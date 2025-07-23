@@ -4,9 +4,11 @@ use App\Controllers\User\Auth\ForgotPasswordController;
 use App\Controllers\User\Auth\RegisterController;
 use App\Controllers\User\Auth\LoginController;
 use App\Controllers\User\Auth\ResetPasswordController;
+use App\Controllers\User\Auth\TwoFactorController;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\HttpFoundation\Request;
+use App\Middleware\AuthMiddleware;
 
 return function (RouteCollection $routes): void {
 	// PUT (register)
@@ -48,4 +50,20 @@ return function (RouteCollection $routes): void {
 		},
 		'_middleware' => []
 	], [], [], '', [], ['PUT']));
+
+	// PUT (two factor)
+	$routes->add('two-factor', new Route('/api/user/auth/two-factor', [
+		'_controller' => function (Request $request) {
+			return (new TwoFactorController())->put($request);
+		},
+		'_middleware' => [AuthMiddleware::class]
+	], [], [], '', [], ['PUT']));
+
+	// GET (two factor)
+	$routes->add('two-factor-get', new Route('/api/user/auth/two-factor', [
+		'_controller' => function (Request $request) {
+			return (new TwoFactorController())->get($request);
+		},
+		'_middleware' => [AuthMiddleware::class]
+	], [], [], '', [], ['GET']));
 };

@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useI18n } from 'vue-i18n';
+import Turnstile from 'vue-turnstile';
+import { useSettingsStore } from '@/stores/settings';
+
+const settingsStore = useSettingsStore();
 
 const props = defineProps<{
     class?: HTMLAttributes['class'];
@@ -17,6 +21,7 @@ const router = useRouter();
 const form = ref({
     password: '',
     confirmPassword: '',
+    turnstile_token: '',
 });
 const loading = ref(true);
 const error = ref('');
@@ -24,7 +29,10 @@ const success = ref('');
 const tokenValid = ref(false);
 const submitting = ref(false);
 
+const turnstileKey = settingsStore.turnstileKeyPub as string;
+
 onMounted(async () => {
+    await settingsStore.fetchSettings();
     const token = route.query.token as string;
     if (!token) {
         error.value = 'Token is required.';
@@ -64,6 +72,11 @@ onMounted(async () => {
 function validateForm(): string | null {
     if (!form.value.password || !form.value.confirmPassword) {
         return $t('api_errors.MISSING_REQUIRED_FIELDS');
+    }
+    if (settingsStore.settings?.turnstile_enabled == 'true') {
+        if (!form.value.turnstile_token) {
+            return $t('api_errors.TURNSTILE_TOKEN_REQUIRED');
+        }
     }
     if (typeof form.value.password !== 'string') {
         return $t('api_errors.INVALID_DATA_TYPE_PASSWORD');
@@ -167,6 +180,7 @@ async function onSubmit(e: Event) {
                                 required
                             />
                         </div>
+                        <Turnstile v-model="form.turnstile_token" :site-key="turnstileKey" />
                         <Button type="submit" class="w-full" :disabled="submitting">
                             <span v-if="submitting">Reset Password...</span>
                             <span v-else>Reset Password</span>

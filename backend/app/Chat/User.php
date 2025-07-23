@@ -227,4 +227,19 @@ class User
 		$stmt->execute(['mail_verify' => $mailVerify]);
 		return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
 	}
+
+	/**
+	 * Get a user by its remember token
+	 * 
+	 * @param string $rememberToken
+	 * 
+	 * @return array|null
+	 */
+	public static function getUserByRememberToken(string $rememberToken): ?array	
+	{
+		$pdo = Database::getPdoConnection();
+		$stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE remember_token = :remember_token LIMIT 1');
+		$stmt->execute(['remember_token' => $rememberToken]);
+		return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+	}
 }

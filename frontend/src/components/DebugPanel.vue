@@ -117,12 +117,13 @@
                                     JSON.stringify(log.requestBody, null, 2)
                                 }}</pre>
                             </div>
-                            <div v-if="log.responseBody" class="mt-2">
+                            <div class="mt-2">
                                 <div class="flex justify-end">
                                     <button
                                         class="p-1 text-gray-400 hover:text-white transition-colors rounded hover:bg-gray-700/50"
                                         title="Copy JSON"
                                         @click="copyJson(log.responseBody)"
+                                        :disabled="!log.responseBody"
                                     >
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"
@@ -137,9 +138,12 @@
                                         </svg>
                                     </button>
                                 </div>
-                                <pre class="bg-gray-900 p-2 rounded text-xs overflow-x-auto custom-scrollbar">{{
-                                    JSON.stringify(log.responseBody, null, 2)
-                                }}</pre>
+                                <pre
+                                    v-if="log.responseBody !== undefined && log.responseBody !== null"
+                                    class="bg-gray-900 p-2 rounded text-xs overflow-x-auto custom-scrollbar"
+                                    >{{ JSON.stringify(log.responseBody, null, 2) }}</pre
+                                >
+                                <div v-else class="bg-gray-900 p-2 rounded text-xs text-gray-500">No response body</div>
                             </div>
                         </div>
                     </div>

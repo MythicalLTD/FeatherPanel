@@ -17,6 +17,11 @@ const authRoutes: RouteRecordRaw[] = [
                 name: 'ResetPassword',
                 component: () => import('@/pages/auth/ResetPassword.vue'),
             },
+            {
+                path: 'setup-two-factor',
+                name: 'SetupTwoFactor',
+                component: () => import('@/pages/auth/SetupTwoFactor.vue'),
+            },
         ],
     },
 ];

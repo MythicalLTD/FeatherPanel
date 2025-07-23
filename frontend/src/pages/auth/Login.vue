@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import { ref, type HTMLAttributes } from 'vue';
+import { ref, onMounted, type HTMLAttributes } from 'vue';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useI18n } from 'vue-i18n';
+import Turnstile from 'vue-turnstile';
+import { useSettingsStore } from '@/stores/settings';
+
+const settingsStore = useSettingsStore();
+onMounted(async () => {
+    await settingsStore.fetchSettings();
+});
 
 const props = defineProps<{
     class?: HTMLAttributes['class'];
@@ -15,14 +22,22 @@ const { t: $t } = useI18n();
 const form = ref({
     email: '',
     password: '',
+    turnstile_token: '',
 });
 const loading = ref(false);
 const error = ref('');
 const success = ref('');
 
+const turnstileKey = settingsStore.settings?.turnstile_key_public as string;
+
 function validateForm(): string | null {
     if (!form.value.email || !form.value.password) {
         return $t('api_errors.MISSING_REQUIRED_FIELDS');
+    }
+    if (settingsStore.settings?.turnstile_enabled == "true") {
+        if (!form.value.turnstile_token) {
+            return $t('api_errors.TURNSTILE_TOKEN_REQUIRED');
+        }
     }
     if (typeof form.value.email !== 'string') {
         return $t('api_errors.INVALID_DATA_TYPE_EMAIL');
@@ -130,6 +145,7 @@ async function onSubmit(e: Event) {
                             required
                         />
                     </div>
+                    <Turnstile v-model="form.turnstile_token" :site-key="turnstileKey" />
                     <Button type="submit" class="w-full" :disabled="loading">
                         <span v-if="loading">Login...</span>
                         <span v-else>Login</span>
