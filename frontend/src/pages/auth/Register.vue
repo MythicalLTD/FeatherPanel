@@ -34,44 +34,72 @@ const success = ref('');
 const turnstileKey = settingsStore.turnstileKeyPub as string;
 
 function validateForm(): string | null {
-    // Required fields
     const requiredFields: Array<keyof typeof form.value> = ['username', 'email', 'password', 'first_name', 'last_name'];
     for (const field of requiredFields) {
         if (!form.value[field] || form.value[field].trim() === '') {
             return $t('api_errors.MISSING_REQUIRED_FIELDS');
         }
     }
-    // Type checks
     for (const field of requiredFields) {
         if (typeof form.value[field] !== 'string') {
-            return $t('api_errors.INVALID_DATA_TYPE', { field: $t('auth.' + field) });
+            switch (field) {
+                case 'email':
+                    return $t('api_errors.INVALID_DATA_TYPE_EMAIL');
+                case 'password':
+                    return $t('api_errors.INVALID_DATA_TYPE_PASSWORD');
+                case 'username':
+                    return $t('api_errors.INVALID_DATA_TYPE_USERNAME');
+                case 'first_name':
+                    return $t('api_errors.INVALID_DATA_TYPE_FIRST_NAME');
+                case 'last_name':
+                    return $t('api_errors.INVALID_DATA_TYPE_LAST_NAME');
+            }
         }
         form.value[field] = form.value[field].trim();
     }
-    // Length checks
     const lengthRules: Record<keyof typeof form.value, [number, number]> = {
         username: [3, 64],
         email: [3, 255],
         first_name: [3, 64],
         last_name: [3, 64],
         password: [8, 255],
-        turnstile_token: [0, 255], // not validated here
+        turnstile_token: [0, 255],
     };
     for (const field of requiredFields) {
         const [min, max] = lengthRules[field];
         const len = form.value[field].length;
         if (len < min) {
-            return $t('api_errors.INVALID_DATA_LENGTH_MIN', { field: $t('auth.' + field), min });
+            switch (field) {
+                case 'email':
+                    return $t('api_errors.INVALID_DATA_LENGTH_MIN_EMAIL');
+                case 'password':
+                    return $t('api_errors.INVALID_DATA_LENGTH_MIN_PASSWORD');
+                case 'username':
+                    return $t('api_errors.INVALID_DATA_LENGTH_MIN_USERNAME');
+                case 'first_name':
+                    return $t('api_errors.INVALID_DATA_LENGTH_MIN_FIRST_NAME');
+                case 'last_name':
+                    return $t('api_errors.INVALID_DATA_LENGTH_MIN_LAST_NAME');
+            }
         }
         if (len > max) {
-            return $t('api_errors.INVALID_DATA_LENGTH_MAX', { field: $t('auth.' + field), max });
+            switch (field) {
+                case 'email':
+                    return $t('api_errors.INVALID_DATA_LENGTH_MAX_EMAIL');
+                case 'password':
+                    return $t('api_errors.INVALID_DATA_LENGTH_MAX_PASSWORD');
+                case 'username':
+                    return $t('api_errors.INVALID_DATA_LENGTH_MAX_USERNAME');
+                case 'first_name':
+                    return $t('api_errors.INVALID_DATA_LENGTH_MAX_FIRST_NAME');
+                case 'last_name':
+                    return $t('api_errors.INVALID_DATA_LENGTH_MAX_LAST_NAME');
+            }
         }
     }
-    // Email format
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.value.email)) {
         return $t('api_errors.INVALID_EMAIL_ADDRESS');
     }
-    // Username format
     if (!/^[a-zA-Z0-9_]+$/.test(form.value.username)) {
         return $t('api_errors.INVALID_USERNAME_FORMAT');
     }
@@ -82,8 +110,23 @@ function getErrorMessage(err: unknown): string {
     if (typeof err === 'object' && err !== null) {
         const e = err as { response?: { data?: { message?: string; error_code?: string } }; message?: string };
         const code = e.response?.data?.error_code;
-        if (code && $t('api_errors.' + code) !== 'api_errors.' + code) {
-            return $t('api_errors.' + code);
+        if (code) {
+            switch (code) {
+                case 'MISSING_REQUIRED_FIELDS':
+                    return $t('api_errors.MISSING_REQUIRED_FIELDS');
+                case 'INVALID_DATA_TYPE':
+                    return $t('api_errors.INVALID_DATA_TYPE_EMAIL');
+                case 'INVALID_DATA_LENGTH_MIN':
+                    return $t('api_errors.INVALID_DATA_LENGTH_MIN_EMAIL');
+                case 'INVALID_DATA_LENGTH_MAX':
+                    return $t('api_errors.INVALID_DATA_LENGTH_MAX_EMAIL');
+                case 'INVALID_EMAIL_ADDRESS':
+                    return $t('api_errors.INVALID_EMAIL_ADDRESS');
+                case 'INVALID_USERNAME_FORMAT':
+                    return $t('api_errors.INVALID_USERNAME_FORMAT');
+                default:
+                    break;
+            }
         }
         return e.response?.data?.message || e.message || $t('api_errors.UNKNOWN_ERROR');
     }
@@ -116,7 +159,7 @@ async function onSubmit(e: Event) {
             headers: { 'Content-Type': 'application/json' },
         });
         if (res.data && res.data.success) {
-            success.value = res.data.message || $t('api_errors.REGISTRATION_SUCCESS');
+            success.value = res.data.message || 'Registration successful!';
         } else {
             error.value = getErrorMessage(res.data);
         }
@@ -135,24 +178,24 @@ async function onSubmit(e: Event) {
                 <div class="flex flex-col gap-4">
                     <div class="flex flex-col md:flex-row gap-3">
                         <div class="w-full md:w-1/2 flex flex-col gap-2">
-                            <Label for="firstName">{{ $t('auth.firstName') }}</Label>
+                            <Label for="firstName">First Name</Label>
                             <Input
                                 id="firstName"
-                                type="text"
-                                :placeholder="$t('auth.firstNamePlaceholder')"
                                 v-model="form.first_name"
+                                type="text"
+                                :placeholder="'First Name'"
                                 required
                                 minlength="3"
                                 maxlength="64"
                             />
                         </div>
                         <div class="w-full md:w-1/2 flex flex-col gap-2">
-                            <Label for="lastName">{{ $t('auth.lastName') }}</Label>
+                            <Label for="lastName">Last Name</Label>
                             <Input
                                 id="lastName"
-                                type="text"
-                                :placeholder="$t('auth.lastNamePlaceholder')"
                                 v-model="form.last_name"
+                                type="text"
+                                :placeholder="'Last Name'"
                                 required
                                 minlength="3"
                                 maxlength="64"
@@ -160,24 +203,24 @@ async function onSubmit(e: Event) {
                         </div>
                     </div>
                     <div class="grid gap-3">
-                        <Label for="email">{{ $t('auth.email') }}</Label>
+                        <Label for="email">Email</Label>
                         <Input
                             id="email"
-                            type="email"
-                            :placeholder="$t('auth.emailPlaceholder')"
                             v-model="form.email"
+                            type="email"
+                            :placeholder="'m@example.com'"
                             required
                             minlength="3"
                             maxlength="255"
                         />
                     </div>
                     <div class="grid gap-3">
-                        <Label for="username">{{ $t('auth.username') }}</Label>
+                        <Label for="username">Username</Label>
                         <Input
                             id="username"
-                            type="text"
-                            :placeholder="$t('auth.usernamePlaceholder')"
                             v-model="form.username"
+                            type="text"
+                            :placeholder="'username'"
                             required
                             minlength="3"
                             maxlength="64"
@@ -185,29 +228,27 @@ async function onSubmit(e: Event) {
                         />
                     </div>
                     <div class="grid gap-3">
-                        <Label for="password">{{ $t('auth.password') }}</Label>
+                        <Label for="password">Password</Label>
                         <Input
                             id="password"
-                            type="password"
-                            :placeholder="$t('auth.passwordPlaceholder')"
                             v-model="form.password"
+                            type="password"
+                            :placeholder="'********'"
                             required
                             minlength="8"
                             maxlength="255"
                         />
                     </div>
-                    <Turnstile :siteKey="turnstileKey" v-model="form.turnstile_token" />
+                    <Turnstile v-model="form.turnstile_token" :site-key="turnstileKey" />
                     <Button type="submit" class="w-full" :disabled="loading">
-                        <span v-if="loading">{{ $t('auth.register') }}...</span>
-                        <span v-else>{{ $t('auth.register') }}</span>
+                        <span v-if="loading">Register...</span>
+                        <span v-else>Register</span>
                     </Button>
                     <div v-if="error" class="text-center text-sm text-red-500">{{ error }}</div>
                     <div v-if="success" class="text-center text-sm text-green-500">{{ success }}</div>
                     <div class="text-center text-sm">
-                        {{ $t('auth.alreadyAccount') }}
-                        <router-link to="/auth/login" class="underline underline-offset-4">
-                            {{ $t('auth.login') }}
-                        </router-link>
+                        Already have an account?
+                        <router-link to="/auth/login" class="underline underline-offset-4"> Login </router-link>
                     </div>
                 </div>
             </div>

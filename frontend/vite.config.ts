@@ -4,7 +4,6 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import vueJsx from '@vitejs/plugin-vue-jsx';
 import vueDevTools from 'vite-plugin-vue-devtools';
-import oxlintPlugin from 'vite-plugin-oxlint';
 import ViteYaml from '@modyfi/vite-plugin-yaml';
 import tailwindcss from '@tailwindcss/vite';
 
@@ -20,7 +19,6 @@ export default defineConfig({
         vueJsx(),
         vueDevTools(),
         tailwindcss(),
-        oxlintPlugin(),
     ],
     resolve: {
         alias: {

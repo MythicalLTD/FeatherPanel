@@ -24,16 +24,25 @@ function validateForm(): string | null {
     if (!form.value.email || !form.value.password) {
         return $t('api_errors.MISSING_REQUIRED_FIELDS');
     }
-    if (typeof form.value.email !== 'string' || typeof form.value.password !== 'string') {
-        return $t('api_errors.INVALID_DATA_TYPE');
+    if (typeof form.value.email !== 'string') {
+        return $t('api_errors.INVALID_DATA_TYPE_EMAIL');
+    }
+    if (typeof form.value.password !== 'string') {
+        return $t('api_errors.INVALID_DATA_TYPE_PASSWORD');
     }
     form.value.email = form.value.email.trim();
     form.value.password = form.value.password.trim();
-    if (form.value.email.length < 3 || form.value.email.length > 255) {
-        return $t('api_errors.INVALID_DATA_LENGTH_MIN', { field: $t('auth.email'), min: 3 });
+    if (form.value.email.length < 3) {
+        return $t('api_errors.INVALID_DATA_LENGTH_MIN_EMAIL');
     }
-    if (form.value.password.length < 8 || form.value.password.length > 255) {
-        return $t('api_errors.INVALID_DATA_LENGTH_MIN', { field: $t('auth.password'), min: 8 });
+    if (form.value.email.length > 255) {
+        return $t('api_errors.INVALID_DATA_LENGTH_MAX_EMAIL');
+    }
+    if (form.value.password.length < 8) {
+        return $t('api_errors.INVALID_DATA_LENGTH_MIN_PASSWORD');
+    }
+    if (form.value.password.length > 255) {
+        return $t('api_errors.INVALID_DATA_LENGTH_MAX_PASSWORD');
     }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.value.email)) {
         return $t('api_errors.INVALID_EMAIL_ADDRESS');
@@ -45,8 +54,21 @@ function getErrorMessage(err: unknown): string {
     if (typeof err === 'object' && err !== null) {
         const e = err as { response?: { data?: { message?: string; error_code?: string } }; message?: string };
         const code = e.response?.data?.error_code;
-        if (code && $t('api_errors.' + code) !== 'api_errors.' + code) {
-            return $t('api_errors.' + code);
+        if (code) {
+            switch (code) {
+                case 'MISSING_REQUIRED_FIELDS':
+                    return $t('api_errors.MISSING_REQUIRED_FIELDS');
+                case 'INVALID_DATA_TYPE':
+                    return $t('api_errors.INVALID_DATA_TYPE_EMAIL');
+                case 'INVALID_DATA_LENGTH_MIN':
+                    return $t('api_errors.INVALID_DATA_LENGTH_MIN_EMAIL');
+                case 'INVALID_DATA_LENGTH_MAX':
+                    return $t('api_errors.INVALID_DATA_LENGTH_MAX_EMAIL');
+                case 'INVALID_EMAIL_ADDRESS':
+                    return $t('api_errors.INVALID_EMAIL_ADDRESS');
+                default:
+                    break;
+            }
         }
         return e.response?.data?.message || e.message || $t('api_errors.UNKNOWN_ERROR');
     }
@@ -73,7 +95,7 @@ async function onSubmit(e: Event) {
             headers: { 'Content-Type': 'application/json' },
         });
         if (res.data && res.data.success) {
-            success.value = res.data.message || $t('api_errors.LOGIN_SUCCESS');
+            success.value = res.data.message || 'Login successful! Redirecting...';
             // Optionally redirect after a short delay
             setTimeout(() => {
                 window.location.href = '/';
@@ -95,41 +117,33 @@ async function onSubmit(e: Event) {
             <div class="flex flex-col gap-6">
                 <div class="flex flex-col gap-4">
                     <div class="grid gap-3">
-                        <Label for="email">{{ $t('auth.email') }}</Label>
-                        <Input
-                            id="email"
-                            type="email"
-                            :placeholder="$t('auth.emailPlaceholder')"
-                            v-model="form.email"
-                            required
-                        />
+                        <Label for="email">Email</Label>
+                        <Input id="email" v-model="form.email" type="email" :placeholder="'m@example.com'" required />
                     </div>
                     <div class="grid gap-3">
-                        <Label for="password">{{ $t('auth.password') }}</Label>
+                        <Label for="password">Password</Label>
                         <Input
                             id="password"
-                            type="password"
-                            :placeholder="$t('auth.passwordPlaceholder')"
                             v-model="form.password"
+                            type="password"
+                            :placeholder="'********'"
                             required
                         />
                     </div>
                     <Button type="submit" class="w-full" :disabled="loading">
-                        <span v-if="loading">{{ $t('auth.login') }}...</span>
-                        <span v-else>{{ $t('auth.login') }}</span>
+                        <span v-if="loading">Login...</span>
+                        <span v-else>Login</span>
                     </Button>
                     <div v-if="error" class="text-center text-sm text-red-500">{{ error }}</div>
                     <div v-if="success" class="text-center text-sm text-green-500">{{ success }}</div>
                     <div class="text-center text-sm">
-                        <router-link to="/auth/forgot-password" class="underline underline-offset-4">{{
-                            $t('auth.forgotPassword')
-                        }}</router-link>
+                        <router-link to="/auth/forgot-password" class="underline underline-offset-4">
+                            Forgot Password?
+                        </router-link>
                     </div>
                     <div class="text-center text-sm">
-                        {{ $t('auth.noAccount') }}
-                        <router-link to="/auth/register" class="underline underline-offset-4">
-                            {{ $t('auth.register') }}
-                        </router-link>
+                        Don't have an account?
+                        <router-link to="/auth/register" class="underline underline-offset-4"> Register </router-link>
                     </div>
                 </div>
             </div>

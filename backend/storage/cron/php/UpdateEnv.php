@@ -21,15 +21,7 @@ class UpdateEnv implements TimeTask
 				$config = new ConfigFactory($db);
 
 				$settings = [
-					ConfigInterface::FIREWALL_ENABLED => 'false',
-					ConfigInterface::FIREWALL_RATE_LIMIT => '100',
-					ConfigInterface::FIREWALL_BLOCK_VPN => 'false',
-					ConfigInterface::MYTHICAL_ZERO_TRUST_ENABLED => 'false',
-					ConfigInterface::MYTHICAL_ZERO_TRUST_SERVER_SCAN_TOOL_ENABLED => 'false',
-					ConfigInterface::MYTHICAL_ZERO_TRUST_WHITELIST_IPS_ENABLED => 'false',
-					ConfigInterface::MYTHICAL_ZERO_TRUST_BLOCK_TOR_ENABLED => 'false',
-					ConfigInterface::MYTHICAL_ZERO_TRUST_ENHANCED_LOGGING_ENABLED => 'false',
-					ConfigInterface::DAILY_BACKUP_ENABLED => 'false'
+					ConfigInterface::SMTP_ENABLED => 'false',
 				];
 
 				foreach ($settings as $key => $value) {

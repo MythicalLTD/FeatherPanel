@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Helpers\ApiResponse;
 use App\App;
-use App\Config\PublicConfig;
+use App\Mail\templates\Welcome;
 use App\Chat\User;
 use App\Helpers\UUIDUtils;
 
@@ -115,7 +115,21 @@ class RegisterController
 		if ($user == false) {
 			return ApiResponse::error('Failed to create user', "FAILED_TO_CREATE_USER");
 		}
+
+		Welcome::send([
+			'email' => $data['email'],
+			'subject' => 'Welcome to ' . $config->getSetting(ConfigInterface::APP_NAME, "MythicalPanel"),
+			'app_name' => $config->getSetting(ConfigInterface::APP_NAME, "MythicalPanel"),
+			'app_url' => $config->getSetting(ConfigInterface::APP_URL, "mythicalpanel.mythical.systems"),
+			'first_name' => $data['first_name'],
+			'last_name' => $data['last_name'],
+			'username' => $data['username'],
+			'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, "https://discord.mythical.systems"),
+			'uuid' => $userInfo['uuid'],
+			'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, "false"),
+		]);
 		// If user creation succeeds, return the user info
 		return ApiResponse::success($userInfo, 'User registered successfully', 200);
 	}
+
 }

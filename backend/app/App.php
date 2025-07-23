@@ -23,7 +23,6 @@ use RateLimit\Exception\LimitExceeded;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\AppEvent;
-use App\Hooks\MythicalSystems\Utils\XChaCha20;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Routing\RouteCollection;
@@ -145,7 +144,7 @@ class App
 			self::getLogger()->warning("Invalid timezone '$timezone', falling back to UTC.");
 			date_default_timezone_set("UTC");
 		}
-		
+
 		$this->routes = new RouteCollection();
 		$this->registerApiRoutes($this->routes);
 		$this->dispatchSymfonyRouter();
@@ -224,7 +223,7 @@ class App
 		} catch (ResourceNotFoundException $e) {
 			$response = ApiResponse::error('The api route does not exist!', 'API_ROUTE_NOT_FOUND', 404, null);
 		} catch (\Exception $e) {
-			$response = ApiResponse::exception('An error occurred', $e->getMessage());
+			$response = ApiResponse::exception('An error occurred: ' . $e->getMessage(), $e->getCode());
 		}
 		$response->send();
 	}
@@ -340,28 +339,6 @@ class App
 		}
 
 		return self::$instance;
-	}
-
-	/**
-	 * Encrypt the data.
-	 *
-	 * @param string $data The data to encrypt
-	 */
-	public function encrypt(string $data): string
-	{
-		return XChaCha20::encrypt($data, $_ENV['DATABASE_ENCRYPTION_KEY'], true);
-	}
-
-	/**
-	 * Decrypt the data.
-	 *
-	 * @param string $data The data to decrypt
-	 *
-	 * @return void
-	 */
-	public function decrypt(string $data): string
-	{
-		return XChaCha20::decrypt($data, $_ENV['DATABASE_ENCRYPTION_KEY'], true);
 	}
 
 	/**

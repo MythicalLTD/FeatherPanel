@@ -18,7 +18,6 @@ export const useSettingsStore = defineStore('settings', {
                     this.loaded = false;
                 }
             } catch (e) {
-                // eslint-disable-next-line no-console
                 console.error('Failed to fetch settings:', e);
                 this.settings = null;
                 this.loaded = false;

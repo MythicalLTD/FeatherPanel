@@ -44,10 +44,7 @@ class User
 		if (!preg_match('/^[a-f0-9\-]{36}$/i', $data['uuid'])) {
 			return false;
 		}
-		// Hash password if not already hashed (simple check)
-		if (strlen($data['password']) < 60) {
-			$data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
-		}
+
 		$pdo = Database::getPdoConnection();
 		$fields = array_keys($data);
 		$placeholders = array_map(fn($f) => ':' . $f, $fields);
@@ -111,36 +108,31 @@ class User
 	/**
 	 * Update a user by ID.
 	 *
-	 * @param int $id
+	 * @param string $uuid
 	 * @param array $data
 	 * @return bool
 	 */
-	public static function updateUser(int $id, array $data): bool
+	public static function updateUser(string $uuid, array $data): bool
 	{
-		if ($id <= 0 || empty($data))
+		if (empty($data))
 			return false;
 		// Prevent updating primary key/id
-		unset($data['id']);
+		if (isset($data['uuid']))
+			unset($data['uuid']);
+		if (isset($data['id']))
+			unset($data['id']);
 		// Validate email if present
 		if (isset($data['email']) && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
 			return false;
-		}
-		// Validate uuid if present
-		if (isset($data['uuid']) && !preg_match('/^[a-f0-9\-]{36}$/i', $data['uuid'])) {
-			return false;
-		}
-		// Hash password if present and not already hashed
-		if (isset($data['password']) && strlen($data['password']) < 60) {
-			$data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
 		}
 		$pdo = Database::getPdoConnection();
 		$fields = array_keys($data);
 		if (empty($fields))
 			return false;
 		$set = implode(', ', array_map(fn($f) => "$f = :$f", $fields));
-		$sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE id = :id';
+		$sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE uuid = :uuid';
 		$stmt = $pdo->prepare($sql);
-		$data['id'] = $id;
+		$data['uuid'] = $uuid;
 		return $stmt->execute($data);
 	}
 
@@ -206,4 +198,33 @@ class User
 		return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
 	}
 
+	/**
+	 * Get a user by its uuid
+	 * 
+	 * @param string $uuid
+	 * 
+	 * @return array|null
+	 */
+	public static function getUserByUuid(string $uuid): ?array
+	{
+		$pdo = Database::getPdoConnection();
+		$stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE uuid = :uuid LIMIT 1');
+		$stmt->execute(['uuid' => $uuid]);
+		return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+	}
+
+	/**
+	 * Get a user by its mail verify
+	 * 
+	 * @param string $mailVerify
+	 * 
+	 * @return array|null
+	 */
+	public static function getUserByMailVerify(string $mailVerify): ?array
+	{
+		$pdo = Database::getPdoConnection();
+		$stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE mail_verify = :mail_verify LIMIT 1');
+		$stmt->execute(['mail_verify' => $mailVerify]);
+		return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+	}
 }

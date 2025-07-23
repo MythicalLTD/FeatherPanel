@@ -9,11 +9,10 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Helpers\ApiResponse;
 use App\App;
-use App\Config\PublicConfig;
 use App\Chat\User;
-use App\Helpers\UUIDUtils;
+use App\Mail\templates\ForgotPassword;
 
-class LoginController
+class ForgotPasswordController
 {
 	/**
 	 * Login a user
@@ -43,7 +42,7 @@ class LoginController
 		}
 
 		// Validate required fields
-		$requiredFields = ['email', 'password'];
+		$requiredFields = ['email'];
 		$missingFields = [];
 		foreach ($requiredFields as $field) {
 			if (!isset($data[$field]) || trim($data[$field]) === '') {
@@ -55,7 +54,7 @@ class LoginController
 		}
 
 		// Validate data types and format
-		foreach (['email', 'password'] as $field) {
+		foreach (['email'] as $field) {
 			if (!is_string($data[$field])) {
 				return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a string', "INVALID_DATA_TYPE");
 			}
@@ -65,7 +64,6 @@ class LoginController
 		// Validate data length
 		$lengthRules = [
 			'email' => [3, 255],
-			'password' => [8, 255],
 		];
 		foreach ($lengthRules as $field => [$min, $max]) {
 			$len = strlen($data[$field]);
@@ -87,19 +85,29 @@ class LoginController
 		if ($userInfo == null) {
 			return ApiResponse::error('Email does not exist', "EMAIL_DOES_NOT_EXIST");
 		}
-		if (!password_verify($data['password'], $userInfo['password'])) {
-			return ApiResponse::error('Invalid password', "INVALID_PASSWORD");
-		}
-		if (isset($userInfo['remember_token'])) {
-			$token = $userInfo['remember_token'];
-			setcookie('remember_token', $token, time() + 60 * 60 * 24 * 30, '/');
-			User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
-			return ApiResponse::success($userInfo, 'User logged in successfully', 200);
+		$resetToken = bin2hex(random_bytes(32));
 
+		if (User::updateUser($userInfo['uuid'], ['mail_verify' => $resetToken])) {
+
+			// Send reset password email
+			$resetUrl = 'https://' . $config->getSetting(ConfigInterface::APP_URL, "mythicalpanel.mythical.systems") . '/auth/reset-password?token=' . $resetToken;
+
+			ForgotPassword::send([
+				'email' => $userInfo['email'],
+				'subject' => 'Reset Password Request',
+				'app_name' => $config->getSetting(ConfigInterface::APP_NAME, "MythicalPanel"),
+				'app_url' => $config->getSetting(ConfigInterface::APP_URL, "mythicalpanel.mythical.systems"),
+				'first_name' => $userInfo['first_name'],
+				'last_name' => $userInfo['last_name'],
+				'username' => $userInfo['username'],
+				'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, "https://discord.mythical.systems"),
+				'uuid' => $userInfo['uuid'],
+				'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, "false"),
+				'reset_url' => $resetUrl
+			]);
+			return ApiResponse::success(null, "We have sent you an email to reset your password", 200);
 		} else {
-			return ApiResponse::error('Remember token not set', "REMEMBER_TOKEN_NOT_SET");
+			return ApiResponse::error('Failed to update user', "FAILED_TO_UPDATE_USER");
 		}
-
 	}
-
 }

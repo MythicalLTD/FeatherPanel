@@ -7,24 +7,6 @@ import router from './router';
 import VueSweetalert2 from 'vue-sweetalert2';
 import { createI18n } from 'vue-i18n';
 
-
-// Load custom CSS and JS
-const loadCustomResources = () => {
-    // Load custom CSS
-    const cssLink = document.createElement('link');
-    cssLink.rel = 'stylesheet';
-    cssLink.href = '/api/system/custom.css';
-    document.head.appendChild(cssLink);
-
-    // Load custom JS
-    const script = document.createElement('script');
-    script.src = '/api/system/custom.js';
-    document.head.appendChild(script);
-};
-
-// Call the function to load resources
-loadCustomResources();
-
 // Performance optimization: Create app with production tip disabled
 const app = createApp(App, {
     // Disable production tip
@@ -86,7 +68,6 @@ if (import.meta.env.PROD) {
     app.config.warnHandler = () => null;
 }
 
-
 // Performance optimization: Register plugins with proper error handling and lazy loading
 const registerPlugins = async () => {
     try {
@@ -102,7 +83,6 @@ const registerPlugins = async () => {
 // Mount the app with error boundary and performance monitoring
 const mountApp = async () => {
     try {
-
         await registerPlugins();
 
         // Performance optimization: Use requestAnimationFrame for mounting

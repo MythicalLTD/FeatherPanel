@@ -15,7 +15,6 @@ namespace App\Cli\Commands;
 
 use App\Cli\App;
 use App\Cli\CommandBuilder;
-use App\Hooks\MythicalSystems\Utils\XChaCha20;
 
 class Setup extends App implements CommandBuilder
 {
@@ -39,20 +38,11 @@ class Setup extends App implements CommandBuilder
 
     public static function createDBConnection(App $cliApp): void
     {
-        $defultEncryption = 'xchacha20';
         $defultDBName = 'mythicalpanel';
         $defultDBHost = '127.0.0.1';
         $defultDBPort = '3306';
         $defultDBUser = 'mythicalpanel';
         $defultDBPassword = '';
-
-        $cliApp->send("&7Please enter the database encryption &8[&e$defultEncryption&8]&7");
-        $dbEncryption = readline('> ') ?: $defultEncryption;
-        $allowedEncryptions = ['xchacha20'];
-        if (!in_array($dbEncryption, $allowedEncryptions)) {
-            $cliApp->send('&cInvalid database encryption.');
-            exit;
-        }
 
         $cliApp->send("&7Please enter the database name &8[&e$defultDBName&8]&7");
         $defultDBName = readline('> ') ?: $defultDBName;
@@ -84,8 +74,7 @@ DATABASE_PORT=' . $defultDBPort . '
 DATABASE_USER=' . $defultDBUser . '
 DATABASE_PASSWORD=' . $defultDBPassword . '
 DATABASE_DATABASE=' . $defultDBName . '
-DATABASE_ENCRYPTION=' . $dbEncryption . '
-DATABASE_ENCRYPTION_KEY=' . XChaCha20::generateStrongKey(true) . '
+DATABASE_ENCRYPTION=plaintext
 REDIS_PASSWORD=eufefwefwefw
 REDIS_HOST=127.0.0.1';
 

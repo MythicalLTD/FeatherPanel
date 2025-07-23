@@ -1,7 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router';
 
-const clientRoutes: RouteRecordRaw[] = [
-   
-];
+const clientRoutes: RouteRecordRaw[] = [];
 
 export default clientRoutes;

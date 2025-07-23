@@ -48,6 +48,7 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::APP_URL => 'framework.mythical.systems',
             ConfigInterface::APP_TIMEZONE => 'UTC',
             ConfigInterface::APP_LOGO => 'https://github.com/mythicalltd.png',	
+            ConfigInterface::APP_SUPPORT_URL => 'https://discord.gg/mythical',
 
             // Turnstile settings
             ConfigInterface::TURNSTILE_ENABLED => 'false',

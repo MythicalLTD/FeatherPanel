@@ -2,6 +2,7 @@
 import { defineComponent, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import DebugPanel from './components/DebugPanel.vue';
+import axios from 'axios';
 
 export default defineComponent({
     name: 'App',
@@ -16,7 +17,7 @@ export default defineComponent({
         // Only one transition type: 'fade'
         const transitionName = 'page-transition-fade';
 
-        // Debug mode setup (unchanged)
+        // Debug mode setup (network only)
         const setupDebugMode = () => {
             const originalFetch = window.fetch;
             window.fetch = async (...args) => {
@@ -75,36 +76,39 @@ export default defineComponent({
                 return response;
             };
 
-            const originalConsoleError = console.error;
-            console.error = (...args) => {
-                originalConsoleError.apply(console, args);
-                debugPanel.value?.addLog('error', {
-                    message: args.join(' '),
-                    stack: new Error().stack,
-                });
-            };
+            // Axios interceptors for DebugPanel (network only)
+            axios.interceptors.request.use(
+                (config) => {
+                    debugPanel.value?.addLog('network', {
+                        url: config.url,
+                        method: config.method?.toUpperCase() || 'GET',
+                        requestBody: config.data,
+                        headers: config.headers,
+                    });
+                    return config;
+                },
+                (error) => {
+                    return Promise.reject(error);
+                },
+            );
 
-            window.addEventListener('unhandledrejection', (event) => {
-                debugPanel.value?.addLog('error', {
-                    message: `Unhandled Promise Rejection: ${event.reason}`,
-                    stack: event.reason?.stack,
-                });
-            });
-
-            window.addEventListener('error', (event) => {
-                debugPanel.value?.addLog('error', {
-                    message: `Global Error: ${event.error}`,
-                    stack: event.error?.stack,
-                });
-            });
-
-            const originalConsoleLog = console.log;
-            console.log = (...args) => {
-                originalConsoleLog.apply(console, args);
-                debugPanel.value?.addLog('console', {
-                    message: args.join(' '),
-                });
-            };
+            axios.interceptors.response.use(
+                (response) => {
+                    debugPanel.value?.addLog('network', {
+                        url: response.config.url,
+                        method: response.config.method?.toUpperCase() || 'GET',
+                        status: response.status,
+                        statusText: response.statusText,
+                        requestBody: response.config.data,
+                        responseBody: response.data,
+                        headers: response.headers,
+                    });
+                    return response;
+                },
+                (error) => {
+                    return Promise.reject(error);
+                },
+            );
         };
 
         onMounted(() => {

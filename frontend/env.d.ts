@@ -2,8 +2,7 @@
 
 declare module '*.vue' {
     import { DefineComponent } from 'vue';
-// oxlint-disable-next-line no-empty-object-type
-    const component: DefineComponent<{}, {}, unknown>;
+    const component: DefineComponent<{}, {}, any>;
     export default component;
 }
 
@@ -12,8 +11,8 @@ declare module '@vueuse/sound' {
 }
 
 declare module '*.yml' {
-    const content: unknown;
-    export default content;
-}  
+    const value: any;
+    export default value;
+}
 
 declare module 'vite-plugin-eslint';
