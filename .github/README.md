@@ -1,0 +1,7 @@
+# ⚠️ WARNING ⚠️
+
+## **THIS IS A DEVELOP BRANCH – NEVER INSTALL MYTHICALPANEL FROM HERE**
+
+---
+
+# MythicalPanel 

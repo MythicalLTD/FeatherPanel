@@ -1,0 +1,9 @@
+/packages/*.php
+/packages/*/
+/caches/*.php
+/caches/*.json
+/logs/*.txt
+/logs/*.log
+/caches/mails/*.html
+/caches/other/
+.env

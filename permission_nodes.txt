@@ -1,0 +1,9 @@
+# MythicalPanel Permission Nodes
+# This file defines all permission nodes used throughout the application
+# Format: KEY=value | category | description
+
+# ROOT PERMISSIONS 
+ADMIN_ROOT=admin.root | Admin Root | Full access to everything
+
+# Dashboard Permissions
+ADMIN_DASHBOARD_VIEW=admin.dashboard.view | Admin Dashboard View | Access to view the admin dashboard
