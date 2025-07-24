@@ -16,7 +16,7 @@ use App\Permissions;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
-use App\Controllers\User\Admin\UsersController;
+use App\Controllers\Admin\UsersController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(

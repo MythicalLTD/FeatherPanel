@@ -15,7 +15,7 @@ use App\App;
 use App\Permissions;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
-use App\Controllers\User\Admin\DashboardController;
+use App\Controllers\Admin\DashboardController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
