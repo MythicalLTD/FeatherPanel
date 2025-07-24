@@ -18,9 +18,9 @@ export interface UserInfo {
     first_ip: string;
     last_ip: string;
     banned: string;
-    ['2fa_enabled']: string;
-    ['2fa_key']: string;
-    ['2fa_blocked']: string;
+    ['two_fa_enabled']: string;
+    ['two_fa_key']: string;
+    ['two_fa_blocked']: string;
     deleted: string;
     locked: string;
     last_seen: string;

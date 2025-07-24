@@ -20,10 +20,10 @@ use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use PragmaRX\Google2FA\Google2FA;
 use App\CloudFlare\CloudFlareRealIP;
+use App\CloudFlare\CloudFlareTurnstile;
 use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\CloudFlare\CloudFlareTurnstile;
 
 class TwoFactorController
 {
@@ -92,12 +92,15 @@ class TwoFactorController
         if (!$google2fa->verifyKey($data['secret'], $data['code'])) {
             return ApiResponse::error('Invalid code', 'INVALID_CODE');
         }
+        if ($userInfo['banned'] == 'true') {
+            return ApiResponse::error('User is banned', 'USER_BANNED');
+        }
 
-        User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP(), '2fa_enabled' => 'true', '2fa_key' => $data['secret']]);
+        User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP(), 'two_fa_enabled' => 'true', 'two_fa_key' => $data['secret']]);
 
         Activity::createActivity([
             'user_uuid' => $userInfo['uuid'],
-            'name' => '2fa_enabled',
+            'name' => 'two_fa_enabled',
             'context' => '2FA enabled',
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
@@ -118,7 +121,7 @@ class TwoFactorController
         $data = json_decode($request->getContent(), true);
         $userInfo = User::getUserByRememberToken($_COOKIE['remember_token']);
 
-        if ($userInfo['2fa_enabled'] == 'true') {
+        if ($userInfo['two_fa_enabled'] == 'true') {
             return ApiResponse::error('Two factor authentication is enabled', 'TWO_FACTOR_AUTH_ENABLED');
         }
 
@@ -146,11 +149,11 @@ class TwoFactorController
             return ApiResponse::error('Missing email or code', 'MISSING_REQUIRED_FIELDS');
         }
         $userInfo = User::getUserByEmail($data['email']);
-        if (!$userInfo || $userInfo['2fa_enabled'] !== 'true') {
-            return ApiResponse::error('2FA not enabled', '2FA_NOT_ENABLED');
+        if (!$userInfo || $userInfo['two_fa_enabled'] !== 'true') {
+            return ApiResponse::error('2FA not enabled', 'two_fa_NOT_ENABLED');
         }
         $google2fa = new Google2FA();
-        if (!$google2fa->verifyKey($userInfo['2fa_key'], $data['code'])) {
+        if (!$google2fa->verifyKey($userInfo['two_fa_key'], $data['code'])) {
             return ApiResponse::error('Invalid 2FA code', 'INVALID_CODE');
         }
         // Set session/cookie and allow login
@@ -160,7 +163,7 @@ class TwoFactorController
 
         Activity::createActivity([
             'user_uuid' => $userInfo['uuid'],
-            'name' => '2fa_verified',
+            'name' => 'two_fa_verified',
             'context' => '2FA verified, user logged in',
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);

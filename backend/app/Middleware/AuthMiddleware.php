@@ -27,6 +27,9 @@ class AuthMiddleware implements MiddlewareInterface
             if ($userInfo == null) {
                 return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
             }
+            if ($userInfo['banned'] == 'true') {
+                return ApiResponse::error('User is banned', 'USER_BANNED');
+            }
             // Attach user info to the request attributes for downstream use
             $request->attributes->set('user', $userInfo);
         } else {
