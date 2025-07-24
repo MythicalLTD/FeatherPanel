@@ -16,6 +16,13 @@
                     </div>
                 </CardHeader>
                 <CardContent>
+                    <Alert
+                        v-if="message"
+                        :variant="message.type === 'error' ? 'destructive' : 'default'"
+                        class="mb-4 whitespace-nowrap overflow-x-auto"
+                    >
+                        <span>{{ displayMessage }}</span>
+                    </Alert>
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -64,9 +71,29 @@
                                         <Button size="sm" variant="secondary" @click="onEdit(user)">
                                             <Pencil :size="16" />
                                         </Button>
-                                        <Button size="sm" variant="destructive" @click="onDelete(user)">
-                                            <Trash2 :size="16" />
-                                        </Button>
+                                        <template v-if="confirmDeleteRow === user.uuid">
+                                            <Button
+                                                size="sm"
+                                                variant="destructive"
+                                                :loading="deleting"
+                                                @click="confirmDelete(user)"
+                                            >
+                                                Confirm
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                :disabled="deleting"
+                                                @click="onCancelDelete"
+                                            >
+                                                Cancel
+                                            </Button>
+                                        </template>
+                                        <template v-else>
+                                            <Button size="sm" variant="destructive" @click="onDelete(user)">
+                                                <Trash2 :size="16" />
+                                            </Button>
+                                        </template>
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -87,7 +114,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -99,6 +126,7 @@ import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@
 import { Eye, Pencil, Trash2 } from 'lucide-vue-next';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
+import { Alert } from '@/components/ui/alert';
 
 type ApiUser = {
     uuid: string;
@@ -119,6 +147,10 @@ const pagination = ref({
 });
 const loading = ref(false);
 const router = useRouter();
+const deleting = ref(false);
+const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
+const confirmDeleteRow = ref<string | null>(null);
+const displayMessage = computed(() => (message.value ? message.value.text.replace(/[\r\n]+/g, ' ') : ''));
 
 async function fetchUsers() {
     loading.value = true;
@@ -151,8 +183,39 @@ function onEdit(user: ApiUser) {
     // handle edit user
     router.push(`/admin/users/${user.uuid}/edit`);
 }
+
+async function confirmDelete(user: ApiUser) {
+    deleting.value = true;
+    let success = false;
+    try {
+        const response = await axios.delete(`/api/admin/users/${user.uuid}`);
+        if (response.data && response.data.success) {
+            message.value = { type: 'success', text: 'User deleted successfully' };
+            await fetchUsers();
+            success = true;
+        } else {
+            message.value = { type: 'error', text: response.data?.message || 'Failed to delete user' };
+        }
+    } catch (e: unknown) {
+        message.value = {
+            type: 'error',
+            text:
+                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+                'Failed to delete user',
+        };
+    } finally {
+        deleting.value = false;
+        if (success) confirmDeleteRow.value = null;
+        setTimeout(() => {
+            message.value = null;
+        }, 4000);
+    }
+}
+
 function onDelete(user: ApiUser) {
-    // handle delete user
-    router.push(`/admin/users/${user.uuid}/delete`);
+    confirmDeleteRow.value = user.uuid;
+}
+function onCancelDelete() {
+    confirmDeleteRow.value = null;
 }
 </script>
