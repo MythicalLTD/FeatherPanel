@@ -78,7 +78,7 @@
                                                 :loading="deleting"
                                                 @click="confirmDelete(user)"
                                             >
-                                                Confirm
+                                                Confirm Delete
                                             </Button>
                                             <Button
                                                 size="sm"
