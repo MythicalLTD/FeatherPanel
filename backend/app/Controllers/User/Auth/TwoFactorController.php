@@ -15,10 +15,12 @@ namespace App\Controllers\User\Auth;
 
 use App\App;
 use App\Chat\User;
+use App\Chat\Activity;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use PragmaRX\Google2FA\Google2FA;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Hooks\MythicalSystems\CloudFlare\CloudFlareTurnstile;
@@ -33,7 +35,7 @@ class TwoFactorController
         $app = App::getInstance(true);
         $config = $app->getConfig();
         $data = json_decode($request->getContent(), true);
-
+        global $eventManager;
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
             $turnstileKeyPublic = $config->getSetting(ConfigInterface::TURNSTILE_KEY_PUB, 'NULL');
             $turnstileKeySecret = $config->getSetting(ConfigInterface::TURNSTILE_KEY_PRIV, 'NULL');
@@ -93,6 +95,19 @@ class TwoFactorController
 
         User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP(), '2fa_enabled' => 'true', '2fa_key' => $data['secret']]);
 
+        Activity::createActivity([
+            'user_uuid' => $userInfo['uuid'],
+            'name' => '2fa_enabled',
+            'context' => '2FA enabled',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+        $eventManager->emit(
+            AuthEvent::onAuth2FAVerifySuccess(),
+            [
+                'user' => $userInfo,
+            ]
+        );
+
         return ApiResponse::success($userInfo, 'Two factor authentication enabled', 200);
     }
 
@@ -142,6 +157,26 @@ class TwoFactorController
         $token = $userInfo['remember_token'];
         setcookie('remember_token', $token, time() + 60 * 60 * 24 * 30, '/');
         User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
+
+        Activity::createActivity([
+            'user_uuid' => $userInfo['uuid'],
+            'name' => '2fa_verified',
+            'context' => '2FA verified, user logged in',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+        global $eventManager;
+        $eventManager->emit(
+            AuthEvent::onAuth2FAVerifySuccess(),
+            [
+                'user' => $userInfo,
+            ]
+        );
+        $eventManager->emit(
+            AuthEvent::onAuthLoginSuccess(),
+            [
+                'user' => $userInfo,
+            ]
+        );
 
         return ApiResponse::success($userInfo, '2FA verified, user logged in', 200);
     }

@@ -15,10 +15,12 @@ namespace App\Controllers\User\Auth;
 
 use App\App;
 use App\Chat\User;
+use App\Chat\Activity;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\ForgotPassword;
+use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Hooks\MythicalSystems\CloudFlare\CloudFlareTurnstile;
@@ -33,7 +35,7 @@ class ForgotPasswordController
         $app = App::getInstance(true);
         $config = $app->getConfig();
         $data = json_decode($request->getContent(), true);
-
+        global $eventManager;
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
             $turnstileKeyPublic = $config->getSetting(ConfigInterface::TURNSTILE_KEY_PUB, 'NULL');
             $turnstileKeySecret = $config->getSetting(ConfigInterface::TURNSTILE_KEY_PRIV, 'NULL');
@@ -111,6 +113,22 @@ class ForgotPasswordController
                 'uuid' => $userInfo['uuid'],
                 'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
                 'reset_url' => $resetUrl,
+            ]);
+
+            $eventManager->emit(
+                AuthEvent::onAuthForgotPassword(),
+                [
+                    'user' => $userInfo,
+                    'reset_url' => $resetUrl,
+                    'ip_address' => CloudFlareRealIP::getRealIP(),
+                    'reset_token' => $resetToken,
+                ]
+            );
+            Activity::createActivity([
+                'user_uuid' => $userInfo['uuid'],
+                'name' => 'forgot_password',
+                'context' => 'User requested password reset',
+                'ip_address' => CloudFlareRealIP::getRealIP(),
             ]);
 
             return ApiResponse::success(null, 'We have sent you an email to reset your password', 200);

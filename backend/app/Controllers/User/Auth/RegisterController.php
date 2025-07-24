@@ -15,11 +15,13 @@ namespace App\Controllers\User\Auth;
 
 use App\App;
 use App\Chat\User;
+use App\Chat\Activity;
 use App\Helpers\UUIDUtils;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use App\Mail\templates\Welcome;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Hooks\MythicalSystems\CloudFlare\CloudFlareTurnstile;
@@ -135,6 +137,20 @@ class RegisterController
             'uuid' => $userInfo['uuid'],
             'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
         ]);
+
+        Activity::createActivity([
+            'user_uuid' => $userInfo['uuid'],
+            'name' => 'register',
+            'context' => 'User registered',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+        global $eventManager;
+        $eventManager->emit(
+            AuthEvent::onAuthRegisterSuccess(),
+            [
+                'user' => $userInfo,
+            ]
+        );
 
         // If user creation succeeds, return the user info
         return ApiResponse::success($userInfo, 'User registered successfully', 200);

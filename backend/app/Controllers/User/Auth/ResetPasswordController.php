@@ -15,9 +15,11 @@ namespace App\Controllers\User\Auth;
 
 use App\App;
 use App\Chat\User;
+use App\Chat\Activity;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Hooks\MythicalSystems\CloudFlare\CloudFlareTurnstile;
@@ -66,6 +68,20 @@ class ResetPasswordController
             }
 
             if (User::updateUser($userInfo['uuid'], ['password' => password_hash($data['password'], PASSWORD_BCRYPT)]) && User::updateUser($userInfo['uuid'], ['mail_verify' => null])) {
+                Activity::createActivity([
+                    'user_uuid' => $userInfo['uuid'],
+                    'name' => 'reset_password',
+                    'context' => 'User reset password',
+                    'ip_address' => CloudFlareRealIP::getRealIP(),
+                ]);
+                global $eventManager;
+                $eventManager->emit(
+                    AuthEvent::onAuthResetPasswordSuccess(),
+                    [
+                        'user' => $userInfo,
+                    ]
+                );
+
                 return ApiResponse::success(null, 'Password reset successfully', 200);
             }
 

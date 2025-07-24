@@ -1,0 +1,12 @@
+CREATE TABLE
+	IF NOT EXISTS `mythicalpanel_activity` (
+		`id` INT (11) NOT NULL AUTO_INCREMENT,
+		`user_uuid` CHAR(36) NOT NULL,
+		`name` VARCHAR(128) NOT NULL,
+		`context` TEXT DEFAULT NULL,
+		`ip_address` VARCHAR(45) DEFAULT NULL,
+		`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		`updated_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`),
+		FOREIGN KEY (`user_uuid`) REFERENCES `mythicalpanel_users` (`uuid`) ON DELETE CASCADE
+	) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;

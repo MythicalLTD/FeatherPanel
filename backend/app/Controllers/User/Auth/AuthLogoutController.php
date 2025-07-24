@@ -14,7 +14,10 @@
 namespace App\Controllers\User\Auth;
 
 use App\Chat\User;
+use App\Chat\Activity;
 use App\Helpers\ApiResponse;
+use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -22,6 +25,7 @@ class AuthLogoutController
 {
     public function get(Request $request): Response
     {
+        global $eventManager;
         if (!isset($_COOKIE['remember_token'])) {
             setcookie('remember_token', '', time() - 3600 - 1500 * 120);
 
@@ -50,6 +54,15 @@ class AuthLogoutController
                     ]
                 );
             }
+            $eventManager->emit(
+                AuthEvent::onAuthLogout(),
+            );
+            Activity::createActivity([
+                'user_uuid' => $user['uuid'],
+                'name' => 'logout',
+                'context' => 'User logged out',
+                'ip_address' => CloudFlareRealIP::getRealIP(),
+            ]);
         }
         setcookie('remember_token', '', time() - 3600 - 1500 * 120);
 

@@ -21,8 +21,8 @@ use App\Logger\LoggerFactory;
 use App\Config\ConfigInterface;
 use RateLimit\RedisRateLimiter;
 use App\CloudFlare\CloudFlareRealIP;
-use Symfony\Component\Routing\Route;
 use RateLimit\Exception\LimitExceeded;
+use App\Plugins\Events\Events\AppEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\HttpFoundation\Response;
@@ -145,6 +145,9 @@ class App
 
         $this->routes = new RouteCollection();
         $this->registerApiRoutes($this->routes);
+        $eventManager->emit(
+            AppEvent::onRouterReady(),
+        );
         $this->dispatchSymfonyRouter();
     }
 

@@ -15,9 +15,11 @@ namespace App\Controllers\User\Auth;
 
 use App\App;
 use App\Chat\User;
+use App\Chat\Activity;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Hooks\MythicalSystems\CloudFlare\CloudFlareTurnstile;
@@ -99,6 +101,8 @@ class LoginController
         // 2FA logic
         if (isset($userInfo['2fa_enabled']) && $userInfo['2fa_enabled'] == 'true') {
             // Do NOT set session/cookie yet
+            global $eventManager;
+
             return ApiResponse::error('2FA required', 'TWO_FACTOR_REQUIRED', 401, [
                 'email' => $userInfo['email'],
             ]);
@@ -109,6 +113,20 @@ class LoginController
             $token = $userInfo['remember_token'];
             setcookie('remember_token', $token, time() + 60 * 60 * 24 * 30, '/');
             User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
+
+            Activity::createActivity([
+                'user_uuid' => $userInfo['uuid'],
+                'name' => 'login',
+                'context' => 'User logged in',
+                'ip_address' => CloudFlareRealIP::getRealIP(),
+            ]);
+            global $eventManager;
+            $eventManager->emit(
+                AuthEvent::onAuthLoginSuccess(),
+                [
+                    'user' => $userInfo,
+                ]
+            );
 
             return ApiResponse::success($userInfo, 'User logged in successfully', 200);
         }
