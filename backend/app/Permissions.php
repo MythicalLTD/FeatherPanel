@@ -13,7 +13,7 @@
 
 /**
  * Permission Nodes Constants
- * Auto-generated from permission_nodes.txt.
+ * Auto-generated from permission_nodes.txt
  */
 
 /**
@@ -35,8 +35,19 @@ class Permissions
     /** Access to view the admin dashboard */
     public const ADMIN_DASHBOARD_VIEW = 'admin.dashboard.view';
 
+    // Admin Users Permissions
+    /** View the users */
+    public const ADMIN_USERS_VIEW = 'admin.users.list';
+    /** Create new users */
+    public const ADMIN_USERS_CREATE = 'admin.users.create';
+    /** Edit existing users */
+    public const ADMIN_USERS_EDIT = 'admin.users.edit';
+    /** Delete users */
+    public const ADMIN_USERS_DELETE = 'admin.users.delete';
+
     /**
      * Returns all permission nodes with metadata.
+     * @return array
      */
     public static function getAll(): array
     {
@@ -45,13 +56,37 @@ class Permissions
                 'constant' => 'ADMIN_ROOT',
                 'value' => self::ADMIN_ROOT,
                 'category' => 'Admin Root',
-                'description' => 'Full access to everything',
+                'description' => 'Full access to everything'
             ],
             [
                 'constant' => 'ADMIN_DASHBOARD_VIEW',
                 'value' => self::ADMIN_DASHBOARD_VIEW,
                 'category' => 'Admin Dashboard View',
-                'description' => 'Access to view the admin dashboard',
+                'description' => 'Access to view the admin dashboard'
+            ],
+            [
+                'constant' => 'ADMIN_USERS_VIEW',
+                'value' => self::ADMIN_USERS_VIEW,
+                'category' => 'Admin Users',
+                'description' => 'View the users'
+            ],
+            [
+                'constant' => 'ADMIN_USERS_CREATE',
+                'value' => self::ADMIN_USERS_CREATE,
+                'category' => 'Admin Users',
+                'description' => 'Create new users'
+            ],
+            [
+                'constant' => 'ADMIN_USERS_EDIT',
+                'value' => self::ADMIN_USERS_EDIT,
+                'category' => 'Admin Users',
+                'description' => 'Edit existing users'
+            ],
+            [
+                'constant' => 'ADMIN_USERS_DELETE',
+                'value' => self::ADMIN_USERS_DELETE,
+                'category' => 'Admin Users',
+                'description' => 'Delete users'
             ],
         ];
     }

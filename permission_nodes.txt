@@ -7,3 +7,9 @@ ADMIN_ROOT=admin.root | Admin Root | Full access to everything
 
 # Dashboard Permissions
 ADMIN_DASHBOARD_VIEW=admin.dashboard.view | Admin Dashboard View | Access to view the admin dashboard
+
+# Users Permissions
+ADMIN_USERS_VIEW=admin.users.list | Admin Users | View the users
+ADMIN_USERS_CREATE=admin.users.create | Admin Users | Create new users
+ADMIN_USERS_EDIT=admin.users.edit | Admin Users | Edit existing users
+ADMIN_USERS_DELETE=admin.users.delete | Admin Users | Delete users

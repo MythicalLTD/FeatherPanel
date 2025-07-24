@@ -122,8 +122,8 @@
                                     <button
                                         class="p-1 text-gray-400 hover:text-white transition-colors rounded hover:bg-gray-700/50"
                                         title="Copy JSON"
-                                        @click="copyJson(log.responseBody)"
                                         :disabled="!log.responseBody"
+                                        @click="copyJson(log.responseBody)"
                                     >
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"

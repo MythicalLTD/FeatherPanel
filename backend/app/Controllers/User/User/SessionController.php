@@ -14,6 +14,7 @@
 namespace App\Controllers\User\User;
 
 use App\App;
+use App\Chat\Permission;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use App\Middleware\AuthMiddleware;
@@ -53,7 +54,10 @@ class SessionController
         if ($user == null) {
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
         }
+        $permissions = Permission::getPermissionsByRoleId($user['role_id']);
 
-        return ApiResponse::success(['user_info' => $user], 'Session retrieved', 200);
+        $permissions = array_column($permissions, 'permission');
+
+        return ApiResponse::success(['user_info' => $user, 'permissions' => $permissions], 'Session retrieved', 200);
     }
 }

@@ -88,7 +88,7 @@ class ExportPermissions extends App implements CommandBuilder
 
         // Generate TypeScript file
         $tsContent = self::generateTypeScriptFile($permissionNodes, $permissionMetadata);
-        $tsFile = $dir . '/frontend/src/App/Permissions.ts';
+        $tsFile = $dir . '/frontend/src/lib/permissions.ts';
         if (file_put_contents($tsFile, $tsContent)) {
             $app->send('&a&l✓ Generated TypeScript file: ' . $tsFile);
         } else {

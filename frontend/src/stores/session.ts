@@ -27,10 +27,13 @@ export interface UserInfo {
     first_seen: string;
 }
 
+export type Permissions = string[];
+
 export const useSessionStore = defineStore('session', {
     state: () => ({
         user: null as UserInfo | null,
         isSessionChecked: false,
+        permissions: [] as Permissions,
     }),
     actions: {
         async checkSessionOrRedirect(router?: Router) {
@@ -38,6 +41,7 @@ export const useSessionStore = defineStore('session', {
                 const res = await axios.get('/api/user/session');
                 if (res.data && res.data.success && res.data.data && res.data.data.user_info) {
                     this.user = res.data.data.user_info as UserInfo;
+                    this.permissions = res.data.data.permissions as Permissions;
                     this.isSessionChecked = true;
                     return true;
                 } else {
@@ -61,5 +65,14 @@ export const useSessionStore = defineStore('session', {
             this.user = null;
             this.isSessionChecked = false;
         },
+    },
+    getters: {
+        hasPermission:
+            (state) =>
+            (permission: string): boolean => {
+                if (!state.permissions) return false;
+                if (state.permissions.includes('admin.root')) return true;
+                return state.permissions.includes(permission);
+            },
     },
 });
