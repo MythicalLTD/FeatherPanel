@@ -23,7 +23,7 @@ use App\Mail\templates\ForgotPassword;
 use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Hooks\MythicalSystems\CloudFlare\CloudFlareTurnstile;
+use App\CloudFlare\CloudFlareTurnstile;
 
 class ForgotPasswordController
 {

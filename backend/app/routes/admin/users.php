@@ -12,61 +12,64 @@
  */
 
 use App\App;
-use App\Helpers\ApiResponse;
 use App\Permissions;
+use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\User\Admin\UsersController;
 
 return function (RouteCollection $routes): void {
-	App::getInstance(true)->registerAdminRoute(
-		$routes,
-		'admin-users',
-		'/api/admin/users',
-		function (Request $request) {
-			return (new UsersController())->index($request);
-		},
-		Permissions::ADMIN_USERS_VIEW,
-	);
-	App::getInstance(true)->registerAdminRoute(
-		$routes,
-		'admin-users-show',
-		'/api/admin/users/{uuid}',
-		function (Request $request, array $args) {
-			$uuid = $args['uuid'] ?? null;
-			if (!$uuid || !is_string($uuid)) {
-				return ApiResponse::error('Missing or invalid UUID', 'INVALID_UUID', 400);
-			}
-			return (new UsersController())->show($request, $uuid);
-		},
-		Permissions::ADMIN_USERS_VIEW,
-	);
-	App::getInstance(true)->registerAdminRoute(
-		$routes,
-		'admin-users-update',
-		'/api/admin/users/{uuid}',
-		function (Request $request, array $args) {
-			$uuid = $args['uuid'] ?? null;
-			if (!$uuid || !is_string($uuid)) {
-				return ApiResponse::error('Missing or invalid UUID', 'INVALID_UUID', 400);
-			}
-			return (new UsersController())->update($request, $uuid);
-		},
-		Permissions::ADMIN_USERS_EDIT,
-		['PATCH']
-	);
-	App::getInstance(true)->registerAdminRoute(
-		$routes,
-		'admin-users-delete',
-		'/api/admin/users/{uuid}',
-		function (Request $request, array $args) {
-			$uuid = $args['uuid'] ?? null;
-			if (!$uuid || !is_string($uuid)) {
-				return ApiResponse::error('Missing or invalid UUID', 'INVALID_UUID', 400);
-			}
-			return (new UsersController())->delete($request, $uuid);
-		},
-		Permissions::ADMIN_USERS_DELETE,
-		['DELETE']
-	);
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-users',
+        '/api/admin/users',
+        function (Request $request) {
+            return (new UsersController())->index($request);
+        },
+        Permissions::ADMIN_USERS_VIEW,
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-users-show',
+        '/api/admin/users/{uuid}',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid || !is_string($uuid)) {
+                return ApiResponse::error('Missing or invalid UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new UsersController())->show($request, $uuid);
+        },
+        Permissions::ADMIN_USERS_VIEW,
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-users-update',
+        '/api/admin/users/{uuid}',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid || !is_string($uuid)) {
+                return ApiResponse::error('Missing or invalid UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new UsersController())->update($request, $uuid);
+        },
+        Permissions::ADMIN_USERS_EDIT,
+        ['PATCH']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-users-delete',
+        '/api/admin/users/{uuid}',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid || !is_string($uuid)) {
+                return ApiResponse::error('Missing or invalid UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new UsersController())->delete($request, $uuid);
+        },
+        Permissions::ADMIN_USERS_DELETE,
+        ['DELETE']
+    );
 };

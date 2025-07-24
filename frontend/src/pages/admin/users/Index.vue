@@ -98,6 +98,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
 import { Eye, Pencil, Trash2 } from 'lucide-vue-next';
 import axios from 'axios';
+import { useRouter } from 'vue-router';
 
 type ApiUser = {
     uuid: string;
@@ -117,6 +118,7 @@ const pagination = ref({
     total: 0,
 });
 const loading = ref(false);
+const router = useRouter();
 
 async function fetchUsers() {
     loading.value = true;
@@ -141,13 +143,16 @@ watch([() => pagination.value.page, () => pagination.value.pageSize, searchQuery
 function onPageChange(page: number) {
     pagination.value.page = page;
 }
-function onView(_user: ApiUser) {
+function onView(user: ApiUser) {
     // handle view user
+    router.push(`/admin/users/${user.uuid}`);
 }
-function onEdit(_user: ApiUser) {
+function onEdit(user: ApiUser) {
     // handle edit user
+    router.push(`/admin/users/${user.uuid}/edit`);
 }
-function onDelete(_user: ApiUser) {
+function onDelete(user: ApiUser) {
     // handle delete user
+    router.push(`/admin/users/${user.uuid}/delete`);
 }
 </script>

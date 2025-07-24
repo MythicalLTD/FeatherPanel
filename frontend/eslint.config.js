@@ -5,7 +5,7 @@ import globals from 'globals';
 import typescriptEslint from 'typescript-eslint';
 
 export default typescriptEslint.config(
-	{ ignores: ['*.d.ts', '**/coverage', '**/dist', 'node_modules', '.vite'] },
+	{ ignores: ['*.d.ts', '**/coverage', '**/dist', 'node_modules', '.vite', 'src/components/ui/*'] },
 	{
 		extends: [
 			eslint.configs.recommended,
@@ -23,6 +23,7 @@ export default typescriptEslint.config(
 		},
 		rules: {
 			'vue/multi-word-component-names': 'off',
+
 		},
 	},
 	eslintConfigPrettier

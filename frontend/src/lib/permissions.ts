@@ -34,12 +34,42 @@ class Permissions {
      */
     public static getAll(): Array<{ constant: string; value: string; category: string; description: string }> {
         return [
-            { constant: 'ADMIN_ROOT', value: Permissions.ADMIN_ROOT, category: 'Admin Root', description: 'Full access to everything' },
-            { constant: 'ADMIN_DASHBOARD_VIEW', value: Permissions.ADMIN_DASHBOARD_VIEW, category: 'Admin Dashboard View', description: 'Access to view the admin dashboard' },
-            { constant: 'ADMIN_USERS_VIEW', value: Permissions.ADMIN_USERS_VIEW, category: 'Admin Users', description: 'View the users' },
-            { constant: 'ADMIN_USERS_CREATE', value: Permissions.ADMIN_USERS_CREATE, category: 'Admin Users', description: 'Create new users' },
-            { constant: 'ADMIN_USERS_EDIT', value: Permissions.ADMIN_USERS_EDIT, category: 'Admin Users', description: 'Edit existing users' },
-            { constant: 'ADMIN_USERS_DELETE', value: Permissions.ADMIN_USERS_DELETE, category: 'Admin Users', description: 'Delete users' },
+            {
+                constant: 'ADMIN_ROOT',
+                value: Permissions.ADMIN_ROOT,
+                category: 'Admin Root',
+                description: 'Full access to everything',
+            },
+            {
+                constant: 'ADMIN_DASHBOARD_VIEW',
+                value: Permissions.ADMIN_DASHBOARD_VIEW,
+                category: 'Admin Dashboard View',
+                description: 'Access to view the admin dashboard',
+            },
+            {
+                constant: 'ADMIN_USERS_VIEW',
+                value: Permissions.ADMIN_USERS_VIEW,
+                category: 'Admin Users',
+                description: 'View the users',
+            },
+            {
+                constant: 'ADMIN_USERS_CREATE',
+                value: Permissions.ADMIN_USERS_CREATE,
+                category: 'Admin Users',
+                description: 'Create new users',
+            },
+            {
+                constant: 'ADMIN_USERS_EDIT',
+                value: Permissions.ADMIN_USERS_EDIT,
+                category: 'Admin Users',
+                description: 'Edit existing users',
+            },
+            {
+                constant: 'ADMIN_USERS_DELETE',
+                value: Permissions.ADMIN_USERS_DELETE,
+                category: 'Admin Users',
+                description: 'Delete users',
+            },
         ];
     }
 }

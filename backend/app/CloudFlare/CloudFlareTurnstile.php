@@ -11,7 +11,7 @@
  * Breaking any of the following rules will result in a permanent ban from the MythicalSystems community and all of its services.
  */
 
-namespace App\Hooks\MythicalSystems\CloudFlare;
+namespace App\CloudFlare;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;

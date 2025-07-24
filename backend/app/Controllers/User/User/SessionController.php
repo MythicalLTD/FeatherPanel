@@ -21,7 +21,7 @@ use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Hooks\MythicalSystems\CloudFlare\CloudFlareTurnstile;
+use App\CloudFlare\CloudFlareTurnstile;
 
 class SessionController
 {

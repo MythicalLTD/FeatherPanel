@@ -80,4 +80,4 @@ To add a new permission node:
 
 ---
 
-*This documentation was auto-generated on 2025-07-24 13:08:28*
+*This documentation was auto-generated on 2025-07-24 13:55:06*
