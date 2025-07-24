@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useI18n } from 'vue-i18n';
 import Turnstile from 'vue-turnstile';
 import { useSettingsStore } from '@/stores/settings';
+import { useRouter } from 'vue-router';
 
 const settingsStore = useSettingsStore();
 onMounted(async () => {
@@ -18,6 +19,7 @@ const props = defineProps<{
     class?: HTMLAttributes['class'];
 }>();
 const { t: $t } = useI18n();
+const router = useRouter();
 
 const form = ref({
     email: '',
@@ -34,7 +36,7 @@ function validateForm(): string | null {
     if (!form.value.email || !form.value.password) {
         return $t('api_errors.MISSING_REQUIRED_FIELDS');
     }
-    if (settingsStore.settings?.turnstile_enabled == "true") {
+    if (settingsStore.settings?.turnstile_enabled == 'true') {
         if (!form.value.turnstile_token) {
             return $t('api_errors.TURNSTILE_TOKEN_REQUIRED');
         }
@@ -112,13 +114,23 @@ async function onSubmit(e: Event) {
         if (res.data && res.data.success) {
             success.value = res.data.message || 'Login successful! Redirecting...';
             // Optionally redirect after a short delay
+            const redirect = router.currentRoute.value.query.redirect as string;
             setTimeout(() => {
-                window.location.href = '/';
+                window.location.href = redirect || '/';
             }, 1200);
         } else {
             error.value = getErrorMessage(res.data);
         }
     } catch (err: unknown) {
+        let errorCode: string | undefined;
+        if (typeof err === 'object' && err !== null && 'response' in err) {
+            const response = (err as { response?: { data?: { error_code?: string } } }).response;
+            errorCode = response?.data?.error_code;
+        }
+        if (errorCode === 'TWO_FACTOR_REQUIRED') {
+            await router.push({ name: 'VerifyTwoFactor', query: { email: form.value.email } });
+            return;
+        }
         error.value = getErrorMessage(err);
     } finally {
         loading.value = false;

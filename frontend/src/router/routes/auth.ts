@@ -22,6 +22,11 @@ const authRoutes: RouteRecordRaw[] = [
                 name: 'SetupTwoFactor',
                 component: () => import('@/pages/auth/SetupTwoFactor.vue'),
             },
+            {
+                path: 'verify-two-factor',
+                name: 'VerifyTwoFactor',
+                component: () => import('@/pages/auth/VerifyTwoFactor.vue'),
+            },
         ],
     },
 ];

@@ -13,7 +13,7 @@
 
 /**
  * Permission Nodes Constants
- * Auto-generated from permission_nodes.txt
+ * Auto-generated from permission_nodes.txt.
  */
 
 /**
@@ -37,7 +37,6 @@ class Permissions
 
     /**
      * Returns all permission nodes with metadata.
-     * @return array
      */
     public static function getAll(): array
     {
@@ -46,13 +45,13 @@ class Permissions
                 'constant' => 'ADMIN_ROOT',
                 'value' => self::ADMIN_ROOT,
                 'category' => 'Admin Root',
-                'description' => 'Full access to everything'
+                'description' => 'Full access to everything',
             ],
             [
                 'constant' => 'ADMIN_DASHBOARD_VIEW',
                 'value' => self::ADMIN_DASHBOARD_VIEW,
                 'category' => 'Admin Dashboard View',
-                'description' => 'Access to view the admin dashboard'
+                'description' => 'Access to view the admin dashboard',
             ],
         ];
     }

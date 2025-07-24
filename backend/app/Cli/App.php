@@ -15,7 +15,7 @@ namespace App\Cli;
 
 use App\Cli\Commands\Help;
 
-class App extends \App\Cli\Utils\MinecraftColorCodeSupport
+class App extends Utils\MinecraftColorCodeSupport
 {
     public $prefix = '&7[&5&lMythical&d&lPanel&7] &8&l| &7';
     public $bars = '&7&m-----------------------------------------------------&r';

@@ -13,8 +13,8 @@
 
 namespace App\FastChat;
 
-use Predis\Client;
 use App\App;
+use Predis\Client;
 
 class Redis
 {

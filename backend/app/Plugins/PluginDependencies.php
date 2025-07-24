@@ -13,9 +13,9 @@
 
 namespace App\Plugins;
 
+use App\Plugins\Dependencies\AppDependencies;
 use App\Plugins\Dependencies\ComposerDependencies;
 use App\Plugins\Dependencies\PhpVersionDependencies;
-use App\Plugins\Dependencies\AppDependencies;
 use App\Plugins\Dependencies\PhpExtensionDependencies;
 
 class PluginDependencies

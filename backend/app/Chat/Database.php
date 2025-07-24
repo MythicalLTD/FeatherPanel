@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalAPP.
+ * This file is part of App.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0

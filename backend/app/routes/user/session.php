@@ -11,18 +11,18 @@
  * Breaking any of the following rules will result in a permanent ban from the MythicalSystems community and all of its services.
  */
 
-use App\Controllers\HomeController;
+use App\Middleware\AuthMiddleware;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\User\User\SessionController;
 
 return function (RouteCollection $routes): void {
-    // GET example
-    $routes->add('home', new Route('/api', [
-        '_controller' => function (Request $request) {
-            return (new HomeController())->index($request);
-        },
-        '_middleware' => [],
-    ]));
 
+    $routes->add('session', new Route('/api/user/session', [
+        '_controller' => function (Request $request) {
+            return (new SessionController())->get($request);
+        },
+        '_middleware' => [AuthMiddleware::class],
+    ], [], [], '', [], ['GET']));
 };

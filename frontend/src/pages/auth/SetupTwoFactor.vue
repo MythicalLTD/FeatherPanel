@@ -10,8 +10,11 @@ import { useSettingsStore } from '@/stores/settings';
 import VueQrcode from 'vue-qrcode';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
+import { useSessionStore } from '@/stores/session';
+import Swal from 'sweetalert2';
 
 const settingsStore = useSettingsStore();
+const sessionStore = useSessionStore();
 
 const props = defineProps<{
     class?: HTMLAttributes['class'];
@@ -34,8 +37,9 @@ const form = ref({
 });
 
 const router = useRouter();
-
 onMounted(async () => {
+    const ok = await sessionStore.checkSessionOrRedirect(router);
+    if (!ok) return;
     loading.value = true;
     try {
         const res = await axios.request({
@@ -49,12 +53,20 @@ onMounted(async () => {
             error.value = t('api_errors.TWO_FACTOR_SETUP_FAILED');
         }
     } catch (err: unknown) {
-        const code = (err as { response?: { data?: { code?: string } } }).response?.data?.code;
+        const code = (err as { response?: { data?: { error_code?: string } } }).response?.data?.error_code;
         if (code === 'TWO_FACTOR_AUTH_ENABLED') {
-            router.replace({ name: 'Home' });
+            Swal.fire({
+                title: t('api_errors.TWO_FACTOR_AUTH_ENABLED_TITLE'),
+                text: t('api_errors.TWO_FACTOR_AUTH_ENABLED_TEXT'),
+
+                icon: 'error',
+                timer: 1500,
+                showConfirmButton: false,
+            });
+            router.replace({ path: '/dashboard', query: { e: t('api_errors.TWO_FACTOR_AUTH_ENABLED_TITLE') } });
             return;
         }
-        error.value = t('api_errors.TWO_FACTOR_SETUP_FAILED');
+        error.value = t('api_errors.TWO_FACTOR_SETUP_FAILED') + ' ' + code;
     } finally {
         loading.value = false;
     }

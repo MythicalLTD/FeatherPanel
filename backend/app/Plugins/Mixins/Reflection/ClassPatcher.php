@@ -13,8 +13,8 @@
 
 namespace App\Plugins\Mixins\Reflection;
 
-use ReflectionClass;
 use App\App;
+use ReflectionClass;
 
 /**
  * Provides runtime class patching and modification capabilities.

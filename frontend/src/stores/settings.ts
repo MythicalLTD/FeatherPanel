@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import axios from 'axios';
 
 export const useSettingsStore = defineStore('settings', {
     state: () => ({
@@ -8,8 +9,8 @@ export const useSettingsStore = defineStore('settings', {
     actions: {
         async fetchSettings() {
             try {
-                const res = await fetch('/api/system/settings');
-                const json = await res.json();
+                const res = await axios.get('/api/system/settings');
+                const json = res.data;
                 if (json.success && json.data?.settings) {
                     this.settings = json.data.settings;
                     this.loaded = true;
