@@ -2,9 +2,9 @@ import type { RouteRecordRaw } from 'vue-router';
 
 const adminRoutes: RouteRecordRaw[] = [
     {
-        path: '/admin/users',
-        name: 'AdminUsers',
-        component: () => import('@/pages/admin/Users.vue'),
+        path: '/admin/locations',
+        name: 'AdminLocations',
+        component: () => import('@/pages/admin/Locations.vue'),
     },
 ];
 

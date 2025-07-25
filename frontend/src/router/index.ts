@@ -7,9 +7,17 @@ import clientRoutes from './routes/client/client';
 import errorRoutes from './routes/errors';
 import adminRoutes from './routes/admin/home';
 import adminUsersRoutes from './routes/admin/users';
+import adminLocationsRoutes from './routes/admin/locations';
 
 // Combine all routes
-const routes: RouteRecordRaw[] = [...authRoutes, ...clientRoutes, ...errorRoutes, ...adminRoutes, ...adminUsersRoutes];
+const routes: RouteRecordRaw[] = [
+    ...authRoutes,
+    ...clientRoutes,
+    ...errorRoutes,
+    ...adminRoutes,
+    ...adminUsersRoutes,
+    ...adminLocationsRoutes,
+];
 
 // Add catch-all route for 404
 routes.push({

@@ -95,6 +95,12 @@ const data = computed(() => {
                 url: '/admin/users',
                 icon: Users,
             },
+            {
+                name: 'Locations',
+                title: 'Locations',
+                url: '/admin/locations',
+                icon: Globe,
+            },
         ],
         navServer: [
             {

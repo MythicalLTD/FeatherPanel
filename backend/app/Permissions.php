@@ -45,6 +45,16 @@ class Permissions
     /** Delete users */
     public const ADMIN_USERS_DELETE = 'admin.users.delete';
 
+    // Admin Locations Permissions
+    /** View locations */
+    public const ADMIN_LOCATIONS_VIEW = 'admin.locations.view';
+    /** Create new locations */
+    public const ADMIN_LOCATIONS_CREATE = 'admin.locations.create';
+    /** Edit existing locations */
+    public const ADMIN_LOCATIONS_EDIT = 'admin.locations.edit';
+    /** Delete locations */
+    public const ADMIN_LOCATIONS_DELETE = 'admin.locations.delete';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -86,6 +96,30 @@ class Permissions
                 'value' => self::ADMIN_USERS_DELETE,
                 'category' => 'Admin Users',
                 'description' => 'Delete users',
+            ],
+            [
+                'constant' => 'ADMIN_LOCATIONS_VIEW',
+                'value' => self::ADMIN_LOCATIONS_VIEW,
+                'category' => 'Admin Locations',
+                'description' => 'View locations',
+            ],
+            [
+                'constant' => 'ADMIN_LOCATIONS_CREATE',
+                'value' => self::ADMIN_LOCATIONS_CREATE,
+                'category' => 'Admin Locations',
+                'description' => 'Create new locations',
+            ],
+            [
+                'constant' => 'ADMIN_LOCATIONS_EDIT',
+                'value' => self::ADMIN_LOCATIONS_EDIT,
+                'category' => 'Admin Locations',
+                'description' => 'Edit existing locations',
+            ],
+            [
+                'constant' => 'ADMIN_LOCATIONS_DELETE',
+                'value' => self::ADMIN_LOCATIONS_DELETE,
+                'category' => 'Admin Locations',
+                'description' => 'Delete locations',
             ],
         ];
     }

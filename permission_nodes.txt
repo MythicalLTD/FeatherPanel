@@ -13,3 +13,9 @@ ADMIN_USERS_VIEW=admin.users.list | Admin Users | View the users
 ADMIN_USERS_CREATE=admin.users.create | Admin Users | Create new users
 ADMIN_USERS_EDIT=admin.users.edit | Admin Users | Edit existing users
 ADMIN_USERS_DELETE=admin.users.delete | Admin Users | Delete users
+
+# Locations Permissions
+ADMIN_LOCATIONS_VIEW=admin.locations.view | Admin Locations | View locations
+ADMIN_LOCATIONS_CREATE=admin.locations.create | Admin Locations | Create new locations
+ADMIN_LOCATIONS_EDIT=admin.locations.edit | Admin Locations | Edit existing locations
+ADMIN_LOCATIONS_DELETE=admin.locations.delete | Admin Locations | Delete locations
