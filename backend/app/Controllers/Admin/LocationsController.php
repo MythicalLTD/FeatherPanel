@@ -87,6 +87,12 @@ class LocationsController
         if (isset($data['ip_address']) && !is_string($data['ip_address'])) {
             return ApiResponse::error('IP Address must be a string', 'INVALID_DATA_TYPE');
         }
+        if (isset($data['ip_address']) 
+            && $data['ip_address'] !== '' 
+            && !filter_var($data['ip_address'], FILTER_VALIDATE_IP)
+        ) {
+            return ApiResponse::error('Invalid IP address format', 'INVALID_IP_FORMAT');
+        }
         if (isset($data['country']) && !is_string($data['country'])) {
             return ApiResponse::error('Country must be a string', 'INVALID_DATA_TYPE');
         }
