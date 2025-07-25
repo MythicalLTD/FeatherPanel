@@ -89,18 +89,26 @@ const data = computed(() => {
                 url: '/admin',
                 icon: Home,
             },
-            {
-                name: 'Users',
-                title: 'Users',
-                url: '/admin/users',
-                icon: Users,
-            },
-            {
-                name: 'Locations',
-                title: 'Locations',
-                url: '/admin/locations',
-                icon: Globe,
-            },
+            ...(sessionStore.hasPermission(Permissions.ADMIN_USERS_VIEW)
+                ? [
+                      {
+                          name: 'Users',
+                          title: 'Users',
+                          url: '/admin/users',
+                          icon: Users,
+                      },
+                  ]
+                : []),
+            ...(sessionStore.hasPermission(Permissions.ADMIN_LOCATIONS_VIEW)
+                ? [
+                      {
+                          name: 'Locations',
+                          title: 'Locations',
+                          url: '/admin/locations',
+                          icon: Globe,
+                      },
+                  ]
+                : []),
         ],
         navServer: [
             {
