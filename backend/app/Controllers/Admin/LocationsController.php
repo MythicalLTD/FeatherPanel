@@ -120,6 +120,9 @@ class LocationsController
             return ApiResponse::error('Location not found', 'LOCATION_NOT_FOUND', 404);
         }
         $data = json_decode($request->getContent(), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
+        }
         if (empty($data)) {
             return ApiResponse::error('No data provided', 'NO_DATA_PROVIDED', 400);
         }
