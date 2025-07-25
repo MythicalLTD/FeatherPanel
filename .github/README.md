@@ -4,4 +4,4 @@
 
 ---
 
-# MythicalPanel 
+API Documentation: https://www.postman.com/mythicalsystems/workspace/mythicalpanel

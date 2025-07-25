@@ -46,11 +46,11 @@ class AuthLogoutController
                     'remember_token' => $newRememberToken,
                 ]
             );
-            if (isset($user['2fa_enabled']) && $user['2fa_enabled'] == 'true') {
+            if (isset($user['two_fa_enabled']) && $user['two_fa_enabled'] == 'true') {
                 User::updateUser(
                     $user['uuid'],
                     [
-                        '2fa_blocked' => 'true',
+                        'two_fa_blocked' => 'true',
                     ]
                 );
             }

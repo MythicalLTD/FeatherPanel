@@ -13,10 +13,26 @@
 
 namespace App\Controllers\Admin;
 
+use App\App;
+use App\Chat\Activity;
+use App\Chat\MailList;
+use App\Chat\MailQueue;
+use App\Helpers\UUIDUtils;
 use App\Helpers\ApiResponse;
+use App\Config\ConfigInterface;
+use App\Mail\templates\Welcome;
+use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/* ---------------------------
+ * Author: Cassian Gherman Date: 2025-07-25
+ *
+ * Changes:
+ * - Added support so we can get the activities of a user
+ * - Added support so we can get the mails the user got!
+ *
+ * ---------------------------*/
 class UsersController
 {
     public function index(Request $request): Response
@@ -97,22 +113,36 @@ class UsersController
             ];
         }
         $roleId = $user['role_id'] ?? null;
-        if ($roleId && isset($rolesMap[$roleId])) {
-            $user['role']['name'] = $rolesMap[$roleId]['name'];
-            $user['role']['display_name'] = $rolesMap[$roleId]['display_name'];
-            $user['role']['color'] = $rolesMap[$roleId]['color'];
-        } else {
-            $user['role']['name'] = $roleId;
-            $user['role']['display_name'] = 'User';
-            $user['role']['color'] = '#666666';
-        }
-        unset($user['role_id']);
+        $user['role'] = [
+            'name' => $rolesMap[$roleId]['name'] ?? $roleId,
+            'display_name' => $rolesMap[$roleId]['display_name'] ?? 'User',
+            'color' => $rolesMap[$roleId]['color'] ?? '#666666',
+        ];
 
-        return ApiResponse::success(['user' => $user], 'User fetched successfully', 200);
+        $user['activities'] = array_map(function ($activity) {
+            unset($activity['user_uuid'], $activity['id'], $activity['updated_at']);
+
+            return $activity;
+        }, Activity::getActivitiesByUser($user['uuid']));
+
+        $mailList = MailList::getByUserUuid($user['uuid']);
+        $queueIds = array_column($mailList, 'queue_id');
+        $mailQueues = MailQueue::getByIds($queueIds);
+        $user['mails'] = [];
+        foreach ($queueIds as $queueId) {
+            if (isset($mailQueues[$queueId])) {
+                $mail = $mailQueues[$queueId];
+                unset($mail['id'], $mail['user_uuid'], $mail['deleted'], $mail['locked'], $mail['updated_at']);
+                $user['mails'][] = $mail;
+            }
+        }
+
+        return ApiResponse::success(['user' => $user, 'roles' => $rolesMap], 'User fetched successfully', 200);
     }
 
     public function create(Request $request): Response
     {
+        $config = App::getInstance(true)->getConfig();
         $data = json_decode($request->getContent(), true);
         // Required fields for user creation
         $requiredFields = ['username', 'first_name', 'last_name', 'email', 'password'];
@@ -161,9 +191,10 @@ class UsersController
             return ApiResponse::error('Username already exists', 'USERNAME_ALREADY_EXISTS', 409);
         }
         // Hash password
-        $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+        $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
         // Generate UUID
-        $data['uuid'] = \Ramsey\Uuid\Uuid::uuid4()->toString();
+        $data['uuid'] = UUIDUtils::generateV4();
+        $data['remember_token'] = bin2hex(random_bytes(16));
         // Set default avatar if not provided
         if (empty($data['avatar'])) {
             $data['avatar'] = 'https://github.com/mythicalltd.png';
@@ -176,6 +207,33 @@ class UsersController
         if (!$userId) {
             return ApiResponse::error('Failed to create user', 'FAILED_TO_CREATE_USER', 500);
         }
+
+        Welcome::send([
+            'email' => $data['email'],
+            'subject' => 'Welcome to ' . $config->getSetting(ConfigInterface::APP_NAME, 'MythicalPanel'),
+            'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'MythicalPanel'),
+            'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'mythicalpanel.mythical.systems'),
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'username' => $data['username'],
+            'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+            'uuid' => $data['uuid'],
+            'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+        ]);
+
+        Activity::createActivity([
+            'user_uuid' => $data['uuid'],
+            'name' => 'register',
+            'context' => 'User registered by admin',
+            'ip_address' => '0.0.0.0',
+        ]);
+
+        Activity::createActivity([
+            'user_uuid' => $request->get('user')['uuid'],
+            'name' => 'create_user',
+            'context' => 'Created a new user ' . $data['username'],
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
 
         return ApiResponse::success(['user_id' => $userId], 'User created successfully', 201);
     }
@@ -196,6 +254,7 @@ class UsersController
         if (isset($data['uuid'])) {
             unset($data['uuid']);
         }
+
         // Validation rules (only for fields being updated)
         $lengthRules = [
             'username' => [3, 32],
@@ -242,7 +301,10 @@ class UsersController
         }
         $updated = \App\Chat\User::updateUser($user['uuid'], $data);
         if (!$updated) {
-            return ApiResponse::error('Failed to update user', 'FAILED_TO_UPDATE_USER', 500);
+            return ApiResponse::error('Failed to update user', 'FAILED_TO_UPDATE_USER', 500, [
+                'error' => $updated,
+
+            ]);
         }
 
         return ApiResponse::success([], 'User updated successfully', 200);

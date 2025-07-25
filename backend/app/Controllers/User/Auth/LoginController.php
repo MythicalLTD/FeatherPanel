@@ -19,10 +19,10 @@ use App\Chat\Activity;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
+use App\CloudFlare\CloudFlareTurnstile;
 use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\CloudFlare\CloudFlareTurnstile;
 
 class LoginController
 {
@@ -94,12 +94,15 @@ class LoginController
         if ($userInfo == null) {
             return ApiResponse::error('Email does not exist', 'EMAIL_DOES_NOT_EXIST');
         }
+        if ($userInfo['banned'] == 'true') {
+            return ApiResponse::error('User is banned', 'USER_BANNED');
+        }
         if (!password_verify($data['password'], $userInfo['password'])) {
             return ApiResponse::error('Invalid password', 'INVALID_PASSWORD');
         }
 
         // 2FA logic
-        if (isset($userInfo['2fa_enabled']) && $userInfo['2fa_enabled'] == 'true') {
+        if (isset($userInfo['two_fa_enabled']) && $userInfo['two_fa_enabled'] == 'true') {
             // Do NOT set session/cookie yet
             global $eventManager;
 

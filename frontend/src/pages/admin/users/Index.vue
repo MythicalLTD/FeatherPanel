@@ -8,14 +8,24 @@
                             <CardTitle class="text-2xl font-bold">Users</CardTitle>
                             <CardDescription>Manage all users in your system.</CardDescription>
                         </div>
-                        <Input
-                            v-model="searchQuery"
-                            placeholder="Search by username, email, or role..."
-                            class="max-w-xs"
-                        />
+                        <div class="flex gap-2">
+                            <Input
+                                v-model="searchQuery"
+                                placeholder="Search by username, email, or role..."
+                                class="max-w-xs"
+                            />
+                            <Button variant="secondary" @click="openCreateDrawer">Create User</Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
+                    <Alert
+                        v-if="message"
+                        :variant="message.type === 'error' ? 'destructive' : 'default'"
+                        class="mb-4 whitespace-nowrap overflow-x-auto"
+                    >
+                        <span>{{ displayMessage }}</span>
+                    </Alert>
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -47,8 +57,8 @@
                                         variant="secondary"
                                     >
                                         {{
-                                            user.role && user.role.real_name
-                                                ? user.role.real_name
+                                            user.role && user.role.display_name
+                                                ? user.role.display_name
                                                 : user.role?.name || '-'
                                         }}
                                     </Badge>
@@ -64,9 +74,29 @@
                                         <Button size="sm" variant="secondary" @click="onEdit(user)">
                                             <Pencil :size="16" />
                                         </Button>
-                                        <Button size="sm" variant="destructive" @click="onDelete(user)">
-                                            <Trash2 :size="16" />
-                                        </Button>
+                                        <template v-if="confirmDeleteRow === user.uuid">
+                                            <Button
+                                                size="sm"
+                                                variant="destructive"
+                                                :loading="deleting"
+                                                @click="confirmDelete(user)"
+                                            >
+                                                Confirm Delete
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                :disabled="deleting"
+                                                @click="onCancelDelete"
+                                            >
+                                                Cancel
+                                            </Button>
+                                        </template>
+                                        <template v-else>
+                                            <Button size="sm" variant="destructive" @click="onDelete(user)">
+                                                <Trash2 :size="16" />
+                                            </Button>
+                                        </template>
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -84,10 +114,298 @@
             </Card>
         </main>
     </DashboardLayout>
+    <Drawer
+        :open="viewing"
+        @update:open="
+            (val: boolean) => {
+                if (!val) closeView();
+            }
+        "
+    >
+        <DrawerContent v-if="selectedUser">
+            <DrawerHeader>
+                <DrawerTitle>User Info</DrawerTitle>
+                <DrawerDescription>Viewing details for user: {{ selectedUser.username }}</DrawerDescription>
+            </DrawerHeader>
+            <div class="flex items-center gap-4 mb-6 px-6 pt-6">
+                <Avatar>
+                    <AvatarImage :src="selectedUser.avatar" :alt="selectedUser.username" />
+                    <AvatarFallback>{{ selectedUser.username[0] }}</AvatarFallback>
+                </Avatar>
+                <div>
+                    <div class="font-bold text-xl">{{ selectedUser.username }}</div>
+                    <div class="text-muted-foreground text-sm">{{ selectedUser.email }}</div>
+                </div>
+            </div>
+            <section class="px-6 pb-6">
+                <Tabs default-value="servers">
+                    <TabsList class="mb-4">
+                        <TabsTrigger value="servers">Servers</TabsTrigger>
+                        <TabsTrigger value="activities">Activities</TabsTrigger>
+                        <TabsTrigger value="mails">Mails</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="servers">
+                        <h3 class="font-semibold text-base mb-4">Servers</h3>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Created</TableHead>
+                                    <TableHead class="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow v-for="server in dummyServers" :key="server.id">
+                                    <TableCell>{{ server.name }}</TableCell>
+                                    <TableCell>
+                                        <Badge :variant="server.status === 'Online' ? 'secondary' : 'destructive'">
+                                            {{ server.status }}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>{{ server.created }}</TableCell>
+                                    <TableCell class="text-right">
+                                        <Button size="sm" variant="outline">View</Button>
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </TabsContent>
+                    <TabsContent value="activities">
+                        <h3 class="font-semibold text-base mb-4">Activities</h3>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Context</TableHead>
+                                    <TableHead>IP Address</TableHead>
+                                    <TableHead>Created At</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow
+                                    v-for="activity in selectedUser.activities"
+                                    :key="activity.created_at + activity.name"
+                                >
+                                    <TableCell>{{ activity.name }}</TableCell>
+                                    <TableCell>{{ activity.context }}</TableCell>
+                                    <TableCell>{{ activity.ip_address }}</TableCell>
+                                    <TableCell>{{ activity.created_at }}</TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </TabsContent>
+                    <TabsContent value="mails">
+                        <h3 class="font-semibold text-base mb-4">Mails</h3>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Subject</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Created At</TableHead>
+                                    <TableHead>Preview</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow v-for="mail in selectedUser.mails" :key="mail.created_at + mail.subject">
+                                    <TableCell>{{ mail.subject }}</TableCell>
+                                    <TableCell>
+                                        <Badge :variant="mail.status === 'sent' ? 'secondary' : 'destructive'">
+                                            {{ mail.status }}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>{{ mail.created_at }}</TableCell>
+                                    <TableCell>
+                                        <Button size="sm" variant="outline" @click="() => showMailPreview(mail)">
+                                            Preview
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </TabsContent>
+                </Tabs>
+            </section>
+            <!-- Mail Preview Dialog -->
+            <Dialog v-model:open="mailPreviewOpen">
+                <DialogContent class="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>{{ mailPreview?.subject }}</DialogTitle>
+                        <DialogDescription>
+                            {{ mailPreview?.created_at }} | {{ mailPreview?.status }}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div class="overflow-auto max-h-[60vh] border rounded bg-background p-4">
+                        <!-- eslint-disable-next-line vue/no-v-html -->
+                        <div v-if="mailPreview?.body" v-html="mailPreview.body"></div>
+                        <div v-else class="text-muted-foreground">No content</div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+            <div class="p-4 flex justify-end">
+                <DrawerClose as-child>
+                    <Button variant="outline" @click="closeView">Close</Button>
+                </DrawerClose>
+            </div>
+        </DrawerContent>
+    </Drawer>
+    <Drawer
+        :open="editDrawerOpen"
+        @update:open="
+            (val: boolean) => {
+                if (!val) closeEditDrawer();
+            }
+        "
+    >
+        <DrawerContent v-if="editingUser">
+            <DrawerHeader>
+                <DrawerTitle>Edit User</DrawerTitle>
+                <DrawerDescription>Edit details for user: {{ editingUser.username }}</DrawerDescription>
+            </DrawerHeader>
+            <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitEdit">
+                <label for="edit-username" class="block mb-1 font-medium">Username</label>
+                <Input
+                    id="edit-username"
+                    v-model="editForm.username"
+                    label="Username"
+                    placeholder="Username"
+                    required
+                />
+                <label for="edit-firstname" class="block mb-1 font-medium">First Name</label>
+                <Input id="edit-firstname" v-model="editForm.first_name" label="First Name" placeholder="First Name" />
+                <label for="edit-lastname" class="block mb-1 font-medium">Last Name</label>
+                <Input id="edit-lastname" v-model="editForm.last_name" label="Last Name" placeholder="Last Name" />
+                <label for="edit-email" class="block mb-1 font-medium">Email</label>
+                <Input id="edit-email" v-model="editForm.email" label="Email" placeholder="Email" type="email" />
+                <div class="flex flex-col gap-2 mt-4">
+                    <!-- Removed Account Flags checkboxes for banned and 2FA Enabled -->
+                </div>
+                <label class="block mb-2 font-medium">Role</label>
+                <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                        <Button variant="outline" class="w-full text-left">
+                            {{ availableRoles.find((r) => r.id == editForm.role_id)?.display_name || 'Select Role' }}
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent class="w-56">
+                        <DropdownMenuLabel>Select Role</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuRadioGroup v-model="editForm.role_id">
+                            <DropdownMenuRadioItem
+                                v-for="role in availableRoles"
+                                :key="role.id"
+                                :value="String(role.id)"
+                            >
+                                <span :style="{ color: role.color }">{{ role.display_name }}</span>
+                            </DropdownMenuRadioItem>
+                        </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <label for="edit-externalid" class="block mb-1 font-medium">External ID</label>
+                <Input
+                    id="edit-externalid"
+                    v-model.number="editForm.external_id"
+                    label="External ID"
+                    placeholder="External ID"
+                    type="number"
+                />
+                <label for="edit-password" class="block mb-1 font-medium">Password</label>
+                <Input
+                    id="edit-password"
+                    v-model="editForm.password"
+                    label="Password"
+                    placeholder="Password"
+                    type="password"
+                />
+                <div class="flex justify-end gap-2 mt-4">
+                    <Button
+                        type="button"
+                        :variant="editingUser && editingUser.banned === 'true' ? 'secondary' : 'destructive'"
+                        @click="toggleBanUser"
+                    >
+                        {{ editingUser && editingUser.banned === 'true' ? 'Unban User' : 'Ban User' }}
+                    </Button>
+                    <Button
+                        v-if="editingUser && editingUser.two_fa_enabled === 'true'"
+                        type="button"
+                        variant="secondary"
+                        @click="removeTwoFactorAuth"
+                    >
+                        Remove Two Factor Auth
+                    </Button>
+                    <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
+                    <Button type="submit" variant="secondary">Save</Button>
+                </div>
+            </form>
+        </DrawerContent>
+    </Drawer>
+    <Drawer
+        :open="createDrawerOpen"
+        @update:open="
+            (val) => {
+                if (!val) closeCreateDrawer();
+            }
+        "
+    >
+        <DrawerContent>
+            <DrawerHeader>
+                <DrawerTitle>Create User</DrawerTitle>
+                <DrawerDescription>Fill in the details to create a new user.</DrawerDescription>
+            </DrawerHeader>
+            <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreate">
+                <label for="create-username" class="block mb-1 font-medium">Username</label>
+                <Input
+                    id="create-username"
+                    v-model="createForm.username"
+                    label="Username"
+                    placeholder="Username"
+                    required
+                />
+                <label for="create-firstname" class="block mb-1 font-medium">First Name</label>
+                <Input
+                    id="create-firstname"
+                    v-model="createForm.first_name"
+                    label="First Name"
+                    placeholder="First Name"
+                    required
+                />
+                <label for="create-lastname" class="block mb-1 font-medium">Last Name</label>
+                <Input
+                    id="create-lastname"
+                    v-model="createForm.last_name"
+                    label="Last Name"
+                    placeholder="Last Name"
+                    required
+                />
+                <label for="create-email" class="block mb-1 font-medium">Email</label>
+                <Input
+                    id="create-email"
+                    v-model="createForm.email"
+                    label="Email"
+                    placeholder="Email"
+                    type="email"
+                    required
+                />
+                <label for="create-password" class="block mb-1 font-medium">Password</label>
+                <Input
+                    id="create-password"
+                    v-model="createForm.password"
+                    label="Password"
+                    placeholder="Password"
+                    type="password"
+                    required
+                />
+                <div class="flex justify-end gap-2 mt-4">
+                    <Button type="button" variant="outline" @click="closeCreateDrawer">Cancel</Button>
+                    <Button type="submit" variant="secondary">Create</Button>
+                </div>
+            </form>
+        </DrawerContent>
+    </Drawer>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -98,16 +416,69 @@ import { Pagination } from '@/components/ui/pagination';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
 import { Eye, Pencil, Trash2 } from 'lucide-vue-next';
 import axios from 'axios';
-import { useRouter } from 'vue-router';
+import { Alert } from '@/components/ui/alert';
+import {
+    Drawer,
+    DrawerContent,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerDescription,
+    DrawerClose,
+} from '@/components/ui/drawer';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+
+type UserRole = {
+    name: string;
+    display_name: string;
+    color: string;
+};
 
 type ApiUser = {
     uuid: string;
     avatar: string;
     username: string;
+    first_name?: string;
+    last_name?: string;
     email?: string;
-    role?: { name: string; real_name: string; color: string };
-    status?: string;
+    external_id?: string | null;
+    password?: string;
+    remember_token?: string;
+    mail_verify?: string | null;
+    first_ip?: string;
+    last_ip?: string;
+    banned?: string;
+    two_fa_enabled?: string;
+    two_fa_key?: string;
+    two_fa_blocked?: string;
+    deleted?: boolean | string;
+    locked?: boolean | string;
+    first_seen?: string;
     last_seen?: string;
+    role_id?: number;
+    role?: UserRole;
+    status?: string;
+    activities?: { name: string; context: string; ip_address: string; created_at: string }[];
+    mails?: { subject: string; status: string; created_at: string }[];
+};
+
+type EditForm = {
+    username: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    role_id: string;
+    external_id?: number;
+    password: string;
 };
 
 const users = ref<ApiUser[]>([]);
@@ -118,7 +489,32 @@ const pagination = ref({
     total: 0,
 });
 const loading = ref(false);
-const router = useRouter();
+const deleting = ref(false);
+const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
+const confirmDeleteRow = ref<string | null>(null);
+const displayMessage = computed(() => (message.value ? message.value.text.replace(/[\r\n]+/g, ' ') : ''));
+const selectedUser = ref<ApiUser | null>(null);
+const viewing = ref(false);
+const editingUser = ref<ApiUser | null>(null);
+const editDrawerOpen = ref(false);
+const editForm = ref<EditForm>({
+    username: '',
+    first_name: '',
+    last_name: '',
+    email: '',
+    role_id: '',
+    external_id: undefined,
+    password: '',
+});
+
+// Store roles for dropdown
+const availableRoles = ref<{ id: string; name: string; display_name: string; color: string }[]>([]);
+
+const dummyServers = [
+    { id: 1, name: 'Survival SMP', status: 'Online', created: '2024-01-10' },
+    { id: 2, name: 'Creative World', status: 'Offline', created: '2024-02-15' },
+    { id: 3, name: 'Skyblock', status: 'Online', created: '2024-03-01' },
+];
 
 async function fetchUsers() {
     loading.value = true;
@@ -143,16 +539,221 @@ watch([() => pagination.value.page, () => pagination.value.pageSize, searchQuery
 function onPageChange(page: number) {
     pagination.value.page = page;
 }
-function onView(user: ApiUser) {
-    // handle view user
-    router.push(`/admin/users/${user.uuid}`);
+async function onView(user: ApiUser) {
+    viewing.value = true;
+    try {
+        const { data } = await axios.get(`/api/admin/users/${user.uuid}`);
+        selectedUser.value = data.data.user;
+    } catch {
+        selectedUser.value = null;
+        message.value = { type: 'error', text: 'Failed to fetch user details' };
+    }
 }
 function onEdit(user: ApiUser) {
-    // handle edit user
-    router.push(`/admin/users/${user.uuid}/edit`);
+    openEditDrawer(user);
 }
+
+async function confirmDelete(user: ApiUser) {
+    deleting.value = true;
+    let success = false;
+    try {
+        const response = await axios.delete(`/api/admin/users/${user.uuid}`);
+        if (response.data && response.data.success) {
+            message.value = { type: 'success', text: 'User deleted successfully' };
+            await fetchUsers();
+            success = true;
+        } else {
+            message.value = { type: 'error', text: response.data?.message || 'Failed to delete user' };
+        }
+    } catch (e: unknown) {
+        message.value = {
+            type: 'error',
+            text:
+                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+                'Failed to delete user',
+        };
+    } finally {
+        deleting.value = false;
+        if (success) confirmDeleteRow.value = null;
+        setTimeout(() => {
+            message.value = null;
+        }, 4000);
+    }
+}
+
 function onDelete(user: ApiUser) {
-    // handle delete user
-    router.push(`/admin/users/${user.uuid}/delete`);
+    confirmDeleteRow.value = user.uuid;
+}
+function onCancelDelete() {
+    confirmDeleteRow.value = null;
+}
+function closeView() {
+    viewing.value = false;
+    selectedUser.value = null;
+}
+
+async function openEditDrawer(user: ApiUser) {
+    try {
+        const { data } = await axios.get(`/api/admin/users/${user.uuid}`);
+        const u: ApiUser = data.data.user;
+        // Parse roles from API response
+        const rolesObj = data.data.roles || {};
+        availableRoles.value = Object.entries(rolesObj).map(([id, role]) => {
+            const r = role as { name: string; display_name: string; color: string };
+            return {
+                id: String(id),
+                name: r.name,
+                display_name: r.display_name,
+                color: r.color,
+            };
+        });
+        editingUser.value = u;
+        editForm.value = {
+            username: u.username || '',
+            first_name: u.first_name || '',
+            last_name: u.last_name || '',
+            email: u.email || '',
+            role_id: u.role_id != null ? String(u.role_id) : '',
+            external_id: u.external_id !== null && u.external_id !== undefined ? Number(u.external_id) : undefined,
+            password: u.password || '',
+        };
+        editDrawerOpen.value = true;
+    } catch {
+        message.value = { type: 'error', text: 'Failed to fetch user details for editing' };
+    }
+}
+
+function closeEditDrawer() {
+    editDrawerOpen.value = false;
+    editingUser.value = null;
+}
+
+async function submitEdit() {
+    if (!editingUser.value) return;
+    try {
+        // Send booleans directly
+        const patchData = { ...editForm.value };
+        console.log('PATCH payload:', patchData);
+        const { data } = await axios.patch(`/api/admin/users/${editingUser.value.uuid}`, patchData);
+        if (data && data.success) {
+            message.value = { type: 'success', text: 'User updated successfully' };
+            await fetchUsers();
+            closeEditDrawer();
+        } else {
+            message.value = { type: 'error', text: data?.message || 'Failed to update user' };
+        }
+    } catch (e: unknown) {
+        message.value = {
+            type: 'error',
+            text:
+                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+                'Failed to update user',
+        };
+    } finally {
+        setTimeout(() => {
+            message.value = null;
+        }, 4000);
+    }
+}
+
+async function toggleBanUser() {
+    if (!editingUser.value) return;
+    const currentlyBanned = editingUser.value.banned === 'true';
+    try {
+        const { data } = await axios.patch(`/api/admin/users/${editingUser.value.uuid}`, {
+            banned: currentlyBanned ? 'false' : 'true',
+        });
+        if (data && data.success) {
+            message.value = {
+                type: 'success',
+                text: currentlyBanned ? 'User unbanned successfully' : 'User banned successfully',
+            };
+            await openEditDrawer(editingUser.value); // refresh user data
+        } else {
+            message.value = { type: 'error', text: data?.message || 'Failed to update ban status' };
+        }
+    } catch (e: unknown) {
+        message.value = {
+            type: 'error',
+            text:
+                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+                'Failed to update ban status',
+        };
+    } finally {
+        setTimeout(() => {
+            message.value = null;
+        }, 4000);
+    }
+}
+
+async function removeTwoFactorAuth() {
+    if (!editingUser.value) return;
+    try {
+        const { data } = await axios.patch(`/api/admin/users/${editingUser.value.uuid}`, { two_fa_enabled: 'false' });
+        if (data && data.success) {
+            message.value = { type: 'success', text: 'Two-factor authentication removed' };
+            await openEditDrawer(editingUser.value); // refresh user data
+        } else {
+            message.value = { type: 'error', text: data?.message || 'Failed to remove 2FA' };
+        }
+    } catch (e: unknown) {
+        message.value = {
+            type: 'error',
+            text:
+                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+                'Failed to remove 2FA',
+        };
+    } finally {
+        setTimeout(() => {
+            message.value = null;
+        }, 4000);
+    }
+}
+
+const createDrawerOpen = ref(false);
+const createForm = ref({
+    username: '',
+    first_name: '',
+    last_name: '',
+    email: '',
+    password: '',
+});
+function openCreateDrawer() {
+    createDrawerOpen.value = true;
+    createForm.value = { username: '', first_name: '', last_name: '', email: '', password: '' };
+}
+function closeCreateDrawer() {
+    createDrawerOpen.value = false;
+}
+async function submitCreate() {
+    try {
+        const { data } = await axios.put('/api/admin/users', createForm.value);
+        if (data && data.success) {
+            message.value = { type: 'success', text: 'User created successfully' };
+            await fetchUsers();
+            closeCreateDrawer();
+        } else {
+            message.value = { type: 'error', text: data?.message || 'Failed to create user' };
+        }
+    } catch (e: unknown) {
+        message.value = {
+            type: 'error',
+            text:
+                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+                'Failed to create user',
+        };
+    } finally {
+        setTimeout(() => {
+            message.value = null;
+        }, 4000);
+    }
+}
+
+const mailPreview = ref<{ subject: string; body?: string; status: string; created_at: string } | null>(null);
+const mailPreviewOpen = ref(false);
+
+function showMailPreview(mail: { subject: string; body?: string; status: string; created_at: string }) {
+    mailPreview.value = mail;
+    mailPreviewOpen.value = true;
 }
 </script>

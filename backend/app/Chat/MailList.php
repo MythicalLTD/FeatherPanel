@@ -118,4 +118,13 @@ class MailList
 
         return $stmt->execute(['id' => $id]);
     }
+
+    public static function getByUserUuid(string $userUuid): array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE user_uuid = :user_uuid ORDER BY created_at DESC LIMIT 250');
+        $stmt->execute(['user_uuid' => $userUuid]);
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
 }

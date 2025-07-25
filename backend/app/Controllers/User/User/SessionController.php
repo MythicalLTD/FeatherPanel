@@ -19,9 +19,9 @@ use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
+use App\CloudFlare\CloudFlareTurnstile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\CloudFlare\CloudFlareTurnstile;
 
 class SessionController
 {

@@ -14,9 +14,9 @@
 use App\App;
 use App\Permissions;
 use App\Helpers\ApiResponse;
+use App\Controllers\Admin\UsersController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
-use App\Controllers\Admin\UsersController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
@@ -71,5 +71,15 @@ return function (RouteCollection $routes): void {
         },
         Permissions::ADMIN_USERS_DELETE,
         ['DELETE']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-users-create',
+        '/api/admin/users',
+        function (Request $request) {
+            return (new UsersController())->create($request);
+        },
+        Permissions::ADMIN_USERS_EDIT,
+        ['PUT']
     );
 };

@@ -13,6 +13,8 @@
 
 namespace App\Chat;
 
+use App\App;
+
 /**
  * User service/model for CRUD operations on the mythicalpanel_users table.
  */
@@ -188,33 +190,50 @@ class User
      */
     public static function updateUser(string $uuid, array $data): bool
     {
-        if (empty($data)) {
-            return false;
-        }
-        // Prevent updating primary key/id
-        if (isset($data['uuid'])) {
-            unset($data['uuid']);
-        }
-        if (isset($data['id'])) {
-            unset($data['id']);
-        }
-        $columns = self::getColumns();
-        $columns = array_map(fn ($c) => $c['Field'], $columns);
-        $missing = array_diff(array_keys($data), $columns);
-        if (!empty($missing)) {
-            return false;
-        }
-        $pdo = Database::getPdoConnection();
-        $fields = array_keys($data);
-        if (empty($fields)) {
-            return false;
-        }
-        $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
-        $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE uuid = :uuid';
-        $stmt = $pdo->prepare($sql);
-        $data['uuid'] = $uuid;
+        try {
+            if (empty($data)) {
+                App::getInstance(true)->getLogger()->error('No data to update');
 
-        return $stmt->execute($data);
+                return false;
+            }
+            // Prevent updating primary key/id
+            if (isset($data['uuid'])) {
+                unset($data['uuid']);
+            }
+            if (isset($data['id'])) {
+                unset($data['id']);
+            }
+            // If password is already hashed (starts with $2y$), don't update it
+            if (isset($data['password']) && str_starts_with($data['password'], '$2y$')) {
+                unset($data['password']);
+            }
+            $columns = self::getColumns();
+            $columns = array_map(fn ($c) => $c['Field'], $columns);
+            $missing = array_diff(array_keys($data), $columns);
+            if (!empty($missing)) {
+                App::getInstance(true)->getLogger()->error('Missing fields: ' . implode(', ', $missing));
+
+                return false;
+            }
+            $pdo = Database::getPdoConnection();
+            $fields = array_keys($data);
+            if (empty($fields)) {
+                App::getInstance(true)->getLogger()->error('No fields to update');
+
+                return false;
+            }
+            $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
+            $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE uuid = :uuid';
+            $stmt = $pdo->prepare($sql);
+            $data['uuid'] = $uuid;
+
+            return $stmt->execute($data);
+        } catch (\PDOException $e) {
+            error_log($e->getMessage());
+            App::getInstance(true)->getLogger()->error('Failed to update user: ' . $e->getMessage());
+
+            return false;
+        }
     }
 
     /**
