@@ -94,7 +94,7 @@ class Location
 		$params = ['id' => $id];
 		foreach ($fields as $field) {
 			if (isset($data[$field])) {
-				$set[] = "$field = :$field";
+				$set[] = "`$field` = :$field";
 				$params[$field] = $data[$field];
 			}
 		}
