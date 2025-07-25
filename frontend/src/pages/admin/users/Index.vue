@@ -8,11 +8,14 @@
                             <CardTitle class="text-2xl font-bold">Users</CardTitle>
                             <CardDescription>Manage all users in your system.</CardDescription>
                         </div>
-                        <Input
-                            v-model="searchQuery"
-                            placeholder="Search by username, email, or role..."
-                            class="max-w-xs"
-                        />
+                        <div class="flex gap-2">
+                            <Input
+                                v-model="searchQuery"
+                                placeholder="Search by username, email, or role..."
+                                class="max-w-xs"
+                            />
+                            <Button variant="secondary" @click="openCreateDrawer">Create User</Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -255,6 +258,69 @@
                     </Button>
                     <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
                     <Button type="submit" variant="secondary">Save</Button>
+                </div>
+            </form>
+        </DrawerContent>
+    </Drawer>
+    <Drawer
+        :open="createDrawerOpen"
+        @update:open="
+            (val) => {
+                if (!val) closeCreateDrawer();
+            }
+        "
+    >
+        <DrawerContent>
+            <DrawerHeader>
+                <DrawerTitle>Create User</DrawerTitle>
+                <DrawerDescription>Fill in the details to create a new user.</DrawerDescription>
+            </DrawerHeader>
+            <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreate">
+                <label for="create-username" class="block mb-1 font-medium">Username</label>
+                <Input
+                    id="create-username"
+                    v-model="createForm.username"
+                    label="Username"
+                    placeholder="Username"
+                    required
+                />
+                <label for="create-firstname" class="block mb-1 font-medium">First Name</label>
+                <Input
+                    id="create-firstname"
+                    v-model="createForm.first_name"
+                    label="First Name"
+                    placeholder="First Name"
+                    required
+                />
+                <label for="create-lastname" class="block mb-1 font-medium">Last Name</label>
+                <Input
+                    id="create-lastname"
+                    v-model="createForm.last_name"
+                    label="Last Name"
+                    placeholder="Last Name"
+                    required
+                />
+                <label for="create-email" class="block mb-1 font-medium">Email</label>
+                <Input
+                    id="create-email"
+                    v-model="createForm.email"
+                    label="Email"
+                    placeholder="Email"
+                    type="email"
+                    required
+                />
+                <label for="create-password" class="block mb-1 font-medium">Password</label>
+                <Input
+                    id="create-password"
+                    v-model="createForm.password"
+                    label="Password"
+                    placeholder="Password"
+                    type="password"
+                    required
+                />
+                <div class="flex justify-end gap-2 mt-4">
+                    <Button type="button" variant="outline" @click="closeCreateDrawer">Cancel</Button>
+                    <Button type="submit" variant="secondary">Create</Button>
                 </div>
             </form>
         </DrawerContent>
@@ -555,6 +621,45 @@ async function removeTwoFactorAuth() {
             text:
                 (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
                 'Failed to remove 2FA',
+        };
+    } finally {
+        setTimeout(() => {
+            message.value = null;
+        }, 4000);
+    }
+}
+
+const createDrawerOpen = ref(false);
+const createForm = ref({
+    username: '',
+    first_name: '',
+    last_name: '',
+    email: '',
+    password: '',
+});
+function openCreateDrawer() {
+    createDrawerOpen.value = true;
+    createForm.value = { username: '', first_name: '', last_name: '', email: '', password: '' };
+}
+function closeCreateDrawer() {
+    createDrawerOpen.value = false;
+}
+async function submitCreate() {
+    try {
+        const { data } = await axios.put('/api/admin/users', createForm.value);
+        if (data && data.success) {
+            message.value = { type: 'success', text: 'User created successfully' };
+            await fetchUsers();
+            closeCreateDrawer();
+        } else {
+            message.value = { type: 'error', text: data?.message || 'Failed to create user' };
+        }
+    } catch (e: unknown) {
+        message.value = {
+            type: 'error',
+            text:
+                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+                'Failed to create user',
         };
     } finally {
         setTimeout(() => {

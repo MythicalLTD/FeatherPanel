@@ -72,4 +72,14 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_USERS_DELETE,
         ['DELETE']
     );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-users-create',
+        '/api/admin/users',
+        function (Request $request) {
+            return (new UsersController())->create($request);
+        },
+        Permissions::ADMIN_USERS_EDIT,
+        ['PUT']
+    );
 };

@@ -13,7 +13,13 @@
 
 namespace App\Controllers\Admin;
 
+use App\App;
+use App\Chat\Activity;
+use App\Helpers\UUIDUtils;
 use App\Helpers\ApiResponse;
+use App\Config\ConfigInterface;
+use App\Mail\templates\Welcome;
+use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -112,6 +118,7 @@ class UsersController
 
     public function create(Request $request): Response
     {
+        $config = App::getInstance(true)->getConfig();
         $data = json_decode($request->getContent(), true);
         // Required fields for user creation
         $requiredFields = ['username', 'first_name', 'last_name', 'email', 'password'];
@@ -160,9 +167,10 @@ class UsersController
             return ApiResponse::error('Username already exists', 'USERNAME_ALREADY_EXISTS', 409);
         }
         // Hash password
-        $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+        $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
         // Generate UUID
-        $data['uuid'] = \Ramsey\Uuid\Uuid::uuid4()->toString();
+        $data['uuid'] = UUIDUtils::generateV4();
+        $data['remember_token'] = bin2hex(random_bytes(16));
         // Set default avatar if not provided
         if (empty($data['avatar'])) {
             $data['avatar'] = 'https://github.com/mythicalltd.png';
@@ -175,6 +183,33 @@ class UsersController
         if (!$userId) {
             return ApiResponse::error('Failed to create user', 'FAILED_TO_CREATE_USER', 500);
         }
+
+        Welcome::send([
+            'email' => $data['email'],
+            'subject' => 'Welcome to ' . $config->getSetting(ConfigInterface::APP_NAME, 'MythicalPanel'),
+            'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'MythicalPanel'),
+            'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'mythicalpanel.mythical.systems'),
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'username' => $data['username'],
+            'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+            'uuid' => $data['uuid'],
+            'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+        ]);
+
+        Activity::createActivity([
+            'user_uuid' => $data['uuid'],
+            'name' => 'register',
+            'context' => 'User registered by admin',
+            'ip_address' => '0.0.0.0',
+        ]);
+
+        Activity::createActivity([
+            'user_uuid' => $request->get('user')['uuid'],
+            'name' => 'create_user',
+            'context' => 'Created a new user ' . $data['username'],
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
 
         return ApiResponse::success(['user_id' => $userId], 'User created successfully', 201);
     }
