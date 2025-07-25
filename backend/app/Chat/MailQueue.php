@@ -52,6 +52,25 @@ class MailQueue
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
+    public static function getByIds(array $ids): array
+    {
+        if (empty($ids)) {
+            return [];
+        }
+        $pdo = Database::getPdoConnection();
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $sql = 'SELECT * FROM ' . self::$table . ' WHERE id IN (' . $placeholders . ')';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($ids);
+        $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $byId = [];
+        foreach ($results as $row) {
+            $byId[$row['id']] = $row;
+        }
+
+        return $byId;
+    }
+
     public static function getAll(bool $includeDeleted = false): array
     {
         $pdo = Database::getPdoConnection();

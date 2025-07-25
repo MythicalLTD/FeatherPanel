@@ -15,6 +15,8 @@ namespace App\Controllers\Admin;
 
 use App\App;
 use App\Chat\Activity;
+use App\Chat\MailList;
+use App\Chat\MailQueue;
 use App\Helpers\UUIDUtils;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
@@ -23,6 +25,14 @@ use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/* ---------------------------
+ * Author: Cassian Gherman Date: 2025-07-25
+ *
+ * Changes:
+ * - Added support so we can get the activities of a user
+ * - Added support so we can get the mails the user got!
+ *
+ * ---------------------------*/
 class UsersController
 {
     public function index(Request $request): Response
@@ -103,14 +113,28 @@ class UsersController
             ];
         }
         $roleId = $user['role_id'] ?? null;
-        if ($roleId && isset($rolesMap[$roleId])) {
-            $user['role']['name'] = $rolesMap[$roleId]['name'];
-            $user['role']['display_name'] = $rolesMap[$roleId]['display_name'];
-            $user['role']['color'] = $rolesMap[$roleId]['color'];
-        } else {
-            $user['role']['name'] = $roleId;
-            $user['role']['display_name'] = 'User';
-            $user['role']['color'] = '#666666';
+        $user['role'] = [
+            'name' => $rolesMap[$roleId]['name'] ?? $roleId,
+            'display_name' => $rolesMap[$roleId]['display_name'] ?? 'User',
+            'color' => $rolesMap[$roleId]['color'] ?? '#666666',
+        ];
+
+        $user['activities'] = array_map(function ($activity) {
+            unset($activity['user_uuid'], $activity['id'], $activity['updated_at']);
+
+            return $activity;
+        }, Activity::getActivitiesByUser($user['uuid']));
+
+        $mailList = MailList::getByUserUuid($user['uuid']);
+        $queueIds = array_column($mailList, 'queue_id');
+        $mailQueues = MailQueue::getByIds($queueIds);
+        $user['mails'] = [];
+        foreach ($queueIds as $queueId) {
+            if (isset($mailQueues[$queueId])) {
+                $mail = $mailQueues[$queueId];
+                unset($mail['id'], $mail['user_uuid'], $mail['deleted'], $mail['locked'], $mail['updated_at']);
+                $user['mails'][] = $mail;
+            }
         }
 
         return ApiResponse::success(['user' => $user, 'roles' => $rolesMap], 'User fetched successfully', 200);

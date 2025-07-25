@@ -124,10 +124,9 @@
     >
         <DrawerContent v-if="selectedUser">
             <DrawerHeader>
-                <DrawerTitle>Server List</DrawerTitle>
-                <DrawerDescription>Viewing servers for user: {{ selectedUser.username }}</DrawerDescription>
+                <DrawerTitle>User Info</DrawerTitle>
+                <DrawerDescription>Viewing details for user: {{ selectedUser.username }}</DrawerDescription>
             </DrawerHeader>
-            <!-- Remove Card wrapper, keep only the content -->
             <div class="flex items-center gap-4 mb-6 px-6 pt-6">
                 <Avatar>
                     <AvatarImage :src="selectedUser.avatar" :alt="selectedUser.username" />
@@ -139,32 +138,110 @@
                 </div>
             </div>
             <section class="px-6 pb-6">
-                <h3 class="font-semibold text-base mb-4">Servers</h3>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Created</TableHead>
-                            <TableHead class="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        <TableRow v-for="server in dummyServers" :key="server.id">
-                            <TableCell>{{ server.name }}</TableCell>
-                            <TableCell>
-                                <Badge :variant="server.status === 'Online' ? 'secondary' : 'destructive'">
-                                    {{ server.status }}
-                                </Badge>
-                            </TableCell>
-                            <TableCell>{{ server.created }}</TableCell>
-                            <TableCell class="text-right">
-                                <Button size="sm" variant="outline">View</Button>
-                            </TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
+                <Tabs default-value="servers">
+                    <TabsList class="mb-4">
+                        <TabsTrigger value="servers">Servers</TabsTrigger>
+                        <TabsTrigger value="activities">Activities</TabsTrigger>
+                        <TabsTrigger value="mails">Mails</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="servers">
+                        <h3 class="font-semibold text-base mb-4">Servers</h3>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Created</TableHead>
+                                    <TableHead class="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow v-for="server in dummyServers" :key="server.id">
+                                    <TableCell>{{ server.name }}</TableCell>
+                                    <TableCell>
+                                        <Badge :variant="server.status === 'Online' ? 'secondary' : 'destructive'">
+                                            {{ server.status }}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>{{ server.created }}</TableCell>
+                                    <TableCell class="text-right">
+                                        <Button size="sm" variant="outline">View</Button>
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </TabsContent>
+                    <TabsContent value="activities">
+                        <h3 class="font-semibold text-base mb-4">Activities</h3>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Context</TableHead>
+                                    <TableHead>IP Address</TableHead>
+                                    <TableHead>Created At</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow
+                                    v-for="activity in selectedUser.activities"
+                                    :key="activity.created_at + activity.name"
+                                >
+                                    <TableCell>{{ activity.name }}</TableCell>
+                                    <TableCell>{{ activity.context }}</TableCell>
+                                    <TableCell>{{ activity.ip_address }}</TableCell>
+                                    <TableCell>{{ activity.created_at }}</TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </TabsContent>
+                    <TabsContent value="mails">
+                        <h3 class="font-semibold text-base mb-4">Mails</h3>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Subject</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Created At</TableHead>
+                                    <TableHead>Preview</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow v-for="mail in selectedUser.mails" :key="mail.created_at + mail.subject">
+                                    <TableCell>{{ mail.subject }}</TableCell>
+                                    <TableCell>
+                                        <Badge :variant="mail.status === 'sent' ? 'secondary' : 'destructive'">
+                                            {{ mail.status }}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>{{ mail.created_at }}</TableCell>
+                                    <TableCell>
+                                        <Button size="sm" variant="outline" @click="() => showMailPreview(mail)">
+                                            Preview
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </TabsContent>
+                </Tabs>
             </section>
+            <!-- Mail Preview Dialog -->
+            <Dialog v-model:open="mailPreviewOpen">
+                <DialogContent class="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>{{ mailPreview?.subject }}</DialogTitle>
+                        <DialogDescription>
+                            {{ mailPreview?.created_at }} | {{ mailPreview?.status }}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div class="overflow-auto max-h-[60vh] border rounded bg-background p-4">
+                        <!-- eslint-disable-next-line vue/no-v-html -->
+                        <div v-if="mailPreview?.body" v-html="mailPreview.body"></div>
+                        <div v-else class="text-muted-foreground">No content</div>
+                    </div>
+                </DialogContent>
+            </Dialog>
             <div class="p-4 flex justify-end">
                 <DrawerClose as-child>
                     <Button variant="outline" @click="closeView">Close</Button>
@@ -357,6 +434,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 type UserRole = {
     name: string;
@@ -388,6 +467,8 @@ type ApiUser = {
     role_id?: number;
     role?: UserRole;
     status?: string;
+    activities?: { name: string; context: string; ip_address: string; created_at: string }[];
+    mails?: { subject: string; status: string; created_at: string }[];
 };
 
 type EditForm = {
@@ -666,5 +747,13 @@ async function submitCreate() {
             message.value = null;
         }, 4000);
     }
+}
+
+const mailPreview = ref<{ subject: string; body?: string; status: string; created_at: string } | null>(null);
+const mailPreviewOpen = ref(false);
+
+function showMailPreview(mail: { subject: string; body?: string; status: string; created_at: string }) {
+    mailPreview.value = mail;
+    mailPreviewOpen.value = true;
 }
 </script>
