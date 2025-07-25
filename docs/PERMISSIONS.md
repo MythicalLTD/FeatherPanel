@@ -4,9 +4,9 @@ This document provides a comprehensive overview of all permission nodes used in 
 
 ## Overview
 
-- **Total Permissions:** 6
-- **Categories:** 3
-- **With Descriptions:** 6
+- **Total Permissions:** 10
+- **Categories:** 4
+- **With Descriptions:** 10
 
 ## Format
 
@@ -58,6 +58,15 @@ if (auth.user.hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)) {
 | `ADMIN_USERS_EDIT` | `admin.users.edit` | Edit existing users |
 | `ADMIN_USERS_DELETE` | `admin.users.delete` | Delete users |
 
+## Admin Locations
+
+| Permission | Node | Description |
+|------------|------|-------------|
+| `ADMIN_LOCATIONS_VIEW` | `admin.locations.view` | View locations |
+| `ADMIN_LOCATIONS_CREATE` | `admin.locations.create` | Create new locations |
+| `ADMIN_LOCATIONS_EDIT` | `admin.locations.edit` | Edit existing locations |
+| `ADMIN_LOCATIONS_DELETE` | `admin.locations.delete` | Delete locations |
+
 ## Adding New Permissions
 
 To add a new permission node:
@@ -80,4 +89,4 @@ To add a new permission node:
 
 ---
 
-*This documentation was auto-generated on 2025-07-24 13:55:06*
+*This documentation was auto-generated on 2025-07-25 08:17:36*
