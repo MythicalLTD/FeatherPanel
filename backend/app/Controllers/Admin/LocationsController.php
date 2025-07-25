@@ -37,14 +37,10 @@ class LocationsController
         $limit = (int) $request->query->get('limit', 10);
         $search = $request->query->get('search', '');
 
-        $allLocations = Location::getAll();
-        if ($search) {
-            $allLocations = array_filter($allLocations, function ($loc) use ($search) {
-                return stripos($loc['name'], $search) !== false || stripos($loc['country'] ?? '', $search) !== false;
-            });
-        }
-        $total = count($allLocations);
-        $locations = array_slice(array_values($allLocations), ($page - 1) * $limit, $limit);
+        // Fetch locations with search, limit, and offset directly from the database
+        $offset = ($page - 1) * $limit;
+        $locations = Location::getAll($search, $limit, $offset);
+        $total = Location::getCount($search);
 
         return ApiResponse::success([
             'locations' => $locations,

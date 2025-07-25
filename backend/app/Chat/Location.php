@@ -15,68 +15,104 @@ namespace App\Chat;
 
 class Location
 {
-    private static string $table = 'mythicalpanel_locations';
+	private static string $table = 'mythicalpanel_locations';
 
-    public static function getAll(): array
-    {
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->query('SELECT * FROM ' . self::$table);
+	public static function getAll(?string $search = null, int $limit = 10, int $offset = 0): array
+	{
+		$pdo = Database::getPdoConnection();
+		$sql = 'SELECT * FROM ' . self::$table;
+		$params = [];
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
-    }
+		if ($search !== null) {
+			$sql .= ' WHERE name LIKE :search OR country LIKE :search';
+			$params['search'] = '%' . $search . '%';
+		}
 
-    public static function getById(int $id): ?array
-    {
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
-        $stmt->execute(['id' => $id]);
+		$sql .= ' LIMIT :limit OFFSET :offset';
+		$stmt = $pdo->prepare($sql);
+		if (!empty($params)) {
+			foreach ($params as $key => $value) {
+				$stmt->bindValue($key, $value);
+			}
+		}
+		$stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
+		$stmt->bindValue('offset', $offset, \PDO::PARAM_INT);
+		$stmt->execute();
+		return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+	}
 
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
-    }
+	public static function getById(int $id): ?array
+	{
+		$pdo = Database::getPdoConnection();
+		$stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
+		$stmt->execute(['id' => $id]);
 
-    public static function create(array $data): int|false
-    {
-        $fields = ['name', 'description', 'ip_address', 'country'];
-        $insert = [];
-        foreach ($fields as $field) {
-            $insert[$field] = $data[$field] ?? null;
-        }
-        $pdo = Database::getPdoConnection();
-        $sql = 'INSERT INTO ' . self::$table . ' (name, description, ip_address, country) VALUES (:name, :description, :ip_address, :country)';
-        $stmt = $pdo->prepare($sql);
-        if ($stmt->execute($insert)) {
-            return (int) $pdo->lastInsertId();
-        }
+		return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+	}
+	public static function getCount(?string $search = null): int
+	{
+		$pdo = Database::getPdoConnection();
+		$sql = 'SELECT COUNT(*) FROM ' . self::$table;
+		$params = [];
 
-        return false;
-    }
+		if ($search !== null) {
+			$sql .= ' WHERE name LIKE :search OR country LIKE :search';
+			$params['search'] = '%' . $search . '%';
+		}
 
-    public static function update(int $id, array $data): bool
-    {
-        $fields = ['name', 'description', 'ip_address', 'country'];
-        $set = [];
-        $params = ['id' => $id];
-        foreach ($fields as $field) {
-            if (isset($data[$field])) {
-                $set[] = "$field = :$field";
-                $params[$field] = $data[$field];
-            }
-        }
-        if (empty($set)) {
-            return false;
-        }
-        $sql = 'UPDATE ' . self::$table . ' SET ' . implode(', ', $set) . ' WHERE id = :id';
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare($sql);
+		$stmt = $pdo->prepare($sql);
+		if (!empty($params)) {
+			$stmt->execute($params);
+		} else {
+			$stmt->execute();
+		}
 
-        return $stmt->execute($params);
-    }
+		return (int) $stmt->fetchColumn();
+	}
 
-    public static function delete(int $id): bool
-    {
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
+	public static function create(array $data): int|false
+	{
+		$fields = ['name', 'description', 'ip_address', 'country'];
+		$insert = [];
+		foreach ($fields as $field) {
+			$insert[$field] = $data[$field] ?? null;
+		}
+		$pdo = Database::getPdoConnection();
+		$sql = 'INSERT INTO ' . self::$table . ' (name, description, ip_address, country) VALUES (:name, :description, :ip_address, :country)';
+		$stmt = $pdo->prepare($sql);
+		if ($stmt->execute($insert)) {
+			return (int) $pdo->lastInsertId();
+		}
 
-        return $stmt->execute(['id' => $id]);
-    }
+		return false;
+	}
+
+	public static function update(int $id, array $data): bool
+	{
+		$fields = ['name', 'description', 'ip_address', 'country'];
+		$set = [];
+		$params = ['id' => $id];
+		foreach ($fields as $field) {
+			if (isset($data[$field])) {
+				$set[] = "$field = :$field";
+				$params[$field] = $data[$field];
+			}
+		}
+		if (empty($set)) {
+			return false;
+		}
+		$sql = 'UPDATE ' . self::$table . ' SET ' . implode(', ', $set) . ' WHERE id = :id';
+		$pdo = Database::getPdoConnection();
+		$stmt = $pdo->prepare($sql);
+
+		return $stmt->execute($params);
+	}
+
+	public static function delete(int $id): bool
+	{
+		$pdo = Database::getPdoConnection();
+		$stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
+
+		return $stmt->execute(['id' => $id]);
+	}
 }

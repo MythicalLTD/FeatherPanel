@@ -34,11 +34,11 @@ return function (RouteCollection $routes): void {
         '/api/admin/locations/{id}',
         function (Request $request, array $args) {
             $id = $args['id'] ?? null;
-            if (!$id || !is_string($id)) {
+			if (!$id || !is_numeric($id)) {
                 return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
             }
 
-            return (new LocationsController())->show($request, $id);
+            return (new LocationsController())->show($request, (int) $id);
         },
         Permissions::ADMIN_LOCATIONS_VIEW,
     );
@@ -48,11 +48,11 @@ return function (RouteCollection $routes): void {
         '/api/admin/locations/{id}',
         function (Request $request, array $args) {
             $id = $args['id'] ?? null;
-            if (!$id || !is_string($id)) {
+            if (!$id || !is_numeric($id)) {
                 return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
             }
 
-            return (new LocationsController())->update($request, $id);
+            return (new LocationsController())->update($request, (int) $id);
         },
         Permissions::ADMIN_LOCATIONS_EDIT,
         ['PATCH']
@@ -63,11 +63,11 @@ return function (RouteCollection $routes): void {
         '/api/admin/locations/{id}',
         function (Request $request, array $args) {
             $id = $args['id'] ?? null;
-            if (!$id || !is_string($id)) {
+            if (!$id || !is_numeric($id)) {
                 return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
             }
 
-            return (new LocationsController())->delete($request, $id);
+            return (new LocationsController())->delete($request, (int) $id);
         },
         Permissions::ADMIN_LOCATIONS_DELETE,
         ['DELETE']
