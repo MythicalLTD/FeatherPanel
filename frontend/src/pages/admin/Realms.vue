@@ -279,6 +279,16 @@ async function fetchRealms() {
         });
         realms.value = data.data.realms || [];
         pagination.value.total = data.data.pagination.total;
+    } catch (e: unknown) {
+        message.value = {
+            type: 'error',
+            text:
+                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+                'Failed to fetch realms',
+        };
+        // Clear realms on error to show empty state
+        realms.value = [];
+        pagination.value.total = 0;
     } finally {
         loading.value = false;
     }

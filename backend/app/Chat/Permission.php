@@ -114,12 +114,26 @@ class Permission
         return $stmt->execute(['id' => $id]);
     }
 
-    public static function getPermissionsByRoleId(int $roleId): array
+    public static function getPermissionsByRoleId(int $roleId, int $limit = 10, int $offset = 0): array
     {
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE role_id = :role_id ORDER BY id ASC');
-        $stmt->execute(['role_id' => $roleId]);
+        $sql = 'SELECT * FROM ' . self::$table . ' WHERE role_id = :role_id ORDER BY id ASC LIMIT :limit OFFSET :offset';
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindValue('role_id', $roleId, \PDO::PARAM_INT);
+        $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindValue('offset', $offset, \PDO::PARAM_INT);
+        $stmt->execute();
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public static function getCountByRoleId(int $roleId): int
+    {
+        $pdo = Database::getPdoConnection();
+        $sql = 'SELECT COUNT(*) FROM ' . self::$table . ' WHERE role_id = :role_id';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(['role_id' => $roleId]);
+
+        return (int) $stmt->fetchColumn();
     }
 }

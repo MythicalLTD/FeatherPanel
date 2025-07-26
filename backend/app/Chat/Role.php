@@ -58,7 +58,7 @@ class Role
         $params = [];
 
         if ($search !== null) {
-            $sql .= ' WHERE name LIKE :search OR display_name LIKE :search OR name LIKE :search';
+            $sql .= ' WHERE name LIKE :search OR display_name LIKE :search';
             $params['search'] = '%' . $search . '%';
         }
 

@@ -79,7 +79,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new RolesController())->create($request);
         },
-        Permissions::ADMIN_REALMS_CREATE,
+        Permissions::ADMIN_ROLES_CREATE,
         ['PUT']
     );
 };

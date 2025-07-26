@@ -24,8 +24,24 @@ class RolesController
 {
     public function index(Request $request): Response
     {
+        // Validate and sanitize pagination parameters
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
+
+        // Adjust page parameter if it's less than 1
+        if ($page < 1) {
+            $page = 1;
+        }
+
+        // Adjust limit parameter with reasonable bounds
+        $maxLimit = 100; // Define maximum limit to prevent performance issues
+        if ($limit < 1) {
+            $limit = 10; // Default to 10 if limit is less than 1
+        }
+        if ($limit > $maxLimit) {
+            $limit = $maxLimit; // Cap at maximum limit
+        }
+
         $search = $request->query->get('search', '');
         $offset = ($page - 1) * $limit;
         $roles = Role::getAll($search, $limit, $offset);

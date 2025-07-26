@@ -24,14 +24,31 @@ class PermissionsController
 {
     public function index(Request $request): Response
     {
+        // Validate and sanitize pagination parameters
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
+
+        // Validate page parameter
+        if ($page < 1) {
+            return ApiResponse::error('Page must be at least 1', 'INVALID_PAGE_PARAMETER', 400);
+        }
+
+        // Validate limit parameter with reasonable bounds
+        $maxLimit = 100; // Define maximum limit to prevent performance issues
+        if ($limit < 1) {
+            return ApiResponse::error('Limit must be at least 1', 'INVALID_LIMIT_PARAMETER', 400);
+        }
+        if ($limit > $maxLimit) {
+            return ApiResponse::error("Limit cannot exceed {$maxLimit}", 'INVALID_LIMIT_PARAMETER', 400);
+        }
+
         $search = $request->query->get('search', '');
         $roleId = $request->query->get('role_id');
         $offset = ($page - 1) * $limit;
+
         if ($roleId) {
-            $permissions = Permission::getPermissionsByRoleId((int) $roleId);
-            $total = count($permissions);
+            $permissions = Permission::getPermissionsByRoleId((int) $roleId, $limit, $offset);
+            $total = Permission::getCountByRoleId((int) $roleId);
         } else {
             $permissions = Permission::getAll($search, $limit, $offset);
             $total = Permission::getCount($search);

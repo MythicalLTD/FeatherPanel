@@ -24,8 +24,24 @@ class RealmsController
 {
     public function index(Request $request): Response
     {
+        // Validate and sanitize pagination parameters
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
+
+        // Adjust page parameter if it's less than 1
+        if ($page < 1) {
+            $page = 1;
+        }
+
+        // Adjust limit parameter with reasonable bounds
+        $maxLimit = 100; // Define maximum limit to prevent performance issues
+        if ($limit < 1) {
+            $limit = 10; // Default to 10 if limit is less than 1
+        }
+        if ($limit > $maxLimit) {
+            $limit = $maxLimit; // Cap at maximum limit
+        }
+
         $search = $request->query->get('search', '');
         $offset = ($page - 1) * $limit;
         $realms = Realm::getAll($search, $limit, $offset);
@@ -73,8 +89,14 @@ class RealmsController
         if (isset($data['logo']) && !is_string($data['logo'])) {
             return ApiResponse::error('Logo must be a string', 'INVALID_DATA_TYPE');
         }
+        if (isset($data['logo']) && strlen($data['logo']) > 255) {
+            return ApiResponse::error('Logo must be less than 255 characters', 'INVALID_DATA_LENGTH');
+        }
         if (isset($data['author']) && !is_string($data['author'])) {
             return ApiResponse::error('Author must be a string', 'INVALID_DATA_TYPE');
+        }
+        if (isset($data['description']) && !is_string($data['description'])) {
+            return ApiResponse::error('Description must be a string', 'INVALID_DATA_TYPE');
         }
         if (strlen($data['name']) < 2 || strlen($data['name']) > 255) {
             return ApiResponse::error('Name must be between 2 and 255 characters', 'INVALID_DATA_LENGTH');
@@ -84,6 +106,9 @@ class RealmsController
         }
         if (isset($data['author']) && strlen($data['author']) > 255) {
             return ApiResponse::error('Author must be less than 255 characters', 'INVALID_DATA_LENGTH');
+        }
+        if (isset($data['description']) && strlen($data['description']) > 65535) {
+            return ApiResponse::error('Description must be less than 65535 characters', 'INVALID_DATA_LENGTH');
         }
         $id = Realm::create($data);
         if (!$id) {
@@ -129,12 +154,23 @@ class RealmsController
         if (isset($data['logo']) && !is_string($data['logo'])) {
             return ApiResponse::error('Logo must be a string', 'INVALID_DATA_TYPE');
         }
+        if (isset($data['logo']) && strlen($data['logo']) > 255) {
+            return ApiResponse::error('Logo must be less than 255 characters', 'INVALID_DATA_LENGTH');
+        }
         if (isset($data['author'])) {
             if (!is_string($data['author'])) {
                 return ApiResponse::error('Author must be a string', 'INVALID_DATA_TYPE');
             }
             if (strlen($data['author']) > 255) {
                 return ApiResponse::error('Author must be less than 255 characters', 'INVALID_DATA_LENGTH');
+            }
+        }
+        if (isset($data['description'])) {
+            if (!is_string($data['description'])) {
+                return ApiResponse::error('Description must be a string', 'INVALID_DATA_TYPE');
+            }
+            if (strlen($data['description']) > 65535) {
+                return ApiResponse::error('Description must be less than 65535 characters', 'INVALID_DATA_LENGTH');
             }
         }
         $success = Realm::update($id, $data);

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, type HTMLAttributes } from 'vue';
+import { ref, computed, type HTMLAttributes } from 'vue';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ const form = ref({
     code: '',
 });
 const turnstileKey = settingsStore.settings?.turnstile_key_public as string;
-const turnstileEnabled = settingsStore.settings?.turnstile_enabled as boolean;
+const turnstileEnabled = computed(() => settingsStore.settings?.turnstile_enabled === 'true');
 async function verify2FA(e: Event) {
     e.preventDefault();
     error.value = '';

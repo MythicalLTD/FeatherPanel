@@ -36,7 +36,7 @@ function validateForm(): string | null {
     if (!form.value.email || !form.value.password) {
         return $t('api_errors.MISSING_REQUIRED_FIELDS');
     }
-    if (settingsStore.settings?.turnstile_enabled == 'true') {
+    if (turnstileEnabled) {
         if (!form.value.turnstile_token) {
             return $t('api_errors.TURNSTILE_TOKEN_REQUIRED');
         }
