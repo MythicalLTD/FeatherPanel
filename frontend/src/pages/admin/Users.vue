@@ -633,7 +633,6 @@ async function submitEdit() {
     try {
         // Send booleans directly
         const patchData = { ...editForm.value };
-        console.log('PATCH payload:', patchData);
         const { data } = await axios.patch(`/api/admin/users/${editingUser.value.uuid}`, patchData);
         if (data && data.success) {
             message.value = { type: 'success', text: 'User updated successfully' };

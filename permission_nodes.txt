@@ -19,3 +19,22 @@ ADMIN_LOCATIONS_VIEW=admin.locations.view | Admin Locations | View locations
 ADMIN_LOCATIONS_CREATE=admin.locations.create | Admin Locations | Create new locations
 ADMIN_LOCATIONS_EDIT=admin.locations.edit | Admin Locations | Edit existing locations
 ADMIN_LOCATIONS_DELETE=admin.locations.delete | Admin Locations | Delete locations
+
+# Realms Permissions
+ADMIN_REALMS_VIEW=admin.realms.view | Admin Realms | View realms
+ADMIN_REALMS_CREATE=admin.realms.create | Admin Realms | Create new realms
+ADMIN_REALMS_EDIT=admin.realms.edit | Admin Realms | Edit existing realms
+ADMIN_REALMS_DELETE=admin.realms.delete | Admin Realms | Delete realms
+
+# Roles Permissions
+ADMIN_ROLES_VIEW=admin.roles.view | Admin Roles | View roles
+ADMIN_ROLES_CREATE=admin.roles.create | Admin Roles | Create new roles 
+ADMIN_ROLES_EDIT=admin.roles.edit | Admin Roles | Edit existing roles
+ADMIN_ROLES_DELETE=admin.roles.delete | Admin Roles | Delete roles
+
+
+# Role Permissions Permissions
+ADMIN_ROLES_PERMISSIONS_VIEW=admin.roles.permissions.view | Admin Role Permissions | View role permissions
+ADMIN_ROLES_PERMISSIONS_CREATE=admin.roles.permissions.create | Admin Role Permissions | Create new role permissions
+ADMIN_ROLES_PERMISSIONS_EDIT=admin.roles.permissions.edit | Admin Role Permissions | Edit existing role permissions
+ADMIN_ROLES_PERMISSIONS_DELETE=admin.roles.permissions.delete | Admin Role Permissions | Delete role permissions

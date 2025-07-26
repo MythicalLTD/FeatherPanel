@@ -28,7 +28,7 @@ const loading = ref(false);
 const error = ref('');
 const success = ref('');
 const turnstileKey = settingsStore.settings?.turnstile_key_public as string;
-
+const turnstileEnabled = settingsStore.settings?.turnstile_enabled as boolean;
 function validateForm(): string | null {
     if (!form.value.email) {
         return $t('api_errors.MISSING_REQUIRED_FIELDS');
@@ -120,7 +120,7 @@ async function onSubmit(e: Event) {
                         <Label for="email">Email</Label>
                         <Input id="email" v-model="form.email" type="email" :placeholder="'m@example.com'" required />
                     </div>
-                    <Turnstile v-model="form.turnstile_token" :site-key="turnstileKey" />
+                    <Turnstile v-if="turnstileEnabled" v-model="form.turnstile_token" :site-key="turnstileKey" />
                     <Button type="submit" class="w-full" :disabled="loading">
                         <span v-if="loading">Send Reset Link...</span>
                         <span v-else>Send Reset Link</span>

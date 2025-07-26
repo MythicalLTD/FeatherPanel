@@ -4,9 +4,9 @@ This document provides a comprehensive overview of all permission nodes used in 
 
 ## Overview
 
-- **Total Permissions:** 10
-- **Categories:** 4
-- **With Descriptions:** 10
+- **Total Permissions:** 22
+- **Categories:** 7
+- **With Descriptions:** 22
 
 ## Format
 
@@ -67,6 +67,33 @@ if (auth.user.hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)) {
 | `ADMIN_LOCATIONS_EDIT` | `admin.locations.edit` | Edit existing locations |
 | `ADMIN_LOCATIONS_DELETE` | `admin.locations.delete` | Delete locations |
 
+## Admin Realms
+
+| Permission | Node | Description |
+|------------|------|-------------|
+| `ADMIN_REALMS_VIEW` | `admin.realms.view` | View realms |
+| `ADMIN_REALMS_CREATE` | `admin.realms.create` | Create new realms |
+| `ADMIN_REALMS_EDIT` | `admin.realms.edit` | Edit existing realms |
+| `ADMIN_REALMS_DELETE` | `admin.realms.delete` | Delete realms |
+
+## Admin Roles
+
+| Permission | Node | Description |
+|------------|------|-------------|
+| `ADMIN_ROLES_VIEW` | `admin.roles.view` | View roles |
+| `ADMIN_ROLES_CREATE` | `admin.roles.create` | Create new roles |
+| `ADMIN_ROLES_EDIT` | `admin.roles.edit` | Edit existing roles |
+| `ADMIN_ROLES_DELETE` | `admin.roles.delete` | Delete roles |
+
+## Admin Role Permissions
+
+| Permission | Node | Description |
+|------------|------|-------------|
+| `ADMIN_ROLES_PERMISSIONS_VIEW` | `admin.roles.permissions.view` | View role permissions |
+| `ADMIN_ROLES_PERMISSIONS_CREATE` | `admin.roles.permissions.create` | Create new role permissions |
+| `ADMIN_ROLES_PERMISSIONS_EDIT` | `admin.roles.permissions.edit` | Edit existing role permissions |
+| `ADMIN_ROLES_PERMISSIONS_DELETE` | `admin.roles.permissions.delete` | Delete role permissions |
+
 ## Adding New Permissions
 
 To add a new permission node:
@@ -89,4 +116,4 @@ To add a new permission node:
 
 ---
 
-*This documentation was auto-generated on 2025-07-25 08:17:36*
+*This documentation was auto-generated on 2025-07-25 18:49:07*

@@ -23,6 +23,7 @@ const props = defineProps<{
 const { t } = useI18n();
 
 const turnstileKey = settingsStore.settings?.turnstile_key_public as string;
+const turnstileEnabled = settingsStore.settings?.turnstile_enabled as boolean;
 
 const qrCodeUrl = ref('');
 const secret = ref('');
@@ -129,7 +130,7 @@ async function verify2FA(e: Event) {
                                 required
                             />
                         </div>
-                        <div class="grid gap-3">
+                        <div v-if="turnstileEnabled" class="grid gap-3">
                             <Turnstile v-model="form.turnstile_token" :site-key="turnstileKey" />
                         </div>
                         <Button type="submit" class="w-full" :disabled="loading">

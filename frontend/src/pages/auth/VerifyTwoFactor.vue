@@ -10,6 +10,7 @@ import { useSettingsStore } from '@/stores/settings';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
+
 const settingsStore = useSettingsStore();
 const props = defineProps<{
     class?: HTMLAttributes['class'];
@@ -27,7 +28,7 @@ const form = ref({
     code: '',
 });
 const turnstileKey = settingsStore.settings?.turnstile_key_public as string;
-
+const turnstileEnabled = settingsStore.settings?.turnstile_enabled as boolean;
 async function verify2FA(e: Event) {
     e.preventDefault();
     error.value = '';
@@ -67,7 +68,7 @@ async function verify2FA(e: Event) {
                             required
                         />
                     </div>
-                    <div class="grid gap-3">
+                    <div v-if="turnstileEnabled" class="grid gap-3">
                         <Turnstile v-model="form.turnstile_token" :site-key="turnstileKey" />
                     </div>
                     <Button type="submit" class="w-full" :disabled="loading">

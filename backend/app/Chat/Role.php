@@ -16,7 +16,59 @@ namespace App\Chat;
 class Role
 {
     private static string $table = 'mythicalpanel_roles';
+	public static function getAll(?string $search = null, int $limit = 10, int $offset = 0): array
+	{
+		$pdo = Database::getPdoConnection();
+		$sql = 'SELECT * FROM ' . self::$table;
+		$params = [];
 
+		if ($search !== null) {
+			$sql .= ' WHERE name LIKE :search OR display_name LIKE :search';
+			$params['search'] = '%' . $search . '%';
+		}
+
+		$sql .= ' LIMIT :limit OFFSET :offset';
+		$stmt = $pdo->prepare($sql);
+		if (!empty($params)) {
+			foreach ($params as $key => $value) {
+				$stmt->bindValue($key, $value);
+			}
+		}
+		$stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
+		$stmt->bindValue('offset', $offset, \PDO::PARAM_INT);
+		$stmt->execute();
+		return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+	}
+
+	public static function getById(int $id): ?array
+	{
+		$pdo = Database::getPdoConnection();
+		$stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
+		$stmt->execute(['id' => $id]);
+
+		return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+	}
+
+	public static function getCount(?string $search = null): int
+	{
+		$pdo = Database::getPdoConnection();
+		$sql = 'SELECT COUNT(*) FROM ' . self::$table;
+		$params = [];
+
+		if ($search !== null) {
+			$sql .= ' WHERE name LIKE :search OR display_name LIKE :search OR name LIKE :search';
+			$params['search'] = '%' . $search . '%';
+		}
+
+		$stmt = $pdo->prepare($sql);
+		if (!empty($params)) {
+			$stmt->execute($params);
+		} else {
+			$stmt->execute();
+		}
+
+		return (int) $stmt->fetchColumn();
+	}
     public static function createRole(array $data): int|false
     {
         $required = ['name', 'display_name', 'color'];
@@ -35,18 +87,6 @@ class Role
         }
 
         return false;
-    }
-
-    public static function getRoleById(int $id): ?array
-    {
-        if ($id <= 0) {
-            return null;
-        }
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
-        $stmt->execute(['id' => $id]);
-
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
     public static function getAllRoles(): array

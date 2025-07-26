@@ -13,6 +13,7 @@ import {
     PlayCircle,
     Home,
     Server,
+	Newspaper,
 } from 'lucide-vue-next';
 import NavMain from '@/components/nav/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -106,6 +107,26 @@ const data = computed(() => {
                           title: 'Locations',
                           url: '/admin/locations',
                           icon: Globe,
+                      },
+                  ]
+                : []),
+            ...(sessionStore.hasPermission(Permissions.ADMIN_REALMS_VIEW)
+                ? [
+                      {
+                          name: 'Realms',
+                          title: 'Realms',
+                          url: '/admin/realms',
+                          icon: Newspaper,
+                      },
+                  ]
+                : []),
+            ...(sessionStore.hasPermission(Permissions.ADMIN_ROLES_VIEW)
+                ? [
+                      {
+                          name: 'Roles',
+                          title: 'Roles',
+                          url: '/admin/roles',
+                          icon: Users,
                       },
                   ]
                 : []),

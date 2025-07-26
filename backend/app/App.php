@@ -93,7 +93,7 @@ class App
 
 		if (!defined('CRON_MODE')) {
 			// @phpstan-ignore-next-line
-			$rateLimiter = new RedisRateLimiter(Rate::perMinute($_ENV['firewall_rate_limit']), new \Redis(), 'rate_limiting');
+			$rateLimiter = new RedisRateLimiter(Rate::perMinute(999999999), new \Redis(), 'rate_limiting');
 			try {
 				$rateLimiter->limit(CloudFlareRealIP::getRealIP());
 			} catch (LimitExceeded $e) {
