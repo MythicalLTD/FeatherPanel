@@ -17,6 +17,57 @@ class Permission
 {
     private static string $table = 'mythicalpanel_permissions';
 
+    public static function getAll(?string $search = null, int $limit = 10, int $offset = 0): array
+    {
+        $pdo = Database::getPdoConnection();
+        $sql = 'SELECT * FROM ' . self::$table;
+        $params = [];
+        if ($search !== null) {
+            $sql .= ' WHERE permission LIKE :search';
+            $params['search'] = '%' . $search . '%';
+        }
+        $sql .= ' LIMIT :limit OFFSET :offset';
+        $stmt = $pdo->prepare($sql);
+        if (!empty($params)) {
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value);
+            }
+        }
+        $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindValue('offset', $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public static function getById(int $id): ?array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $id]);
+
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
+    public static function getCount(?string $search = null): int
+    {
+        $pdo = Database::getPdoConnection();
+        $sql = 'SELECT COUNT(*) FROM ' . self::$table;
+        $params = [];
+        if ($search !== null) {
+            $sql .= ' WHERE permission LIKE :search';
+            $params['search'] = '%' . $search . '%';
+        }
+        $stmt = $pdo->prepare($sql);
+        if (!empty($params)) {
+            $stmt->execute($params);
+        } else {
+            $stmt->execute();
+        }
+
+        return (int) $stmt->fetchColumn();
+    }
+
     public static function createPermission(array $data): int|false
     {
         $required = ['role_id', 'permission'];
@@ -35,35 +86,6 @@ class Permission
         }
 
         return false;
-    }
-
-    public static function getPermissionById(int $id): ?array
-    {
-        if ($id <= 0) {
-            return null;
-        }
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
-        $stmt->execute(['id' => $id]);
-
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
-    }
-
-    public static function getAllPermissions(): array
-    {
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->query('SELECT * FROM ' . self::$table . ' ORDER BY id ASC');
-
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
-    }
-
-    public static function getPermissionsByRoleId(int $roleId): array
-    {
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE role_id = :role_id ORDER BY id ASC');
-        $stmt->execute(['role_id' => $roleId]);
-
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     public static function updatePermission(int $id, array $data): bool
@@ -90,5 +112,28 @@ class Permission
         $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
 
         return $stmt->execute(['id' => $id]);
+    }
+
+    public static function getPermissionsByRoleId(int $roleId, int $limit = 10, int $offset = 0): array
+    {
+        $pdo = Database::getPdoConnection();
+        $sql = 'SELECT * FROM ' . self::$table . ' WHERE role_id = :role_id ORDER BY id ASC LIMIT :limit OFFSET :offset';
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindValue('role_id', $roleId, \PDO::PARAM_INT);
+        $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindValue('offset', $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public static function getCountByRoleId(int $roleId): int
+    {
+        $pdo = Database::getPdoConnection();
+        $sql = 'SELECT COUNT(*) FROM ' . self::$table . ' WHERE role_id = :role_id';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(['role_id' => $roleId]);
+
+        return (int) $stmt->fetchColumn();
     }
 }

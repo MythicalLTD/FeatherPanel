@@ -14,72 +14,72 @@
 use App\App;
 use App\Permissions;
 use App\Helpers\ApiResponse;
+use App\Controllers\Admin\RealmsController;
 use Symfony\Component\HttpFoundation\Request;
-use App\Controllers\Admin\LocationsController;
 use Symfony\Component\Routing\RouteCollection;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-locations',
-        '/api/admin/locations',
+        'admin-realms',
+        '/api/admin/realms',
         function (Request $request) {
-            return (new LocationsController())->index($request);
+            return (new RealmsController())->index($request);
         },
-        Permissions::ADMIN_LOCATIONS_VIEW,
+        Permissions::ADMIN_REALMS_VIEW,
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-locations-show',
-        '/api/admin/locations/{id}',
+        'admin-realms-show',
+        '/api/admin/realms/{id}',
         function (Request $request, array $args) {
             $id = $args['id'] ?? null;
             if (!$id || !is_numeric($id)) {
                 return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
             }
 
-            return (new LocationsController())->show($request, (int) $id);
+            return (new RealmsController())->show($request, (int) $id);
         },
-        Permissions::ADMIN_LOCATIONS_VIEW,
+        Permissions::ADMIN_REALMS_VIEW,
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-locations-update',
-        '/api/admin/locations/{id}',
+        'admin-realms-update',
+        '/api/admin/realms/{id}',
         function (Request $request, array $args) {
             $id = $args['id'] ?? null;
             if (!$id || !is_numeric($id)) {
                 return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
             }
 
-            return (new LocationsController())->update($request, (int) $id);
+            return (new RealmsController())->update($request, (int) $id);
         },
-        Permissions::ADMIN_LOCATIONS_EDIT,
+        Permissions::ADMIN_REALMS_EDIT,
         ['PATCH']
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-locations-delete',
-        '/api/admin/locations/{id}',
+        'admin-realms-delete',
+        '/api/admin/realms/{id}',
         function (Request $request, array $args) {
             $id = $args['id'] ?? null;
             if (!$id || !is_numeric($id)) {
                 return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
             }
 
-            return (new LocationsController())->delete($request, (int) $id);
+            return (new RealmsController())->delete($request, (int) $id);
         },
-        Permissions::ADMIN_LOCATIONS_DELETE,
+        Permissions::ADMIN_REALMS_DELETE,
         ['DELETE']
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-locations-create',
-        '/api/admin/locations',
+        'admin-realms-create',
+        '/api/admin/realms',
         function (Request $request) {
-            return (new LocationsController())->create($request);
+            return (new RealmsController())->create($request);
         },
-        Permissions::ADMIN_LOCATIONS_CREATE,
+        Permissions::ADMIN_REALMS_CREATE,
         ['PUT']
     );
 };

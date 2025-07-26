@@ -12,23 +12,24 @@
  */
 
 use App\App;
+use App\Chat\Role;
 use App\Chat\User;
 use PHPUnit\Framework\TestCase;
-use App\Controllers\Admin\UsersController;
 use Symfony\Component\HttpFoundation\Request;
+use App\Controllers\Admin\PermissionsController;
 
-class UsersControllerTest extends TestCase
+class PermissionsControllerTest extends TestCase
 {
-    private UsersController $controller;
+    private PermissionsController $controller;
     private string $adminUuid = '123e4567-e89b-12d3-a456-426614174000';
     private string $adminEmail = 'testadmin@example.com';
+    private int $testRoleId;
 
     protected function setUp(): void
     {
-        $this->controller = new UsersController();
-        // Ensure DB connection is initialized
-        $app = new App(false, false, true);
-        $app->getDatabase();
+        $this->controller = new PermissionsController();
+        // Ensure DB connection is initialized in test mode
+        App::getInstance(false, true, true);
         // Ensure test admin user exists
         $existing = User::getUserByUuid($this->adminUuid);
         if (!$existing) {
@@ -44,6 +45,19 @@ class UsersControllerTest extends TestCase
                 'remember_token' => bin2hex(random_bytes(16)),
             ]);
         }
+        // Ensure a test role exists
+        $roleId = null;
+        $roles = Role::getAll('testrole', 1, 0);
+        if (!empty($roles)) {
+            $roleId = $roles[0]['id'];
+        } else {
+            $roleId = Role::createRole([
+                'name' => 'testrole',
+                'display_name' => 'Test Role',
+                'color' => '#123456',
+            ]);
+        }
+        $this->testRoleId = $roleId;
     }
 
     protected function tearDown(): void
@@ -53,83 +67,67 @@ class UsersControllerTest extends TestCase
         if ($admin) {
             User::hardDeleteUser($admin['id']);
         }
+        // Remove test role
+        if ($this->testRoleId) {
+            Role::deleteRole($this->testRoleId);
+        }
     }
 
     public function testIndexReturnsSuccess()
     {
-        $request = Request::create('/api/admin/users', 'GET');
+        $request = Request::create('/api/admin/permissions', 'GET');
         $response = $this->controller->index($request);
         $data = json_decode($response->getContent(), true);
         $this->assertTrue($data['success']);
-        $this->assertArrayHasKey('users', $data['data']);
+        $this->assertArrayHasKey('permissions', $data['data']);
     }
 
-    public function testShowReturnsNotFoundForInvalidUuid()
+    public function testShowReturnsNotFoundForInvalidId()
     {
-        $request = Request::create('/api/admin/users/invalid-uuid', 'GET');
-        $response = $this->controller->show($request, 'invalid-uuid');
+        $request = Request::create('/api/admin/permissions/999999', 'GET');
+        $response = $this->controller->show($request, 999999);
         $data = json_decode($response->getContent(), true);
         $this->assertFalse($data['success']);
-        $this->assertEquals('USER_NOT_FOUND', $data['error_code']);
+        $this->assertEquals('PERMISSION_NOT_FOUND', $data['error_code']);
     }
 
     public function testCreateValidationFails()
     {
-        $request = Request::create('/api/admin/users', 'PUT', [], [], [], [], json_encode([]));
+        $request = Request::create('/api/admin/permissions', 'PUT', [], [], [], [], json_encode([]));
         $response = $this->controller->create($request);
         $data = json_decode($response->getContent(), true);
         $this->assertFalse($data['success']);
         $this->assertEquals('MISSING_REQUIRED_FIELDS', $data['error_code']);
     }
 
-    public function testCreateAndDeleteUser()
+    public function testCreateAndDeletePermission()
     {
         // Create
         $payload = [
-            'username' => 'testuser_' . uniqid(),
-            'first_name' => 'Test',
-            'last_name' => 'User',
-            'email' => 'testuser_' . uniqid() . '@example.com',
-            'password' => 'TestPassword123',
+            'role_id' => $this->testRoleId,
+            'permission' => 'test.permission',
         ];
-        $request = Request::create('/api/admin/users', 'PUT', [], [], [], [], json_encode($payload));
+        $request = Request::create('/api/admin/permissions', 'PUT', [], [], [], [], json_encode($payload));
         $request->attributes->set('user', ['uuid' => $this->adminUuid]);
         $response = $this->controller->create($request);
         $data = json_decode($response->getContent(), true);
         $this->assertTrue($data['success']);
-        $this->assertArrayHasKey('user_id', $data['data']);
-
-        // Fetch user by UUID
-        $userUuid = null;
-        if (isset($data['data']['user_id'])) {
-            // We need to fetch the user by searching, as the API returns user_id, not uuid
-            $indexRequest = Request::create('/api/admin/users', 'GET', ['search' => $payload['username']]);
-            $indexResponse = $this->controller->index($indexRequest);
-            $indexData = json_decode($indexResponse->getContent(), true);
-            $found = false;
-            foreach ($indexData['data']['users'] as $user) {
-                if ($user['username'] === $payload['username']) {
-                    $userUuid = $user['uuid'];
-                    $found = true;
-                    break;
-                }
-            }
-            $this->assertTrue($found, 'Created user should be found in user list');
-        }
-        $this->assertNotNull($userUuid);
+        $this->assertArrayHasKey('permission', $data['data']);
+        $permissionId = $data['data']['permission']['id'];
 
         // Update
-        $updatePayload = ['first_name' => 'UpdatedName'];
-        $updateRequest = Request::create('/api/admin/users/' . $userUuid, 'PATCH', [], [], [], [], json_encode($updatePayload));
+        $updatePayload = ['permission' => 'test.permission.updated'];
+        $updateRequest = Request::create('/api/admin/permissions/' . $permissionId, 'PATCH', [], [], [], [], json_encode($updatePayload));
         $updateRequest->attributes->set('user', ['uuid' => $this->adminUuid]);
-        $updateResponse = $this->controller->update($updateRequest, $userUuid);
+        $updateResponse = $this->controller->update($updateRequest, $permissionId);
         $updateData = json_decode($updateResponse->getContent(), true);
         $this->assertTrue($updateData['success']);
+        $this->assertEquals('test.permission.updated', $updateData['data']['permission']['permission']);
 
         // Delete
-        $deleteRequest = Request::create('/api/admin/users/' . $userUuid, 'DELETE');
+        $deleteRequest = Request::create('/api/admin/permissions/' . $permissionId, 'DELETE');
         $deleteRequest->attributes->set('user', ['uuid' => $this->adminUuid]);
-        $deleteResponse = $this->controller->delete($deleteRequest, $userUuid);
+        $deleteResponse = $this->controller->delete($deleteRequest, $permissionId);
         $deleteData = json_decode($deleteResponse->getContent(), true);
         $this->assertTrue($deleteData['success']);
     }

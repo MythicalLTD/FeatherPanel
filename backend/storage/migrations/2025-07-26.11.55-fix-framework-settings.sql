@@ -1,0 +1,1 @@
+ALTER TABLE `mythicalpanel_settings` ADD UNIQUE (`name`);

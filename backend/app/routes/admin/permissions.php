@@ -15,71 +15,71 @@ use App\App;
 use App\Permissions;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
-use App\Controllers\Admin\LocationsController;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Admin\PermissionsController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-locations',
-        '/api/admin/locations',
+        'admin-permissions',
+        '/api/admin/permissions',
         function (Request $request) {
-            return (new LocationsController())->index($request);
+            return (new PermissionsController())->index($request);
         },
-        Permissions::ADMIN_LOCATIONS_VIEW,
+        Permissions::ADMIN_ROLES_PERMISSIONS_VIEW,
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-locations-show',
-        '/api/admin/locations/{id}',
+        'admin-permissions-show',
+        '/api/admin/permissions/{id}',
         function (Request $request, array $args) {
             $id = $args['id'] ?? null;
             if (!$id || !is_numeric($id)) {
                 return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
             }
 
-            return (new LocationsController())->show($request, (int) $id);
+            return (new PermissionsController())->show($request, (int) $id);
         },
-        Permissions::ADMIN_LOCATIONS_VIEW,
+        Permissions::ADMIN_ROLES_PERMISSIONS_VIEW,
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-locations-update',
-        '/api/admin/locations/{id}',
+        'admin-permissions-update',
+        '/api/admin/permissions/{id}',
         function (Request $request, array $args) {
             $id = $args['id'] ?? null;
             if (!$id || !is_numeric($id)) {
                 return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
             }
 
-            return (new LocationsController())->update($request, (int) $id);
+            return (new PermissionsController())->update($request, (int) $id);
         },
-        Permissions::ADMIN_LOCATIONS_EDIT,
+        Permissions::ADMIN_ROLES_PERMISSIONS_EDIT,
         ['PATCH']
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-locations-delete',
-        '/api/admin/locations/{id}',
+        'admin-permissions-delete',
+        '/api/admin/permissions/{id}',
         function (Request $request, array $args) {
             $id = $args['id'] ?? null;
             if (!$id || !is_numeric($id)) {
                 return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
             }
 
-            return (new LocationsController())->delete($request, (int) $id);
+            return (new PermissionsController())->delete($request, (int) $id);
         },
-        Permissions::ADMIN_LOCATIONS_DELETE,
+        Permissions::ADMIN_ROLES_PERMISSIONS_DELETE,
         ['DELETE']
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-locations-create',
-        '/api/admin/locations',
+        'admin-permissions-create',
+        '/api/admin/permissions',
         function (Request $request) {
-            return (new LocationsController())->create($request);
+            return (new PermissionsController())->create($request);
         },
-        Permissions::ADMIN_LOCATIONS_CREATE,
+        Permissions::ADMIN_ROLES_PERMISSIONS_CREATE,
         ['PUT']
     );
 };

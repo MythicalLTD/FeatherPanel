@@ -14,21 +14,20 @@
 use App\App;
 use App\Chat\User;
 use PHPUnit\Framework\TestCase;
-use App\Controllers\Admin\UsersController;
+use App\Controllers\Admin\RolesController;
 use Symfony\Component\HttpFoundation\Request;
 
-class UsersControllerTest extends TestCase
+class RolesControllerTest extends TestCase
 {
-    private UsersController $controller;
+    private RolesController $controller;
     private string $adminUuid = '123e4567-e89b-12d3-a456-426614174000';
     private string $adminEmail = 'testadmin@example.com';
 
     protected function setUp(): void
     {
-        $this->controller = new UsersController();
-        // Ensure DB connection is initialized
-        $app = new App(false, false, true);
-        $app->getDatabase();
+        $this->controller = new RolesController();
+        // Ensure DB connection is initialized in test mode
+        App::getInstance(false, true, true);
         // Ensure test admin user exists
         $existing = User::getUserByUuid($this->adminUuid);
         if (!$existing) {
@@ -57,79 +56,60 @@ class UsersControllerTest extends TestCase
 
     public function testIndexReturnsSuccess()
     {
-        $request = Request::create('/api/admin/users', 'GET');
+        $request = Request::create('/api/admin/roles', 'GET');
         $response = $this->controller->index($request);
         $data = json_decode($response->getContent(), true);
         $this->assertTrue($data['success']);
-        $this->assertArrayHasKey('users', $data['data']);
+        $this->assertArrayHasKey('roles', $data['data']);
     }
 
-    public function testShowReturnsNotFoundForInvalidUuid()
+    public function testShowReturnsNotFoundForInvalidId()
     {
-        $request = Request::create('/api/admin/users/invalid-uuid', 'GET');
-        $response = $this->controller->show($request, 'invalid-uuid');
+        $request = Request::create('/api/admin/roles/999999', 'GET');
+        $response = $this->controller->show($request, 999999);
         $data = json_decode($response->getContent(), true);
         $this->assertFalse($data['success']);
-        $this->assertEquals('USER_NOT_FOUND', $data['error_code']);
+        $this->assertEquals('ROLE_NOT_FOUND', $data['error_code']);
     }
 
     public function testCreateValidationFails()
     {
-        $request = Request::create('/api/admin/users', 'PUT', [], [], [], [], json_encode([]));
+        $request = Request::create('/api/admin/roles', 'PUT', [], [], [], [], json_encode([]));
         $response = $this->controller->create($request);
         $data = json_decode($response->getContent(), true);
         $this->assertFalse($data['success']);
         $this->assertEquals('MISSING_REQUIRED_FIELDS', $data['error_code']);
     }
 
-    public function testCreateAndDeleteUser()
+    public function testCreateAndDeleteRole()
     {
         // Create
         $payload = [
-            'username' => 'testuser_' . uniqid(),
-            'first_name' => 'Test',
-            'last_name' => 'User',
-            'email' => 'testuser_' . uniqid() . '@example.com',
-            'password' => 'TestPassword123',
+            'name' => 'testrole',
+            'display_name' => 'Test Role',
+            'color' => '#123456',
         ];
-        $request = Request::create('/api/admin/users', 'PUT', [], [], [], [], json_encode($payload));
+        $request = Request::create('/api/admin/roles', 'PUT', [], [], [], [], json_encode($payload));
         $request->attributes->set('user', ['uuid' => $this->adminUuid]);
         $response = $this->controller->create($request);
         $data = json_decode($response->getContent(), true);
         $this->assertTrue($data['success']);
-        $this->assertArrayHasKey('user_id', $data['data']);
-
-        // Fetch user by UUID
-        $userUuid = null;
-        if (isset($data['data']['user_id'])) {
-            // We need to fetch the user by searching, as the API returns user_id, not uuid
-            $indexRequest = Request::create('/api/admin/users', 'GET', ['search' => $payload['username']]);
-            $indexResponse = $this->controller->index($indexRequest);
-            $indexData = json_decode($indexResponse->getContent(), true);
-            $found = false;
-            foreach ($indexData['data']['users'] as $user) {
-                if ($user['username'] === $payload['username']) {
-                    $userUuid = $user['uuid'];
-                    $found = true;
-                    break;
-                }
-            }
-            $this->assertTrue($found, 'Created user should be found in user list');
-        }
-        $this->assertNotNull($userUuid);
+        $this->assertArrayHasKey('role', $data['data']);
+        $roleId = $data['data']['role']['id'];
 
         // Update
-        $updatePayload = ['first_name' => 'UpdatedName'];
-        $updateRequest = Request::create('/api/admin/users/' . $userUuid, 'PATCH', [], [], [], [], json_encode($updatePayload));
+        $updatePayload = ['display_name' => 'Test Role Updated'];
+        $updateRequest = Request::create('/api/admin/roles/' . $roleId, 'PATCH', [], [], [], [], json_encode($updatePayload));
         $updateRequest->attributes->set('user', ['uuid' => $this->adminUuid]);
-        $updateResponse = $this->controller->update($updateRequest, $userUuid);
+        $updateResponse = $this->controller->update($updateRequest, $roleId);
         $updateData = json_decode($updateResponse->getContent(), true);
         $this->assertTrue($updateData['success']);
+        $this->assertEquals('Test Role Updated', $updateData['data']['role']['display_name']);
 
         // Delete
-        $deleteRequest = Request::create('/api/admin/users/' . $userUuid, 'DELETE');
+        $deleteRequest = Request::create('/api/admin/roles/' . $roleId, 'DELETE');
         $deleteRequest->attributes->set('user', ['uuid' => $this->adminUuid]);
-        $deleteResponse = $this->controller->delete($deleteRequest, $userUuid);
+        $deleteResponse = $this->controller->delete($deleteRequest, $roleId);
         $deleteData = json_decode($deleteResponse->getContent(), true);
         $this->assertTrue($deleteData['success']);
     }

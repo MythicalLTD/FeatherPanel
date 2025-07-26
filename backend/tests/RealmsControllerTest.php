@@ -14,21 +14,20 @@
 use App\App;
 use App\Chat\User;
 use PHPUnit\Framework\TestCase;
-use App\Controllers\Admin\UsersController;
+use App\Controllers\Admin\RealmsController;
 use Symfony\Component\HttpFoundation\Request;
 
-class UsersControllerTest extends TestCase
+class RealmsControllerTest extends TestCase
 {
-    private UsersController $controller;
+    private RealmsController $controller;
     private string $adminUuid = '123e4567-e89b-12d3-a456-426614174000';
     private string $adminEmail = 'testadmin@example.com';
 
     protected function setUp(): void
     {
-        $this->controller = new UsersController();
-        // Ensure DB connection is initialized
-        $app = new App(false, false, true);
-        $app->getDatabase();
+        $this->controller = new RealmsController();
+        // Ensure DB connection is initialized in test mode
+        App::getInstance(false, true, true);
         // Ensure test admin user exists
         $existing = User::getUserByUuid($this->adminUuid);
         if (!$existing) {
@@ -57,79 +56,61 @@ class UsersControllerTest extends TestCase
 
     public function testIndexReturnsSuccess()
     {
-        $request = Request::create('/api/admin/users', 'GET');
+        $request = Request::create('/api/admin/realms', 'GET');
         $response = $this->controller->index($request);
         $data = json_decode($response->getContent(), true);
         $this->assertTrue($data['success']);
-        $this->assertArrayHasKey('users', $data['data']);
+        $this->assertArrayHasKey('realms', $data['data']);
     }
 
-    public function testShowReturnsNotFoundForInvalidUuid()
+    public function testShowReturnsNotFoundForInvalidId()
     {
-        $request = Request::create('/api/admin/users/invalid-uuid', 'GET');
-        $response = $this->controller->show($request, 'invalid-uuid');
+        $request = Request::create('/api/admin/realms/999999', 'GET');
+        $response = $this->controller->show($request, 999999);
         $data = json_decode($response->getContent(), true);
         $this->assertFalse($data['success']);
-        $this->assertEquals('USER_NOT_FOUND', $data['error_code']);
+        $this->assertEquals('REALM_NOT_FOUND', $data['error_code']);
     }
 
     public function testCreateValidationFails()
     {
-        $request = Request::create('/api/admin/users', 'PUT', [], [], [], [], json_encode([]));
+        $request = Request::create('/api/admin/realms', 'PUT', [], [], [], [], json_encode([]));
         $response = $this->controller->create($request);
         $data = json_decode($response->getContent(), true);
         $this->assertFalse($data['success']);
         $this->assertEquals('MISSING_REQUIRED_FIELDS', $data['error_code']);
     }
 
-    public function testCreateAndDeleteUser()
+    public function testCreateAndDeleteRealm()
     {
         // Create
         $payload = [
-            'username' => 'testuser_' . uniqid(),
-            'first_name' => 'Test',
-            'last_name' => 'User',
-            'email' => 'testuser_' . uniqid() . '@example.com',
-            'password' => 'TestPassword123',
+            'name' => 'Test Realm',
+            'description' => 'Unit test realm',
+            'logo' => 'https://github.com/mythicalltd.png',
+            'author' => 'testadmin@example.com',
         ];
-        $request = Request::create('/api/admin/users', 'PUT', [], [], [], [], json_encode($payload));
+        $request = Request::create('/api/admin/realms', 'PUT', [], [], [], [], json_encode($payload));
         $request->attributes->set('user', ['uuid' => $this->adminUuid]);
         $response = $this->controller->create($request);
         $data = json_decode($response->getContent(), true);
         $this->assertTrue($data['success']);
-        $this->assertArrayHasKey('user_id', $data['data']);
-
-        // Fetch user by UUID
-        $userUuid = null;
-        if (isset($data['data']['user_id'])) {
-            // We need to fetch the user by searching, as the API returns user_id, not uuid
-            $indexRequest = Request::create('/api/admin/users', 'GET', ['search' => $payload['username']]);
-            $indexResponse = $this->controller->index($indexRequest);
-            $indexData = json_decode($indexResponse->getContent(), true);
-            $found = false;
-            foreach ($indexData['data']['users'] as $user) {
-                if ($user['username'] === $payload['username']) {
-                    $userUuid = $user['uuid'];
-                    $found = true;
-                    break;
-                }
-            }
-            $this->assertTrue($found, 'Created user should be found in user list');
-        }
-        $this->assertNotNull($userUuid);
+        $this->assertArrayHasKey('realm', $data['data']);
+        $realmId = $data['data']['realm']['id'];
 
         // Update
-        $updatePayload = ['first_name' => 'UpdatedName'];
-        $updateRequest = Request::create('/api/admin/users/' . $userUuid, 'PATCH', [], [], [], [], json_encode($updatePayload));
+        $updatePayload = ['name' => 'Test Realm Updated'];
+        $updateRequest = Request::create('/api/admin/realms/' . $realmId, 'PATCH', [], [], [], [], json_encode($updatePayload));
         $updateRequest->attributes->set('user', ['uuid' => $this->adminUuid]);
-        $updateResponse = $this->controller->update($updateRequest, $userUuid);
+        $updateResponse = $this->controller->update($updateRequest, $realmId);
         $updateData = json_decode($updateResponse->getContent(), true);
         $this->assertTrue($updateData['success']);
+        $this->assertEquals('Test Realm Updated', $updateData['data']['realm']['name']);
 
         // Delete
-        $deleteRequest = Request::create('/api/admin/users/' . $userUuid, 'DELETE');
+        $deleteRequest = Request::create('/api/admin/realms/' . $realmId, 'DELETE');
         $deleteRequest->attributes->set('user', ['uuid' => $this->adminUuid]);
-        $deleteResponse = $this->controller->delete($deleteRequest, $userUuid);
+        $deleteResponse = $this->controller->delete($deleteRequest, $realmId);
         $deleteData = json_decode($deleteResponse->getContent(), true);
         $this->assertTrue($deleteData['success']);
     }

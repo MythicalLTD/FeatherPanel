@@ -28,7 +28,7 @@ const error = ref('');
 const success = ref('');
 const tokenValid = ref(false);
 const submitting = ref(false);
-
+const turnstileEnabled = settingsStore.settings?.turnstile_enabled as boolean;
 const turnstileKey = settingsStore.turnstileKeyPub as string;
 
 onMounted(async () => {
@@ -180,7 +180,7 @@ async function onSubmit(e: Event) {
                                 required
                             />
                         </div>
-                        <Turnstile v-model="form.turnstile_token" :site-key="turnstileKey" />
+                        <Turnstile v-if="turnstileEnabled" v-model="form.turnstile_token" :site-key="turnstileKey" />
                         <Button type="submit" class="w-full" :disabled="submitting">
                             <span v-if="submitting">Reset Password...</span>
                             <span v-else>Reset Password</span>

@@ -13,9 +13,9 @@
 
 namespace App\Chat;
 
-class Role
+class Realm
 {
-    private static string $table = 'mythicalpanel_roles';
+    private static string $table = 'mythicalpanel_realms';
 
     public static function getAll(?string $search = null, int $limit = 10, int $offset = 0): array
     {
@@ -24,7 +24,7 @@ class Role
         $params = [];
 
         if ($search !== null) {
-            $sql .= ' WHERE name LIKE :search OR display_name LIKE :search';
+            $sql .= ' WHERE name LIKE :search OR description LIKE :search OR author LIKE :search';
             $params['search'] = '%' . $search . '%';
         }
 
@@ -58,7 +58,7 @@ class Role
         $params = [];
 
         if ($search !== null) {
-            $sql .= ' WHERE name LIKE :search OR display_name LIKE :search';
+            $sql .= ' WHERE name LIKE :search OR description LIKE :search OR author LIKE :search';
             $params['search'] = '%' . $search . '%';
         }
 
@@ -72,54 +72,46 @@ class Role
         return (int) $stmt->fetchColumn();
     }
 
-    public static function createRole(array $data): int|false
+    public static function create(array $data): int|false
     {
-        $required = ['name', 'display_name', 'color'];
-        foreach ($required as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
-                return false;
-            }
+        $fields = ['name', 'description', 'logo', 'author'];
+        $insert = [];
+        foreach ($fields as $field) {
+            $insert[$field] = $data[$field] ?? null;
         }
         $pdo = Database::getPdoConnection();
-        $fields = array_keys($data);
-        $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+        $sql = 'INSERT INTO ' . self::$table . ' (name, description, logo, author) VALUES (:name, :description, :logo, :author)';
         $stmt = $pdo->prepare($sql);
-        if ($stmt->execute($data)) {
+        if ($stmt->execute($insert)) {
             return (int) $pdo->lastInsertId();
         }
 
         return false;
     }
 
-    public static function getAllRoles(): array
+    public static function update(int $id, array $data): bool
     {
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->query('SELECT * FROM ' . self::$table . ' ORDER BY id ASC');
-
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
-    }
-
-    public static function updateRole(int $id, array $data): bool
-    {
-        if ($id <= 0 || empty($data)) {
+        $fields = ['name', 'description', 'logo', 'author'];
+        $set = [];
+        $params = ['id' => $id];
+        foreach ($fields as $field) {
+            if (isset($data[$field])) {
+                $set[] = "`$field` = :$field";
+                $params[$field] = $data[$field];
+            }
+        }
+        if (empty($set)) {
             return false;
         }
-        $fields = array_keys($data);
-        $set = implode(', ', array_map(fn ($f) => "$f = :$f", $fields));
-        $data['id'] = $id;
+        $sql = 'UPDATE ' . self::$table . ' SET ' . implode(', ', $set) . ' WHERE id = :id';
         $pdo = Database::getPdoConnection();
-        $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE id = :id';
         $stmt = $pdo->prepare($sql);
 
-        return $stmt->execute($data);
+        return $stmt->execute($params);
     }
 
-    public static function deleteRole(int $id): bool
+    public static function delete(int $id): bool
     {
-        if ($id <= 0) {
-            return false;
-        }
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
 

@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+early_access: false
+tone_instructions: "Talk like a senior dev forged in fire and bad commits. Mythical tone, sarcastic edge. Roast the codebase like it ruined your weekend. Mock the devs like they deployed on a Friday. Be wise, chaotic, and allergic to spaghetti code."
+reviews:
+  profile: "chill"
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  sequence_diagrams: false
+  estimate_code_review_effort: false
+  auto_apply_labels: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+chat:
+  auto_reply: true

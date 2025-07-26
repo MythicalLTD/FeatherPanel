@@ -31,12 +31,12 @@ const error = ref('');
 const success = ref('');
 
 const turnstileKey = settingsStore.settings?.turnstile_key_public as string;
-
+const turnstileEnabled = settingsStore.settings?.turnstile_enabled as boolean;
 function validateForm(): string | null {
     if (!form.value.email || !form.value.password) {
         return $t('api_errors.MISSING_REQUIRED_FIELDS');
     }
-    if (settingsStore.settings?.turnstile_enabled == 'true') {
+    if (turnstileEnabled) {
         if (!form.value.turnstile_token) {
             return $t('api_errors.TURNSTILE_TOKEN_REQUIRED');
         }
@@ -157,7 +157,7 @@ async function onSubmit(e: Event) {
                             required
                         />
                     </div>
-                    <Turnstile v-model="form.turnstile_token" :site-key="turnstileKey" />
+                    <Turnstile v-if="turnstileEnabled" v-model="form.turnstile_token" :site-key="turnstileKey" />
                     <Button type="submit" class="w-full" :disabled="loading">
                         <span v-if="loading">Login...</span>
                         <span v-else>Login</span>

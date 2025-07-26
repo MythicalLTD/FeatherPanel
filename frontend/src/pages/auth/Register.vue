@@ -32,7 +32,7 @@ const error = ref('');
 const success = ref('');
 
 const turnstileKey = settingsStore.turnstileKeyPub as string;
-
+const turnstileEnabled = settingsStore.settings?.turnstile_enabled as boolean;
 function validateForm(): string | null {
     const requiredFields: Array<keyof typeof form.value> = ['username', 'email', 'password', 'first_name', 'last_name'];
     for (const field of requiredFields) {
@@ -239,7 +239,7 @@ async function onSubmit(e: Event) {
                             maxlength="255"
                         />
                     </div>
-                    <Turnstile v-model="form.turnstile_token" :site-key="turnstileKey" />
+                    <Turnstile v-if="turnstileEnabled" v-model="form.turnstile_token" :site-key="turnstileKey" />
                     <Button type="submit" class="w-full" :disabled="loading">
                         <span v-if="loading">Register...</span>
                         <span v-else>Register</span>

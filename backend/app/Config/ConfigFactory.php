@@ -93,12 +93,7 @@ class ConfigFactory
      */
     public function setSetting(string $name, string $value): bool
     {
-        $existingSetting = $this->getSetting($name, null);
-        if ($existingSetting) {
-            $stmt = $this->db->prepare("UPDATE {$this->table_name} SET value = :value, date = NOW() WHERE name = :name");
-        } else {
-            $stmt = $this->db->prepare("INSERT INTO {$this->table_name} (name, value, date) VALUES (:name, :value, NOW())");
-        }
+        $stmt = $this->db->prepare("INSERT INTO {$this->table_name} (name, value, date) VALUES (:name, :value, NOW()) ON DUPLICATE KEY UPDATE value = :value, date = NOW()");
         $result = $stmt->execute(['name' => $name, 'value' => $value]);
         if ($result) {
             // Update the cache
