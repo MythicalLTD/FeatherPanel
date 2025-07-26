@@ -1,10 +1,21 @@
 <?php
 
+/*
+ * This file is part of App.
+ * Please view the LICENSE file that was distributed with this source code.
+ *
+ * # MythicalSystems License v2.0
+ *
+ * ## Copyright (c) 2021–2025 MythicalSystems and Cassian Gherman
+ *
+ * Breaking any of the following rules will result in a permanent ban from the MythicalSystems community and all of its services.
+ */
+
+use App\App;
+use App\Chat\User;
 use PHPUnit\Framework\TestCase;
 use App\Controllers\Admin\RolesController;
 use Symfony\Component\HttpFoundation\Request;
-use App\App;
-use App\Chat\User;
 
 class RolesControllerTest extends TestCase
 {
@@ -102,4 +113,4 @@ class RolesControllerTest extends TestCase
         $deleteData = json_decode($deleteResponse->getContent(), true);
         $this->assertTrue($deleteData['success']);
     }
-} 
+}

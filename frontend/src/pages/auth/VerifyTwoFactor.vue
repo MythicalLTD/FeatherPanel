@@ -10,7 +10,6 @@ import { useSettingsStore } from '@/stores/settings';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
-
 const settingsStore = useSettingsStore();
 const props = defineProps<{
     class?: HTMLAttributes['class'];

@@ -227,7 +227,7 @@
     * {
         -ms-overflow-style: auto;
     }
-    
+
     *::-ms-scrollbar {
         width: 10px;
         height: 10px;

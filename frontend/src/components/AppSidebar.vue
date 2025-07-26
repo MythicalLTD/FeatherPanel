@@ -13,7 +13,7 @@ import {
     PlayCircle,
     Home,
     Server,
-	Newspaper,
+    Newspaper,
 } from 'lucide-vue-next';
 import NavMain from '@/components/nav/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';

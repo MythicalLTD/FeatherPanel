@@ -34,7 +34,7 @@ return function (RouteCollection $routes): void {
         '/api/admin/locations/{id}',
         function (Request $request, array $args) {
             $id = $args['id'] ?? null;
-			if (!$id || !is_numeric($id)) {
+            if (!$id || !is_numeric($id)) {
                 return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
             }
 

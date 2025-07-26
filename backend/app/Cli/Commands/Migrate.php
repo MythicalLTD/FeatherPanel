@@ -31,16 +31,16 @@ class Migrate extends App implements CommandBuilder
         try {
             \App\App::getInstance(true)->loadEnv();
             $db = new Database($_ENV['DATABASE_HOST'], $_ENV['DATABASE_DATABASE'], $_ENV['DATABASE_USER'], $_ENV['DATABASE_PASSWORD'], $_ENV['DATABASE_PORT']);
-			
+
             // --- Fix duplicate settings before running migrations that add unique constraints ---
             $pdo = $db->getPdo();
             $tableExists = $pdo->query("SHOW TABLES LIKE 'mythicalpanel_settings'")->rowCount() > 0;
             if ($tableExists) {
-                $fixSql = "DELETE FROM mythicalpanel_settings WHERE id NOT IN (SELECT id FROM (SELECT MAX(id) as id FROM mythicalpanel_settings GROUP BY name) as keep_ids);";
+                $fixSql = 'DELETE FROM mythicalpanel_settings WHERE id NOT IN (SELECT id FROM (SELECT MAX(id) as id FROM mythicalpanel_settings GROUP BY name) as keep_ids);';
                 $pdo->exec($fixSql);
             }
             // --- End fix ---
-		} catch (\Exception $e) {
+        } catch (\Exception $e) {
             $cliApp->send('&cFailed to connect to the database: &r' . $e->getMessage());
             exit;
         }

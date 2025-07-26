@@ -38,6 +38,7 @@ class Realm
         $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
         $stmt->bindValue('offset', $offset, \PDO::PARAM_INT);
         $stmt->execute();
+
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
@@ -116,4 +117,4 @@ class Realm
 
         return $stmt->execute(['id' => $id]);
     }
-} 
+}

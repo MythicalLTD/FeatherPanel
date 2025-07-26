@@ -185,8 +185,8 @@
                     <Button
                         type="button"
                         variant="ghost"
-                        @click="openPermissionsDrawer(editingRole)"
                         :title="'Manage Permissions'"
+                        @click="openPermissionsDrawer(editingRole)"
                     >
                         <Shield :size="16" />
                     </Button>
@@ -266,8 +266,8 @@
                                     <Button
                                         size="icon"
                                         variant="destructive"
-                                        @click="deletePermission(perm.id)"
                                         :title="'Delete Permission'"
+                                        @click="deletePermission(perm.id)"
                                     >
                                         <Trash2 :size="16" />
                                     </Button>
@@ -347,7 +347,7 @@ import {
     DrawerDescription,
     DrawerClose,
 } from '@/components/ui/drawer';
-import { Ref } from 'vue';
+import { type Ref } from 'vue';
 import Permissions from '@/lib/permissions';
 
 type Role = {
@@ -440,7 +440,9 @@ async function fetchPermissionsForRole(roleId: number) {
     }
 }
 
-async function addPermission(val?: string) {
+// Change the addPermission function signature to accept an optional event parameter of type Event
+async function addPermission(event?: Event, val?: string) {
+    if (event) event.preventDefault?.();
     if (!permissionsRole.value) return;
     const permToAdd = (val !== undefined ? val : newPermission.value).trim();
     if (!permToAdd) return;
@@ -646,6 +648,6 @@ function closePermissionsDrawer() {
 async function addPermissionFromOption(val: string) {
     newPermission.value = '';
     // Add permission immediately
-    await addPermission(val);
+    await addPermission(undefined, val);
 }
 </script>
