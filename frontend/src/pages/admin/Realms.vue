@@ -57,6 +57,9 @@
                                         <Button size="sm" variant="outline" @click="onView(realm)">
                                             <Eye :size="16" />
                                         </Button>
+                                        <Button size="sm" variant="secondary" @click="onViewSpells(realm)">
+                                            <Sparkles :size="16" />
+                                        </Button>
                                         <Button size="sm" variant="secondary" @click="onEdit(realm)">
                                             <Pencil :size="16" />
                                         </Button>
@@ -215,7 +218,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
-import { Eye, Pencil, Trash2 } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Sparkles } from 'lucide-vue-next';
 import axios from 'axios';
 import { Alert } from '@/components/ui/alert';
 import {
@@ -226,6 +229,7 @@ import {
     DrawerDescription,
     DrawerClose,
 } from '@/components/ui/drawer';
+import { useRouter } from 'vue-router';
 
 type Realm = {
     id: number;
@@ -253,6 +257,7 @@ const selectedRealm = ref<Realm | null>(null);
 const viewing = ref(false);
 const editingRealm = ref<Realm | null>(null);
 const editDrawerOpen = ref(false);
+const router = useRouter();
 const editForm = ref({
     name: '',
     description: '',
@@ -309,6 +314,10 @@ async function onView(realm: Realm) {
         selectedRealm.value = null;
         message.value = { type: 'error', text: 'Failed to fetch realm details' };
     }
+}
+
+function onViewSpells(realm: Realm) {
+    router.push({ path: '/admin/spells', query: { realm_id: realm.id } });
 }
 function onEdit(realm: Realm) {
     openEditDrawer(realm);

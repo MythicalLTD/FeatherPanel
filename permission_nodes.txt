@@ -26,6 +26,13 @@ ADMIN_REALMS_CREATE=admin.realms.create | Admin Realms | Create new realms
 ADMIN_REALMS_EDIT=admin.realms.edit | Admin Realms | Edit existing realms
 ADMIN_REALMS_DELETE=admin.realms.delete | Admin Realms | Delete realms
 
+# Spells Permissions
+ADMIN_SPELLS_VIEW=admin.spells.view | Admin Spells | View spells
+ADMIN_SPELLS_CREATE=admin.spells.create | Admin Spells | Create new spells
+ADMIN_SPELLS_EDIT=admin.spells.edit | Admin Spells | Edit existing spells
+ADMIN_SPELLS_DELETE=admin.spells.delete | Admin Spells | Delete spells
+
+
 # Roles Permissions
 ADMIN_ROLES_VIEW=admin.roles.view | Admin Roles | View roles
 ADMIN_ROLES_CREATE=admin.roles.create | Admin Roles | Create new roles 

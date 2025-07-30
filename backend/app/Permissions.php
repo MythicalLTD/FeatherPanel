@@ -65,6 +65,16 @@ class Permissions
     /** Delete realms */
     public const ADMIN_REALMS_DELETE = 'admin.realms.delete';
 
+    // Admin Spells Permissions
+    /** View spells */
+    public const ADMIN_SPELLS_VIEW = 'admin.spells.view';
+    /** Create new spells */
+    public const ADMIN_SPELLS_CREATE = 'admin.spells.create';
+    /** Edit existing spells */
+    public const ADMIN_SPELLS_EDIT = 'admin.spells.edit';
+    /** Delete spells */
+    public const ADMIN_SPELLS_DELETE = 'admin.spells.delete';
+
     // Admin Roles Permissions
     /** View roles */
     public const ADMIN_ROLES_VIEW = 'admin.roles.view';
@@ -174,6 +184,30 @@ class Permissions
                 'value' => self::ADMIN_REALMS_DELETE,
                 'category' => 'Admin Realms',
                 'description' => 'Delete realms',
+            ],
+            [
+                'constant' => 'ADMIN_SPELLS_VIEW',
+                'value' => self::ADMIN_SPELLS_VIEW,
+                'category' => 'Admin Spells',
+                'description' => 'View spells',
+            ],
+            [
+                'constant' => 'ADMIN_SPELLS_CREATE',
+                'value' => self::ADMIN_SPELLS_CREATE,
+                'category' => 'Admin Spells',
+                'description' => 'Create new spells',
+            ],
+            [
+                'constant' => 'ADMIN_SPELLS_EDIT',
+                'value' => self::ADMIN_SPELLS_EDIT,
+                'category' => 'Admin Spells',
+                'description' => 'Edit existing spells',
+            ],
+            [
+                'constant' => 'ADMIN_SPELLS_DELETE',
+                'value' => self::ADMIN_SPELLS_DELETE,
+                'category' => 'Admin Spells',
+                'description' => 'Delete spells',
             ],
             [
                 'constant' => 'ADMIN_ROLES_VIEW',

@@ -63,7 +63,7 @@
         ],
         "tests": [
             "export COMPOSER_ALLOW_SUPERUSER=1",
-            "storage/packages/bin/phpunit tests/"
+            "storage/packages/bin/phpunit --display-warnings tests/"
         ]
     }
 }
