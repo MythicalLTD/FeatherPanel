@@ -1315,8 +1315,9 @@ async function submitVariable() {
         await fetchSpellVariables();
         addingVariable.value = false;
         editingVariable.value = null;
-    } catch {
-        // error intentionally ignored
+    } catch (e: unknown) {
+        console.error('Failed to save variable:', e);
+        message.value = { type: 'error', text: 'Failed to save variable. Please try again.' };
     }
 }
 
