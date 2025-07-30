@@ -1,12 +1,23 @@
 <?php
 
+/*
+ * This file is part of App.
+ * Please view the LICENSE file that was distributed with this source code.
+ *
+ * # MythicalSystems License v2.0
+ *
+ * ## Copyright (c) 2021–2025 MythicalSystems and Cassian Gherman
+ *
+ * Breaking any of the following rules will result in a permanent ban from the MythicalSystems community and all of its services.
+ */
+
 namespace App\Services\Wings\Services;
 
 use App\Services\Wings\WingsConnection;
 
 /**
- * WebSocket Service for Wings API
- * 
+ * WebSocket Service for Wings API.
+ *
  * Handles all WebSocket-related functionality including:
  * - WebSocket token generation
  * - WebSocket URL generation
@@ -14,280 +25,222 @@ use App\Services\Wings\WingsConnection;
  */
 class WebSocketService
 {
-	private WingsConnection $connection;
+    private WingsConnection $connection;
 
-	/**
-	 * Create a new WebSocketService instance
-	 * 
-	 * @param WingsConnection $connection
-	 */
-	public function __construct(WingsConnection $connection)
-	{
-		$this->connection = $connection;
-	}
+    /**
+     * Create a new WebSocketService instance.
+     */
+    public function __construct(WingsConnection $connection)
+    {
+        $this->connection = $connection;
+    }
 
-	/**
-	 * Generate WebSocket token
-	 * 
-	 * @param string $serverUuid
-	 * @param string $userUuid
-	 * @param array $permissions
-	 * @return string
-	 */
-	public function generateWebSocketToken(string $serverUuid, string $userUuid, array $permissions = []): string
-	{
-		$tokenGenerator = $this->connection->getTokenGenerator();
-		return $tokenGenerator->generateWebSocketToken($serverUuid, $userUuid, $permissions);
-	}
+    /**
+     * Generate WebSocket token.
+     */
+    public function generateWebSocketToken(string $serverUuid, string $userUuid, array $permissions = []): string
+    {
+        $tokenGenerator = $this->connection->getTokenGenerator();
 
-	/**
-	 * Generate WebSocket URL
-	 * 
-	 * @param string $serverUuid
-	 * @param string $userUuid
-	 * @param array $permissions
-	 * @return string
-	 */
-	public function generateWebSocketUrl(string $serverUuid, string $userUuid, array $permissions = []): string
-	{
-		$tokenGenerator = $this->connection->getTokenGenerator();
-		$baseUrl = $this->connection->getBaseUrl();
+        return $tokenGenerator->generateWebSocketToken($serverUuid, $userUuid, $permissions);
+    }
 
-		return $tokenGenerator->generateWebSocketUrl($baseUrl, $serverUuid, $userUuid, $permissions);
-	}
+    /**
+     * Generate WebSocket URL.
+     */
+    public function generateWebSocketUrl(string $serverUuid, string $userUuid, array $permissions = []): string
+    {
+        $tokenGenerator = $this->connection->getTokenGenerator();
+        $baseUrl = $this->connection->getBaseUrl();
 
-	/**
-	 * Deny WebSocket tokens for a server
-	 * 
-	 * @param string $serverUuid
-	 * @return array
-	 */
-	public function denyWebSocketTokens(string $serverUuid): array
-	{
-		return $this->connection->post("/api/servers/{$serverUuid}/ws/deny");
-	}
+        return $tokenGenerator->generateWebSocketUrl($baseUrl, $serverUuid, $userUuid, $permissions);
+    }
 
-	/**
-	 * Get WebSocket connection status
-	 * 
-	 * @param string $serverUuid
-	 * @return array
-	 */
-	public function getWebSocketStatus(string $serverUuid): array
-	{
-		return $this->connection->get("/api/servers/{$serverUuid}/ws");
-	}
+    /**
+     * Deny WebSocket tokens for a server.
+     */
+    public function denyWebSocketTokens(string $serverUuid): array
+    {
+        return $this->connection->post("/api/servers/{$serverUuid}/ws/deny");
+    }
 
-	/**
-	 * Check if WebSocket is connected
-	 * 
-	 * @param string $serverUuid
-	 * @return bool
-	 */
-	public function isWebSocketConnected(string $serverUuid): bool
-	{
-		try {
-			$status = $this->getWebSocketStatus($serverUuid);
-			return $status['connected'] ?? false;
-		} catch (\Exception $e) {
-			return false;
-		}
-	}
+    /**
+     * Get WebSocket connection status.
+     */
+    public function getWebSocketStatus(string $serverUuid): array
+    {
+        return $this->connection->get("/api/servers/{$serverUuid}/ws");
+    }
 
-	/**
-	 * Get WebSocket connection count
-	 * 
-	 * @param string $serverUuid
-	 * @return int
-	 */
-	public function getWebSocketConnectionCount(string $serverUuid): int
-	{
-		try {
-			$status = $this->getWebSocketStatus($serverUuid);
-			return $status['connections'] ?? 0;
-		} catch (\Exception $e) {
-			return 0;
-		}
-	}
+    /**
+     * Check if WebSocket is connected.
+     */
+    public function isWebSocketConnected(string $serverUuid): bool
+    {
+        try {
+            $status = $this->getWebSocketStatus($serverUuid);
 
-	/**
-	 * Get WebSocket permissions for a user
-	 * 
-	 * @param string $serverUuid
-	 * @param string $userUuid
-	 * @return array
-	 */
-	public function getWebSocketPermissions(string $serverUuid, string $userUuid): array
-	{
-		try {
-			$status = $this->getWebSocketStatus($serverUuid);
-			return $status['permissions'][$userUuid] ?? [];
-		} catch (\Exception $e) {
-			return [];
-		}
-	}
+            return $status['connected'] ?? false;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
 
-	/**
-	 * Check if user has WebSocket permission
-	 * 
-	 * @param string $serverUuid
-	 * @param string $userUuid
-	 * @param string $permission
-	 * @return bool
-	 */
-	public function hasWebSocketPermission(string $serverUuid, string $userUuid, string $permission): bool
-	{
-		$permissions = $this->getWebSocketPermissions($serverUuid, $userUuid);
-		return in_array($permission, $permissions);
-	}
+    /**
+     * Get WebSocket connection count.
+     */
+    public function getWebSocketConnectionCount(string $serverUuid): int
+    {
+        try {
+            $status = $this->getWebSocketStatus($serverUuid);
 
-	/**
-	 * Check if user has console permission
-	 * 
-	 * @param string $serverUuid
-	 * @param string $userUuid
-	 * @return bool
-	 */
-	public function hasConsolePermission(string $serverUuid, string $userUuid): bool
-	{
-		return $this->hasWebSocketPermission($serverUuid, $userUuid, 'console');
-	}
+            return $status['connections'] ?? 0;
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
 
-	/**
-	 * Check if user has files permission
-	 * 
-	 * @param string $serverUuid
-	 * @param string $userUuid
-	 * @return bool
-	 */
-	public function hasFilesPermission(string $serverUuid, string $userUuid): bool
-	{
-		return $this->hasWebSocketPermission($serverUuid, $userUuid, 'files');
-	}
+    /**
+     * Get WebSocket permissions for a user.
+     */
+    public function getWebSocketPermissions(string $serverUuid, string $userUuid): array
+    {
+        try {
+            $status = $this->getWebSocketStatus($serverUuid);
 
-	/**
-	 * Check if user has admin permission
-	 * 
-	 * @param string $serverUuid
-	 * @param string $userUuid
-	 * @return bool
-	 */
-	public function hasAdminPermission(string $serverUuid, string $userUuid): bool
-	{
-		return $this->hasWebSocketPermission($serverUuid, $userUuid, 'admin');
-	}
+            return $status['permissions'][$userUuid] ?? [];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
 
-	/**
-	 * Get WebSocket events
-	 * 
-	 * @param string $serverUuid
-	 * @return array
-	 */
-	public function getWebSocketEvents(string $serverUuid): array
-	{
-		return $this->connection->get("/api/servers/{$serverUuid}/ws/events");
-	}
+    /**
+     * Check if user has WebSocket permission.
+     */
+    public function hasWebSocketPermission(string $serverUuid, string $userUuid, string $permission): bool
+    {
+        $permissions = $this->getWebSocketPermissions($serverUuid, $userUuid);
 
-	/**
-	 * Get WebSocket logs
-	 * 
-	 * @param string $serverUuid
-	 * @param int $lines Number of lines to get (default: 100)
-	 * @return array
-	 */
-	public function getWebSocketLogs(string $serverUuid, int $lines = 100): array
-	{
-		return $this->connection->get("/api/servers/{$serverUuid}/ws/logs?lines={$lines}");
-	}
+        return in_array($permission, $permissions);
+    }
 
-	/**
-	 * Get WebSocket statistics
-	 * 
-	 * @param string $serverUuid
-	 * @return array
-	 */
-	public function getWebSocketStats(string $serverUuid): array
-	{
-		return $this->connection->get("/api/servers/{$serverUuid}/ws/stats");
-	}
+    /**
+     * Check if user has console permission.
+     */
+    public function hasConsolePermission(string $serverUuid, string $userUuid): bool
+    {
+        return $this->hasWebSocketPermission($serverUuid, $userUuid, 'console');
+    }
 
-	/**
-	 * Get WebSocket memory usage
-	 * 
-	 * @param string $serverUuid
-	 * @return int
-	 */
-	public function getWebSocketMemoryUsage(string $serverUuid): int
-	{
-		try {
-			$stats = $this->getWebSocketStats($serverUuid);
-			return $stats['memory'] ?? 0;
-		} catch (\Exception $e) {
-			return 0;
-		}
-	}
+    /**
+     * Check if user has files permission.
+     */
+    public function hasFilesPermission(string $serverUuid, string $userUuid): bool
+    {
+        return $this->hasWebSocketPermission($serverUuid, $userUuid, 'files');
+    }
 
-	/**
-	 * Get WebSocket CPU usage
-	 * 
-	 * @param string $serverUuid
-	 * @return float
-	 */
-	public function getWebSocketCpuUsage(string $serverUuid): float
-	{
-		try {
-			$stats = $this->getWebSocketStats($serverUuid);
-			return $stats['cpu'] ?? 0.0;
-		} catch (\Exception $e) {
-			return 0.0;
-		}
-	}
+    /**
+     * Check if user has admin permission.
+     */
+    public function hasAdminPermission(string $serverUuid, string $userUuid): bool
+    {
+        return $this->hasWebSocketPermission($serverUuid, $userUuid, 'admin');
+    }
 
-	/**
-	 * Get WebSocket uptime
-	 * 
-	 * @param string $serverUuid
-	 * @return int
-	 */
-	public function getWebSocketUptime(string $serverUuid): int
-	{
-		try {
-			$stats = $this->getWebSocketStats($serverUuid);
-			return $stats['uptime'] ?? 0;
-		} catch (\Exception $e) {
-			return 0;
-		}
-	}
+    /**
+     * Get WebSocket events.
+     */
+    public function getWebSocketEvents(string $serverUuid): array
+    {
+        return $this->connection->get("/api/servers/{$serverUuid}/ws/events");
+    }
 
-	/**
-	 * Get WebSocket message count
-	 * 
-	 * @param string $serverUuid
-	 * @return int
-	 */
-	public function getWebSocketMessageCount(string $serverUuid): int
-	{
-		try {
-			$stats = $this->getWebSocketStats($serverUuid);
-			return $stats['messages'] ?? 0;
-		} catch (\Exception $e) {
-			return 0;
-		}
-	}
+    /**
+     * Get WebSocket logs.
+     *
+     * @param int $lines Number of lines to get (default: 100)
+     */
+    public function getWebSocketLogs(string $serverUuid, int $lines = 100): array
+    {
+        return $this->connection->get("/api/servers/{$serverUuid}/ws/logs?lines={$lines}");
+    }
 
-	/**
-	 * Get WebSocket error count
-	 * 
-	 * @param string $serverUuid
-	 * @return int
-	 */
-	public function getWebSocketErrorCount(string $serverUuid): int
-	{
-		try {
-			$stats = $this->getWebSocketStats($serverUuid);
-			return $stats['errors'] ?? 0;
-		} catch (\Exception $e) {
-			return 0;
-		}
-	}
+    /**
+     * Get WebSocket statistics.
+     */
+    public function getWebSocketStats(string $serverUuid): array
+    {
+        return $this->connection->get("/api/servers/{$serverUuid}/ws/stats");
+    }
+
+    /**
+     * Get WebSocket memory usage.
+     */
+    public function getWebSocketMemoryUsage(string $serverUuid): int
+    {
+        try {
+            $stats = $this->getWebSocketStats($serverUuid);
+
+            return $stats['memory'] ?? 0;
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Get WebSocket CPU usage.
+     */
+    public function getWebSocketCpuUsage(string $serverUuid): float
+    {
+        try {
+            $stats = $this->getWebSocketStats($serverUuid);
+
+            return $stats['cpu'] ?? 0.0;
+        } catch (\Exception $e) {
+            return 0.0;
+        }
+    }
+
+    /**
+     * Get WebSocket uptime.
+     */
+    public function getWebSocketUptime(string $serverUuid): int
+    {
+        try {
+            $stats = $this->getWebSocketStats($serverUuid);
+
+            return $stats['uptime'] ?? 0;
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Get WebSocket message count.
+     */
+    public function getWebSocketMessageCount(string $serverUuid): int
+    {
+        try {
+            $stats = $this->getWebSocketStats($serverUuid);
+
+            return $stats['messages'] ?? 0;
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Get WebSocket error count.
+     */
+    public function getWebSocketErrorCount(string $serverUuid): int
+    {
+        try {
+            $stats = $this->getWebSocketStats($serverUuid);
+
+            return $stats['errors'] ?? 0;
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
 }

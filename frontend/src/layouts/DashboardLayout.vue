@@ -9,7 +9,6 @@ import AppSidebar from '@/components/AppSidebar.vue';
 import {
     Breadcrumb,
     BreadcrumbItem,
-    BreadcrumbLink,
     BreadcrumbList,
     BreadcrumbPage,
     BreadcrumbSeparator,
@@ -40,7 +39,7 @@ defineProps<{ breadcrumbs?: BreadcrumbEntry[] }>();
                         <BreadcrumbList>
                             <template v-for="(crumb, i) in breadcrumbs" :key="i">
                                 <BreadcrumbItem v-if="!crumb.isCurrent">
-                                    <BreadcrumbLink :href="crumb.href || '#'">{{ crumb.text }}</BreadcrumbLink>
+                                    <router-link :to="crumb.href || '#'">{{ crumb.text }}</router-link>
                                 </BreadcrumbItem>
                                 <BreadcrumbItem v-else>
                                     <BreadcrumbPage>{{ crumb.text }}</BreadcrumbPage>

@@ -41,7 +41,7 @@ class ApiResponse
         ]), $status, ['Content-Type' => 'application/json']);
     }
 
-    public static function exception(string $message = 'Error', ?string $error = null): Response
+    public static function exception(string $message = 'Error', ?string $error = null, array $trace = []): Response
     {
         if ($error instanceof \Exception) {
             $error = $error->getMessage();
@@ -54,6 +54,7 @@ class ApiResponse
             'error' => $error,
             'error_message' => $error,
             'error_code' => null,
+            'trace' => $trace,
         ]), 500, ['Content-Type' => 'application/json']);
     }
 }

@@ -48,6 +48,9 @@
                                         <Button size="sm" variant="secondary" @click="onEdit(location)">
                                             <Pencil :size="16" />
                                         </Button>
+                                        <Button size="sm" variant="secondary" @click="onViewNodes(location)">
+                                            <Server :size="16" />
+                                        </Button>
                                         <template v-if="confirmDeleteRow === location.id">
                                             <Button
                                                 size="sm"
@@ -109,7 +112,8 @@
                 <div><b>Created At:</b> {{ selectedLocation.created_at }}</div>
                 <div><b>Updated At:</b> {{ selectedLocation.updated_at }}</div>
             </div>
-            <div class="p-4 flex justify-end">
+            <div class="p-4 flex justify-between">
+                <Button variant="secondary" @click="openCreateNodeDrawer(selectedLocation)">Create Node</Button>
                 <DrawerClose as-child>
                     <Button variant="outline" @click="closeView">Close</Button>
                 </DrawerClose>
@@ -194,7 +198,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
-import { Eye, Pencil, Trash2 } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Server } from 'lucide-vue-next';
 import axios from 'axios';
 import { Alert } from '@/components/ui/alert';
 import {
@@ -205,6 +209,7 @@ import {
     DrawerDescription,
     DrawerClose,
 } from '@/components/ui/drawer';
+import { useRouter } from 'vue-router';
 
 type Location = {
     id: number;
@@ -245,6 +250,9 @@ const createForm = ref({
     ip_address: '',
     country: '',
 });
+const router = useRouter();
+const createNodeDrawerOpen = ref(false);
+const createNodeLocationId = ref<number | null>(null);
 
 async function fetchLocations() {
     loading.value = true;
@@ -399,5 +407,13 @@ async function submitCreate() {
             message.value = null;
         }, 4000);
     }
+}
+
+function onViewNodes(location: Location) {
+    router.push({ path: '/admin/nodes', query: { location_id: location.id } });
+}
+function openCreateNodeDrawer(location: Location) {
+    createNodeLocationId.value = location.id;
+    createNodeDrawerOpen.value = true;
 }
 </script>

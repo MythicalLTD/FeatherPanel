@@ -75,6 +75,16 @@ class Permissions
     /** Delete spells */
     public const ADMIN_SPELLS_DELETE = 'admin.spells.delete';
 
+    // Admin Nodes Permissions
+    /** View nodes */
+    public const ADMIN_NODES_VIEW = 'admin.nodes.view';
+    /** Create new nodes */
+    public const ADMIN_NODES_CREATE = 'admin.nodes.create';
+    /** Edit existing nodes */
+    public const ADMIN_NODES_EDIT = 'admin.nodes.edit';
+    /** Delete nodes */
+    public const ADMIN_NODES_DELETE = 'admin.nodes.delete';
+
     // Admin Roles Permissions
     /** View roles */
     public const ADMIN_ROLES_VIEW = 'admin.roles.view';
@@ -208,6 +218,30 @@ class Permissions
                 'value' => self::ADMIN_SPELLS_DELETE,
                 'category' => 'Admin Spells',
                 'description' => 'Delete spells',
+            ],
+            [
+                'constant' => 'ADMIN_NODES_VIEW',
+                'value' => self::ADMIN_NODES_VIEW,
+                'category' => 'Admin Nodes',
+                'description' => 'View nodes',
+            ],
+            [
+                'constant' => 'ADMIN_NODES_CREATE',
+                'value' => self::ADMIN_NODES_CREATE,
+                'category' => 'Admin Nodes',
+                'description' => 'Create new nodes',
+            ],
+            [
+                'constant' => 'ADMIN_NODES_EDIT',
+                'value' => self::ADMIN_NODES_EDIT,
+                'category' => 'Admin Nodes',
+                'description' => 'Edit existing nodes',
+            ],
+            [
+                'constant' => 'ADMIN_NODES_DELETE',
+                'value' => self::ADMIN_NODES_DELETE,
+                'category' => 'Admin Nodes',
+                'description' => 'Delete nodes',
             ],
             [
                 'constant' => 'ADMIN_ROLES_VIEW',

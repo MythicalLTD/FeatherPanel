@@ -4,9 +4,9 @@ This document provides a comprehensive overview of all permission nodes used in 
 
 ## Overview
 
-- **Total Permissions:** 26
-- **Categories:** 8
-- **With Descriptions:** 26
+- **Total Permissions:** 30
+- **Categories:** 9
+- **With Descriptions:** 30
 
 ## Format
 
@@ -85,6 +85,15 @@ if (auth.user.hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)) {
 | `ADMIN_SPELLS_EDIT` | `admin.spells.edit` | Edit existing spells |
 | `ADMIN_SPELLS_DELETE` | `admin.spells.delete` | Delete spells |
 
+## Admin Nodes
+
+| Permission | Node | Description |
+|------------|------|-------------|
+| `ADMIN_NODES_VIEW` | `admin.nodes.view` | View nodes |
+| `ADMIN_NODES_CREATE` | `admin.nodes.create` | Create new nodes |
+| `ADMIN_NODES_EDIT` | `admin.nodes.edit` | Edit existing nodes |
+| `ADMIN_NODES_DELETE` | `admin.nodes.delete` | Delete nodes |
+
 ## Admin Roles
 
 | Permission | Node | Description |
@@ -125,4 +134,4 @@ To add a new permission node:
 
 ---
 
-*This documentation was auto-generated on 2025-07-30 08:18:04*
+*This documentation was auto-generated on 2025-07-30 13:57:17*

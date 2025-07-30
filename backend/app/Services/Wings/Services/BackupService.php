@@ -1,12 +1,23 @@
 <?php
 
+/*
+ * This file is part of App.
+ * Please view the LICENSE file that was distributed with this source code.
+ *
+ * # MythicalSystems License v2.0
+ *
+ * ## Copyright (c) 2021–2025 MythicalSystems and Cassian Gherman
+ *
+ * Breaking any of the following rules will result in a permanent ban from the MythicalSystems community and all of its services.
+ */
+
 namespace App\Services\Wings\Services;
 
 use App\Services\Wings\WingsConnection;
 
 /**
- * Backup Service for Wings API
- * 
+ * Backup Service for Wings API.
+ *
  * Handles all backup-related API endpoints including:
  * - Backup creation and management
  * - Backup restoration
@@ -15,338 +26,252 @@ use App\Services\Wings\WingsConnection;
  */
 class BackupService
 {
-	private WingsConnection $connection;
+    private WingsConnection $connection;
 
-	/**
-	 * Create a new BackupService instance
-	 * 
-	 * @param WingsConnection $connection
-	 */
-	public function __construct(WingsConnection $connection)
-	{
-		$this->connection = $connection;
-	}
+    /**
+     * Create a new BackupService instance.
+     */
+    public function __construct(WingsConnection $connection)
+    {
+        $this->connection = $connection;
+    }
 
-	/**
-	 * Get all backups for a server
-	 * 
-	 * @param string $serverUuid
-	 * @return array
-	 */
-	public function getAllBackups(string $serverUuid): array
-	{
-		return $this->connection->get("/api/servers/{$serverUuid}/backups");
-	}
+    /**
+     * Get all backups for a server.
+     */
+    public function getAllBackups(string $serverUuid): array
+    {
+        return $this->connection->get("/api/servers/{$serverUuid}/backups");
+    }
 
-	/**
-	 * Get a specific backup
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return array
-	 */
-	public function getBackup(string $serverUuid, string $backupUuid): array
-	{
-		return $this->connection->get("/api/servers/{$serverUuid}/backups/{$backupUuid}");
-	}
+    /**
+     * Get a specific backup.
+     */
+    public function getBackup(string $serverUuid, string $backupUuid): array
+    {
+        return $this->connection->get("/api/servers/{$serverUuid}/backups/{$backupUuid}");
+    }
 
-	/**
-	 * Create a new backup
-	 * 
-	 * @param string $serverUuid
-	 * @param array $backupData
-	 * @return array
-	 */
-	public function createBackup(string $serverUuid, array $backupData = []): array
-	{
-		return $this->connection->post("/api/servers/{$serverUuid}/backups", $backupData);
-	}
+    /**
+     * Create a new backup.
+     */
+    public function createBackup(string $serverUuid, array $backupData = []): array
+    {
+        return $this->connection->post("/api/servers/{$serverUuid}/backups", $backupData);
+    }
 
-	/**
-	 * Delete a backup
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return array
-	 */
-	public function deleteBackup(string $serverUuid, string $backupUuid): array
-	{
-		return $this->connection->delete("/api/servers/{$serverUuid}/backups/{$backupUuid}");
-	}
+    /**
+     * Delete a backup.
+     */
+    public function deleteBackup(string $serverUuid, string $backupUuid): array
+    {
+        return $this->connection->delete("/api/servers/{$serverUuid}/backups/{$backupUuid}");
+    }
 
-	/**
-	 * Restore a backup
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @param array $restoreData
-	 * @return array
-	 */
-	public function restoreBackup(string $serverUuid, string $backupUuid, array $restoreData = []): array
-	{
-		return $this->connection->post("/api/servers/{$serverUuid}/backups/{$backupUuid}/restore", $restoreData);
-	}
+    /**
+     * Restore a backup.
+     */
+    public function restoreBackup(string $serverUuid, string $backupUuid, array $restoreData = []): array
+    {
+        return $this->connection->post("/api/servers/{$serverUuid}/backups/{$backupUuid}/restore", $restoreData);
+    }
 
-	/**
-	 * Get backup download URL
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return string
-	 */
-	public function getBackupDownloadUrl(string $serverUuid, string $backupUuid): string
-	{
-		$tokenGenerator = $this->connection->getTokenGenerator();
-		$baseUrl = $this->connection->getBaseUrl();
+    /**
+     * Get backup download URL.
+     */
+    public function getBackupDownloadUrl(string $serverUuid, string $backupUuid): string
+    {
+        $tokenGenerator = $this->connection->getTokenGenerator();
+        $baseUrl = $this->connection->getBaseUrl();
 
-		return $tokenGenerator->generateBackupDownloadUrl($baseUrl, $serverUuid, $backupUuid);
-	}
+        return $tokenGenerator->generateBackupDownloadUrl($baseUrl, $serverUuid, $backupUuid);
+    }
 
-	/**
-	 * Get backup download token
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return string
-	 */
-	public function getBackupDownloadToken(string $serverUuid, string $backupUuid): string
-	{
-		$tokenGenerator = $this->connection->getTokenGenerator();
-		return $tokenGenerator->generateBackupDownloadToken($serverUuid, $backupUuid);
-	}
+    /**
+     * Get backup download token.
+     */
+    public function getBackupDownloadToken(string $serverUuid, string $backupUuid): string
+    {
+        $tokenGenerator = $this->connection->getTokenGenerator();
 
-	/**
-	 * Get backup logs
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return array
-	 */
-	public function getBackupLogs(string $serverUuid, string $backupUuid): array
-	{
-		return $this->connection->get("/api/servers/{$serverUuid}/backups/{$backupUuid}/logs");
-	}
+        return $tokenGenerator->generateBackupDownloadToken($serverUuid, $backupUuid);
+    }
 
-	/**
-	 * Get backup size
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return array
-	 */
-	public function getBackupSize(string $serverUuid, string $backupUuid): array
-	{
-		return $this->connection->get("/api/servers/{$serverUuid}/backups/{$backupUuid}/size");
-	}
+    /**
+     * Get backup logs.
+     */
+    public function getBackupLogs(string $serverUuid, string $backupUuid): array
+    {
+        return $this->connection->get("/api/servers/{$serverUuid}/backups/{$backupUuid}/logs");
+    }
 
-	/**
-	 * Get backup information
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return array
-	 */
-	public function getBackupInfo(string $serverUuid, string $backupUuid): array
-	{
-		return $this->getBackup($serverUuid, $backupUuid);
-	}
+    /**
+     * Get backup size.
+     */
+    public function getBackupSize(string $serverUuid, string $backupUuid): array
+    {
+        return $this->connection->get("/api/servers/{$serverUuid}/backups/{$backupUuid}/size");
+    }
 
-	/**
-	 * Check if backup exists
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return bool
-	 */
-	public function backupExists(string $serverUuid, string $backupUuid): bool
-	{
-		try {
-			$this->getBackup($serverUuid, $backupUuid);
-			return true;
-		} catch (\Exception $e) {
-			return false;
-		}
-	}
+    /**
+     * Get backup information.
+     */
+    public function getBackupInfo(string $serverUuid, string $backupUuid): array
+    {
+        return $this->getBackup($serverUuid, $backupUuid);
+    }
 
-	/**
-	 * Get backup status
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return string
-	 */
-	public function getBackupStatus(string $serverUuid, string $backupUuid): string
-	{
-		$backup = $this->getBackup($serverUuid, $backupUuid);
-		return $backup['status'] ?? 'unknown';
-	}
+    /**
+     * Check if backup exists.
+     */
+    public function backupExists(string $serverUuid, string $backupUuid): bool
+    {
+        try {
+            $this->getBackup($serverUuid, $backupUuid);
 
-	/**
-	 * Check if backup is completed
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return bool
-	 */
-	public function isBackupCompleted(string $serverUuid, string $backupUuid): bool
-	{
-		return $this->getBackupStatus($serverUuid, $backupUuid) === 'completed';
-	}
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
 
-	/**
-	 * Check if backup is failed
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return bool
-	 */
-	public function isBackupFailed(string $serverUuid, string $backupUuid): bool
-	{
-		return $this->getBackupStatus($serverUuid, $backupUuid) === 'failed';
-	}
+    /**
+     * Get backup status.
+     */
+    public function getBackupStatus(string $serverUuid, string $backupUuid): string
+    {
+        $backup = $this->getBackup($serverUuid, $backupUuid);
 
-	/**
-	 * Check if backup is in progress
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return bool
-	 */
-	public function isBackupInProgress(string $serverUuid, string $backupUuid): bool
-	{
-		return $this->getBackupStatus($serverUuid, $backupUuid) === 'in_progress';
-	}
+        return $backup['status'] ?? 'unknown';
+    }
 
-	/**
-	 * Get backup creation date
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return string
-	 */
-	public function getBackupCreatedAt(string $serverUuid, string $backupUuid): string
-	{
-		$backup = $this->getBackup($serverUuid, $backupUuid);
-		return $backup['created_at'] ?? '';
-	}
+    /**
+     * Check if backup is completed.
+     */
+    public function isBackupCompleted(string $serverUuid, string $backupUuid): bool
+    {
+        return $this->getBackupStatus($serverUuid, $backupUuid) === 'completed';
+    }
 
-	/**
-	 * Get backup completion date
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return string
-	 */
-	public function getBackupCompletedAt(string $serverUuid, string $backupUuid): string
-	{
-		$backup = $this->getBackup($serverUuid, $backupUuid);
-		return $backup['completed_at'] ?? '';
-	}
+    /**
+     * Check if backup is failed.
+     */
+    public function isBackupFailed(string $serverUuid, string $backupUuid): bool
+    {
+        return $this->getBackupStatus($serverUuid, $backupUuid) === 'failed';
+    }
 
-	/**
-	 * Get backup name
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return string
-	 */
-	public function getBackupName(string $serverUuid, string $backupUuid): string
-	{
-		$backup = $this->getBackup($serverUuid, $backupUuid);
-		return $backup['name'] ?? '';
-	}
+    /**
+     * Check if backup is in progress.
+     */
+    public function isBackupInProgress(string $serverUuid, string $backupUuid): bool
+    {
+        return $this->getBackupStatus($serverUuid, $backupUuid) === 'in_progress';
+    }
 
-	/**
-	 * Get backup description
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return string
-	 */
-	public function getBackupDescription(string $serverUuid, string $backupUuid): string
-	{
-		$backup = $this->getBackup($serverUuid, $backupUuid);
-		return $backup['description'] ?? '';
-	}
+    /**
+     * Get backup creation date.
+     */
+    public function getBackupCreatedAt(string $serverUuid, string $backupUuid): string
+    {
+        $backup = $this->getBackup($serverUuid, $backupUuid);
 
-	/**
-	 * Get backup size in bytes
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return int
-	 */
-	public function getBackupSizeBytes(string $serverUuid, string $backupUuid): int
-	{
-		$size = $this->getBackupSize($serverUuid, $backupUuid);
-		return $size['size'] ?? 0;
-	}
+        return $backup['created_at'] ?? '';
+    }
 
-	/**
-	 * Get backup size in MB
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return float
-	 */
-	public function getBackupSizeMB(string $serverUuid, string $backupUuid): float
-	{
-		$bytes = $this->getBackupSizeBytes($serverUuid, $backupUuid);
-		return round($bytes / 1024 / 1024, 2);
-	}
+    /**
+     * Get backup completion date.
+     */
+    public function getBackupCompletedAt(string $serverUuid, string $backupUuid): string
+    {
+        $backup = $this->getBackup($serverUuid, $backupUuid);
 
-	/**
-	 * Get backup size in GB
-	 * 
-	 * @param string $serverUuid
-	 * @param string $backupUuid
-	 * @return float
-	 */
-	public function getBackupSizeGB(string $serverUuid, string $backupUuid): float
-	{
-		$bytes = $this->getBackupSizeBytes($serverUuid, $backupUuid);
-		return round($bytes / 1024 / 1024 / 1024, 2);
-	}
+        return $backup['completed_at'] ?? '';
+    }
 
-	/**
-	 * Get completed backups
-	 * 
-	 * @param string $serverUuid
-	 * @return array
-	 */
-	public function getCompletedBackups(string $serverUuid): array
-	{
-		$backups = $this->getAllBackups($serverUuid);
-		return array_filter($backups, function ($backup) {
-			return $backup['status'] === 'completed';
-		});
-	}
+    /**
+     * Get backup name.
+     */
+    public function getBackupName(string $serverUuid, string $backupUuid): string
+    {
+        $backup = $this->getBackup($serverUuid, $backupUuid);
 
-	/**
-	 * Get failed backups
-	 * 
-	 * @param string $serverUuid
-	 * @return array
-	 */
-	public function getFailedBackups(string $serverUuid): array
-	{
-		$backups = $this->getAllBackups($serverUuid);
-		return array_filter($backups, function ($backup) {
-			return $backup['status'] === 'failed';
-		});
-	}
+        return $backup['name'] ?? '';
+    }
 
-	/**
-	 * Get in-progress backups
-	 * 
-	 * @param string $serverUuid
-	 * @return array
-	 */
-	public function getInProgressBackups(string $serverUuid): array
-	{
-		$backups = $this->getAllBackups($serverUuid);
-		return array_filter($backups, function ($backup) {
-			return $backup['status'] === 'in_progress';
-		});
-	}
+    /**
+     * Get backup description.
+     */
+    public function getBackupDescription(string $serverUuid, string $backupUuid): string
+    {
+        $backup = $this->getBackup($serverUuid, $backupUuid);
+
+        return $backup['description'] ?? '';
+    }
+
+    /**
+     * Get backup size in bytes.
+     */
+    public function getBackupSizeBytes(string $serverUuid, string $backupUuid): int
+    {
+        $size = $this->getBackupSize($serverUuid, $backupUuid);
+
+        return $size['size'] ?? 0;
+    }
+
+    /**
+     * Get backup size in MB.
+     */
+    public function getBackupSizeMB(string $serverUuid, string $backupUuid): float
+    {
+        $bytes = $this->getBackupSizeBytes($serverUuid, $backupUuid);
+
+        return round($bytes / 1024 / 1024, 2);
+    }
+
+    /**
+     * Get backup size in GB.
+     */
+    public function getBackupSizeGB(string $serverUuid, string $backupUuid): float
+    {
+        $bytes = $this->getBackupSizeBytes($serverUuid, $backupUuid);
+
+        return round($bytes / 1024 / 1024 / 1024, 2);
+    }
+
+    /**
+     * Get completed backups.
+     */
+    public function getCompletedBackups(string $serverUuid): array
+    {
+        $backups = $this->getAllBackups($serverUuid);
+
+        return array_filter($backups, function ($backup) {
+            return $backup['status'] === 'completed';
+        });
+    }
+
+    /**
+     * Get failed backups.
+     */
+    public function getFailedBackups(string $serverUuid): array
+    {
+        $backups = $this->getAllBackups($serverUuid);
+
+        return array_filter($backups, function ($backup) {
+            return $backup['status'] === 'failed';
+        });
+    }
+
+    /**
+     * Get in-progress backups.
+     */
+    public function getInProgressBackups(string $serverUuid): array
+    {
+        $backups = $this->getAllBackups($serverUuid);
+
+        return array_filter($backups, function ($backup) {
+            return $backup['status'] === 'in_progress';
+        });
+    }
 }

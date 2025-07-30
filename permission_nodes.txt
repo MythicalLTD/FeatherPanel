@@ -32,6 +32,12 @@ ADMIN_SPELLS_CREATE=admin.spells.create | Admin Spells | Create new spells
 ADMIN_SPELLS_EDIT=admin.spells.edit | Admin Spells | Edit existing spells
 ADMIN_SPELLS_DELETE=admin.spells.delete | Admin Spells | Delete spells
 
+# Nodes Permissions
+ADMIN_NODES_VIEW=admin.nodes.view | Admin Nodes | View nodes
+ADMIN_NODES_CREATE=admin.nodes.create | Admin Nodes | Create new nodes
+ADMIN_NODES_EDIT=admin.nodes.edit | Admin Nodes | Edit existing nodes
+ADMIN_NODES_DELETE=admin.nodes.delete | Admin Nodes | Delete nodes
+
 
 # Roles Permissions
 ADMIN_ROLES_VIEW=admin.roles.view | Admin Roles | View roles

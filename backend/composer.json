@@ -32,7 +32,7 @@
         "nikolaposa/rate-limit": "^3.2",
 		"guzzlehttp/guzzle": "^7.0",
 		"composer-runtime-api": "^2.0",
-        "symfony/yaml": "^7.2",
+        "symfony/yaml": "^7.3",
         "dg/mysql-dump": "^1.6",
         "sentry/sentry": "^4.14",
         "symfony/routing": "^7.3",
