@@ -64,6 +64,9 @@
                                         <Button size="sm" variant="secondary" @click="onEdit(spell)">
                                             <Pencil :size="16" />
                                         </Button>
+                                        <Button size="sm" variant="outline" @click="onExport(spell)">
+                                            <Download :size="16" />
+                                        </Button>
                                         <template v-if="confirmDeleteRow === spell.id">
                                             <Button
                                                 size="sm"
@@ -727,7 +730,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 import { Pagination } from '@/components/ui/pagination';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
-import { Eye, Pencil, Trash2 } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Download } from 'lucide-vue-next';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select';
 import axios from 'axios';
@@ -990,6 +993,37 @@ function onDelete(spell: Spell) {
 
 function onCancelDelete() {
     confirmDeleteRow.value = null;
+}
+
+async function onExport(spell: Spell) {
+    try {
+        const response = await axios.get(`/api/admin/spells/${spell.id}/export`, {
+            responseType: 'blob',
+        });
+
+        // Create download link
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `${spell.name.toLowerCase().replace(/\s+/g, '-')}.json`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+
+        message.value = { type: 'success', text: 'Spell exported successfully' };
+        setTimeout(() => {
+            message.value = null;
+        }, 4000);
+    } catch {
+        message.value = {
+            type: 'error',
+            text: 'Failed to export spell',
+        };
+        setTimeout(() => {
+            message.value = null;
+        }, 4000);
+    }
 }
 
 function closeView() {

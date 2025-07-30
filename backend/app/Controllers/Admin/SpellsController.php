@@ -395,6 +395,31 @@ class SpellsController
 			'force_outgoing_ip' => false,
 		];
 
+		// Preserve original UUID if it exists in MythicalPanel metadata
+		if (isset($jsonData['_mythicalpanel']['spell_metadata']['uuid'])) {
+			$originalUuid = $jsonData['_mythicalpanel']['spell_metadata']['uuid'];
+			// Check if UUID already exists
+			$existingSpell = Spell::getSpellByUuid($originalUuid);
+			if (!$existingSpell) {
+				$spellData['uuid'] = $originalUuid;
+			}
+		}
+
+		// Preserve original metadata if available
+		$importMetadata = null;
+		if (isset($jsonData['_mythicalpanel'])) {
+			$importMetadata = [
+				'original_export_info' => $jsonData['_mythicalpanel']['export_info'] ?? null,
+				'original_spell_metadata' => $jsonData['_mythicalpanel']['spell_metadata'] ?? null,
+				'import_info' => [
+					'imported_by' => $admin['username'] ?? 'Unknown',
+					'imported_at' => date('Y-m-d H:i:s'),
+					'panel_version' => '1.0.0',
+					'import_format_version' => '1.0'
+				]
+			];
+		}
+
 		// Create spell
 		$spellId = Spell::createSpell($spellData);
 		if (!$spellId) {
@@ -421,16 +446,126 @@ class SpellsController
 
 		$spell = Spell::getSpellById($spellId);
 
+		// Log activity with metadata information
+		$logContext = 'Imported spell: ' . $spell['name'];
+		if ($importMetadata && isset($importMetadata['original_export_info']['exported_by'])) {
+			$logContext .= ' (originally exported by: ' . $importMetadata['original_export_info']['exported_by'] . ')';
+		}
+
 		// Log activity
 		$admin = $request->get('user');
 		Activity::createActivity([
 			'user_uuid' => $admin['uuid'] ?? null,
 			'name' => 'import_spell',
-			'context' => 'Imported spell: ' . $spell['name'],
+			'context' => $logContext,
 			'ip_address' => CloudFlareRealIP::getRealIP(),
 		]);
 
 		return ApiResponse::success(['spell' => $spell], 'Spell imported successfully', 201);
+	}
+
+	public function export(Request $request, int $id): Response
+	{
+		// Get spell with realm information
+		$spell = Spell::getSpellWithRealm($id);
+		if (!$spell) {
+			return ApiResponse::error('Spell not found', 'SPELL_NOT_FOUND', 404);
+		}
+
+		// Get spell variables
+		$variables = SpellVariable::getVariablesBySpellId($id);
+
+		// Build export data structure matching the import format
+		$exportData = [
+			'_comment' => 'DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PANEL',
+			'meta' => [
+				'update_url' => $spell['update_url'],
+				'version' => 'PTDL_v2'
+			],
+			'exported_at' => date('c'), // ISO 8601 format
+			'name' => $spell['name'],
+			'author' => $spell['author'],
+			'description' => $spell['description'],
+			'features' => !empty($spell['features']) ? json_decode($spell['features'], true) : [],
+			'docker_images' => !empty($spell['docker_images']) ? json_decode($spell['docker_images'], true) : [],
+			'file_denylist' => !empty($spell['file_denylist']) ? json_decode($spell['file_denylist'], true) : [],
+			'startup' => $spell['startup'],
+			'config' => [
+				'files' => $spell['config_files'] ?? '{}',
+				'startup' => $spell['config_startup'] ?? '{}',
+				'logs' => $spell['config_logs'] ?? '{}',
+				'stop' => $spell['config_stop'] ?? 'stop'
+			],
+			'scripts' => [
+				'installation' => [
+					'container' => $spell['script_container'] ?? 'alpine:3.4',
+					'entrypoint' => $spell['script_entry'] ?? 'ash',
+					'script' => $spell['script_install'] ?? ''
+				]
+			],
+			'variables' => [],
+			// MythicalPanel-specific metadata (won't affect import compatibility)
+			'_mythicalpanel' => [
+				'export_info' => [
+					'exported_by' => $admin['username'] ?? 'Unknown',
+					'exported_at' => date('Y-m-d H:i:s'),
+					'panel_version' => '1.0.0', // You can make this dynamic
+					'export_format_version' => '1.0'
+				],
+				'spell_metadata' => [
+					'uuid' => $spell['uuid'],
+					'realm_id' => $spell['realm_id'],
+					'realm_name' => $spell['realm_name'] ?? 'Unknown',
+					'created_at' => $spell['created_at'],
+					'updated_at' => $spell['updated_at'],
+					'script_is_privileged' => (bool) $spell['script_is_privileged'],
+					'force_outgoing_ip' => (bool) $spell['force_outgoing_ip'],
+					'config_from' => $spell['config_from'],
+					'copy_script_from' => $spell['copy_script_from']
+				],
+				'variables_count' => count($variables),
+				'features_count' => !empty($spell['features']) ? count(json_decode($spell['features'], true)) : 0,
+				'docker_images_count' => !empty($spell['docker_images']) ? count(json_decode($spell['docker_images'], true)) : 0
+			]
+		];
+
+		// Add variables to export data
+		foreach ($variables as $variable) {
+			$exportData['variables'][] = [
+				'name' => $variable['name'],
+				'description' => $variable['description'],
+				'env_variable' => $variable['env_variable'],
+				'default_value' => $variable['default_value'],
+				'user_viewable' => (bool) $variable['user_viewable'],
+				'user_editable' => (bool) $variable['user_editable'],
+				'rules' => $variable['rules'],
+				'field_type' => $variable['field_type'] ?? 'text'
+			];
+		}
+
+		// Generate filename
+		$filename = strtolower(str_replace(' ', '-', $spell['name'])) . '.json';
+
+		// Log activity
+		$admin = $request->get('user');
+		Activity::createActivity([
+			'user_uuid' => $admin['uuid'] ?? null,
+			'name' => 'export_spell',
+			'context' => 'Exported spell: ' . $spell['name'],
+			'ip_address' => CloudFlareRealIP::getRealIP(),
+		]);
+
+		// Return JSON file as download
+		$response = new Response(
+			json_encode($exportData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+			200,
+			[
+				'Content-Type' => 'application/json',
+				'Content-Disposition' => 'attachment; filename="' . $filename . '"'
+			]
+		);
+
+		return $response;
 	}
 
 	// --- Spell Variables CRUD ---
