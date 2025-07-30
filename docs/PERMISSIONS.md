@@ -4,9 +4,9 @@ This document provides a comprehensive overview of all permission nodes used in 
 
 ## Overview
 
-- **Total Permissions:** 22
-- **Categories:** 7
-- **With Descriptions:** 22
+- **Total Permissions:** 26
+- **Categories:** 8
+- **With Descriptions:** 26
 
 ## Format
 
@@ -76,6 +76,15 @@ if (auth.user.hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)) {
 | `ADMIN_REALMS_EDIT` | `admin.realms.edit` | Edit existing realms |
 | `ADMIN_REALMS_DELETE` | `admin.realms.delete` | Delete realms |
 
+## Admin Spells
+
+| Permission | Node | Description |
+|------------|------|-------------|
+| `ADMIN_SPELLS_VIEW` | `admin.spells.view` | View spells |
+| `ADMIN_SPELLS_CREATE` | `admin.spells.create` | Create new spells |
+| `ADMIN_SPELLS_EDIT` | `admin.spells.edit` | Edit existing spells |
+| `ADMIN_SPELLS_DELETE` | `admin.spells.delete` | Delete spells |
+
 ## Admin Roles
 
 | Permission | Node | Description |
@@ -116,4 +125,4 @@ To add a new permission node:
 
 ---
 
-*This documentation was auto-generated on 2025-07-26 13:01:29*
+*This documentation was auto-generated on 2025-07-30 08:18:04*

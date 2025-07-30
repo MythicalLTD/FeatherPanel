@@ -26,6 +26,11 @@ const adminRoutes: RouteRecordRaw[] = [
         name: 'AdminRoles',
         component: () => import('@/pages/admin/Roles.vue'),
     },
+    {
+        path: '/admin/spells',
+        name: 'AdminSpells',
+        component: () => import('@/pages/admin/Spells.vue'),
+    },
 ];
 
 export default adminRoutes;
