@@ -49,7 +49,7 @@
 	"editor.useTabStops": true,
 	"editor.tabFocusMode": false,
 	"workbench.sideBar.location": "left",
-	"window.title": "${rootName}",
+	"window.title": "MythicalPanel",
 	"editor.insertSpaces": false,
 	"editor.detectIndentation": false,
 	"workbench.colorCustomizations": {
@@ -150,4 +150,5 @@
 	"editor.formatOnType": false, // required
 	"editor.formatOnSave": true, // optional
 	"editor.formatOnSaveMode": "file", // required to format on save
+
 }
