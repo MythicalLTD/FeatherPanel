@@ -1064,7 +1064,7 @@ async function requestResetKey() {
             return;
         }
 
-        const response = await axios.post(`/api/admin/nodes/${node.uuid}/reset-key`);
+        const response = await axios.post(`/api/admin/nodes/${node.id}/reset-key`);
         if (response.data.success) {
             message.value = { type: 'success', text: 'Master daemon reset key requested successfully' };
             // Refresh the node data to get updated tokens
