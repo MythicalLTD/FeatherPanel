@@ -111,8 +111,8 @@
                                   : 'View node details.'
                         }}
                     </DrawerDescription>
-                    <!-- Navigation buttons at the top -->
-                    <div class="flex items-center justify-between mt-4">
+                    <!-- Navigation buttons only for create mode -->
+                    <div v-if="drawerMode === 'create'" class="flex items-center justify-between mt-4">
                         <div class="flex-1 font-semibold">
                             Step {{ currentStep + 1 }} of {{ steps.length }}: {{ steps[currentStep].label }}
                         </div>
@@ -127,8 +127,8 @@
                             </Button>
                         </div>
                     </div>
-                    <!-- Progress indicator -->
-                    <div class="flex gap-2 mt-2">
+                    <!-- Progress indicator only for create mode -->
+                    <div v-if="drawerMode === 'create'" class="flex gap-2 mt-2">
                         <template v-for="(step, idx) in steps" :key="step.key">
                             <div
                                 :class="['w-3 h-3 rounded-full', idx === currentStep ? 'bg-primary' : 'bg-muted']"
@@ -141,190 +141,408 @@
                     class="space-y-4 p-4 overflow-y-auto max-h-[calc(100vh-200px)]"
                     @submit.prevent="submitForm"
                 >
-                    <div v-show="currentStep === 0">
-                        <!-- Basic Details -->
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block font-medium mb-1">Name</label>
-                                <Input v-model="form.name" :disabled="formLoading" />
-                                <div class="text-xs text-muted-foreground">
-                                    Character limits: <code>a-zA-Z0-9_-</code> and [space] (min 1, max 100 characters).
+                    <!-- Wizard steps for create mode -->
+                    <div v-if="drawerMode === 'create'">
+                        <div v-show="currentStep === 0">
+                            <!-- Basic Details -->
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block font-medium mb-1">Name</label>
+                                    <Input v-model="form.name" :disabled="formLoading" />
+                                    <div class="text-xs text-muted-foreground">
+                                        Character limits: <code>a-zA-Z0-9_-</code> and [space] (min 1, max 100
+                                        characters).
+                                    </div>
+                                    <div v-if="formErrors.name" class="text-red-500 text-xs mt-1">
+                                        {{ formErrors.name }}
+                                    </div>
                                 </div>
-                                <div v-if="formErrors.name" class="text-red-500 text-xs mt-1">
-                                    {{ formErrors.name }}
+                                <div>
+                                    <label class="block font-medium mb-1">Description</label>
+                                    <Textarea v-model="form.description" :disabled="formLoading" />
                                 </div>
-                            </div>
-                            <div>
-                                <label class="block font-medium mb-1">Description</label>
-                                <Textarea v-model="form.description" :disabled="formLoading" />
-                            </div>
-                            <div>
-                                <label class="block font-medium mb-1">Node Visibility</label>
-                                <Select v-model="form.public" :disabled="formLoading">
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select visibility" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="true">Public</SelectItem>
-                                        <SelectItem value="false">Private</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <div class="text-xs text-muted-foreground">
-                                    By setting a node to <b>private</b> you will be denying the ability to auto-deploy
-                                    to this node.
+                                <div>
+                                    <label class="block font-medium mb-1">Node Visibility</label>
+                                    <Select v-model="form.public" :disabled="formLoading">
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select visibility" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="true">Public</SelectItem>
+                                            <SelectItem value="false">Private</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <div class="text-xs text-muted-foreground">
+                                        By setting a node to <b>private</b> you will be denying the ability to
+                                        auto-deploy to this node.
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
-                                <label class="block font-medium mb-1">FQDN</label>
-                                <Input v-model="form.fqdn" :disabled="formLoading" />
-                                <div class="text-xs text-muted-foreground">
-                                    Please enter domain name (e.g. <code>node.example.com</code>) to be used for
-                                    connecting to the daemon. An IP address may be used <b>only</b> if you are not using
-                                    SSL for this node.
+                                <div>
+                                    <label class="block font-medium mb-1">FQDN</label>
+                                    <Input v-model="form.fqdn" :disabled="formLoading" />
+                                    <div class="text-xs text-muted-foreground">
+                                        Please enter domain name (e.g. <code>node.example.com</code>) to be used for
+                                        connecting to the daemon. An IP address may be used <b>only</b> if you are not
+                                        using SSL for this node.
+                                    </div>
+                                    <div v-if="formErrors.fqdn" class="text-red-500 text-xs mt-1">
+                                        {{ formErrors.fqdn }}
+                                    </div>
                                 </div>
-                                <div v-if="formErrors.fqdn" class="text-red-500 text-xs mt-1">
-                                    {{ formErrors.fqdn }}
+                                <div>
+                                    <label class="block font-medium mb-1">Communicate Over SSL</label>
+                                    <Select v-model="form.scheme" :disabled="formLoading">
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select SSL option" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="https">Use SSL Connection</SelectItem>
+                                            <SelectItem value="http">Use HTTP Connection</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <div v-if="form.scheme === 'https'" class="text-xs text-red-500">
+                                        Your Panel is currently configured to use a secure connection. In order for
+                                        browsers to connect to your node it must use a SSL connection.
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
-                                <label class="block font-medium mb-1">Communicate Over SSL</label>
-                                <Select v-model="form.scheme" :disabled="formLoading">
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select SSL option" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="https">Use SSL Connection</SelectItem>
-                                        <SelectItem value="http">Use HTTP Connection</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <div v-if="form.scheme === 'https'" class="text-xs text-red-500">
-                                    Your Panel is currently configured to use a secure connection. In order for browsers
-                                    to connect to your node it must use a SSL connection.
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block font-medium mb-1">Behind Proxy</label>
-                                <Select v-model="form.behind_proxy" :disabled="formLoading">
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select proxy option" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="false">Not Behind Proxy</SelectItem>
-                                        <SelectItem value="true">Behind Proxy</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <div class="text-xs text-muted-foreground">
-                                    If you are running the daemon behind a proxy such as Cloudflare, select this to have
-                                    the daemon skip looking for certificates on boot.
+                                <div>
+                                    <label class="block font-medium mb-1">Behind Proxy</label>
+                                    <Select v-model="form.behind_proxy" :disabled="formLoading">
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select proxy option" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="false">Not Behind Proxy</SelectItem>
+                                            <SelectItem value="true">Behind Proxy</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <div class="text-xs text-muted-foreground">
+                                        If you are running the daemon behind a proxy such as Cloudflare, select this to
+                                        have the daemon skip looking for certificates on boot.
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div v-show="currentStep === 1">
-                        <!-- Configuration -->
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block font-medium mb-1">Daemon Server File Directory</label>
-                                <Input v-model="form.daemonBase" :disabled="formLoading" />
-                                <div class="text-xs text-muted-foreground">
-                                    Enter the directory where server files should be stored. If you use OVH you should
-                                    check your partition scheme.
-                                    <b>You may need to use <code>/home/daemon-data</code> to have enough space.</b>
+                        <div v-show="currentStep === 1">
+                            <!-- Configuration -->
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block font-medium mb-1">Daemon Server File Directory</label>
+                                    <Input v-model="form.daemonBase" :disabled="formLoading" />
+                                    <div class="text-xs text-muted-foreground">
+                                        Enter the directory where server files should be stored. If you use OVH you
+                                        should check your partition scheme.
+                                        <b>You may need to use <code>/home/daemon-data</code> to have enough space.</b>
+                                    </div>
+                                </div>
+                                <div class="flex gap-4">
+                                    <div class="flex-1">
+                                        <label class="block font-medium mb-1">Total Memory</label>
+                                        <Input
+                                            v-model.number="form.memory"
+                                            type="number"
+                                            min="0"
+                                            :disabled="formLoading"
+                                        />
+                                        <span class="text-xs">MiB</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="block font-medium mb-1">Memory Over-Allocation</label>
+                                        <Input
+                                            v-model.number="form.memory_overallocate"
+                                            type="number"
+                                            min="-1"
+                                            :disabled="formLoading"
+                                        />
+                                        <span class="text-xs">%</span>
+                                    </div>
+                                </div>
+                                <div class="flex gap-4">
+                                    <div class="flex-1">
+                                        <label class="block font-medium mb-1">Total Disk Space</label>
+                                        <Input
+                                            v-model.number="form.disk"
+                                            type="number"
+                                            min="0"
+                                            :disabled="formLoading"
+                                        />
+                                        <span class="text-xs">MiB</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="block font-medium mb-1">Disk Over-Allocation</label>
+                                        <Input
+                                            v-model.number="form.disk_overallocate"
+                                            type="number"
+                                            min="-1"
+                                            :disabled="formLoading"
+                                        />
+                                        <span class="text-xs">%</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="flex gap-4">
-                                <div class="flex-1">
-                                    <label class="block font-medium mb-1">Total Memory</label>
-                                    <Input v-model.number="form.memory" type="number" min="0" :disabled="formLoading" />
-                                    <span class="text-xs">MiB</span>
-                                </div>
-                                <div class="flex-1">
-                                    <label class="block font-medium mb-1">Memory Over-Allocation</label>
+                        </div>
+                        <div v-show="currentStep === 2">
+                            <!-- Network -->
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block font-medium mb-1">Daemon Port</label>
                                     <Input
-                                        v-model.number="form.memory_overallocate"
+                                        v-model.number="form.daemonListen"
                                         type="number"
-                                        min="-1"
+                                        min="1"
                                         :disabled="formLoading"
                                     />
-                                    <span class="text-xs">%</span>
                                 </div>
-                            </div>
-                            <div class="flex gap-4">
-                                <div class="flex-1">
-                                    <label class="block font-medium mb-1">Total Disk Space</label>
-                                    <Input v-model.number="form.disk" type="number" min="0" :disabled="formLoading" />
-                                    <span class="text-xs">MiB</span>
-                                </div>
-                                <div class="flex-1">
-                                    <label class="block font-medium mb-1">Disk Over-Allocation</label>
+                                <div>
+                                    <label class="block font-medium mb-1">Daemon SFTP Port</label>
                                     <Input
-                                        v-model.number="form.disk_overallocate"
+                                        v-model.number="form.daemonSFTP"
                                         type="number"
-                                        min="-1"
+                                        min="1"
                                         :disabled="formLoading"
                                     />
-                                    <span class="text-xs">%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-show="currentStep === 3">
+                            <!-- Advanced -->
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block font-medium mb-1">Maintenance Mode</label>
+                                    <Select v-model="form.maintenance_mode" :disabled="formLoading">
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select maintenance mode" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="false">Disabled</SelectItem>
+                                            <SelectItem value="true">Enabled</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <div class="text-xs text-muted-foreground">
+                                        When enabled, this node will not accept new server deployments.
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block font-medium mb-1">Upload Size Limit</label>
+                                    <Input
+                                        v-model.number="form.upload_size"
+                                        type="number"
+                                        min="1"
+                                        :disabled="formLoading"
+                                    />
+                                    <span class="text-xs">MiB</span>
+                                    <div class="text-xs text-muted-foreground">
+                                        Maximum file upload size for this node.
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div v-show="currentStep === 2">
-                        <!-- Network -->
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block font-medium mb-1">Daemon Port</label>
-                                <Input
-                                    v-model.number="form.daemonListen"
-                                    type="number"
-                                    min="1"
-                                    :disabled="formLoading"
-                                />
-                            </div>
-                            <div>
-                                <label class="block font-medium mb-1">Daemon SFTP Port</label>
-                                <Input v-model.number="form.daemonSFTP" type="number" min="1" :disabled="formLoading" />
-                            </div>
-                        </div>
-                    </div>
-                    <div v-show="currentStep === 3">
-                        <!-- Advanced -->
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block font-medium mb-1">Maintenance Mode</label>
-                                <Select v-model="form.maintenance_mode" :disabled="formLoading">
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select maintenance mode" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="false">Disabled</SelectItem>
-                                        <SelectItem value="true">Enabled</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <div class="text-xs text-muted-foreground">
-                                    When enabled, this node will not accept new server deployments.
+
+                    <!-- Tabs for edit mode -->
+                    <div v-if="drawerMode === 'edit'" class="space-y-4">
+                        <Tabs v-model="activeTab" class="w-full">
+                            <TabsList class="grid w-full grid-cols-4">
+                                <TabsTrigger value="basic">Basic</TabsTrigger>
+                                <TabsTrigger value="config">Config</TabsTrigger>
+                                <TabsTrigger value="network">Network</TabsTrigger>
+                                <TabsTrigger value="advanced">Advanced</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="basic" class="space-y-4">
+                                <div>
+                                    <label class="block font-medium mb-1">Name</label>
+                                    <Input v-model="form.name" :disabled="formLoading" />
+                                    <div class="text-xs text-muted-foreground">
+                                        Character limits: <code>a-zA-Z0-9_-</code> and [space] (min 1, max 100
+                                        characters).
+                                    </div>
+                                    <div v-if="formErrors.name" class="text-red-500 text-xs mt-1">
+                                        {{ formErrors.name }}
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
-                                <label class="block font-medium mb-1">Upload Size Limit</label>
-                                <Input
-                                    v-model.number="form.upload_size"
-                                    type="number"
-                                    min="1"
-                                    :disabled="formLoading"
-                                />
-                                <span class="text-xs">MiB</span>
-                                <div class="text-xs text-muted-foreground">Maximum file upload size for this node.</div>
-                            </div>
-                        </div>
+                                <div>
+                                    <label class="block font-medium mb-1">Description</label>
+                                    <Textarea v-model="form.description" :disabled="formLoading" />
+                                </div>
+                                <div>
+                                    <label class="block font-medium mb-1">Node Visibility</label>
+                                    <Select v-model="form.public" :disabled="formLoading">
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select visibility" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="true">Public</SelectItem>
+                                            <SelectItem value="false">Private</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <div class="text-xs text-muted-foreground">
+                                        By setting a node to <b>private</b> you will be denying the ability to
+                                        auto-deploy to this node.
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block font-medium mb-1">FQDN</label>
+                                    <Input v-model="form.fqdn" :disabled="formLoading" />
+                                    <div class="text-xs text-muted-foreground">
+                                        Please enter domain name (e.g. <code>node.example.com</code>) to be used for
+                                        connecting to the daemon. An IP address may be used <b>only</b> if you are not
+                                        using SSL for this node.
+                                    </div>
+                                    <div v-if="formErrors.fqdn" class="text-red-500 text-xs mt-1">
+                                        {{ formErrors.fqdn }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block font-medium mb-1">Communicate Over SSL</label>
+                                    <Select v-model="form.scheme" :disabled="formLoading">
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select SSL option" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="https">Use SSL Connection</SelectItem>
+                                            <SelectItem value="http">Use HTTP Connection</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <div v-if="form.scheme === 'https'" class="text-xs text-red-500">
+                                        Your Panel is currently configured to use a secure connection. In order for
+                                        browsers to connect to your node it must use a SSL connection.
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block font-medium mb-1">Behind Proxy</label>
+                                    <Select v-model="form.behind_proxy" :disabled="formLoading">
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select proxy option" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="false">Not Behind Proxy</SelectItem>
+                                            <SelectItem value="true">Behind Proxy</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <div class="text-xs text-muted-foreground">
+                                        If you are running the daemon behind a proxy such as Cloudflare, select this to
+                                        have the daemon skip looking for certificates on boot.
+                                    </div>
+                                </div>
+                            </TabsContent>
+                            <TabsContent value="config" class="space-y-4">
+                                <div>
+                                    <label class="block font-medium mb-1">Daemon Server File Directory</label>
+                                    <Input v-model="form.daemonBase" :disabled="formLoading" />
+                                    <div class="text-xs text-muted-foreground">
+                                        Enter the directory where server files should be stored. If you use OVH you
+                                        should check your partition scheme.
+                                        <b>You may need to use <code>/home/daemon-data</code> to have enough space.</b>
+                                    </div>
+                                </div>
+                                <div class="flex gap-4">
+                                    <div class="flex-1">
+                                        <label class="block font-medium mb-1">Total Memory</label>
+                                        <Input
+                                            v-model.number="form.memory"
+                                            type="number"
+                                            min="0"
+                                            :disabled="formLoading"
+                                        />
+                                        <span class="text-xs">MiB</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="block font-medium mb-1">Memory Over-Allocation</label>
+                                        <Input
+                                            v-model.number="form.memory_overallocate"
+                                            type="number"
+                                            min="-1"
+                                            :disabled="formLoading"
+                                        />
+                                        <span class="text-xs">%</span>
+                                    </div>
+                                </div>
+                                <div class="flex gap-4">
+                                    <div class="flex-1">
+                                        <label class="block font-medium mb-1">Total Disk Space</label>
+                                        <Input
+                                            v-model.number="form.disk"
+                                            type="number"
+                                            min="0"
+                                            :disabled="formLoading"
+                                        />
+                                        <span class="text-xs">MiB</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="block font-medium mb-1">Disk Over-Allocation</label>
+                                        <Input
+                                            v-model.number="form.disk_overallocate"
+                                            type="number"
+                                            min="-1"
+                                            :disabled="formLoading"
+                                        />
+                                        <span class="text-xs">%</span>
+                                    </div>
+                                </div>
+                            </TabsContent>
+                            <TabsContent value="network" class="space-y-4">
+                                <div>
+                                    <label class="block font-medium mb-1">Daemon Port</label>
+                                    <Input
+                                        v-model.number="form.daemonListen"
+                                        type="number"
+                                        min="1"
+                                        :disabled="formLoading"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block font-medium mb-1">Daemon SFTP Port</label>
+                                    <Input
+                                        v-model.number="form.daemonSFTP"
+                                        type="number"
+                                        min="1"
+                                        :disabled="formLoading"
+                                    />
+                                </div>
+                            </TabsContent>
+                            <TabsContent value="advanced" class="space-y-4">
+                                <div>
+                                    <label class="block font-medium mb-1">Maintenance Mode</label>
+                                    <Select v-model="form.maintenance_mode" :disabled="formLoading">
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select maintenance mode" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="false">Disabled</SelectItem>
+                                            <SelectItem value="true">Enabled</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <div class="text-xs text-muted-foreground">
+                                        When enabled, this node will not accept new server deployments.
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block font-medium mb-1">Upload Size Limit</label>
+                                    <Input
+                                        v-model.number="form.upload_size"
+                                        type="number"
+                                        min="1"
+                                        :disabled="formLoading"
+                                    />
+                                    <span class="text-xs">MiB</span>
+                                    <div class="text-xs text-muted-foreground">
+                                        Maximum file upload size for this node.
+                                    </div>
+                                </div>
+                            </TabsContent>
+                        </Tabs>
                     </div>
                     <DrawerFooter class="mt-4">
                         <Button
-                            v-if="currentStep === steps.length - 1"
+                            v-if="currentStep === steps.length - 1 && drawerMode === 'create'"
                             type="submit"
                             class="w-full"
                             :loading="formLoading"
                         >
-                            {{ drawerMode === 'create' ? 'Create' : 'Save Changes' }}
+                            Create
+                        </Button>
+                        <Button v-if="drawerMode === 'edit'" type="submit" class="w-full" :loading="formLoading">
+                            Save Changes
                         </Button>
                         <Button type="button" class="w-full" variant="outline" @click="closeDrawer"> Cancel </Button>
                     </DrawerFooter>
@@ -367,6 +585,7 @@ import {
 } from '@/components/ui/drawer';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Extend Node type and form default
 
@@ -528,6 +747,7 @@ const steps = [
     { key: 'advanced', label: 'Advanced' },
 ];
 const currentStep = ref(0);
+const activeTab = ref('basic'); // For edit mode tabs
 
 function nextStep() {
     if (validateStep(currentStep.value)) {
@@ -603,6 +823,7 @@ function openCreateDrawer() {
 function onEdit(node: Node) {
     drawerMode.value = 'edit';
     editingNodeId.value = node.id;
+    activeTab.value = 'basic'; // Reset to first tab
     form.value = {
         name: node.name,
         description: node.description || '',
@@ -621,7 +842,7 @@ function onEdit(node: Node) {
         daemonSFTP: node.daemonSFTP || 2022,
         daemonBase: node.daemonBase || '/var/lib/pterodactyl/volumes',
     };
-    resetWizard();
+    resetWizard(); // Reset wizard for edit mode
     showDrawer.value = true;
 }
 function onView(node: Node) {
