@@ -110,6 +110,7 @@
         </main>
     </DashboardLayout>
     <Drawer
+        class="w-full"
         :open="viewing"
         @update:open="
             (val: boolean) => {

@@ -96,7 +96,7 @@
             </Card>
         </main>
         <!-- Drawers -->
-        <Drawer v-model:open="showDrawer">
+        <Drawer v-model:open="showDrawer" class="w-full">
             <DrawerContent>
                 <DrawerHeader>
                     <DrawerTitle>{{
@@ -342,11 +342,12 @@
                     <!-- Tabs for edit mode -->
                     <div v-if="drawerMode === 'edit'" class="space-y-4">
                         <Tabs v-model="activeTab" class="w-full">
-                            <TabsList class="grid w-full grid-cols-4">
+                            <TabsList class="grid w-full grid-cols-5">
                                 <TabsTrigger value="basic">Basic</TabsTrigger>
                                 <TabsTrigger value="config">Config</TabsTrigger>
                                 <TabsTrigger value="network">Network</TabsTrigger>
                                 <TabsTrigger value="advanced">Advanced</TabsTrigger>
+                                <TabsTrigger value="wings">Wings Config</TabsTrigger>
                             </TabsList>
                             <TabsContent value="basic" class="space-y-4">
                                 <div>
@@ -530,6 +531,63 @@
                                     </div>
                                 </div>
                             </TabsContent>
+                            <TabsContent value="wings" class="space-y-4">
+                                <div>
+                                    <label class="block font-medium mb-1">Wings Configuration</label>
+                                    <textarea
+                                        :value="wingsConfigYaml"
+                                        readonly
+                                        class="w-full h-64 p-3 text-xs font-mono bg-muted border rounded-md resize-none"
+                                        :disabled="formLoading"
+                                    ></textarea>
+                                    <div class="text-xs text-muted-foreground mt-2">
+                                        This configuration file should be saved as
+                                        <code>/etc/pterodactyl/config.yml</code> on your Wings daemon.
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        :disabled="formLoading"
+                                        size="sm"
+                                        @click="copyWingsConfig"
+                                    >
+                                        Copy Config
+                                    </Button>
+                                    <template v-if="confirmResetKeyRow === editingNodeId">
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            size="sm"
+                                            :loading="formLoading"
+                                            @click="requestResetKey"
+                                        >
+                                            Confirm Reset Key
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            :disabled="formLoading"
+                                            @click="onCancelResetKey"
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </template>
+                                    <template v-else>
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            size="sm"
+                                            :disabled="formLoading"
+                                            @click="confirmResetKey"
+                                        >
+                                            Request Master Daemon Reset Key
+                                        </Button>
+                                    </template>
+                                </div>
+                            </TabsContent>
                         </Tabs>
                     </div>
                     <DrawerFooter class="mt-4">
@@ -605,6 +663,8 @@ type Node = {
     disk: number;
     disk_overallocate: number;
     upload_size: number;
+    daemon_token_id: string;
+    daemon_token: string;
     daemonListen: number;
     daemonSFTP: number;
     daemonBase: string;
@@ -643,7 +703,53 @@ const loading = ref(false);
 const deleting = ref(false);
 const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<number | null>(null);
+const confirmResetKeyRow = ref<number | null>(null);
 const displayMessage = computed(() => (message.value ? message.value.text.replace(/\r?\n|\r/g, ' ') : ''));
+
+// Wings configuration computed property
+const wingsConfigYaml = computed(() => {
+    console.log('wingsConfigYaml computed - editingNodeId:', editingNodeId.value);
+    console.log('wingsConfigYaml computed - nodes:', nodes.value);
+
+    if (!editingNodeId.value) return 'No node selected';
+
+    const node = nodes.value.find((n) => n.id === editingNodeId.value);
+    console.log('wingsConfigYaml computed - found node:', node);
+
+    if (!node) return 'Node not found';
+
+    // Check if required fields exist
+    if (!node.uuid || !node.daemon_token_id || !node.daemon_token) {
+        console.log('wingsConfigYaml computed - missing fields:', {
+            uuid: node.uuid,
+            daemon_token_id: node.daemon_token_id,
+            daemon_token: node.daemon_token,
+        });
+        return 'Node data incomplete - missing UUID or tokens';
+    }
+
+    const yaml = `debug: false
+uuid: ${node.uuid}
+token_id: ${node.daemon_token_id}
+token: ${node.daemon_token}
+api:
+  host: 0.0.0.0
+  port: ${node.daemonListen || 8080}
+  ssl:
+    enabled: ${node.scheme === 'https'}
+    cert: /etc/letsencrypt/live/${node.fqdn}/fullchain.pem
+    key: /etc/letsencrypt/live/${node.fqdn}/privkey.pem
+  upload_limit: ${node.upload_size || 512}
+system:
+  data: ${node.daemonBase || '/var/lib/pterodactyl/volumes'}
+  sftp:
+    bind_port: ${node.daemonSFTP || 2022}
+allowed_mounts: []
+remote: 'https://${window.location.hostname}'`;
+
+    console.log('wingsConfigYaml computed - generated YAML:', yaml);
+    return yaml;
+});
 
 const route = useRoute();
 const router = useRouter();
@@ -924,6 +1030,61 @@ async function submitForm() {
             message.value = null;
         }, 4000);
     }
+}
+
+function copyWingsConfig() {
+    const textarea = document.querySelector('textarea[readonly]') as HTMLTextAreaElement;
+    if (textarea) {
+        textarea.select();
+        textarea.setSelectionRange(0, 99999); // For mobile devices
+        document.execCommand('copy');
+        message.value = { type: 'success', text: 'Wings configuration copied to clipboard' };
+        setTimeout(() => {
+            message.value = null;
+        }, 3000);
+    } else {
+        message.value = { type: 'error', text: 'Failed to copy configuration' };
+        setTimeout(() => {
+            message.value = null;
+        }, 3000);
+    }
+}
+
+function confirmResetKey() {
+    confirmResetKeyRow.value = editingNodeId.value;
+}
+
+async function requestResetKey() {
+    if (!editingNodeId.value) return;
+
+    try {
+        const node = nodes.value.find((n) => n.id === editingNodeId.value);
+        if (!node) {
+            message.value = { type: 'error', text: 'Node not found' };
+            return;
+        }
+
+        const response = await axios.post(`/api/admin/nodes/${node.uuid}/reset-key`);
+        if (response.data.success) {
+            message.value = { type: 'success', text: 'Master daemon reset key requested successfully' };
+            // Refresh the node data to get updated tokens
+            await fetchNodes();
+            confirmResetKeyRow.value = null; // Clear confirmation state
+        } else {
+            message.value = { type: 'error', text: response.data.message || 'Failed to request reset key' };
+        }
+    } catch (e) {
+        const err = e as { response?: { data?: { message?: string } } };
+        message.value = { type: 'error', text: err?.response?.data?.message || 'Failed to request reset key' };
+    }
+
+    setTimeout(() => {
+        message.value = null;
+    }, 4000);
+}
+
+function onCancelResetKey() {
+    confirmResetKeyRow.value = null;
 }
 
 onMounted(async () => {
