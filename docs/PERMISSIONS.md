@@ -4,9 +4,9 @@ This document provides a comprehensive overview of all permission nodes used in 
 
 ## Overview
 
-- **Total Permissions:** 30
-- **Categories:** 9
-- **With Descriptions:** 30
+- **Total Permissions:** 34
+- **Categories:** 10
+- **With Descriptions:** 34
 
 ## Format
 
@@ -103,6 +103,15 @@ if (auth.user.hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)) {
 | `ADMIN_ROLES_EDIT` | `admin.roles.edit` | Edit existing roles |
 | `ADMIN_ROLES_DELETE` | `admin.roles.delete` | Delete roles |
 
+## Admin Databases
+
+| Permission | Node | Description |
+|------------|------|-------------|
+| `ADMIN_DATABASES_VIEW` | `admin.databases.view` | View databases |
+| `ADMIN_DATABASES_CREATE` | `admin.databases.create` | Create new databases |
+| `ADMIN_DATABASES_EDIT` | `admin.databases.edit` | Edit existing databases |
+| `ADMIN_DATABASES_DELETE` | `admin.databases.delete` | Delete databases |
+
 ## Admin Role Permissions
 
 | Permission | Node | Description |
@@ -134,4 +143,4 @@ To add a new permission node:
 
 ---
 
-*This documentation was auto-generated on 2025-07-30 13:57:17*
+*This documentation was auto-generated on 2025-08-04 12:57:45*

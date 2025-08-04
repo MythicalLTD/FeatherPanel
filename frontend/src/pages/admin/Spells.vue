@@ -154,6 +154,13 @@
                 <DrawerTitle>Edit Spell</DrawerTitle>
                 <DrawerDescription>Edit details for spell: {{ editingSpell.name }}</DrawerDescription>
             </DrawerHeader>
+            <Alert
+                v-if="drawerMessage"
+                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
+                class="mb-4 whitespace-nowrap overflow-x-auto"
+            >
+                <span>{{ drawerMessage.text }}</span>
+            </Alert>
             <Tabs v-model="activeEditTab" default-value="general" class="px-6 pt-2">
                 <TabsList class="mb-4">
                     <TabsTrigger value="general">General</TabsTrigger>
@@ -524,6 +531,13 @@
                 <DrawerTitle>Create Spell</DrawerTitle>
                 <DrawerDescription>Fill in the details to create a new spell.</DrawerDescription>
             </DrawerHeader>
+            <Alert
+                v-if="drawerMessage"
+                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
+                class="mb-4 whitespace-nowrap overflow-x-auto"
+            >
+                <span>{{ drawerMessage.text }}</span>
+            </Alert>
             <Tabs default-value="general" class="px-6 pt-2">
                 <TabsList class="mb-4">
                     <TabsTrigger value="general">General</TabsTrigger>
@@ -811,6 +825,7 @@ const pagination = ref({
 const loading = ref(false);
 const deleting = ref(false);
 const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
+const drawerMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<number | null>(null);
 const displayMessage = computed(() => (message.value ? message.value.text.replace(/\r?\n|\r/g, ' ') : ''));
 const selectedSpell = ref<Spell | null>(null);
@@ -1093,6 +1108,7 @@ async function openEditDrawer(spell: Spell) {
 function closeEditDrawer() {
     editDrawerOpen.value = false;
     editingSpell.value = null;
+    drawerMessage.value = null;
 }
 
 async function submitEdit() {
@@ -1116,23 +1132,22 @@ async function submitEdit() {
         };
         const { data } = await axios.patch(`/api/admin/spells/${editingSpell.value.id}`, patchData);
         if (data && data.success) {
-            message.value = { type: 'success', text: 'Spell updated successfully' };
+            drawerMessage.value = { type: 'success', text: 'Spell updated successfully' };
+            setTimeout(() => {
+                drawerMessage.value = null;
+            }, 2000);
             await fetchSpells();
             closeEditDrawer();
         } else {
-            message.value = { type: 'error', text: data?.message || 'Failed to update spell' };
+            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to update spell' };
         }
     } catch (e: unknown) {
-        message.value = {
+        drawerMessage.value = {
             type: 'error',
             text:
                 (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
                 'Failed to update spell',
         };
-    } finally {
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
     }
 }
 
@@ -1166,15 +1181,13 @@ function openCreateDrawer() {
 
 function closeCreateDrawer() {
     createDrawerOpen.value = false;
+    drawerMessage.value = null;
 }
 
 async function submitCreate() {
     // Validate realm_id is set (only if not in realm context)
     if (!currentRealm.value && (!createForm.value.realm_id || createForm.value.realm_id === 0)) {
-        message.value = { type: 'error', text: 'Please select a realm before creating a spell.' };
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
+        drawerMessage.value = { type: 'error', text: 'Please select a realm before creating a spell.' };
         return;
     }
 
@@ -1198,23 +1211,22 @@ async function submitCreate() {
         };
         const { data } = await axios.put('/api/admin/spells', formData);
         if (data && data.success) {
-            message.value = { type: 'success', text: 'Spell created successfully' };
+            drawerMessage.value = { type: 'success', text: 'Spell created successfully' };
+            setTimeout(() => {
+                drawerMessage.value = null;
+            }, 2000);
             await fetchSpells();
             closeCreateDrawer();
         } else {
-            message.value = { type: 'error', text: data?.message || 'Failed to create spell' };
+            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to create spell' };
         }
     } catch (e: unknown) {
-        message.value = {
+        drawerMessage.value = {
             type: 'error',
             text:
                 (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
                 'Failed to create spell',
         };
-    } finally {
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
     }
 }
 

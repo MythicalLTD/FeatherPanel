@@ -79,6 +79,16 @@ class Permissions {
     /** Delete roles */
     public static ADMIN_ROLES_DELETE = 'admin.roles.delete';
 
+    // Admin Databases Permissions
+    /** View databases */
+    public static ADMIN_DATABASES_VIEW = 'admin.databases.view';
+    /** Create new databases */
+    public static ADMIN_DATABASES_CREATE = 'admin.databases.create';
+    /** Edit existing databases */
+    public static ADMIN_DATABASES_EDIT = 'admin.databases.edit';
+    /** Delete databases */
+    public static ADMIN_DATABASES_DELETE = 'admin.databases.delete';
+
     // Admin Role Permissions Permissions
     /** View role permissions */
     public static ADMIN_ROLES_PERMISSIONS_VIEW = 'admin.roles.permissions.view';
@@ -249,6 +259,30 @@ class Permissions {
                 value: Permissions.ADMIN_ROLES_DELETE,
                 category: 'Admin Roles',
                 description: 'Delete roles',
+            },
+            {
+                constant: 'ADMIN_DATABASES_VIEW',
+                value: Permissions.ADMIN_DATABASES_VIEW,
+                category: 'Admin Databases',
+                description: 'View databases',
+            },
+            {
+                constant: 'ADMIN_DATABASES_CREATE',
+                value: Permissions.ADMIN_DATABASES_CREATE,
+                category: 'Admin Databases',
+                description: 'Create new databases',
+            },
+            {
+                constant: 'ADMIN_DATABASES_EDIT',
+                value: Permissions.ADMIN_DATABASES_EDIT,
+                category: 'Admin Databases',
+                description: 'Edit existing databases',
+            },
+            {
+                constant: 'ADMIN_DATABASES_DELETE',
+                value: Permissions.ADMIN_DATABASES_DELETE,
+                category: 'Admin Databases',
+                description: 'Delete databases',
             },
             {
                 constant: 'ADMIN_ROLES_PERMISSIONS_VIEW',

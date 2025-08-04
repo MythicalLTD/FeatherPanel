@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of App.
+ * This file is part of MythicalPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -94,6 +94,16 @@ class Permissions
     public const ADMIN_ROLES_EDIT = 'admin.roles.edit';
     /** Delete roles */
     public const ADMIN_ROLES_DELETE = 'admin.roles.delete';
+
+    // Admin Databases Permissions
+    /** View databases */
+    public const ADMIN_DATABASES_VIEW = 'admin.databases.view';
+    /** Create new databases */
+    public const ADMIN_DATABASES_CREATE = 'admin.databases.create';
+    /** Edit existing databases */
+    public const ADMIN_DATABASES_EDIT = 'admin.databases.edit';
+    /** Delete databases */
+    public const ADMIN_DATABASES_DELETE = 'admin.databases.delete';
 
     // Admin Role Permissions Permissions
     /** View role permissions */
@@ -266,6 +276,30 @@ class Permissions
                 'value' => self::ADMIN_ROLES_DELETE,
                 'category' => 'Admin Roles',
                 'description' => 'Delete roles',
+            ],
+            [
+                'constant' => 'ADMIN_DATABASES_VIEW',
+                'value' => self::ADMIN_DATABASES_VIEW,
+                'category' => 'Admin Databases',
+                'description' => 'View databases',
+            ],
+            [
+                'constant' => 'ADMIN_DATABASES_CREATE',
+                'value' => self::ADMIN_DATABASES_CREATE,
+                'category' => 'Admin Databases',
+                'description' => 'Create new databases',
+            ],
+            [
+                'constant' => 'ADMIN_DATABASES_EDIT',
+                'value' => self::ADMIN_DATABASES_EDIT,
+                'category' => 'Admin Databases',
+                'description' => 'Edit existing databases',
+            ],
+            [
+                'constant' => 'ADMIN_DATABASES_DELETE',
+                'value' => self::ADMIN_DATABASES_DELETE,
+                'category' => 'Admin Databases',
+                'description' => 'Delete databases',
             ],
             [
                 'constant' => 'ADMIN_ROLES_PERMISSIONS_VIEW',

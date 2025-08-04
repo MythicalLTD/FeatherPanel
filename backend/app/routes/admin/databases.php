@@ -14,87 +14,117 @@
 use App\App;
 use App\Permissions;
 use App\Helpers\ApiResponse;
-use App\Controllers\Admin\NodesController;
 use Symfony\Component\HttpFoundation\Request;
+use App\Controllers\Admin\DatabasesController;
 use Symfony\Component\Routing\RouteCollection;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-nodes',
-        '/api/admin/nodes',
+        'admin-databases',
+        '/api/admin/databases',
         function (Request $request) {
-            return (new NodesController())->index($request);
+            return (new DatabasesController())->index($request);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_DATABASES_VIEW,
     );
+
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-nodes-show',
-        '/api/admin/nodes/{id}',
+        'admin-databases-show',
+        '/api/admin/databases/{id}',
         function (Request $request, array $args) {
             $id = $args['id'] ?? null;
             if (!$id || !is_numeric($id)) {
                 return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
             }
 
-            return (new NodesController())->show($request, (int) $id);
+            return (new DatabasesController())->show($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_VIEW,
+        Permissions::ADMIN_DATABASES_VIEW,
     );
+
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-nodes-update',
-        '/api/admin/nodes/{id}',
+        'admin-databases-update',
+        '/api/admin/databases/{id}',
         function (Request $request, array $args) {
             $id = $args['id'] ?? null;
             if (!$id || !is_numeric($id)) {
                 return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
             }
 
-            return (new NodesController())->update($request, (int) $id);
+            return (new DatabasesController())->update($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_DATABASES_EDIT,
         ['PATCH']
     );
+
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-nodes-delete',
-        '/api/admin/nodes/{id}',
+        'admin-databases-delete',
+        '/api/admin/databases/{id}',
         function (Request $request, array $args) {
             $id = $args['id'] ?? null;
             if (!$id || !is_numeric($id)) {
                 return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
             }
 
-            return (new NodesController())->delete($request, (int) $id);
+            return (new DatabasesController())->delete($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_DELETE,
+        Permissions::ADMIN_DATABASES_DELETE,
         ['DELETE']
     );
+
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-nodes-create',
-        '/api/admin/nodes',
+        'admin-databases-create',
+        '/api/admin/databases',
         function (Request $request) {
-            return (new NodesController())->create($request);
+            return (new DatabasesController())->create($request);
         },
-        Permissions::ADMIN_NODES_CREATE,
+        Permissions::ADMIN_DATABASES_CREATE,
         ['PUT']
     );
+
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-nodes-reset-key',
-        '/api/admin/nodes/{id}/reset-key',
+        'admin-databases-by-node',
+        '/api/admin/databases/node/{nodeId}',
+        function (Request $request, array $args) {
+            $nodeId = $args['nodeId'] ?? null;
+            if (!$nodeId || !is_numeric($nodeId)) {
+                return ApiResponse::error('Missing or invalid node ID', 'INVALID_NODE_ID', 400);
+            }
+
+            return (new DatabasesController())->getByNode($request, (int) $nodeId);
+        },
+        Permissions::ADMIN_DATABASES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-databases-health-check',
+        '/api/admin/databases/{id}/health',
         function (Request $request, array $args) {
             $id = $args['id'] ?? null;
             if (!$id || !is_numeric($id)) {
                 return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
             }
 
-            return (new NodesController())->resetKey($request, (int) $id);
+            return (new DatabasesController())->healthCheck($request, (int) $id);
         },
-        Permissions::ADMIN_NODES_EDIT,
+        Permissions::ADMIN_DATABASES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-databases-test-connection',
+        '/api/admin/databases/test-connection',
+        function (Request $request) {
+            return (new DatabasesController())->testConnection($request);
+        },
+        Permissions::ADMIN_DATABASES_CREATE,
         ['POST']
     );
 };

@@ -263,6 +263,13 @@
                 <DrawerTitle>Edit User</DrawerTitle>
                 <DrawerDescription>Edit details for user: {{ editingUser.username }}</DrawerDescription>
             </DrawerHeader>
+            <Alert
+                v-if="drawerMessage"
+                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
+                class="mb-4 whitespace-nowrap overflow-x-auto"
+            >
+                <span>{{ drawerMessage.text }}</span>
+            </Alert>
             <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitEdit">
                 <label for="edit-username" class="block mb-1 font-medium">Username</label>
                 <Input
@@ -353,6 +360,13 @@
                 <DrawerTitle>Create User</DrawerTitle>
                 <DrawerDescription>Fill in the details to create a new user.</DrawerDescription>
             </DrawerHeader>
+            <Alert
+                v-if="drawerMessage"
+                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
+                class="mb-4 whitespace-nowrap overflow-x-auto"
+            >
+                <span>{{ drawerMessage.text }}</span>
+            </Alert>
             <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreate">
                 <label for="create-username" class="block mb-1 font-medium">Username</label>
                 <Input
@@ -492,6 +506,7 @@ const pagination = ref({
 const loading = ref(false);
 const deleting = ref(false);
 const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
+const drawerMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<string | null>(null);
 const displayMessage = computed(() => (message.value ? message.value.text.replace(/[\r\n]+/g, ' ') : ''));
 const selectedUser = ref<ApiUser | null>(null);
@@ -627,6 +642,7 @@ async function openEditDrawer(user: ApiUser) {
 function closeEditDrawer() {
     editDrawerOpen.value = false;
     editingUser.value = null;
+    drawerMessage.value = null;
 }
 
 async function submitEdit() {
@@ -636,23 +652,22 @@ async function submitEdit() {
         const patchData = { ...editForm.value };
         const { data } = await axios.patch(`/api/admin/users/${editingUser.value.uuid}`, patchData);
         if (data && data.success) {
-            message.value = { type: 'success', text: 'User updated successfully' };
+            drawerMessage.value = { type: 'success', text: 'User updated successfully' };
+            setTimeout(() => {
+                drawerMessage.value = null;
+            }, 2000);
             await fetchUsers();
             closeEditDrawer();
         } else {
-            message.value = { type: 'error', text: data?.message || 'Failed to update user' };
+            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to update user' };
         }
     } catch (e: unknown) {
-        message.value = {
+        drawerMessage.value = {
             type: 'error',
             text:
                 (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
                 'Failed to update user',
         };
-    } finally {
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
     }
 }
 
@@ -724,28 +739,28 @@ function openCreateDrawer() {
 }
 function closeCreateDrawer() {
     createDrawerOpen.value = false;
+    drawerMessage.value = null;
 }
 async function submitCreate() {
     try {
         const { data } = await axios.put('/api/admin/users', createForm.value);
         if (data && data.success) {
-            message.value = { type: 'success', text: 'User created successfully' };
+            drawerMessage.value = { type: 'success', text: 'User created successfully' };
+            setTimeout(() => {
+                drawerMessage.value = null;
+            }, 2000);
             await fetchUsers();
             closeCreateDrawer();
         } else {
-            message.value = { type: 'error', text: data?.message || 'Failed to create user' };
+            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to create user' };
         }
     } catch (e: unknown) {
-        message.value = {
+        drawerMessage.value = {
             type: 'error',
             text:
                 (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
                 'Failed to create user',
         };
-    } finally {
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
     }
 }
 

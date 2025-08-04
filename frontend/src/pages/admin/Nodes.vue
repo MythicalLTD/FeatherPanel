@@ -96,6 +96,14 @@
                                         <Button size="sm" variant="secondary" @click="onEdit(node)">
                                             <Pencil :size="16" />
                                         </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            title="Manage Databases"
+                                            @click="onDatabases(node)"
+                                        >
+                                            <Database :size="16" />
+                                        </Button>
                                         <template v-if="confirmDeleteRow === node.id">
                                             <Button
                                                 size="sm"
@@ -1307,7 +1315,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
-import { Eye, Pencil, Trash2, ArrowLeft, ArrowRight, RefreshCw } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, ArrowLeft, ArrowRight, RefreshCw, Database } from 'lucide-vue-next';
 import axios from 'axios';
 import { Alert } from '@/components/ui/alert';
 import {
@@ -1730,6 +1738,10 @@ function onEdit(node: Node) {
     };
     resetWizard(); // Reset wizard for edit mode
     showDrawer.value = true;
+}
+
+function onDatabases(node: Node) {
+    router.push(`/admin/nodes/${node.id}/databases`);
 }
 async function onView(node: Node) {
     drawerMode.value = 'view';

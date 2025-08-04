@@ -45,6 +45,12 @@ ADMIN_ROLES_CREATE=admin.roles.create | Admin Roles | Create new roles
 ADMIN_ROLES_EDIT=admin.roles.edit | Admin Roles | Edit existing roles
 ADMIN_ROLES_DELETE=admin.roles.delete | Admin Roles | Delete roles
 
+# Databases Permissions
+ADMIN_DATABASES_VIEW=admin.databases.view | Admin Databases | View databases
+ADMIN_DATABASES_CREATE=admin.databases.create | Admin Databases | Create new databases
+ADMIN_DATABASES_EDIT=admin.databases.edit | Admin Databases | Edit existing databases
+ADMIN_DATABASES_DELETE=admin.databases.delete | Admin Databases | Delete databases
+
 
 # Role Permissions Permissions
 ADMIN_ROLES_PERMISSIONS_VIEW=admin.roles.permissions.view | Admin Role Permissions | View role permissions

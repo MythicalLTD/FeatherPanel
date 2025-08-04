@@ -154,6 +154,13 @@
                 <DrawerTitle>Edit Realm</DrawerTitle>
                 <DrawerDescription>Edit details for realm: {{ editingRealm.name }}</DrawerDescription>
             </DrawerHeader>
+            <Alert
+                v-if="drawerMessage"
+                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
+                class="mb-4 whitespace-nowrap overflow-x-auto"
+            >
+                <span>{{ drawerMessage.text }}</span>
+            </Alert>
             <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitEdit">
                 <label for="edit-name" class="block mb-1 font-medium">Name</label>
                 <Input id="edit-name" v-model="editForm.name" label="Name" placeholder="Name" required />
@@ -188,6 +195,13 @@
                 <DrawerTitle>Create Realm</DrawerTitle>
                 <DrawerDescription>Fill in the details to create a new realm.</DrawerDescription>
             </DrawerHeader>
+            <Alert
+                v-if="drawerMessage"
+                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
+                class="mb-4 whitespace-nowrap overflow-x-auto"
+            >
+                <span>{{ drawerMessage.text }}</span>
+            </Alert>
             <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreate">
                 <label for="create-name" class="block mb-1 font-medium">Name</label>
                 <Input id="create-name" v-model="createForm.name" label="Name" placeholder="Name" required />
@@ -252,6 +266,7 @@ const pagination = ref({
 const loading = ref(false);
 const deleting = ref(false);
 const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
+const drawerMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<number | null>(null);
 const displayMessage = computed(() => (message.value ? message.value.text.replace(/\r?\n|\r/g, ' ') : ''));
 const selectedRealm = ref<Realm | null>(null);
@@ -383,6 +398,7 @@ async function openEditDrawer(realm: Realm) {
 function closeEditDrawer() {
     editDrawerOpen.value = false;
     editingRealm.value = null;
+    drawerMessage.value = null;
 }
 
 async function submitEdit() {
@@ -391,23 +407,22 @@ async function submitEdit() {
         const patchData = { ...editForm.value };
         const { data } = await axios.patch(`/api/admin/realms/${editingRealm.value.id}`, patchData);
         if (data && data.success) {
-            message.value = { type: 'success', text: 'Realm updated successfully' };
+            drawerMessage.value = { type: 'success', text: 'Realm updated successfully' };
+            setTimeout(() => {
+                drawerMessage.value = null;
+            }, 2000);
             await fetchRealms();
             closeEditDrawer();
         } else {
-            message.value = { type: 'error', text: data?.message || 'Failed to update realm' };
+            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to update realm' };
         }
     } catch (e: unknown) {
-        message.value = {
+        drawerMessage.value = {
             type: 'error',
             text:
                 (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
                 'Failed to update realm',
         };
-    } finally {
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
     }
 }
 
@@ -417,28 +432,28 @@ function openCreateDrawer() {
 }
 function closeCreateDrawer() {
     createDrawerOpen.value = false;
+    drawerMessage.value = null;
 }
 async function submitCreate() {
     try {
         const { data } = await axios.put('/api/admin/realms', createForm.value);
         if (data && data.success) {
-            message.value = { type: 'success', text: 'Realm created successfully' };
+            drawerMessage.value = { type: 'success', text: 'Realm created successfully' };
+            setTimeout(() => {
+                drawerMessage.value = null;
+            }, 2000);
             await fetchRealms();
             closeCreateDrawer();
         } else {
-            message.value = { type: 'error', text: data?.message || 'Failed to create realm' };
+            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to create realm' };
         }
     } catch (e: unknown) {
-        message.value = {
+        drawerMessage.value = {
             type: 'error',
             text:
                 (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
                 'Failed to create realm',
         };
-    } finally {
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
     }
 }
 </script>

@@ -134,6 +134,13 @@
                 <DrawerTitle>Edit Location</DrawerTitle>
                 <DrawerDescription>Edit details for location: {{ editingLocation.name }}</DrawerDescription>
             </DrawerHeader>
+            <Alert
+                v-if="drawerMessage"
+                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
+                class="mb-4 whitespace-nowrap overflow-x-auto"
+            >
+                <span>{{ drawerMessage.text }}</span>
+            </Alert>
             <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitEdit">
                 <label for="edit-name" class="block mb-1 font-medium">Name</label>
                 <Input id="edit-name" v-model="editForm.name" label="Name" placeholder="Name" required />
@@ -168,6 +175,13 @@
                 <DrawerTitle>Create Location</DrawerTitle>
                 <DrawerDescription>Fill in the details to create a new location.</DrawerDescription>
             </DrawerHeader>
+            <Alert
+                v-if="drawerMessage"
+                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
+                class="mb-4 whitespace-nowrap overflow-x-auto"
+            >
+                <span>{{ drawerMessage.text }}</span>
+            </Alert>
             <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreate">
                 <label for="create-name" class="block mb-1 font-medium">Name</label>
                 <Input id="create-name" v-model="createForm.name" label="Name" placeholder="Name" required />
@@ -232,6 +246,7 @@ const pagination = ref({
 const loading = ref(false);
 const deleting = ref(false);
 const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
+const drawerMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<number | null>(null);
 const displayMessage = computed(() => (message.value ? message.value.text.replace(/\r?\n|\r/g, ' ') : ''));
 const selectedLocation = ref<Location | null>(null);
@@ -351,6 +366,7 @@ async function openEditDrawer(location: Location) {
 function closeEditDrawer() {
     editDrawerOpen.value = false;
     editingLocation.value = null;
+    drawerMessage.value = null;
 }
 
 async function submitEdit() {
@@ -359,23 +375,22 @@ async function submitEdit() {
         const patchData = { ...editForm.value };
         const { data } = await axios.patch(`/api/admin/locations/${editingLocation.value.id}`, patchData);
         if (data && data.success) {
-            message.value = { type: 'success', text: 'Location updated successfully' };
+            drawerMessage.value = { type: 'success', text: 'Location updated successfully' };
+            setTimeout(() => {
+                drawerMessage.value = null;
+            }, 2000);
             await fetchLocations();
             closeEditDrawer();
         } else {
-            message.value = { type: 'error', text: data?.message || 'Failed to update location' };
+            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to update location' };
         }
     } catch (e: unknown) {
-        message.value = {
+        drawerMessage.value = {
             type: 'error',
             text:
                 (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
                 'Failed to update location',
         };
-    } finally {
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
     }
 }
 
@@ -385,28 +400,28 @@ function openCreateDrawer() {
 }
 function closeCreateDrawer() {
     createDrawerOpen.value = false;
+    drawerMessage.value = null;
 }
 async function submitCreate() {
     try {
         const { data } = await axios.put('/api/admin/locations', createForm.value);
         if (data && data.success) {
-            message.value = { type: 'success', text: 'Location created successfully' };
+            drawerMessage.value = { type: 'success', text: 'Location created successfully' };
+            setTimeout(() => {
+                drawerMessage.value = null;
+            }, 2000);
             await fetchLocations();
             closeCreateDrawer();
         } else {
-            message.value = { type: 'error', text: data?.message || 'Failed to create location' };
+            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to create location' };
         }
     } catch (e: unknown) {
-        message.value = {
+        drawerMessage.value = {
             type: 'error',
             text:
                 (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
                 'Failed to create location',
         };
-    } finally {
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
     }
 }
 
