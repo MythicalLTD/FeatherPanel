@@ -10,12 +10,28 @@
                                 Managing nodes for location: {{ currentLocation?.name }}
                             </CardDescription>
                         </div>
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 items-center">
                             <Input
                                 v-model="searchQuery"
                                 placeholder="Search by name, fqdn, or description..."
                                 class="max-w-xs"
                             />
+                            <div
+                                v-if="isCheckingHealth"
+                                class="flex items-center gap-2 px-2 py-1 bg-muted rounded text-xs text-muted-foreground"
+                            >
+                                <div class="h-2 w-2 bg-blue-500 rounded-full animate-pulse"></div>
+                                Checking health...
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                :loading="isCheckingHealth"
+                                title="Refresh node health status"
+                                @click="checkAllNodesHealth"
+                            >
+                                <RefreshCw :size="16" />
+                            </Button>
                             <Button variant="secondary" @click="openCreateDrawer">Create Node</Button>
                         </div>
                     </div>
@@ -31,6 +47,7 @@
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead>Status</TableHead>
                                 <TableHead>Name</TableHead>
                                 <TableHead>FQDN</TableHead>
                                 <TableHead>Location</TableHead>
@@ -42,6 +59,29 @@
                         </TableHeader>
                         <TableBody>
                             <TableRow v-for="node in nodes" :key="node.id">
+                                <TableCell>
+                                    <div class="flex items-center gap-2">
+                                        <div
+                                            :class="[
+                                                'h-2 w-2 rounded-full',
+                                                getNodeHealthStatus(node.id) === 'healthy'
+                                                    ? 'bg-green-500'
+                                                    : getNodeHealthStatus(node.id) === 'unhealthy'
+                                                      ? 'bg-red-500'
+                                                      : 'bg-gray-400',
+                                            ]"
+                                        ></div>
+                                        <span class="text-xs">
+                                            {{
+                                                getNodeHealthStatus(node.id) === 'healthy'
+                                                    ? 'Online'
+                                                    : getNodeHealthStatus(node.id) === 'unhealthy'
+                                                      ? 'Offline'
+                                                      : 'Unknown'
+                                            }}
+                                        </span>
+                                    </div>
+                                </TableCell>
                                 <TableCell>{{ node.name }}</TableCell>
                                 <TableCell>{{ node.fqdn }}</TableCell>
                                 <TableCell>{{ getLocationName(node.location_id) }}</TableCell>
@@ -605,13 +645,185 @@
                         <Button type="button" class="w-full" variant="outline" @click="closeDrawer"> Cancel </Button>
                     </DrawerFooter>
                 </form>
-                <div v-else class="p-4 space-y-2">
-                    <div><b>Name:</b> {{ drawerNode?.name }}</div>
-                    <div><b>FQDN:</b> {{ drawerNode?.fqdn }}</div>
-                    <div><b>Location:</b> {{ getLocationName(drawerNode?.location_id) }}</div>
-                    <div><b>Memory:</b> {{ drawerNode?.memory }}</div>
-                    <div><b>Disk:</b> {{ drawerNode?.disk }}</div>
-                    <div><b>Created:</b> {{ drawerNode?.created_at }}</div>
+                <div v-else class="p-4 space-y-4 overflow-y-auto max-h-[calc(100vh-200px)]">
+                    <Tabs v-model="viewActiveTab" class="w-full">
+                        <TabsList class="grid w-full grid-cols-2">
+                            <TabsTrigger value="overview">Overview</TabsTrigger>
+                            <TabsTrigger value="system">System Info</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="overview" class="space-y-4 mt-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle class="text-lg">Node Overview</CardTitle>
+                                </CardHeader>
+                                <CardContent class="space-y-3">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">Name</div>
+                                            <div class="text-sm">{{ drawerNode?.name }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">FQDN</div>
+                                            <div class="text-sm">{{ drawerNode?.fqdn }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">Location</div>
+                                            <div class="text-sm">{{ getLocationName(drawerNode?.location_id) }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">Memory</div>
+                                            <div class="text-sm">{{ drawerNode?.memory }} MiB</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">Disk</div>
+                                            <div class="text-sm">{{ drawerNode?.disk }} MiB</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">Created</div>
+                                            <div class="text-sm">{{ drawerNode?.created_at }}</div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        <TabsContent value="system" class="space-y-4 mt-4">
+                            <div v-if="systemInfoLoading" class="flex items-center justify-center py-8">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                            </div>
+
+                            <div v-else-if="systemInfoData" class="space-y-4">
+                                <!-- Wings Information -->
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg">Wings Information</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">Version</div>
+                                            <div class="text-sm font-mono">{{ systemInfoData.wings.version }}</div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <!-- Docker Information -->
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg">Docker Information</CardTitle>
+                                    </CardHeader>
+                                    <CardContent class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">Version</div>
+                                            <div class="text-sm">{{ systemInfoData.wings.docker.version }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">CGroups Driver</div>
+                                            <div class="text-sm">{{ systemInfoData.wings.docker.cgroups.driver }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">CGroups Version</div>
+                                            <div class="text-sm">{{ systemInfoData.wings.docker.cgroups.version }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">Storage Driver</div>
+                                            <div class="text-sm">{{ systemInfoData.wings.docker.storage.driver }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">
+                                                Storage Filesystem
+                                            </div>
+                                            <div class="text-sm">
+                                                {{ systemInfoData.wings.docker.storage.filesystem }}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">RunC Version</div>
+                                            <div class="text-sm">{{ systemInfoData.wings.docker.runc.version }}</div>
+                                        </div>
+                                        <div class="md:col-span-2">
+                                            <div class="text-sm font-medium text-muted-foreground">Containers</div>
+                                            <div class="text-sm">
+                                                Total: {{ systemInfoData.wings.docker.containers.total }}, Running:
+                                                {{ systemInfoData.wings.docker.containers.running }}, Paused:
+                                                {{ systemInfoData.wings.docker.containers.paused }}, Stopped:
+                                                {{ systemInfoData.wings.docker.containers.stopped }}
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <!-- System Information -->
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg">System Information</CardTitle>
+                                    </CardHeader>
+                                    <CardContent class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">Architecture</div>
+                                            <div class="text-sm">{{ systemInfoData.wings.system.architecture }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">CPU Threads</div>
+                                            <div class="text-sm">{{ systemInfoData.wings.system.cpu_threads }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">Memory</div>
+                                            <div class="text-sm">
+                                                {{ formatBytes(systemInfoData.wings.system.memory_bytes) }}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">Kernel Version</div>
+                                            <div class="text-sm">{{ systemInfoData.wings.system.kernel_version }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">OS</div>
+                                            <div class="text-sm">{{ systemInfoData.wings.system.os }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">OS Type</div>
+                                            <div class="text-sm">{{ systemInfoData.wings.system.os_type }}</div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            <div v-else-if="systemInfoError" class="space-y-4">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg flex items-center gap-2">
+                                            <div class="h-3 w-3 bg-red-500 rounded-full animate-pulse"></div>
+                                            Node Unhealthy
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent class="space-y-4">
+                                        <Alert variant="destructive">
+                                            <div class="space-y-3">
+                                                <div class="font-medium">Failed to connect to Wings daemon</div>
+                                                <div class="text-sm">{{ systemInfoError }}</div>
+                                                <div class="text-xs text-muted-foreground">
+                                                    This node is currently marked as unhealthy due to connection issues.
+                                                    Please check that the Wings daemon is running and accessible.
+                                                </div>
+                                            </div>
+                                        </Alert>
+                                        <div class="flex gap-2">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                :loading="systemInfoLoading"
+                                                @click="retryConnection"
+                                            >
+                                                Retry Connection
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </TabsContent>
+                    </Tabs>
+
                     <DrawerFooter>
                         <Button type="button" variant="outline" class="w-full" @click="closeDrawer">Close</Button>
                     </DrawerFooter>
@@ -622,7 +834,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -630,7 +842,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
-import { Eye, Pencil, Trash2, ArrowLeft, ArrowRight } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, ArrowLeft, ArrowRight, RefreshCw } from 'lucide-vue-next';
 import axios from 'axios';
 import { Alert } from '@/components/ui/alert';
 import {
@@ -641,11 +853,46 @@ import {
     DrawerDescription,
     DrawerFooter,
 } from '@/components/ui/drawer';
+
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Extend Node type and form default
+
+type SystemInfoResponse = {
+    wings: {
+        version: string;
+        docker: {
+            version: string;
+            cgroups: {
+                driver: string;
+                version: string;
+            };
+            containers: {
+                total: number;
+                running: number;
+                paused: number;
+                stopped: number;
+            };
+            storage: {
+                driver: string;
+                filesystem: string;
+            };
+            runc: {
+                version: string;
+            };
+        };
+        system: {
+            architecture: string;
+            cpu_threads: number;
+            memory_bytes: number;
+            kernel_version: string;
+            os: string;
+            os_type: string;
+        };
+    };
+};
 
 type Node = {
     id: number;
@@ -705,6 +952,17 @@ const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<number | null>(null);
 const confirmResetKeyRow = ref<number | null>(null);
 const displayMessage = computed(() => (message.value ? message.value.text.replace(/\r?\n|\r/g, ' ') : ''));
+
+// System info state for view mode
+const systemInfoLoading = ref(false);
+const systemInfoData = ref<SystemInfoResponse | null>(null);
+const systemInfoError = ref<string | null>(null);
+const viewActiveTab = ref('overview'); // For view mode tabs
+
+// Node health tracking
+const nodeHealthStatus = ref<Record<number, 'healthy' | 'unhealthy' | 'unknown'>>({});
+const healthCheckInterval = ref<number | null>(null);
+const isCheckingHealth = ref(false);
 
 // Wings configuration computed property
 const wingsConfigYaml = computed(() => {
@@ -795,6 +1053,9 @@ async function fetchNodes() {
         const { data } = await axios.get('/api/admin/nodes', { params });
         nodes.value = data.data.nodes || [];
         pagination.value.total = data.data.pagination.total;
+
+        // Auto-check health status for all nodes
+        await checkAllNodesHealth();
     } catch (e: unknown) {
         message.value = {
             type: 'error',
@@ -951,10 +1212,14 @@ function onEdit(node: Node) {
     resetWizard(); // Reset wizard for edit mode
     showDrawer.value = true;
 }
-function onView(node: Node) {
+async function onView(node: Node) {
     drawerMode.value = 'view';
     drawerNode.value = node;
+    viewActiveTab.value = 'overview';
     showDrawer.value = true;
+
+    // Fetch system info when opening view mode
+    await fetchSystemInfo(node);
 }
 function closeDrawer() {
     showDrawer.value = false;
@@ -1091,6 +1356,20 @@ onMounted(async () => {
     await fetchLocations();
     await fetchCurrentLocation();
     await fetchNodes();
+
+    // Set up periodic health checks every 30 seconds
+    healthCheckInterval.value = setInterval(async () => {
+        if (nodes.value.length > 0) {
+            await checkAllNodesHealth();
+        }
+    }, 30000);
+});
+
+// Cleanup interval on unmount
+onUnmounted(() => {
+    if (healthCheckInterval.value) {
+        clearInterval(healthCheckInterval.value);
+    }
 });
 watch([() => pagination.value.page, () => pagination.value.pageSize, searchQuery, locationIdParam], async () => {
     await fetchCurrentLocation();
@@ -1133,5 +1412,75 @@ function onDelete(node: Node) {
 }
 function onCancelDelete() {
     confirmDeleteRow.value = null;
+}
+
+// System info functions
+async function fetchSystemInfo(node: Node) {
+    systemInfoLoading.value = true;
+    systemInfoError.value = null;
+    systemInfoData.value = null;
+
+    try {
+        const response = await axios.get(`/api/wings/admin/node/${node.id}/system`);
+        if (response.data.success) {
+            systemInfoData.value = response.data.data;
+            nodeHealthStatus.value[node.id] = 'healthy';
+        } else {
+            systemInfoError.value = response.data.message || 'Failed to fetch system information';
+            nodeHealthStatus.value[node.id] = 'unhealthy';
+            // Auto-switch to system tab when there's an error to show the improved error message
+            viewActiveTab.value = 'system';
+        }
+    } catch (e: unknown) {
+        const error = e as { response?: { data?: { message?: string } } };
+        systemInfoError.value = error?.response?.data?.message || 'Failed to fetch system information';
+        nodeHealthStatus.value[node.id] = 'unhealthy';
+        // Auto-switch to system tab when there's an error to show the improved error message
+        viewActiveTab.value = 'system';
+    } finally {
+        systemInfoLoading.value = false;
+    }
+}
+
+function getNodeHealthStatus(nodeId: number): 'healthy' | 'unhealthy' | 'unknown' {
+    return nodeHealthStatus.value[nodeId] || 'unknown';
+}
+
+async function retryConnection() {
+    if (drawerNode.value) {
+        await fetchSystemInfo(drawerNode.value);
+    }
+}
+
+// Auto-fetch health status for all nodes
+async function checkAllNodesHealth() {
+    if (nodes.value.length === 0) return;
+
+    isCheckingHealth.value = true;
+
+    try {
+        // Create promises for all health checks
+        const healthCheckPromises = nodes.value.map(async (node) => {
+            try {
+                const response = await axios.get(`/api/wings/admin/node/${node.id}/system`);
+                nodeHealthStatus.value[node.id] = response.data.success ? 'healthy' : 'unhealthy';
+            } catch {
+                nodeHealthStatus.value[node.id] = 'unhealthy';
+            }
+        });
+
+        // Execute all health checks in parallel
+        await Promise.allSettled(healthCheckPromises);
+    } finally {
+        isCheckingHealth.value = false;
+    }
+}
+
+function formatBytes(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 </script>

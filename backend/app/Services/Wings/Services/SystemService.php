@@ -304,4 +304,265 @@ class SystemService
     {
         return $this->getSystemInfo('v1');
     }
+
+    /**
+     * Get system utilization information.
+     */
+    public function getSystemUtilization(): array
+    {
+        return $this->connection->get('/api/system/utilization');
+    }
+
+    /**
+     * Get total memory in bytes.
+     */
+    public function getTotalMemory(): int
+    {
+        $utilization = $this->getSystemUtilization();
+
+        return $utilization['memory_total'] ?? 0;
+    }
+
+    /**
+     * Get used memory in bytes.
+     */
+    public function getUsedMemory(): int
+    {
+        $utilization = $this->getSystemUtilization();
+
+        return $utilization['memory_used'] ?? 0;
+    }
+
+    /**
+     * Get memory usage percentage.
+     */
+    public function getMemoryUsagePercent(): float
+    {
+        $total = $this->getTotalMemory();
+        $used = $this->getUsedMemory();
+
+        if ($total === 0) {
+            return 0.0;
+        }
+
+        return round(($used / $total) * 100, 2);
+    }
+
+    /**
+     * Get total swap in bytes.
+     */
+    public function getTotalSwap(): int
+    {
+        $utilization = $this->getSystemUtilization();
+
+        return $utilization['swap_total'] ?? 0;
+    }
+
+    /**
+     * Get used swap in bytes.
+     */
+    public function getUsedSwap(): int
+    {
+        $utilization = $this->getSystemUtilization();
+
+        return $utilization['swap_used'] ?? 0;
+    }
+
+    /**
+     * Get swap usage percentage.
+     */
+    public function getSwapUsagePercent(): float
+    {
+        $total = $this->getTotalSwap();
+        $used = $this->getUsedSwap();
+
+        if ($total === 0) {
+            return 0.0;
+        }
+
+        return round(($used / $total) * 100, 2);
+    }
+
+    /**
+     * Get load average (1 minute).
+     */
+    public function getLoadAverage1(): float
+    {
+        $utilization = $this->getSystemUtilization();
+
+        return $utilization['load_average1'] ?? 0.0;
+    }
+
+    /**
+     * Get load average (5 minutes).
+     */
+    public function getLoadAverage5(): float
+    {
+        $utilization = $this->getSystemUtilization();
+
+        return $utilization['load_average5'] ?? 0.0;
+    }
+
+    /**
+     * Get load average (15 minutes).
+     */
+    public function getLoadAverage15(): float
+    {
+        $utilization = $this->getSystemUtilization();
+
+        return $utilization['load_average15'] ?? 0.0;
+    }
+
+    /**
+     * Get CPU usage percentage.
+     */
+    public function getCpuPercent(): float
+    {
+        $utilization = $this->getSystemUtilization();
+
+        return round($utilization['cpu_percent'] ?? 0.0, 2);
+    }
+
+    /**
+     * Get total disk space in bytes.
+     */
+    public function getTotalDisk(): int
+    {
+        $utilization = $this->getSystemUtilization();
+
+        return $utilization['disk_total'] ?? 0;
+    }
+
+    /**
+     * Get used disk space in bytes.
+     */
+    public function getUsedDisk(): int
+    {
+        $utilization = $this->getSystemUtilization();
+
+        return $utilization['disk_used'] ?? 0;
+    }
+
+    /**
+     * Get disk usage percentage.
+     */
+    public function getDiskUsagePercent(): float
+    {
+        $total = $this->getTotalDisk();
+        $used = $this->getUsedDisk();
+
+        if ($total === 0) {
+            return 0.0;
+        }
+
+        return round(($used / $total) * 100, 2);
+    }
+
+    /**
+     * Get disk details array.
+     */
+    public function getDiskDetails(): array
+    {
+        $utilization = $this->getSystemUtilization();
+
+        return $utilization['disk_details'] ?? [];
+    }
+
+    /**
+     * Get available memory in bytes.
+     */
+    public function getAvailableMemory(): int
+    {
+        return $this->getTotalMemory() - $this->getUsedMemory();
+    }
+
+    /**
+     * Get available disk space in bytes.
+     */
+    public function getAvailableDisk(): int
+    {
+        return $this->getTotalDisk() - $this->getUsedDisk();
+    }
+
+    /**
+     * Get available swap in bytes.
+     */
+    public function getAvailableSwap(): int
+    {
+        return $this->getTotalSwap() - $this->getUsedSwap();
+    }
+
+    /**
+     * Format bytes to human readable format.
+     */
+    public function formatBytes(int $bytes, int $precision = 2): string
+    {
+        if ($bytes < 1024) {
+            return $bytes . ' B';
+        }
+
+        $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+        $base = log($bytes, 1024);
+        $pow = floor($base);
+        $value = $bytes / pow(1024, $pow);
+
+        return round($value, $precision) . ' ' . $units[$pow];
+    }
+
+    /**
+     * Get formatted memory usage.
+     */
+    public function getFormattedMemoryUsage(): array
+    {
+        return [
+            'total' => $this->formatBytes($this->getTotalMemory()),
+            'used' => $this->formatBytes($this->getUsedMemory()),
+            'available' => $this->formatBytes($this->getAvailableMemory()),
+            'usage_percent' => $this->getMemoryUsagePercent(),
+        ];
+    }
+
+    /**
+     * Get formatted disk usage.
+     */
+    public function getFormattedDiskUsage(): array
+    {
+        return [
+            'total' => $this->formatBytes($this->getTotalDisk()),
+            'used' => $this->formatBytes($this->getUsedDisk()),
+            'available' => $this->formatBytes($this->getAvailableDisk()),
+            'usage_percent' => $this->getDiskUsagePercent(),
+        ];
+    }
+
+    /**
+     * Get formatted swap usage.
+     */
+    public function getFormattedSwapUsage(): array
+    {
+        return [
+            'total' => $this->formatBytes($this->getTotalSwap()),
+            'used' => $this->formatBytes($this->getUsedSwap()),
+            'available' => $this->formatBytes($this->getAvailableSwap()),
+            'usage_percent' => $this->getSwapUsagePercent(),
+        ];
+    }
+
+    /**
+     * Get system health summary.
+     */
+    public function getSystemHealth(): array
+    {
+        return [
+            'memory' => $this->getFormattedMemoryUsage(),
+            'disk' => $this->getFormattedDiskUsage(),
+            'swap' => $this->getFormattedSwapUsage(),
+            'cpu' => [
+                'usage_percent' => $this->getCpuPercent(),
+                'load_average_1m' => $this->getLoadAverage1(),
+                'load_average_5m' => $this->getLoadAverage5(),
+                'load_average_15m' => $this->getLoadAverage15(),
+            ],
+        ];
+    }
 }

@@ -57,4 +57,9 @@ class ApiResponse
             'trace' => $trace,
         ]), 500, ['Content-Type' => 'application/json']);
     }
+
+    public static function sendManualResponse(array $data, int $status = 200): Response
+    {
+        return new Response(json_encode($data), $status, ['Content-Type' => 'application/json']);
+    }
 }

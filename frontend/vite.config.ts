@@ -27,6 +27,14 @@ export default defineConfig({
     },
     server: {
         host: '0.0.0.0',
+        strictPort: true,
+        allowedHosts: ['localhost', '127.0.0.1', '0.0.0.0', 'devsv.mythical.systems'],
+        hmr: {
+            host: 'devsv.mythical.systems',
+            protocol: 'wss',
+            clientPort: 443,
+            overlay: true,
+        },
         proxy: {
             '/api': {
                 target: 'http://localhost:8721',
