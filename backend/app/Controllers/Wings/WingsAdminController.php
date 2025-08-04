@@ -66,6 +66,62 @@ class WingsAdminController
         return ApiResponse::success(['node' => $node, 'utilization' => $utilization], 'Node utilization', 200);
     }
 
+    public function getDockerDiskUsage(Request $request, int $id): Response
+    {
+        $admin = $request->get('user');
+        $node = Node::getNodeById($id);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $scheme = $node['scheme'];
+        $host = $node['fqdn'];
+        $port = $node['daemonListen'];
+        $token = $node['daemon_token'];
+
+        $timeout = (int) 30;
+
+        $wings = new Wings(
+            $host,
+            $port,
+            $scheme,
+            $token,
+            $timeout
+        );
+
+        $dockerDiskUsage = $wings->getDocker()->getDockerDiskUsage();
+
+        return ApiResponse::success(['node' => $node, 'dockerDiskUsage' => $dockerDiskUsage], 'Node docker disk usage', 200);
+    }
+
+    public function getDockerPrune(Request $request, int $id): Response
+    {
+        $admin = $request->get('user');
+        $node = Node::getNodeById($id);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $scheme = $node['scheme'];
+        $host = $node['fqdn'];
+        $port = $node['daemonListen'];
+        $token = $node['daemon_token'];
+
+        $timeout = (int) 30;
+
+        $wings = new Wings(
+            $host,
+            $port,
+            $scheme,
+            $token,
+            $timeout
+        );
+
+        $dockerPrune = $wings->getDocker()->pruneDockerImages();
+
+        return ApiResponse::success(['node' => $node, 'dockerPrune' => $dockerPrune], 'Node docker prune', 200);
+    }
+
     public function getIps(Request $request, int $id): Response
     {
         $admin = $request->get('user');

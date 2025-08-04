@@ -647,9 +647,12 @@
                 </form>
                 <div v-else class="p-4 space-y-4 overflow-y-auto max-h-[calc(100vh-200px)]">
                     <Tabs v-model="viewActiveTab" class="w-full">
-                        <TabsList class="grid w-full grid-cols-2">
+                        <TabsList class="grid w-full grid-cols-5">
                             <TabsTrigger value="overview">Overview</TabsTrigger>
                             <TabsTrigger value="system">System Info</TabsTrigger>
+                            <TabsTrigger value="utilization">Utilization</TabsTrigger>
+                            <TabsTrigger value="docker">Docker</TabsTrigger>
+                            <TabsTrigger value="network">Network</TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="overview" class="space-y-4 mt-4">
@@ -822,6 +825,468 @@
                                 </Card>
                             </div>
                         </TabsContent>
+
+                        <TabsContent value="utilization" class="space-y-4 mt-4">
+                            <div v-if="utilizationLoading" class="flex items-center justify-center py-8">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                            </div>
+
+                            <div v-else-if="utilizationData" class="space-y-4">
+                                <!-- CPU Usage -->
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg">CPU Usage</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div class="space-y-3">
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-sm text-muted-foreground">Current Usage</span>
+                                                <span class="text-sm font-medium"
+                                                    >{{ utilizationData.utilization.cpu_percent.toFixed(2) }}%</span
+                                                >
+                                            </div>
+                                            <div class="w-full bg-muted rounded-full h-2">
+                                                <div
+                                                    class="bg-primary h-2 rounded-full transition-all duration-300"
+                                                    :style="{
+                                                        width:
+                                                            Math.min(100, utilizationData.utilization.cpu_percent) +
+                                                            '%',
+                                                    }"
+                                                ></div>
+                                            </div>
+                                            <div class="grid grid-cols-3 gap-4 text-sm">
+                                                <div>
+                                                    <div class="text-muted-foreground">1m Load</div>
+                                                    <div class="font-medium">
+                                                        {{ utilizationData.utilization.load_average1 }}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div class="text-muted-foreground">5m Load</div>
+                                                    <div class="font-medium">
+                                                        {{ utilizationData.utilization.load_average5 }}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div class="text-muted-foreground">15m Load</div>
+                                                    <div class="font-medium">
+                                                        {{ utilizationData.utilization.load_average15 }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <!-- Memory Usage -->
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg">Memory Usage</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div class="space-y-3">
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-sm text-muted-foreground">Used / Total</span>
+                                                <span class="text-sm font-medium">
+                                                    {{ formatBytes(utilizationData.utilization.memory_used) }} /
+                                                    {{ formatBytes(utilizationData.utilization.memory_total) }}
+                                                </span>
+                                            </div>
+                                            <div class="w-full bg-muted rounded-full h-2">
+                                                <div
+                                                    class="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                                    :style="{
+                                                        width:
+                                                            (utilizationData.utilization.memory_used /
+                                                                utilizationData.utilization.memory_total) *
+                                                                100 +
+                                                            '%',
+                                                    }"
+                                                ></div>
+                                            </div>
+                                            <div class="text-sm text-center text-muted-foreground">
+                                                {{
+                                                    (
+                                                        (utilizationData.utilization.memory_used /
+                                                            utilizationData.utilization.memory_total) *
+                                                        100
+                                                    ).toFixed(1)
+                                                }}% used
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <!-- Disk Usage -->
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg">Disk Usage</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div class="space-y-3">
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-sm text-muted-foreground">Used / Total</span>
+                                                <span class="text-sm font-medium">
+                                                    {{ formatBytes(utilizationData.utilization.disk_used) }} /
+                                                    {{ formatBytes(utilizationData.utilization.disk_total) }}
+                                                </span>
+                                            </div>
+                                            <div class="w-full bg-muted rounded-full h-2">
+                                                <div
+                                                    class="bg-green-500 h-2 rounded-full transition-all duration-300"
+                                                    :style="{
+                                                        width:
+                                                            (utilizationData.utilization.disk_used /
+                                                                utilizationData.utilization.disk_total) *
+                                                                100 +
+                                                            '%',
+                                                    }"
+                                                ></div>
+                                            </div>
+                                            <div class="text-sm text-center text-muted-foreground">
+                                                {{
+                                                    (
+                                                        (utilizationData.utilization.disk_used /
+                                                            utilizationData.utilization.disk_total) *
+                                                        100
+                                                    ).toFixed(1)
+                                                }}% used
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <!-- Swap Usage -->
+                                <Card v-if="utilizationData.utilization.swap_total > 0">
+                                    <CardHeader>
+                                        <CardTitle class="text-lg">Swap Usage</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div class="space-y-3">
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-sm text-muted-foreground">Used / Total</span>
+                                                <span class="text-sm font-medium">
+                                                    {{ formatBytes(utilizationData.utilization.swap_used) }} /
+                                                    {{ formatBytes(utilizationData.utilization.swap_total) }}
+                                                </span>
+                                            </div>
+                                            <div class="w-full bg-muted rounded-full h-2">
+                                                <div
+                                                    class="bg-orange-500 h-2 rounded-full transition-all duration-300"
+                                                    :style="{
+                                                        width:
+                                                            (utilizationData.utilization.swap_used /
+                                                                utilizationData.utilization.swap_total) *
+                                                                100 +
+                                                            '%',
+                                                    }"
+                                                ></div>
+                                            </div>
+                                            <div class="text-sm text-center text-muted-foreground">
+                                                {{
+                                                    (
+                                                        (utilizationData.utilization.swap_used /
+                                                            utilizationData.utilization.swap_total) *
+                                                        100
+                                                    ).toFixed(1)
+                                                }}% used
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            <div v-else-if="utilizationError" class="space-y-4">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg flex items-center gap-2">
+                                            <div class="h-3 w-3 bg-red-500 rounded-full animate-pulse"></div>
+                                            Utilization Data Unavailable
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Alert variant="destructive">
+                                            <div class="space-y-3">
+                                                <div class="font-medium">Failed to fetch utilization data</div>
+                                                <div class="text-sm">{{ utilizationError }}</div>
+                                            </div>
+                                        </Alert>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="docker" class="space-y-4 mt-4">
+                            <div v-if="dockerLoading" class="flex items-center justify-center py-8">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                            </div>
+
+                            <div v-else-if="dockerData" class="space-y-4">
+                                <!-- Docker Images -->
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg">Docker Images</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <div class="text-center">
+                                                <div class="text-2xl font-bold">
+                                                    {{ dockerData.dockerDiskUsage.images_total }}
+                                                </div>
+                                                <div class="text-sm text-muted-foreground">Total Images</div>
+                                            </div>
+                                            <div class="text-center">
+                                                <div class="text-2xl font-bold text-green-600">
+                                                    {{ dockerData.dockerDiskUsage.images_active }}
+                                                </div>
+                                                <div class="text-sm text-muted-foreground">Active Images</div>
+                                            </div>
+                                            <div class="text-center">
+                                                <div class="text-2xl font-bold text-orange-600">
+                                                    {{
+                                                        dockerData.dockerDiskUsage.images_total -
+                                                        dockerData.dockerDiskUsage.images_active
+                                                    }}
+                                                </div>
+                                                <div class="text-sm text-muted-foreground">Inactive Images</div>
+                                            </div>
+                                            <div class="text-center">
+                                                <div class="text-2xl font-bold">
+                                                    {{ formatBytes(dockerData.dockerDiskUsage.images_size) }}
+                                                </div>
+                                                <div class="text-sm text-muted-foreground">Images Size</div>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <!-- Docker Disk Usage -->
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg">Docker Disk Usage</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div class="space-y-4">
+                                            <div class="flex justify-between items-center p-3 bg-muted rounded-lg">
+                                                <span class="text-sm font-medium">Containers</span>
+                                                <span class="text-sm">{{
+                                                    formatBytes(dockerData.dockerDiskUsage.containers_size)
+                                                }}</span>
+                                            </div>
+                                            <div class="flex justify-between items-center p-3 bg-muted rounded-lg">
+                                                <span class="text-sm font-medium">Images</span>
+                                                <span class="text-sm">{{
+                                                    formatBytes(dockerData.dockerDiskUsage.images_size)
+                                                }}</span>
+                                            </div>
+                                            <div class="flex justify-between items-center p-3 bg-muted rounded-lg">
+                                                <span class="text-sm font-medium">Build Cache</span>
+                                                <span class="text-sm">{{
+                                                    formatBytes(dockerData.dockerDiskUsage.build_cache_size)
+                                                }}</span>
+                                            </div>
+                                            <div
+                                                class="flex justify-between items-center p-3 bg-primary/10 rounded-lg border border-primary/20"
+                                            >
+                                                <span class="text-sm font-bold">Total Docker Usage</span>
+                                                <span class="text-sm font-bold">{{
+                                                    formatBytes(
+                                                        dockerData.dockerDiskUsage.containers_size +
+                                                            dockerData.dockerDiskUsage.images_size +
+                                                            dockerData.dockerDiskUsage.build_cache_size,
+                                                    )
+                                                }}</span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <!-- Docker Management -->
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg">Docker Management</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div class="space-y-4">
+                                            <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                                <div class="flex items-start gap-3">
+                                                    <div class="flex-1">
+                                                        <div class="font-medium text-yellow-800">
+                                                            Cleanup Recommendation
+                                                        </div>
+                                                        <div class="text-sm text-yellow-700 mt-1">
+                                                            You have
+                                                            {{
+                                                                dockerData.dockerDiskUsage.images_total -
+                                                                dockerData.dockerDiskUsage.images_active
+                                                            }}
+                                                            inactive Docker images. Pruning them could free up space.
+                                                        </div>
+                                                        <div class="text-xs text-yellow-600 mt-2">
+                                                            Build cache:
+                                                            {{
+                                                                formatBytes(dockerData.dockerDiskUsage.build_cache_size)
+                                                            }}
+                                                            could also be reclaimed.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                variant="outline"
+                                                class="w-full"
+                                                :loading="dockerPruning"
+                                                :disabled="
+                                                    dockerData.dockerDiskUsage.images_total -
+                                                        dockerData.dockerDiskUsage.images_active ===
+                                                    0
+                                                "
+                                                @click="pruneDockerImages"
+                                            >
+                                                <Trash2 :size="16" class="mr-2" />
+                                                Prune Unused Images
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            <div v-else-if="dockerError" class="space-y-4">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg flex items-center gap-2">
+                                            <div class="h-3 w-3 bg-red-500 rounded-full animate-pulse"></div>
+                                            Docker Data Unavailable
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Alert variant="destructive">
+                                            <div class="space-y-3">
+                                                <div class="font-medium">Failed to fetch Docker information</div>
+                                                <div class="text-sm">{{ dockerError }}</div>
+                                            </div>
+                                        </Alert>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="network" class="space-y-4 mt-4">
+                            <div v-if="networkLoading" class="flex items-center justify-center py-8">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                            </div>
+
+                            <div v-else-if="networkData" class="space-y-4">
+                                <!-- IP Addresses -->
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg">Network Interfaces</CardTitle>
+                                        <CardDescription> Available IP addresses on this node </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div class="space-y-3">
+                                            <div
+                                                v-for="(ip, index) in networkData.ips.ip_addresses"
+                                                :key="index"
+                                                class="flex items-center justify-between p-3 bg-muted rounded-lg"
+                                            >
+                                                <div class="flex items-center gap-3">
+                                                    <div class="h-2 w-2 bg-green-500 rounded-full"></div>
+                                                    <span class="font-mono text-sm">{{ ip }}</span>
+                                                    <span
+                                                        v-if="isIPv6(ip)"
+                                                        class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
+                                                    >
+                                                        IPv6
+                                                    </span>
+                                                    <span
+                                                        v-else-if="isPrivateIP(ip)"
+                                                        class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
+                                                    >
+                                                        Private
+                                                    </span>
+                                                    <span
+                                                        v-else
+                                                        class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full"
+                                                    >
+                                                        Public
+                                                    </span>
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    class="h-8 w-8 p-0"
+                                                    @click="copyToClipboard(ip)"
+                                                >
+                                                    <svg
+                                                        class="h-4 w-4"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                                        ></path>
+                                                    </svg>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <!-- Network Statistics -->
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg">Network Summary</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
+                                            <div>
+                                                <div class="text-2xl font-bold">
+                                                    {{ networkData.ips.ip_addresses.length }}
+                                                </div>
+                                                <div class="text-sm text-muted-foreground">Total IPs</div>
+                                            </div>
+                                            <div>
+                                                <div class="text-2xl font-bold text-green-600">
+                                                    {{ getPublicIPs(networkData.ips.ip_addresses).length }}
+                                                </div>
+                                                <div class="text-sm text-muted-foreground">Public IPs</div>
+                                            </div>
+                                            <div>
+                                                <div class="text-2xl font-bold text-blue-600">
+                                                    {{ getIPv6IPs(networkData.ips.ip_addresses).length }}
+                                                </div>
+                                                <div class="text-sm text-muted-foreground">IPv6 IPs</div>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            <div v-else-if="networkError" class="space-y-4">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg flex items-center gap-2">
+                                            <div class="h-3 w-3 bg-red-500 rounded-full animate-pulse"></div>
+                                            Network Data Unavailable
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Alert variant="destructive">
+                                            <div class="space-y-3">
+                                                <div class="font-medium">Failed to fetch network information</div>
+                                                <div class="text-sm">{{ networkError }}</div>
+                                            </div>
+                                        </Alert>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </TabsContent>
                     </Tabs>
 
                     <DrawerFooter>
@@ -859,6 +1324,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Extend Node type and form default
+
+type UtilizationResponse = {
+    utilization: {
+        memory_total: number;
+        memory_used: number;
+        swap_total: number;
+        swap_used: number;
+        load_average1: number;
+        load_average5: number;
+        load_average15: number;
+        cpu_percent: number;
+        disk_total: number;
+        disk_used: number;
+        disk_details: Array<{
+            device: string;
+            mountpoint: string;
+            total_space: number;
+            used_space: number;
+            tags: string[];
+        }>;
+    };
+};
+
+type DockerResponse = {
+    dockerDiskUsage: {
+        containers_size: number;
+        images_total: number;
+        images_active: number;
+        images_size: number;
+        build_cache_size: number;
+    };
+};
+
+type NetworkResponse = {
+    ips: {
+        ip_addresses: string[];
+    };
+};
 
 type SystemInfoResponse = {
     wings: {
@@ -958,6 +1461,22 @@ const systemInfoLoading = ref(false);
 const systemInfoData = ref<SystemInfoResponse | null>(null);
 const systemInfoError = ref<string | null>(null);
 const viewActiveTab = ref('overview'); // For view mode tabs
+
+// Utilization state
+const utilizationLoading = ref(false);
+const utilizationData = ref<UtilizationResponse | null>(null);
+const utilizationError = ref<string | null>(null);
+
+// Docker state
+const dockerLoading = ref(false);
+const dockerData = ref<DockerResponse | null>(null);
+const dockerError = ref<string | null>(null);
+const dockerPruning = ref(false);
+
+// Network state
+const networkLoading = ref(false);
+const networkData = ref<NetworkResponse | null>(null);
+const networkError = ref<string | null>(null);
 
 // Node health tracking
 const nodeHealthStatus = ref<Record<number, 'healthy' | 'unhealthy' | 'unknown'>>({});
@@ -1218,12 +1737,27 @@ async function onView(node: Node) {
     viewActiveTab.value = 'overview';
     showDrawer.value = true;
 
-    // Fetch system info when opening view mode
-    await fetchSystemInfo(node);
+    // Fetch all node information when opening view mode
+    await Promise.all([
+        fetchSystemInfo(node),
+        fetchUtilizationInfo(node),
+        fetchDockerInfo(node),
+        fetchNetworkInfo(node),
+    ]);
 }
 function closeDrawer() {
     showDrawer.value = false;
     drawerNode.value = null;
+
+    // Reset all data states
+    systemInfoData.value = null;
+    systemInfoError.value = null;
+    utilizationData.value = null;
+    utilizationError.value = null;
+    dockerData.value = null;
+    dockerError.value = null;
+    networkData.value = null;
+    networkError.value = null;
 }
 
 function getLocationName(id: number | undefined) {
@@ -1440,6 +1974,156 @@ async function fetchSystemInfo(node: Node) {
     } finally {
         systemInfoLoading.value = false;
     }
+}
+
+// Utilization functions
+async function fetchUtilizationInfo(node: Node) {
+    utilizationLoading.value = true;
+    utilizationError.value = null;
+    utilizationData.value = null;
+
+    try {
+        const response = await axios.get(`/api/wings/admin/node/${node.id}/utilization`);
+        if (response.data.success) {
+            utilizationData.value = response.data.data;
+        } else {
+            utilizationError.value = response.data.message || 'Failed to fetch utilization information';
+        }
+    } catch (e: unknown) {
+        const error = e as { response?: { data?: { message?: string } } };
+        utilizationError.value = error?.response?.data?.message || 'Failed to fetch utilization information';
+    } finally {
+        utilizationLoading.value = false;
+    }
+}
+
+// Docker functions
+async function fetchDockerInfo(node: Node) {
+    dockerLoading.value = true;
+    dockerError.value = null;
+    dockerData.value = null;
+
+    try {
+        const response = await axios.get(`/api/wings/admin/node/${node.id}/docker/disk`);
+        if (response.data.success) {
+            dockerData.value = response.data.data;
+        } else {
+            dockerError.value = response.data.message || 'Failed to fetch Docker information';
+        }
+    } catch (e: unknown) {
+        const error = e as { response?: { data?: { message?: string } } };
+        dockerError.value = error?.response?.data?.message || 'Failed to fetch Docker information';
+    } finally {
+        dockerLoading.value = false;
+    }
+}
+
+async function pruneDockerImages() {
+    if (!drawerNode.value) return;
+
+    dockerPruning.value = true;
+
+    try {
+        const response = await axios.delete(`/api/wings/admin/node/${drawerNode.value.id}/docker/prune`);
+        if (response.data.success) {
+            const spaceReclaimed = response.data.data.dockerPrune.SpaceReclaimed || 0;
+            const imagesDeleted = response.data.data.dockerPrune.ImagesDeleted || [];
+
+            message.value = {
+                type: 'success',
+                text: `Docker prune completed. Space reclaimed: ${formatBytes(spaceReclaimed)}. Images deleted: ${imagesDeleted ? imagesDeleted.length : 0}`,
+            };
+
+            // Refresh Docker data
+            await fetchDockerInfo(drawerNode.value);
+        } else {
+            message.value = { type: 'error', text: response.data.message || 'Failed to prune Docker images' };
+        }
+    } catch (e: unknown) {
+        const error = e as { response?: { data?: { message?: string } } };
+        message.value = { type: 'error', text: error?.response?.data?.message || 'Failed to prune Docker images' };
+    } finally {
+        dockerPruning.value = false;
+
+        setTimeout(() => {
+            message.value = null;
+        }, 5000);
+    }
+}
+
+// Network functions
+async function fetchNetworkInfo(node: Node) {
+    networkLoading.value = true;
+    networkError.value = null;
+    networkData.value = null;
+
+    try {
+        const response = await axios.get(`/api/wings/admin/node/${node.id}/ips`);
+        if (response.data.success) {
+            networkData.value = response.data.data;
+        } else {
+            networkError.value = response.data.message || 'Failed to fetch network information';
+        }
+    } catch (e: unknown) {
+        const error = e as { response?: { data?: { message?: string } } };
+        networkError.value = error?.response?.data?.message || 'Failed to fetch network information';
+    } finally {
+        networkLoading.value = false;
+    }
+}
+
+// Utility functions for network info
+function isIPv6(ip: string): boolean {
+    return ip.includes(':');
+}
+
+function isPrivateIP(ip: string): boolean {
+    // Check for private IP ranges
+    if (isIPv6(ip)) {
+        return ip.startsWith('fd') || ip.startsWith('fe80');
+    }
+
+    const octets = ip.split('.').map(Number);
+    if (octets.length !== 4) return false;
+
+    // 10.0.0.0/8
+    if (octets[0] === 10) return true;
+
+    // 172.16.0.0/12
+    if (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) return true;
+
+    // 192.168.0.0/16
+    if (octets[0] === 192 && octets[1] === 168) return true;
+
+    // 127.0.0.0/8 (localhost)
+    if (octets[0] === 127) return true;
+
+    return false;
+}
+
+function getPublicIPs(ips: string[]): string[] {
+    return ips.filter((ip) => !isPrivateIP(ip) && !isIPv6(ip));
+}
+
+function getIPv6IPs(ips: string[]): string[] {
+    return ips.filter((ip) => isIPv6(ip));
+}
+
+function copyToClipboard(text: string) {
+    navigator.clipboard
+        .writeText(text)
+        .then(() => {
+            message.value = { type: 'success', text: `IP address ${text} copied to clipboard` };
+            setTimeout(() => {
+                message.value = null;
+            }, 3000);
+        })
+        .catch(() => {
+            message.value = { type: 'error', text: 'Failed to copy to clipboard' };
+            setTimeout(() => {
+                message.value = null;
+            }, 3000);
+        });
 }
 
 function getNodeHealthStatus(nodeId: number): 'healthy' | 'unhealthy' | 'unknown' {
