@@ -38,6 +38,13 @@ class ApiResponse
             'error' => true,
             'error_message' => $error_message,
             'error_code' => $error_code,
+            'errors' => [
+                [
+                    'code' => $error_code,
+                    'detail' => $error_message,
+                    'status' => $status,
+                ],
+            ],
         ]), $status, ['Content-Type' => 'application/json']);
     }
 
@@ -54,6 +61,13 @@ class ApiResponse
             'error' => $error,
             'error_message' => $error,
             'error_code' => null,
+            'errors' => [
+                [
+                    'code' => 'INTERNAL_SERVER_ERROR',
+                    'detail' => $error,
+                    'status' => 500,
+                ],
+            ],
             'trace' => $trace,
         ]), 500, ['Content-Type' => 'application/json']);
     }

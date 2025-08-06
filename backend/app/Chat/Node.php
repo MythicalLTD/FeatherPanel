@@ -527,6 +527,25 @@ class Node
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    public static function isWingsAuthValid(string $tokenId, string $tokenSecret): bool
+    {
+        try {
+            if (empty($tokenId) || empty($tokenSecret)) {
+                return false;
+            }
+
+            $pdo = Database::getPdoConnection();
+            $stmt = $pdo->prepare('SELECT COUNT(*) FROM mythicalpanel_nodes WHERE daemon_token_id = :token_id AND daemon_token = :token_secret');
+            $stmt->execute(['token_id' => $tokenId, 'token_secret' => $tokenSecret]);
+
+            return (bool) $stmt->fetchColumn();
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Wings auth validation failed: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
     /**
      * Sanitize data for logging by excluding sensitive fields.
      */

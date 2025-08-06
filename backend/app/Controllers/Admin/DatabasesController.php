@@ -53,12 +53,26 @@ class DatabasesController
         // Get total count for pagination
         $total = DatabaseInstance::getDatabasesCount($search, $nodeId ? (int) $nodeId : null);
 
+        // Calculate pagination metadata
+        $totalPages = ceil($total / $limit);
+        $from = ($page - 1) * $limit + 1;
+        $to = min($from + $limit - 1, $total);
+
         return ApiResponse::success([
             'databases' => $databases,
             'pagination' => [
-                'page' => (int) $page,
-                'limit' => (int) $limit,
-                'total' => (int) $total,
+                'current_page' => (int) $page,
+                'per_page' => (int) $limit,
+                'total_records' => (int) $total,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
+                'from' => $from,
+                'to' => $to,
+            ],
+            'search' => [
+                'query' => $search,
+                'has_results' => count($databases) > 0,
             ],
         ], 'Databases fetched successfully', 200);
     }
@@ -309,12 +323,26 @@ class DatabasesController
         // Get total count for pagination
         $total = DatabaseInstance::getDatabasesCount($search, $nodeId);
 
+        // Calculate pagination metadata
+        $totalPages = ceil($total / $limit);
+        $from = ($page - 1) * $limit + 1;
+        $to = min($from + $limit - 1, $total);
+
         return ApiResponse::success([
             'databases' => $databases,
             'pagination' => [
-                'page' => (int) $page,
-                'limit' => (int) $limit,
-                'total' => (int) $total,
+                'current_page' => (int) $page,
+                'per_page' => (int) $limit,
+                'total_records' => (int) $total,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
+                'from' => $from,
+                'to' => $to,
+            ],
+            'search' => [
+                'query' => $search,
+                'has_results' => count($databases) > 0,
             ],
         ], 'Databases for node fetched successfully', 200);
     }

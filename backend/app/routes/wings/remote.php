@@ -17,7 +17,7 @@ use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\Wings\WingsAdminController;
 
 return function (RouteCollection $routes): void {
-    App::getInstance(true)->registerApiRoute(
+    App::getInstance(true)->registerWingsRoute(
         $routes,
         'wings-remote-servers',
         '/api/remote/servers',
@@ -27,7 +27,7 @@ return function (RouteCollection $routes): void {
         ['GET']
     );
 
-    App::getInstance(true)->registerApiRoute(
+    App::getInstance(true)->registerWingsRoute(
         $routes,
         'wings-remote-serveres-reset',
         '/api/remote/servers/reset',

@@ -22,6 +22,7 @@ use App\Config\ConfigInterface;
 use RateLimit\RedisRateLimiter;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\AdminMiddleware;
+use App\Middleware\WingsMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\Routing\Route;
 use RateLimit\Exception\LimitExceeded;
@@ -267,10 +268,8 @@ class App
             foreach ($this->routes as $name => $route) {
                 $allRoutes[] = $route->getPath();
             }
-            self::getLogger()->error('Route not found: ' . $request->getPathInfo() . '. Registered routes: ' . json_encode($allRoutes));
             $response = ApiResponse::error('The api route does not exist! [' . $request->getPathInfo() . ']', 'API_ROUTE_NOT_FOUND', 404, null);
         } catch (MethodNotAllowedException $e) {
-            self::getLogger()->error('Method not allowed: ' . $request->getMethod() . ' for ' . $request->getPathInfo() . '. Allowed methods: ' . json_encode($e->getAllowedMethods()));
             $response = ApiResponse::error('Method not allowed for this route. Allowed: ' . implode(', ', $e->getAllowedMethods()), 'METHOD_NOT_ALLOWED', 405, null);
         } catch (\Exception $e) {
             self::getLogger()->error(
@@ -366,6 +365,33 @@ class App
             [
                 '_controller' => $controller,
                 '_middleware' => [],
+            ],
+            [], // requirements
+            [], // options
+            '', // host
+            [], // schemes
+            $methods
+        ));
+    }
+
+    /**
+     * Register a Wings route.
+     *
+     * This route does not require authentication or any middleware by default.
+     *
+     * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
+     * @param string $name The name of the route
+     * @param string $path The URL path for the route (e.g. '/api/wings/data')
+     * @param callable $controller The controller to handle the request
+     * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
+     */
+    public function registerWingsRoute(RouteCollection $routes, string $name, string $path, callable $controller, array $methods = ['GET']): void
+    {
+        $routes->add($name, new Route(
+            $path,
+            [
+                '_controller' => $controller,
+                '_middleware' => [WingsMiddleware::class],
             ],
             [], // requirements
             [], // options

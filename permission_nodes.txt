@@ -57,3 +57,13 @@ ADMIN_ROLES_PERMISSIONS_VIEW=admin.roles.permissions.view | Admin Role Permissio
 ADMIN_ROLES_PERMISSIONS_CREATE=admin.roles.permissions.create | Admin Role Permissions | Create new role permissions
 ADMIN_ROLES_PERMISSIONS_EDIT=admin.roles.permissions.edit | Admin Role Permissions | Edit existing role permissions
 ADMIN_ROLES_PERMISSIONS_DELETE=admin.roles.permissions.delete | Admin Role Permissions | Delete role permissions
+
+# Admin Settings Permissions
+ADMIN_SETTINGS_VIEW=admin.settings.view | Admin Settings | View settings
+ADMIN_SETTINGS_EDIT=admin.settings.edit | Admin Settings | Edit and manage settings
+
+# Allocations Permissions
+ADMIN_ALLOCATIONS_VIEW=admin.allocations.view | Admin Allocations | View allocations
+ADMIN_ALLOCATIONS_CREATE=admin.allocations.create | Admin Allocations | Create new allocations
+ADMIN_ALLOCATIONS_EDIT=admin.allocations.edit | Admin Allocations | Edit existing allocations
+ADMIN_ALLOCATIONS_DELETE=admin.allocations.delete | Admin Allocations | Delete allocations

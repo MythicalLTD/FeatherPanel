@@ -24,26 +24,21 @@ class PermissionsController
 {
     public function index(Request $request): Response
     {
-        // Validate and sanitize pagination parameters
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
-
-        // Validate page parameter
-        if ($page < 1) {
-            return ApiResponse::error('Page must be at least 1', 'INVALID_PAGE_PARAMETER', 400);
-        }
-
-        // Validate limit parameter with reasonable bounds
-        $maxLimit = 100; // Define maximum limit to prevent performance issues
-        if ($limit < 1) {
-            return ApiResponse::error('Limit must be at least 1', 'INVALID_LIMIT_PARAMETER', 400);
-        }
-        if ($limit > $maxLimit) {
-            return ApiResponse::error("Limit cannot exceed {$maxLimit}", 'INVALID_LIMIT_PARAMETER', 400);
-        }
-
         $search = $request->query->get('search', '');
         $roleId = $request->query->get('role_id');
+
+        if ($page < 1) {
+            $page = 1;
+        }
+        if ($limit < 1) {
+            $limit = 10;
+        }
+        if ($limit > 100) {
+            $limit = 100;
+        }
+
         $offset = ($page - 1) * $limit;
 
         if ($roleId) {
@@ -54,12 +49,25 @@ class PermissionsController
             $total = Permission::getCount($search);
         }
 
+        $totalPages = ceil($total / $limit);
+        $from = ($page - 1) * $limit + 1;
+        $to = min($from + $limit - 1, $total);
+
         return ApiResponse::success([
             'permissions' => $permissions,
             'pagination' => [
-                'page' => $page,
-                'limit' => $limit,
-                'total' => $total,
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total_records' => $total,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
+                'from' => $from,
+                'to' => $to,
+            ],
+            'search' => [
+                'query' => $search,
+                'has_results' => count($permissions) > 0,
             ],
         ], 'Permissions fetched successfully', 200);
     }

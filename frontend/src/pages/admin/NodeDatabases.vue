@@ -1,120 +1,129 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
-        <main class="p-6 space-y-8 bg-background min-h-screen">
-            <Card class="rounded-xl">
-                <CardHeader>
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div>
-                            <CardTitle class="text-2xl font-bold">Node Databases</CardTitle>
-                            <CardDescription> Managing databases for node: {{ node?.name }} </CardDescription>
-                        </div>
-                        <div class="flex gap-2 items-center">
-                            <Input v-model="searchQuery" placeholder="Search by name or host..." class="max-w-xs" />
-                            <Button variant="secondary" @click="openCreateDrawer">Add Database</Button>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <Alert
-                        v-if="message"
-                        :variant="message.type === 'error' ? 'destructive' : 'default'"
-                        class="mb-4 whitespace-nowrap overflow-x-auto"
-                    >
-                        <span>{{ displayMessage }}</span>
-                    </Alert>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Host</TableHead>
-                                <TableHead>Port</TableHead>
-                                <TableHead>Username</TableHead>
-                                <TableHead>Created</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow v-for="database in databases" :key="database.id">
-                                <TableCell>
-                                    <div class="flex items-center gap-2">
-                                        <div
-                                            :class="[
-                                                'h-2 w-2 rounded-full',
-                                                database.healthy ? 'bg-green-500' : 'bg-red-500',
-                                            ]"
-                                        ></div>
-                                        <span class="text-xs">
-                                            {{ database.healthy ? 'Healthy' : 'Unhealthy' }}
-                                        </span>
-                                    </div>
-                                </TableCell>
-                                <TableCell>{{ database.name }}</TableCell>
-                                <TableCell>
-                                    <Badge :variant="getDatabaseTypeVariant(database.database_type)">
-                                        {{ database.database_type }}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>{{ database.database_host }}</TableCell>
-                                <TableCell>{{ database.database_port }}</TableCell>
-                                <TableCell>{{ database.database_username }}</TableCell>
-                                <TableCell>{{ formatDate(database.created_at) }}</TableCell>
-                                <TableCell>
-                                    <div class="flex gap-2">
-                                        <Button size="sm" variant="outline" @click="onView(database)">
-                                            <Eye :size="16" />
-                                        </Button>
-                                        <Button size="sm" variant="secondary" @click="onEdit(database)">
-                                            <Pencil :size="16" />
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            title="Check Health"
-                                            @click="onHealthCheck(database)"
-                                        >
-                                            <Activity :size="16" />
-                                        </Button>
-                                        <template v-if="confirmDeleteRow === database.id">
-                                            <Button
-                                                size="sm"
-                                                variant="destructive"
-                                                :loading="deleting"
-                                                @click="confirmDelete(database)"
-                                            >
-                                                Confirm Delete
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                :disabled="deleting"
-                                                @click="onCancelDelete"
-                                            >
-                                                Cancel
-                                            </Button>
-                                        </template>
-                                        <template v-else>
-                                            <Button size="sm" variant="destructive" @click="onDelete(database)">
-                                                <Trash2 :size="16" />
-                                            </Button>
-                                        </template>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                    <div class="mt-6 flex justify-end">
-                        <Pagination
-                            :items-per-page="pagination.pageSize"
-                            :total="pagination.total"
-                            :default-page="pagination.page"
-                            @page-change="onPageChange"
+        <div class="min-h-screen bg-background">
+            <!-- Loading State -->
+            <div v-if="loading" class="flex items-center justify-center py-12">
+                <div class="flex items-center gap-3">
+                    <div class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+                    <span class="text-muted-foreground">Loading databases...</span>
+                </div>
+            </div>
+
+            <!-- Error State -->
+            <div
+                v-else-if="message?.type === 'error'"
+                class="flex flex-col items-center justify-center py-12 text-center"
+            >
+                <div class="text-red-500 mb-4">
+                    <svg class="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
                         />
-                    </div>
-                </CardContent>
-            </Card>
-        </main>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-muted-foreground mb-2">Failed to load databases</h3>
+                <p class="text-sm text-muted-foreground max-w-sm">
+                    {{ message.text }}
+                </p>
+                <Button class="mt-4" @click="fetchDatabases">Try Again</Button>
+            </div>
+
+            <!-- Databases Table -->
+            <div v-else class="p-6">
+                <TableComponent
+                    title="Node Databases"
+                    :description="`Managing databases for node: ${node?.name}`"
+                    :columns="tableColumns"
+                    :data="databases"
+                    :search-placeholder="'Search by name or host...'"
+                    :server-side-pagination="true"
+                    :total-records="pagination.total"
+                    :total-pages="Math.ceil(pagination.total / pagination.pageSize)"
+                    :current-page="pagination.page"
+                    :has-next="pagination.hasNext"
+                    :has-prev="pagination.hasPrev"
+                    :from="pagination.from"
+                    :to="pagination.to"
+                    local-storage-key="node-databases-table-columns"
+                    @search="handleSearch"
+                    @page-change="changePage"
+                    @column-toggle="handleColumnToggle"
+                >
+                    <template #header-actions>
+                        <Button variant="outline" size="sm" @click="openCreateDrawer">
+                            <Plus class="h-4 w-4 mr-2" />
+                            Add Database
+                        </Button>
+                    </template>
+
+                    <!-- Custom cell templates -->
+                    <template #cell-status="{ item }">
+                        <div class="flex items-center gap-2">
+                            <div
+                                :class="[
+                                    'h-2 w-2 rounded-full',
+                                    (item as unknown as Database).healthy ? 'bg-green-500' : 'bg-red-500',
+                                ]"
+                            ></div>
+                            <span class="text-xs">
+                                {{ (item as unknown as Database).healthy ? 'Healthy' : 'Unhealthy' }}
+                            </span>
+                        </div>
+                    </template>
+
+                    <template #cell-type="{ item }">
+                        <Badge :variant="getDatabaseTypeVariant((item as unknown as Database).database_type)">
+                            {{ (item as unknown as Database).database_type }}
+                        </Badge>
+                    </template>
+
+                    <template #cell-created="{ item }">
+                        {{ formatDate((item as unknown as Database).created_at) }}
+                    </template>
+
+                    <template #cell-actions="{ item }">
+                        <div class="flex gap-2">
+                            <Button size="sm" variant="outline" @click="onView(item as unknown as Database)">
+                                <Eye :size="16" />
+                            </Button>
+                            <Button size="sm" variant="secondary" @click="onEdit(item as unknown as Database)">
+                                <Pencil :size="16" />
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                title="Check Health"
+                                @click="onHealthCheck(item as unknown as Database)"
+                            >
+                                <Activity :size="16" />
+                            </Button>
+                            <template v-if="confirmDeleteRow === (item as unknown as Database).id">
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    :loading="deleting"
+                                    @click="confirmDelete(item as unknown as Database)"
+                                >
+                                    Confirm Delete
+                                </Button>
+                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
+                                    Cancel
+                                </Button>
+                            </template>
+                            <template v-else>
+                                <Button size="sm" variant="destructive" @click="onDelete(item as unknown as Database)">
+                                    <Trash2 :size="16" />
+                                </Button>
+                            </template>
+                        </div>
+                    </template>
+                </TableComponent>
+            </div>
+        </div>
+
         <!-- Drawers -->
         <Drawer v-model:open="showDrawer" class="w-full">
             <DrawerContent>
@@ -278,18 +287,18 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Pagination } from '@/components/ui/pagination';
-import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
-import { Eye, Pencil, Trash2, Activity, Database } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Activity, Database, Plus } from 'lucide-vue-next';
 import axios from 'axios';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import TableComponent from '@/kit/TableComponent.vue';
+import type { TableColumn } from '@/kit/types';
 
 interface Database {
     id: number;
@@ -328,6 +337,19 @@ const viewDatabase = ref<Database | null>(null);
 const confirmDeleteRow = ref<number | null>(null);
 const deleting = ref(false);
 const formLoading = ref(false);
+const loading = ref(false);
+
+// Table columns configuration
+const tableColumns: TableColumn[] = [
+    { key: 'status', label: 'Status', headerClass: 'w-[100px]' },
+    { key: 'name', label: 'Name', searchable: true },
+    { key: 'type', label: 'Type' },
+    { key: 'database_host', label: 'Host', searchable: true },
+    { key: 'database_port', label: 'Port' },
+    { key: 'database_username', label: 'Username' },
+    { key: 'created', label: 'Created' },
+    { key: 'actions', label: 'Actions', headerClass: 'w-[200px] font-semibold' },
+];
 
 // Form data
 const form = ref({
@@ -346,6 +368,10 @@ const pagination = ref({
     page: 1,
     pageSize: 10,
     total: 0,
+    hasNext: false,
+    hasPrev: false,
+    from: 0,
+    to: 0,
 });
 
 // Breadcrumbs
@@ -356,10 +382,9 @@ const breadcrumbs = computed(() => [
     { text: 'Databases', href: `/admin/nodes/${nodeId.value}/databases` },
 ]);
 
-const displayMessage = computed(() => message.value?.text || '');
-
 // Methods
 async function fetchDatabases() {
+    loading.value = true;
     try {
         const response = await axios.get(`/api/admin/databases/node/${nodeId.value}`, {
             params: {
@@ -369,10 +394,23 @@ async function fetchDatabases() {
             },
         });
         databases.value = response.data.data.databases;
-        pagination.value = response.data.data.pagination;
+
+        // Map the API response pagination to our expected format
+        const apiPagination = response.data.data.pagination;
+        pagination.value = {
+            page: apiPagination.current_page,
+            pageSize: apiPagination.per_page,
+            total: apiPagination.total_records,
+            hasNext: apiPagination.has_next,
+            hasPrev: apiPagination.has_prev,
+            from: apiPagination.from,
+            to: apiPagination.to,
+        };
     } catch (e) {
         const err = e as { response?: { data?: { message?: string } } };
         message.value = { type: 'error', text: err?.response?.data?.message || 'Failed to fetch databases' };
+    } finally {
+        loading.value = false;
     }
 }
 
@@ -399,6 +437,23 @@ async function checkDatabaseHealth(database: Database) {
 
 async function checkAllDatabasesHealth() {
     await Promise.all(databases.value.map(checkDatabaseHealth));
+}
+
+// Table event handlers
+function handleSearch(query: string) {
+    searchQuery.value = query;
+    pagination.value.page = 1; // Reset to first page when searching
+    fetchDatabases();
+}
+
+function changePage(page: number) {
+    pagination.value.page = page;
+    fetchDatabases();
+}
+
+function handleColumnToggle(columns: string[]) {
+    // Column preferences are automatically saved by the TableComponent
+    console.log('Columns changed:', columns);
 }
 
 function openCreateDrawer() {
@@ -543,11 +598,6 @@ async function submitForm() {
     } finally {
         formLoading.value = false;
     }
-}
-
-function onPageChange(page: number) {
-    pagination.value.page = page;
-    fetchDatabases();
 }
 
 function getDatabaseTypeVariant(type: string | undefined) {

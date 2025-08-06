@@ -5,422 +5,401 @@
             { text: 'Spells', isCurrent: true, href: '/admin/spells' },
         ]"
     >
-        <main class="p-6 space-y-8 bg-background min-h-screen">
-            <Card class="rounded-xl">
-                <CardHeader>
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div>
-                            <CardTitle class="text-2xl font-bold">Spells</CardTitle>
-                            <CardDescription v-if="currentRealm">
-                                Managing spells for realm: {{ currentRealm.name }}
-                            </CardDescription>
-                            <CardDescription v-else> Manage all spells in your system. </CardDescription>
-                        </div>
+        <div class="min-h-screen bg-background">
+            <!-- Loading State -->
+            <div v-if="loading" class="flex items-center justify-center py-12">
+                <div class="flex items-center gap-3">
+                    <div class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+                    <span class="text-muted-foreground">Loading spells...</span>
+                </div>
+            </div>
+
+            <!-- Error State -->
+            <div
+                v-else-if="message?.type === 'error'"
+                class="flex flex-col items-center justify-center py-12 text-center"
+            >
+                <div class="text-red-500 mb-4">
+                    <svg class="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                        />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-muted-foreground mb-2">Failed to load spells</h3>
+                <p class="text-sm text-muted-foreground max-w-sm">
+                    {{ message.text }}
+                </p>
+                <Button class="mt-4" @click="fetchSpells">Try Again</Button>
+            </div>
+
+            <!-- Spells Table -->
+            <div v-else class="p-6">
+                <TableComponent
+                    :title="'Spells'"
+                    :description="
+                        currentRealm
+                            ? `Managing spells for realm: ${currentRealm.name}`
+                            : 'Manage all spells in your system.'
+                    "
+                    :columns="tableColumns"
+                    :data="spells"
+                    :search-placeholder="'Search by name, description, or author...'"
+                    :server-side-pagination="true"
+                    :total-records="pagination.total"
+                    :total-pages="Math.ceil(pagination.total / pagination.pageSize)"
+                    :current-page="pagination.page"
+                    :has-next="pagination.hasNext"
+                    :has-prev="pagination.hasPrev"
+                    :from="pagination.from"
+                    :to="pagination.to"
+                    local-storage-key="spells-table-columns"
+                    @search="handleSearch"
+                    @page-change="changePage"
+                    @column-toggle="handleColumnToggle"
+                >
+                    <template #header-actions>
                         <div class="flex gap-2">
-                            <Input
-                                v-model="searchQuery"
-                                placeholder="Search by name, description, or author..."
-                                class="max-w-xs"
-                            />
-                            <Button variant="secondary" @click="openCreateDrawer">Create Spell</Button>
+                            <Button variant="outline" size="sm" @click="openCreateDrawer">
+                                <Plus class="h-4 w-4 mr-2" />
+                                Create Spell
+                            </Button>
                             <label class="inline-block">
-                                <Button variant="outline" as="span">Import Spell</Button>
+                                <Button variant="outline" size="sm" as="span">
+                                    <Upload class="h-4 w-4 mr-2" />
+                                    Import Spell
+                                </Button>
                                 <input type="file" accept="application/json" class="hidden" @change="onImportSpell" />
                             </label>
                         </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <Alert
-                        v-if="message"
-                        :variant="message.type === 'error' ? 'destructive' : 'default'"
-                        class="mb-4 whitespace-nowrap overflow-x-auto"
-                    >
-                        <span>{{ displayMessage }}</span>
-                    </Alert>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Description</TableHead>
-                                <TableHead>Author</TableHead>
-                                <TableHead v-if="!currentRealm">Realm</TableHead>
-                                <TableHead>Created</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow v-for="spell in spells" :key="spell.id">
-                                <TableCell>{{ spell.name }}</TableCell>
-                                <TableCell>{{ spell.description || '-' }}</TableCell>
-                                <TableCell>{{ spell.author || '-' }}</TableCell>
-                                <TableCell v-if="!currentRealm">{{ spell.realm_name || '-' }}</TableCell>
-                                <TableCell>{{ spell.created_at }}</TableCell>
-                                <TableCell>
-                                    <div class="flex gap-2">
-                                        <Button size="sm" variant="outline" @click="onView(spell)">
-                                            <Eye :size="16" />
-                                        </Button>
-                                        <Button size="sm" variant="secondary" @click="onEdit(spell)">
-                                            <Pencil :size="16" />
-                                        </Button>
-                                        <Button size="sm" variant="outline" @click="onExport(spell)">
-                                            <Download :size="16" />
-                                        </Button>
-                                        <template v-if="confirmDeleteRow === spell.id">
-                                            <Button
-                                                size="sm"
-                                                variant="destructive"
-                                                :loading="deleting"
-                                                @click="confirmDelete(spell)"
-                                            >
-                                                Confirm Delete
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                :disabled="deleting"
-                                                @click="onCancelDelete"
-                                            >
-                                                Cancel
-                                            </Button>
-                                        </template>
-                                        <template v-else>
-                                            <Button size="sm" variant="destructive" @click="onDelete(spell)">
-                                                <Trash2 :size="16" />
-                                            </Button>
-                                        </template>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                    <div class="mt-6 flex justify-end">
-                        <Pagination
-                            :items-per-page="pagination.pageSize"
-                            :total="pagination.total"
-                            :default-page="pagination.page"
-                            @page-change="onPageChange"
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-        </main>
-    </DashboardLayout>
-    <Drawer
-        class="w-full"
-        :open="viewing"
-        @update:open="
-            (val: boolean) => {
-                if (!val) closeView();
-            }
-        "
-    >
-        <DrawerContent v-if="selectedSpell">
-            <DrawerHeader>
-                <DrawerTitle>Spell Info</DrawerTitle>
-                <DrawerDescription>Viewing details for spell: {{ selectedSpell.name }}</DrawerDescription>
-            </DrawerHeader>
-            <div class="px-6 pt-6 space-y-2">
-                <div><b>Name:</b> {{ selectedSpell.name }}</div>
-                <div><b>Description:</b> {{ selectedSpell.description || '-' }}</div>
-                <div><b>Author:</b> {{ selectedSpell.author || '-' }}</div>
-                <div><b>UUID:</b> {{ selectedSpell.uuid }}</div>
-                <div><b>Realm:</b> {{ selectedSpell.realm_name || '-' }}</div>
-                <div><b>Script Container:</b> {{ selectedSpell.script_container || '-' }}</div>
-                <div><b>Script Entry:</b> {{ selectedSpell.script_entry || '-' }}</div>
-                <div><b>Privileged:</b> {{ selectedSpell.script_is_privileged ? 'Yes' : 'No' }}</div>
-                <div><b>Force Outgoing IP:</b> {{ selectedSpell.force_outgoing_ip ? 'Yes' : 'No' }}</div>
-                <div><b>Created At:</b> {{ selectedSpell.created_at }}</div>
-                <div><b>Updated At:</b> {{ selectedSpell.updated_at }}</div>
+                    </template>
+
+                    <!-- Custom cell templates -->
+                    <template #cell-realm="{ item }">
+                        {{ (item as Spell).realm_name || '-' }}
+                    </template>
+
+                    <template #cell-actions="{ item }">
+                        <div class="flex gap-2">
+                            <Button size="sm" variant="outline" @click="onView(item as Spell)">
+                                <Eye :size="16" />
+                            </Button>
+                            <Button size="sm" variant="secondary" @click="onEdit(item as Spell)">
+                                <Pencil :size="16" />
+                            </Button>
+                            <Button size="sm" variant="outline" @click="onExport(item as Spell)">
+                                <Download :size="16" />
+                            </Button>
+                            <template v-if="confirmDeleteRow === (item as Spell).id">
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    :loading="deleting"
+                                    @click="confirmDelete(item as Spell)"
+                                >
+                                    Confirm Delete
+                                </Button>
+                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
+                                    Cancel
+                                </Button>
+                            </template>
+                            <template v-else>
+                                <Button size="sm" variant="destructive" @click="onDelete(item as Spell)">
+                                    <Trash2 :size="16" />
+                                </Button>
+                            </template>
+                        </div>
+                    </template>
+                </TableComponent>
             </div>
-            <div class="p-4 flex justify-end">
-                <DrawerClose as-child>
-                    <Button variant="outline" @click="closeView">Close</Button>
-                </DrawerClose>
-            </div>
-        </DrawerContent>
-    </Drawer>
-    <Drawer
-        :open="editDrawerOpen"
-        @update:open="
-            (val: boolean) => {
-                if (!val) closeEditDrawer();
-            }
-        "
-    >
-        <DrawerContent v-if="editingSpell">
-            <DrawerHeader>
-                <DrawerTitle>Edit Spell</DrawerTitle>
-                <DrawerDescription>Edit details for spell: {{ editingSpell.name }}</DrawerDescription>
-            </DrawerHeader>
-            <Alert
-                v-if="drawerMessage"
-                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                class="mb-4 whitespace-nowrap overflow-x-auto"
-            >
-                <span>{{ drawerMessage.text }}</span>
-            </Alert>
-            <Tabs v-model="activeEditTab" default-value="general" class="px-6 pt-2">
-                <TabsList class="mb-4">
-                    <TabsTrigger value="general">General</TabsTrigger>
-                    <TabsTrigger value="docker">Docker</TabsTrigger>
-                    <TabsTrigger value="features">Features</TabsTrigger>
-                    <TabsTrigger value="config">Config</TabsTrigger>
-                    <TabsTrigger value="script">Script</TabsTrigger>
-                    <TabsTrigger value="variables">Variables</TabsTrigger>
-                </TabsList>
-                <form class="space-y-4 pb-6 max-h-96 overflow-y-auto" @submit.prevent="submitEdit">
-                    <TabsContent value="general">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="edit-name" class="block mb-1 font-medium">Name *</label>
-                                <Input id="edit-name" v-model="editForm.name" placeholder="Name" required />
-                            </div>
-                            <div>
-                                <label for="edit-author" class="block mb-1 font-medium">Author</label>
-                                <Input id="edit-author" v-model="editForm.author" placeholder="Author" />
-                            </div>
-                        </div>
-                        <div>
-                            <label for="edit-description" class="block mb-1 font-medium">Description</label>
-                            <Input id="edit-description" v-model="editForm.description" placeholder="Description" />
-                        </div>
-                        <div>
-                            <label for="edit-update-url" class="block mb-1 font-medium">Update URL</label>
-                            <Input
-                                id="edit-update-url"
-                                v-model="editForm.update_url"
-                                placeholder="https://example.com/update"
-                            />
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="docker">
-                        <div>
-                            <label class="block mb-1 font-medium">Docker Images</label>
-                            <div class="space-y-2">
-                                <div v-for="(image, index) in editDockerImages" :key="index" class="flex gap-2">
-                                    <Input v-model="image.name" placeholder="Java 8" class="flex-1" />
-                                    <Input
-                                        v-model="image.value"
-                                        placeholder="ghcr.io/parkervcp/yolks:java_8"
-                                        class="flex-1"
-                                    />
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="destructive"
-                                        @click="removeEditDockerImage(index)"
-                                    >
-                                        <Trash2 :size="16" />
-                                    </Button>
+        </div>
+
+        <!-- View Drawer -->
+        <Drawer
+            class="w-full"
+            :open="viewing"
+            @update:open="
+                (val: boolean) => {
+                    if (!val) closeView();
+                }
+            "
+        >
+            <DrawerContent v-if="selectedSpell">
+                <DrawerHeader>
+                    <DrawerTitle>Spell Info</DrawerTitle>
+                    <DrawerDescription>Viewing details for spell: {{ selectedSpell.name }}</DrawerDescription>
+                </DrawerHeader>
+                <div class="px-6 pt-6 space-y-2">
+                    <div><b>Name:</b> {{ selectedSpell.name }}</div>
+                    <div><b>Description:</b> {{ selectedSpell.description || '-' }}</div>
+                    <div><b>Author:</b> {{ selectedSpell.author || '-' }}</div>
+                    <div><b>UUID:</b> {{ selectedSpell.uuid }}</div>
+                    <div><b>Realm:</b> {{ selectedSpell.realm_name || '-' }}</div>
+                    <div><b>Script Container:</b> {{ selectedSpell.script_container || '-' }}</div>
+                    <div><b>Script Entry:</b> {{ selectedSpell.script_entry || '-' }}</div>
+                    <div><b>Privileged:</b> {{ selectedSpell.script_is_privileged ? 'Yes' : 'No' }}</div>
+                    <div><b>Force Outgoing IP:</b> {{ selectedSpell.force_outgoing_ip ? 'Yes' : 'No' }}</div>
+                    <div><b>Created At:</b> {{ selectedSpell.created_at }}</div>
+                    <div><b>Updated At:</b> {{ selectedSpell.updated_at }}</div>
+                </div>
+                <div class="p-4 flex justify-end">
+                    <DrawerClose as-child>
+                        <Button variant="outline" @click="closeView">Close</Button>
+                    </DrawerClose>
+                </div>
+            </DrawerContent>
+        </Drawer>
+
+        <!-- Edit Drawer -->
+        <Drawer
+            :open="editDrawerOpen"
+            @update:open="
+                (val: boolean) => {
+                    if (!val) closeEditDrawer();
+                }
+            "
+        >
+            <DrawerContent v-if="editingSpell">
+                <DrawerHeader>
+                    <DrawerTitle>Edit Spell</DrawerTitle>
+                    <DrawerDescription>Edit details for spell: {{ editingSpell.name }}</DrawerDescription>
+                </DrawerHeader>
+                <Alert
+                    v-if="drawerMessage"
+                    :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
+                    class="mb-4 whitespace-nowrap overflow-x-auto"
+                >
+                    <span>{{ drawerMessage.text }}</span>
+                </Alert>
+                <Tabs v-model="activeEditTab" default-value="general" class="px-6 pt-2">
+                    <TabsList class="mb-4">
+                        <TabsTrigger value="general">General</TabsTrigger>
+                        <TabsTrigger value="docker">Docker</TabsTrigger>
+                        <TabsTrigger value="features">Features</TabsTrigger>
+                        <TabsTrigger value="config">Config</TabsTrigger>
+                        <TabsTrigger value="script">Script</TabsTrigger>
+                        <TabsTrigger value="variables">Variables</TabsTrigger>
+                    </TabsList>
+                    <form class="space-y-4 pb-6 max-h-96 overflow-y-auto" @submit.prevent="submitEdit">
+                        <TabsContent value="general">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="edit-name" class="block mb-1 font-medium">Name *</label>
+                                    <Input id="edit-name" v-model="editForm.name" placeholder="Name" required />
                                 </div>
-                                <Button type="button" size="sm" variant="outline" @click="addEditDockerImage"
-                                    >Add Docker Image</Button
-                                >
+                                <div>
+                                    <label for="edit-author" class="block mb-1 font-medium">Author</label>
+                                    <Input id="edit-author" v-model="editForm.author" placeholder="Author" />
+                                </div>
                             </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4 mt-4">
                             <div>
-                                <label for="edit-script-container" class="block mb-1 font-medium"
-                                    >Script Container</label
-                                >
+                                <label for="edit-description" class="block mb-1 font-medium">Description</label>
+                                <Input id="edit-description" v-model="editForm.description" placeholder="Description" />
+                            </div>
+                            <div>
+                                <label for="edit-update-url" class="block mb-1 font-medium">Update URL</label>
                                 <Input
-                                    id="edit-script-container"
-                                    v-model="editForm.script_container"
-                                    placeholder="alpine:3.4"
+                                    id="edit-update-url"
+                                    v-model="editForm.update_url"
+                                    placeholder="https://example.com/update"
                                 />
                             </div>
+                        </TabsContent>
+                        <TabsContent value="docker">
                             <div>
-                                <label for="edit-script-entry" class="block mb-1 font-medium">Script Entry</label>
-                                <Input id="edit-script-entry" v-model="editForm.script_entry" placeholder="ash" />
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-4 mt-4">
-                            <div class="flex items-center space-x-2">
-                                <Checkbox id="edit-force-ip" v-model:checked="editForm.force_outgoing_ip" />
-                                <label for="edit-force-ip" class="text-sm font-medium">Force outgoing IP</label>
-                            </div>
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="features">
-                        <div>
-                            <label class="block mb-1 font-medium">Features</label>
-                            <div class="space-y-2">
-                                <div v-for="(feature, index) in editFeatures" :key="index" class="flex gap-2">
-                                    <Input v-model="feature.value" placeholder="eula" class="flex-1" />
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="destructive"
-                                        @click="removeEditFeature(index)"
+                                <label class="block mb-1 font-medium">Docker Images</label>
+                                <div class="space-y-2">
+                                    <div v-for="(image, index) in editDockerImages" :key="index" class="flex gap-2">
+                                        <Input v-model="image.name" placeholder="Java 8" class="flex-1" />
+                                        <Input
+                                            v-model="image.value"
+                                            placeholder="ghcr.io/parkervcp/yolks:java_8"
+                                            class="flex-1"
+                                        />
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="destructive"
+                                            @click="removeEditDockerImage(index)"
+                                        >
+                                            <Trash2 :size="16" />
+                                        </Button>
+                                    </div>
+                                    <Button type="button" size="sm" variant="outline" @click="addEditDockerImage"
+                                        >Add Docker Image</Button
                                     >
-                                        <Trash2 :size="16" />
-                                    </Button>
                                 </div>
-                                <Button type="button" size="sm" variant="outline" @click="addEditFeature"
-                                    >Add Feature</Button
-                                >
                             </div>
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="config">
-                        <div>
-                            <label for="edit-file-denylist" class="block mb-1 font-medium">File Denylist (JSON)</label>
-                            <Textarea
-                                id="edit-file-denylist"
-                                v-model="editForm.file_denylist"
-                                placeholder='["file1", "file2"]'
-                            />
-                        </div>
-                        <div>
-                            <label for="edit-config-files" class="block mb-1 font-medium">Config Files (JSON)</label>
-                            <Textarea
-                                id="edit-config-files"
-                                v-model="editForm.config_files"
-                                placeholder='{"file.properties": {...}}'
-                            />
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-2 gap-4 mt-4">
+                                <div>
+                                    <label for="edit-script-container" class="block mb-1 font-medium"
+                                        >Script Container</label
+                                    >
+                                    <Input
+                                        id="edit-script-container"
+                                        v-model="editForm.script_container"
+                                        placeholder="alpine:3.4"
+                                    />
+                                </div>
+                                <div>
+                                    <label for="edit-script-entry" class="block mb-1 font-medium">Script Entry</label>
+                                    <Input id="edit-script-entry" v-model="editForm.script_entry" placeholder="ash" />
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4 mt-4">
+                                <div class="flex items-center space-x-2">
+                                    <Checkbox id="edit-force-ip" v-model:checked="editForm.force_outgoing_ip" />
+                                    <label for="edit-force-ip" class="text-sm font-medium">Force outgoing IP</label>
+                                </div>
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="features">
                             <div>
-                                <label for="edit-config-startup" class="block mb-1 font-medium"
-                                    >Config Startup (JSON)</label
+                                <label class="block mb-1 font-medium">Features</label>
+                                <div class="space-y-2">
+                                    <div v-for="(feature, index) in editFeatures" :key="index" class="flex gap-2">
+                                        <Input v-model="feature.value" placeholder="eula" class="flex-1" />
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="destructive"
+                                            @click="removeEditFeature(index)"
+                                        >
+                                            <Trash2 :size="16" />
+                                        </Button>
+                                    </div>
+                                    <Button type="button" size="sm" variant="outline" @click="addEditFeature"
+                                        >Add Feature</Button
+                                    >
+                                </div>
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="config">
+                            <div>
+                                <label for="edit-file-denylist" class="block mb-1 font-medium"
+                                    >File Denylist (JSON)</label
                                 >
                                 <Textarea
-                                    id="edit-config-startup"
-                                    v-model="editForm.config_startup"
-                                    placeholder='{"done": "text"}'
+                                    id="edit-file-denylist"
+                                    v-model="editForm.file_denylist"
+                                    placeholder='["file1", "file2"]'
                                 />
                             </div>
                             <div>
-                                <label for="edit-config-logs" class="block mb-1 font-medium">Config Logs (JSON)</label>
-                                <Textarea id="edit-config-logs" v-model="editForm.config_logs" placeholder="{}" />
+                                <label for="edit-config-files" class="block mb-1 font-medium"
+                                    >Config Files (JSON)</label
+                                >
+                                <Textarea
+                                    id="edit-config-files"
+                                    v-model="editForm.config_files"
+                                    placeholder='{"file.properties": {...}}'
+                                />
                             </div>
-                        </div>
-                        <div>
-                            <label for="edit-config-stop" class="block mb-1 font-medium">Config Stop</label>
-                            <Input id="edit-config-stop" v-model="editForm.config_stop" placeholder="stop" />
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="script">
-                        <div>
-                            <label for="edit-script-install" class="block mb-1 font-medium">Script Install</label>
-                            <Textarea
-                                id="edit-script-install"
-                                v-model="editForm.script_install"
-                                placeholder="#!/bin/bash..."
-                                class="min-h-24"
-                            />
-                        </div>
-                        <div class="flex items-center space-x-4 mt-4">
-                            <div class="flex items-center space-x-2">
-                                <Checkbox id="edit-privileged" v-model:checked="editForm.script_is_privileged" />
-                                <label for="edit-privileged" class="text-sm font-medium">Script is privileged</label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="edit-config-startup" class="block mb-1 font-medium"
+                                        >Config Startup (JSON)</label
+                                    >
+                                    <Textarea
+                                        id="edit-config-startup"
+                                        v-model="editForm.config_startup"
+                                        placeholder='{"done": "text"}'
+                                    />
+                                </div>
+                                <div>
+                                    <label for="edit-config-logs" class="block mb-1 font-medium"
+                                        >Config Logs (JSON)</label
+                                    >
+                                    <Textarea id="edit-config-logs" v-model="editForm.config_logs" placeholder="{}" />
+                                </div>
                             </div>
+                            <div>
+                                <label for="edit-config-stop" class="block mb-1 font-medium">Config Stop</label>
+                                <Input id="edit-config-stop" v-model="editForm.config_stop" placeholder="stop" />
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="script">
+                            <div>
+                                <label for="edit-script-install" class="block mb-1 font-medium">Script Install</label>
+                                <Textarea
+                                    id="edit-script-install"
+                                    v-model="editForm.script_install"
+                                    placeholder="#!/bin/bash..."
+                                    class="min-h-24"
+                                />
+                            </div>
+                            <div class="flex items-center space-x-4 mt-4">
+                                <div class="flex items-center space-x-2">
+                                    <Checkbox id="edit-privileged" v-model:checked="editForm.script_is_privileged" />
+                                    <label for="edit-privileged" class="text-sm font-medium"
+                                        >Script is privileged</label
+                                    >
+                                </div>
+                            </div>
+                            <div>
+                                <label for="edit-startup" class="block mb-1 font-medium">Startup Command</label>
+                                <Textarea
+                                    id="edit-startup"
+                                    v-model="editForm.startup"
+                                    placeholder="java -jar server.jar"
+                                />
+                            </div>
+                        </TabsContent>
+                        <div v-if="activeEditTab !== 'variables'" class="flex justify-end gap-2 mt-4">
+                            <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
+                            <Button type="submit" variant="secondary">Save</Button>
                         </div>
-                        <div>
-                            <label for="edit-startup" class="block mb-1 font-medium">Startup Command</label>
-                            <Textarea id="edit-startup" v-model="editForm.startup" placeholder="java -jar server.jar" />
+                    </form>
+                    <TabsContent value="variables">
+                        <div class="flex justify-between items-center mb-1">
+                            <div class="font-semibold text-lg">Variables</div>
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                :disabled="addingVariable || editingVariable !== null"
+                                @click="startAddVariable"
+                                >Add Variable</Button
+                            >
                         </div>
-                    </TabsContent>
-                    <div v-if="activeEditTab !== 'variables'" class="flex justify-end gap-2 mt-4">
-                        <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
-                        <Button type="submit" variant="secondary">Save</Button>
-                    </div>
-                </form>
-                <TabsContent value="variables">
-                    <div class="flex justify-between items-center mb-1">
-                        <div class="font-semibold text-lg">Variables</div>
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            :disabled="addingVariable || editingVariable !== null"
-                            @click="startAddVariable"
-                            >Add Variable</Button
-                        >
-                    </div>
-                    <Table class="mt-0 mb-0">
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Env Variable</TableHead>
-                                <TableHead>Description</TableHead>
-                                <TableHead>Default</TableHead>
-                                <TableHead>User Viewable</TableHead>
-                                <TableHead>User Editable</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <!-- Inline Add Row -->
-                            <TableRow v-if="addingVariable">
-                                <TableCell
-                                    ><Input v-model="variableForm.name" placeholder="Name" class="w-full"
-                                /></TableCell>
-                                <TableCell
-                                    ><Input
-                                        v-model="variableForm.env_variable"
-                                        placeholder="ENV_VARIABLE"
-                                        class="w-full"
-                                /></TableCell>
-                                <TableCell
-                                    ><Textarea
-                                        v-model="variableForm.description"
-                                        placeholder="Description"
-                                        class="w-full"
-                                /></TableCell>
-                                <TableCell
-                                    ><Input
-                                        v-model="variableForm.default_value"
-                                        placeholder="Default Value"
-                                        class="w-full"
-                                /></TableCell>
-                                <TableCell class="text-center"
-                                    ><Select v-model="variableForm.user_viewable">
-                                        <SelectTrigger>
-                                            <span>{{
-                                                variableForm.user_viewable === 'true'
-                                                    ? 'Visible to users'
-                                                    : 'Hidden from users'
-                                            }}</span>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="true">Visible to users</SelectItem>
-                                            <SelectItem value="false">Hidden from users</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </TableCell>
-                                <TableCell class="text-center"
-                                    ><Select v-model="variableForm.user_editable">
-                                        <SelectTrigger>
-                                            <span>{{
-                                                variableForm.user_editable === 'true'
-                                                    ? 'Allow users to edit'
-                                                    : "Don't allow users to edit"
-                                            }}</span>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="true">Allow users to edit</SelectItem>
-                                            <SelectItem value="false">Don't allow users to edit</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </TableCell>
-                                <TableCell>
-                                    <div class="flex gap-2">
-                                        <Button size="sm" variant="secondary" @click="submitVariable">Save</Button>
-                                        <Button size="sm" variant="outline" @click="cancelVariableEdit">Cancel</Button>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                            <!-- Inline Edit Row -->
-                            <TableRow v-for="variable in spellVariables" :key="variable.id">
-                                <template v-if="editingVariable && editingVariable.id === variable.id">
-                                    <TableCell><Input v-model="variableForm.name" class="w-full" /></TableCell>
-                                    <TableCell><Input v-model="variableForm.env_variable" class="w-full" /></TableCell>
+                        <Table class="mt-0 mb-0">
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Env Variable</TableHead>
+                                    <TableHead>Description</TableHead>
+                                    <TableHead>Default</TableHead>
+                                    <TableHead>User Viewable</TableHead>
+                                    <TableHead>User Editable</TableHead>
+                                    <TableHead>Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <!-- Inline Add Row -->
+                                <TableRow v-if="addingVariable">
                                     <TableCell
-                                        ><Textarea v-model="variableForm.description" class="w-full"
+                                        ><Input v-model="variableForm.name" placeholder="Name" class="w-full"
                                     /></TableCell>
-                                    <TableCell><Input v-model="variableForm.default_value" class="w-full" /></TableCell>
+                                    <TableCell
+                                        ><Input
+                                            v-model="variableForm.env_variable"
+                                            placeholder="ENV_VARIABLE"
+                                            class="w-full"
+                                    /></TableCell>
+                                    <TableCell
+                                        ><Textarea
+                                            v-model="variableForm.description"
+                                            placeholder="Description"
+                                            class="w-full"
+                                    /></TableCell>
+                                    <TableCell
+                                        ><Input
+                                            v-model="variableForm.default_value"
+                                            placeholder="Default Value"
+                                            class="w-full"
+                                    /></TableCell>
                                     <TableCell class="text-center"
                                         ><Select v-model="variableForm.user_viewable">
                                             <SelectTrigger>
@@ -459,295 +438,364 @@
                                             >
                                         </div>
                                     </TableCell>
-                                </template>
-                                <template v-else>
-                                    <TableCell>{{ variable.name }}</TableCell>
-                                    <TableCell>{{ variable.env_variable }}</TableCell>
-                                    <TableCell>{{ variable.description }}</TableCell>
-                                    <TableCell>{{ variable.default_value }}</TableCell>
-                                    <TableCell class="text-center">
-                                        {{ variable.user_viewable === 'true' ? 'Visible' : 'Hidden' }}
-                                    </TableCell>
-                                    <TableCell class="text-center">
-                                        {{ variable.user_editable === 'true' ? 'Allowed' : 'Not allowed' }}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div class="flex gap-2">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                :disabled="
-                                                    addingVariable ||
-                                                    (editingVariable && editingVariable.id !== variable.id)
-                                                "
-                                                @click="startEditVariable(variable)"
-                                                ><Pencil :size="16"
-                                            /></Button>
-                                            <template v-if="confirmDeleteVariableRow === variable.id">
-                                                <Button
-                                                    size="sm"
-                                                    variant="destructive"
-                                                    :loading="deleting"
-                                                    @click="confirmDeleteVariable(variable)"
-                                                    >Confirm Delete</Button
+                                </TableRow>
+                                <!-- Inline Edit Row -->
+                                <TableRow v-for="variable in spellVariables" :key="variable.id">
+                                    <template v-if="editingVariable && editingVariable.id === variable.id">
+                                        <TableCell><Input v-model="variableForm.name" class="w-full" /></TableCell>
+                                        <TableCell
+                                            ><Input v-model="variableForm.env_variable" class="w-full"
+                                        /></TableCell>
+                                        <TableCell
+                                            ><Textarea v-model="variableForm.description" class="w-full"
+                                        /></TableCell>
+                                        <TableCell
+                                            ><Input v-model="variableForm.default_value" class="w-full"
+                                        /></TableCell>
+                                        <TableCell class="text-center"
+                                            ><Select v-model="variableForm.user_viewable">
+                                                <SelectTrigger>
+                                                    <span>{{
+                                                        variableForm.user_viewable === 'true'
+                                                            ? 'Visible to users'
+                                                            : 'Hidden from users'
+                                                    }}</span>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="true">Visible to users</SelectItem>
+                                                    <SelectItem value="false">Hidden from users</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </TableCell>
+                                        <TableCell class="text-center"
+                                            ><Select v-model="variableForm.user_editable">
+                                                <SelectTrigger>
+                                                    <span>{{
+                                                        variableForm.user_editable === 'true'
+                                                            ? 'Allow users to edit'
+                                                            : "Don't allow users to edit"
+                                                    }}</span>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="true">Allow users to edit</SelectItem>
+                                                    <SelectItem value="false">Don't allow users to edit</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div class="flex gap-2">
+                                                <Button size="sm" variant="secondary" @click="submitVariable"
+                                                    >Save</Button
                                                 >
+                                                <Button size="sm" variant="outline" @click="cancelVariableEdit"
+                                                    >Cancel</Button
+                                                >
+                                            </div>
+                                        </TableCell>
+                                    </template>
+                                    <template v-else>
+                                        <TableCell>{{ variable.name }}</TableCell>
+                                        <TableCell>{{ variable.env_variable }}</TableCell>
+                                        <TableCell>{{ variable.description }}</TableCell>
+                                        <TableCell>{{ variable.default_value }}</TableCell>
+                                        <TableCell class="text-center">
+                                            {{ variable.user_viewable === 'true' ? 'Visible' : 'Hidden' }}
+                                        </TableCell>
+                                        <TableCell class="text-center">
+                                            {{ variable.user_editable === 'true' ? 'Allowed' : 'Not allowed' }}
+                                        </TableCell>
+                                        <TableCell>
+                                            <div class="flex gap-2">
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    :disabled="deleting"
-                                                    @click="onCancelDeleteVariable"
-                                                    >Cancel</Button
-                                                >
-                                            </template>
-                                            <template v-else>
-                                                <Button
-                                                    size="sm"
-                                                    variant="destructive"
-                                                    :disabled="addingVariable || editingVariable !== null"
-                                                    @click="onDeleteVariable(variable)"
-                                                    ><Trash2 :size="16"
+                                                    :disabled="
+                                                        addingVariable ||
+                                                        (editingVariable && editingVariable.id !== variable.id)
+                                                    "
+                                                    @click="startEditVariable(variable)"
+                                                    ><Pencil :size="16"
                                                 /></Button>
-                                            </template>
-                                        </div>
-                                    </TableCell>
-                                </template>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </TabsContent>
-            </Tabs>
-        </DrawerContent>
-    </Drawer>
-    <Drawer
-        :open="createDrawerOpen"
-        @update:open="
-            (val) => {
-                if (!val) closeCreateDrawer();
-            }
-        "
-    >
-        <DrawerContent>
-            <DrawerHeader>
-                <DrawerTitle>Create Spell</DrawerTitle>
-                <DrawerDescription>Fill in the details to create a new spell.</DrawerDescription>
-            </DrawerHeader>
-            <Alert
-                v-if="drawerMessage"
-                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                class="mb-4 whitespace-nowrap overflow-x-auto"
-            >
-                <span>{{ drawerMessage.text }}</span>
-            </Alert>
-            <Tabs default-value="general" class="px-6 pt-2">
-                <TabsList class="mb-4">
-                    <TabsTrigger value="general">General</TabsTrigger>
-                    <TabsTrigger value="docker">Docker</TabsTrigger>
-                    <TabsTrigger value="features">Features</TabsTrigger>
-                    <TabsTrigger value="config">Config</TabsTrigger>
-                    <TabsTrigger value="script">Script</TabsTrigger>
-                </TabsList>
-                <form class="space-y-4 pb-6 max-h-96 overflow-y-auto" @submit.prevent="submitCreate">
-                    <TabsContent value="general">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="create-name" class="block mb-1 font-medium">Name *</label>
-                                <Input id="create-name" v-model="createForm.name" placeholder="Name" required />
-                            </div>
-                            <div>
-                                <label for="create-author" class="block mb-1 font-medium">Author</label>
-                                <Input id="create-author" v-model="createForm.author" placeholder="Author" />
-                            </div>
-                        </div>
-                        <div v-if="!currentRealm">
-                            <label for="create-realm" class="block mb-1 font-medium">Realm *</label>
-                            <Select v-model="createForm.realm_id">
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a realm" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem v-for="realm in realms" :key="realm.id" :value="realm.id">
-                                        {{ realm.name }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div>
-                            <label for="create-description" class="block mb-1 font-medium">Description</label>
-                            <Textarea
-                                id="create-description"
-                                v-model="createForm.description"
-                                placeholder="Description"
-                            />
-                        </div>
-                        <div>
-                            <label for="create-update-url" class="block mb-1 font-medium">Update URL</label>
-                            <Input
-                                id="create-update-url"
-                                v-model="createForm.update_url"
-                                placeholder="https://example.com/update"
-                            />
-                        </div>
+                                                <template v-if="confirmDeleteVariableRow === variable.id">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="destructive"
+                                                        :loading="deleting"
+                                                        @click="confirmDeleteVariable(variable)"
+                                                        >Confirm Delete</Button
+                                                    >
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        :disabled="deleting"
+                                                        @click="onCancelDeleteVariable"
+                                                        >Cancel</Button
+                                                    >
+                                                </template>
+                                                <template v-else>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="destructive"
+                                                        :disabled="addingVariable || editingVariable !== null"
+                                                        @click="onDeleteVariable(variable)"
+                                                        ><Trash2 :size="16"
+                                                    /></Button>
+                                                </template>
+                                            </div>
+                                        </TableCell>
+                                    </template>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
                     </TabsContent>
-                    <TabsContent value="docker">
-                        <div>
-                            <label class="block mb-1 font-medium">Docker Images</label>
-                            <div class="space-y-2">
-                                <div v-for="(image, index) in createDockerImages" :key="index" class="flex gap-2">
-                                    <Input v-model="image.name" placeholder="Java 8" class="flex-1" />
-                                    <Input
-                                        v-model="image.value"
-                                        placeholder="ghcr.io/parkervcp/yolks:java_8"
-                                        class="flex-1"
-                                    />
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="destructive"
-                                        @click="removeCreateDockerImage(index)"
-                                    >
-                                        <Trash2 :size="16" />
-                                    </Button>
+                </Tabs>
+            </DrawerContent>
+        </Drawer>
+
+        <!-- Create Drawer -->
+        <Drawer
+            :open="createDrawerOpen"
+            @update:open="
+                (val) => {
+                    if (!val) closeCreateDrawer();
+                }
+            "
+        >
+            <DrawerContent>
+                <DrawerHeader>
+                    <DrawerTitle>Create Spell</DrawerTitle>
+                    <DrawerDescription>Fill in the details to create a new spell.</DrawerDescription>
+                </DrawerHeader>
+                <Alert
+                    v-if="drawerMessage"
+                    :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
+                    class="mb-4 whitespace-nowrap overflow-x-auto"
+                >
+                    <span>{{ drawerMessage.text }}</span>
+                </Alert>
+                <Tabs default-value="general" class="px-6 pt-2">
+                    <TabsList class="mb-4">
+                        <TabsTrigger value="general">General</TabsTrigger>
+                        <TabsTrigger value="docker">Docker</TabsTrigger>
+                        <TabsTrigger value="features">Features</TabsTrigger>
+                        <TabsTrigger value="config">Config</TabsTrigger>
+                        <TabsTrigger value="script">Script</TabsTrigger>
+                    </TabsList>
+                    <form class="space-y-4 pb-6 max-h-96 overflow-y-auto" @submit.prevent="submitCreate">
+                        <TabsContent value="general">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="create-name" class="block mb-1 font-medium">Name *</label>
+                                    <Input id="create-name" v-model="createForm.name" placeholder="Name" required />
                                 </div>
-                                <Button type="button" size="sm" variant="outline" @click="addCreateDockerImage"
-                                    >Add Docker Image</Button
-                                >
+                                <div>
+                                    <label for="create-author" class="block mb-1 font-medium">Author</label>
+                                    <Input id="create-author" v-model="createForm.author" placeholder="Author" />
+                                </div>
                             </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4 mt-4">
+                            <div v-if="!currentRealm">
+                                <label for="create-realm" class="block mb-1 font-medium">Realm *</label>
+                                <Select v-model="createForm.realm_id">
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a realm" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem v-for="realm in realms" :key="realm.id" :value="realm.id">
+                                            {{ realm.name }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                             <div>
-                                <label for="create-script-container" class="block mb-1 font-medium"
-                                    >Script Container</label
-                                >
-                                <Input
-                                    id="create-script-container"
-                                    v-model="createForm.script_container"
-                                    placeholder="alpine:3.4"
+                                <label for="create-description" class="block mb-1 font-medium">Description</label>
+                                <Textarea
+                                    id="create-description"
+                                    v-model="createForm.description"
+                                    placeholder="Description"
                                 />
                             </div>
                             <div>
-                                <label for="create-script-entry" class="block mb-1 font-medium">Script Entry</label>
-                                <Input id="create-script-entry" v-model="createForm.script_entry" placeholder="ash" />
+                                <label for="create-update-url" class="block mb-1 font-medium">Update URL</label>
+                                <Input
+                                    id="create-update-url"
+                                    v-model="createForm.update_url"
+                                    placeholder="https://example.com/update"
+                                />
                             </div>
-                        </div>
-                        <div class="flex items-center space-x-4 mt-4">
-                            <div class="flex items-center space-x-2">
-                                <Checkbox id="create-force-ip" v-model:checked="createForm.force_outgoing_ip" />
-                                <label for="create-force-ip" class="text-sm font-medium">Force outgoing IP</label>
-                            </div>
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="features">
-                        <div>
-                            <label class="block mb-1 font-medium">Features</label>
-                            <div class="space-y-2">
-                                <div v-for="(feature, index) in createFeatures" :key="index" class="flex gap-2">
-                                    <Input v-model="feature.value" placeholder="eula" class="flex-1" />
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="destructive"
-                                        @click="removeCreateFeature(index)"
-                                    >
-                                        <Trash2 :size="16" />
-                                    </Button>
-                                </div>
-                                <Button type="button" size="sm" variant="outline" @click="addCreateFeature"
-                                    >Add Feature</Button
-                                >
-                            </div>
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="config">
-                        <div>
-                            <label for="create-file-denylist" class="block mb-1 font-medium"
-                                >File Denylist (JSON)</label
-                            >
-                            <Textarea
-                                id="create-file-denylist"
-                                v-model="createForm.file_denylist"
-                                placeholder='["file1", "file2"]'
-                            />
-                        </div>
-                        <div>
-                            <label for="create-config-files" class="block mb-1 font-medium">Config Files (JSON)</label>
-                            <Textarea
-                                id="create-config-files"
-                                v-model="createForm.config_files"
-                                placeholder='{"file.properties": {...}}'
-                            />
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
+                        </TabsContent>
+                        <TabsContent value="docker">
                             <div>
-                                <label for="create-config-startup" class="block mb-1 font-medium"
-                                    >Config Startup (JSON)</label
+                                <label class="block mb-1 font-medium">Docker Images</label>
+                                <div class="space-y-2">
+                                    <div v-for="(image, index) in createDockerImages" :key="index" class="flex gap-2">
+                                        <Input v-model="image.name" placeholder="Java 8" class="flex-1" />
+                                        <Input
+                                            v-model="image.value"
+                                            placeholder="ghcr.io/parkervcp/yolks:java_8"
+                                            class="flex-1"
+                                        />
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="destructive"
+                                            @click="removeCreateDockerImage(index)"
+                                        >
+                                            <Trash2 :size="16" />
+                                        </Button>
+                                    </div>
+                                    <Button type="button" size="sm" variant="outline" @click="addCreateDockerImage"
+                                        >Add Docker Image</Button
+                                    >
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mt-4">
+                                <div>
+                                    <label for="create-script-container" class="block mb-1 font-medium"
+                                        >Script Container</label
+                                    >
+                                    <Input
+                                        id="create-script-container"
+                                        v-model="createForm.script_container"
+                                        placeholder="alpine:3.4"
+                                    />
+                                </div>
+                                <div>
+                                    <label for="create-script-entry" class="block mb-1 font-medium">Script Entry</label>
+                                    <Input
+                                        id="create-script-entry"
+                                        v-model="createForm.script_entry"
+                                        placeholder="ash"
+                                    />
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4 mt-4">
+                                <div class="flex items-center space-x-2">
+                                    <Checkbox id="create-force-ip" v-model:checked="createForm.force_outgoing_ip" />
+                                    <label for="create-force-ip" class="text-sm font-medium">Force outgoing IP</label>
+                                </div>
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="features">
+                            <div>
+                                <label class="block mb-1 font-medium">Features</label>
+                                <div class="space-y-2">
+                                    <div v-for="(feature, index) in createFeatures" :key="index" class="flex gap-2">
+                                        <Input v-model="feature.value" placeholder="eula" class="flex-1" />
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="destructive"
+                                            @click="removeCreateFeature(index)"
+                                        >
+                                            <Trash2 :size="16" />
+                                        </Button>
+                                    </div>
+                                    <Button type="button" size="sm" variant="outline" @click="addCreateFeature"
+                                        >Add Feature</Button
+                                    >
+                                </div>
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="config">
+                            <div>
+                                <label for="create-file-denylist" class="block mb-1 font-medium"
+                                    >File Denylist (JSON)</label
                                 >
                                 <Textarea
-                                    id="create-config-startup"
-                                    v-model="createForm.config_startup"
-                                    placeholder='{"done": "text"}'
+                                    id="create-file-denylist"
+                                    v-model="createForm.file_denylist"
+                                    placeholder='["file1", "file2"]'
                                 />
                             </div>
                             <div>
-                                <label for="create-config-logs" class="block mb-1 font-medium"
-                                    >Config Logs (JSON)</label
+                                <label for="create-config-files" class="block mb-1 font-medium"
+                                    >Config Files (JSON)</label
                                 >
-                                <Textarea id="create-config-logs" v-model="createForm.config_logs" placeholder="{}" />
+                                <Textarea
+                                    id="create-config-files"
+                                    v-model="createForm.config_files"
+                                    placeholder='{"file.properties": {...}}'
+                                />
                             </div>
-                        </div>
-                        <div>
-                            <label for="create-config-stop" class="block mb-1 font-medium">Config Stop</label>
-                            <Input id="create-config-stop" v-model="createForm.config_stop" placeholder="stop" />
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="script">
-                        <div>
-                            <label for="create-script-install" class="block mb-1 font-medium">Script Install</label>
-                            <Textarea
-                                id="create-script-install"
-                                v-model="createForm.script_install"
-                                placeholder="#!/bin/bash..."
-                                class="min-h-24"
-                            />
-                        </div>
-                        <div class="flex items-center space-x-4 mt-4">
-                            <div class="flex items-center space-x-2">
-                                <Checkbox id="create-privileged" v-model:checked="createForm.script_is_privileged" />
-                                <label for="create-privileged" class="text-sm font-medium">Script is privileged</label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="create-config-startup" class="block mb-1 font-medium"
+                                        >Config Startup (JSON)</label
+                                    >
+                                    <Textarea
+                                        id="create-config-startup"
+                                        v-model="createForm.config_startup"
+                                        placeholder='{"done": "text"}'
+                                    />
+                                </div>
+                                <div>
+                                    <label for="create-config-logs" class="block mb-1 font-medium"
+                                        >Config Logs (JSON)</label
+                                    >
+                                    <Textarea
+                                        id="create-config-logs"
+                                        v-model="createForm.config_logs"
+                                        placeholder="{}"
+                                    />
+                                </div>
                             </div>
+                            <div>
+                                <label for="create-config-stop" class="block mb-1 font-medium">Config Stop</label>
+                                <Input id="create-config-stop" v-model="createForm.config_stop" placeholder="stop" />
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="script">
+                            <div>
+                                <label for="create-script-install" class="block mb-1 font-medium">Script Install</label>
+                                <Textarea
+                                    id="create-script-install"
+                                    v-model="createForm.script_install"
+                                    placeholder="#!/bin/bash..."
+                                    class="min-h-24"
+                                />
+                            </div>
+                            <div class="flex items-center space-x-4 mt-4">
+                                <div class="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="create-privileged"
+                                        v-model:checked="createForm.script_is_privileged"
+                                    />
+                                    <label for="create-privileged" class="text-sm font-medium"
+                                        >Script is privileged</label
+                                    >
+                                </div>
+                            </div>
+                            <div>
+                                <label for="create-startup" class="block mb-1 font-medium">Startup Command</label>
+                                <Textarea
+                                    id="create-startup"
+                                    v-model="createForm.startup"
+                                    placeholder="java -jar server.jar"
+                                />
+                            </div>
+                        </TabsContent>
+                        <div class="flex justify-end gap-2 mt-4">
+                            <Button type="button" variant="outline" @click="closeCreateDrawer">Cancel</Button>
+                            <Button type="submit" variant="secondary">Create</Button>
                         </div>
-                        <div>
-                            <label for="create-startup" class="block mb-1 font-medium">Startup Command</label>
-                            <Textarea
-                                id="create-startup"
-                                v-model="createForm.startup"
-                                placeholder="java -jar server.jar"
-                            />
-                        </div>
-                    </TabsContent>
-                    <div class="flex justify-end gap-2 mt-4">
-                        <Button type="button" variant="outline" @click="closeCreateDrawer">Cancel</Button>
-                        <Button type="submit" variant="secondary">Create</Button>
-                    </div>
-                </form>
-            </Tabs>
-        </DrawerContent>
-    </Drawer>
+                    </form>
+                </Tabs>
+            </DrawerContent>
+        </Drawer>
+    </DashboardLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-
-import { Pagination } from '@/components/ui/pagination';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
-import { Eye, Pencil, Trash2, Download } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Download, Plus, Upload } from 'lucide-vue-next';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import axios from 'axios';
 import { Alert } from '@/components/ui/alert';
 import {
@@ -759,6 +807,8 @@ import {
     DrawerClose,
 } from '@/components/ui/drawer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import TableComponent from '@/kit/TableComponent.vue';
+import type { TableColumn } from '@/kit/types';
 
 type Spell = {
     id: number;
@@ -821,13 +871,16 @@ const pagination = ref({
     page: 1,
     pageSize: 10,
     total: 0,
+    hasNext: false,
+    hasPrev: false,
+    from: 0,
+    to: 0,
 });
 const loading = ref(false);
 const deleting = ref(false);
 const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const drawerMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<number | null>(null);
-const displayMessage = computed(() => (message.value ? message.value.text.replace(/\r?\n|\r/g, ' ') : ''));
 const selectedSpell = ref<Spell | null>(null);
 const viewing = ref(false);
 const editingSpell = ref<Spell | null>(null);
@@ -897,6 +950,16 @@ const activeEditTab = ref('general');
 const addingVariable = ref(false);
 const confirmDeleteVariableRow = ref<number | null>(null);
 
+// Table columns configuration
+const tableColumns: TableColumn[] = [
+    { key: 'name', label: 'Name', searchable: true },
+    { key: 'description', label: 'Description', searchable: true },
+    { key: 'author', label: 'Author', searchable: true },
+    { key: 'realm', label: 'Realm', searchable: true },
+    { key: 'created_at', label: 'Created' },
+    { key: 'actions', label: 'Actions', headerClass: 'w-[200px] font-semibold' },
+];
+
 async function fetchSpells() {
     loading.value = true;
     try {
@@ -912,7 +975,18 @@ async function fetchSpells() {
 
         const { data } = await axios.get('/api/admin/spells', { params });
         spells.value = data.data.spells || [];
-        pagination.value.total = data.data.pagination.total;
+
+        // Map the API response pagination to our expected format
+        const apiPagination = data.data.pagination;
+        pagination.value = {
+            page: apiPagination.current_page,
+            pageSize: apiPagination.per_page,
+            total: apiPagination.total_records,
+            hasNext: apiPagination.has_next,
+            hasPrev: apiPagination.has_prev,
+            from: apiPagination.from,
+            to: apiPagination.to,
+        };
     } catch (e: unknown) {
         message.value = {
             type: 'error',
@@ -956,8 +1030,21 @@ onMounted(async () => {
 
 watch([() => pagination.value.page, () => pagination.value.pageSize, searchQuery], fetchSpells);
 
-function onPageChange(page: number) {
+// Table event handlers
+function handleSearch(query: string) {
+    searchQuery.value = query;
+    pagination.value.page = 1; // Reset to first page when searching
+    fetchSpells();
+}
+
+function changePage(page: number) {
     pagination.value.page = page;
+    fetchSpells();
+}
+
+function handleColumnToggle(columns: string[]) {
+    // Column preferences are automatically saved by the TableComponent
+    console.log('Columns changed:', columns);
 }
 
 async function onView(spell: Spell) {

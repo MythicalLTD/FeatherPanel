@@ -1,346 +1,360 @@
 <template>
     <DashboardLayout :breadcrumbs="[{ text: 'Roles', isCurrent: true, href: '/admin/roles' }]">
-        <main class="p-6 space-y-8 bg-background min-h-screen">
-            <Card class="rounded-xl">
-                <CardHeader>
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div>
-                            <CardTitle class="text-2xl font-bold">Roles</CardTitle>
-                            <CardDescription>Manage all roles in your system.</CardDescription>
-                        </div>
-                        <div class="flex gap-2">
-                            <Input
-                                v-model="searchQuery"
-                                placeholder="Search by name or display name..."
-                                class="max-w-xs"
-                            />
-                            <Button variant="secondary" @click="openCreateDrawer">Create Role</Button>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent class="flex-1 overflow-auto">
-                    <Alert
-                        v-if="message"
-                        :variant="message.type === 'error' ? 'destructive' : 'default'"
-                        class="mb-4 whitespace-nowrap overflow-x-auto"
-                    >
-                        <span>{{ displayMessage }}</span>
-                    </Alert>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Display Name</TableHead>
-                                <TableHead>Color</TableHead>
-                                <TableHead>Created</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow v-for="role in roles" :key="role.id">
-                                <TableCell>{{ role.name }}</TableCell>
-                                <TableCell>{{ role.display_name }}</TableCell>
-                                <TableCell>
-                                    <span
-                                        :style="{
-                                            backgroundColor: role.color,
-                                            color: '#fff',
-                                            padding: '2px 8px',
-                                            borderRadius: '4px',
-                                        }"
-                                    >
-                                        {{ role.color }}
-                                    </span>
-                                </TableCell>
-                                <TableCell>{{ role.created_at }}</TableCell>
-                                <TableCell>
-                                    <div class="flex gap-2">
-                                        <Button size="sm" variant="outline" @click="onView(role)">
-                                            <Eye :size="16" />
-                                        </Button>
-                                        <Button size="sm" variant="secondary" @click="onEdit(role)">
-                                            <Pencil :size="16" />
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            :title="'Manage Permissions'"
-                                            @click="openPermissionsDrawer(role)"
-                                        >
-                                            <Shield :size="16" />
-                                        </Button>
-                                        <template v-if="confirmDeleteRow === role.id">
-                                            <Button
-                                                size="sm"
-                                                variant="destructive"
-                                                :loading="deleting"
-                                                @click="confirmDelete(role)"
-                                            >
-                                                Confirm Delete
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                :disabled="deleting"
-                                                @click="onCancelDelete"
-                                            >
-                                                Cancel
-                                            </Button>
-                                        </template>
-                                        <template v-else>
-                                            <Button size="sm" variant="destructive" @click="onDelete(role)">
-                                                <Trash2 :size="16" />
-                                            </Button>
-                                        </template>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                    <div class="mt-6 flex justify-end">
-                        <Pagination
-                            :items-per-page="pagination.pageSize"
-                            :total="pagination.total"
-                            :default-page="pagination.page"
-                            @page-change="onPageChange"
+        <div class="min-h-screen bg-background">
+            <!-- Loading State -->
+            <div v-if="loading" class="flex items-center justify-center py-12">
+                <div class="flex items-center gap-3">
+                    <div class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+                    <span class="text-muted-foreground">Loading roles...</span>
+                </div>
+            </div>
+
+            <!-- Error State -->
+            <div
+                v-else-if="message?.type === 'error'"
+                class="flex flex-col items-center justify-center py-12 text-center"
+            >
+                <div class="text-red-500 mb-4">
+                    <svg class="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
                         />
-                    </div>
-                </CardContent>
-            </Card>
-        </main>
-    </DashboardLayout>
-    <Drawer
-        class="w-full"
-        :open="viewing"
-        @update:open="
-            (val: boolean) => {
-                if (!val) closeView();
-            }
-        "
-    >
-        <DrawerContent v-if="selectedRole">
-            <DrawerHeader>
-                <DrawerTitle>Role Info</DrawerTitle>
-                <DrawerDescription>Viewing details for role: {{ selectedRole.name }}</DrawerDescription>
-            </DrawerHeader>
-            <div class="px-6 pt-6 space-y-2">
-                <div><b>Name:</b> {{ selectedRole.name }}</div>
-                <div><b>Display Name:</b> {{ selectedRole.display_name }}</div>
-                <div>
-                    <b>Color:</b>
-                    <span
-                        :style="{
-                            backgroundColor: selectedRole.color,
-                            color: '#fff',
-                            padding: '2px 8px',
-                            borderRadius: '4px',
-                        }"
-                        >{{ selectedRole.color }}</span
-                    >
+                    </svg>
                 </div>
-                <div><b>Created At:</b> {{ selectedRole.created_at }}</div>
-                <div><b>Updated At:</b> {{ selectedRole.updated_at }}</div>
+                <h3 class="text-lg font-medium text-muted-foreground mb-2">Failed to load roles</h3>
+                <p class="text-sm text-muted-foreground max-w-sm">
+                    {{ message.text }}
+                </p>
+                <Button class="mt-4" @click="fetchRoles">Try Again</Button>
             </div>
-            <div class="p-4 flex justify-end">
-                <DrawerClose as-child>
-                    <Button variant="outline" @click="closeView">Close</Button>
-                </DrawerClose>
-            </div>
-        </DrawerContent>
-    </Drawer>
-    <Drawer
-        :open="editDrawerOpen"
-        @update:open="
-            (val: boolean) => {
-                if (!val) closeEditDrawer();
-            }
-        "
-    >
-        <DrawerContent v-if="editingRole">
-            <DrawerHeader>
-                <DrawerTitle>Edit Role</DrawerTitle>
-                <DrawerDescription>Edit details for role: {{ editingRole.name }}</DrawerDescription>
-            </DrawerHeader>
-            <Alert
-                v-if="drawerMessage"
-                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                class="mb-4 whitespace-nowrap overflow-x-auto"
-            >
-                <span>{{ drawerMessage.text }}</span>
-            </Alert>
-            <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitEdit">
-                <label for="edit-name" class="block mb-1 font-medium">Name</label>
-                <Input id="edit-name" v-model="editForm.name" label="Name" placeholder="Name" required />
-                <label for="edit-display-name" class="block mb-1 font-medium">Display Name</label>
-                <Input
-                    id="edit-display-name"
-                    v-model="editForm.display_name"
-                    label="Display Name"
-                    placeholder="Display Name"
-                    required
-                />
-                <label for="edit-color" class="block mb-1 font-medium">Color</label>
-                <input
-                    id="edit-color"
-                    v-model="editForm.color"
-                    type="color"
-                    class="h-10 w-20 rounded border border-input"
-                    required
-                />
-                <div class="flex justify-end gap-2 mt-4">
-                    <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
-                    <Button type="submit" variant="secondary">Save</Button>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        :title="'Manage Permissions'"
-                        @click="openPermissionsDrawer(editingRole)"
-                    >
-                        <Shield :size="16" />
-                    </Button>
-                </div>
-            </form>
-        </DrawerContent>
-    </Drawer>
-    <Drawer
-        :open="createDrawerOpen"
-        @update:open="
-            (val) => {
-                if (!val) closeCreateDrawer();
-            }
-        "
-    >
-        <DrawerContent>
-            <DrawerHeader>
-                <DrawerTitle>Create Role</DrawerTitle>
-                <DrawerDescription>Fill in the details to create a new role.</DrawerDescription>
-            </DrawerHeader>
-            <Alert
-                v-if="drawerMessage"
-                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                class="mb-4 whitespace-nowrap overflow-x-auto"
-            >
-                <span>{{ drawerMessage.text }}</span>
-            </Alert>
-            <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreate">
-                <label for="create-name" class="block mb-1 font-medium">Name</label>
-                <Input id="create-name" v-model="createForm.name" label="Name" placeholder="Name" required />
-                <label for="create-display-name" class="block mb-1 font-medium">Display Name</label>
-                <Input
-                    id="create-display-name"
-                    v-model="createForm.display_name"
-                    label="Display Name"
-                    placeholder="Display Name"
-                    required
-                />
-                <label for="create-color" class="block mb-1 font-medium">Color</label>
-                <input
-                    id="create-color"
-                    v-model="createForm.color"
-                    type="color"
-                    class="h-10 w-20 rounded border border-input"
-                    required
-                />
-                <div class="flex justify-end gap-2 mt-4">
-                    <Button type="button" variant="outline" @click="closeCreateDrawer">Cancel</Button>
-                    <Button type="submit" variant="secondary">Create</Button>
-                </div>
-            </form>
-        </DrawerContent>
-    </Drawer>
-    <Drawer
-        :open="permissionsDrawerOpen"
-        @update:open="
-            (val: boolean) => {
-                if (!val) closePermissionsDrawer();
-            }
-        "
-    >
-        <DrawerContent v-if="permissionsRole">
-            <DrawerHeader>
-                <DrawerTitle>Manage Permissions</DrawerTitle>
-                <DrawerDescription>Permissions for role: {{ permissionsRole.name }}</DrawerDescription>
-            </DrawerHeader>
-            <Card class="m-6">
-                <CardHeader>
-                    <CardTitle>Permissions</CardTitle>
-                    <CardDescription>View, add, or remove permissions for this role.</CardDescription>
-                </CardHeader>
-                <CardContent class="max-h-96 overflow-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Permission</TableHead>
-                                <TableHead class="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow v-for="perm in permissions" :key="perm.id">
-                                <TableCell>{{ perm.permission }}</TableCell>
-                                <TableCell class="text-right">
-                                    <Button
-                                        size="icon"
-                                        variant="destructive"
-                                        :title="'Delete Permission'"
-                                        @click="deletePermission(perm.id)"
-                                    >
-                                        <Trash2 :size="16" />
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                            <TableRow v-if="permissions.length === 0">
-                                <TableCell colspan="2" class="text-muted-foreground"
-                                    >No permissions for this role.</TableCell
-                                >
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                    <form class="flex gap-2 mt-4 items-end" @submit.prevent="addPermission">
-                        <div class="flex-1">
-                            <label for="perm-autocomplete" class="block text-xs font-medium mb-1">Add Permission</label>
-                            <Input
-                                id="perm-autocomplete"
-                                v-model="newPermission"
-                                placeholder="Type or select permission"
-                                autocomplete="off"
-                                class="w-full"
-                            />
-                            <div
-                                v-if="newPermission && filteredPermissionOptions.length > 0"
-                                class="bg-popover border rounded shadow mt-1 max-h-48 overflow-auto z-10"
-                            >
-                                <ul>
-                                    <li
-                                        v-for="option in filteredPermissionOptions"
-                                        :key="option.value"
-                                        class="px-3 py-2 cursor-pointer hover:bg-accent"
-                                        @click="addPermissionFromOption(option.value)"
-                                    >
-                                        <div class="font-mono text-xs">{{ option.value }}</div>
-                                        <div class="text-xs text-muted-foreground">
-                                            {{ option.category }} — {{ option.description }}
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                        <Button
-                            v-if="newPermission && filteredPermissionOptions.length === 0"
-                            type="submit"
-                            variant="secondary"
-                        >
-                            Add
+
+            <!-- Roles Table -->
+            <div v-else class="p-6">
+                <TableComponent
+                    title="Roles"
+                    description="Manage all roles in your system."
+                    :columns="tableColumns"
+                    :data="roles"
+                    :search-placeholder="'Search by name or display name...'"
+                    :server-side-pagination="true"
+                    :total-records="pagination.total"
+                    :total-pages="Math.ceil(pagination.total / pagination.pageSize)"
+                    :current-page="pagination.page"
+                    :has-next="pagination.hasNext"
+                    :has-prev="pagination.hasPrev"
+                    :from="pagination.from"
+                    :to="pagination.to"
+                    local-storage-key="roles-table-columns"
+                    @search="handleSearch"
+                    @page-change="changePage"
+                    @column-toggle="handleColumnToggle"
+                >
+                    <template #header-actions>
+                        <Button variant="outline" size="sm" @click="openCreateDrawer">
+                            <Plus class="h-4 w-4 mr-2" />
+                            Create Role
                         </Button>
-                    </form>
-                </CardContent>
-            </Card>
-            <div class="p-4 flex justify-end">
-                <DrawerClose as-child>
-                    <Button variant="outline" @click="closePermissionsDrawer">Close</Button>
-                </DrawerClose>
+                    </template>
+
+                    <!-- Custom cell templates -->
+                    <template #cell-color="{ item }">
+                        <span
+                            :style="{
+                                backgroundColor: (item as Role).color,
+                                color: '#fff',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                            }"
+                        >
+                            {{ (item as Role).color }}
+                        </span>
+                    </template>
+
+                    <template #cell-actions="{ item }">
+                        <div class="flex gap-2">
+                            <Button size="sm" variant="outline" @click="onView(item as Role)">
+                                <Eye :size="16" />
+                            </Button>
+                            <Button size="sm" variant="secondary" @click="onEdit(item as Role)">
+                                <Pencil :size="16" />
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                :title="'Manage Permissions'"
+                                @click="openPermissionsDrawer(item as Role)"
+                            >
+                                <Shield :size="16" />
+                            </Button>
+                            <template v-if="confirmDeleteRow === (item as Role).id">
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    :loading="deleting"
+                                    @click="confirmDelete(item as Role)"
+                                >
+                                    Confirm Delete
+                                </Button>
+                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
+                                    Cancel
+                                </Button>
+                            </template>
+                            <template v-else>
+                                <Button size="sm" variant="destructive" @click="onDelete(item as Role)">
+                                    <Trash2 :size="16" />
+                                </Button>
+                            </template>
+                        </div>
+                    </template>
+                </TableComponent>
             </div>
-        </DrawerContent>
-    </Drawer>
+        </div>
+
+        <!-- View Drawer -->
+        <Drawer
+            class="w-full"
+            :open="viewing"
+            @update:open="
+                (val: boolean) => {
+                    if (!val) closeView();
+                }
+            "
+        >
+            <DrawerContent v-if="selectedRole">
+                <DrawerHeader>
+                    <DrawerTitle>Role Info</DrawerTitle>
+                    <DrawerDescription>Viewing details for role: {{ selectedRole.name }}</DrawerDescription>
+                </DrawerHeader>
+                <div class="px-6 pt-6 space-y-2">
+                    <div><b>Name:</b> {{ selectedRole.name }}</div>
+                    <div><b>Display Name:</b> {{ selectedRole.display_name }}</div>
+                    <div>
+                        <b>Color:</b>
+                        <span
+                            :style="{
+                                backgroundColor: selectedRole.color,
+                                color: '#fff',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                            }"
+                            >{{ selectedRole.color }}</span
+                        >
+                    </div>
+                    <div><b>Created At:</b> {{ selectedRole.created_at }}</div>
+                    <div><b>Updated At:</b> {{ selectedRole.updated_at }}</div>
+                </div>
+                <div class="p-4 flex justify-end">
+                    <DrawerClose as-child>
+                        <Button variant="outline" @click="closeView">Close</Button>
+                    </DrawerClose>
+                </div>
+            </DrawerContent>
+        </Drawer>
+
+        <!-- Edit Drawer -->
+        <Drawer
+            :open="editDrawerOpen"
+            @update:open="
+                (val: boolean) => {
+                    if (!val) closeEditDrawer();
+                }
+            "
+        >
+            <DrawerContent v-if="editingRole">
+                <DrawerHeader>
+                    <DrawerTitle>Edit Role</DrawerTitle>
+                    <DrawerDescription>Edit details for role: {{ editingRole.name }}</DrawerDescription>
+                </DrawerHeader>
+                <Alert
+                    v-if="drawerMessage"
+                    :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
+                    class="mb-4 whitespace-nowrap overflow-x-auto"
+                >
+                    <span>{{ drawerMessage.text }}</span>
+                </Alert>
+                <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitEdit">
+                    <label for="edit-name" class="block mb-1 font-medium">Name</label>
+                    <Input id="edit-name" v-model="editForm.name" label="Name" placeholder="Name" required />
+                    <label for="edit-display-name" class="block mb-1 font-medium">Display Name</label>
+                    <Input
+                        id="edit-display-name"
+                        v-model="editForm.display_name"
+                        label="Display Name"
+                        placeholder="Display Name"
+                        required
+                    />
+                    <label for="edit-color" class="block mb-1 font-medium">Color</label>
+                    <input
+                        id="edit-color"
+                        v-model="editForm.color"
+                        type="color"
+                        class="h-10 w-20 rounded border border-input"
+                        required
+                    />
+                    <div class="flex justify-end gap-2 mt-4">
+                        <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
+                        <Button type="submit" variant="secondary">Save</Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            :title="'Manage Permissions'"
+                            @click="openPermissionsDrawer(editingRole)"
+                        >
+                            <Shield :size="16" />
+                        </Button>
+                    </div>
+                </form>
+            </DrawerContent>
+        </Drawer>
+
+        <!-- Create Drawer -->
+        <Drawer
+            :open="createDrawerOpen"
+            @update:open="
+                (val) => {
+                    if (!val) closeCreateDrawer();
+                }
+            "
+        >
+            <DrawerContent>
+                <DrawerHeader>
+                    <DrawerTitle>Create Role</DrawerTitle>
+                    <DrawerDescription>Fill in the details to create a new role.</DrawerDescription>
+                </DrawerHeader>
+                <Alert
+                    v-if="drawerMessage"
+                    :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
+                    class="mb-4 whitespace-nowrap overflow-x-auto"
+                >
+                    <span>{{ drawerMessage.text }}</span>
+                </Alert>
+                <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreate">
+                    <label for="create-name" class="block mb-1 font-medium">Name</label>
+                    <Input id="create-name" v-model="createForm.name" label="Name" placeholder="Name" required />
+                    <label for="create-display-name" class="block mb-1 font-medium">Display Name</label>
+                    <Input
+                        id="create-display-name"
+                        v-model="createForm.display_name"
+                        label="Display Name"
+                        placeholder="Display Name"
+                        required
+                    />
+                    <label for="create-color" class="block mb-1 font-medium">Color</label>
+                    <input
+                        id="create-color"
+                        v-model="createForm.color"
+                        type="color"
+                        class="h-10 w-20 rounded border border-input"
+                        required
+                    />
+                    <div class="flex justify-end gap-2 mt-4">
+                        <Button type="button" variant="outline" @click="closeCreateDrawer">Cancel</Button>
+                        <Button type="submit" variant="secondary">Create</Button>
+                    </div>
+                </form>
+            </DrawerContent>
+        </Drawer>
+
+        <!-- Permissions Drawer -->
+        <Drawer
+            :open="permissionsDrawerOpen"
+            @update:open="
+                (val: boolean) => {
+                    if (!val) closePermissionsDrawer();
+                }
+            "
+        >
+            <DrawerContent v-if="permissionsRole">
+                <DrawerHeader>
+                    <DrawerTitle>Manage Permissions</DrawerTitle>
+                    <DrawerDescription>Permissions for role: {{ permissionsRole.name }}</DrawerDescription>
+                </DrawerHeader>
+                <Card class="m-6">
+                    <CardHeader>
+                        <CardTitle>Permissions</CardTitle>
+                        <CardDescription>View, add, or remove permissions for this role.</CardDescription>
+                    </CardHeader>
+                    <CardContent class="max-h-96 overflow-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Permission</TableHead>
+                                    <TableHead class="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow v-for="perm in permissions" :key="perm.id">
+                                    <TableCell>{{ perm.permission }}</TableCell>
+                                    <TableCell class="text-right">
+                                        <Button
+                                            size="icon"
+                                            variant="destructive"
+                                            :title="'Delete Permission'"
+                                            @click="deletePermission(perm.id)"
+                                        >
+                                            <Trash2 :size="16" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow v-if="permissions.length === 0">
+                                    <TableCell colspan="2" class="text-muted-foreground"
+                                        >No permissions for this role.</TableCell
+                                    >
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                        <form class="flex gap-2 mt-4 items-end" @submit.prevent="addPermission">
+                            <div class="flex-1">
+                                <label for="perm-autocomplete" class="block text-xs font-medium mb-1"
+                                    >Add Permission</label
+                                >
+                                <Input
+                                    id="perm-autocomplete"
+                                    v-model="newPermission"
+                                    placeholder="Type or select permission"
+                                    autocomplete="off"
+                                    class="w-full"
+                                />
+                                <div
+                                    v-if="newPermission && filteredPermissionOptions.length > 0"
+                                    class="bg-popover border rounded shadow mt-1 max-h-48 overflow-auto z-10"
+                                >
+                                    <ul>
+                                        <li
+                                            v-for="option in filteredPermissionOptions"
+                                            :key="option.value"
+                                            class="px-3 py-2 cursor-pointer hover:bg-accent"
+                                            @click="addPermissionFromOption(option.value)"
+                                        >
+                                            <div class="font-mono text-xs">{{ option.value }}</div>
+                                            <div class="text-xs text-muted-foreground">
+                                                {{ option.category }} — {{ option.description }}
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <Button
+                                v-if="newPermission && filteredPermissionOptions.length === 0"
+                                type="submit"
+                                variant="secondary"
+                            >
+                                Add
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
+                <div class="p-4 flex justify-end">
+                    <DrawerClose as-child>
+                        <Button variant="outline" @click="closePermissionsDrawer">Close</Button>
+                    </DrawerClose>
+                </div>
+            </DrawerContent>
+        </Drawer>
+    </DashboardLayout>
 </template>
 
 <script setup lang="ts">
@@ -349,9 +363,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Pagination } from '@/components/ui/pagination';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
-import { Eye, Pencil, Trash2, Shield } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Shield, Plus } from 'lucide-vue-next';
 import axios from 'axios';
 import { Alert } from '@/components/ui/alert';
 import {
@@ -364,6 +377,8 @@ import {
 } from '@/components/ui/drawer';
 import { type Ref } from 'vue';
 import Permissions from '@/lib/permissions';
+import TableComponent from '@/kit/TableComponent.vue';
+import type { TableColumn } from '@/kit/types';
 
 type Role = {
     id: number;
@@ -380,13 +395,16 @@ const pagination = ref({
     page: 1,
     pageSize: 10,
     total: 0,
+    hasNext: false,
+    hasPrev: false,
+    from: 0,
+    to: 0,
 });
 const loading = ref(false);
 const deleting = ref(false);
 const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const drawerMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<number | null>(null);
-const displayMessage = computed(() => (message.value ? message.value.text.replace(/\r?\n|\r/g, ' ') : ''));
 const selectedRole = ref<Role | null>(null);
 const viewing = ref(false);
 const editingRole = ref<Role | null>(null);
@@ -427,6 +445,15 @@ const filteredPermissionOptions = computed(() => {
     );
 });
 
+// Table columns configuration
+const tableColumns: TableColumn[] = [
+    { key: 'name', label: 'Name', searchable: true },
+    { key: 'display_name', label: 'Display Name', searchable: true },
+    { key: 'color', label: 'Color' },
+    { key: 'created_at', label: 'Created' },
+    { key: 'actions', label: 'Actions', headerClass: 'w-[200px] font-semibold' },
+];
+
 async function fetchRoles() {
     loading.value = true;
     try {
@@ -438,7 +465,18 @@ async function fetchRoles() {
             },
         });
         roles.value = data.data.roles || [];
-        pagination.value.total = data.data.pagination.total;
+
+        // Map the API response pagination to our expected format
+        const apiPagination = data.data.pagination;
+        pagination.value = {
+            page: apiPagination.current_page,
+            pageSize: apiPagination.per_page,
+            total: apiPagination.total_records,
+            hasNext: apiPagination.has_next,
+            hasPrev: apiPagination.has_prev,
+            from: apiPagination.from,
+            to: apiPagination.to,
+        };
     } finally {
         loading.value = false;
     }
@@ -514,9 +552,23 @@ async function deletePermission(permissionId: number) {
 onMounted(fetchRoles);
 watch([() => pagination.value.page, () => pagination.value.pageSize, searchQuery], fetchRoles);
 
-function onPageChange(page: number) {
-    pagination.value.page = page;
+// Table event handlers
+function handleSearch(query: string) {
+    searchQuery.value = query;
+    pagination.value.page = 1; // Reset to first page when searching
+    fetchRoles();
 }
+
+function changePage(page: number) {
+    pagination.value.page = page;
+    fetchRoles();
+}
+
+function handleColumnToggle(columns: string[]) {
+    // Column preferences are automatically saved by the TableComponent
+    console.log('Columns changed:', columns);
+}
+
 async function onView(role: Role) {
     viewing.value = true;
     try {
@@ -527,6 +579,7 @@ async function onView(role: Role) {
         message.value = { type: 'error', text: 'Failed to fetch role details' };
     }
 }
+
 function onEdit(role: Role) {
     openEditDrawer(role);
 }
@@ -562,9 +615,11 @@ async function confirmDelete(role: Role) {
 function onDelete(role: Role) {
     confirmDeleteRow.value = role.id;
 }
+
 function onCancelDelete() {
     confirmDeleteRow.value = null;
 }
+
 function closeView() {
     viewing.value = false;
     selectedRole.value = null;
@@ -622,10 +677,12 @@ function openCreateDrawer() {
     createDrawerOpen.value = true;
     createForm.value = { name: '', display_name: '', color: '' };
 }
+
 function closeCreateDrawer() {
     createDrawerOpen.value = false;
     drawerMessage.value = null;
 }
+
 async function submitCreate() {
     try {
         const { data } = await axios.put('/api/admin/roles', createForm.value);
@@ -654,6 +711,7 @@ function openPermissionsDrawer(role: Role) {
     permissionsDrawerOpen.value = true;
     fetchPermissionsForRole(role.id);
 }
+
 function closePermissionsDrawer() {
     permissionsDrawerOpen.value = false;
     permissionsRole.value = null;

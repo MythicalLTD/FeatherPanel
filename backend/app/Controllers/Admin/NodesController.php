@@ -29,6 +29,7 @@ class NodesController
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         $search = $request->query->get('search', '');
+
         if ($page < 1) {
             $page = 1;
         }
@@ -38,15 +39,30 @@ class NodesController
         if ($limit > 100) {
             $limit = 100;
         }
+
+        $offset = ($page - 1) * $limit;
         $nodes = Node::searchNodes($page, $limit, $search);
         $total = Node::getNodesCount($search);
+
+        $totalPages = ceil($total / $limit);
+        $from = ($page - 1) * $limit + 1;
+        $to = min($from + $limit - 1, $total);
 
         return ApiResponse::success([
             'nodes' => $nodes,
             'pagination' => [
-                'page' => $page,
-                'limit' => $limit,
-                'total' => $total,
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total_records' => $total,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
+                'from' => $from,
+                'to' => $to,
+            ],
+            'search' => [
+                'query' => $search,
+                'has_results' => count($nodes) > 0,
             ],
         ], 'Nodes fetched successfully', 200);
     }

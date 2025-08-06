@@ -1,21 +1,59 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
-        <main class="p-6 space-y-8 bg-background min-h-screen">
-            <Card class="rounded-xl">
-                <CardHeader>
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div>
-                            <CardTitle class="text-2xl font-bold">Nodes</CardTitle>
-                            <CardDescription>
-                                Managing nodes for location: {{ currentLocation?.name }}
-                            </CardDescription>
-                        </div>
+        <div class="min-h-screen bg-background">
+            <!-- Loading State -->
+            <div v-if="loading" class="flex items-center justify-center py-12">
+                <div class="flex items-center gap-3">
+                    <div class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+                    <span class="text-muted-foreground">Loading nodes...</span>
+                </div>
+            </div>
+
+            <!-- Error State -->
+            <div
+                v-else-if="message?.type === 'error'"
+                class="flex flex-col items-center justify-center py-12 text-center"
+            >
+                <div class="text-red-500 mb-4">
+                    <svg class="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                        />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-muted-foreground mb-2">Failed to load nodes</h3>
+                <p class="text-sm text-muted-foreground max-w-sm">
+                    {{ message.text }}
+                </p>
+                <Button class="mt-4" @click="fetchNodes">Try Again</Button>
+            </div>
+
+            <!-- Nodes Table -->
+            <div v-else class="p-6">
+                <TableComponent
+                    title="Nodes"
+                    :description="`Managing nodes for location: ${currentLocation?.name}`"
+                    :columns="tableColumns"
+                    :data="nodes"
+                    :search-placeholder="'Search by name, fqdn, or description...'"
+                    :server-side-pagination="true"
+                    :total-records="pagination.total"
+                    :total-pages="Math.ceil(pagination.total / pagination.pageSize)"
+                    :current-page="pagination.page"
+                    :has-next="pagination.hasNext"
+                    :has-prev="pagination.hasPrev"
+                    :from="pagination.from"
+                    :to="pagination.to"
+                    local-storage-key="nodes-table-columns"
+                    @search="handleSearch"
+                    @page-change="changePage"
+                    @column-toggle="handleColumnToggle"
+                >
+                    <template #header-actions>
                         <div class="flex gap-2 items-center">
-                            <Input
-                                v-model="searchQuery"
-                                placeholder="Search by name, fqdn, or description..."
-                                class="max-w-xs"
-                            />
                             <div
                                 v-if="isCheckingHealth"
                                 class="flex items-center gap-2 px-2 py-1 bg-muted rounded text-xs text-muted-foreground"
@@ -32,117 +70,90 @@
                             >
                                 <RefreshCw :size="16" />
                             </Button>
-                            <Button variant="secondary" @click="openCreateDrawer">Create Node</Button>
+                            <Button variant="outline" size="sm" @click="openCreateDrawer">
+                                <Plus class="h-4 w-4 mr-2" />
+                                Create Node
+                            </Button>
                         </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <Alert
-                        v-if="message"
-                        :variant="message.type === 'error' ? 'destructive' : 'default'"
-                        class="mb-4 whitespace-nowrap overflow-x-auto"
-                    >
-                        <span>{{ displayMessage }}</span>
-                    </Alert>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>FQDN</TableHead>
-                                <TableHead>Location</TableHead>
-                                <TableHead>Memory</TableHead>
-                                <TableHead>Disk</TableHead>
-                                <TableHead>Created</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow v-for="node in nodes" :key="node.id">
-                                <TableCell>
-                                    <div class="flex items-center gap-2">
-                                        <div
-                                            :class="[
-                                                'h-2 w-2 rounded-full',
-                                                getNodeHealthStatus(node.id) === 'healthy'
-                                                    ? 'bg-green-500'
-                                                    : getNodeHealthStatus(node.id) === 'unhealthy'
-                                                      ? 'bg-red-500'
-                                                      : 'bg-gray-400',
-                                            ]"
-                                        ></div>
-                                        <span class="text-xs">
-                                            {{
-                                                getNodeHealthStatus(node.id) === 'healthy'
-                                                    ? 'Online'
-                                                    : getNodeHealthStatus(node.id) === 'unhealthy'
-                                                      ? 'Offline'
-                                                      : 'Unknown'
-                                            }}
-                                        </span>
-                                    </div>
-                                </TableCell>
-                                <TableCell>{{ node.name }}</TableCell>
-                                <TableCell>{{ node.fqdn }}</TableCell>
-                                <TableCell>{{ getLocationName(node.location_id) }}</TableCell>
-                                <TableCell>{{ node.memory }}</TableCell>
-                                <TableCell>{{ node.disk }}</TableCell>
-                                <TableCell>{{ node.created_at }}</TableCell>
-                                <TableCell>
-                                    <div class="flex gap-2">
-                                        <Button size="sm" variant="outline" @click="onView(node)">
-                                            <Eye :size="16" />
-                                        </Button>
-                                        <Button size="sm" variant="secondary" @click="onEdit(node)">
-                                            <Pencil :size="16" />
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            title="Manage Databases"
-                                            @click="onDatabases(node)"
-                                        >
-                                            <Database :size="16" />
-                                        </Button>
-                                        <template v-if="confirmDeleteRow === node.id">
-                                            <Button
-                                                size="sm"
-                                                variant="destructive"
-                                                :loading="deleting"
-                                                @click="confirmDelete(node)"
-                                            >
-                                                Confirm Delete
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                :disabled="deleting"
-                                                @click="onCancelDelete"
-                                            >
-                                                Cancel
-                                            </Button>
-                                        </template>
-                                        <template v-else>
-                                            <Button size="sm" variant="destructive" @click="onDelete(node)">
-                                                <Trash2 :size="16" />
-                                            </Button>
-                                        </template>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                    <div class="mt-6 flex justify-end">
-                        <Pagination
-                            :items-per-page="pagination.pageSize"
-                            :total="pagination.total"
-                            :default-page="pagination.page"
-                            @page-change="onPageChange"
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-        </main>
+                    </template>
+
+                    <!-- Custom cell templates -->
+                    <template #cell-status="{ item }">
+                        <div class="flex items-center gap-2">
+                            <div
+                                :class="[
+                                    'h-2 w-2 rounded-full',
+                                    getNodeHealthStatus((item as Node).id) === 'healthy'
+                                        ? 'bg-green-500'
+                                        : getNodeHealthStatus((item as Node).id) === 'unhealthy'
+                                          ? 'bg-red-500'
+                                          : 'bg-gray-400',
+                                ]"
+                            ></div>
+                            <span class="text-xs">
+                                {{
+                                    getNodeHealthStatus((item as Node).id) === 'healthy'
+                                        ? 'Online'
+                                        : getNodeHealthStatus((item as Node).id) === 'unhealthy'
+                                          ? 'Offline'
+                                          : 'Unknown'
+                                }}
+                            </span>
+                        </div>
+                    </template>
+
+                    <template #cell-location="{ item }">
+                        {{ getLocationName((item as Node).location_id) }}
+                    </template>
+
+                    <template #cell-actions="{ item }">
+                        <div class="flex gap-2">
+                            <Button size="sm" variant="outline" @click="onView(item as Node)">
+                                <Eye :size="16" />
+                            </Button>
+                            <Button size="sm" variant="secondary" @click="onEdit(item as Node)">
+                                <Pencil :size="16" />
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                title="Manage Databases"
+                                @click="onDatabases(item as Node)"
+                            >
+                                <Database :size="16" />
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                title="Manage Allocations"
+                                @click="onAllocations(item as Node)"
+                            >
+                                <Network :size="16" />
+                            </Button>
+                            <template v-if="confirmDeleteRow === (item as Node).id">
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    :loading="deleting"
+                                    @click="confirmDelete(item as Node)"
+                                >
+                                    Confirm Delete
+                                </Button>
+                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
+                                    Cancel
+                                </Button>
+                            </template>
+                            <template v-else>
+                                <Button size="sm" variant="destructive" @click="onDelete(item as Node)">
+                                    <Trash2 :size="16" />
+                                </Button>
+                            </template>
+                        </div>
+                    </template>
+                </TableComponent>
+            </div>
+        </div>
+
         <!-- Drawers -->
         <Drawer v-model:open="showDrawer" class="w-full">
             <DrawerContent>
@@ -1313,9 +1324,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Pagination } from '@/components/ui/pagination';
-import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
-import { Eye, Pencil, Trash2, ArrowLeft, ArrowRight, RefreshCw, Database } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, ArrowLeft, ArrowRight, RefreshCw, Database, Network, Plus } from 'lucide-vue-next';
 import axios from 'axios';
 import { Alert } from '@/components/ui/alert';
 import {
@@ -1330,6 +1339,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import TableComponent from '@/kit/TableComponent.vue';
+import type { TableColumn } from '@/kit/types';
 
 // Extend Node type and form default
 
@@ -1456,13 +1467,28 @@ const pagination = ref({
     page: 1,
     pageSize: 10,
     total: 0,
+    hasNext: false,
+    hasPrev: false,
+    from: 0,
+    to: 0,
 });
 const loading = ref(false);
 const deleting = ref(false);
 const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<number | null>(null);
 const confirmResetKeyRow = ref<number | null>(null);
-const displayMessage = computed(() => (message.value ? message.value.text.replace(/\r?\n|\r/g, ' ') : ''));
+
+// Table columns configuration
+const tableColumns: TableColumn[] = [
+    { key: 'status', label: 'Status', headerClass: 'w-[100px]' },
+    { key: 'name', label: 'Name', searchable: true },
+    { key: 'fqdn', label: 'FQDN', searchable: true },
+    { key: 'location', label: 'Location' },
+    { key: 'memory', label: 'Memory' },
+    { key: 'disk', label: 'Disk' },
+    { key: 'created_at', label: 'Created' },
+    { key: 'actions', label: 'Actions', headerClass: 'w-[200px] font-semibold' },
+];
 
 // System info state for view mode
 const systemInfoLoading = ref(false);
@@ -1579,7 +1605,18 @@ async function fetchNodes() {
         };
         const { data } = await axios.get('/api/admin/nodes', { params });
         nodes.value = data.data.nodes || [];
-        pagination.value.total = data.data.pagination.total;
+
+        // Map the API response pagination to our expected format
+        const apiPagination = data.data.pagination;
+        pagination.value = {
+            page: apiPagination.current_page,
+            pageSize: apiPagination.per_page,
+            total: apiPagination.total_records,
+            hasNext: apiPagination.has_next,
+            hasPrev: apiPagination.has_prev,
+            from: apiPagination.from,
+            to: apiPagination.to,
+        };
 
         // Auto-check health status for all nodes
         await checkAllNodesHealth();
@@ -1743,6 +1780,10 @@ function onEdit(node: Node) {
 function onDatabases(node: Node) {
     router.push(`/admin/nodes/${node.id}/databases`);
 }
+
+function onAllocations(node: Node) {
+    router.push(`/admin/nodes/${node.id}/allocations`);
+}
 async function onView(node: Node) {
     drawerMode.value = 'view';
     drawerNode.value = node;
@@ -1898,6 +1939,23 @@ function onCancelResetKey() {
     confirmResetKeyRow.value = null;
 }
 
+// Table event handlers
+function handleSearch(query: string) {
+    searchQuery.value = query;
+    pagination.value.page = 1; // Reset to first page when searching
+    fetchNodes();
+}
+
+function changePage(page: number) {
+    pagination.value.page = page;
+    fetchNodes();
+}
+
+function handleColumnToggle(columns: string[]) {
+    // Column preferences are automatically saved by the TableComponent
+    console.log('Columns changed:', columns);
+}
+
 onMounted(async () => {
     await fetchLocations();
     await fetchCurrentLocation();
@@ -1921,10 +1979,6 @@ watch([() => pagination.value.page, () => pagination.value.pageSize, searchQuery
     await fetchCurrentLocation();
     await fetchNodes();
 });
-
-function onPageChange(page: number) {
-    pagination.value.page = page;
-}
 
 async function confirmDelete(node: Node) {
     deleting.value = true;

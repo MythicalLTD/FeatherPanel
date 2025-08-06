@@ -24,37 +24,46 @@ class RolesController
 {
     public function index(Request $request): Response
     {
-        // Validate and sanitize pagination parameters
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
+        $search = $request->query->get('search', '');
 
-        // Adjust page parameter if it's less than 1
         if ($page < 1) {
             $page = 1;
         }
-
-        // Adjust limit parameter with reasonable bounds
-        $maxLimit = 100; // Define maximum limit to prevent performance issues
         if ($limit < 1) {
-            $limit = 10; // Default to 10 if limit is less than 1
+            $limit = 10;
         }
-        if ($limit > $maxLimit) {
-            $limit = $maxLimit; // Cap at maximum limit
+        if ($limit > 100) {
+            $limit = 100;
         }
 
-        $search = $request->query->get('search', '');
         $offset = ($page - 1) * $limit;
         $roles = Role::getAll($search, $limit, $offset);
         $total = Role::getCount($search);
 
+        $totalPages = ceil($total / $limit);
+        $from = ($page - 1) * $limit + 1;
+        $to = min($from + $limit - 1, $total);
+
         return ApiResponse::success([
             'roles' => $roles,
             'pagination' => [
-                'page' => $page,
-                'limit' => $limit,
-                'total' => $total,
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total_records' => $total,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
+                'from' => $from,
+                'to' => $to,
+            ],
+            'search' => [
+                'query' => $search,
+                'has_results' => count($roles) > 0,
             ],
         ], 'Roles fetched successfully', 200);
+
     }
 
     public function show(Request $request, int $id): Response

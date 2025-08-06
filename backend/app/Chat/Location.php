@@ -24,7 +24,7 @@ class Location
         $params = [];
 
         if ($search !== null) {
-            $sql .= ' WHERE name LIKE :search OR country LIKE :search';
+            $sql .= ' WHERE name LIKE :search';
             $params['search'] = '%' . $search . '%';
         }
 
@@ -58,7 +58,7 @@ class Location
         $params = [];
 
         if ($search !== null) {
-            $sql .= ' WHERE name LIKE :search OR country LIKE :search';
+            $sql .= ' WHERE name LIKE :search';
             $params['search'] = '%' . $search . '%';
         }
 
@@ -74,13 +74,13 @@ class Location
 
     public static function create(array $data): int|false
     {
-        $fields = ['name', 'description', 'ip_address', 'country'];
+        $fields = ['name', 'description'];
         $insert = [];
         foreach ($fields as $field) {
             $insert[$field] = $data[$field] ?? null;
         }
         $pdo = Database::getPdoConnection();
-        $sql = 'INSERT INTO ' . self::$table . ' (name, description, ip_address, country) VALUES (:name, :description, :ip_address, :country)';
+        $sql = 'INSERT INTO ' . self::$table . ' (name, description) VALUES (:name, :description)';
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($insert)) {
             return (int) $pdo->lastInsertId();
@@ -91,7 +91,7 @@ class Location
 
     public static function update(int $id, array $data): bool
     {
-        $fields = ['name', 'description', 'ip_address', 'country'];
+        $fields = ['name', 'description'];
         $set = [];
         $params = ['id' => $id];
         foreach ($fields as $field) {

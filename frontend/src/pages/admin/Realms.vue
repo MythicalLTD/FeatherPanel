@@ -1,239 +1,244 @@
 <template>
     <DashboardLayout :breadcrumbs="[{ text: 'Realms', isCurrent: true, href: '/admin/realms' }]">
-        <main class="p-6 space-y-8 bg-background min-h-screen">
-            <Card class="rounded-xl">
-                <CardHeader>
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div>
-                            <CardTitle class="text-2xl font-bold">Realms</CardTitle>
-                            <CardDescription>Manage all realms in your system.</CardDescription>
-                        </div>
-                        <div class="flex gap-2">
-                            <Input
-                                v-model="searchQuery"
-                                placeholder="Search by name, description, or author..."
-                                class="max-w-xs"
-                            />
-                            <Button variant="secondary" @click="openCreateDrawer">Create Realm</Button>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <Alert
-                        v-if="message"
-                        :variant="message.type === 'error' ? 'destructive' : 'default'"
-                        class="mb-4 whitespace-nowrap overflow-x-auto"
-                    >
-                        <span>{{ displayMessage }}</span>
-                    </Alert>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Description</TableHead>
-                                <TableHead>Logo</TableHead>
-                                <TableHead>Author</TableHead>
-                                <TableHead>Created</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow v-for="realm in realms" :key="realm.id">
-                                <TableCell>{{ realm.name }}</TableCell>
-                                <TableCell>{{ realm.description || '-' }}</TableCell>
-                                <TableCell>
-                                    <img
-                                        v-if="realm.logo"
-                                        :src="realm.logo"
-                                        :alt="realm.name"
-                                        class="h-8 w-8 rounded"
-                                    />
-                                    <span v-else>-</span>
-                                </TableCell>
-                                <TableCell>{{ realm.author || '-' }}</TableCell>
-                                <TableCell>{{ realm.created_at }}</TableCell>
-                                <TableCell>
-                                    <div class="flex gap-2">
-                                        <Button size="sm" variant="outline" @click="onView(realm)">
-                                            <Eye :size="16" />
-                                        </Button>
-                                        <Button size="sm" variant="secondary" @click="onViewSpells(realm)">
-                                            <Sparkles :size="16" />
-                                        </Button>
-                                        <Button size="sm" variant="secondary" @click="onEdit(realm)">
-                                            <Pencil :size="16" />
-                                        </Button>
-                                        <template v-if="confirmDeleteRow === realm.id">
-                                            <Button
-                                                size="sm"
-                                                variant="destructive"
-                                                :loading="deleting"
-                                                @click="confirmDelete(realm)"
-                                            >
-                                                Confirm Delete
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                :disabled="deleting"
-                                                @click="onCancelDelete"
-                                            >
-                                                Cancel
-                                            </Button>
-                                        </template>
-                                        <template v-else>
-                                            <Button size="sm" variant="destructive" @click="onDelete(realm)">
-                                                <Trash2 :size="16" />
-                                            </Button>
-                                        </template>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                    <div class="mt-6 flex justify-end">
-                        <Pagination
-                            :items-per-page="pagination.pageSize"
-                            :total="pagination.total"
-                            :default-page="pagination.page"
-                            @page-change="onPageChange"
+        <div class="min-h-screen bg-background">
+            <!-- Loading State -->
+            <div v-if="loading" class="flex items-center justify-center py-12">
+                <div class="flex items-center gap-3">
+                    <div class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+                    <span class="text-muted-foreground">Loading realms...</span>
+                </div>
+            </div>
+
+            <!-- Error State -->
+            <div
+                v-else-if="message?.type === 'error'"
+                class="flex flex-col items-center justify-center py-12 text-center"
+            >
+                <div class="text-red-500 mb-4">
+                    <svg class="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
                         />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-muted-foreground mb-2">Failed to load realms</h3>
+                <p class="text-sm text-muted-foreground max-w-sm">
+                    {{ message.text }}
+                </p>
+                <Button class="mt-4" @click="fetchRealms">Try Again</Button>
+            </div>
+
+            <!-- Realms Table -->
+            <div v-else class="p-6">
+                <TableComponent
+                    title="Realms"
+                    description="Manage all realms in your system."
+                    :columns="tableColumns"
+                    :data="realms"
+                    :search-placeholder="'Search by name, description, or author...'"
+                    :server-side-pagination="true"
+                    :total-records="pagination.total"
+                    :total-pages="Math.ceil(pagination.total / pagination.pageSize)"
+                    :current-page="pagination.page"
+                    :has-next="pagination.hasNext"
+                    :has-prev="pagination.hasPrev"
+                    :from="pagination.from"
+                    :to="pagination.to"
+                    local-storage-key="realms-table-columns"
+                    @search="handleSearch"
+                    @page-change="changePage"
+                    @column-toggle="handleColumnToggle"
+                >
+                    <template #header-actions>
+                        <Button variant="outline" size="sm" @click="openCreateDrawer">
+                            <Plus class="h-4 w-4 mr-2" />
+                            Create Realm
+                        </Button>
+                    </template>
+
+                    <!-- Custom cell templates -->
+                    <template #cell-logo="{ item }">
+                        <img
+                            v-if="(item as Realm).logo"
+                            :src="(item as Realm).logo"
+                            :alt="(item as Realm).name"
+                            class="h-8 w-8 rounded"
+                        />
+                        <span v-else>-</span>
+                    </template>
+
+                    <template #cell-actions="{ item }">
+                        <div class="flex gap-2">
+                            <Button size="sm" variant="outline" @click="onView(item as Realm)">
+                                <Eye :size="16" />
+                            </Button>
+                            <Button size="sm" variant="secondary" @click="onViewSpells(item as Realm)">
+                                <Sparkles :size="16" />
+                            </Button>
+                            <Button size="sm" variant="secondary" @click="onEdit(item as Realm)">
+                                <Pencil :size="16" />
+                            </Button>
+                            <template v-if="confirmDeleteRow === (item as Realm).id">
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    :loading="deleting"
+                                    @click="confirmDelete(item as Realm)"
+                                >
+                                    Confirm Delete
+                                </Button>
+                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
+                                    Cancel
+                                </Button>
+                            </template>
+                            <template v-else>
+                                <Button size="sm" variant="destructive" @click="onDelete(item as Realm)">
+                                    <Trash2 :size="16" />
+                                </Button>
+                            </template>
+                        </div>
+                    </template>
+                </TableComponent>
+            </div>
+        </div>
+
+        <!-- View Drawer -->
+        <Drawer
+            class="w-full"
+            :open="viewing"
+            @update:open="
+                (val: boolean) => {
+                    if (!val) closeView();
+                }
+            "
+        >
+            <DrawerContent v-if="selectedRealm">
+                <DrawerHeader>
+                    <DrawerTitle>Realm Info</DrawerTitle>
+                    <DrawerDescription>Viewing details for realm: {{ selectedRealm.name }}</DrawerDescription>
+                </DrawerHeader>
+                <div class="px-6 pt-6 space-y-2">
+                    <div><b>Name:</b> {{ selectedRealm.name }}</div>
+                    <div><b>Description:</b> {{ selectedRealm.description || '-' }}</div>
+                    <div>
+                        <b>Logo:</b>
+                        <img
+                            v-if="selectedRealm.logo"
+                            :src="selectedRealm.logo"
+                            :alt="selectedRealm.name"
+                            class="h-8 w-8 rounded inline"
+                        />
+                        <span v-else>-</span>
                     </div>
-                </CardContent>
-            </Card>
-        </main>
-    </DashboardLayout>
-    <Drawer
-        class="w-full"
-        :open="viewing"
-        @update:open="
-            (val: boolean) => {
-                if (!val) closeView();
-            }
-        "
-    >
-        <DrawerContent v-if="selectedRealm">
-            <DrawerHeader>
-                <DrawerTitle>Realm Info</DrawerTitle>
-                <DrawerDescription>Viewing details for realm: {{ selectedRealm.name }}</DrawerDescription>
-            </DrawerHeader>
-            <div class="px-6 pt-6 space-y-2">
-                <div><b>Name:</b> {{ selectedRealm.name }}</div>
-                <div><b>Description:</b> {{ selectedRealm.description || '-' }}</div>
-                <div>
-                    <b>Logo:</b>
-                    <img
-                        v-if="selectedRealm.logo"
-                        :src="selectedRealm.logo"
-                        :alt="selectedRealm.name"
-                        class="h-8 w-8 rounded inline"
+                    <div><b>Author:</b> {{ selectedRealm.author || '-' }}</div>
+                    <div><b>Created At:</b> {{ selectedRealm.created_at }}</div>
+                    <div><b>Updated At:</b> {{ selectedRealm.updated_at }}</div>
+                </div>
+                <div class="p-4 flex justify-end">
+                    <DrawerClose as-child>
+                        <Button variant="outline" @click="closeView">Close</Button>
+                    </DrawerClose>
+                </div>
+            </DrawerContent>
+        </Drawer>
+
+        <!-- Edit Drawer -->
+        <Drawer
+            :open="editDrawerOpen"
+            @update:open="
+                (val: boolean) => {
+                    if (!val) closeEditDrawer();
+                }
+            "
+        >
+            <DrawerContent v-if="editingRealm">
+                <DrawerHeader>
+                    <DrawerTitle>Edit Realm</DrawerTitle>
+                    <DrawerDescription>Edit details for realm: {{ editingRealm.name }}</DrawerDescription>
+                </DrawerHeader>
+                <Alert
+                    v-if="drawerMessage"
+                    :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
+                    class="mb-4 whitespace-nowrap overflow-x-auto"
+                >
+                    <span>{{ drawerMessage.text }}</span>
+                </Alert>
+                <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitEdit">
+                    <label for="edit-name" class="block mb-1 font-medium">Name</label>
+                    <Input id="edit-name" v-model="editForm.name" label="Name" placeholder="Name" required />
+                    <label for="edit-description" class="block mb-1 font-medium">Description</label>
+                    <Input
+                        id="edit-description"
+                        v-model="editForm.description"
+                        label="Description"
+                        placeholder="Description"
                     />
-                    <span v-else>-</span>
-                </div>
-                <div><b>Author:</b> {{ selectedRealm.author || '-' }}</div>
-                <div><b>Created At:</b> {{ selectedRealm.created_at }}</div>
-                <div><b>Updated At:</b> {{ selectedRealm.updated_at }}</div>
-            </div>
-            <div class="p-4 flex justify-end">
-                <DrawerClose as-child>
-                    <Button variant="outline" @click="closeView">Close</Button>
-                </DrawerClose>
-            </div>
-        </DrawerContent>
-    </Drawer>
-    <Drawer
-        :open="editDrawerOpen"
-        @update:open="
-            (val: boolean) => {
-                if (!val) closeEditDrawer();
-            }
-        "
-    >
-        <DrawerContent v-if="editingRealm">
-            <DrawerHeader>
-                <DrawerTitle>Edit Realm</DrawerTitle>
-                <DrawerDescription>Edit details for realm: {{ editingRealm.name }}</DrawerDescription>
-            </DrawerHeader>
-            <Alert
-                v-if="drawerMessage"
-                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                class="mb-4 whitespace-nowrap overflow-x-auto"
-            >
-                <span>{{ drawerMessage.text }}</span>
-            </Alert>
-            <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitEdit">
-                <label for="edit-name" class="block mb-1 font-medium">Name</label>
-                <Input id="edit-name" v-model="editForm.name" label="Name" placeholder="Name" required />
-                <label for="edit-description" class="block mb-1 font-medium">Description</label>
-                <Input
-                    id="edit-description"
-                    v-model="editForm.description"
-                    label="Description"
-                    placeholder="Description"
-                />
-                <label for="edit-logo" class="block mb-1 font-medium">Logo URL</label>
-                <Input id="edit-logo" v-model="editForm.logo" label="Logo" placeholder="Logo URL" />
-                <label for="edit-author" class="block mb-1 font-medium">Author</label>
-                <Input id="edit-author" v-model="editForm.author" label="Author" placeholder="Author" />
-                <div class="flex justify-end gap-2 mt-4">
-                    <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
-                    <Button type="submit" variant="secondary">Save</Button>
-                </div>
-            </form>
-        </DrawerContent>
-    </Drawer>
-    <Drawer
-        :open="createDrawerOpen"
-        @update:open="
-            (val) => {
-                if (!val) closeCreateDrawer();
-            }
-        "
-    >
-        <DrawerContent>
-            <DrawerHeader>
-                <DrawerTitle>Create Realm</DrawerTitle>
-                <DrawerDescription>Fill in the details to create a new realm.</DrawerDescription>
-            </DrawerHeader>
-            <Alert
-                v-if="drawerMessage"
-                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                class="mb-4 whitespace-nowrap overflow-x-auto"
-            >
-                <span>{{ drawerMessage.text }}</span>
-            </Alert>
-            <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreate">
-                <label for="create-name" class="block mb-1 font-medium">Name</label>
-                <Input id="create-name" v-model="createForm.name" label="Name" placeholder="Name" required />
-                <label for="create-description" class="block mb-1 font-medium">Description</label>
-                <Input
-                    id="create-description"
-                    v-model="createForm.description"
-                    label="Description"
-                    placeholder="Description"
-                />
-                <label for="create-logo" class="block mb-1 font-medium">Logo URL</label>
-                <Input id="create-logo" v-model="createForm.logo" label="Logo" placeholder="Logo URL" />
-                <label for="create-author" class="block mb-1 font-medium">Author</label>
-                <Input id="create-author" v-model="createForm.author" label="Author" placeholder="Author" />
-                <div class="flex justify-end gap-2 mt-4">
-                    <Button type="button" variant="outline" @click="closeCreateDrawer">Cancel</Button>
-                    <Button type="submit" variant="secondary">Create</Button>
-                </div>
-            </form>
-        </DrawerContent>
-    </Drawer>
+                    <label for="edit-logo" class="block mb-1 font-medium">Logo URL</label>
+                    <Input id="edit-logo" v-model="editForm.logo" label="Logo" placeholder="Logo URL" />
+                    <label for="edit-author" class="block mb-1 font-medium">Author</label>
+                    <Input id="edit-author" v-model="editForm.author" label="Author" placeholder="Author" />
+                    <div class="flex justify-end gap-2 mt-4">
+                        <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
+                        <Button type="submit" variant="secondary">Save</Button>
+                    </div>
+                </form>
+            </DrawerContent>
+        </Drawer>
+
+        <!-- Create Drawer -->
+        <Drawer
+            :open="createDrawerOpen"
+            @update:open="
+                (val) => {
+                    if (!val) closeCreateDrawer();
+                }
+            "
+        >
+            <DrawerContent>
+                <DrawerHeader>
+                    <DrawerTitle>Create Realm</DrawerTitle>
+                    <DrawerDescription>Fill in the details to create a new realm.</DrawerDescription>
+                </DrawerHeader>
+                <Alert
+                    v-if="drawerMessage"
+                    :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
+                    class="mb-4 whitespace-nowrap overflow-x-auto"
+                >
+                    <span>{{ drawerMessage.text }}</span>
+                </Alert>
+                <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreate">
+                    <label for="create-name" class="block mb-1 font-medium">Name</label>
+                    <Input id="create-name" v-model="createForm.name" label="Name" placeholder="Name" required />
+                    <label for="create-description" class="block mb-1 font-medium">Description</label>
+                    <Input
+                        id="create-description"
+                        v-model="createForm.description"
+                        label="Description"
+                        placeholder="Description"
+                    />
+                    <label for="create-logo" class="block mb-1 font-medium">Logo URL</label>
+                    <Input id="create-logo" v-model="createForm.logo" label="Logo" placeholder="Logo URL" />
+                    <label for="create-author" class="block mb-1 font-medium">Author</label>
+                    <Input id="create-author" v-model="createForm.author" label="Author" placeholder="Author" />
+                    <div class="flex justify-end gap-2 mt-4">
+                        <Button type="button" variant="outline" @click="closeCreateDrawer">Cancel</Button>
+                        <Button type="submit" variant="secondary">Create</Button>
+                    </div>
+                </form>
+            </DrawerContent>
+        </Drawer>
+    </DashboardLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Pagination } from '@/components/ui/pagination';
-import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
-import { Eye, Pencil, Trash2, Sparkles } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Sparkles, Plus } from 'lucide-vue-next';
 import axios from 'axios';
 import { Alert } from '@/components/ui/alert';
 import {
@@ -245,6 +250,8 @@ import {
     DrawerClose,
 } from '@/components/ui/drawer';
 import { useRouter } from 'vue-router';
+import TableComponent from '@/kit/TableComponent.vue';
+import type { TableColumn } from '@/kit/types';
 
 type Realm = {
     id: number;
@@ -262,13 +269,16 @@ const pagination = ref({
     page: 1,
     pageSize: 10,
     total: 0,
+    hasNext: false,
+    hasPrev: false,
+    from: 0,
+    to: 0,
 });
 const loading = ref(false);
 const deleting = ref(false);
 const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const drawerMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<number | null>(null);
-const displayMessage = computed(() => (message.value ? message.value.text.replace(/\r?\n|\r/g, ' ') : ''));
 const selectedRealm = ref<Realm | null>(null);
 const viewing = ref(false);
 const editingRealm = ref<Realm | null>(null);
@@ -288,6 +298,16 @@ const createForm = ref({
     author: '',
 });
 
+// Table columns configuration
+const tableColumns: TableColumn[] = [
+    { key: 'name', label: 'Name', searchable: true },
+    { key: 'description', label: 'Description', searchable: true },
+    { key: 'logo', label: 'Logo' },
+    { key: 'author', label: 'Author', searchable: true },
+    { key: 'created_at', label: 'Created' },
+    { key: 'actions', label: 'Actions', headerClass: 'w-[200px] font-semibold' },
+];
+
 async function fetchRealms() {
     loading.value = true;
     try {
@@ -299,7 +319,18 @@ async function fetchRealms() {
             },
         });
         realms.value = data.data.realms || [];
-        pagination.value.total = data.data.pagination.total;
+
+        // Map the API response pagination to our expected format
+        const apiPagination = data.data.pagination;
+        pagination.value = {
+            page: apiPagination.current_page,
+            pageSize: apiPagination.per_page,
+            total: apiPagination.total_records,
+            hasNext: apiPagination.has_next,
+            hasPrev: apiPagination.has_prev,
+            from: apiPagination.from,
+            to: apiPagination.to,
+        };
     } catch (e: unknown) {
         message.value = {
             type: 'error',
@@ -318,9 +349,23 @@ async function fetchRealms() {
 onMounted(fetchRealms);
 watch([() => pagination.value.page, () => pagination.value.pageSize, searchQuery], fetchRealms);
 
-function onPageChange(page: number) {
-    pagination.value.page = page;
+// Table event handlers
+function handleSearch(query: string) {
+    searchQuery.value = query;
+    pagination.value.page = 1; // Reset to first page when searching
+    fetchRealms();
 }
+
+function changePage(page: number) {
+    pagination.value.page = page;
+    fetchRealms();
+}
+
+function handleColumnToggle(columns: string[]) {
+    // Column preferences are automatically saved by the TableComponent
+    console.log('Columns changed:', columns);
+}
+
 async function onView(realm: Realm) {
     viewing.value = true;
     try {
@@ -335,6 +380,7 @@ async function onView(realm: Realm) {
 function onViewSpells(realm: Realm) {
     router.push({ path: '/admin/spells', query: { realm_id: realm.id } });
 }
+
 function onEdit(realm: Realm) {
     openEditDrawer(realm);
 }
@@ -370,9 +416,11 @@ async function confirmDelete(realm: Realm) {
 function onDelete(realm: Realm) {
     confirmDeleteRow.value = realm.id;
 }
+
 function onCancelDelete() {
     confirmDeleteRow.value = null;
 }
+
 function closeView() {
     viewing.value = false;
     selectedRealm.value = null;
@@ -430,10 +478,12 @@ function openCreateDrawer() {
     createDrawerOpen.value = true;
     createForm.value = { name: '', description: '', logo: '', author: '' };
 }
+
 function closeCreateDrawer() {
     createDrawerOpen.value = false;
     drawerMessage.value = null;
 }
+
 async function submitCreate() {
     try {
         const { data } = await axios.put('/api/admin/realms', createForm.value);

@@ -42,12 +42,25 @@ class LocationsController
         $locations = Location::getAll($search, $limit, $offset);
         $total = Location::getCount($search);
 
+        $totalPages = ceil($total / $limit);
+        $from = ($page - 1) * $limit + 1;
+        $to = min($from + $limit - 1, $total);
+
         return ApiResponse::success([
             'locations' => $locations,
             'pagination' => [
-                'page' => $page,
-                'limit' => $limit,
-                'total' => $total,
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total_records' => $total,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
+                'from' => $from,
+                'to' => $to,
+            ],
+            'search' => [
+                'query' => $search,
+                'has_results' => count($locations) > 0,
             ],
         ], 'Locations fetched successfully', 200);
     }

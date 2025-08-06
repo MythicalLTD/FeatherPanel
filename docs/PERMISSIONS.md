@@ -4,9 +4,9 @@ This document provides a comprehensive overview of all permission nodes used in 
 
 ## Overview
 
-- **Total Permissions:** 34
-- **Categories:** 10
-- **With Descriptions:** 34
+- **Total Permissions:** 40
+- **Categories:** 12
+- **With Descriptions:** 40
 
 ## Format
 
@@ -121,6 +121,22 @@ if (auth.user.hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)) {
 | `ADMIN_ROLES_PERMISSIONS_EDIT` | `admin.roles.permissions.edit` | Edit existing role permissions |
 | `ADMIN_ROLES_PERMISSIONS_DELETE` | `admin.roles.permissions.delete` | Delete role permissions |
 
+## Admin Settings
+
+| Permission | Node | Description |
+|------------|------|-------------|
+| `ADMIN_SETTINGS_VIEW` | `admin.settings.view` | View settings |
+| `ADMIN_SETTINGS_EDIT` | `admin.settings.edit` | Edit and manage settings |
+
+## Admin Allocations
+
+| Permission | Node | Description |
+|------------|------|-------------|
+| `ADMIN_ALLOCATIONS_VIEW` | `admin.allocations.view` | View allocations |
+| `ADMIN_ALLOCATIONS_CREATE` | `admin.allocations.create` | Create new allocations |
+| `ADMIN_ALLOCATIONS_EDIT` | `admin.allocations.edit` | Edit existing allocations |
+| `ADMIN_ALLOCATIONS_DELETE` | `admin.allocations.delete` | Delete allocations |
+
 ## Adding New Permissions
 
 To add a new permission node:
@@ -143,4 +159,4 @@ To add a new permission node:
 
 ---
 
-*This documentation was auto-generated on 2025-08-04 12:57:45*
+*This documentation was auto-generated on 2025-08-05 16:18:06*

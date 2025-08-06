@@ -41,6 +41,11 @@ const adminRoutes: RouteRecordRaw[] = [
         name: 'AdminNodeDatabases',
         component: () => import('@/pages/admin/NodeDatabases.vue'),
     },
+    {
+        path: '/admin/nodes/:nodeId/allocations',
+        name: 'AdminNodeAllocations',
+        component: () => import('@/pages/admin/Allocations.vue'),
+    },
 ];
 
 export default adminRoutes;

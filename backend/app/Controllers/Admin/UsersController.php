@@ -37,15 +37,26 @@ class UsersController
 {
     public function index(Request $request): Response
     {
-        $page = $request->query->get('page', 1);
-        $limit = $request->query->get('limit', 10);
+        $page = (int) $request->query->get('page', 1);
+        $limit = (int) $request->query->get('limit', 10);
         $search = $request->query->get('search', '');
 
+        if ($page < 1) {
+            $page = 1;
+        }
+        if ($limit < 1) {
+            $limit = 10;
+        }
+        if ($limit > 100) {
+            $limit = 100;
+        }
+
+        $offset = ($page - 1) * $limit;
         $users = \App\Chat\User::searchUsers(
-            (int) $page,
-            (int) $limit,
+            $page,
+            $limit,
             $search,
-            false, // no deleted users
+            false,
             [
                 'username',
                 'uuid',
@@ -59,7 +70,6 @@ class UsersController
         );
 
         $roles = \App\Chat\Role::getAllRoles();
-        // Build a map of role_id => [name, real_name, color]
         $rolesMap = [];
         foreach ($roles as $role) {
             $rolesMap[$role['id']] = [
@@ -83,16 +93,26 @@ class UsersController
             unset($user['role_id']);
         }
 
-        // Get total count for pagination (without limit/offset)
-        $allUsers = \App\Chat\User::getAllUsers(false);
-        $total = count($allUsers);
+        $total = \App\Chat\User::getCount($search);
+        $totalPages = ceil($total / $limit);
+        $from = ($page - 1) * $limit + 1;
+        $to = min($from + $limit - 1, $total);
 
         return ApiResponse::success([
             'users' => $users,
             'pagination' => [
-                'page' => (int) $page,
-                'limit' => (int) $limit,
-                'total' => (int) $total,
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total_records' => $total,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
+                'from' => $from,
+                'to' => $to,
+            ],
+            'search' => [
+                'query' => $search,
+                'has_results' => count($users) > 0,
             ],
         ], 'Users fetched successfully', 200);
     }

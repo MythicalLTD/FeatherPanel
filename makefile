@@ -112,6 +112,7 @@ release:
 lint: 
 	@cd $(BACKEND_DIR) && $(COMPOSER) run lint
 	@cd $(FRONTEND_DIR) && $(YARN) lint
+	@echo -e "${GREEN}${CHECK} Linting complete${NC}\n"
 # Install dependencies
 install:
 	@echo -e "\n${BOLD}${BLUE}Installing Dependencies${NC} ${PACKAGE}"

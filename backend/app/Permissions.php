@@ -115,6 +115,22 @@ class Permissions
     /** Delete role permissions */
     public const ADMIN_ROLES_PERMISSIONS_DELETE = 'admin.roles.permissions.delete';
 
+    // Admin Settings Permissions
+    /** View settings */
+    public const ADMIN_SETTINGS_VIEW = 'admin.settings.view';
+    /** Edit and manage settings */
+    public const ADMIN_SETTINGS_EDIT = 'admin.settings.edit';
+
+    // Admin Allocations Permissions
+    /** View allocations */
+    public const ADMIN_ALLOCATIONS_VIEW = 'admin.allocations.view';
+    /** Create new allocations */
+    public const ADMIN_ALLOCATIONS_CREATE = 'admin.allocations.create';
+    /** Edit existing allocations */
+    public const ADMIN_ALLOCATIONS_EDIT = 'admin.allocations.edit';
+    /** Delete allocations */
+    public const ADMIN_ALLOCATIONS_DELETE = 'admin.allocations.delete';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -324,6 +340,42 @@ class Permissions
                 'value' => self::ADMIN_ROLES_PERMISSIONS_DELETE,
                 'category' => 'Admin Role Permissions',
                 'description' => 'Delete role permissions',
+            ],
+            [
+                'constant' => 'ADMIN_SETTINGS_VIEW',
+                'value' => self::ADMIN_SETTINGS_VIEW,
+                'category' => 'Admin Settings',
+                'description' => 'View settings',
+            ],
+            [
+                'constant' => 'ADMIN_SETTINGS_EDIT',
+                'value' => self::ADMIN_SETTINGS_EDIT,
+                'category' => 'Admin Settings',
+                'description' => 'Edit and manage settings',
+            ],
+            [
+                'constant' => 'ADMIN_ALLOCATIONS_VIEW',
+                'value' => self::ADMIN_ALLOCATIONS_VIEW,
+                'category' => 'Admin Allocations',
+                'description' => 'View allocations',
+            ],
+            [
+                'constant' => 'ADMIN_ALLOCATIONS_CREATE',
+                'value' => self::ADMIN_ALLOCATIONS_CREATE,
+                'category' => 'Admin Allocations',
+                'description' => 'Create new allocations',
+            ],
+            [
+                'constant' => 'ADMIN_ALLOCATIONS_EDIT',
+                'value' => self::ADMIN_ALLOCATIONS_EDIT,
+                'category' => 'Admin Allocations',
+                'description' => 'Edit existing allocations',
+            ],
+            [
+                'constant' => 'ADMIN_ALLOCATIONS_DELETE',
+                'value' => self::ADMIN_ALLOCATIONS_DELETE,
+                'category' => 'Admin Allocations',
+                'description' => 'Delete allocations',
             ],
         ];
     }

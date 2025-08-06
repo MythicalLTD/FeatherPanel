@@ -337,4 +337,23 @@ class User
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Get the total number of users.
+     */
+    public static function getCount(string $search = ''): int
+    {
+        $pdo = Database::getPdoConnection();
+        $sql = 'SELECT COUNT(*) FROM ' . self::$table;
+        if ($search !== '') {
+            $sql .= ' WHERE username LIKE :search';
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute(['search' => '%' . $search . '%']);
+        } else {
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute();
+        }
+
+        return (int) $stmt->fetchColumn();
+    }
 }
