@@ -76,6 +76,14 @@ class Allocation
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
+    public static function getAllocationById(int $id): ?array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
     /**
      * Get allocations by node ID.
      */
