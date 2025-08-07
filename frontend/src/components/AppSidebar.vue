@@ -130,6 +130,16 @@ const data = computed(() => {
                       },
                   ]
                 : []),
+            ...(sessionStore.hasPermission(Permissions.ADMIN_SERVERS_VIEW)
+                ? [
+                      {
+                          name: 'Servers',
+                          title: 'Servers',
+                          url: '/admin/servers',
+                          icon: Server,
+                      },
+                  ]
+                : []),
         ],
         navServer: [
             {

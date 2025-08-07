@@ -4,9 +4,9 @@ This document provides a comprehensive overview of all permission nodes used in 
 
 ## Overview
 
-- **Total Permissions:** 40
-- **Categories:** 12
-- **With Descriptions:** 40
+- **Total Permissions:** 48
+- **Categories:** 13
+- **With Descriptions:** 48
 
 ## Format
 
@@ -137,6 +137,19 @@ if (auth.user.hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)) {
 | `ADMIN_ALLOCATIONS_EDIT` | `admin.allocations.edit` | Edit existing allocations |
 | `ADMIN_ALLOCATIONS_DELETE` | `admin.allocations.delete` | Delete allocations |
 
+## Admin Servers
+
+| Permission | Node | Description |
+|------------|------|-------------|
+| `ADMIN_SERVERS_VIEW` | `admin.servers.view` | View all servers |
+| `ADMIN_SERVERS_CREATE` | `admin.servers.create` | Create new servers |
+| `ADMIN_SERVERS_EDIT` | `admin.servers.edit` | Edit existing servers |
+| `ADMIN_SERVERS_DELETE` | `admin.servers.delete` | Delete servers |
+| `ADMIN_SERVERS_INSTALL` | `admin.servers.install` | Install servers |
+| `ADMIN_SERVERS_REINSTALL` | `admin.servers.reinstall` | Reinstall servers |
+| `ADMIN_SERVERS_SUSPEND` | `admin.servers.suspend` | Suspend servers |
+| `ADMIN_SERVERS_UNSUSPEND` | `admin.servers.unsuspend` | Unsuspend servers |
+
 ## Adding New Permissions
 
 To add a new permission node:
@@ -159,4 +172,4 @@ To add a new permission node:
 
 ---
 
-*This documentation was auto-generated on 2025-08-05 16:18:06*
+*This documentation was auto-generated on 2025-08-07 00:41:05*

@@ -131,6 +131,24 @@ class Permissions
     /** Delete allocations */
     public const ADMIN_ALLOCATIONS_DELETE = 'admin.allocations.delete';
 
+    // Admin Servers Permissions
+    /** View all servers */
+    public const ADMIN_SERVERS_VIEW = 'admin.servers.view';
+    /** Create new servers */
+    public const ADMIN_SERVERS_CREATE = 'admin.servers.create';
+    /** Edit existing servers */
+    public const ADMIN_SERVERS_EDIT = 'admin.servers.edit';
+    /** Delete servers */
+    public const ADMIN_SERVERS_DELETE = 'admin.servers.delete';
+    /** Install servers */
+    public const ADMIN_SERVERS_INSTALL = 'admin.servers.install';
+    /** Reinstall servers */
+    public const ADMIN_SERVERS_REINSTALL = 'admin.servers.reinstall';
+    /** Suspend servers */
+    public const ADMIN_SERVERS_SUSPEND = 'admin.servers.suspend';
+    /** Unsuspend servers */
+    public const ADMIN_SERVERS_UNSUSPEND = 'admin.servers.unsuspend';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -376,6 +394,54 @@ class Permissions
                 'value' => self::ADMIN_ALLOCATIONS_DELETE,
                 'category' => 'Admin Allocations',
                 'description' => 'Delete allocations',
+            ],
+            [
+                'constant' => 'ADMIN_SERVERS_VIEW',
+                'value' => self::ADMIN_SERVERS_VIEW,
+                'category' => 'Admin Servers',
+                'description' => 'View all servers',
+            ],
+            [
+                'constant' => 'ADMIN_SERVERS_CREATE',
+                'value' => self::ADMIN_SERVERS_CREATE,
+                'category' => 'Admin Servers',
+                'description' => 'Create new servers',
+            ],
+            [
+                'constant' => 'ADMIN_SERVERS_EDIT',
+                'value' => self::ADMIN_SERVERS_EDIT,
+                'category' => 'Admin Servers',
+                'description' => 'Edit existing servers',
+            ],
+            [
+                'constant' => 'ADMIN_SERVERS_DELETE',
+                'value' => self::ADMIN_SERVERS_DELETE,
+                'category' => 'Admin Servers',
+                'description' => 'Delete servers',
+            ],
+            [
+                'constant' => 'ADMIN_SERVERS_INSTALL',
+                'value' => self::ADMIN_SERVERS_INSTALL,
+                'category' => 'Admin Servers',
+                'description' => 'Install servers',
+            ],
+            [
+                'constant' => 'ADMIN_SERVERS_REINSTALL',
+                'value' => self::ADMIN_SERVERS_REINSTALL,
+                'category' => 'Admin Servers',
+                'description' => 'Reinstall servers',
+            ],
+            [
+                'constant' => 'ADMIN_SERVERS_SUSPEND',
+                'value' => self::ADMIN_SERVERS_SUSPEND,
+                'category' => 'Admin Servers',
+                'description' => 'Suspend servers',
+            ],
+            [
+                'constant' => 'ADMIN_SERVERS_UNSUSPEND',
+                'value' => self::ADMIN_SERVERS_UNSUSPEND,
+                'category' => 'Admin Servers',
+                'description' => 'Unsuspend servers',
             ],
         ];
     }

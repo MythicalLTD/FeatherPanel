@@ -12,9 +12,10 @@
  */
 
 use App\App;
+use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
-use App\Controllers\Wings\WingsAdminController;
+use App\Controllers\Wings\WingsServerController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerWingsRoute(
@@ -22,7 +23,7 @@ return function (RouteCollection $routes): void {
         'wings-remote-servers',
         '/api/remote/servers',
         function (Request $request) {
-            return (new WingsAdminController())->remoteServers($request);
+            return (new WingsServerController())->remoteServers($request);
         },
         ['GET']
     );
@@ -32,9 +33,24 @@ return function (RouteCollection $routes): void {
         'wings-remote-serveres-reset',
         '/api/remote/servers/reset',
         function (Request $request) {
-            return (new WingsAdminController())->resetServers($request);
+            return (new WingsServerController())->resetServers($request);
         },
         ['POST']
+    );
+
+    App::getInstance(true)->registerWingsRoute(
+        $routes,
+        'wings-server-config',
+        '/api/remote/servers/{uuid}',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid) {
+                return ApiResponse::error('Missing server UUID', 'MISSING_SERVER_UUID', 400);
+            }
+
+            return (new WingsServerController())->getServer($request, $uuid);
+        },
+        ['GET']
     );
 
 };

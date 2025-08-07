@@ -96,6 +96,17 @@ class AllocationsController
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
+        // Check for invalid fields
+        $allowedFields = ['node_id', 'ip', 'ip_alias', 'port', 'server_id', 'notes'];
+        $invalidFields = array_diff(array_keys($data), $allowedFields);
+        if (!empty($invalidFields)) {
+            return ApiResponse::error(
+                'Invalid fields provided: ' . implode(', ', $invalidFields) . '. Allowed fields: ' . implode(', ', $allowedFields),
+                'INVALID_FIELDS',
+                400
+            );
+        }
+
         // Validate required fields
         $requiredFields = ['node_id', 'ip', 'port'];
         $missingFields = [];
@@ -264,6 +275,22 @@ class AllocationsController
         $existingAllocation = Allocation::getById($id);
         if (!$existingAllocation) {
             return ApiResponse::error('Allocation not found', 'ALLOCATION_NOT_FOUND', 404);
+        }
+
+        // If no data is provided, return the current allocation without updating
+        if (empty($data)) {
+            return ApiResponse::success(['allocation' => $existingAllocation], 'No changes to update', 200);
+        }
+
+        // Check for invalid fields
+        $allowedFields = ['node_id', 'ip', 'ip_alias', 'port', 'server_id', 'notes'];
+        $invalidFields = array_diff(array_keys($data), $allowedFields);
+        if (!empty($invalidFields)) {
+            return ApiResponse::error(
+                'Invalid fields provided: ' . implode(', ', $invalidFields) . '. Allowed fields: ' . implode(', ', $allowedFields),
+                'INVALID_FIELDS',
+                400
+            );
         }
 
         // Validate data types for provided fields

@@ -527,6 +527,15 @@ class Node
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    public static function getNodeByWingsAuth(string $tokenId, string $tokenSecret): ?array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE daemon_token_id = :token_id AND daemon_token = :token_secret LIMIT 1');
+        $stmt->execute(['token_id' => $tokenId, 'token_secret' => $tokenSecret]);
+
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
     public static function isWingsAuthValid(string $tokenId, string $tokenSecret): bool
     {
         try {

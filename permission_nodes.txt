@@ -67,3 +67,13 @@ ADMIN_ALLOCATIONS_VIEW=admin.allocations.view | Admin Allocations | View allocat
 ADMIN_ALLOCATIONS_CREATE=admin.allocations.create | Admin Allocations | Create new allocations
 ADMIN_ALLOCATIONS_EDIT=admin.allocations.edit | Admin Allocations | Edit existing allocations
 ADMIN_ALLOCATIONS_DELETE=admin.allocations.delete | Admin Allocations | Delete allocations
+
+# Server Management Permissions
+ADMIN_SERVERS_VIEW=admin.servers.view | Admin Servers | View all servers
+ADMIN_SERVERS_CREATE=admin.servers.create | Admin Servers | Create new servers
+ADMIN_SERVERS_EDIT=admin.servers.edit | Admin Servers | Edit existing servers
+ADMIN_SERVERS_DELETE=admin.servers.delete | Admin Servers | Delete servers
+ADMIN_SERVERS_INSTALL=admin.servers.install | Admin Servers | Install servers
+ADMIN_SERVERS_REINSTALL=admin.servers.reinstall | Admin Servers | Reinstall servers
+ADMIN_SERVERS_SUSPEND=admin.servers.suspend | Admin Servers | Suspend servers
+ADMIN_SERVERS_UNSUSPEND=admin.servers.unsuspend | Admin Servers | Unsuspend servers

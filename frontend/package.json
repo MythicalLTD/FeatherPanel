@@ -78,7 +78,7 @@
         "pinia": "^3.0.3",
         "prettier": "^3.6.2",
         "qrcode": "^1.5.4",
-        "reka-ui": "^2.4.0",
+        "reka-ui": "^2.4.1",
         "sweetalert2": "^11.22.2",
         "tailwind-merge": "^3.3.1",
         "tailwindcss": "^4.1.11",

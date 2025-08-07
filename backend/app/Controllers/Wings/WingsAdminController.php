@@ -201,27 +201,4 @@ class WingsAdminController
 
         return ApiResponse::success(['node' => $node, 'wings' => $system], 'Node system information', 200);
     }
-
-    public function remoteServers(Request $request): Response
-    {
-        return ApiResponse::sendManualResponse([
-            'data' => [],
-            'meta' => [
-                'current_page' => 1,
-                'from' => 1,
-                'last_page' => 1,
-                'per_page' => 50,
-                'to' => 1,
-                'total' => 1,
-            ],
-        ], 200);
-    }
-
-    public function resetServers(Request $request): Response
-    {
-        return ApiResponse::sendManualResponse([
-            'success' => true,
-            'message' => 'Servers reset successfully',
-        ], 200);
-    }
 }

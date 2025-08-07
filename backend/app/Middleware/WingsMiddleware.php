@@ -37,6 +37,8 @@ class WingsMiddleware implements MiddlewareInterface
         }
 
         $request->attributes->set('wings_token', $token);
+        $request->attributes->set('wings_token_id', $tokenId);
+        $request->attributes->set('wings_token_secret', $tokenSecret);
 
         return $next($request);
     }

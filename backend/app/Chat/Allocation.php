@@ -13,6 +13,8 @@
 
 namespace App\Chat;
 
+use App\App;
+
 class Allocation
 {
     private static string $table = 'mythicalpanel_allocations';
@@ -81,6 +83,7 @@ class Allocation
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $id]);
+
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
@@ -290,7 +293,13 @@ class Allocation
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare($sql);
 
-        return $stmt->execute($params);
+        try {
+            return $stmt->execute($params);
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to update allocation: ' . $e->getMessage());
+
+            return false;
+        }
     }
 
     /**

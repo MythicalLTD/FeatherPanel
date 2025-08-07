@@ -58,6 +58,7 @@ class UsersController
             $search,
             false,
             [
+                'id',
                 'username',
                 'uuid',
                 'role_id',

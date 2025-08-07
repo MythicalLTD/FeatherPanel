@@ -13,6 +13,7 @@
 
 namespace App\Services\Wings\Services;
 
+use App\Services\Wings\WingsResponse;
 use App\Services\Wings\WingsConnection;
 
 /**
@@ -55,9 +56,15 @@ class ServerService
     /**
      * Create a new server.
      */
-    public function createServer(array $serverData): array
+    public function createServer(array $serverData): WingsResponse
     {
-        return $this->connection->post('/api/servers', $serverData);
+        try {
+            $response = $this->connection->post('/api/servers', $serverData);
+
+            return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
     }
 
     /**
