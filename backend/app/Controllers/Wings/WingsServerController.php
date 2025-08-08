@@ -25,520 +25,764 @@ use Symfony\Component\HttpFoundation\Response;
 
 class WingsServerController
 {
-    public function getServer(Request $request, string $uuid): Response
-    {
-        // Get server by UUID
-        $server = Server::getServerByUuid($uuid);
-        if (!$server) {
-            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
+	public function getServerInstall(Request $request, string $uuid): Response
+	{
+		// Get server by UUID
+		$server = Server::getServerByUuid($uuid);
+		if (!$server) {
+			return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+		}
 
-        // Get Wings authentication attributes from request
-        $tokenId = $request->attributes->get('wings_token_id');
-        $tokenSecret = $request->attributes->get('wings_token_secret');
+		// Get Wings authentication attributes from request
+		$tokenId = $request->attributes->get('wings_token_id');
+		$tokenSecret = $request->attributes->get('wings_token_secret');
 
-        if (!$tokenId || !$tokenSecret) {
-            return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
-        }
+		if (!$tokenId || !$tokenSecret) {
+			return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
+		}
 
-        // Get node info
-        $node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
+		// Get node info
+		$node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
 
-        if (!$node) {
-            return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
-        }
+		if (!$node) {
+			return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
+		}
 
-        // Get server info
-        $server = Server::getServerByUuidAndNodeId($uuid, (int) $node['id']);
-        if (!$server) {
-            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
+		// Get server info
+		$server = Server::getServerByUuidAndNodeId($uuid, (int) $node['id']);
+		if (!$server) {
+			return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+		}
 
-        // Get node information
-        $node = Node::getNodeById($server['node_id']);
-        if (!$node) {
-            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
-        }
+		// Get spell information
+		$spell = Spell::getSpellById($server['spell_id']);
+		if (!$spell) {
+			return ApiResponse::error('Spell not found', 'SPELL_NOT_FOUND', 404);
+		}
 
-        // Get allocation information
-        $allocation = Allocation::getAllocationById($server['allocation_id']);
-        if (!$allocation) {
-            return ApiResponse::error('Allocation not found', 'ALLOCATION_NOT_FOUND', 404);
-        }
+		// Get docker image from spell or server
+		$containerImage = $server['image']; // Use server.image as fallback
+		if (!empty($spell['copy_script_container'])) {
+			$containerImage = $spell['copy_script_container'];
+		} elseif (!empty($spell['docker_images'])) {
+			try {
+				$dockerImages = json_decode($spell['docker_images'], true);
+				if (is_array($dockerImages) && !empty($dockerImages)) {
+					// Use the first available image from spell or fallback to server image
+					$containerImage = $dockerImages[0] ?? $server['image'];
+				}
+			} catch (\Exception $e) {
+				// If docker images parsing fails, use server image
+			}
+		}
 
-        // Get spell information
-        $spell = Spell::getSpellById($server['spell_id']);
-        if (!$spell) {
-            return ApiResponse::error('Spell not found', 'SPELL_NOT_FOUND', 404);
-        }
+		// Get installation script from spell
+		$script = '';
+		if (!empty($spell['copy_script_install'])) {
+			$script = $spell['copy_script_install'];
+		} elseif (!empty($spell['script_install'])) {
+			$script = $spell['script_install'];
+		}
 
-        // Get realm information
-        $realm = Realm::getById($server['realms_id']);
-        if (!$realm) {
-            return ApiResponse::error('Realm not found', 'REALM_NOT_FOUND', 404);
-        }
+		// Get entrypoint from spell or use default
+		$entrypoint = '/bin/bash';
+		if (!empty($spell['copy_script_entry'])) {
+			$entrypoint = $spell['copy_script_entry'];
+		} elseif (!empty($spell['entrypoint'])) {
+			$entrypoint = $spell['entrypoint'];
+		}
 
-        // Get server variables with spell variable details
-        $serverVariables = ServerVariable::getServerVariablesWithDetails($server['id']);
-        $environment = [];
+		// Build the installation configuration
+		$installConfig = [
+			'container_image' => $containerImage,
+			'entrypoint' => $entrypoint,
+			'script' => $script,
+		];
 
-        // Build environment variables from server variables
-        foreach ($serverVariables as $variable) {
-            $environment[$variable['env_variable']] = $variable['variable_value'];
-        }
+		return ApiResponse::sendManualResponse($installConfig, 200);
+	}
 
-        // Add default environment variables based on database fields
-        $environment['P_SERVER_LOCATION'] = $node['location_id'] ?? '';
-        $environment['P_SERVER_UUID'] = $server['uuid'];
-        $environment['P_SERVER_ALLOCATION_LIMIT'] = $server['allocation_limit'] ?? 0;
-        $environment['SERVER_MEMORY'] = $server['memory'];
-        $environment['SERVER_IP'] = $allocation['ip'];
-        $environment['SERVER_PORT'] = $allocation['port'];
+	public function postServerInstall(Request $request, string $uuid): Response
+	{
+		// Get server by UUID
+		$server = Server::getServerByUuid($uuid);
+		if (!$server) {
+			return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+		}
 
-        // Parse spell features if available (from spell.features JSON field)
-        $spellFeatures = [];
-        if (!empty($spell['features'])) {
-            try {
-                $features = json_decode($spell['features'], true);
-                if (is_array($features)) {
-                    $spellFeatures = $features;
-                }
-            } catch (\Exception $e) {
-                // If features parsing fails, use empty array
-            }
-        }
+		// Get Wings authentication attributes from request
+		$tokenId = $request->attributes->get('wings_token_id');
+		$tokenSecret = $request->attributes->get('wings_token_secret');
 
-        // Parse spell file denylist if available (from spell.file_denylist JSON field)
-        $fileDenylist = [];
-        if (!empty($spell['file_denylist'])) {
-            try {
-                $denylist = json_decode($spell['file_denylist'], true);
-                if (is_array($denylist)) {
-                    $fileDenylist = $denylist;
-                }
-            } catch (\Exception $e) {
-                // If file denylist parsing fails, use empty array
-            }
-        }
+		if (!$tokenId || !$tokenSecret) {
+			return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
+		}
 
-        // Parse spell docker images if available (from spell.docker_images JSON field)
-        $dockerImage = $server['image']; // Use server.image as fallback
-        if (!empty($spell['docker_images'])) {
-            try {
-                $dockerImages = json_decode($spell['docker_images'], true);
-                if (is_array($dockerImages) && !empty($dockerImages)) {
-                    // Use the first available image from spell or fallback to server image
-                    $dockerImage = $dockerImages[0] ?? $server['image'];
-                }
-            } catch (\Exception $e) {
-                // If docker images parsing fails, use server image
-            }
-        }
+		// Get node info
+		$node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
 
-        // Parse spell startup configuration (from spell.startup field)
-        $startupCommand = $server['startup']; // Use server.startup as primary
-        if (!empty($spell['startup'])) {
-            $startupCommand = $spell['startup'];
-        }
+		if (!$node) {
+			return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
+		}
 
-        // Parse spell config files (from spell.config_files field)
-        $configFiles = [];
-        if (!empty($spell['config_files'])) {
-            try {
-                $configs = json_decode($spell['config_files'], true);
-                if (is_array($configs)) {
-                    $configFiles = $configs;
-                }
-            } catch (\Exception $e) {
-                // If config files parsing fails, use empty array
-            }
-        }
+		// Get server info
+		$server = Server::getServerByUuidAndNodeId($uuid, (int) $node['id']);
+		if (!$server) {
+			return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+		}
 
-        // Parse spell config startup (from spell.config_startup field)
-        $configStartup = [];
-        if (!empty($spell['config_startup'])) {
-            try {
-                $startup = json_decode($spell['config_startup'], true);
-                if (is_array($startup)) {
-                    $configStartup = $startup;
-                }
-            } catch (\Exception $e) {
-                // If config startup parsing fails, use empty array
-            }
-        }
+		// Get request content
+		$content = json_decode($request->getContent(), true);
 
-        // Parse spell config logs (from spell.config_logs field)
-        $configLogs = [];
-        if (!empty($spell['config_logs'])) {
-            try {
-                $logs = json_decode($spell['config_logs'], true);
-                if (is_array($logs)) {
-                    $configLogs = $logs;
-                }
-            } catch (\Exception $e) {
-                // If config logs parsing fails, use empty array
-            }
-        }
+		if (!$content) {
+			return ApiResponse::error('Invalid JSON payload', 'INVALID_JSON', 400);
+		}
 
-        // Parse spell config stop (from spell.config_stop field)
-        $configStop = $spell['config_stop'] ?? 'stop';
+		// Validate required fields
+		if (!isset($content['successful'])) {
+			return ApiResponse::error('Missing required field: successful', 'MISSING_FIELD', 400);
+		}
 
-        // Build the Wings configuration format using actual database fields
-        $wingsConfig = [
-            'settings' => [
-                'uuid' => $server['uuid'],
-                'meta' => [
-                    'name' => $server['name'],
-                    'description' => $server['description'],
-                ],
-                'suspended' => $server['status'] === 'suspended',
-                'invocation' => $startupCommand,
-                'skip_egg_scripts' => (bool) $server['skip_scripts'],
-                'environment' => $environment,
-                'labels' => [
-                    'service' => $spell['name'] ?? 'unknown',
-                    'realm' => $realm['name'] ?? 'unknown',
-                    'node' => $node['name'] ?? 'unknown',
-                    'author' => $spell['author'] ?? 'unknown',
-                ],
-                'allocations' => [
-                    'force_outgoing_ip' => (bool) $spell['force_outgoing_ip'],
-                    'default' => [
-                        'ip' => $allocation['ip'],
-                        'port' => $allocation['port'],
-                    ],
-                    'mappings' => [
-                        $allocation['ip'] => [
-                            $allocation['port'],
-                        ],
-                    ],
-                ],
-                'build' => [
-                    'memory_limit' => $server['memory'],
-                    'swap' => $server['swap'],
-                    'io_weight' => $server['io'],
-                    'cpu_limit' => $server['cpu'],
-                    'disk_space' => $server['disk'],
-                    'threads' => $server['threads'] ?? null,
-                    'oom_disabled' => !(bool) $server['oom_disabled'],
-                ],
-                'crash_detection_enabled' => true,
-                'mounts' => [],
-                'egg' => [
-                    'id' => $spell['uuid'] ?? $spell['id'],
-                    'file_denylist' => $fileDenylist,
-                    'features' => $spellFeatures,
-                ],
-                'container' => [
-                    'image' => $dockerImage,
-                    'oom_disabled' => (bool) $server['oom_disabled'],
-                    'requires_rebuild' => false,
-                ],
-            ],
-            'process_configuration' => [
-                'startup' => [
-                    'done' => $configStartup['done'] ?? [
-                        'Server is ready to accept connections',
-                        'Server startup complete',
-                        'Done (',
-                        'For help, type "help"',
-                    ],
-                    'user_interaction' => $configStartup['user_interaction'] ?? [
-                        'Do you accept the EULA?',
-                        'Please accept the terms',
-                    ],
-                    'strip_ansi' => $configStartup['strip_ansi'] ?? false,
-                ],
-                'stop' => [
-                    'type' => $configStop['type'] ?? 'command',
-                    'value' => $configStop['value'] ?? $configStop,
-                ],
-                'configs' => $configFiles,
-            ],
-        ];
+		$successful = (bool) $content['successful'];
+		$reinstall = (bool) ($content['reinstall'] ?? false);
 
-        return ApiResponse::sendManualResponse($wingsConfig, 200);
-    }
+		// Update server installation status
+		try {
+			$status = 'installed'; // Default to installed for successful installations
+			$installedAt = new \DateTimeImmutable();
 
-    public function resetServers(Request $request): Response
-    {
-        // Get Wings authentication attributes from request
-        $tokenId = $request->attributes->get('wings_token_id');
-        $tokenSecret = $request->attributes->get('wings_token_secret');
+			// Make sure the type of failure is accurate
+			if (!$successful) {
+				$status = 'installation_failed';
 
-        if (!$tokenId || !$tokenSecret) {
-            return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
-        }
+				if ($reinstall) {
+					$status = 'reinstall_failed';
+				}
+			}
 
-        // Get node info
-        $node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
+			// Keep the server suspended if it's already suspended
+			if ($server['status'] === 'suspended') {
+				$status = 'suspended';
+			}
 
-        if (!$node) {
-            return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
-        }
+			// Update server status and installed_at timestamp
+			Server::updateServerInstallationStatus($server['id'], $status, $installedAt);
 
-        // Get all servers on the node
-        $servers = Server::getServersByNodeId($node['id']);
+			// TODO: Implement event system for installation notifications
 
-        // Reset each server's status
-        Server::resetAllServerStatuses($node['id']);
+			return ApiResponse::sendManualResponse([], 204);
 
-        return ApiResponse::sendManualResponse([
-            'success' => true,
-            'message' => 'Servers reset successfully',
-        ], 200);
-    }
+		} catch (\Exception $e) {
+			return ApiResponse::error('Failed to update installation status', 'UPDATE_FAILED', 500);
+		}
+	}
 
-    public function remoteServers(Request $request): Response
-    {
-        // Get pagination parameters
-        $page = (int) $request->query->get('page', 1);
-        $perPage = (int) $request->query->get('per_page', 50);
-        $search = $request->query->get('search', '');
+	public function postServerContainerStatus(Request $request, string $uuid): Response
+	{
+		// Get server by UUID
+		$server = Server::getServerByUuid($uuid);
+		if (!$server) {
+			return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+		}
 
-        // Get Wings authentication attributes from request
-        $tokenId = $request->attributes->get('wings_token_id');
-        $tokenSecret = $request->attributes->get('wings_token_secret');
+		// Get Wings authentication attributes from request
+		$tokenId = $request->attributes->get('wings_token_id');
+		$tokenSecret = $request->attributes->get('wings_token_secret');
 
-        if (!$tokenId || !$tokenSecret) {
-            return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
-        }
+		if (!$tokenId || !$tokenSecret) {
+			return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
+		}
 
-        // Get node info
-        $node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
+		// Get node info
+		$node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
 
-        if (!$node) {
-            return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
-        }
+		if (!$node) {
+			return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
+		}
 
-        // Get all servers with pagination
-        $servers = Server::searchServers(page: $page, limit: $perPage, search: $search, fields: [], sortOrder: 'ASC', nodeId: $node['id']);
-        $total = Server::getCount(search: $search, nodeId: $node['id']);
-        $lastPage = ceil($total / $perPage);
+		// Get server info
+		$server = Server::getServerByUuidAndNodeId($uuid, (int) $node['id']);
+		if (!$server) {
+			return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+		}
 
-        // Build the response data
-        $data = [];
-        foreach ($servers as $server) {
-            // Get related data for each server
-            $node = Node::getNodeById($server['node_id']);
-            $allocation = Allocation::getAllocationById($server['allocation_id']);
-            $spell = Spell::getSpellById($server['spell_id']);
-            $realm = Realm::getById($server['realms_id']);
+		// Get request content
+		$content = json_decode($request->getContent(), true);
 
-            if (!$node || !$allocation || !$spell || !$realm) {
-                continue; // Skip servers with missing related data
-            }
+		if (!$content) {
+			return ApiResponse::error('Invalid JSON payload', 'INVALID_JSON', 400);
+		}
 
-            // Get server variables
-            $serverVariables = ServerVariable::getServerVariablesWithDetails($server['id']);
-            $environment = [];
+		// Validate required data field
+		if (!isset($content['data'])) {
+			return ApiResponse::error('Missing required field: data', 'MISSING_FIELD', 400);
+		}
 
-            // Build environment variables from server variables
-            foreach ($serverVariables as $variable) {
-                $environment[$variable['env_variable']] = $variable['variable_value'];
-            }
+		$data = $content['data'];
 
-            // Add default environment variables
-            $environment['P_SERVER_LOCATION'] = $node['location_id'] ?? '';
-            $environment['P_SERVER_UUID'] = $server['uuid'];
-            $environment['P_SERVER_ALLOCATION_LIMIT'] = $server['allocation_limit'] ?? 0;
-            $environment['SERVER_MEMORY'] = $server['memory'];
-            $environment['SERVER_IP'] = $allocation['ip'];
-            $environment['SERVER_PORT'] = $allocation['port'];
+		// Validate required fields in data
+		if (!isset($data['state'])) {
+			return ApiResponse::error('Missing required field: state', 'MISSING_FIELD', 400);
+		}
 
-            // Parse spell features if available
-            $spellFeatures = [];
-            if (!empty($spell['features'])) {
-                try {
-                    $features = json_decode($spell['features'], true);
-                    if (is_array($features)) {
-                        $spellFeatures = $features;
-                    }
-                } catch (\Exception $e) {
-                    // If features parsing fails, use empty array
-                }
-            }
+		// Extract data fields
+		$state = $data['state'];
+		$memoryBytes = $data['memory_bytes'] ?? 0;
+		$cpuAbsolute = $data['cpu_absolute'] ?? 0.0;
+		$uptime = $data['uptime'] ?? 0;
 
-            // Parse spell file denylist if available
-            $fileDenylist = [];
-            if (!empty($spell['file_denylist'])) {
-                try {
-                    $denylist = json_decode($spell['file_denylist'], true);
-                    if (is_array($denylist)) {
-                        $fileDenylist = $denylist;
-                    }
-                } catch (\Exception $e) {
-                    // If file denylist parsing fails, use empty array
-                }
-            }
+		// Extract network data
+		$networkRxBytes = 0;
+		$networkTxBytes = 0;
+		if (isset($data['network'])) {
+			$networkRxBytes = $data['network']['rx_bytes'] ?? 0;
+			$networkTxBytes = $data['network']['tx_bytes'] ?? 0;
+		}
 
-            // Parse spell docker images if available
-            $dockerImage = $server['image'];
-            if (!empty($spell['docker_images'])) {
-                try {
-                    $dockerImages = json_decode($spell['docker_images'], true);
-                    if (is_array($dockerImages) && !empty($dockerImages)) {
-                        $dockerImage = $dockerImages[0] ?? $server['image'];
-                    }
-                } catch (\Exception $e) {
-                    // If docker images parsing fails, use server image
-                }
-            }
+		// Map Wings states to our status values
+		$statusMap = [
+			'running' => 'running',
+			'stopped' => 'stopped',
+			'starting' => 'starting',
+			'stopping' => 'stopping',
+			'crashed' => 'crashed',
+			'suspended' => 'suspended',
+		];
 
-            // Parse spell startup configuration
-            $startupCommand = $server['startup'];
-            if (!empty($spell['startup'])) {
-                $startupCommand = $spell['startup'];
-            }
+		$newStatus = $statusMap[$state] ?? $state;
 
-            // Parse spell config files
-            $configFiles = [];
-            if (!empty($spell['config_files'])) {
-                try {
-                    $configs = json_decode($spell['config_files'], true);
-                    if (is_array($configs)) {
-                        $configFiles = $configs;
-                    }
-                } catch (\Exception $e) {
-                    // If config files parsing fails, use empty array
-                }
-            }
+		try {
 
-            // Parse spell config startup
-            $configStartup = [];
-            if (!empty($spell['config_startup'])) {
-                try {
-                    $startup = json_decode($spell['config_startup'], true);
-                    if (is_array($startup)) {
-                        $configStartup = $startup;
-                    }
-                } catch (\Exception $e) {
-                    // If config startup parsing fails, use empty array
-                }
-            }
+			//TODO: Update server resource usage
+			// Server::updateServerResourceUsage(
+			// 	$server['id'],
+			// 	$newStatus,
+			// 	$memoryBytes,
+			// 	$cpuAbsolute,
+			// 	$networkRxBytes,
+			// 	$networkTxBytes,
+			// 	$uptime
+			// );
 
-            // Parse spell config stop
-            $configStop = $spell['config_stop'] ?? 'stop';
+			return ApiResponse::sendManualResponse([], 204);
 
-            // Build server configuration
-            $serverConfig = [
-                'uuid' => $server['uuid'],
-                'settings' => [
-                    'uuid' => $server['uuid'],
-                    'meta' => [
-                        'name' => $server['name'],
-                        'description' => $server['description'],
-                    ],
-                    'suspended' => $server['status'] === 'suspended',
-                    'invocation' => $startupCommand,
-                    'skip_egg_scripts' => (bool) $server['skip_scripts'],
-                    'environment' => $environment,
-                    'labels' => [
-                        'service' => $spell['name'] ?? 'unknown',
-                        'realm' => $realm['name'] ?? 'unknown',
-                        'node' => $node['name'] ?? 'unknown',
-                        'author' => $spell['author'] ?? 'unknown',
-                    ],
-                    'allocations' => [
-                        'force_outgoing_ip' => (bool) $spell['force_outgoing_ip'],
-                        'default' => [
-                            'ip' => $allocation['ip'],
-                            'port' => $allocation['port'],
-                        ],
-                        'mappings' => [
-                            $allocation['ip'] => [
-                                $allocation['port'],
-                            ],
-                        ],
-                    ],
-                    'build' => [
-                        'memory_limit' => $server['memory'],
-                        'swap' => $server['swap'],
-                        'io_weight' => $server['io'],
-                        'cpu_limit' => $server['cpu'],
-                        'disk_space' => $server['disk'],
-                        'threads' => $server['threads'] ?? null,
-                        'oom_killer' => !(bool) $server['oom_disabled'],
-                    ],
-                    'crash_detection_enabled' => true,
-                    'mounts' => [],
-                    'egg' => [
-                        'id' => $spell['uuid'] ?? $spell['id'],
-                        'file_denylist' => $fileDenylist,
-                        'features' => $spellFeatures,
-                    ],
-                    'container' => [
-                        'image' => $dockerImage,
-                        'oom_disabled' => (bool) $server['oom_disabled'],
-                        'requires_rebuild' => false,
-                    ],
-                ],
-                'process_configuration' => [
-                    'startup' => [
-                        'done' => $configStartup['done'] ?? [
-                            'Server is ready to accept connections',
-                            'Server startup complete',
-                            'Done (',
-                            'For help, type "help"',
-                        ],
-                        'user_interaction' => $configStartup['user_interaction'] ?? [
-                            'Do you accept the EULA?',
-                            'Please accept the terms',
-                        ],
-                        'strip_ansi' => $configStartup['strip_ansi'] ?? true,
-                    ],
-                    'stop' => [
-                        'type' => $configStop['type'] ?? 'command',
-                        'value' => $configStop['value'] ?? $configStop,
-                    ],
-                    'configs' => $configFiles,
-                ],
-            ];
+		} catch (\Exception $e) {
+			return ApiResponse::error('Failed to update server status', 'UPDATE_FAILED', 500);
+		}
+	}
 
-            $data[] = $serverConfig;
-        }
+	public function getServer(Request $request, string $uuid): Response
+	{
+		// Get server by UUID
+		$server = Server::getServerByUuid($uuid);
+		if (!$server) {
+			return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+		}
 
-        // Build pagination links
-        $baseUrl = $request->getSchemeAndHttpHost() . $request->getBaseUrl() . '/api/remote/servers';
-        $links = [
-            'first' => $baseUrl . '?page=1',
-            'last' => $baseUrl . '?page=' . $lastPage,
-            'prev' => $page > 1 ? $baseUrl . '?page=' . ($page - 1) : null,
-            'next' => $page < $lastPage ? $baseUrl . '?page=' . ($page + 1) : null,
-        ];
+		// Get Wings authentication attributes from request
+		$tokenId = $request->attributes->get('wings_token_id');
+		$tokenSecret = $request->attributes->get('wings_token_secret');
 
-        // Build meta information
-        $meta = [
-            'current_page' => $page,
-            'from' => ($page - 1) * $perPage + 1,
-            'last_page' => $lastPage,
-            'links' => [
-                [
-                    'url' => $page > 1 ? $baseUrl . '?page=' . ($page - 1) : null,
-                    'label' => '&laquo; Previous',
-                    'active' => false,
-                ],
-                [
-                    'url' => $baseUrl . '?page=' . $page,
-                    'label' => (string) $page,
-                    'active' => true,
-                ],
-                [
-                    'url' => $page < $lastPage ? $baseUrl . '?page=' . ($page + 1) : null,
-                    'label' => 'Next &raquo;',
-                    'active' => false,
-                ],
-            ],
-            'path' => $baseUrl,
-            'per_page' => $perPage,
-            'to' => min($page * $perPage, $total),
-            'total' => $total,
-        ];
+		if (!$tokenId || !$tokenSecret) {
+			return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
+		}
 
-        return ApiResponse::sendManualResponse([
-            'data' => $data,
-            'links' => $links,
-            'meta' => $meta,
-        ], 200);
-    }
+		// Get node info
+		$node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
+
+		if (!$node) {
+			return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
+		}
+
+		// Get server info
+		$server = Server::getServerByUuidAndNodeId($uuid, (int) $node['id']);
+		if (!$server) {
+			return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+		}
+
+		// Get node information
+		$node = Node::getNodeById($server['node_id']);
+		if (!$node) {
+			return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+		}
+
+		// Get allocation information
+		$allocation = Allocation::getAllocationById($server['allocation_id']);
+		if (!$allocation) {
+			return ApiResponse::error('Allocation not found', 'ALLOCATION_NOT_FOUND', 404);
+		}
+
+		// Get spell information
+		$spell = Spell::getSpellById($server['spell_id']);
+		if (!$spell) {
+			return ApiResponse::error('Spell not found', 'SPELL_NOT_FOUND', 404);
+		}
+
+		// Get realm information
+		$realm = Realm::getById($server['realms_id']);
+		if (!$realm) {
+			return ApiResponse::error('Realm not found', 'REALM_NOT_FOUND', 404);
+		}
+
+		// Get server variables with spell variable details
+		$serverVariables = ServerVariable::getServerVariablesWithDetails($server['id']);
+		$environment = [];
+
+		// Build environment variables from server variables
+		foreach ($serverVariables as $variable) {
+			$environment[$variable['env_variable']] = $variable['variable_value'];
+		}
+
+		// Add default environment variables based on database fields
+		$environment['P_SERVER_LOCATION'] = $node['location_id'] ?? '';
+		$environment['P_SERVER_UUID'] = $server['uuid'];
+		$environment['P_SERVER_ALLOCATION_LIMIT'] = $server['allocation_limit'] ?? 0;
+		$environment['SERVER_MEMORY'] = $server['memory'];
+		$environment['SERVER_IP'] = $allocation['ip'];
+		$environment['SERVER_PORT'] = $allocation['port'];
+
+		// Parse spell features if available (from spell.features JSON field)
+		$spellFeatures = [];
+		if (!empty($spell['features'])) {
+			try {
+				$features = json_decode($spell['features'], true);
+				if (is_array($features)) {
+					$spellFeatures = $features;
+				}
+			} catch (\Exception $e) {
+				// If features parsing fails, use empty array
+			}
+		}
+
+		// Parse spell file denylist if available (from spell.file_denylist JSON field)
+		$fileDenylist = [];
+		if (!empty($spell['file_denylist'])) {
+			try {
+				$denylist = json_decode($spell['file_denylist'], true);
+				if (is_array($denylist)) {
+					$fileDenylist = $denylist;
+				}
+			} catch (\Exception $e) {
+				// If file denylist parsing fails, use empty array
+			}
+		}
+
+		// Parse spell docker images if available (from spell.docker_images JSON field)
+		$dockerImage = $server['image']; // Use server.image as fallback
+		if (!empty($spell['docker_images'])) {
+			try {
+				$dockerImages = json_decode($spell['docker_images'], true);
+				if (is_array($dockerImages) && !empty($dockerImages)) {
+					// Use the first available image from spell or fallback to server image
+					$dockerImage = $dockerImages[0] ?? $server['image'];
+				}
+			} catch (\Exception $e) {
+				// If docker images parsing fails, use server image
+			}
+		}
+
+		// Parse spell startup configuration (from spell.startup field)
+		$startupCommand = $server['startup']; // Use server.startup as primary
+		if (!empty($spell['startup'])) {
+			$startupCommand = $spell['startup'];
+		}
+
+		// Parse spell config files (from spell.config_files field)
+		$configFiles = [];
+		if (!empty($spell['config_files'])) {
+			try {
+				$configs = json_decode($spell['config_files'], true);
+				if (is_array($configs)) {
+					$configFiles = $configs;
+				}
+			} catch (\Exception $e) {
+				// If config files parsing fails, use empty array
+			}
+		}
+
+		// Parse spell config startup (from spell.config_startup field)
+		$configStartup = [];
+		if (!empty($spell['config_startup'])) {
+			try {
+				$startup = json_decode($spell['config_startup'], true);
+				if (is_array($startup)) {
+					$configStartup = $startup;
+				}
+			} catch (\Exception $e) {
+				// If config startup parsing fails, use empty array
+			}
+		}
+
+		// Parse spell config logs (from spell.config_logs field)
+		$configLogs = [];
+		if (!empty($spell['config_logs'])) {
+			try {
+				$logs = json_decode($spell['config_logs'], true);
+				if (is_array($logs)) {
+					$configLogs = $logs;
+				}
+			} catch (\Exception $e) {
+				// If config logs parsing fails, use empty array
+			}
+		}
+
+		// Parse spell config stop (from spell.config_stop field)
+		$configStop = $spell['config_stop'] ?? 'stop';
+
+		// Build the Wings configuration format using actual database fields
+		$wingsConfig = [
+			'settings' => [
+				'uuid' => $server['uuid'],
+				'meta' => [
+					'name' => $server['name'],
+					'description' => $server['description'],
+				],
+				'suspended' => $server['status'] === 'suspended',
+				'invocation' => $startupCommand,
+				'skip_egg_scripts' => (bool) $server['skip_scripts'],
+				'environment' => $environment,
+				'labels' => [
+					'service' => $spell['name'] ?? 'unknown',
+					'realm' => $realm['name'] ?? 'unknown',
+					'node' => $node['name'] ?? 'unknown',
+					'author' => $spell['author'] ?? 'unknown',
+				],
+				'allocations' => [
+					'force_outgoing_ip' => (bool) $spell['force_outgoing_ip'],
+					'default' => [
+						'ip' => $allocation['ip'],
+						'port' => $allocation['port'],
+					],
+					'mappings' => [
+						$allocation['ip'] => [
+							$allocation['port'],
+						],
+					],
+				],
+				'build' => [
+					'memory_limit' => $server['memory'],
+					'swap' => $server['swap'],
+					'io_weight' => $server['io'],
+					'cpu_limit' => $server['cpu'],
+					'disk_space' => $server['disk'],
+					'threads' => $server['threads'] ?? null,
+					'oom_disabled' => !(bool) $server['oom_disabled'],
+				],
+				'crash_detection_enabled' => true,
+				'mounts' => [],
+				'egg' => [
+					'id' => $spell['uuid'] ?? $spell['id'],
+					'file_denylist' => $fileDenylist,
+					'features' => $spellFeatures,
+				],
+				'container' => [
+					'image' => $dockerImage,
+					'oom_disabled' => (bool) $server['oom_disabled'],
+					'requires_rebuild' => false,
+				],
+			],
+			'process_configuration' => [
+				'startup' => [
+					'done' => $configStartup['done'] ?? [
+						'Server is ready to accept connections',
+						'Server startup complete',
+						'Done (',
+						'For help, type "help"',
+					],
+					'user_interaction' => $configStartup['user_interaction'] ?? [
+						'Do you accept the EULA?',
+						'Please accept the terms',
+					],
+					'strip_ansi' => $configStartup['strip_ansi'] ?? false,
+				],
+				'stop' => [
+					'type' => $configStop['type'] ?? 'command',
+					'value' => $configStop['value'] ?? $configStop,
+				],
+				'configs' => $configFiles,
+			],
+		];
+
+		return ApiResponse::sendManualResponse($wingsConfig, 200);
+	}
+
+	public function resetServers(Request $request): Response
+	{
+		// Get Wings authentication attributes from request
+		$tokenId = $request->attributes->get('wings_token_id');
+		$tokenSecret = $request->attributes->get('wings_token_secret');
+
+		if (!$tokenId || !$tokenSecret) {
+			return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
+		}
+
+		// Get node info
+		$node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
+
+		if (!$node) {
+			return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
+		}
+
+
+		// Reset each server's status
+		Server::resetAllServerStatuses($node['id']);
+
+		return ApiResponse::sendManualResponse([
+			'success' => true,
+			'message' => 'Servers reset successfully',
+		], 200);
+	}
+
+	public function remoteServers(Request $request): Response
+	{
+		// Get pagination parameters
+		$page = max(1, (int) $request->query->get('page', 1));
+		$perPage = max(1, (int) $request->query->get('per_page', 50));
+		$search = $request->query->get('search', '');
+
+		// Get Wings authentication attributes from request
+		$tokenId = $request->attributes->get('wings_token_id');
+		$tokenSecret = $request->attributes->get('wings_token_secret');
+
+		if (!$tokenId || !$tokenSecret) {
+			return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
+		}
+
+		// Get node info
+		$node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
+
+		if (!$node) {
+			return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
+		}
+
+		// Get all servers with pagination
+		$servers = Server::searchServers(page: $page, limit: $perPage, search: $search, fields: [], sortOrder: 'ASC', nodeId: $node['id']);
+		$total = Server::getCount(search: $search, nodeId: $node['id']);
+		$lastPage = max(1, (int) ceil($total / $perPage));
+
+		// Build the response data
+		$data = [];
+		foreach ($servers as $server) {
+			// Get related data for each server
+			$node = Node::getNodeById($server['node_id']);
+			$allocation = Allocation::getAllocationById($server['allocation_id']);
+			$spell = Spell::getSpellById($server['spell_id']);
+			$realm = Realm::getById($server['realms_id']);
+
+			if (!$node || !$allocation || !$spell || !$realm) {
+				continue; // Skip servers with missing related data
+			}
+
+			// Get server variables
+			$serverVariables = ServerVariable::getServerVariablesWithDetails($server['id']);
+			$environment = [];
+
+			// Build environment variables from server variables
+			foreach ($serverVariables as $variable) {
+				$environment[$variable['env_variable']] = $variable['variable_value'];
+			}
+
+			// Add default environment variables
+			$environment['P_SERVER_LOCATION'] = $node['location_id'] ?? '';
+			$environment['P_SERVER_UUID'] = $server['uuid'];
+			$environment['P_SERVER_ALLOCATION_LIMIT'] = $server['allocation_limit'] ?? 0;
+			$environment['SERVER_MEMORY'] = $server['memory'];
+			$environment['SERVER_IP'] = $allocation['ip'];
+			$environment['SERVER_PORT'] = $allocation['port'];
+
+			// Parse spell features if available
+			$spellFeatures = [];
+			if (!empty($spell['features'])) {
+				try {
+					$features = json_decode($spell['features'], true);
+					if (is_array($features)) {
+						$spellFeatures = $features;
+					}
+				} catch (\Exception $e) {
+					// If features parsing fails, use empty array
+				}
+			}
+
+			// Parse spell file denylist if available
+			$fileDenylist = [];
+			if (!empty($spell['file_denylist'])) {
+				try {
+					$denylist = json_decode($spell['file_denylist'], true);
+					if (is_array($denylist)) {
+						$fileDenylist = $denylist;
+					}
+				} catch (\Exception $e) {
+					// If file denylist parsing fails, use empty array
+				}
+			}
+
+			// Parse spell docker images if available
+			$dockerImage = $server['image'];
+			if (!empty($spell['docker_images'])) {
+				try {
+					$dockerImages = json_decode($spell['docker_images'], true);
+					if (is_array($dockerImages) && !empty($dockerImages)) {
+						$dockerImage = $dockerImages[0] ?? $server['image'];
+					}
+				} catch (\Exception $e) {
+					// If docker images parsing fails, use server image
+				}
+			}
+
+			// Parse spell startup configuration
+			$startupCommand = $server['startup'];
+			if (!empty($spell['startup'])) {
+				$startupCommand = $spell['startup'];
+			}
+
+			// Parse spell config files
+			$configFiles = [];
+			if (!empty($spell['config_files'])) {
+				try {
+					$configs = json_decode($spell['config_files'], true);
+					if (is_array($configs)) {
+						$configFiles = $configs;
+					}
+				} catch (\Exception $e) {
+					// If config files parsing fails, use empty array
+				}
+			}
+
+			// Parse spell config startup
+			$configStartup = [];
+			if (!empty($spell['config_startup'])) {
+				try {
+					$startup = json_decode($spell['config_startup'], true);
+					if (is_array($startup)) {
+						$configStartup = $startup;
+					}
+				} catch (\Exception $e) {
+					// If config startup parsing fails, use empty array
+				}
+			}
+
+			// Parse spell config stop
+			$configStop = $spell['config_stop'] ?? 'stop';
+
+			// Build server configuration
+			$serverConfig = [
+				'uuid' => $server['uuid'],
+				'settings' => [
+					'uuid' => $server['uuid'],
+					'meta' => [
+						'name' => $server['name'],
+						'description' => $server['description'],
+					],
+					'suspended' => $server['status'] === 'suspended',
+					'invocation' => $startupCommand,
+					'skip_egg_scripts' => (bool) $server['skip_scripts'],
+					'environment' => $environment,
+					'labels' => [
+						'service' => $spell['name'] ?? 'unknown',
+						'realm' => $realm['name'] ?? 'unknown',
+						'node' => $node['name'] ?? 'unknown',
+						'author' => $spell['author'] ?? 'unknown',
+					],
+					'allocations' => [
+						'force_outgoing_ip' => (bool) $spell['force_outgoing_ip'],
+						'default' => [
+							'ip' => $allocation['ip'],
+							'port' => $allocation['port'],
+						],
+						'mappings' => [
+							$allocation['ip'] => [
+								$allocation['port'],
+							],
+						],
+					],
+					'build' => [
+						'memory_limit' => $server['memory'],
+						'swap' => $server['swap'],
+						'io_weight' => $server['io'],
+						'cpu_limit' => $server['cpu'],
+						'disk_space' => $server['disk'],
+						'threads' => $server['threads'] ?? null,
+						'oom_killer' => !(bool) $server['oom_disabled'],
+					],
+					'crash_detection_enabled' => true,
+					'mounts' => [],
+					'egg' => [
+						'id' => $spell['uuid'] ?? $spell['id'],
+						'file_denylist' => $fileDenylist,
+						'features' => $spellFeatures,
+					],
+					'container' => [
+						'image' => $dockerImage,
+						'oom_disabled' => (bool) $server['oom_disabled'],
+						'requires_rebuild' => false,
+					],
+				],
+				'process_configuration' => [
+					'startup' => [
+						'done' => $configStartup['done'] ?? [
+							'Server is ready to accept connections',
+							'Server startup complete',
+							'Done (',
+							'For help, type "help"',
+						],
+						'user_interaction' => $configStartup['user_interaction'] ?? [
+							'Do you accept the EULA?',
+							'Please accept the terms',
+						],
+						'strip_ansi' => $configStartup['strip_ansi'] ?? true,
+					],
+					'stop' => [
+						'type' => $configStop['type'] ?? 'command',
+						'value' => $configStop['value'] ?? $configStop,
+					],
+					'configs' => $configFiles,
+				],
+			];
+
+			$data[] = $serverConfig;
+		}
+
+		// Build pagination links
+		$baseUrl = $request->getSchemeAndHttpHost() . $request->getBaseUrl() . '/api/remote/servers';
+		$links = [
+			'first' => $baseUrl . '?page=1',
+			'last' => $baseUrl . '?page=' . max(1, $lastPage),
+			'prev' => $page > 1 ? $baseUrl . '?page=' . ($page - 1) : null,
+			'next' => $page < $lastPage ? $baseUrl . '?page=' . ($page + 1) : null,
+		];
+
+		// Build meta information
+		$meta = [
+			'current_page' => $page,
+			'from' => max(1, ($page - 1) * $perPage + 1),
+			'last_page' => $lastPage,
+			'links' => [
+				[
+					'url' => $page > 1 ? $baseUrl . '?page=' . ($page - 1) : null,
+					'label' => '&laquo; Previous',
+					'active' => false,
+				],
+				[
+					'url' => $baseUrl . '?page=' . $page,
+					'label' => (string) $page,
+					'active' => true,
+				],
+				[
+					'url' => $page < $lastPage ? $baseUrl . '?page=' . ($page + 1) : null,
+					'label' => 'Next &raquo;',
+					'active' => false,
+				],
+			],
+			'path' => $baseUrl,
+			'per_page' => $perPage,
+			'to' => max(0, min($page * $perPage, $total)),
+			'total' => $total,
+		];
+
+		return ApiResponse::sendManualResponse([
+			'data' => $data,
+			'links' => $links,
+			'meta' => $meta,
+		], 200);
+	}
 }

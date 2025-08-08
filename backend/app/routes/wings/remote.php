@@ -53,4 +53,49 @@ return function (RouteCollection $routes): void {
         ['GET']
     );
 
+	App::getInstance(true)->registerWingsRoute(
+		$routes,
+		'wings-server-install',
+		'/api/remote/servers/{uuid}/install',
+		function (Request $request, array $args) {
+			$uuid = $args['uuid'] ?? null;
+			if (!$uuid) {
+				return ApiResponse::error('Missing server UUID', 'MISSING_SERVER_UUID', 400);
+			}
+
+			return (new WingsServerController())->getServerInstall($request, $uuid);
+		},
+		['GET']
+	);
+
+	App::getInstance(true)->registerWingsRoute(
+		$routes,
+		'wings-server-install-done',
+		'/api/remote/servers/{uuid}/install',
+		function (Request $request, array $args) {
+			$uuid = $args['uuid'] ?? null;
+			if (!$uuid) {
+				return ApiResponse::error('Missing server UUID', 'MISSING_SERVER_UUID', 400);
+			}
+
+			return (new WingsServerController())->postServerInstall($request, $uuid);
+		},
+		['POST']
+	);
+
+	App::getInstance(true)->registerWingsRoute(
+		$routes,
+		'wings-server-status',
+		'/api/remote/servers/{uuid}/status',
+		function (Request $request, array $args) {
+			$uuid = $args['uuid'] ?? null;
+			if (!$uuid) {
+				return ApiResponse::error('Missing server UUID', 'MISSING_SERVER_UUID', 400);
+			}
+
+			return (new WingsServerController())->postServerStatus($request, $uuid);
+		},
+		['POST']
+	);
+
 };

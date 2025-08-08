@@ -206,14 +206,14 @@ class App
                 'methods' => $route->getMethods(),
             ];
         }
-        self::getLogger()->info('Registered routes: ' . json_encode($routeList));
+        self::getLogger()->debug('Registered routes: ' . json_encode($routeList));
 
         // Log the incoming request
-        self::getLogger()->info('Attempting to match route: ' . $request->getMethod() . ' ' . $request->getPathInfo());
+        self::getLogger()->debug('Attempting to match route: ' . $request->getMethod() . ' ' . $request->getPathInfo());
 
         try {
             $parameters = $matcher->match($request->getPathInfo());
-            self::getLogger()->info('Matched route: ' . ($parameters['_route'] ?? 'unknown') . ' with params: ' . json_encode($parameters));
+            self::getLogger()->debug('Matched route: ' . ($parameters['_route'] ?? 'unknown') . ' with params: ' . json_encode($parameters));
 
             $controller = $parameters['_controller'];
             unset($parameters['_controller'], $parameters['_route']);
