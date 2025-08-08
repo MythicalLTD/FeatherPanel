@@ -504,7 +504,42 @@ class ServersController
 		if (!$deleted) {
 			return ApiResponse::error('Failed to delete server', 'FAILED_TO_DELETE_SERVER', 500);
 		}
+		$nodeInfo = Node::getNodeById($server['node_id']);
+		$scheme = $nodeInfo['scheme'];
+		$host = $nodeInfo['fqdn'];
+		$port = $nodeInfo['daemonListen'];
+		$token = $nodeInfo['daemon_token'];
 
+		$timeout = (int) 30;
+		try {
+			$wings = new Wings(
+				$host,
+				$port,
+				$scheme,
+				$token,
+				$timeout
+			);
+
+			$response = $wings->getServer()->deleteServer($server['uuid']);
+			if (!$response->isSuccessful()) {
+				$error = $response->getError();
+				if ($response->getStatusCode() === 400) {
+					return ApiResponse::error('Invalid server configuration: ' . $error, 'INVALID_SERVER_CONFIG', 400);
+				} elseif ($response->getStatusCode() === 401) {
+					return ApiResponse::error('Unauthorized access to Wings daemon', 'WINGS_UNAUTHORIZED', 401);
+				} elseif ($response->getStatusCode() === 403) {
+					return ApiResponse::error('Forbidden access to Wings daemon', 'WINGS_FORBIDDEN', 403);
+				} elseif ($response->getStatusCode() === 422) {
+					return ApiResponse::error('Invalid server data: ' . $error, 'INVALID_SERVER_DATA', 422);
+				}
+
+				return ApiResponse::error('Failed to create server in Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+			}
+		} catch (\Exception $e) {
+			App::getInstance(true)->getLogger()->error('Failed to create server in Wings: ' . $e->getMessage());
+
+			return ApiResponse::error('Failed to create server in Wings: ' . $e->getMessage(), 'FAILED_TO_CREATE_SERVER_IN_WINGS', 500);
+		}
 		// Log activity
 		Activity::createActivity([
 			'user_uuid' => $request->get('user')['uuid'],
