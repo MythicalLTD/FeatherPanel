@@ -18,40 +18,40 @@ use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\Wings\WingsServerController;
 
 return function (RouteCollection $routes): void {
-    App::getInstance(true)->registerWingsRoute(
-        $routes,
-        'wings-remote-servers',
-        '/api/remote/servers',
-        function (Request $request) {
-            return (new WingsServerController())->remoteServers($request);
-        },
-        ['GET']
-    );
+	App::getInstance(true)->registerWingsRoute(
+		$routes,
+		'wings-remote-servers',
+		'/api/remote/servers',
+		function (Request $request) {
+			return (new WingsServerController())->remoteServers($request);
+		},
+		['GET']
+	);
 
-    App::getInstance(true)->registerWingsRoute(
-        $routes,
-        'wings-remote-serveres-reset',
-        '/api/remote/servers/reset',
-        function (Request $request) {
-            return (new WingsServerController())->resetServers($request);
-        },
-        ['POST']
-    );
+	App::getInstance(true)->registerWingsRoute(
+		$routes,
+		'wings-remote-serveres-reset',
+		'/api/remote/servers/reset',
+		function (Request $request) {
+			return (new WingsServerController())->resetServers($request);
+		},
+		['POST']
+	);
 
-    App::getInstance(true)->registerWingsRoute(
-        $routes,
-        'wings-server-config',
-        '/api/remote/servers/{uuid}',
-        function (Request $request, array $args) {
-            $uuid = $args['uuid'] ?? null;
-            if (!$uuid) {
-                return ApiResponse::error('Missing server UUID', 'MISSING_SERVER_UUID', 400);
-            }
+	App::getInstance(true)->registerWingsRoute(
+		$routes,
+		'wings-server-config',
+		'/api/remote/servers/{uuid}',
+		function (Request $request, array $args) {
+			$uuid = $args['uuid'] ?? null;
+			if (!$uuid) {
+				return ApiResponse::error('Missing server UUID', 'MISSING_SERVER_UUID', 400);
+			}
 
-            return (new WingsServerController())->getServer($request, $uuid);
-        },
-        ['GET']
-    );
+			return (new WingsServerController())->getServer($request, $uuid);
+		},
+		['GET']
+	);
 
 	App::getInstance(true)->registerWingsRoute(
 		$routes,
@@ -93,7 +93,7 @@ return function (RouteCollection $routes): void {
 				return ApiResponse::error('Missing server UUID', 'MISSING_SERVER_UUID', 400);
 			}
 
-			return (new WingsServerController())->postServerStatus($request, $uuid);
+			return (new WingsServerController())->postServerContainerStatus($request, $uuid);
 		},
 		['POST']
 	);
