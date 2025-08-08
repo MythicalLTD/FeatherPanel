@@ -61,6 +61,11 @@ const adminRoutes: RouteRecordRaw[] = [
         name: 'AdminServersEdit',
         component: () => import('@/pages/admin/Servers/Edit.vue'),
     },
+    {
+        path: '/admin/settings',
+        name: 'AdminSettings',
+        component: () => import('@/pages/admin/Settings.vue'),
+    },
 ];
 
 export default adminRoutes;

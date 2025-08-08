@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronsUpDown, Plus } from 'lucide-vue-next';
+import { ChevronsUpDown, House } from 'lucide-vue-next';
 
 import { ref } from 'vue';
 import {
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
+import { useRouter } from 'vue-router';
 
 const props = defineProps<{
     servers: {
@@ -24,6 +25,7 @@ const props = defineProps<{
 
 const { isMobile } = useSidebar();
 const activeServer = ref(props.servers[0]);
+const router = useRouter();
 </script>
 
 <template>
@@ -69,11 +71,11 @@ const activeServer = ref(props.servers[0]);
                         <DropdownMenuShortcut>⌘{{ index + 2 }}</DropdownMenuShortcut>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem class="gap-2 p-2">
+                    <DropdownMenuItem class="gap-2 p-2" @click="router.push('/dashboard')">
                         <div class="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                            <Plus class="size-4" />
+                            <House class="size-4" />
                         </div>
-                        <div class="font-medium text-muted-foreground">Create Server</div>
+                        <div class="font-medium text-muted-foreground">Dashboard</div>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

@@ -140,6 +140,16 @@ const data = computed(() => {
                       },
                   ]
                 : []),
+            ...(sessionStore.hasPermission(Permissions.ADMIN_SETTINGS_VIEW)
+                ? [
+                      {
+                          name: 'Settings',
+                          title: 'Settings',
+                          url: '/admin/settings',
+                          icon: Settings2,
+                      },
+                  ]
+                : []),
         ],
         navServer: [
             {
@@ -266,9 +276,9 @@ const user = computed(() => {
 
 const firstTeam = computed(() => {
     return {
-        name: String(settingsStore.settings?.name || 'MythicalPanel'),
-        logo: String(settingsStore.settings?.logo || 'https://github.com/mythicalltd.png'), // Always a string URL
-        plan: String(settingsStore.settings?.plan || 'Dashboard'),
+        name: String(settingsStore.appName),
+        logo: String(settingsStore.appLogo),
+        plan: String(settingsStore.appTimezone),
     };
 });
 
