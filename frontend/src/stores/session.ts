@@ -64,6 +64,16 @@ export const useSessionStore = defineStore('session', {
         clearSession() {
             this.user = null;
             this.isSessionChecked = false;
+            this.permissions = [];
+        },
+        async logout() {
+            try {
+                await axios.post('/api/user/auth/logout');
+            } catch (error) {
+                console.error('Error during logout:', error);
+            } finally {
+                this.clearSession();
+            }
         },
     },
     getters: {
