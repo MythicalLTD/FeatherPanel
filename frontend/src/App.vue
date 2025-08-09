@@ -5,9 +5,9 @@ import { useRouter } from 'vue-router';
 
 export default defineComponent({
     name: 'App',
-    // components: {
-    //     DebugPanel,
-    // },
+    components: {
+        // DebugPanel,
+    },
     setup() {
         const router = useRouter();
         // const debugPanel = ref<InstanceType<typeof DebugPanel> | null>(null);

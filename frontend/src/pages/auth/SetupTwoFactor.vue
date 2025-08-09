@@ -11,7 +11,7 @@ import VueQrcode from 'vue-qrcode';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useSessionStore } from '@/stores/session';
-import Swal from 'sweetalert2';
+import { toast } from 'vue-sonner';
 
 const settingsStore = useSettingsStore();
 const sessionStore = useSessionStore();
@@ -29,8 +29,6 @@ const qrCodeUrl = ref('');
 const secret = ref('');
 const code = ref('');
 const loading = ref(false);
-const error = ref('');
-const success = ref('');
 
 const form = ref({
     turnstile_token: '',
@@ -51,23 +49,19 @@ onMounted(async () => {
             qrCodeUrl.value = res.data.data.qr_code_url;
             secret.value = res.data.data.secret;
         } else {
-            error.value = t('api_errors.TWO_FACTOR_SETUP_FAILED');
+            toast.error(t('api_errors.TWO_FACTOR_SETUP_FAILED'));
         }
     } catch (err: unknown) {
         const code = (err as { response?: { data?: { error_code?: string } } }).response?.data?.error_code;
         if (code === 'TWO_FACTOR_AUTH_ENABLED') {
-            Swal.fire({
-                title: t('api_errors.TWO_FACTOR_AUTH_ENABLED_TITLE'),
-                text: t('api_errors.TWO_FACTOR_AUTH_ENABLED_TEXT'),
-
-                icon: 'error',
-                timer: 1500,
-                showConfirmButton: false,
+            toast.error(t('api_errors.TWO_FACTOR_AUTH_ENABLED_TEXT'), {
+                description: t('api_errors.TWO_FACTOR_AUTH_ENABLED_TITLE'),
+                duration: 1500,
             });
             router.replace({ path: '/dashboard', query: { e: t('api_errors.TWO_FACTOR_AUTH_ENABLED_TITLE') } });
             return;
         }
-        error.value = t('api_errors.TWO_FACTOR_SETUP_FAILED') + ' ' + code;
+        toast.error(t('api_errors.TWO_FACTOR_SETUP_FAILED') + ' ' + code);
     } finally {
         loading.value = false;
     }
@@ -79,8 +73,6 @@ function onDataUrlChange(dataUrl: string) {
 
 async function verify2FA(e: Event) {
     e.preventDefault();
-    error.value = '';
-    success.value = '';
     loading.value = true;
     try {
         const res = await axios.put('/api/user/auth/two-factor', {
@@ -89,12 +81,12 @@ async function verify2FA(e: Event) {
             turnstile_token: form.value.turnstile_token,
         });
         if (res.data && res.data.success) {
-            success.value = t('api_errors.TWO_FACTOR_ENABLED_SUCCESS');
+            toast.success(t('api_errors.TWO_FACTOR_ENABLED_SUCCESS'));
         } else {
-            error.value = t(`api_errors.${res.data.code}`) || t('api_errors.INVALID_CODE');
+            toast.error(t(`api_errors.${res.data.code}`) || t('api_errors.INVALID_CODE'));
         }
     } catch {
-        error.value = t('api_errors.TWO_FACTOR_VERIFY_FAILED');
+        toast.error(t('api_errors.TWO_FACTOR_VERIFY_FAILED'));
     } finally {
         loading.value = false;
     }
@@ -137,8 +129,6 @@ async function verify2FA(e: Event) {
                             <span v-if="loading">{{ t('api_errors.TWO_FACTOR_LOADING') }}</span>
                             <span v-else>{{ t('api_errors.TWO_FACTOR_VERIFY_BUTTON') }}</span>
                         </Button>
-                        <div v-if="error" class="text-center text-sm text-red-500">{{ error }}</div>
-                        <div v-if="success" class="text-center text-sm text-green-500">{{ success }}</div>
                     </div>
                 </div>
             </form>

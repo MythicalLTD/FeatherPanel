@@ -13,6 +13,7 @@
 
 namespace App\Controllers\Wings\Server;
 
+use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
 use App\Helpers\ApiResponse;
@@ -53,7 +54,6 @@ class WingsServerStatusController
 			return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
 		}
 
-		// Handle Wings format: {"data": {"previous_state": "offline", "new_state": "starting"}}
 		$state = null;
 		if (isset($data['data']) && is_array($data['data'])) {
 			$state = $data['data']['new_state'] ?? null;
@@ -103,7 +103,8 @@ class WingsServerStatusController
 		if (!$updated) {
 			return ApiResponse::error('Failed to update server status', 'UPDATE_FAILED', 500);
 		}
-
+		$app = App::getInstance(true);
+		$app->getLogger()->debug("Server status updated successfully: {$state}: ". json_encode($data));
 		return ApiResponse::success([
 			'message' => 'Server status updated successfully',
 			'state' => $state,

@@ -6,7 +6,7 @@ FRONTEND_DIR = frontend
 BACKEND_DIR = backend
 
 # Commands
-YARN = yarn
+PNPM = pnpm
 NPM = npm
 PHP = php
 COMPOSER = COMPOSER_ALLOW_SUPERUSER=1 composer
@@ -61,7 +61,7 @@ frontend:
 	@echo -e "\n${BOLD}${BLUE}Frontend Build${NC} ${ROCKET}"
 	@echo -e "${CYAN}=================${NC}"
 	@echo -e "${GREEN}${INFO} Building frontend for production...${NC}"
-	@cd $(FRONTEND_DIR) && $(YARN) build
+	@cd $(FRONTEND_DIR) && $(PNPM) build
 	@echo -e "${GREEN}${CHECK} Frontend build complete!${NC}\n"
 
 # Backend tasks
@@ -94,16 +94,16 @@ release:
 	@echo -e "${PURPLE}${INFO} Frontend checks...${NC}"
 
 	@cd $(BACKEND_DIR) && $(COMPOSER) run lint
-	@cd $(FRONTEND_DIR) && $(YARN) lint
+	@cd $(FRONTEND_DIR) && $(PNPM) lint
 	@echo -e "${GREEN}${CHECK} Frontend checks complete${NC}\n"
 	
 	@echo -e "${PURPLE}${INFO} Updating dependencies...${NC}"
-	@cd $(FRONTEND_DIR) && $(YARN) upgrade
+	@cd $(FRONTEND_DIR) && $(PNPM) upgrade
 	@cd $(BACKEND_DIR) && $(COMPOSER) update
 	@echo -e "${GREEN}${CHECK} Dependencies updated${NC}\n"
 	
 	@echo -e "${PURPLE}${INFO} Building applications...${NC}"
-	@cd $(FRONTEND_DIR) && $(YARN) build
+	@cd $(FRONTEND_DIR) && $(PNPM) build
 	@cd $(BACKEND_DIR) && $(COMPOSER) dump-autoload
 	@cd $(BACKEND_DIR) && $(COMPOSER) install --optimize-autoloader
 	@echo -e "${GREEN}${CHECK} Build complete${NC}\n"
@@ -111,14 +111,14 @@ release:
 	@echo -e "${GREEN}${ROCKET} Release build successful!${NC}\n"
 lint: 
 	@cd $(BACKEND_DIR) && $(COMPOSER) run lint
-	@cd $(FRONTEND_DIR) && $(YARN) lint
+	@cd $(FRONTEND_DIR) && $(PNPM) lint
 	@echo -e "${GREEN}${CHECK} Linting complete${NC}\n"
 # Install dependencies
 install:
 	@echo -e "\n${BOLD}${BLUE}Installing Dependencies${NC} ${PACKAGE}"
 	@echo -e "${CYAN}=======================${NC}"
 	@echo -e "${GREEN}${INFO} Installing frontend packages...${NC}"
-	@cd $(FRONTEND_DIR) && $(YARN) install
+	@cd $(FRONTEND_DIR) && $(PNPM) install
 	@echo -e "${GREEN}${CHECK} Frontend packages installed${NC}\n"
 	@echo -e "${GREEN}${INFO} Installing backend packages...${NC}"
 	@cd $(BACKEND_DIR) && $(COMPOSER) install

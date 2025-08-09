@@ -4,8 +4,8 @@ import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import App from './App.vue';
 import router from './router';
-import VueSweetalert2 from 'vue-sweetalert2';
 import { createI18n } from 'vue-i18n';
+import { toast } from 'vue-sonner';
 
 // Performance optimization: Create app with production tip disabled
 const app = createApp(App, {
@@ -74,7 +74,7 @@ const registerPlugins = async () => {
         app.use(i18n);
         app.use(pinia);
         app.use(router);
-        app.use(VueSweetalert2);
+        app.use(toast);
     } catch (error) {
         console.error('Failed to initialize Vue plugins:', error);
     }

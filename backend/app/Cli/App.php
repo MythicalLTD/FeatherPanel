@@ -160,7 +160,7 @@ class App extends Utils\MinecraftColorCodeSupport
     private function handleCustomCommands(string $cmdName, array $subCmd): void
     {
         if ($cmdName == 'frontend:build') {
-            $process = popen('cd frontend && yarn build 2>&1', 'r');
+            $process = popen('cd frontend && pnpm build 2>&1', 'r');
             if (is_resource($process)) {
                 while (!feof($process)) {
                     $output = fgets($process);
@@ -180,7 +180,7 @@ class App extends Utils\MinecraftColorCodeSupport
 
             exit;
         } elseif ($cmdName == 'frontend:watch') {
-            $process = popen('cd frontend && yarn dev 2>&1', 'r');
+            $process = popen('cd frontend && pnpm dev 2>&1', 'r');
             if (is_resource($process)) {
                 while (!feof($process)) {
                     $output = fgets($process);
@@ -280,7 +280,7 @@ class App extends Utils\MinecraftColorCodeSupport
                 $this->sendOutput($this->prefix . 'Failed to start backend lint process.');
             }
 
-            $process = popen('cd frontend && yarn lint 2>&1', 'r');
+            $process = popen('cd frontend && pnpm lint 2>&1', 'r');
             if (is_resource($process)) {
                 while (!feof($process)) {
                     $output = fgets($process);
@@ -298,7 +298,7 @@ class App extends Utils\MinecraftColorCodeSupport
                 $this->sendOutput($this->prefix . 'Failed to start frontend lint process.');
             }
 
-            $process = popen('cd frontend && yarn format 2>&1', 'r');
+            $process = popen('cd frontend && pnpm format 2>&1', 'r');
             if (is_resource($process)) {
                 while (!feof($process)) {
                     $output = fgets($process);

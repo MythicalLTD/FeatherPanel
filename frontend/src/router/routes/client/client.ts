@@ -7,6 +7,11 @@ const clientRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/dashboard/Dashboard.vue'),
     },
     {
+        path: '/dashboard/account',
+        name: 'Account',
+        component: () => import('@/pages/dashboard/account/Account.vue'),
+    },
+    {
         path: '/',
         redirect: '/dashboard',
     },

@@ -18,13 +18,23 @@ use App\Controllers\User\User\SessionController;
 
 return function (RouteCollection $routes): void {
 
-    App::getInstance(true)->registerAuthRoute(
-        $routes,
-        'session',
-        '/api/user/session',
-        function (Request $request) {
-            return (new SessionController())->get($request);
-        },
-        ['GET']
-    );
+	App::getInstance(true)->registerAuthRoute(
+		$routes,
+		'session',
+		'/api/user/session',
+		function (Request $request) {
+			return (new SessionController())->get($request);
+		},
+		['GET']
+	);
+
+	App::getInstance(true)->registerAuthRoute(
+		$routes,
+		'session-update',
+		'/api/user/session',
+		function (Request $request) {
+			return (new SessionController())->put($request);
+		},
+		['PATCH']
+	);
 };

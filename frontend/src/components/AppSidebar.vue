@@ -17,7 +17,6 @@ import {
 } from 'lucide-vue-next';
 import NavMain from '@/components/nav/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
-import TeamSwitcher from '@/components/TeamSwitcher.vue';
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar';
 import { useSessionStore } from '@/stores/session';
@@ -74,6 +73,13 @@ const data = computed(() => {
                 url: '/dashboard',
                 icon: Home,
                 isActive: currentPath.startsWith('/dashboard'),
+            },
+            {
+                name: 'Account',
+                title: 'Account',
+                url: '/dashboard/account',
+                icon: Users,
+                isActive: currentPath.startsWith('/dashboard/account'),
             },
             {
                 name: 'Servers',
@@ -273,22 +279,24 @@ const user = computed(() => {
         hasAdminPanel: sessionStore.hasPermission(Permissions.ADMIN_DASHBOARD_VIEW) || false,
     };
 });
-
-const firstTeam = computed(() => {
-    return {
-        name: String(settingsStore.appName),
-        logo: String(settingsStore.appLogo),
-        plan: String(settingsStore.appTimezone),
-    };
-});
-
-const servers = computed(() => [firstTeam.value, ...data.value.servers]);
 </script>
 
 <template>
     <Sidebar v-bind="props">
         <SidebarHeader>
-            <TeamSwitcher :servers="servers" />
+            <div class="flex items-center gap-4 px-4 py-3">
+                <div class="flex items-center gap-2 min-w-0">
+                    <img
+                        v-if="settingsStore.appLogo"
+                        :src="String(settingsStore.appLogo || '')"
+                        :alt="String(settingsStore.appName || '')"
+                        class="h-8 w-8 object-contain flex-shrink-0"
+                    />
+                    <span v-if="!$attrs.collapsed" class="font-medium text-lg truncate">
+                        {{ settingsStore.appName || '' }}
+                    </span>
+                </div>
+            </div>
         </SidebarHeader>
         <SidebarContent>
             <NavMain

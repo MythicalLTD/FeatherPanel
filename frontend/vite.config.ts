@@ -55,7 +55,7 @@ export default defineConfig({
         chunkSizeWarningLimit: 120000,
     },
     optimizeDeps: {
-        include: ['vue', 'vue-router', 'pinia', 'vue-i18n', 'vue-sweetalert2'],
+        include: ['vue', 'vue-router', 'pinia', 'vue-i18n'],
     },
     cacheDir: '.vite',
 });
