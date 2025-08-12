@@ -1,0 +1,78 @@
+<?php
+
+/*
+ * This file is part of MythicalPanel.
+ * Please view the LICENSE file that was distributed with this source code.
+ *
+ * # MythicalSystems License v2.0
+ *
+ * ## Copyright (c) 2021–2025 MythicalSystems and Cassian Gherman
+ *
+ * Breaking any of the following rules will result in a permanent ban from the MythicalSystems community and all of its services.
+ */
+
+use App\App;
+use App\Helpers\ApiResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\User\Server\ServerUserController;
+use App\Controllers\User\Server\Power\ServerPowerController;
+
+return function (RouteCollection $routes): void {
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'session-servers',
+        '/api/user/servers',
+        function (Request $request) {
+            return (new ServerUserController())->getUserServers($request);
+        },
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'session-server-get',
+        '/api/user/servers/{uuidShort}',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new ServerUserController())->getServer($request, $uuidShort);
+        },
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'session-server-jwt',
+        '/api/user/servers/{uuidShort}/jwt',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new ServerUserController())->generateServerJwt($request, $uuidShort);
+        },
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'session-server-power',
+        '/api/user/servers/{uuidShort}/power/{action}',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            $action = $args['action'] ?? null;
+            if (!$uuidShort || !$action) {
+                return ApiResponse::error('Missing or invalid UUID short or action', 'INVALID_UUID_SHORT_OR_ACTION', 400);
+            }
+
+            return (new ServerPowerController())->sendPowerAction($request, $uuidShort, $action);
+        },
+        ['POST']
+    );
+};

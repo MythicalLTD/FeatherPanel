@@ -93,7 +93,7 @@
 import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSessionStore } from '@/stores/session';
-import { toast } from 'vue-sonner';
+import { useToast } from 'vue-toastification';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -102,6 +102,7 @@ import axios from 'axios';
 
 const { t: $t } = useI18n();
 const sessionStore = useSessionStore();
+const toast = useToast();
 
 // Form data with proper typing
 const formData = ref({

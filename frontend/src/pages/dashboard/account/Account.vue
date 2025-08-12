@@ -27,15 +27,23 @@
                 <Card>
                     <div class="p-6">
                         <Tabs v-model="activeTab" class="w-full">
-                            <TabsList class="grid w-full grid-cols-2">
+                            <TabsList class="grid w-full grid-cols-4">
                                 <TabsTrigger value="profile">{{ $t('account.profile') }}</TabsTrigger>
                                 <TabsTrigger value="settings">{{ $t('account.settings') }}</TabsTrigger>
+                                <TabsTrigger value="activity">{{ $t('account.activity.title') }}</TabsTrigger>
+                                <TabsTrigger value="mail">{{ $t('account.mail.title') }}</TabsTrigger>
                             </TabsList>
                             <TabsContent value="profile" class="mt-6">
                                 <AccountProfile />
                             </TabsContent>
                             <TabsContent value="settings" class="mt-6">
                                 <AccountSettings />
+                            </TabsContent>
+                            <TabsContent value="activity" class="mt-6">
+                                <Activity />
+                            </TabsContent>
+                            <TabsContent value="mail" class="mt-6">
+                                <MailList />
                             </TabsContent>
                         </Tabs>
                     </div>
@@ -55,6 +63,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import AccountProfile from '@/components/account/AccountProfile.vue';
 import AccountSettings from '@/components/account/AccountSettings.vue';
+import Activity from '@/components/account/Activity.vue';
+import MailList from '@/components/account/MailList.vue';
 import type { UserInfo } from '@/stores/session';
 
 const { t: $t } = useI18n();

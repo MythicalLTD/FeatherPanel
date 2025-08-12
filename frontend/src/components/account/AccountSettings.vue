@@ -71,7 +71,7 @@ import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSessionStore } from '@/stores/session';
 import { useRouter } from 'vue-router';
-import { toast } from 'vue-sonner';
+import { useToast } from 'vue-toastification';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -81,6 +81,7 @@ import type { UserInfo } from '@/stores/session';
 const { t: $t } = useI18n();
 const sessionStore = useSessionStore();
 const router = useRouter();
+const toast = useToast();
 
 // Form state
 const isSubmitting = ref(false);

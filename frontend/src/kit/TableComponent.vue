@@ -8,20 +8,21 @@
                     <p class="text-muted-foreground mt-2">
                         {{ description }}
                         <span v-if="totalRecords > 0" class="ml-2">
-                            • {{ totalRecords }} records • Page {{ currentPage }} of {{ totalPages }}
+                            • {{ totalRecords }} {{ $t('table.records') }} • {{ $t('table.page') }} {{ currentPage }}
+                            {{ $t('table.of') }} {{ totalPages }}
                         </span>
                         <span
                             v-if="visibleColumns.length > 0"
                             class="ml-2 text-xs bg-primary/10 text-primary px-2 py-1 rounded"
                         >
-                            {{ visibleColumns.length }} columns selected
+                            {{ $t('table.columnsSelected', { count: visibleColumns.length }) }}
                         </span>
                     </p>
                 </div>
                 <div class="flex items-center gap-3">
                     <Button variant="outline" size="sm" @click="showColumnSelector = true">
                         <Settings class="h-4 w-4 mr-2" />
-                        Columns
+                        {{ $t('table.columns') }}
                     </Button>
                     <slot name="header-actions"></slot>
                 </div>
@@ -95,14 +96,16 @@
             <div v-if="showPagination" class="border-t bg-muted/30 px-6 py-4">
                 <div class="flex items-center justify-between">
                     <div class="text-sm text-muted-foreground">
-                        <span v-if="totalRecords === 0"> No records found </span>
-                        <span v-else-if="from === 0 && to === 0"> Showing 0 of {{ totalRecords }} records </span>
-                        <span v-else> Showing {{ from }} to {{ to }} of {{ totalRecords }} records </span>
+                        <span v-if="totalRecords === 0"> {{ $t('table.noRecordsFound') }} </span>
+                        <span v-else-if="from === 0 && to === 0">
+                            {{ $t('table.showingZeroRecords', { total: totalRecords }) }}
+                        </span>
+                        <span v-else> {{ $t('table.showingRecords', { from, to, total: totalRecords }) }} </span>
                     </div>
                     <div class="flex items-center gap-2">
                         <Button variant="outline" size="sm" :disabled="!hasPrev" @click="changePage(currentPage - 1)">
                             <ChevronLeft class="h-4 w-4 mr-1" />
-                            Previous
+                            {{ $t('table.previous') }}
                         </Button>
                         <div class="flex items-center gap-1">
                             <Button
@@ -116,7 +119,7 @@
                             </Button>
                         </div>
                         <Button variant="outline" size="sm" :disabled="!hasNext" @click="changePage(currentPage + 1)">
-                            Next
+                            {{ $t('table.next') }}
                             <ChevronRight class="h-4 w-4 ml-1" />
                         </Button>
                     </div>
@@ -129,17 +132,17 @@
             <div class="text-muted-foreground mb-4">
                 <Search class="h-12 w-12 mx-auto" />
             </div>
-            <h3 class="text-lg font-medium text-muted-foreground mb-2">No records found</h3>
-            <p class="text-sm text-muted-foreground">Try searching with different keywords</p>
+            <h3 class="text-lg font-medium text-muted-foreground mb-2">{{ $t('table.noSearchResults') }}</h3>
+            <p class="text-sm text-muted-foreground">{{ $t('table.tryDifferentKeywords') }}</p>
         </div>
 
         <!-- Column Selector Dialog -->
         <Dialog v-model:open="showColumnSelector">
             <DialogContent class="max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Select Columns to Display</DialogTitle>
+                    <DialogTitle>{{ $t('table.selectColumnsTitle') }}</DialogTitle>
                     <DialogDescription>
-                        Choose which columns to show in the table. Your preferences will be saved.
+                        {{ $t('table.selectColumnsDescription') }}
                     </DialogDescription>
                 </DialogHeader>
                 <div class="space-y-4">
@@ -154,8 +157,8 @@
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" @click="resetColumnPreferences">Reset to Default</Button>
-                    <Button @click="showColumnSelector = false">Apply</Button>
+                    <Button variant="outline" @click="resetColumnPreferences">{{ $t('table.resetToDefault') }}</Button>
+                    <Button @click="showColumnSelector = false">{{ $t('table.apply') }}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

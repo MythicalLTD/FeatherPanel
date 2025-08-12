@@ -1,11 +1,13 @@
 import './assets/main.css';
+import 'vue-toastification/dist/index.css';
 
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import App from './App.vue';
+import { createTerminal } from 'vue-web-terminal';
 import router from './router';
 import { createI18n } from 'vue-i18n';
-import { toast } from 'vue-sonner';
+import Toast from 'vue-toastification';
 
 // Performance optimization: Create app with production tip disabled
 const app = createApp(App, {
@@ -74,7 +76,24 @@ const registerPlugins = async () => {
         app.use(i18n);
         app.use(pinia);
         app.use(router);
-        app.use(toast);
+        app.use(createTerminal());
+        app.use(Toast, {
+            // Toast configuration options
+            position: 'top-right',
+            timeout: 5000,
+            closeOnClick: true,
+            pauseOnFocusLoss: true,
+            pauseOnHover: true,
+            draggable: true,
+            draggablePercent: 0.6,
+            showCloseButtonOnHover: false,
+            hideProgressBar: false,
+            closeButton: 'button',
+            icon: true,
+            rtl: false,
+            maxToasts: 20,
+            newestOnTop: true,
+        });
     } catch (error) {
         console.error('Failed to initialize Vue plugins:', error);
     }

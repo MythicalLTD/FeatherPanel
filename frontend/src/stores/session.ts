@@ -75,6 +75,18 @@ export const useSessionStore = defineStore('session', {
                 this.clearSession();
             }
         },
+        async getSession() {
+            try {
+                const res = await axios.get('/api/user/session');
+                if (res.data && res.data.success && res.data.data) {
+                    return res.data.data;
+                }
+                return null;
+            } catch (error) {
+                console.error('Error fetching session:', error);
+                return null;
+            }
+        },
     },
     getters: {
         hasPermission:

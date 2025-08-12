@@ -12,6 +12,11 @@ const clientRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/dashboard/account/Account.vue'),
     },
     {
+        path: '/server/:uuidShort',
+        name: 'ServerConsole',
+        component: () => import('@/pages/dashboard/server/ServerConsole.vue'),
+    },
+    {
         path: '/',
         redirect: '/dashboard',
     },

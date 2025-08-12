@@ -13,6 +13,7 @@
 
 namespace App\Services\Wings;
 
+use App\Services\Wings\Services\JwtService;
 use App\Services\Wings\Services\FileService;
 use App\Services\Wings\Services\BackupService;
 use App\Services\Wings\Services\DockerService;
@@ -37,6 +38,7 @@ class Wings
     private DockerService $docker;
     private TransferService $transfer;
     private WebSocketService $websocket;
+    private JwtService $jwt;
 
     /**
      * Create a new Wings client instance.
@@ -64,6 +66,9 @@ class Wings
         $this->docker = new DockerService($this->connection);
         $this->transfer = new TransferService($this->connection);
         $this->websocket = new WebSocketService($this->connection);
+
+        // Initialize JWT service with node secret
+        $this->jwt = new JwtService($authToken, '', $this->connection->getBaseUrl());
     }
 
     /**
@@ -120,6 +125,14 @@ class Wings
     public function getWebSocket(): WebSocketService
     {
         return $this->websocket;
+    }
+
+    /**
+     * Get the JWT service.
+     */
+    public function getJwt(): JwtService
+    {
+        return $this->jwt;
     }
 
     /**

@@ -11,10 +11,11 @@ import VueQrcode from 'vue-qrcode';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useSessionStore } from '@/stores/session';
-import { toast } from 'vue-sonner';
+import { useToast } from 'vue-toastification';
 
 const settingsStore = useSettingsStore();
 const sessionStore = useSessionStore();
+const toast = useToast();
 
 const props = defineProps<{
     class?: HTMLAttributes['class'];
@@ -54,10 +55,12 @@ onMounted(async () => {
     } catch (err: unknown) {
         const code = (err as { response?: { data?: { error_code?: string } } }).response?.data?.error_code;
         if (code === 'TWO_FACTOR_AUTH_ENABLED') {
-            toast.error(t('api_errors.TWO_FACTOR_AUTH_ENABLED_TEXT'), {
-                description: t('api_errors.TWO_FACTOR_AUTH_ENABLED_TITLE'),
-                duration: 1500,
-            });
+            toast.error(
+                `${t('api_errors.TWO_FACTOR_AUTH_ENABLED_TITLE')}: ${t('api_errors.TWO_FACTOR_AUTH_ENABLED_TEXT')}`,
+                {
+                    timeout: 1500,
+                },
+            );
             router.replace({ path: '/dashboard', query: { e: t('api_errors.TWO_FACTOR_AUTH_ENABLED_TITLE') } });
             return;
         }

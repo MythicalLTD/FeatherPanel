@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SidebarProps } from '@/components/ui/sidebar';
+import { useI18n } from 'vue-i18n';
 
 import {
     Settings2,
@@ -24,6 +25,8 @@ import { useRouter } from 'vue-router';
 import { computed, onMounted } from 'vue';
 import { useSettingsStore } from '@/stores/settings';
 import Permissions from '@/lib/permissions';
+
+const { t } = useI18n();
 
 const sessionStore = useSessionStore();
 const router = useRouter();
@@ -69,30 +72,23 @@ const data = computed(() => {
         navMain: [
             {
                 name: 'Main',
-                title: 'Dashboard',
+                title: t('nav.dashboard'),
                 url: '/dashboard',
                 icon: Home,
                 isActive: currentPath.startsWith('/dashboard'),
             },
             {
                 name: 'Account',
-                title: 'Account',
+                title: t('nav.account'),
                 url: '/dashboard/account',
                 icon: Users,
                 isActive: currentPath.startsWith('/dashboard/account'),
-            },
-            {
-                name: 'Servers',
-                title: 'Servers',
-                url: '/servers',
-                icon: Server,
-                isActive: currentPath.startsWith('/servers'),
             },
         ],
         navAdmin: [
             {
                 name: 'Dashboard',
-                title: 'Dashboard',
+                title: t('nav.dashboard'),
                 url: '/admin',
                 icon: Home,
             },
@@ -100,7 +96,7 @@ const data = computed(() => {
                 ? [
                       {
                           name: 'Users',
-                          title: 'Users',
+                          title: t('nav.users'),
                           url: '/admin/users',
                           icon: Users,
                       },
@@ -110,7 +106,7 @@ const data = computed(() => {
                 ? [
                       {
                           name: 'Locations',
-                          title: 'Locations',
+                          title: t('nav.locations'),
                           url: '/admin/locations',
                           icon: Globe,
                       },
@@ -120,7 +116,7 @@ const data = computed(() => {
                 ? [
                       {
                           name: 'Realms',
-                          title: 'Realms',
+                          title: t('nav.realms'),
                           url: '/admin/realms',
                           icon: Newspaper,
                       },
@@ -130,7 +126,7 @@ const data = computed(() => {
                 ? [
                       {
                           name: 'Roles',
-                          title: 'Roles',
+                          title: t('nav.roles'),
                           url: '/admin/roles',
                           icon: Users,
                       },
@@ -140,7 +136,7 @@ const data = computed(() => {
                 ? [
                       {
                           name: 'Servers',
-                          title: 'Servers',
+                          title: t('nav.servers'),
                           url: '/admin/servers',
                           icon: Server,
                       },
@@ -150,7 +146,7 @@ const data = computed(() => {
                 ? [
                       {
                           name: 'Settings',
-                          title: 'Settings',
+                          title: t('nav.settings'),
                           url: '/admin/settings',
                           icon: Settings2,
                       },
@@ -159,108 +155,108 @@ const data = computed(() => {
         ],
         navServer: [
             {
-                title: 'Console',
+                title: t('nav.console'),
                 url: '#',
                 icon: SquareTerminal,
                 items: [
                     {
-                        title: 'Console',
+                        title: t('nav.console'),
                         url: '#',
                         icon: SquareTerminal,
                     },
                 ],
             },
             {
-                title: 'Files',
+                title: t('nav.files'),
                 url: '#',
                 icon: Folder,
                 items: [
                     {
-                        title: 'Files',
+                        title: t('nav.files'),
                         url: '#',
                         icon: Folder,
                     },
                 ],
             },
             {
-                title: 'Databases',
+                title: t('nav.databases'),
                 url: '#',
                 icon: Database,
                 items: [
                     {
-                        title: 'Databases',
+                        title: t('nav.databases'),
                         url: '#',
                         icon: Database,
                     },
                 ],
             },
             {
-                title: 'Schedules',
+                title: t('nav.schedules'),
                 url: '#',
                 icon: Calendar,
                 items: [
                     {
-                        title: 'Schedules',
+                        title: t('nav.schedules'),
                         url: '#',
                         icon: Calendar,
                     },
                 ],
             },
             {
-                title: 'Users',
+                title: t('nav.users'),
                 url: '#',
                 icon: Users,
                 items: [
                     {
-                        title: 'Users',
+                        title: t('nav.users'),
                         url: '#',
                         icon: Users,
                     },
                 ],
             },
             {
-                title: 'Backups',
+                title: t('nav.backups'),
                 url: '#',
                 icon: Archive,
                 items: [
                     {
-                        title: 'Backups',
+                        title: t('nav.backups'),
                         url: '#',
                         icon: Archive,
                     },
                 ],
             },
             {
-                title: 'Network',
+                title: t('nav.network'),
                 url: '#',
                 icon: Globe,
                 items: [
                     {
-                        title: 'Network',
+                        title: t('nav.network'),
                         url: '#',
                         icon: Globe,
                     },
                 ],
             },
             {
-                title: 'Startup',
+                title: t('nav.startup'),
                 url: '#',
                 icon: PlayCircle,
                 items: [
                     {
-                        title: 'Startup',
+                        title: t('nav.startup'),
                         url: '#',
                         icon: PlayCircle,
                     },
                 ],
             },
             {
-                title: 'Settings',
+                title: t('nav.settings'),
                 url: '#',
                 icon: Settings2,
                 items: [
                     {
-                        title: 'Settings',
+                        title: t('nav.settings'),
                         url: '#',
                         icon: Settings2,
                     },
@@ -285,7 +281,7 @@ const user = computed(() => {
     <Sidebar v-bind="props">
         <SidebarHeader>
             <div class="flex items-center gap-4 px-4 py-3">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="flex items-center gap-2 min-w-0 cursor-pointer" @click="router.push('/')">
                     <img
                         v-if="settingsStore.appLogo"
                         :src="String(settingsStore.appLogo || '')"
@@ -301,17 +297,17 @@ const user = computed(() => {
         <SidebarContent>
             <NavMain
                 v-if="router.currentRoute.value.path.startsWith('/dashboard')"
-                name="Dashboard"
+                :name="t('nav.dashboard')"
                 :items="data.navMain"
             />
             <NavMain
                 v-if="router.currentRoute.value.path.startsWith('/server')"
-                name="Server Management"
+                :name="t('nav.serverManagement')"
                 :items="data.navServer"
             />
             <NavMain
                 v-if="router.currentRoute.value.path.startsWith('/admin') && user.hasAdminPanel"
-                name="Admin Panel"
+                :name="t('nav.adminPanel')"
                 :items="data.navAdmin"
             />
         </SidebarContent>

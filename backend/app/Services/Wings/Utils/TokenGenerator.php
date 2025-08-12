@@ -215,6 +215,144 @@ class TokenGenerator
     }
 
     /**
+     * Generate a Wings-compatible JWT token for API authentication.
+     *
+     * This method generates a JWT token that follows the exact format expected by Wings,
+     * including all required claims like issuer, audience, and proper timestamps.
+     *
+     * @param string $serverUuid The server UUID
+     * @param string $userUuid The user UUID
+     * @param array $permissions The permissions array
+     * @param string $panelUrl The panel's URL (issuer)
+     * @param string $wingsUrl The Wings node's URL (audience)
+     * @param array $additionalClaims Additional claims to include
+     *
+     * @throws \Exception
+     *
+     * @return string The JWT token
+     */
+    public function generateWingsApiToken(
+        string $serverUuid,
+        string $userUuid,
+        array $permissions = [],
+        string $panelUrl = '',
+        string $wingsUrl = '',
+        array $additionalClaims = [],
+    ): string {
+        $currentTime = time();
+
+        $payload = [
+            // Standard JWT claims
+            'iss' => $panelUrl, // Issuer (panel URL)
+            'aud' => $wingsUrl, // Audience (Wings node URL)
+            'iat' => $currentTime, // Issued at
+            'nbf' => $currentTime - 300, // Not valid before (5 minutes ago)
+            'exp' => $currentTime + $this->expiration, // Expiration
+            'jti' => $this->generateJti(), // JWT ID
+
+            // Wings-specific claims
+            'user_uuid' => $userUuid,
+            'server_uuid' => $serverUuid,
+            'permissions' => $permissions,
+
+            // Additional claims
+            ...$additionalClaims,
+        ];
+
+        return $this->encodeToken($payload);
+    }
+
+    /**
+     * Generate a Wings-compatible JWT token for server actions.
+     *
+     * This method generates a JWT token specifically for server control actions
+     * like start, stop, restart, etc.
+     *
+     * @param string $serverUuid The server UUID
+     * @param string $userUuid The user UUID
+     * @param array $permissions The permissions array
+     * @param string $panelUrl The panel's URL (issuer)
+     * @param string $wingsUrl The Wings node's URL (audience)
+     * @param string $action The specific action being performed
+     *
+     * @throws \Exception
+     *
+     * @return string The JWT token
+     */
+    public function generateServerActionToken(
+        string $serverUuid,
+        string $userUuid,
+        array $permissions = [],
+        string $panelUrl = '',
+        string $wingsUrl = '',
+        string $action = '',
+    ): string {
+        $additionalClaims = [];
+
+        if (!empty($action)) {
+            $additionalClaims['action'] = $action;
+        }
+
+        return $this->generateWingsApiToken(
+            $serverUuid,
+            $userUuid,
+            $permissions,
+            $panelUrl,
+            $wingsUrl,
+            $additionalClaims
+        );
+    }
+
+    /**
+     * Generate a Wings-compatible JWT token for backup operations.
+     *
+     * This method generates a JWT token specifically for backup-related actions
+     * like creating, downloading, or restoring backups.
+     *
+     * @param string $serverUuid The server UUID
+     * @param string $userUuid The user UUID
+     * @param array $permissions The permissions array
+     * @param string $panelUrl The panel's URL (issuer)
+     * @param string $wingsUrl The Wings node's URL (audience)
+     * @param string $backupUuid The backup UUID (if applicable)
+     * @param string $operation The backup operation (create, download, restore, delete)
+     *
+     * @throws \Exception
+     *
+     * @return string The JWT token
+     */
+    public function generateBackupOperationToken(
+        string $serverUuid,
+        string $userUuid,
+        array $permissions = [],
+        string $panelUrl = '',
+        string $wingsUrl = '',
+        string $backupUuid = '',
+        string $operation = '',
+    ): string {
+        $additionalClaims = [
+            'type' => 'backup',
+        ];
+
+        if (!empty($backupUuid)) {
+            $additionalClaims['backup_uuid'] = $backupUuid;
+        }
+
+        if (!empty($operation)) {
+            $additionalClaims['operation'] = $operation;
+        }
+
+        return $this->generateWingsApiToken(
+            $serverUuid,
+            $userUuid,
+            $permissions,
+            $panelUrl,
+            $wingsUrl,
+            $additionalClaims
+        );
+    }
+
+    /**
      * Generate a signed URL for backup download.
      *
      * @param string $baseUrl The Wings base URL

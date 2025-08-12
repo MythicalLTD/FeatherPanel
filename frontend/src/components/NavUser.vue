@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Sparkles } from 'lucide-vue-next';
+import { ChevronsUpDown, LogOut, Sparkles, UserPenIcon } from 'lucide-vue-next';
+import { useI18n } from 'vue-i18n';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -13,6 +14,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
 import { useRouter } from 'vue-router';
+
+const { t } = useI18n();
 
 defineProps<{
     user: {
@@ -74,28 +77,20 @@ const router = useRouter();
                     <DropdownMenuGroup v-if="user.hasAdminPanel">
                         <DropdownMenuItem @click="router.push('/admin')">
                             <Sparkles />
-                            Admin Panel
+                            {{ t('user.adminPanel') }}
                         </DropdownMenuItem>
                     </DropdownMenuGroup>
                     <DropdownMenuSeparator />
                     <DropdownMenuGroup>
-                        <DropdownMenuItem>
-                            <BadgeCheck />
-                            Account
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                            <CreditCard />
-                            Billing
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                            <Bell />
-                            Notifications
+                        <DropdownMenuItem @click="router.push('/dashboard/account')">
+                            <UserPenIcon />
+                            {{ t('user.account') }}
                         </DropdownMenuItem>
                     </DropdownMenuGroup>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem @click="router.push('/auth/logout')">
                         <LogOut />
-                        Log out
+                        {{ t('user.logOut') }}
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

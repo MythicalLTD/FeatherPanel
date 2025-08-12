@@ -14,41 +14,36 @@
 namespace App\Controllers\Wings\Server;
 
 use App\Chat\Node;
-use App\Chat\Realm;
-use App\Chat\Spell;
 use App\Chat\Server;
-use App\Chat\Allocation;
-use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class WingsServersResetController
 {
-	public function resetServers(Request $request): Response
-	{
-		// Get Wings authentication attributes from request
-		$tokenId = $request->attributes->get('wings_token_id');
-		$tokenSecret = $request->attributes->get('wings_token_secret');
+    public function resetServers(Request $request): Response
+    {
+        // Get Wings authentication attributes from request
+        $tokenId = $request->attributes->get('wings_token_id');
+        $tokenSecret = $request->attributes->get('wings_token_secret');
 
-		if (!$tokenId || !$tokenSecret) {
-			return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
-		}
+        if (!$tokenId || !$tokenSecret) {
+            return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
+        }
 
-		// Get node info
-		$node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
+        // Get node info
+        $node = Node::getNodeByWingsAuth($tokenId, $tokenSecret);
 
-		if (!$node) {
-			return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
-		}
+        if (!$node) {
+            return ApiResponse::error('Invalid Wings authentication', 'INVALID_WINGS_AUTH', 403);
+        }
 
+        // Reset each server's status
+        Server::resetAllServerStatuses($node['id']);
 
-		// Reset each server's status
-		Server::resetAllServerStatuses($node['id']);
-
-		return ApiResponse::sendManualResponse([
-			'success' => true,
-			'message' => 'Servers reset successfully',
-		], 200);
-	}
+        return ApiResponse::sendManualResponse([
+            'success' => true,
+            'message' => 'Servers reset successfully',
+        ], 200);
+    }
 }
