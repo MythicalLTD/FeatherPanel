@@ -6,6 +6,7 @@ export interface ServerAllocation {
 export interface ServerSpell {
     id: number;
     name: string;
+    banner?: string;
 }
 
 export interface Server {

@@ -6,10 +6,16 @@
                 <h3 class="text-lg font-semibold">{{ $t('servers.title') }}</h3>
                 <p class="text-sm text-muted-foreground">{{ $t('servers.description') }}</p>
             </div>
-            <Button variant="outline" size="sm" :disabled="loading" @click="fetchServers">
-                <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': loading }" />
-                {{ $t('servers.refresh') }}
-            </Button>
+            <div class="flex items-center gap-2">
+                <Button variant="outline" size="sm" @click="createFolder">
+                    <FolderPlus class="h-4 w-4 mr-2" />
+                    {{ $t('servers.createFolder') }}
+                </Button>
+                <Button variant="outline" size="sm" :disabled="loading" @click="fetchServers">
+                    <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': loading }" />
+                    {{ $t('servers.refresh') }}
+                </Button>
+            </div>
         </div>
 
         <!-- Search and Filters -->
@@ -22,6 +28,18 @@
                     class="pl-10"
                     @input="handleSearch"
                 />
+            </div>
+            <div class="flex items-center gap-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    :class="{ 'bg-primary text-primary-foreground': viewMode === 'folders' }"
+                    @click="toggleViewMode"
+                >
+                    <FolderOpen v-if="viewMode === 'folders'" class="h-4 w-4 mr-2" />
+                    <List v-else class="h-4 w-4 mr-2" />
+                    {{ viewMode === 'folders' ? $t('servers.folderView') : $t('servers.listView') }}
+                </Button>
             </div>
         </div>
 
@@ -45,27 +63,318 @@
 
         <!-- Servers Grid -->
         <div v-else-if="servers.length > 0" class="space-y-4">
-            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <Card
+            <!-- Folder View -->
+            <div v-if="viewMode === 'folders'" class="space-y-6">
+                <div v-for="folder in serverFolders" :key="folder.id" class="space-y-3">
+                    <!-- Folder Header -->
+                    <div class="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border/50">
+                        <div class="flex items-center gap-2">
+                            <FolderOpen class="h-5 w-5 text-primary" />
+                            <h4 class="font-semibold">{{ folder.name }}</h4>
+                            <Badge variant="secondary">{{ folder.servers.length }} {{ $t('servers.servers') }}</Badge>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="editFolder(folder)">
+                                <Edit class="h-4 w-4" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                class="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                @click="deleteFolder(folder.id)"
+                            >
+                                <Trash2 class="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+
+                    <!-- Servers in Folder -->
+                    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        <div
+                            v-for="server in folder.servers"
+                            :key="server.id"
+                            class="group bg-card border-2 border-border rounded-lg hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-primary/20 hover:scale-[1.02] overflow-hidden"
+                            @click="openServerDetails(server)"
+                            @contextmenu.prevent="showContextMenu($event, server, folder.id)"
+                        >
+                            <!-- Spell Banner - Full Width, No Padding -->
+                            <div class="relative w-full h-32">
+                                <!-- Spell Banner Background -->
+                                <div
+                                    v-if="server.spell?.banner"
+                                    class="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                                    :style="{ backgroundImage: `url(${server.spell.banner})` }"
+                                />
+
+                                <!-- Dark overlay for better text readability -->
+                                <div
+                                    class="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300"
+                                />
+
+                                <!-- Content overlaid on banner -->
+                                <div class="relative z-10 p-4 h-full flex flex-col justify-between">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1 min-w-0">
+                                            <h3 class="text-lg font-bold text-white drop-shadow-sm truncate">
+                                                {{ server.name }}
+                                            </h3>
+                                            <p class="text-sm text-white/80 drop-shadow-sm truncate mt-1">
+                                                {{ server.description || $t('servers.noDescription') }}
+                                            </p>
+                                        </div>
+                                        <Badge
+                                            :variant="getStatusVariant(server.status)"
+                                            class="bg-white/20 text-white border-white/30 hover:bg-white/30"
+                                        >
+                                            {{ $t(`servers.status.${server.status}`) }}
+                                        </Badge>
+                                    </div>
+
+                                    <!-- Spell name at bottom of header -->
+                                    <div class="flex items-center gap-2 text-sm">
+                                        <Sparkles class="h-4 w-4 text-white drop-shadow-sm" />
+                                        <span class="text-white/90 font-medium drop-shadow-sm"
+                                            >{{ $t('servers.spell') }}:</span
+                                        >
+                                        <span class="font-bold text-white truncate drop-shadow-sm">{{
+                                            server.spell?.name || 'N/A'
+                                        }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card Content -->
+                            <div class="p-4 bg-card">
+                                <div class="space-y-3">
+                                    <!-- Server Info -->
+                                    <div class="grid grid-cols-2 gap-3 text-sm">
+                                        <div class="flex items-center gap-2">
+                                            <Server class="h-4 w-4 text-muted-foreground" />
+                                            <span class="text-muted-foreground">{{ $t('servers.node') }}:</span>
+                                            <span class="font-medium truncate">{{ server.node?.name || 'N/A' }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <Hash class="h-4 w-4 text-muted-foreground" />
+                                            <span class="text-muted-foreground">{{ $t('servers.realm') }}:</span>
+                                            <span class="font-medium truncate">{{ server.realm?.name || 'N/A' }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Resources -->
+                                    <div class="grid grid-cols-3 gap-2 text-xs">
+                                        <div
+                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                        >
+                                            <div class="font-semibold text-primary">
+                                                {{ formatMemory(server.memory) }}
+                                            </div>
+                                            <div class="text-muted-foreground">{{ $t('servers.memory') }}</div>
+                                        </div>
+                                        <div
+                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                        >
+                                            <div class="font-semibold text-primary">{{ formatDisk(server.disk) }}</div>
+                                            <div class="text-muted-foreground">{{ $t('servers.disk') }}</div>
+                                        </div>
+                                        <div
+                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                        >
+                                            <div class="font-semibold text-primary">{{ server.cpu }}%</div>
+                                            <div class="text-muted-foreground">{{ $t('servers.cpu') }}</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Click indicator -->
+                                    <div class="flex items-center justify-end pt-2">
+                                        <div
+                                            class="text-xs text-muted-foreground group-hover:text-primary transition-colors"
+                                        >
+                                            {{ $t('servers.clickToView') }} →
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unassigned Servers -->
+                <div v-if="unassignedServers.length > 0" class="space-y-3">
+                    <div class="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border/50">
+                        <div class="flex items-center gap-2">
+                            <Server class="h-5 w-5 text-muted-foreground" />
+                            <h4 class="font-semibold">{{ $t('servers.unassigned') }}</h4>
+                            <Badge variant="secondary"
+                                >{{ unassignedServers.length }} {{ $t('servers.servers') }}</Badge
+                            >
+                        </div>
+                    </div>
+
+                    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        <div
+                            v-for="server in unassignedServers"
+                            :key="server.id"
+                            class="group bg-card border-2 border-border rounded-lg hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-primary/20 hover:scale-[1.02] overflow-hidden"
+                            @click="openServerDetails(server)"
+                            @contextmenu.prevent="showContextMenu($event, server, null)"
+                        >
+                            <!-- Spell Banner - Full Width, No Padding -->
+                            <div class="relative w-full h-32">
+                                <!-- Spell Banner Background -->
+                                <div
+                                    v-if="server.spell?.banner"
+                                    class="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                                    :style="{ backgroundImage: `url(${server.spell.banner})` }"
+                                />
+
+                                <!-- Dark overlay for better text readability -->
+                                <div
+                                    class="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300"
+                                />
+
+                                <!-- Content overlaid on banner -->
+                                <div class="relative z-10 p-4 h-full flex flex-col justify-between">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1 min-w-0">
+                                            <h3 class="text-lg font-bold text-white drop-shadow-sm truncate">
+                                                {{ server.name }}
+                                            </h3>
+                                            <p class="text-sm text-white/80 drop-shadow-sm truncate mt-1">
+                                                {{ server.description || $t('servers.noDescription') }}
+                                            </p>
+                                        </div>
+                                        <Badge
+                                            :variant="getStatusVariant(server.status)"
+                                            class="bg-white/20 text-white border-white/30 hover:bg-white/30"
+                                        >
+                                            {{ $t(`servers.status.${server.status}`) }}
+                                        </Badge>
+                                    </div>
+
+                                    <!-- Spell name at bottom of header -->
+                                    <div class="flex items-center gap-2 text-sm">
+                                        <Sparkles class="h-4 w-4 text-white drop-shadow-sm" />
+                                        <span class="text-white/90 font-medium drop-shadow-sm"
+                                            >{{ $t('servers.spell') }}:</span
+                                        >
+                                        <span class="font-bold text-white truncate drop-shadow-sm">{{
+                                            server.spell?.name || 'N/A'
+                                        }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card Content -->
+                            <div class="p-4 bg-card">
+                                <div class="space-y-3">
+                                    <!-- Server Info -->
+                                    <div class="grid grid-cols-2 gap-3 text-sm">
+                                        <div class="flex items-center gap-2">
+                                            <Server class="h-4 w-4 text-muted-foreground" />
+                                            <span class="text-muted-foreground">{{ $t('servers.node') }}:</span>
+                                            <span class="font-medium truncate">{{ server.node?.name || 'N/A' }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <Hash class="h-4 w-4 text-muted-foreground" />
+                                            <span class="text-muted-foreground">{{ $t('servers.realm') }}:</span>
+                                            <span class="font-medium truncate">{{ server.realm?.name || 'N/A' }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Resources -->
+                                    <div class="grid grid-cols-3 gap-2 text-xs">
+                                        <div
+                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                        >
+                                            <div class="font-semibold text-primary">
+                                                {{ formatMemory(server.memory) }}
+                                            </div>
+                                            <div class="text-muted-foreground">{{ $t('servers.memory') }}</div>
+                                        </div>
+                                        <div
+                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                        >
+                                            <div class="font-semibold text-primary">{{ formatDisk(server.disk) }}</div>
+                                            <div class="text-muted-foreground">{{ $t('servers.disk') }}</div>
+                                        </div>
+                                        <div
+                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                        >
+                                            <div class="font-semibold text-primary">{{ server.cpu }}%</div>
+                                            <div class="text-muted-foreground">{{ $t('servers.cpu') }}</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Click indicator -->
+                                    <div class="flex items-center justify-end pt-2">
+                                        <div
+                                            class="text-xs text-muted-foreground group-hover:text-primary transition-colors"
+                                        >
+                                            {{ $t('servers.clickToView') }} →
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- List View (Original) -->
+            <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div
                     v-for="server in servers"
                     :key="server.id"
-                    class="group hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-primary/20 hover:scale-[1.02] bg-gradient-to-br from-card to-card/50"
+                    class="group bg-card border-2 border-border rounded-lg hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-primary/20 hover:scale-[1.02] overflow-hidden"
                     @click="openServerDetails(server)"
+                    @contextmenu.prevent="showContextMenu($event, server, null)"
                 >
-                    <CardHeader class="pb-3">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1 min-w-0">
-                                <CardTitle class="text-base truncate">{{ server.name }}</CardTitle>
-                                <p class="text-sm text-muted-foreground truncate">
-                                    {{ server.description || $t('servers.noDescription') }}
-                                </p>
+                    <!-- Spell Banner - Full Width, No Padding -->
+                    <div class="relative w-full h-32">
+                        <!-- Spell Banner Background -->
+                        <div
+                            v-if="server.spell?.banner"
+                            class="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                            :style="{ backgroundImage: `url(${server.spell.banner})` }"
+                        />
+
+                        <!-- Dark overlay for better text readability -->
+                        <div
+                            class="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300"
+                        />
+
+                        <!-- Content overlaid on banner -->
+                        <div class="relative z-10 p-4 h-full flex flex-col justify-between">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-lg font-bold text-white drop-shadow-sm truncate">
+                                        {{ server.name }}
+                                    </h3>
+                                    <p class="text-sm text-white/80 drop-shadow-sm truncate mt-1">
+                                        {{ server.description || $t('servers.noDescription') }}
+                                    </p>
+                                </div>
+                                <Badge
+                                    :variant="getStatusVariant(server.status)"
+                                    class="bg-white/20 text-white border-white/30 hover:bg-white/30"
+                                >
+                                    {{ $t(`servers.status.${server.status}`) }}
+                                </Badge>
                             </div>
-                            <Badge :variant="getStatusVariant(server.status)">
-                                {{ $t(`servers.status.${server.status}`) }}
-                            </Badge>
+
+                            <!-- Spell name at bottom of header -->
+                            <div class="flex items-center gap-2 text-sm">
+                                <Sparkles class="h-4 w-4 text-white drop-shadow-sm" />
+                                <span class="text-white/90 font-medium drop-shadow-sm">{{ $t('servers.spell') }}:</span>
+                                <span class="font-bold text-white truncate drop-shadow-sm">{{
+                                    server.spell?.name || 'N/A'
+                                }}</span>
+                            </div>
                         </div>
-                    </CardHeader>
-                    <CardContent class="pt-0">
+                    </div>
+
+                    <!-- Card Content -->
+                    <div class="p-4 bg-card">
                         <div class="space-y-3">
                             <!-- Server Info -->
                             <div class="grid grid-cols-2 gap-3 text-sm">
@@ -103,13 +412,6 @@
                                 </div>
                             </div>
 
-                            <!-- Spell Info -->
-                            <div class="flex items-center gap-2 text-sm">
-                                <Sparkles class="h-4 w-4 text-muted-foreground" />
-                                <span class="text-muted-foreground">{{ $t('servers.spell') }}:</span>
-                                <span class="font-medium truncate">{{ server.spell?.name || 'N/A' }}</span>
-                            </div>
-
                             <!-- Click indicator -->
                             <div class="flex items-center justify-end pt-2">
                                 <div class="text-xs text-muted-foreground group-hover:text-primary transition-colors">
@@ -117,8 +419,8 @@
                                 </div>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
 
             <!-- Pagination -->
@@ -181,18 +483,119 @@
             </div>
         </div>
     </div>
+
+    <!-- Context Menu for Server Actions -->
+    <div
+        v-if="contextMenu.show"
+        class="fixed z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[200px] context-menu"
+        :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
+        @click.stop
+    >
+        <div class="px-3 py-2 text-sm font-medium border-b border-border">
+            {{ contextMenu.server?.name }}
+        </div>
+
+        <!-- Move to Folder Section -->
+        <div class="px-3 py-2">
+            <div class="text-xs text-muted-foreground mb-2">{{ $t('servers.moveToFolder') }}</div>
+            <div class="space-y-1">
+                <button
+                    v-for="folder in serverFolders"
+                    :key="folder.id"
+                    class="w-full text-left px-2 py-1 text-sm hover:bg-accent hover:text-accent-foreground rounded-sm flex items-center gap-2"
+                    :class="{ 'text-primary': contextMenu.currentFolderId === folder.id }"
+                    @click="moveServerToFolder(contextMenu.server!, folder.id)"
+                >
+                    <FolderOpen class="h-4 w-4" />
+                    {{ folder.name }}
+                    <span v-if="contextMenu.currentFolderId === folder.id" class="ml-auto text-xs">{{
+                        $t('servers.current')
+                    }}</span>
+                </button>
+
+                <!-- Move to Unassigned -->
+                <button
+                    class="w-full text-left px-2 py-1 text-sm hover:bg-accent hover:text-accent-foreground rounded-sm flex items-center gap-2"
+                    :class="{ 'text-primary': contextMenu.currentFolderId === null }"
+                    @click="moveServerToFolder(contextMenu.server!, null)"
+                >
+                    <Server class="h-4 w-4" />
+                    {{ $t('servers.unassigned') }}
+                    <span v-if="contextMenu.currentFolderId === null" class="ml-auto text-xs">{{
+                        $t('servers.current')
+                    }}</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Create New Folder Option -->
+        <div class="px-3 py-2 border-t border-border">
+            <button
+                class="w-full text-left px-2 py-1 text-sm hover:bg-accent hover:text-accent-foreground rounded-sm flex items-center gap-2"
+                @click="createFolderForServer(contextMenu.server!)"
+            >
+                <FolderPlus class="h-4 w-4" />
+                {{ $t('servers.createNewFolder') }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Folder Management Dialogs -->
+    <Dialog v-model:open="folderDialogOpen">
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>{{ editingFolder ? $t('servers.editFolder') : $t('servers.createFolder') }}</DialogTitle>
+            </DialogHeader>
+            <div class="space-y-4">
+                <div>
+                    <label for="folder-name" class="block mb-2 text-sm font-medium">{{
+                        $t('servers.folderName')
+                    }}</label>
+                    <Input
+                        id="folder-name"
+                        v-model="folderForm.name"
+                        :placeholder="$t('servers.folderNamePlaceholder')"
+                        @keyup.enter="saveFolder"
+                    />
+                </div>
+                <div class="flex justify-end gap-2">
+                    <Button variant="outline" @click="folderDialogOpen = false">
+                        {{ $t('servers.cancel') }}
+                    </Button>
+                    <Button :disabled="!folderForm.name.trim()" @click="saveFolder">
+                        {{ editingFolder ? $t('servers.update') : $t('servers.create') }}
+                    </Button>
+                </div>
+            </div>
+        </DialogContent>
+    </Dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import { useSessionStore } from '@/stores/session';
 import { useRouter } from 'vue-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Badge } from '@/components/ui/badge';
-import { Search, RefreshCw, Server, Hash, Sparkles, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-vue-next';
+import {
+    Search,
+    RefreshCw,
+    Server,
+    Hash,
+    Sparkles,
+    AlertCircle,
+    ChevronLeft,
+    ChevronRight,
+    FolderPlus,
+    FolderOpen,
+    List,
+    Edit,
+    Trash2,
+} from 'lucide-vue-next';
 import axios from 'axios';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const sessionStore = useSessionStore();
 const router = useRouter();
@@ -216,6 +619,7 @@ interface ServerRealm {
 interface ServerSpell {
     id: number;
     name: string;
+    banner?: string;
 }
 
 interface ServerAllocation {
@@ -245,6 +649,12 @@ interface Server {
     updated_at: string;
 }
 
+interface Folder {
+    id: number;
+    name: string;
+    servers: Server[];
+}
+
 interface Pagination {
     current_page: number;
     per_page: number;
@@ -272,6 +682,14 @@ const pagination = ref<Pagination>({
     to: 0,
 });
 
+const viewMode = ref<'folders' | 'list'>('folders');
+const folderDialogOpen = ref(false);
+const editingFolder = ref<Folder | null>(null);
+const folderForm = ref({ name: '' });
+
+const serverFolders = ref<Folder[]>([]);
+const unassignedServers = ref<Server[]>([]);
+
 const filteredServers = computed(() => {
     if (!searchQuery.value.trim()) {
         return servers.value;
@@ -289,7 +707,35 @@ const filteredServers = computed(() => {
 
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect();
+
+    // Load folders from local storage FIRST
+    loadFoldersFromStorage();
+
+    // If no folders exist, create a default one
+    if (serverFolders.value.length === 0) {
+        serverFolders.value.push({
+            id: Date.now(),
+            name: 'My Servers',
+            servers: [],
+        });
+        saveFoldersToStorage();
+    }
+
+    // Now fetch servers
     await fetchServers();
+
+    // Organize servers into folders (but preserve existing assignments)
+    organizeServersIntoFolders();
+
+    // Add click outside handler for context menu
+    document.addEventListener('click', handleClickOutside);
+    document.addEventListener('keydown', handleEscapeKey);
+});
+
+// Clean up event listener
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
+    document.removeEventListener('keydown', handleEscapeKey);
 });
 
 // Watch for servers changes and emit updates
@@ -317,6 +763,9 @@ async function fetchServers() {
         if (response.data.success) {
             servers.value = response.data.data.servers;
             pagination.value = response.data.data.pagination;
+
+            // After fetching servers, organize them into folders
+            organizeServersIntoFolders();
         } else {
             error.value = response.data.message || 'Failed to fetch servers';
         }
@@ -369,5 +818,240 @@ function formatDisk(disk: number): string {
 
 function openServerDetails(server: Server) {
     router.push(`/server/${server.uuidShort}`);
+}
+
+function createFolder() {
+    editingFolder.value = null;
+    folderForm.value.name = '';
+    folderDialogOpen.value = true;
+}
+
+function editFolder(folder: Folder) {
+    editingFolder.value = folder;
+    folderForm.value.name = folder.name;
+    folderDialogOpen.value = true;
+}
+
+function saveFolder() {
+    if (!folderForm.value.name.trim()) {
+        return;
+    }
+
+    if (editingFolder.value) {
+        // Edit existing folder
+        const index = serverFolders.value.findIndex((f) => f.id === editingFolder.value!.id);
+        if (index !== -1) {
+            serverFolders.value[index].name = folderForm.value.name;
+        }
+    } else {
+        // Create new folder
+        const newFolder: Folder = {
+            id: Date.now(), // Simple ID generation for local storage
+            name: folderForm.value.name,
+            servers: [],
+        };
+        serverFolders.value.push(newFolder);
+    }
+
+    // Save to local storage
+    saveFoldersToStorage();
+    folderDialogOpen.value = false;
+}
+
+function deleteFolder(folderId: number) {
+    if (confirm('Are you sure you want to delete this folder? All servers will be moved to unassigned.')) {
+        // Move all servers from deleted folder to unassigned
+        const folder = serverFolders.value.find((f) => f.id === folderId);
+        if (folder) {
+            unassignedServers.value.push(...folder.servers);
+        }
+
+        // Remove folder
+        serverFolders.value = serverFolders.value.filter((f) => f.id !== folderId);
+
+        // Save to local storage
+        saveFoldersToStorage();
+    }
+}
+
+function toggleViewMode() {
+    viewMode.value = viewMode.value === 'folders' ? 'list' : 'folders';
+}
+
+// Local Storage Functions
+function saveFoldersToStorage() {
+    try {
+        localStorage.setItem('mythicalpanel_server_folders', JSON.stringify(serverFolders.value));
+        localStorage.setItem('mythicalpanel_unassigned_servers', JSON.stringify(unassignedServers.value));
+        console.log('Saved folders to storage:', serverFolders.value);
+        console.log('Saved unassigned to storage:', unassignedServers.value);
+    } catch (error) {
+        console.error('Error saving to localStorage:', error);
+    }
+}
+
+function loadFoldersFromStorage() {
+    try {
+        const savedFolders = localStorage.getItem('mythicalpanel_server_folders');
+        const savedUnassigned = localStorage.getItem('mythicalpanel_unassigned_servers');
+
+        if (savedFolders) {
+            serverFolders.value = JSON.parse(savedFolders);
+            console.log('Loaded folders from storage:', serverFolders.value);
+        }
+
+        if (savedUnassigned) {
+            unassignedServers.value = JSON.parse(savedUnassigned);
+            console.log('Loaded unassigned from storage:', unassignedServers.value);
+        }
+    } catch (error) {
+        console.error('Error loading from localStorage:', error);
+        // Reset to default if there's an error
+        serverFolders.value = [];
+        unassignedServers.value = [];
+    }
+}
+
+function organizeServersIntoFolders() {
+    // Get all servers that are currently assigned to folders
+    const assignedServerIds = new Set<number>();
+    serverFolders.value.forEach((folder) => {
+        folder.servers.forEach((server) => {
+            assignedServerIds.add(server.id);
+        });
+    });
+
+    // Get all servers that are currently in unassigned
+    const unassignedServerIds = new Set<number>();
+    unassignedServers.value.forEach((server) => {
+        unassignedServerIds.add(server.id);
+    });
+
+    // For each server from the API, check if it's already assigned somewhere
+    servers.value.forEach((server) => {
+        // If server is not assigned anywhere, add it to unassigned
+        if (!assignedServerIds.has(server.id) && !unassignedServerIds.has(server.id)) {
+            unassignedServers.value.push(server);
+        }
+    });
+
+    // Save to local storage
+    saveFoldersToStorage();
+}
+
+// Context Menu State
+const contextMenu = ref({
+    show: false,
+    x: 0,
+    y: 0,
+    server: null as Server | null,
+    currentFolderId: null as number | null,
+});
+
+function showContextMenu(event: MouseEvent, server: Server, folderId: number | null) {
+    contextMenu.value.show = true;
+    contextMenu.value.x = event.clientX;
+    contextMenu.value.y = event.clientY;
+    contextMenu.value.server = server;
+    contextMenu.value.currentFolderId = folderId;
+}
+
+function moveServerToFolder(server: Server, targetFolderId: number | null) {
+    if (!server) return;
+
+    // Find where the server currently is
+    let currentFolderId: number | null = null;
+
+    // Check if server is in any folder
+    for (const folder of serverFolders.value) {
+        if (folder.servers.some((s) => s.id === server.id)) {
+            currentFolderId = folder.id;
+            break;
+        }
+    }
+
+    // If server is in unassigned, currentFolderId remains null
+
+    // Don't move if it's the same location
+    if (currentFolderId === targetFolderId) {
+        contextMenu.value.show = false;
+        return;
+    }
+
+    // Remove from current location
+    if (currentFolderId !== null) {
+        const currentFolder = serverFolders.value.find((f) => f.id === currentFolderId);
+        if (currentFolder) {
+            currentFolder.servers = currentFolder.servers.filter((s) => s.id !== server.id);
+        }
+    } else {
+        // Remove from unassigned
+        unassignedServers.value = unassignedServers.value.filter((s) => s.id !== server.id);
+    }
+
+    // Add to new location
+    if (targetFolderId !== null) {
+        const targetFolder = serverFolders.value.find((f) => f.id === targetFolderId);
+        if (targetFolder) {
+            targetFolder.servers.push(server);
+        }
+    } else {
+        // Add to unassigned
+        unassignedServers.value.push(server);
+    }
+
+    // Save to local storage
+    saveFoldersToStorage();
+    contextMenu.value.show = false;
+}
+
+function createFolderForServer(server: Server) {
+    if (!server) return;
+
+    const newFolderName = `Folder for ${server.name}`;
+    const newFolder: Folder = {
+        id: Date.now(),
+        name: newFolderName,
+        servers: [server],
+    };
+
+    // Remove server from current location
+    let currentFolderId: number | null = null;
+
+    // Check if server is in any folder
+    for (const folder of serverFolders.value) {
+        if (folder.servers.some((s) => s.id === server.id)) {
+            currentFolderId = folder.id;
+            break;
+        }
+    }
+
+    if (currentFolderId !== null) {
+        const currentFolder = serverFolders.value.find((f) => f.id === currentFolderId);
+        if (currentFolder) {
+            currentFolder.servers = currentFolder.servers.filter((s) => s.id !== server.id);
+        }
+    } else {
+        // Remove from unassigned
+        unassignedServers.value = unassignedServers.value.filter((s) => s.id !== server.id);
+    }
+
+    serverFolders.value.push(newFolder);
+    saveFoldersToStorage();
+    contextMenu.value.show = false;
+}
+
+function handleClickOutside(event: MouseEvent) {
+    // Check if the click is outside the context menu
+    const target = event.target as Element;
+    if (target && !target.closest('.context-menu')) {
+        contextMenu.value.show = false;
+    }
+}
+
+function handleEscapeKey(event: KeyboardEvent) {
+    if (event.key === 'Escape' && contextMenu.value.show) {
+        contextMenu.value.show = false;
+    }
 }
 </script>

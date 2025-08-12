@@ -145,6 +145,22 @@ servers:
         starting: 'Starting'
         null: 'Offline'
     clickToView: 'Click to view details'
+    # Folder System
+    createFolder: 'Create Folder'
+    editFolder: 'Edit Folder'
+    folderName: 'Folder Name'
+    folderNamePlaceholder: 'Enter folder name...'
+    folderView: 'Folder View'
+    listView: 'List View'
+    unassigned: 'Unassigned'
+    servers: 'servers'
+    cancel: 'Cancel'
+    create: 'Create'
+    update: 'Update'
+    # Context Menu
+    moveToFolder: 'Move to folder:'
+    createNewFolder: 'Create new folder...'
+    current: '(Current)'
 
 # Server Console
 serverConsole:

@@ -135,6 +135,13 @@
                 <div class="px-6 pt-6 space-y-2">
                     <div><b>Name:</b> {{ selectedSpell.name }}</div>
                     <div><b>Description:</b> {{ selectedSpell.description || '-' }}</div>
+                    <div v-if="selectedSpell.banner" class="space-y-2">
+                        <div><b>Banner:</b></div>
+                        <div
+                            class="w-full h-32 rounded-lg border border-border bg-cover bg-center bg-no-repeat"
+                            :style="{ backgroundImage: `url(${selectedSpell.banner})` }"
+                        />
+                    </div>
                     <div><b>Author:</b> {{ selectedSpell.author || '-' }}</div>
                     <div><b>UUID:</b> {{ selectedSpell.uuid }}</div>
                     <div><b>Realm:</b> {{ selectedSpell.realm_name || '-' }}</div>
@@ -206,6 +213,21 @@
                                     v-model="editForm.update_url"
                                     placeholder="https://example.com/update"
                                 />
+                            </div>
+                            <div>
+                                <label for="edit-banner" class="block mb-1 font-medium">Banner URL</label>
+                                <Input
+                                    id="edit-banner"
+                                    v-model="editForm.banner"
+                                    placeholder="https://example.com/banner.jpg"
+                                />
+                                <div v-if="editForm.banner" class="mt-2">
+                                    <div class="text-sm text-muted-foreground mb-1">Preview:</div>
+                                    <div
+                                        class="w-full h-24 rounded-lg border border-border bg-cover bg-center bg-no-repeat"
+                                        :style="{ backgroundImage: `url(${editForm.banner})` }"
+                                    />
+                                </div>
                             </div>
                         </TabsContent>
                         <TabsContent value="docker">
@@ -622,6 +644,21 @@
                                     placeholder="https://example.com/update"
                                 />
                             </div>
+                            <div>
+                                <label for="create-banner" class="block mb-1 font-medium">Banner URL</label>
+                                <Input
+                                    id="create-banner"
+                                    v-model="createForm.banner"
+                                    placeholder="https://example.com/banner.jpg"
+                                />
+                                <div v-if="createForm.banner" class="mt-2">
+                                    <div class="text-sm text-muted-foreground mb-1">Preview:</div>
+                                    <div
+                                        class="w-full h-24 rounded-lg border border-border bg-cover bg-center bg-no-repeat"
+                                        :style="{ backgroundImage: `url(${createForm.banner})` }"
+                                    />
+                                </div>
+                            </div>
                         </TabsContent>
                         <TabsContent value="docker">
                             <div>
@@ -835,6 +872,7 @@ type Spell = {
     created_at: string;
     updated_at: string;
     force_outgoing_ip: boolean;
+    banner?: string;
     realm_name?: string;
 };
 
@@ -893,6 +931,7 @@ const editForm = ref({
     docker_images: '',
     file_denylist: '',
     update_url: '',
+    banner: '',
     config_files: '',
     config_startup: '',
     config_logs: '',
@@ -914,6 +953,7 @@ const createForm = ref({
     docker_images: '',
     file_denylist: '',
     update_url: '',
+    banner: '',
     config_files: '',
     config_startup: '',
     config_logs: '',
@@ -1175,6 +1215,7 @@ async function openEditDrawer(spell: Spell) {
             docker_images: s.docker_images || '',
             file_denylist: s.file_denylist || '',
             update_url: s.update_url || '',
+            banner: s.banner || '',
             config_files: s.config_files || '',
             config_startup: s.config_startup || '',
             config_logs: s.config_logs || '',
@@ -1248,6 +1289,7 @@ function openCreateDrawer() {
         docker_images: '',
         file_denylist: '',
         update_url: '',
+        banner: '',
         config_files: '',
         config_startup: '',
         config_logs: '',
@@ -1269,6 +1311,28 @@ function openCreateDrawer() {
 function closeCreateDrawer() {
     createDrawerOpen.value = false;
     drawerMessage.value = null;
+    // Reset form fields
+    createForm.value = {
+        name: '',
+        description: '',
+        author: '',
+        realm_id: 0,
+        features: '',
+        docker_images: '',
+        file_denylist: '',
+        update_url: '',
+        banner: '',
+        config_files: '',
+        config_startup: '',
+        config_logs: '',
+        config_stop: '',
+        startup: '',
+        script_container: 'alpine:3.4',
+        script_entry: 'ash',
+        script_is_privileged: true,
+        script_install: '',
+        force_outgoing_ip: false,
+    };
 }
 
 async function submitCreate() {
