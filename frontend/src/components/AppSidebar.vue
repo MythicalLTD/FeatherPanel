@@ -15,13 +15,14 @@ import {
     Home,
     Server,
     Newspaper,
+    FileText,
 } from 'lucide-vue-next';
 import NavMain from '@/components/nav/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar';
 import { useSessionStore } from '@/stores/session';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { computed, onMounted } from 'vue';
 import { useSettingsStore } from '@/stores/settings';
 import Permissions from '@/lib/permissions';
@@ -40,6 +41,8 @@ onMounted(async () => {
 const props = withDefaults(defineProps<SidebarProps>(), {
     collapsible: 'icon',
 });
+
+const route = useRoute();
 
 // This is sample data.
 const data = computed(() => {
@@ -156,13 +159,25 @@ const data = computed(() => {
         navServer: [
             {
                 title: t('nav.console'),
-                url: '#',
+                url: `/server/${route.params.uuidShort}`,
                 icon: SquareTerminal,
                 items: [
                     {
                         title: t('nav.console'),
-                        url: '#',
+                        url: `/server/${route.params.uuidShort}`,
                         icon: SquareTerminal,
+                    },
+                ],
+            },
+            {
+                title: t('nav.logs'),
+                url: `/server/${route.params.uuidShort}/logs`,
+                icon: FileText,
+                items: [
+                    {
+                        title: t('nav.logs'),
+                        url: `/server/${route.params.uuidShort}/logs`,
+                        icon: FileText,
                     },
                 ],
             },

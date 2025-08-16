@@ -47,7 +47,7 @@
                     :has-prev="pagination.hasPrev"
                     :from="pagination.from"
                     :to="pagination.to"
-                    local-storage-key="locations-table-columns"
+                    local-storage-key="mythicalpanel-locations-table-columns"
                     @search="handleSearch"
                     @page-change="changePage"
                     @column-toggle="handleColumnToggle"

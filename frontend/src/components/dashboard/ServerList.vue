@@ -881,8 +881,8 @@ function toggleViewMode() {
 // Local Storage Functions
 function saveFoldersToStorage() {
     try {
-        localStorage.setItem('mythicalpanel_server_folders', JSON.stringify(serverFolders.value));
-        localStorage.setItem('mythicalpanel_unassigned_servers', JSON.stringify(unassignedServers.value));
+        localStorage.setItem('mythicalpanel-server_folders', JSON.stringify(serverFolders.value));
+        localStorage.setItem('mythicalpanel-unassigned_servers', JSON.stringify(unassignedServers.value));
         console.log('Saved folders to storage:', serverFolders.value);
         console.log('Saved unassigned to storage:', unassignedServers.value);
     } catch (error) {
@@ -892,8 +892,8 @@ function saveFoldersToStorage() {
 
 function loadFoldersFromStorage() {
     try {
-        const savedFolders = localStorage.getItem('mythicalpanel_server_folders');
-        const savedUnassigned = localStorage.getItem('mythicalpanel_unassigned_servers');
+        const savedFolders = localStorage.getItem('mythicalpanel-server_folders');
+        const savedUnassigned = localStorage.getItem('mythicalpanel-unassigned_servers');
 
         if (savedFolders) {
             serverFolders.value = JSON.parse(savedFolders);

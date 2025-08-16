@@ -36,8 +36,12 @@
                             :key="line.id"
                             class="terminal-line whitespace-pre-wrap leading-relaxed"
                             :class="getLineClasses(line)"
-                            v-html="line.content"
-                        ></div>
+                        >
+                            <span v-if="showTimestamps" class="text-gray-500 mr-2">
+                                {{ new Date(line.timestamp).toLocaleTimeString() }}
+                            </span>
+                            <span v-html="line.content"></span>
+                        </div>
                     </div>
                 </div>
 
@@ -75,6 +79,7 @@ const { t } = useI18n();
 interface Props {
     terminalLines: TerminalLine[];
     wingsWebSocket: ReturnType<typeof import('@/composables/useWingsWebSocket').useWingsWebSocket>;
+    showTimestamps?: boolean;
 }
 
 defineProps<Props>();

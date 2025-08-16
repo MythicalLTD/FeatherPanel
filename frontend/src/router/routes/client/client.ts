@@ -17,6 +17,16 @@ const clientRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/dashboard/server/ServerConsole.vue'),
     },
     {
+        path: '/server/:uuidShort/logs',
+        name: 'ServerLogs',
+        component: () => import('@/pages/dashboard/server/ServerLogs.vue'),
+    },
+    {
+        path: '/server/:uuidShort/logs/install',
+        name: 'ServerInstallLogs',
+        component: () => import('@/pages/dashboard/server/ServerInstallLogs.vue'),
+    },
+    {
         path: '/',
         redirect: '/dashboard',
     },

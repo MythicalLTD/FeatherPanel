@@ -24,6 +24,7 @@ use App\Middleware\AuthMiddleware;
 use App\Middleware\AdminMiddleware;
 use App\Middleware\WingsMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Middleware\ServerMiddleware;
 use Symfony\Component\Routing\Route;
 use RateLimit\Exception\LimitExceeded;
 use App\Plugins\Events\Events\AppEvent;
@@ -338,6 +339,34 @@ class App
             [
                 '_controller' => $controller,
                 '_middleware' => [AuthMiddleware::class],
+            ],
+            [], // requirements
+            [], // options
+            '', // host
+            [], // schemes
+            $methods
+        ));
+    }
+
+    /**
+     * Register a server route.
+     *
+     * This route requires the user to be logged in!
+     *
+     * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
+     * @param string $name The name of the route
+     * @param string $path The URL path for the route (e.g. '/api/server/data')
+     * @param callable $controller The controller to handle the request
+     * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
+     */
+    public function registerServerRoute(RouteCollection $routes, string $name, string $path, callable $controller, string $serverShortUuid, array $methods = ['GET']): void
+    {
+        $routes->add($name, new Route(
+            $path,
+            [
+                '_controller' => $controller,
+                '_middleware' => [AuthMiddleware::class, ServerMiddleware::class],
+                '_server' => $serverShortUuid,
             ],
             [], // requirements
             [], // options

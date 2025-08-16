@@ -33,11 +33,8 @@ class Wings
     private WingsConnection $connection;
     private SystemService $system;
     private ServerService $server;
-    private FileService $file;
-    private BackupService $backup;
     private DockerService $docker;
     private TransferService $transfer;
-    private WebSocketService $websocket;
     private JwtService $jwt;
 
     /**
@@ -61,11 +58,8 @@ class Wings
         // Initialize service classes
         $this->system = new SystemService($this->connection);
         $this->server = new ServerService($this->connection);
-        $this->file = new FileService($this->connection);
-        $this->backup = new BackupService($this->connection);
         $this->docker = new DockerService($this->connection);
         $this->transfer = new TransferService($this->connection);
-        $this->websocket = new WebSocketService($this->connection);
 
         // Initialize JWT service with node secret
         $this->jwt = new JwtService($authToken, '', $this->connection->getBaseUrl());
@@ -88,22 +82,6 @@ class Wings
     }
 
     /**
-     * Get the file service.
-     */
-    public function getFile(): FileService
-    {
-        return $this->file;
-    }
-
-    /**
-     * Get the backup service.
-     */
-    public function getBackup(): BackupService
-    {
-        return $this->backup;
-    }
-
-    /**
      * Get the Docker service.
      */
     public function getDocker(): DockerService
@@ -117,14 +95,6 @@ class Wings
     public function getTransfer(): TransferService
     {
         return $this->transfer;
-    }
-
-    /**
-     * Get the WebSocket service.
-     */
-    public function getWebSocket(): WebSocketService
-    {
-        return $this->websocket;
     }
 
     /**

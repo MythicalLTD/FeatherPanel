@@ -1,6 +1,6 @@
 <template>
-    <div class="grid gap-4 md:grid-cols-4">
-        <Card>
+    <div class="grid gap-4" :class="gridColsClass">
+        <Card v-if="showCpu !== false">
             <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle class="text-sm font-medium">{{ t('serverConsole.cpuLoad') }}</CardTitle>
                 <Cpu class="h-4 w-4 text-muted-foreground" />
@@ -12,7 +12,7 @@
             </CardContent>
         </Card>
 
-        <Card>
+        <Card v-if="showMemory !== false">
             <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle class="text-sm font-medium">{{ t('serverConsole.memory') }}</CardTitle>
                 <MemoryStick class="h-4 w-4 text-muted-foreground" />
@@ -30,7 +30,7 @@
             </CardContent>
         </Card>
 
-        <Card>
+        <Card v-if="showDisk !== false">
             <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle class="text-sm font-medium">{{ t('serverConsole.disk') }}</CardTitle>
                 <HardDrive class="h-4 w-4 text-muted-foreground" />
@@ -42,7 +42,7 @@
             </CardContent>
         </Card>
 
-        <Card>
+        <Card v-if="showNetwork !== false">
             <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle class="text-sm font-medium">{{ t('serverConsole.network') }}</CardTitle>
                 <Globe class="h-4 w-4 text-muted-foreground" />
@@ -63,6 +63,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Cpu, MemoryStick, HardDrive, Globe } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
@@ -78,9 +79,28 @@ interface Props {
     diskData: Array<{ timestamp: number; value: number }>;
     networkData: Array<{ timestamp: number; value: number }>;
     networkStats: NetworkStats;
+    showCpu?: boolean;
+    showMemory?: boolean;
+    showDisk?: boolean;
+    showNetwork?: boolean;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
+
+// Compute grid columns based on visible charts
+const gridColsClass = computed(() => {
+    const visibleCharts = [
+        props.showCpu !== false,
+        props.showMemory !== false,
+        props.showDisk !== false,
+        props.showNetwork !== false,
+    ].filter(Boolean).length;
+
+    if (visibleCharts === 1) return 'grid-cols-1';
+    if (visibleCharts === 2) return 'md:grid-cols-2';
+    if (visibleCharts === 3) return 'md:grid-cols-3';
+    return 'md:grid-cols-4';
+});
 
 const dataColors = {
     cpu: '#ef4444',

@@ -2,8 +2,449 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6">
+            <!-- Customization Toggle Button -->
+            <div class="flex justify-end">
+                <Button variant="outline" size="sm" @click="showCustomization = !showCustomization">
+                    <Settings class="h-4 w-4 mr-2" />
+                    {{ showCustomization ? t('serverConsole.hideLayout') : t('serverConsole.customizeLayout') }}
+                </Button>
+            </div>
+
+            <!-- Customization Panel -->
+            <Card v-if="showCustomization" class="p-6">
+                <CardHeader>
+                    <CardTitle class="flex items-center gap-2">
+                        <Settings class="h-5 w-5" />
+                        {{ t('serverConsole.customizeLayout') }}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Component Visibility -->
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-medium text-sm">{{ t('serverConsole.componentVisibility') }}</h4>
+                                <p class="text-xs text-muted-foreground mt-1">
+                                    Choose whether to show or hide each component.
+                                </p>
+                            </div>
+                            <div class="space-y-3">
+                                <div class="space-y-2">
+                                    <Label for="wingsStatus">{{ t('serverConsole.wingsConnectionStatus') }}</Label>
+                                    <Select
+                                        :model-value="customization.components.wingsStatus ? 'hide' : 'show'"
+                                        @update:model-value="
+                                            (value) => {
+                                                customization.components.wingsStatus = value === 'hide';
+                                            }
+                                        "
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue
+                                                :placeholder="
+                                                    customization.components.wingsStatus
+                                                        ? t('serverConsole.hide')
+                                                        : t('serverConsole.show')
+                                                "
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="show">{{ t('serverConsole.show') }}</SelectItem>
+                                            <SelectItem value="hide">{{ t('serverConsole.hide') }}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div class="space-y-2">
+                                    <Label for="serverInfo">{{ t('serverConsole.serverInfoCards') }}</Label>
+                                    <Select
+                                        :model-value="customization.components.serverInfo ? 'hide' : 'show'"
+                                        @update:model-value="
+                                            (value) => {
+                                                customization.components.serverInfo = value === 'hide';
+                                            }
+                                        "
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue
+                                                :placeholder="
+                                                    customization.components.serverInfo
+                                                        ? t('serverConsole.hide')
+                                                        : t('serverConsole.show')
+                                                "
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="show">{{ t('serverConsole.show') }}</SelectItem>
+                                            <SelectItem value="hide">{{ t('serverConsole.hide') }}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div class="space-y-2">
+                                    <Label for="terminal">{{ t('serverConsole.terminalConsole') }}</Label>
+                                    <Select
+                                        :model-value="customization.components.terminal ? 'hide' : 'show'"
+                                        @update:model-value="
+                                            (value) => {
+                                                customization.components.terminal = value === 'hide';
+                                            }
+                                        "
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue
+                                                :placeholder="
+                                                    customization.components.terminal
+                                                        ? t('serverConsole.hide')
+                                                        : t('serverConsole.show')
+                                                "
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="show">{{ t('serverConsole.show') }}</SelectItem>
+                                            <SelectItem value="hide">{{ t('serverConsole.hide') }}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div class="space-y-2">
+                                    <Label for="performance">{{ t('serverConsole.performanceMonitoring') }}</Label>
+                                    <Select
+                                        :model-value="customization.components.performance ? 'hide' : 'show'"
+                                        @update:model-value="
+                                            (value) => {
+                                                customization.components.performance = value === 'hide';
+                                            }
+                                        "
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue
+                                                :placeholder="
+                                                    customization.components.performance
+                                                        ? t('serverConsole.hide')
+                                                        : t('serverConsole.show')
+                                                "
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="show">{{ t('serverConsole.show') }}</SelectItem>
+                                            <SelectItem value="hide">{{ t('serverConsole.hide') }}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Terminal Settings -->
+                        <div class="space-y-4">
+                            <h4 class="font-medium text-sm">{{ t('serverConsole.terminalSettings') }}</h4>
+                            <div class="space-y-3">
+                                <div class="space-y-2">
+                                    <Label for="autoScroll">{{ t('serverConsole.autoScrollToBottom') }}</Label>
+                                    <Select
+                                        :model-value="customization.terminal.autoScroll ? 'enabled' : 'disabled'"
+                                        @update:model-value="
+                                            (value) => {
+                                                customization.terminal.autoScroll = value === 'enabled';
+                                            }
+                                        "
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue
+                                                :placeholder="
+                                                    customization.terminal.autoScroll
+                                                        ? t('serverConsole.enabled')
+                                                        : t('serverConsole.disabled')
+                                                "
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="enabled">{{ t('serverConsole.enabled') }}</SelectItem>
+                                            <SelectItem value="disabled">{{ t('serverConsole.disabled') }}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div class="space-y-2">
+                                    <Label for="showTimestamps">{{ t('serverConsole.showTimestamps') }}</Label>
+                                    <Select
+                                        :model-value="customization.terminal.showTimestamps ? 'enabled' : 'disabled'"
+                                        @update:model-value="
+                                            (value) => {
+                                                customization.terminal.showTimestamps = value === 'enabled';
+                                            }
+                                        "
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue
+                                                :placeholder="
+                                                    customization.terminal.showTimestamps
+                                                        ? t('serverConsole.enabled')
+                                                        : t('serverConsole.disabled')
+                                                "
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="enabled">{{ t('serverConsole.enabled') }}</SelectItem>
+                                            <SelectItem value="disabled">{{ t('serverConsole.disabled') }}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div class="space-y-2">
+                                    <Label for="filterCommands">{{ t('serverConsole.filterCommandEchoes') }}</Label>
+                                    <Select
+                                        :model-value="customization.terminal.filterCommands ? 'enabled' : 'disabled'"
+                                        @update:model-value="
+                                            (value) => {
+                                                customization.terminal.filterCommands = value === 'enabled';
+                                            }
+                                        "
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue
+                                                :placeholder="
+                                                    customization.terminal.filterCommands
+                                                        ? t('serverConsole.enabled')
+                                                        : t('serverConsole.disabled')
+                                                "
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="enabled">{{ t('serverConsole.enabled') }}</SelectItem>
+                                            <SelectItem value="disabled">{{ t('serverConsole.disabled') }}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div class="space-y-2">
+                                    <Label for="maxLines">{{ t('serverConsole.maxTerminalLines') }}</Label>
+                                    <Select
+                                        :model-value="customization.terminal.maxLines"
+                                        @update:model-value="
+                                            (value) => {
+                                                customization.terminal.maxLines = Number(value);
+                                            }
+                                        "
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue :placeholder="customization.terminal.maxLines.toString()" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem :value="500">{{ t('serverConsole.maxLines500') }}</SelectItem>
+                                            <SelectItem :value="1000">{{ t('serverConsole.maxLines1000') }}</SelectItem>
+                                            <SelectItem :value="2000">{{ t('serverConsole.maxLines2000') }}</SelectItem>
+                                            <SelectItem :value="5000">{{ t('serverConsole.maxLines5000') }}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Performance Chart Settings -->
+                        <div class="space-y-4">
+                            <h4 class="font-medium text-sm">{{ t('serverConsole.performanceCharts') }}</h4>
+                            <div class="space-y-3">
+                                <div class="space-y-2">
+                                    <Label for="showCPU">{{ t('serverConsole.showCPUChart') }}</Label>
+                                    <Select
+                                        :model-value="customization.charts.showCPU ? 'enabled' : 'disabled'"
+                                        @update:model-value="
+                                            (value) => {
+                                                customization.charts.showCPU = value === 'enabled';
+                                            }
+                                        "
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue
+                                                :placeholder="
+                                                    customization.charts.showCPU
+                                                        ? t('serverConsole.enabled')
+                                                        : t('serverConsole.disabled')
+                                                "
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="enabled">{{ t('serverConsole.enabled') }}</SelectItem>
+                                            <SelectItem value="disabled">{{ t('serverConsole.disabled') }}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div class="space-y-2">
+                                    <Label for="showMemory">{{ t('serverConsole.showMemoryChart') }}</Label>
+                                    <Select
+                                        :model-value="customization.charts.showMemory ? 'enabled' : 'disabled'"
+                                        @update:model-value="
+                                            (value) => {
+                                                customization.charts.showMemory = value === 'enabled';
+                                            }
+                                        "
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue
+                                                :placeholder="
+                                                    customization.charts.showMemory
+                                                        ? t('serverConsole.enabled')
+                                                        : t('serverConsole.disabled')
+                                                "
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="enabled">{{ t('serverConsole.enabled') }}</SelectItem>
+                                            <SelectItem value="disabled">{{ t('serverConsole.disabled') }}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div class="space-y-2">
+                                    <Label for="showDisk">{{ t('serverConsole.showDiskChart') }}</Label>
+                                    <Select
+                                        :model-value="customization.charts.showDisk ? 'enabled' : 'disabled'"
+                                        @update:model-value="
+                                            (value) => {
+                                                customization.charts.showDisk = value === 'enabled';
+                                            }
+                                        "
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue
+                                                :placeholder="
+                                                    customization.charts.showDisk
+                                                        ? t('serverConsole.enabled')
+                                                        : t('serverConsole.disabled')
+                                                "
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="enabled">{{ t('serverConsole.enabled') }}</SelectItem>
+                                            <SelectItem value="disabled">{{ t('serverConsole.disabled') }}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div class="space-y-2">
+                                    <Label for="showNetwork">{{ t('serverConsole.showNetworkChart') }}</Label>
+                                    <Select
+                                        :model-value="customization.charts.showNetwork ? 'enabled' : 'disabled'"
+                                        @update:model-value="
+                                            (value) => {
+                                                customization.charts.showNetwork = value === 'enabled';
+                                            }
+                                        "
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue
+                                                :placeholder="
+                                                    customization.charts.showNetwork
+                                                        ? t('serverConsole.enabled')
+                                                        : t('serverConsole.disabled')
+                                                "
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="enabled">{{ t('serverConsole.enabled') }}</SelectItem>
+                                            <SelectItem value="disabled">{{ t('serverConsole.disabled') }}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div class="space-y-2">
+                                    <Label for="dataPoints">{{ t('serverConsole.dataPoints') }}</Label>
+                                    <Select
+                                        :model-value="customization.charts.dataPoints"
+                                        @update:model-value="
+                                            (value) => {
+                                                customization.charts.dataPoints = Number(value);
+                                            }
+                                        "
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue :placeholder="customization.charts.dataPoints.toString()" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem :value="30">{{ t('serverConsole.dataPoints30') }}</SelectItem>
+                                            <SelectItem :value="60">{{ t('serverConsole.dataPoints60') }}</SelectItem>
+                                            <SelectItem :value="120">{{ t('serverConsole.dataPoints120') }}</SelectItem>
+                                            <SelectItem :value="300">{{ t('serverConsole.dataPoints300') }}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Console Filters Section -->
+                    <div class="mt-8 pt-6 border-t">
+                        <h4 class="font-medium text-sm mb-4">{{ t('serverConsole.consoleFilters') }}</h4>
+                        <div class="space-y-4">
+                            <!-- Add New Filter -->
+                            <div class="flex gap-2">
+                                <Input
+                                    v-model="newFilter.pattern"
+                                    :placeholder="t('serverConsole.filterPattern')"
+                                    class="flex-1"
+                                />
+                                <Select
+                                    :model-value="newFilter.type"
+                                    @update:model-value="
+                                        (value) => (newFilter.type = value as 'hide' | 'replace' | 'highlight')
+                                    "
+                                >
+                                    <SelectTrigger class="w-32">
+                                        <SelectValue :placeholder="t('serverConsole.filterType')" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="hide">{{ t('serverConsole.hide') }}</SelectItem>
+                                        <SelectItem value="replace">{{ t('serverConsole.replace') }}</SelectItem>
+                                        <SelectItem value="highlight">{{ t('serverConsole.highlight') }}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Input
+                                    v-if="newFilter.type === 'replace'"
+                                    v-model="newFilter.replacement"
+                                    :placeholder="t('serverConsole.replacementText')"
+                                    class="w-32"
+                                />
+                                <Button size="sm" @click="addFilter">
+                                    <Plus class="h-4 w-4 mr-2" />
+                                    {{ t('serverConsole.addFilter') }}
+                                </Button>
+                            </div>
+
+                            <!-- Active Filters -->
+                            <div v-if="customization.terminal.filters.length > 0" class="space-y-2">
+                                <div
+                                    v-for="(filter, index) in customization.terminal.filters"
+                                    :key="index"
+                                    class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                                >
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <Badge :variant="getFilterBadgeVariant(filter.type)">
+                                                {{ t(`serverConsole.${filter.type}`) }}
+                                            </Badge>
+                                            <span class="text-sm font-mono">{{ filter.pattern }}</span>
+                                        </div>
+                                        <div v-if="filter.type === 'replace'" class="text-xs text-muted-foreground">
+                                            → {{ filter.replacement }}
+                                        </div>
+                                    </div>
+                                    <Button variant="outline" size="sm" @click="removeFilter(index)">
+                                        <Trash2 class="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reset Button -->
+                    <div class="mt-6 pt-4 border-t flex gap-3">
+                        <Button variant="outline" @click="async () => await resetCustomization()">
+                            <RotateCcw class="h-4 w-4 mr-2" />
+                            {{ t('serverConsole.resetToDefaults') }}
+                        </Button>
+                        <Button class="flex-1" @click="async () => await saveAndApplyCustomization()">
+                            <Save class="h-4 w-4 mr-2" />
+                            {{ t('serverConsole.saveAndApply') }}
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
             <!-- Header Section -->
             <ServerHeader
+                v-if="!customization.components.serverHeader"
                 :server="server"
                 :loading="loading"
                 :wings-state="wingsState"
@@ -15,6 +456,7 @@
 
             <!-- Wings Connection Status Banner -->
             <div
+                v-if="!customization.components.wingsStatus"
                 class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border"
                 :class="{
                     'border-green-200 bg-green-50 dark:bg-green-900/20': wingsConnectionInfo.status === 'healthy',
@@ -33,24 +475,37 @@
             </div>
 
             <!-- Server Info Cards -->
-            <ServerInfoCards :server="server" :wings-uptime="wingsUptime" :wings-state="wingsState" />
+            <ServerInfoCards
+                v-if="!customization.components.serverInfo"
+                :server="server"
+                :wings-uptime="wingsUptime"
+                :wings-state="wingsState"
+            />
 
             <!-- Terminal Console -->
             <ServerTerminal
-                :terminal-lines="terminalLines"
+                v-if="!customization.components.terminal"
+                :terminal-lines="filteredTerminalLines"
                 :wings-web-socket="wingsWebSocket"
+                :show-timestamps="customization.terminal.showTimestamps"
                 @clear="clearTerminal"
                 @download-logs="downloadLogs"
                 @send-command="sendCommand"
             />
+
             <!-- Performance Monitoring -->
             <ServerPerformance
+                v-if="!customization.components.performance"
                 :server="server"
-                :cpu-data="cpuData"
-                :memory-data="memoryData"
-                :disk-data="diskData"
-                :network-data="networkData"
+                :cpu-data="filteredCpuData"
+                :memory-data="filteredMemoryData"
+                :disk-data="filteredDiskData"
+                :network-data="filteredNetworkData"
                 :network-stats="networkStats"
+                :show-cpu="customization.charts.showCPU"
+                :show-memory="customization.charts.showMemory"
+                :show-disk="customization.charts.showDisk"
+                :show-network="customization.charts.showNetwork"
             />
         </div>
     </DashboardLayout>
@@ -66,12 +521,27 @@ import ServerHeader from '@/components/server/ServerHeader.vue';
 import ServerInfoCards from '@/components/server/ServerInfoCards.vue';
 import ServerPerformance from '@/components/server/ServerPerformance.vue';
 import ServerTerminal from '@/components/server/ServerTerminal.vue';
+import { Button } from '@/components/ui/button';
+import { Settings, RotateCcw, Save } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import { useI18n } from 'vue-i18n';
 import type { Server, NetworkStats, TerminalLine } from '@/types/server';
 import { useWingsWebSocket, type WingsStats } from '@/composables/useWingsWebSocket';
 import Convert from 'ansi-to-html';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Trash2 } from 'lucide-vue-next';
+
+// Filter interfaces
+interface ConsoleFilter {
+    pattern: string;
+    type: 'hide' | 'replace' | 'highlight';
+    replacement?: string;
+}
 
 const route = useRoute();
 const router = useRouter();
@@ -79,6 +549,39 @@ const sessionStore = useSessionStore();
 const settingsStore = useSettingsStore();
 const { t } = useI18n();
 const toast = useToast();
+
+// Customization system
+const showCustomization = ref(false);
+const customization = ref({
+    components: {
+        serverHeader: false, // false = visible by default
+        wingsStatus: false, // false = visible by default
+        serverInfo: false, // false = visible by default
+        terminal: false, // false = visible by default
+        performance: false, // false = visible by default
+    },
+    terminal: {
+        autoScroll: true, // enabled by default
+        showTimestamps: false, // disabled by default
+        filterCommands: true, // enabled by default
+        maxLines: 100, // 100 by default
+        filters: [] as ConsoleFilter[],
+    },
+    charts: {
+        showCPU: true, // shown by default
+        showMemory: true, // shown by default
+        showDisk: true, // shown by default
+        showNetwork: true, // shown by default
+        dataPoints: 60, // 60 by default (good as is)
+    },
+});
+
+// New filter for adding/editing filters
+const newFilter = ref<ConsoleFilter>({
+    pattern: '',
+    type: 'hide',
+    replacement: '',
+});
 
 // Flag to track if user is navigating away
 const isNavigatingAway = ref(false);
@@ -115,8 +618,8 @@ const memoryData = ref<Array<{ timestamp: number; value: number }>>([]);
 const diskData = ref<Array<{ timestamp: number; value: number }>>([]);
 const networkData = ref<Array<{ timestamp: number; value: number }>>([]);
 
-// Performance data configuration
-const maxDataPoints = 60; // Keep last 60 data points (1 minute at 1s intervals)
+// Performance data configuration - now dynamic based on customization
+const maxDataPoints = computed(() => customization.value.charts.dataPoints);
 
 // Initialize charts with initial data point so they always display
 const initTimestamp = Date.now();
@@ -124,6 +627,82 @@ cpuData.value.push({ timestamp: initTimestamp, value: 0 });
 memoryData.value.push({ timestamp: initTimestamp, value: 0 });
 diskData.value.push({ timestamp: initTimestamp, value: 0 });
 networkData.value.push({ timestamp: initTimestamp, value: 0 });
+
+// Filtered data based on customization
+const filteredCpuData = computed(() => (customization.value.charts.showCPU ? cpuData.value : []));
+const filteredMemoryData = computed(() => (customization.value.charts.showMemory ? memoryData.value : []));
+const filteredDiskData = computed(() => (customization.value.charts.showDisk ? diskData.value : []));
+const filteredNetworkData = computed(() => (customization.value.charts.showNetwork ? networkData.value : []));
+
+// Filtered terminal lines based on customization
+const filteredTerminalLines = computed(() => {
+    let lines = terminalLines.value;
+
+    // Apply max lines limit
+    if (lines.length > customization.value.terminal.maxLines) {
+        lines = lines.slice(-customization.value.terminal.maxLines);
+    }
+
+    // Apply filters
+    if (customization.value.terminal.filters.length > 0) {
+        lines = lines.filter((line) => {
+            const content = line.content;
+
+            // Check if any hide filters match
+            const hideFilters = customization.value.terminal.filters.filter((f) => f.type === 'hide');
+            for (const filter of hideFilters) {
+                try {
+                    const regex = new RegExp(filter.pattern, 'i');
+                    if (regex.test(content)) {
+                        return false; // Hide this line
+                    }
+                } catch {
+                    // Invalid regex, skip this filter
+                    console.warn('Invalid regex pattern:', filter.pattern);
+                }
+            }
+
+            return true; // Show this line
+        });
+
+        // Apply replacements and highlights
+        lines = lines.map((line) => {
+            let processedContent = line.content;
+
+            // Apply replace filters
+            const replaceFilters = customization.value.terminal.filters.filter((f) => f.type === 'replace');
+            for (const filter of replaceFilters) {
+                try {
+                    const regex = new RegExp(filter.pattern, 'gi');
+                    processedContent = processedContent.replace(regex, filter.replacement || '');
+                } catch {
+                    console.warn('Invalid regex pattern:', filter.pattern);
+                }
+            }
+
+            // Apply highlight filters (wrap in span with highlight class)
+            const highlightFilters = customization.value.terminal.filters.filter((f) => f.type === 'highlight');
+            for (const filter of highlightFilters) {
+                try {
+                    const regex = new RegExp(filter.pattern, 'gi');
+                    processedContent = processedContent.replace(
+                        regex,
+                        '<span class="bg-yellow-200 dark:bg-yellow-800 px-1 rounded">$&</span>',
+                    );
+                } catch {
+                    console.warn('Invalid regex pattern:', filter.pattern);
+                }
+            }
+
+            return {
+                ...line,
+                content: processedContent,
+            };
+        });
+    }
+
+    return lines;
+});
 
 // ANSI to HTML converter
 const ansiConverter = new Convert({
@@ -173,9 +752,117 @@ const wingsConnectionInfo = computed(() => {
     }
 });
 
+// Watch for customization changes to debug
+watch(
+    customization,
+    (newVal) => {
+        console.log('Customization changed:', newVal);
+    },
+    { deep: true },
+);
+
+// Customization functions
+async function saveCustomization(): Promise<void> {
+    try {
+        const customizationData = {
+            components: customization.value.components,
+            terminal: customization.value.terminal,
+            charts: customization.value.charts,
+        };
+
+        // Save to localStorage for immediate use
+        localStorage.setItem('mythicalpanel-console-customization', JSON.stringify(customizationData));
+
+        console.log('Console customization saved:', customizationData);
+        console.log('Filters saved:', customization.value.terminal.filters);
+    } catch (error) {
+        console.error('Error saving console customization:', error);
+    }
+}
+
+async function loadCustomization(): Promise<void> {
+    try {
+        // Fallback to localStorage for backward compatibility
+        const localSaved = localStorage.getItem('mythicalpanel-console-customization');
+        if (localSaved) {
+            const parsed = JSON.parse(localSaved);
+            console.log('Loading from localStorage (fallback):', parsed);
+
+            // Type guard to ensure parsed data has the expected structure
+            if (
+                parsed &&
+                typeof parsed === 'object' &&
+                'components' in parsed &&
+                'terminal' in parsed &&
+                'charts' in parsed
+            ) {
+                const typedParsed = parsed as {
+                    components: Record<string, boolean>;
+                    terminal: Record<string, unknown>;
+                    charts: Record<string, unknown>;
+                };
+
+                customization.value = {
+                    components: { ...customization.value.components, ...typedParsed.components },
+                    terminal: {
+                        ...customization.value.terminal,
+                        ...typedParsed.terminal,
+                        filters: (typedParsed.terminal?.filters as ConsoleFilter[]) || [],
+                    },
+                    charts: { ...customization.value.charts, ...typedParsed.charts },
+                };
+            } else {
+                console.warn('Invalid customization data structure in localStorage, using defaults');
+            }
+        } else {
+            console.log('No saved customization found, using defaults');
+        }
+    } catch (error) {
+        console.error('Error loading console customization:', error);
+    }
+}
+
+async function resetCustomization(): Promise<void> {
+    customization.value = {
+        components: {
+            serverHeader: false, // false = visible by default
+            wingsStatus: false, // false = visible by default
+            serverInfo: false, // false = visible by default
+            terminal: false, // false = visible by default
+            performance: false, // false = visible by default
+        },
+        terminal: {
+            autoScroll: true, // enabled by default
+            showTimestamps: false, // disabled by default
+            filterCommands: true, // enabled by default
+            maxLines: 100, // 100 by default
+            filters: [],
+        },
+        charts: {
+            showCPU: true, // shown by default
+            showMemory: true, // shown by default
+            showDisk: true, // shown by default
+            showNetwork: true, // shown by default
+            dataPoints: 60, // 60 by default (good as is)
+        },
+    };
+    await saveCustomization();
+    toast.success('Console layout reset to defaults');
+}
+
+async function saveAndApplyCustomization(): Promise<void> {
+    await saveCustomization();
+    toast.success(t('serverConsole.customizationSaved'));
+    // No immediate re-render needed, customization is reactive
+}
+
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect(router);
     await settingsStore.fetchSettings(); // Load settings for app name
+
+    // Load customization settings
+    await loadCustomization();
+
     await fetchServer();
 
     // Set up navigation detection to prevent false "lost connection" messages
@@ -328,15 +1015,17 @@ function setupWebSocketHandlers(): void {
 
                 // Check if this output is likely a command echo
                 let isCommandEcho = false;
-                for (const recentCommand of recentCommands) {
-                    // Check exact match or if output starts with the command (handling server prompts)
-                    if (
-                        trimmedOutput === recentCommand ||
-                        trimmedOutput.startsWith(recentCommand + ' ') ||
-                        trimmedOutput.startsWith('> ' + recentCommand)
-                    ) {
-                        isCommandEcho = true;
-                        break;
+                if (customization.value.terminal.filterCommands) {
+                    for (const recentCommand of recentCommands) {
+                        // Check exact match or if output starts with the command (handling server prompts)
+                        if (
+                            trimmedOutput === recentCommand ||
+                            trimmedOutput.startsWith(recentCommand + ' ') ||
+                            trimmedOutput.startsWith('> ' + recentCommand)
+                        ) {
+                            isCommandEcho = true;
+                            break;
+                        }
                     }
                 }
 
@@ -468,8 +1157,8 @@ function updatePerformanceCharts(stats: WingsStats): void {
 function addDataPoint(dataArray: Array<{ timestamp: number; value: number }>, timestamp: number, value: number): void {
     dataArray.push({ timestamp, value });
 
-    // Keep only last N data points
-    if (dataArray.length > maxDataPoints) {
+    // Keep only last N data points based on customization
+    if (dataArray.length > maxDataPoints.value) {
         dataArray.shift();
     }
 }
@@ -559,18 +1248,20 @@ function addTerminalLine(content: string, type: 'output' | 'error' | 'warning' |
     };
     terminalLines.value.push(newLine);
 
-    // Keep only last 1000 lines to prevent memory issues
-    if (terminalLines.value.length > 1000) {
+    // Keep only last N lines based on customization
+    if (terminalLines.value.length > customization.value.terminal.maxLines) {
         terminalLines.value.shift();
     }
 
-    // Auto-scroll to bottom
-    nextTick(() => {
-        const container = document.querySelector('.terminal-container');
-        if (container) {
-            container.scrollTop = container.scrollHeight;
-        }
-    });
+    // Auto-scroll to bottom if enabled
+    if (customization.value.terminal.autoScroll) {
+        nextTick(() => {
+            const container = document.querySelector('.terminal-container');
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        });
+    }
 }
 
 async function startServer(): Promise<void> {
@@ -828,5 +1519,41 @@ function requestServerLogs(): void {
             console.warn('Failed to request server logs:', error);
         }
     }
+}
+
+// Filter functions
+function getFilterBadgeVariant(
+    type: 'hide' | 'replace' | 'highlight',
+): 'secondary' | 'destructive' | 'default' | 'outline' | null | undefined {
+    switch (type) {
+        case 'hide':
+            return 'secondary';
+        case 'replace':
+            return 'destructive';
+        case 'highlight':
+            return 'default';
+        default:
+            return 'default';
+    }
+}
+
+function addFilter(): void {
+    if (newFilter.value.pattern && newFilter.value.type) {
+        const filter: ConsoleFilter = {
+            pattern: newFilter.value.pattern,
+            type: newFilter.value.type,
+            replacement: newFilter.value.replacement || '',
+        };
+        customization.value.terminal.filters.push(filter);
+        newFilter.value = { pattern: '', type: 'hide', replacement: '' };
+        toast.success(t('serverConsole.filterAdded'));
+    } else {
+        toast.warning(t('serverConsole.filterMissingFields'));
+    }
+}
+
+function removeFilter(index: number): void {
+    customization.value.terminal.filters.splice(index, 1);
+    toast.success(t('serverConsole.filterRemoved'));
 }
 </script>
