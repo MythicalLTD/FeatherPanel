@@ -27,6 +27,11 @@ const authRoutes: RouteRecordRaw[] = [
                 name: 'VerifyTwoFactor',
                 component: () => import('@/pages/auth/VerifyTwoFactor.vue'),
             },
+            {
+                path: 'logout',
+                name: 'Logout',
+                component: () => import('@/pages/auth/Logout.vue'),
+            },
         ],
     },
 ];

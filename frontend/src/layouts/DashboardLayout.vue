@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import BackgroundPicker from '@/components/BackgroundPicker.vue';
 
 export interface BreadcrumbEntry {
     text: string;
@@ -55,6 +56,11 @@ defineProps<{ breadcrumbs?: BreadcrumbEntry[] }>();
                             </template>
                         </BreadcrumbList>
                     </Breadcrumb>
+                </div>
+
+                <!-- Background Picker - Right side of header -->
+                <div class="ml-auto mr-4">
+                    <BackgroundPicker />
                 </div>
             </header>
             <div class="flex flex-1 flex-col gap-4 p-4 pt-0">

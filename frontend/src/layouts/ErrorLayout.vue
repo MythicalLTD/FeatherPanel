@@ -1,5 +1,10 @@
 <template>
     <div class="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
+        <!-- Background Picker Button - Top Left -->
+        <div class="absolute top-4 left-4">
+            <BackgroundPicker />
+        </div>
+
         <div class="w-full max-w-sm">
             <div class="flex flex-col items-center gap-4">
                 <FileWarningIcon class="size-10 text-destructive transition-all duration-300 animate-pulse" />
@@ -21,9 +26,11 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router';
 import { Button } from '@/components/ui/button';
 import { useI18n } from 'vue-i18n';
 import { FileWarningIcon } from 'lucide-vue-next';
+import BackgroundPicker from '@/components/BackgroundPicker.vue';
 
 const props = defineProps({
     errorCode: {
@@ -43,9 +50,10 @@ const props = defineProps({
 document.title = `${props.errorCode} - ${props.title}`;
 
 const { t: $t } = useI18n();
+const router = useRouter();
 
 function goHome() {
-    location.href = '/';
+    router.push('/');
 }
 </script>
 

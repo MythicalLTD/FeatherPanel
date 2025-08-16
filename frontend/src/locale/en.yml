@@ -22,6 +22,12 @@ auth:
     firstNamePlaceholder: 'First Name'
     lastName: 'Last Name'
     lastNamePlaceholder: 'Last Name'
+    # Logout translations
+    loggingOut: 'Logging Out'
+    logoutMessage: 'Please wait while we securely log you out and clean up your session data.'
+    cleaningUp: 'Cleaning up...'
+    redirectDelay: 'Taking longer than expected?'
+    continueToLogin: 'Continue to Login'
 
 account:
     title: 'Account Settings'
@@ -242,6 +248,12 @@ serverConsole:
     filterAdded: 'Filter added successfully'
     filterRemoved: 'Filter removed successfully'
     filterMissingFields: 'Please fill in all required fields'
+    # Console Window/Popup
+    openInNewWindow: 'Open in New Window'
+    openPopup: 'Open Popup'
+    consoleOpenedInNewWindow: 'Console opened in new window'
+    consoleOpenedInPopup: 'Console opened in popup'
+    popupBlocked: 'Popup blocked by browser - please allow popups for this site'
 
 # Server Logs
 serverLogs:
@@ -324,6 +336,19 @@ user:
     billing: 'Billing'
     notifications: 'Notifications'
     logOut: 'Log out'
+    switchToLight: 'Switch to Light Theme'
+    switchToDark: 'Switch to Dark Theme'
+
+# Background Customization
+background:
+    customize: 'Customize Background'
+    presets: 'Preset Backgrounds'
+    custom: 'Custom Background'
+    uploadImage: 'Upload Image'
+    settings: 'Background Settings'
+    opacity: 'Background Opacity'
+    blur: 'Background Blur'
+    reset: 'Reset to Default'
 # Debug Panel
 debug:
     title: 'Debug Panel'

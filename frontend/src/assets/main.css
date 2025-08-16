@@ -18,6 +18,12 @@
     --accent-primary: rgba(99, 102, 241, 1); /* indigo-500 */
     --accent-primary-hover: rgba(79, 70, 229, 1); /* indigo-600 */
     --accent-primary-subtle: rgba(99, 102, 241, 0.2); /* indigo-500 at 20% */
+
+    /* Background customization variables */
+    --background-image: none;
+    --background-opacity: 0.2;
+    --background-blur: 0px;
+
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -194,4 +200,47 @@
     body {
         @apply bg-background text-foreground;
     }
+}
+
+/* Custom Background Styles */
+body.has-custom-background {
+    position: relative;
+}
+
+body.has-custom-background::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: var(--background-image);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    opacity: var(--background-opacity);
+    filter: blur(var(--background-blur));
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Ensure content is readable over backgrounds */
+body.has-custom-background .bg-background {
+    background-color: rgba(var(--background), 0.8);
+    backdrop-filter: blur(8px);
+}
+
+body.has-custom-background .bg-card {
+    background-color: rgba(var(--card), 0.9);
+    backdrop-filter: blur(12px);
+}
+
+/* Smooth transitions for background changes */
+body {
+    transition: background-color 0.3s ease;
+}
+
+body.has-custom-background::before {
+    transition: all 0.3s ease;
 }

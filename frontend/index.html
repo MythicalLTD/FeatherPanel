@@ -63,7 +63,7 @@
                 scrollbar-color: #374151 #0a0a15;
             }
 
-            /* Preloader Styles */
+            /* Preloader Styles - Dark Theme (Default) */
             .preloader {
                 position: fixed;
                 top: 0;
@@ -76,7 +76,12 @@
                 justify-content: center;
                 align-items: center;
                 z-index: 9999;
-                transition: opacity 0.5s ease-out;
+                transition: all 0.5s ease-out;
+            }
+
+            /* Preloader Light Theme */
+            .preloader.light {
+                background: #ffffff;
             }
 
             .preloader.fade-out {
@@ -95,6 +100,13 @@
                 align-items: center;
                 justify-content: center;
                 background: #0a0a15;
+                transition: all 0.3s ease;
+            }
+
+            /* Light theme logo */
+            .preloader.light .preloader-logo {
+                border-color: #d1d5db;
+                background: #f9fafb;
             }
 
             .preloader-logo::before {
@@ -108,6 +120,12 @@
                 border-top: 2px solid #ffffff;
                 border-radius: 50%;
                 animation: logoRotate 1.2s linear infinite;
+                transition: all 0.3s ease;
+            }
+
+            /* Light theme logo border */
+            .preloader.light .preloader-logo::before {
+                border-top-color: #1f2937;
             }
 
             .preloader-logo::after {
@@ -115,6 +133,12 @@
                 font-size: 1.5rem;
                 color: #ffffff;
                 animation: logoPulse 2s ease-in-out infinite;
+                transition: all 0.3s ease;
+            }
+
+            /* Light theme logo icon */
+            .preloader.light .preloader-logo::after {
+                color: #1f2937;
             }
 
             .preloader-tip {
@@ -126,6 +150,12 @@
                 max-width: 300px;
                 line-height: 1.4;
                 padding: 0 1rem;
+                transition: all 0.3s ease;
+            }
+
+            /* Light theme tip text */
+            .preloader.light .preloader-tip {
+                color: #6b7280;
             }
 
             .loading-bar {
@@ -135,6 +165,12 @@
                 border-radius: 1px;
                 overflow: hidden;
                 position: relative;
+                transition: all 0.3s ease;
+            }
+
+            /* Light theme loading bar background */
+            .preloader.light .loading-bar {
+                background: #e5e7eb;
             }
 
             .loading-progress {
@@ -144,6 +180,12 @@
                 width: 0%;
                 animation: loadingProgress 2s ease-in-out infinite;
                 position: relative;
+                transition: all 0.3s ease;
+            }
+
+            /* Light theme loading bar progress */
+            .preloader.light .loading-progress {
+                background: #1f2937;
             }
 
             .loading-progress::after {
@@ -155,6 +197,12 @@
                 height: 100%;
                 background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
                 animation: loadingShine 1.5s ease-in-out infinite;
+                transition: all 0.3s ease;
+            }
+
+            /* Light theme loading bar shine */
+            .preloader.light .loading-progress::after {
+                background: linear-gradient(90deg, transparent, rgba(31, 41, 55, 0.4), transparent);
             }
 
             .server-status {
@@ -169,6 +217,12 @@
                 border-radius: 50%;
                 background: #374151;
                 animation: statusPulse 1.5s ease-in-out infinite;
+                transition: all 0.3s ease;
+            }
+
+            /* Light theme status indicators */
+            .preloader.light .status-indicator {
+                background: #9ca3af;
             }
 
             /* Animations */
@@ -260,6 +314,77 @@
 
         <!-- Preloader Script -->
         <script>
+            // Theme management for preloader - Initialize immediately
+            let currentTheme = 'dark';
+
+            // Function to update preloader theme
+            function updatePreloaderTheme(theme) {
+                const preloader = document.getElementById('preloader');
+                if (preloader) {
+                    if (theme === 'light') {
+                        preloader.classList.add('light');
+                        preloader.classList.remove('dark');
+                    } else {
+                        preloader.classList.remove('light');
+                        preloader.classList.add('dark');
+                    }
+                }
+            }
+
+            // Function to get current theme
+            function getCurrentTheme() {
+                const savedTheme = localStorage.getItem('theme');
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                return savedTheme || (prefersDark ? 'dark' : 'light');
+            }
+
+            // Initialize preloader theme immediately
+            function initializePreloaderTheme() {
+                currentTheme = getCurrentTheme();
+                updatePreloaderTheme(currentTheme);
+            }
+
+            // Apply theme immediately when script runs
+            (function () {
+                // Get theme before DOM is ready
+                const savedTheme = localStorage.getItem('theme');
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+
+                // Apply theme to body immediately
+                if (theme === 'light') {
+                    document.body.classList.add('light');
+                    document.body.classList.remove('dark');
+                } else {
+                    document.body.classList.add('dark');
+                    document.body.classList.remove('light');
+                }
+
+                // Store current theme
+                currentTheme = theme;
+
+                // Apply theme to preloader if it exists
+                const preloader = document.getElementById('preloader');
+                if (preloader) {
+                    updatePreloaderTheme(theme);
+                }
+            })();
+
+            // Listen for theme changes
+            window.addEventListener('theme-changed', (event) => {
+                currentTheme = event.detail.theme;
+                updatePreloaderTheme(currentTheme);
+            });
+
+            // Listen for system theme changes
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (!localStorage.getItem('theme')) {
+                    // Only auto-update if no manual preference
+                    currentTheme = e.matches ? 'dark' : 'light';
+                    updatePreloaderTheme(currentTheme);
+                }
+            });
+
             // Realistic game engine loading messages
             const loadingMessages = [
                 'Preloading assets...',
@@ -345,28 +470,11 @@
                 }
             }
 
-            // Track page load progress
-            window.addEventListener('load', () => {
-                pageLoadTime = Date.now();
-                isPageFullyLoaded = true;
-
-                // Wait additional 500ms after page load to ensure everything is ready
-                setTimeout(() => {
-                    if (isPageFullyLoaded) {
-                        // Switch to showing tips for a bit before hiding
-                        clearInterval(messageInterval);
-                        startShowingTips();
-
-                        // Hide after showing a few tips
-                        setTimeout(() => {
-                            hidePreloader();
-                        }, 2000);
-                    }
-                }, 500);
-            });
-
-            // Alternative: Hide preloader when Vue app is mounted
+            // Initialize theme when DOM is ready (for any remaining elements)
             document.addEventListener('DOMContentLoaded', () => {
+                // Ensure theme is applied to any newly created elements
+                updatePreloaderTheme(currentTheme);
+
                 // Start showing loading messages immediately
                 showLoadingMessage();
                 messageInterval = setInterval(() => {
@@ -391,6 +499,26 @@
                         }
                     }
                 }, 100);
+            });
+
+            // Track page load progress
+            window.addEventListener('load', () => {
+                pageLoadTime = Date.now();
+                isPageFullyLoaded = true;
+
+                // Wait additional 500ms after page load to ensure everything is ready
+                setTimeout(() => {
+                    if (isPageFullyLoaded) {
+                        // Switch to showing tips for a bit before hiding
+                        clearInterval(messageInterval);
+                        startShowingTips();
+
+                        // Hide after showing a few tips
+                        setTimeout(() => {
+                            hidePreloader();
+                        }, 2000);
+                    }
+                }, 500);
             });
         </script>
 

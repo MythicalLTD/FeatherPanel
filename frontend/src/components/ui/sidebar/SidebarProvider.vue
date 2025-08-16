@@ -3,14 +3,7 @@ import { useEventListener, useMediaQuery, useVModel } from '@vueuse/core';
 import { TooltipProvider } from 'reka-ui';
 import { computed, type HTMLAttributes, type Ref, ref } from 'vue';
 import { cn } from '@/lib/utils';
-import {
-    provideSidebarContext,
-    SIDEBAR_COOKIE_MAX_AGE,
-    SIDEBAR_COOKIE_NAME,
-    SIDEBAR_KEYBOARD_SHORTCUT,
-    SIDEBAR_WIDTH,
-    SIDEBAR_WIDTH_ICON,
-} from './utils';
+import { provideSidebarContext, SIDEBAR_KEYBOARD_SHORTCUT, SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON } from './utils';
 
 const props = withDefaults(
     defineProps<{
@@ -31,16 +24,30 @@ const emits = defineEmits<{
 const isMobile = useMediaQuery('(max-width: 768px)');
 const openMobile = ref(false);
 
+// Load saved sidebar state from localStorage
+const getSavedSidebarState = (): boolean => {
+    try {
+        const saved = localStorage.getItem('mythicalpanel-sidebar-expanded');
+        return saved ? JSON.parse(saved) : (props.defaultOpen ?? true);
+    } catch {
+        return props.defaultOpen ?? true;
+    }
+};
+
 const open = useVModel(props, 'open', emits, {
-    defaultValue: props.defaultOpen ?? false,
+    defaultValue: getSavedSidebarState(),
     passive: (props.open === undefined) as false,
 }) as Ref<boolean>;
 
 function setOpen(value: boolean) {
     open.value = value; // emits('update:open', value)
 
-    // This sets the cookie to keep the sidebar state.
-    document.cookie = `${SIDEBAR_COOKIE_NAME}=${open.value}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+    // Save sidebar state to localStorage
+    try {
+        localStorage.setItem('mythicalpanel-sidebar-expanded', JSON.stringify(value));
+    } catch (error) {
+        console.warn('Failed to save sidebar state to localStorage:', error);
+    }
 }
 
 function setOpenMobile(value: boolean) {

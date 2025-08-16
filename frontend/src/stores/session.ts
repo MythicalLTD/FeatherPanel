@@ -68,11 +68,32 @@ export const useSessionStore = defineStore('session', {
         },
         async logout() {
             try {
+                // Call backend logout endpoint
                 await axios.post('/api/user/auth/logout');
             } catch (error) {
                 console.error('Error during logout:', error);
+                // Continue with cleanup even if backend call fails
             } finally {
+                // Always clear local session data
                 this.clearSession();
+
+                // Clear any axios default headers
+                delete axios.defaults.headers.common['Authorization'];
+
+                // Use the storage utility for comprehensive cleanup
+                try {
+                    const { clearAuthStorage } = await import('@/lib/storage');
+                    clearAuthStorage();
+                } catch (importError) {
+                    console.error('Error importing storage utilities:', importError);
+                    // Fallback to manual cleanup
+                    if (localStorage.getItem('auth_token')) {
+                        localStorage.removeItem('auth_token');
+                    }
+                    if (sessionStorage.getItem('auth_token')) {
+                        sessionStorage.removeItem('auth_token');
+                    }
+                }
             }
         },
         async getSession() {

@@ -27,6 +27,16 @@ const clientRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/dashboard/server/ServerInstallLogs.vue'),
     },
     {
+        path: '/server/:uuidShort/console-window',
+        name: 'ServerConsoleWindow',
+        component: () => import('@/pages/dashboard/server/ConsoleWindow.vue'),
+    },
+    {
+        path: '/server/:uuidShort/console-popup',
+        name: 'ServerConsolePopup',
+        component: () => import('@/pages/dashboard/server/ConsolePopup.vue'),
+    },
+    {
         path: '/',
         redirect: '/dashboard',
     },

@@ -20,7 +20,14 @@ import {
 import NavMain from '@/components/nav/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarRail,
+    useSidebar,
+} from '@/components/ui/sidebar';
 import { useSessionStore } from '@/stores/session';
 import { useRouter, useRoute } from 'vue-router';
 import { computed, onMounted } from 'vue';
@@ -42,6 +49,7 @@ const props = withDefaults(defineProps<SidebarProps>(), {
     collapsible: 'icon',
 });
 
+const { state } = useSidebar();
 const route = useRoute();
 
 // This is sample data.
@@ -294,16 +302,22 @@ const user = computed(() => {
 
 <template>
     <Sidebar v-bind="props">
-        <SidebarHeader>
-            <div class="flex items-center gap-4 px-4 py-3">
-                <div class="flex items-center gap-2 min-w-0 cursor-pointer" @click="router.push('/')">
+        <SidebarHeader class="flex-shrink-0">
+            <div class="flex items-center justify-center px-4 py-3">
+                <div class="flex items-center gap-2 min-w-0 cursor-pointer flex-shrink-0" @click="router.push('/')">
                     <img
                         v-if="settingsStore.appLogo"
                         :src="String(settingsStore.appLogo || '')"
                         :alt="String(settingsStore.appName || '')"
                         class="h-8 w-8 object-contain flex-shrink-0"
                     />
-                    <span v-if="!$attrs.collapsed" class="font-medium text-lg truncate">
+                    <div
+                        v-else
+                        class="h-8 w-8 bg-primary rounded flex items-center justify-center text-white font-bold text-lg flex-shrink-0"
+                    >
+                        {{ String(settingsStore.appName || '').charAt(0) || 'M' }}
+                    </div>
+                    <span v-if="state === 'expanded'" class="font-medium text-lg truncate ml-2">
                         {{ settingsStore.appName || '' }}
                     </span>
                 </div>

@@ -483,15 +483,31 @@
             />
 
             <!-- Terminal Console -->
-            <ServerTerminal
-                v-if="!customization.components.terminal"
-                :terminal-lines="filteredTerminalLines"
-                :wings-web-socket="wingsWebSocket"
-                :show-timestamps="customization.terminal.showTimestamps"
-                @clear="clearTerminal"
-                @download-logs="downloadLogs"
-                @send-command="sendCommand"
-            />
+            <div v-if="!customization.components.terminal" class="space-y-4">
+                <!-- Terminal Controls -->
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold">{{ t('serverConsole.terminalConsole') }}</h3>
+                    <div class="flex items-center gap-2">
+                        <Button variant="outline" size="sm" @click="openConsoleInNewWindow">
+                            <ExternalLink class="h-4 w-4 mr-2" />
+                            {{ t('serverConsole.openInNewWindow') }}
+                        </Button>
+                        <Button variant="outline" size="sm" @click="openConsolePopup">
+                            <Maximize2 class="h-4 w-4 mr-2" />
+                            {{ t('serverConsole.openPopup') }}
+                        </Button>
+                    </div>
+                </div>
+
+                <ServerTerminal
+                    :terminal-lines="filteredTerminalLines"
+                    :wings-web-socket="wingsWebSocket"
+                    :show-timestamps="customization.terminal.showTimestamps"
+                    @clear="clearTerminal"
+                    @download-logs="downloadLogs"
+                    @send-command="sendCommand"
+                />
+            </div>
 
             <!-- Performance Monitoring -->
             <ServerPerformance
@@ -522,7 +538,7 @@ import ServerInfoCards from '@/components/server/ServerInfoCards.vue';
 import ServerPerformance from '@/components/server/ServerPerformance.vue';
 import ServerTerminal from '@/components/server/ServerTerminal.vue';
 import { Button } from '@/components/ui/button';
-import { Settings, RotateCcw, Save } from 'lucide-vue-next';
+import { Settings, RotateCcw, Save, ExternalLink, Maximize2 } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import { useI18n } from 'vue-i18n';
@@ -1555,5 +1571,36 @@ function addFilter(): void {
 function removeFilter(index: number): void {
     customization.value.terminal.filters.splice(index, 1);
     toast.success(t('serverConsole.filterRemoved'));
+}
+
+// Console window/popup functions
+function openConsoleInNewWindow(): void {
+    const consoleWindow = window.open(
+        `/server/${route.params.uuidShort}/console-window`,
+        'server-console',
+        'width=1000,height=800,scrollbars=yes,resizable=yes,menubar=no,toolbar=no,location=no,status=no',
+    );
+
+    if (consoleWindow) {
+        consoleWindow.focus();
+        toast.success(t('serverConsole.consoleOpenedInNewWindow'));
+    } else {
+        toast.error(t('serverConsole.popupBlocked'));
+    }
+}
+
+function openConsolePopup(): void {
+    const popupWindow = window.open(
+        `/server/${route.params.uuidShort}/console-popup`,
+        'console-popup',
+        'width=800,height=600,scrollbars=yes,resizable=yes,menubar=no,toolbar=no,location=no,status=no',
+    );
+
+    if (popupWindow) {
+        popupWindow.focus();
+        toast.success(t('serverConsole.consoleOpenedInPopup'));
+    } else {
+        toast.error(t('serverConsole.popupBlocked'));
+    }
 }
 </script>
