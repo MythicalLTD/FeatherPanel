@@ -12,7 +12,7 @@
         <!-- Background Picker Dropdown -->
         <div
             v-if="isOpen"
-            class="absolute right-0 top-12 w-80 bg-background border border-border rounded-lg shadow-lg z-50 p-4 space-y-4"
+            class="fixed right-4 top-12 w-80 bg-white dark:bg-gray-900 border border-border rounded-lg shadow-2xl z-[999999] p-4 space-y-4"
         >
             <div class="flex items-center justify-between">
                 <h3 class="font-semibold text-foreground">{{ $t('background.customize') }}</h3>
