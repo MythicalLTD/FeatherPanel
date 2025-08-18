@@ -1,9 +1,9 @@
 CREATE TABLE
-	IF NOT EXISTS `mythicalpanel_permissions` (
+	IF NOT EXISTS `featherpanel_permissions` (
 		`id` INT AUTO_INCREMENT PRIMARY KEY,
 		`role_id` INT NOT NULL,
 		`permission` VARCHAR(255) NOT NULL,
 		`created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		`updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-		FOREIGN KEY (`role_id`) REFERENCES `mythicalpanel_roles` (`id`) ON DELETE CASCADE
+		FOREIGN KEY (`role_id`) REFERENCES `featherpanel_roles` (`id`) ON DELETE CASCADE
 	) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;

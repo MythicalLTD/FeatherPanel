@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -161,12 +161,17 @@ class SessionController
             }
         }
 
-        return ApiResponse::success(['user_info' => $user, 'permissions' => $permissions, 'activity' => [
-            'count' => count($activity),
-            'data' => $activity,
-        ], 'mails' => [
-            'count' => count($user['mails']),
-            'data' => $user['mails'],
-        ]], 'Session retrieved', 200);
+        return ApiResponse::success([
+            'user_info' => $user,
+            'permissions' => $permissions,
+            'activity' => [
+                'count' => count($activity),
+                'data' => $activity,
+            ],
+            'mails' => [
+                'count' => count($user['mails']),
+                'data' => $user['mails'],
+            ],
+        ], 'Session retrieved', 200);
     }
 }

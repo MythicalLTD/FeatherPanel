@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -100,7 +100,8 @@ class LocationsController
         if (isset($data['ip_address']) && !is_string($data['ip_address'])) {
             return ApiResponse::error('IP Address must be a string', 'INVALID_DATA_TYPE');
         }
-        if (isset($data['ip_address'])
+        if (
+            isset($data['ip_address'])
             && $data['ip_address'] !== ''
             && !filter_var($data['ip_address'], FILTER_VALIDATE_IP)
         ) {

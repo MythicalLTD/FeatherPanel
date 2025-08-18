@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -43,7 +43,7 @@ class SpellsControllerTest extends TestCase
                 'email' => $this->adminEmail,
                 'password' => password_hash('TestPassword123', PASSWORD_BCRYPT),
                 'role_id' => 4,
-                'avatar' => 'https://github.com/mythicalltd.png',
+                'avatar' => 'http://cdn.mythical.systems/featherpanel/logo.png',
                 'remember_token' => bin2hex(random_bytes(16)),
             ]);
         }
@@ -52,7 +52,7 @@ class SpellsControllerTest extends TestCase
         $realmId = Realm::create([
             'name' => 'Test Realm for Spells',
             'description' => 'Test realm for spell unit tests',
-            'logo' => 'https://github.com/mythicalltd.png',
+            'logo' => 'http://cdn.mythical.systems/featherpanel/logo.png',
             'author' => $this->adminEmail,
         ]);
         $this->testRealmId = $realmId;

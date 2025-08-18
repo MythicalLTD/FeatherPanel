@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -403,9 +403,9 @@ class SpellsController
             'force_outgoing_ip' => false,
         ];
 
-        // Preserve original UUID if it exists in MythicalPanel metadata
-        if (isset($jsonData['_mythicalpanel']['spell_metadata']['uuid'])) {
-            $originalUuid = $jsonData['_mythicalpanel']['spell_metadata']['uuid'];
+        // Preserve original UUID if it exists in FeatherPanel metadata
+        if (isset($jsonData['_featherpanel']['spell_metadata']['uuid'])) {
+            $originalUuid = $jsonData['_featherpanel']['spell_metadata']['uuid'];
             // Check if UUID already exists
             $existingSpell = Spell::getSpellByUuid($originalUuid);
             if (!$existingSpell) {
@@ -415,10 +415,10 @@ class SpellsController
 
         // Preserve original metadata if available
         $importMetadata = null;
-        if (isset($jsonData['_mythicalpanel'])) {
+        if (isset($jsonData['_featherpanel'])) {
             $importMetadata = [
-                'original_export_info' => $jsonData['_mythicalpanel']['export_info'] ?? null,
-                'original_spell_metadata' => $jsonData['_mythicalpanel']['spell_metadata'] ?? null,
+                'original_export_info' => $jsonData['_featherpanel']['export_info'] ?? null,
+                'original_spell_metadata' => $jsonData['_featherpanel']['spell_metadata'] ?? null,
                 'import_info' => [
                     'imported_by' => $admin['username'] ?? 'Unknown',
                     'imported_at' => date('Y-m-d H:i:s'),
@@ -512,8 +512,8 @@ class SpellsController
                 ],
             ],
             'variables' => [],
-            // MythicalPanel-specific metadata (won't affect import compatibility)
-            '_mythicalpanel' => [
+            // FeatherPanel-specific metadata (won't affect import compatibility)
+            '_featherpanel' => [
                 'export_info' => [
                     'exported_by' => $admin['username'] ?? 'Unknown',
                     'exported_at' => date('Y-m-d H:i:s'),

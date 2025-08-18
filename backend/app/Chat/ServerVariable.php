@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -16,14 +16,14 @@ namespace App\Chat;
 use App\App;
 
 /**
- * ServerVariable service/model for CRUD operations on the mythicalpanel_server_variables table.
+ * ServerVariable service/model for CRUD operations on the featherpanel_server_variables table.
  */
 class ServerVariable
 {
     /**
      * @var string The server_variables table name
      */
-    private static string $table = 'mythicalpanel_server_variables';
+    private static string $table = 'featherpanel_server_variables';
 
     /**
      * Whitelist of allowed field names for SQL queries to prevent injection.
@@ -157,7 +157,7 @@ class ServerVariable
         $pdo = Database::getPdoConnection();
         $sql = 'SELECT sv.*, spv.name, spv.description, spv.env_variable, spv.default_value, spv.user_viewable, spv.user_editable, spv.rules, spv.field_type 
                 FROM ' . self::$table . ' sv 
-                LEFT JOIN mythicalpanel_spell_variables spv ON sv.variable_id = spv.id 
+                LEFT JOIN featherpanel_spell_variables spv ON sv.variable_id = spv.id 
                 WHERE sv.server_id = :server_id 
                 ORDER BY sv.id ASC';
         $stmt = $pdo->prepare($sql);

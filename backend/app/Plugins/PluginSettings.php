@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -44,7 +44,7 @@ class PluginSettings extends PluginDB
             // Check if setting already exists
             $stmt = $conn->prepare('
 					SELECT id 	
-					FROM mythicalpanel_addons_settings 
+					FROM featherpanel_addons_settings 
 					WHERE identifier = :identifier 
 					AND `key` = :key
 					LIMIT 1
@@ -60,7 +60,7 @@ class PluginSettings extends PluginDB
 
             if ($exists) {
                 $stmt = $conn->prepare("
-						UPDATE mythicalpanel_addons_settings 
+						UPDATE featherpanel_addons_settings 
 						SET value = :value, 
 							date = CURRENT_TIMESTAMP,
 							deleted = 'false'
@@ -69,7 +69,7 @@ class PluginSettings extends PluginDB
 					");
             } else {
                 $stmt = $conn->prepare("
-						INSERT INTO mythicalpanel_addons_settings 
+						INSERT INTO featherpanel_addons_settings 
 						(identifier, `key`, value, locked, deleted, date) 
 						VALUES (:identifier, :key, :value, 'false', 'false', CURRENT_TIMESTAMP)
 					");
@@ -111,7 +111,7 @@ class PluginSettings extends PluginDB
 
         try {
             $stmt = $conn->prepare("
-					UPDATE mythicalpanel_addons_settings 
+					UPDATE featherpanel_addons_settings 
 					SET deleted = 'true',
 						date = CURRENT_TIMESTAMP
 					WHERE identifier = :identifier 
@@ -150,7 +150,7 @@ class PluginSettings extends PluginDB
         try {
             $stmt = $conn->prepare("
 					SELECT value 
-					FROM mythicalpanel_addons_settings 
+					FROM featherpanel_addons_settings 
 					WHERE identifier = :identifier 
 					AND `key` = :key 
 					AND deleted = 'false'
@@ -189,7 +189,7 @@ class PluginSettings extends PluginDB
         try {
             $stmt = $conn->prepare("
 					SELECT * 
-					FROM mythicalpanel_addons_settings 
+					FROM featherpanel_addons_settings 
 					WHERE identifier = :identifier 
 					AND deleted = 'false'
 				");

@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -27,7 +27,7 @@ class App extends Utils\MinecraftColorCodeSupport
         $this->handleCustomCommands($commandName, $args);
         self::$instance = $this;
 
-        if (getcwd() !== '/var/www/mythicalpanel') {
+        if (getcwd() !== '/var/www/featherpanel') {
             exit('We detected that you are not running this command from the root directory of App. Please run this command from the root directory.');
         }
 
@@ -219,7 +219,7 @@ class App extends Utils\MinecraftColorCodeSupport
             }
             exit;
         } elseif ($cmdName == 'backend:watch') {
-            $process = popen('tail -f backend/storage/logs/mythicalpanel-web.log backend/storage/logs/App.log', 'r');
+            $process = popen('tail -f backend/storage/logs/featherpanel-web.log backend/storage/logs/App.log', 'r');
             $this->sendOutput('Please wait while we attach to the process...');
             $this->sendOutput(message: "\n");
             sleep(5);

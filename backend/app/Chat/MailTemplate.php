@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -14,11 +14,11 @@
 namespace App\Chat;
 
 /**
- * MailTemplate service/model for CRUD operations on the mythicalpanel_mail_templates table.
+ * MailTemplate service/model for CRUD operations on the featherpanel_mail_templates table.
  */
 class MailTemplate
 {
-    private static string $table = 'mythicalpanel_mail_templates';
+    private static string $table = 'featherpanel_mail_templates';
 
     public static function create(array $data): int|false
     {

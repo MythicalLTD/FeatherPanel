@@ -1,5 +1,5 @@
 CREATE TABLE
-	IF NOT EXISTS `mythicalpanel_roles` (
+	IF NOT EXISTS `featherpanel_roles` (
 		`id` INT AUTO_INCREMENT PRIMARY KEY,
 		`name` VARCHAR(255) NOT NULL,
 		`display_name` VARCHAR(255) NOT NULL,

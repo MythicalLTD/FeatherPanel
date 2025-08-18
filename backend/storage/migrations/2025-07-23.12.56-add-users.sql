@@ -1,5 +1,5 @@
 CREATE TABLE
-	IF NOT EXISTS `mythicalpanel_users` (
+	IF NOT EXISTS `featherpanel_users` (
 		`id` INT NOT NULL AUTO_INCREMENT,
 		`username` VARCHAR(64) NOT NULL,
 		`first_name` VARCHAR(64) NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE
 		`external_id` INT NULL DEFAULT NULL,
 		`password` VARCHAR(255) NOT NULL,
 		`remember_token` VARCHAR(255) NOT NULL,
-		`avatar` VARCHAR(255) NOT NULL DEFAULT 'https://github.com/mythicalltd.png',
+		`avatar` VARCHAR(255) NOT NULL DEFAULT 'http://cdn.mythical.systems/featherpanel/logo.png',
 		`uuid` CHAR(36) NOT NULL,
 		`first_ip` VARCHAR(45) NOT NULL DEFAULT '127.0.0.1',
 		`last_ip` VARCHAR(45) NOT NULL DEFAULT '127.0.0.1',

@@ -1,6 +1,7 @@
 export interface ServerAllocation {
     ip: string;
     port: number;
+    ip_alias?: string;
 }
 
 export interface ServerSpell {

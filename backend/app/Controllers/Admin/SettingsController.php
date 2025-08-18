@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -63,11 +63,11 @@ class SettingsController
         $this->settings = [
             ConfigInterface::APP_NAME => [
                 'name' => ConfigInterface::APP_NAME,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_NAME, 'MythicalPanel'),
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
                 'description' => 'The name of the application',
                 'type' => 'text',
                 'required' => true,
-                'placeholder' => 'MythicalPanel',
+                'placeholder' => 'FeatherPanel',
                 'validation' => 'required|string|max:255',
                 'options' => [],
                 'category' => 'app',

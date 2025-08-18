@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -16,14 +16,14 @@ namespace App\Chat;
 use App\App;
 
 /**
- * Spell service/model for CRUD operations on the mythicalpanel_spells table.
+ * Spell service/model for CRUD operations on the featherpanel_spells table.
  */
 class Spell
 {
     /**
      * @var string The spells table name
      */
-    private static string $table = 'mythicalpanel_spells';
+    private static string $table = 'featherpanel_spells';
 
     /**
      * Create a new spell.
@@ -200,7 +200,7 @@ class Spell
         $params = [];
 
         $sql = 'SELECT s.*, r.name as realm_name FROM ' . self::$table . ' s';
-        $sql .= ' LEFT JOIN mythicalpanel_realms r ON s.realm_id = r.id';
+        $sql .= ' LEFT JOIN featherpanel_realms r ON s.realm_id = r.id';
         $sql .= ' WHERE 1=1';
 
         if (!empty($search)) {
@@ -453,7 +453,7 @@ class Spell
         $stmt = $pdo->prepare('
             SELECT s.*, r.name as realm_name, r.description as realm_description 
             FROM ' . self::$table . ' s 
-            LEFT JOIN mythicalpanel_realms r ON s.realm_id = r.id 
+            LEFT JOIN featherpanel_realms r ON s.realm_id = r.id 
             WHERE s.id = :id LIMIT 1
         ');
         $stmt->execute(['id' => $id]);
@@ -470,7 +470,7 @@ class Spell
         $stmt = $pdo->prepare('
             SELECT s.*, r.name as realm_name, r.description as realm_description 
             FROM ' . self::$table . ' s 
-            LEFT JOIN mythicalpanel_realms r ON s.realm_id = r.id 
+            LEFT JOIN featherpanel_realms r ON s.realm_id = r.id 
             ORDER BY s.name ASC
         ');
         $stmt->execute();

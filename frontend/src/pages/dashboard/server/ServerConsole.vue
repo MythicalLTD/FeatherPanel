@@ -434,6 +434,17 @@
                             <RotateCcw class="h-4 w-4 mr-2" />
                             {{ t('serverConsole.resetToDefaults') }}
                         </Button>
+                        <Button variant="outline" @click="clearRecentCommands">
+                            <Trash2 class="h-4 w-4 mr-2" />
+                            Clear Recent Commands
+                        </Button>
+                        <Button variant="outline" @click="debugRecentCommands">
+                            <Settings class="h-4 w-4 mr-2" />
+                            Debug Commands
+                        </Button>
+                        <Button variant="outline" @click="toggleCommandFiltering">
+                            {{ customization.terminal.filterCommands ? 'Disable' : 'Enable' }} Command Filtering
+                        </Button>
                         <Button class="flex-1" @click="async () => await saveAndApplyCustomization()">
                             <Save class="h-4 w-4 mr-2" />
                             {{ t('serverConsole.saveAndApply') }}
@@ -787,7 +798,7 @@ async function saveCustomization(): Promise<void> {
         };
 
         // Save to localStorage for immediate use
-        localStorage.setItem('mythicalpanel-console-customization', JSON.stringify(customizationData));
+        localStorage.setItem('featherpanel-console-customization', JSON.stringify(customizationData));
 
         console.log('Console customization saved:', customizationData);
         console.log('Filters saved:', customization.value.terminal.filters);
@@ -799,7 +810,7 @@ async function saveCustomization(): Promise<void> {
 async function loadCustomization(): Promise<void> {
     try {
         // Fallback to localStorage for backward compatibility
-        const localSaved = localStorage.getItem('mythicalpanel-console-customization');
+        const localSaved = localStorage.getItem('featherpanel-console-customization');
         if (localSaved) {
             const parsed = JSON.parse(localSaved);
             console.log('Loading from localStorage (fallback):', parsed);
@@ -1025,28 +1036,52 @@ function setupWebSocketHandlers(): void {
             if (data.event === 'console output') {
                 // Handle console output from Wings
                 const output = data.args[0];
+                console.log(`Received console output: "${output}"`);
 
                 // Filter out command echoes - don't show output that matches recent commands
                 const trimmedOutput = output.trim();
 
                 // Check if this output is likely a command echo
                 let isCommandEcho = false;
+                console.log(
+                    `Checking for command echo: "${trimmedOutput}" (filtering ${customization.value.terminal.filterCommands ? 'enabled' : 'disabled'})`,
+                );
                 if (customization.value.terminal.filterCommands) {
                     for (const recentCommand of recentCommands) {
-                        // Check exact match or if output starts with the command (handling server prompts)
+                        const trimmedCommand = recentCommand.trim();
+
+                        // More comprehensive command echo detection:
+                        // 1. Exact match (most common case)
+                        // 2. Output starts with command + space (command with arguments)
+                        // 3. Output starts with '> ' + command (server prompt style)
+                        // 4. Output is just the command (Wings echo case)
+                        // 5. Output matches command after removing common prefixes
+                        // 6. Check if output contains just the command (for multi-line commands)
                         if (
-                            trimmedOutput === recentCommand ||
-                            trimmedOutput.startsWith(recentCommand + ' ') ||
-                            trimmedOutput.startsWith('> ' + recentCommand)
+                            trimmedOutput === trimmedCommand ||
+                            trimmedOutput.startsWith(trimmedCommand + ' ') ||
+                            trimmedOutput.startsWith('> ' + trimmedCommand) ||
+                            trimmedOutput.replace(/^[>:\s]+/, '') === trimmedCommand ||
+                            (trimmedOutput.includes(trimmedCommand) &&
+                                trimmedOutput.length === trimmedCommand.length) ||
+                            trimmedOutput.replace(/\s+/g, '') === trimmedCommand.replace(/\s+/g, '') ||
+                            trimmedOutput.toLowerCase() === trimmedCommand.toLowerCase() ||
+                            trimmedOutput.toLowerCase().includes(trimmedCommand.toLowerCase())
                         ) {
                             isCommandEcho = true;
+                            console.log(`Filtering command echo: "${trimmedOutput}" matches "${trimmedCommand}"`);
                             break;
                         }
                     }
                 }
 
                 if (!isCommandEcho) {
-                    addTerminalLine(output, 'output');
+                    // Clean up Wings daemon console output prefixes before adding to terminal
+                    const cleanedOutput = output.replace(/^>\s*/gm, '');
+                    addTerminalLine(cleanedOutput, 'output');
+                } else {
+                    console.log(`Filtered out command echo: "${trimmedOutput}"`);
+                    console.log(`Recent commands: [${Array.from(recentCommands).join(', ')}]`);
                 }
             } else if (data.event === 'status') {
                 // Update server status and Wings state
@@ -1249,12 +1284,34 @@ function handleApiError(error: unknown, action: string): void {
 }
 
 function addTerminalLine(content: string, type: 'output' | 'error' | 'warning' | 'info' | 'command' = 'output'): void {
+    // Debug: Log raw content to see what's causing the '>' characters
+    if (type === 'output' && content.includes('>')) {
+        console.log('Raw content with >:', content);
+        console.log('Content length:', content.length);
+        console.log('First few characters:', content.substring(0, 10));
+    }
+
     // First replace brand names with custom app name
     const brandReplacedContent = replaceBrandNames(content);
 
+    // Clean up Wings daemon console output prefixes for output lines
+    let cleanedContent = brandReplacedContent;
+    if (type === 'output' || type === 'error') {
+        // Remove Wings daemon '> ' prefixes that appear at the start of console lines
+        cleanedContent = brandReplacedContent.replace(/^>\s*/, '');
+
+        // Also remove any '>' characters that might appear at the beginning of lines
+        cleanedContent = cleanedContent.replace(/^>\s*/gm, '');
+    }
+
     // Process ANSI content for output lines, but not for command/info lines
     const processedContent =
-        type === 'output' || type === 'error' ? processAnsiContent(brandReplacedContent) : brandReplacedContent;
+        type === 'output' || type === 'error' ? processAnsiContent(cleanedContent) : cleanedContent;
+
+    // Debug: Log processed content
+    if (type === 'output' && processedContent.includes('>')) {
+        console.log('Processed content with >:', processedContent);
+    }
 
     const newLine: TerminalLine = {
         id: Date.now() + Math.random(),
@@ -1480,12 +1537,16 @@ function sendCommand(command: string): void {
     addTerminalLine(`> ${command}`, 'command');
 
     // Add command to recent commands set
-    recentCommands.add(command.trim());
+    const trimmedCommand = command.trim();
+    recentCommands.add(trimmedCommand);
+    console.log(`Added command to recent commands: "${trimmedCommand}" (total: ${recentCommands.size})`);
 
     // Set a timeout to remove the command from recent commands after a delay
     const timeoutId = setTimeout(() => {
-        recentCommands.delete(command.trim());
-    }, 1000); // 1 second delay
+        const trimmedCommand = command.trim();
+        recentCommands.delete(trimmedCommand);
+        console.log(`Removed command from recent commands: "${trimmedCommand}" (remaining: ${recentCommands.size})`);
+    }, 3000); // 3 second delay - increased to catch Wings echoes
     commandTimeouts.set(command.trim(), timeoutId);
 
     // Send command via WebSocket using correct API format
@@ -1571,6 +1632,35 @@ function addFilter(): void {
 function removeFilter(index: number): void {
     customization.value.terminal.filters.splice(index, 1);
     toast.success(t('serverConsole.filterRemoved'));
+}
+
+function clearRecentCommands(): void {
+    // Clear all recent commands and timeouts
+    commandTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+    commandTimeouts.clear();
+    recentCommands.clear();
+    console.log('Recent commands cleared');
+    toast.success('Recent commands cleared');
+}
+
+function debugRecentCommands(): void {
+    console.log('=== Recent Commands Debug ===');
+    console.log('Recent commands:', Array.from(recentCommands));
+    console.log('Command timeouts:', Array.from(commandTimeouts.entries()));
+    console.log('Total recent commands:', recentCommands.size);
+    console.log('Total timeouts:', commandTimeouts.size);
+    console.log('============================');
+
+    // Show in toast for easy viewing
+    const commandsList = Array.from(recentCommands).join(', ') || 'None';
+    toast.info(`Recent commands: ${commandsList}`);
+}
+
+function toggleCommandFiltering(): void {
+    customization.value.terminal.filterCommands = !customization.value.terminal.filterCommands;
+    const status = customization.value.terminal.filterCommands ? 'enabled' : 'disabled';
+    console.log(`Command filtering ${status}`);
+    toast.info(`Command filtering ${status}`);
 }
 
 // Console window/popup functions

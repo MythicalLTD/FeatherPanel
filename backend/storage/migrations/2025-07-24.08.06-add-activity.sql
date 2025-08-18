@@ -1,5 +1,5 @@
 CREATE TABLE
-	IF NOT EXISTS `mythicalpanel_activity` (
+	IF NOT EXISTS `featherpanel_activity` (
 		`id` INT (11) NOT NULL AUTO_INCREMENT,
 		`user_uuid` CHAR(36) NOT NULL,
 		`name` VARCHAR(128) NOT NULL,
@@ -8,5 +8,5 @@ CREATE TABLE
 		`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		`updated_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`),
-		FOREIGN KEY (`user_uuid`) REFERENCES `mythicalpanel_users` (`uuid`) ON DELETE CASCADE
+		FOREIGN KEY (`user_uuid`) REFERENCES `featherpanel_users` (`uuid`) ON DELETE CASCADE
 	) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;

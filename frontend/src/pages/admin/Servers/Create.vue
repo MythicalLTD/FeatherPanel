@@ -995,7 +995,7 @@ const cpuUnit = ref<'%' | 'cores'>('%');
 // Load saved resource preferences
 function loadResourcePreferences() {
     try {
-        const saved = localStorage.getItem('mythicalpanel-resource-preferences');
+        const saved = localStorage.getItem('featherpanel-resource-preferences');
         if (saved) {
             const preferences = JSON.parse(saved);
             memoryUnit.value = preferences.memoryUnit || 'MiB';
@@ -1033,7 +1033,7 @@ function saveResourcePreferences() {
                 io: form.value.io,
             },
         };
-        localStorage.setItem('mythicalpanel-resource-preferences', JSON.stringify(preferences));
+        localStorage.setItem('featherpanel-resource-preferences', JSON.stringify(preferences));
     } catch (error) {
         console.error('Failed to save resource preferences:', error);
     }
@@ -1337,7 +1337,7 @@ function validateForm(): boolean {
         validationErrors.value.name = 'Server name must be between 1 and 191 characters';
     } else {
         // Server name regex: a-z A-Z 0-9 _ - . and spaces
-        const nameRegex = /^[a-zA-Z0-9_\-s.]+$/;
+        const nameRegex = /^[a-zA-Z0-9_.\-\s]+$/;
         if (!nameRegex.test(form.value.name)) {
             validationErrors.value.name =
                 'Server name can only contain letters, numbers, spaces, hyphens, underscores, and dots';

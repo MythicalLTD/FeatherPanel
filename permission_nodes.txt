@@ -1,4 +1,4 @@
-# MythicalPanel Permission Nodes
+# FeatherPanel Permission Nodes
 # This file defines all permission nodes used throughout the application
 # Format: KEY=value | category | description
 

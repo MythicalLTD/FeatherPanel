@@ -1,5 +1,5 @@
 CREATE TABLE
-	`mythicalpanel_locations` (
+	`featherpanel_locations` (
 		`id` int (11) NOT NULL AUTO_INCREMENT,
 		`name` varchar(255) NOT NULL,
 		`description` text DEFAULT NULL,

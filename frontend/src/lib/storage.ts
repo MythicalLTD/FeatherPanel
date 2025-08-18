@@ -125,9 +125,9 @@ export const clearAllStorage = async (): Promise<void> => {
             'token',
             'auth',
             'session',
-            'mythicalpanel_token',
-            'mythicalpanel_user',
-            'mythicalpanel_session',
+            'featherpanel_token',
+            'featherpanel_user',
+            'featherpanel_session',
         ];
 
         authKeys.forEach((key) => {
@@ -154,9 +154,9 @@ export const clearAuthStorage = (): void => {
             'token',
             'auth',
             'session',
-            'mythicalpanel_token',
-            'mythicalpanel_user',
-            'mythicalpanel_session',
+            'featherpanel_token',
+            'featherpanel_user',
+            'featherpanel_session',
         ];
 
         authKeys.forEach((key) => {

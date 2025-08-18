@@ -1,3 +1,3 @@
-ALTER TABLE `mythicalpanel_locations`
+ALTER TABLE `featherpanel_locations`
 DROP `ip_address`,
 DROP `country`;

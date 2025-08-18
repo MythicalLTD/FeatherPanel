@@ -1,5 +1,5 @@
 CREATE TABLE
-    IF NOT EXISTS `mythicalpanel_nodes` (
+    IF NOT EXISTS `featherpanel_nodes` (
         `id` INT(11) NOT NULL AUTO_INCREMENT,
         `uuid` CHAR(36) NOT NULL,
         `public` SMALLINT(5) UNSIGNED NOT NULL DEFAULT 1,
@@ -23,8 +23,8 @@ CREATE TABLE
         `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
         `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (`id`),
-        UNIQUE KEY `mythicalpanel_nodes_uuid_unique` (`uuid`),
-        UNIQUE KEY `mythicalpanel_nodes_daemon_token_id_unique` (`daemon_token_id`),
-        KEY `mythicalpanel_nodes_location_id_foreign` (`location_id`),
-        CONSTRAINT `mythicalpanel_nodes_location_id_foreign` FOREIGN KEY (`location_id`) REFERENCES `mythicalpanel_locations` (`id`) ON DELETE CASCADE
+        UNIQUE KEY `featherpanel_nodes_uuid_unique` (`uuid`),
+        UNIQUE KEY `featherpanel_nodes_daemon_token_id_unique` (`daemon_token_id`),
+        KEY `featherpanel_nodes_location_id_foreign` (`location_id`),
+        CONSTRAINT `featherpanel_nodes_location_id_foreign` FOREIGN KEY (`location_id`) REFERENCES `featherpanel_locations` (`id`) ON DELETE CASCADE
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;

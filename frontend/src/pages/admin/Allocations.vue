@@ -48,7 +48,7 @@
                     :has-prev="hasPrev"
                     :from="from"
                     :to="to"
-                    local-storage-key="mythicalpanel-allocations-table-columns"
+                    local-storage-key="featherpanel-allocations-table-columns"
                     @search="handleSearch"
                     @page-change="changePage"
                     @column-toggle="handleColumnToggle"

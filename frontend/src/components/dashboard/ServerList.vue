@@ -11,6 +11,10 @@
                     <FolderPlus class="h-4 w-4 mr-2" />
                     {{ $t('servers.createFolder') }}
                 </Button>
+                <Button variant="outline" size="sm" :disabled="loading" @click="validateAndCleanupServers">
+                    <Shield class="h-4 w-4 mr-2" />
+                    Validate Servers
+                </Button>
                 <Button variant="outline" size="sm" :disabled="loading" @click="fetchServers">
                     <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': loading }" />
                     {{ $t('servers.refresh') }}
@@ -593,6 +597,7 @@ import {
     List,
     Edit,
     Trash2,
+    Shield,
 } from 'lucide-vue-next';
 import axios from 'axios';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -690,6 +695,9 @@ const folderForm = ref({ name: '' });
 const serverFolders = ref<Folder[]>([]);
 const unassignedServers = ref<Server[]>([]);
 
+// Interval for periodic server validation
+let validationInterval: number | undefined = undefined;
+
 const filteredServers = computed(() => {
     if (!searchQuery.value.trim()) {
         return servers.value;
@@ -725,17 +733,60 @@ onMounted(async () => {
     await fetchServers();
 
     // Organize servers into folders (but preserve existing assignments)
-    organizeServersIntoFolders();
+    await organizeServersIntoFolders();
 
     // Add click outside handler for context menu
     document.addEventListener('click', handleClickOutside);
     document.addEventListener('keydown', handleEscapeKey);
+
+    // Set up periodic server validation (every 5 minutes)
+    validationInterval = setInterval(
+        async () => {
+            try {
+                // Fetch a minimal list of servers just to validate existence
+                const response = await axios.get('/api/user/servers', {
+                    params: { page: 1, limit: 1000 }, // Get all servers for validation
+                });
+
+                if (response.data.success) {
+                    const validServerIds = new Set(response.data.data.servers.map((server: Server) => server.id));
+
+                    // Clean up any deleted servers from folders
+                    let hasChanges = false;
+                    serverFolders.value.forEach((folder) => {
+                        const originalLength = folder.servers.length;
+                        folder.servers = folder.servers.filter((server) => validServerIds.has(server.id));
+                        if (folder.servers.length !== originalLength) {
+                            hasChanges = true;
+                        }
+                    });
+
+                    // Clean up any deleted servers from unassigned
+                    const originalUnassignedLength = unassignedServers.value.length;
+                    unassignedServers.value = unassignedServers.value.filter((server) => validServerIds.has(server.id));
+                    if (unassignedServers.value.length !== originalUnassignedLength) {
+                        hasChanges = true;
+                    }
+
+                    // Save changes if any servers were removed
+                    if (hasChanges) {
+                        saveFoldersToStorage();
+                        console.log('Periodic validation: Removed deleted servers from folders');
+                    }
+                }
+            } catch (error) {
+                console.warn('Periodic server validation failed:', error);
+            }
+        },
+        5 * 60 * 1000,
+    ); // 5 minutes
 });
 
 // Clean up event listener
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
     document.removeEventListener('keydown', handleEscapeKey);
+    clearInterval(validationInterval);
 });
 
 // Watch for servers changes and emit updates
@@ -765,7 +816,7 @@ async function fetchServers() {
             pagination.value = response.data.data.pagination;
 
             // After fetching servers, organize them into folders
-            organizeServersIntoFolders();
+            await organizeServersIntoFolders();
         } else {
             error.value = response.data.message || 'Failed to fetch servers';
         }
@@ -878,11 +929,54 @@ function toggleViewMode() {
     viewMode.value = viewMode.value === 'folders' ? 'list' : 'folders';
 }
 
+async function validateAndCleanupServers() {
+    try {
+        loading.value = true;
+
+        // Fetch current server list to validate existence
+        const response = await axios.get('/api/user/servers', {
+            params: { page: 1, limit: 1000 }, // Get all servers for validation
+        });
+
+        if (response.data.success) {
+            const validServerIds = new Set(response.data.data.servers.map((server: Server) => server.id));
+            let removedCount = 0;
+
+            // Clean up any deleted servers from folders
+            serverFolders.value.forEach((folder) => {
+                const originalLength = folder.servers.length;
+                folder.servers = folder.servers.filter((server) => validServerIds.has(server.id));
+                removedCount += originalLength - folder.servers.length;
+            });
+
+            // Clean up any deleted servers from unassigned
+            const originalUnassignedLength = unassignedServers.value.length;
+            unassignedServers.value = unassignedServers.value.filter((server) => validServerIds.has(server.id));
+            removedCount += originalUnassignedLength - unassignedServers.value.length;
+
+            // Save changes if any servers were removed
+            if (removedCount > 0) {
+                saveFoldersToStorage();
+                console.log(`Validation complete: Removed ${removedCount} deleted servers from folders`);
+                // Show success message
+                alert(`Validation complete! Removed ${removedCount} deleted/non-existent servers from your folders.`);
+            } else {
+                alert('Validation complete! All servers in your folders are still valid.');
+            }
+        }
+    } catch (error) {
+        console.error('Server validation failed:', error);
+        alert('Server validation failed. Please try again.');
+    } finally {
+        loading.value = false;
+    }
+}
+
 // Local Storage Functions
 function saveFoldersToStorage() {
     try {
-        localStorage.setItem('mythicalpanel-server_folders', JSON.stringify(serverFolders.value));
-        localStorage.setItem('mythicalpanel-unassigned_servers', JSON.stringify(unassignedServers.value));
+        localStorage.setItem('featherpanel-server_folders', JSON.stringify(serverFolders.value));
+        localStorage.setItem('featherpanel-unassigned_servers', JSON.stringify(unassignedServers.value));
         console.log('Saved folders to storage:', serverFolders.value);
         console.log('Saved unassigned to storage:', unassignedServers.value);
     } catch (error) {
@@ -892,8 +986,8 @@ function saveFoldersToStorage() {
 
 function loadFoldersFromStorage() {
     try {
-        const savedFolders = localStorage.getItem('mythicalpanel-server_folders');
-        const savedUnassigned = localStorage.getItem('mythicalpanel-unassigned_servers');
+        const savedFolders = localStorage.getItem('featherpanel-server_folders');
+        const savedUnassigned = localStorage.getItem('featherpanel-unassigned_servers');
 
         if (savedFolders) {
             serverFolders.value = JSON.parse(savedFolders);
@@ -912,31 +1006,72 @@ function loadFoldersFromStorage() {
     }
 }
 
-function organizeServersIntoFolders() {
-    // Get all servers that are currently assigned to folders
-    const assignedServerIds = new Set<number>();
-    serverFolders.value.forEach((folder) => {
-        folder.servers.forEach((server) => {
-            assignedServerIds.add(server.id);
+async function organizeServersIntoFolders() {
+    try {
+        // Get all servers that are currently assigned to folders
+        const assignedServerIds = new Set<number>();
+        serverFolders.value.forEach((folder) => {
+            folder.servers.forEach((server) => {
+                assignedServerIds.add(server.id);
+            });
         });
-    });
 
-    // Get all servers that are currently in unassigned
-    const unassignedServerIds = new Set<number>();
-    unassignedServers.value.forEach((server) => {
-        unassignedServerIds.add(server.id);
-    });
+        // Get all servers that are currently in unassigned
+        const unassignedServerIds = new Set<number>();
+        unassignedServers.value.forEach((server) => {
+            unassignedServerIds.add(server.id);
+        });
 
-    // For each server from the API, check if it's already assigned somewhere
-    servers.value.forEach((server) => {
-        // If server is not assigned anywhere, add it to unassigned
-        if (!assignedServerIds.has(server.id) && !unassignedServerIds.has(server.id)) {
-            unassignedServers.value.push(server);
+        // Create a set of valid server IDs from the API response
+        const validServerIds = new Set(servers.value.map((server) => server.id));
+
+        // Filter out deleted/non-existent servers from folders
+        let removedFromFolders = 0;
+        serverFolders.value.forEach((folder) => {
+            folder.servers = folder.servers.filter((server) => {
+                const isValid = validServerIds.has(server.id);
+                if (!isValid) {
+                    console.log(
+                        `Removing deleted server "${server.name}" (ID: ${server.id}) from folder "${folder.name}"`,
+                    );
+                    removedFromFolders++;
+                }
+                return isValid;
+            });
+        });
+
+        // Filter out deleted/non-existent servers from unassigned
+        let removedFromUnassigned = 0;
+        unassignedServers.value = unassignedServers.value.filter((server) => {
+            const isValid = validServerIds.has(server.id);
+            if (!isValid) {
+                console.log(`Removing deleted server "${server.name}" (ID: ${server.id}) from unassigned servers`);
+                removedFromUnassigned++;
+            }
+            return isValid;
+        });
+
+        // For each server from the API, check if it's already assigned somewhere
+        servers.value.forEach((server) => {
+            // If server is not assigned anywhere, add it to unassigned
+            if (!assignedServerIds.has(server.id) && !unassignedServerIds.has(server.id)) {
+                unassignedServers.value.push(server);
+            }
+        });
+
+        // Save to local storage
+        saveFoldersToStorage();
+
+        // Log summary of cleanup
+        if (removedFromFolders > 0 || removedFromUnassigned > 0) {
+            console.log(
+                `Server organization complete: Removed ${removedFromFolders} deleted servers from folders, ${removedFromUnassigned} from unassigned`,
+            );
         }
-    });
-
-    // Save to local storage
-    saveFoldersToStorage();
+    } catch (error) {
+        console.error('Error organizing servers into folders:', error);
+        // Continue with existing organization if there's an error
+    }
 }
 
 // Context Menu State

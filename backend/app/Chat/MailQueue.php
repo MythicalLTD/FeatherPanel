@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -14,11 +14,11 @@
 namespace App\Chat;
 
 /**
- * MailQueue service/model for CRUD operations on the mythicalpanel_mail_queue table.
+ * MailQueue service/model for CRUD operations on the featherpanel_mail_queue table.
  */
 class MailQueue
 {
-    private static string $table = 'mythicalpanel_mail_queue';
+    private static string $table = 'featherpanel_mail_queue';
 
     public static function create(array $data): int|false
     {

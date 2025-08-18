@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -15,7 +15,7 @@ namespace App\Chat;
 
 class ApiClient
 {
-    private static string $table = 'mythicalpanel_apikeys_client';
+    private static string $table = 'featherpanel_apikeys_client';
 
     public static function createApiClient(array $data): int|false
     {

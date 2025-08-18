@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -16,14 +16,14 @@ namespace App\Chat;
 use App\App;
 
 /**
- * Node service/model for CRUD operations on the mythicalpanel_nodes table.
+ * Node service/model for CRUD operations on the featherpanel_nodes table.
  */
 class Node
 {
     /**
      * @var string The nodes table name
      */
-    private static string $table = 'mythicalpanel_nodes';
+    private static string $table = 'featherpanel_nodes';
 
     /**
      * Whitelist of allowed field names for SQL queries to prevent injection.
@@ -273,7 +273,7 @@ class Node
         $params = [];
 
         $sql = 'SELECT n.*, l.name as location_name FROM ' . self::$table . ' n';
-        $sql .= ' LEFT JOIN mythicalpanel_locations l ON n.location_id = l.id';
+        $sql .= ' LEFT JOIN featherpanel_locations l ON n.location_id = l.id';
         $sql .= ' WHERE 1=1';
 
         if (!empty($search)) {
@@ -502,7 +502,7 @@ class Node
         $stmt = $pdo->prepare('
             SELECT n.*, l.name as location_name, l.description as location_description 
             FROM ' . self::$table . ' n 
-            LEFT JOIN mythicalpanel_locations l ON n.location_id = l.id 
+            LEFT JOIN featherpanel_locations l ON n.location_id = l.id 
             WHERE n.id = :id LIMIT 1
         ');
         $stmt->execute(['id' => $id]);
@@ -519,7 +519,7 @@ class Node
         $stmt = $pdo->prepare('
             SELECT n.*, l.name as location_name, l.description as location_description 
             FROM ' . self::$table . ' n 
-            LEFT JOIN mythicalpanel_locations l ON n.location_id = l.id 
+            LEFT JOIN featherpanel_locations l ON n.location_id = l.id 
             ORDER BY n.name ASC
         ');
         $stmt->execute();
@@ -544,7 +544,7 @@ class Node
             }
 
             $pdo = Database::getPdoConnection();
-            $stmt = $pdo->prepare('SELECT COUNT(*) FROM mythicalpanel_nodes WHERE daemon_token_id = :token_id AND daemon_token = :token_secret');
+            $stmt = $pdo->prepare('SELECT COUNT(*) FROM featherpanel_nodes WHERE daemon_token_id = :token_id AND daemon_token = :token_secret');
             $stmt->execute(['token_id' => $tokenId, 'token_secret' => $tokenSecret]);
 
             return (bool) $stmt->fetchColumn();

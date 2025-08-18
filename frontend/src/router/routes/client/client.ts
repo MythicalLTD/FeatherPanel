@@ -27,6 +27,16 @@ const clientRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/dashboard/server/ServerInstallLogs.vue'),
     },
     {
+        path: '/server/:uuidShort/settings',
+        name: 'ServerSettings',
+        component: () => import('@/pages/dashboard/server/ServerSettings.vue'),
+    },
+    {
+        path: '/server/:uuidShort/startup',
+        name: 'ServerStartup',
+        component: () => import('@/pages/dashboard/server/ServerStartup.vue'),
+    },
+    {
         path: '/server/:uuidShort/console-window',
         name: 'ServerConsoleWindow',
         component: () => import('@/pages/dashboard/server/ConsoleWindow.vue'),

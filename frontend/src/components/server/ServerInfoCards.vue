@@ -6,8 +6,25 @@
                 <Wifi class="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div class="font-bold font-mono text-sm">
-                    {{ server?.allocation?.ip || 'N/A' }}:{{ server?.allocation?.port || 'N/A' }}
+                <div class="flex items-center justify-between gap-2">
+                    <div class="font-bold font-mono text-sm truncate" :title="serverAddress || 'N/A'">
+                        {{ serverAddress || 'N/A' }}
+                    </div>
+                    <div class="shrink-0">
+                        <Tooltip>
+                            <TooltipTrigger as-child>
+                                <Button variant="outline" size="icon" class="h-8 w-8" @click="copyServerAddress">
+                                    <Copy v-if="!addressCopied" class="h-4 w-4" />
+                                    <Check v-else class="h-4 w-4 text-green-600" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <span>{{
+                                    addressCopied ? t('common.copied') || 'Copied' : t('common.copy') || 'Copy'
+                                }}</span>
+                            </TooltipContent>
+                        </Tooltip>
+                    </div>
                 </div>
             </CardContent>
         </Card>
@@ -46,9 +63,12 @@
 
 <script setup lang="ts">
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Wifi, Clock, Fingerprint } from 'lucide-vue-next';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Wifi, Clock, Fingerprint, Copy, Check } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import type { Server } from '@/types/server';
+import { computed, ref } from 'vue';
 
 const { t } = useI18n();
 
@@ -58,7 +78,36 @@ interface Props {
     wingsState?: string;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
+
+const addressCopied = ref(false);
+
+const serverAddress = computed(() => {
+    const ip =
+        (props.server?.allocation?.ip_alias as string | undefined) ||
+        (props.server?.allocation?.ip as string | undefined);
+    const port = props.server?.allocation?.port as number | undefined;
+    if (!ip || !port) return '';
+    return `${ip}:${port}`;
+});
+
+async function copyServerAddress(): Promise<void> {
+    if (!serverAddress.value) return;
+    try {
+        await navigator.clipboard.writeText(serverAddress.value);
+        addressCopied.value = true;
+        setTimeout(() => (addressCopied.value = false), 1200);
+    } catch {
+        const textarea = document.createElement('textarea');
+        textarea.value = serverAddress.value;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        addressCopied.value = true;
+        setTimeout(() => (addressCopied.value = false), 1200);
+    }
+}
 function formatUptime(uptimeMs?: number): string {
     if (!uptimeMs) return '0s';
 

@@ -151,7 +151,7 @@ class MailSender implements TimeTask
 				$mailObj->setFrom($config->getSetting(ConfigInterface::SMTP_FROM, null), $config->getSetting(ConfigInterface::APP_NAME, null));
 				$mailObj->addReplyTo($config->getSetting(ConfigInterface::SMTP_FROM, null), $config->getSetting(ConfigInterface::APP_NAME, null));
 				$mailObj->isHTML(true);
-				$mailObj->Name = $config->getSetting(ConfigInterface::APP_NAME, "MythicalPanel");
+				$mailObj->Name = $config->getSetting(ConfigInterface::APP_NAME, "FeatherPanel");
 				$mailObj->Subject = $mail['subject'];
 				$mailObj->Body = $mail['body'];
 				$mailObj->addAddress($userInfo['email']);

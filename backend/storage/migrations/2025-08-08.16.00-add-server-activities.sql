@@ -1,5 +1,5 @@
 CREATE TABLE
-	IF NOT EXISTS `mythicalpanel_server_activities` (
+	IF NOT EXISTS `featherpanel_server_activities` (
 		`id` int (11) NOT NULL AUTO_INCREMENT,
 		`server_id` int (11) NOT NULL,
 		`node_id` int (11) NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE
 		KEY `server_activities_user_id_foreign` (`user_id`),
 		KEY `server_activities_event_index` (`event`),
 		KEY `server_activities_timestamp_index` (`timestamp`),
-		CONSTRAINT `server_activities_server_id_foreign` FOREIGN KEY (`server_id`) REFERENCES `mythicalpanel_servers` (`id`) ON DELETE CASCADE,
-		CONSTRAINT `server_activities_node_id_foreign` FOREIGN KEY (`node_id`) REFERENCES `mythicalpanel_nodes` (`id`) ON DELETE CASCADE,
-		CONSTRAINT `server_activities_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `mythicalpanel_users` (`id`) ON DELETE SET NULL
+		CONSTRAINT `server_activities_server_id_foreign` FOREIGN KEY (`server_id`) REFERENCES `featherpanel_servers` (`id`) ON DELETE CASCADE,
+		CONSTRAINT `server_activities_node_id_foreign` FOREIGN KEY (`node_id`) REFERENCES `featherpanel_nodes` (`id`) ON DELETE CASCADE,
+		CONSTRAINT `server_activities_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `featherpanel_users` (`id`) ON DELETE SET NULL
 	) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;

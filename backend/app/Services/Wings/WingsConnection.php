@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -73,7 +73,7 @@ class WingsConnection
         // Set default headers
         $this->defaultHeaders = [
             'Accept' => 'application/json',
-            'User-Agent' => 'MythicalPanel/v1.0.0',
+            'User-Agent' => 'FeatherPanel/v1.0.0',
             'Content-Type' => 'application/json',
         ];
 

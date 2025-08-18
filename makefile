@@ -1,4 +1,4 @@
-# MythicalPanel
+# FeatherPanel
 # ==========================================
 
 # Directory configurations
@@ -42,7 +42,7 @@ SHELL := /bin/bash
 
 # Default target
 help:
-	@echo -e "${BOLD}${BLUE}MythicalPanel Build System${NC}"
+	@echo -e "${BOLD}${BLUE}FeatherPanel Build System${NC}"
 	@echo -e "${CYAN}================================${NC}\n"
 	@echo -e "${BOLD}Available commands:${NC}"
 	@echo -e "  ${GREEN}make frontend${NC}    ${ROCKET} Builds the frontend for production"
@@ -77,7 +77,7 @@ clean-license:
 	@echo -e "\n${BOLD}${BLUE}Cleaning License${NC} ${CLEAN}"
 	@echo -e "${CYAN}=======================${NC}"
 	@echo -e "${YELLOW}${WARN} Cleaning license...${NC}"
-	@rm -rf /var/www/mythicalpanel/backend/storage/caches/licenses/*.json 
+	@rm -rf /var/www/featherpanel/backend/storage/caches/licenses/*.json 
 	@echo -e "${GREEN}${CHECK} License cleaned${NC}\n"
 
 # Release build

@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -128,7 +128,7 @@ class TwoFactorController
         $google2fa = new Google2FA();
         $secret = $google2fa->generateSecretKey();
         $qrCodeUrl = $google2fa->getQRCodeUrl(
-            $config->getSetting(ConfigInterface::APP_NAME, 'MythicalPanel'),
+            $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
             $userInfo['email'],
             $secret
         );

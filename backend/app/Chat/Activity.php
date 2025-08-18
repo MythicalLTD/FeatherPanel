@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -15,7 +15,7 @@ namespace App\Chat;
 
 class Activity
 {
-    private static string $table = 'mythicalpanel_activity';
+    private static string $table = 'featherpanel_activity';
 
     public static function createActivity(array $data): int|false
     {

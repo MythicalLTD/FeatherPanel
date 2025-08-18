@@ -1,5 +1,5 @@
 CREATE TABLE
-	`mythicalpanel_spells` (
+	`featherpanel_spells` (
 		`id` int (11) NOT NULL AUTO_INCREMENT,
 		`uuid` char(36) NOT NULL,
 		`realm_id` int (11) NOT NULL,
@@ -35,7 +35,7 @@ CREATE TABLE
 			KEY `spells_realm_id_foreign` (`realm_id`),
 			KEY `spells_config_from_foreign` (`config_from`),
 			KEY `spells_copy_script_from_foreign` (`copy_script_from`),
-			CONSTRAINT `spells_config_from_foreign` FOREIGN KEY (`config_from`) REFERENCES `mythicalpanel_spells` (`id`) ON DELETE SET NULL,
-			CONSTRAINT `spells_copy_script_from_foreign` FOREIGN KEY (`copy_script_from`) REFERENCES `mythicalpanel_spells` (`id`) ON DELETE SET NULL,
-			CONSTRAINT `spells_realm_id_foreign` FOREIGN KEY (`realm_id`) REFERENCES `mythicalpanel_realms` (`id`) ON DELETE CASCADE
+			CONSTRAINT `spells_config_from_foreign` FOREIGN KEY (`config_from`) REFERENCES `featherpanel_spells` (`id`) ON DELETE SET NULL,
+			CONSTRAINT `spells_copy_script_from_foreign` FOREIGN KEY (`copy_script_from`) REFERENCES `featherpanel_spells` (`id`) ON DELETE SET NULL,
+			CONSTRAINT `spells_realm_id_foreign` FOREIGN KEY (`realm_id`) REFERENCES `featherpanel_realms` (`id`) ON DELETE CASCADE
 	) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;

@@ -1,5 +1,5 @@
 CREATE TABLE
-	IF NOT EXISTS `mythicalpanel_servers` (
+	IF NOT EXISTS `featherpanel_servers` (
 		`id` int (11) NOT NULL AUTO_INCREMENT,
 		`external_id` varchar(191) DEFAULT NULL,
 		`uuid` char(36) NOT NULL,
@@ -37,9 +37,9 @@ CREATE TABLE
 		KEY `servers_owner_id_foreign` (`owner_id`),
 		KEY `servers_realm_id_foreign` (`realms_id`),
 		KEY `servers_spell_id_foreign` (`spell_id`),
-		CONSTRAINT `servers_allocation_id_foreign` FOREIGN KEY (`allocation_id`) REFERENCES `mythicalpanel_allocations` (`id`),
-		CONSTRAINT `servers_spell_id_foreign` FOREIGN KEY (`spell_id`) REFERENCES `mythicalpanel_spells` (`id`),
-		CONSTRAINT `servers_realm_id_foreign` FOREIGN KEY (`realms_id`) REFERENCES `mythicalpanel_realms` (`id`),
-		CONSTRAINT `servers_node_id_foreign` FOREIGN KEY (`node_id`) REFERENCES `mythicalpanel_nodes` (`id`),
-		CONSTRAINT `servers_owner_id_foreign` FOREIGN KEY (`owner_id`) REFERENCES `mythicalpanel_users` (`id`)
+		CONSTRAINT `servers_allocation_id_foreign` FOREIGN KEY (`allocation_id`) REFERENCES `featherpanel_allocations` (`id`),
+		CONSTRAINT `servers_spell_id_foreign` FOREIGN KEY (`spell_id`) REFERENCES `featherpanel_spells` (`id`),
+		CONSTRAINT `servers_realm_id_foreign` FOREIGN KEY (`realms_id`) REFERENCES `featherpanel_realms` (`id`),
+		CONSTRAINT `servers_node_id_foreign` FOREIGN KEY (`node_id`) REFERENCES `featherpanel_nodes` (`id`),
+		CONSTRAINT `servers_owner_id_foreign` FOREIGN KEY (`owner_id`) REFERENCES `featherpanel_users` (`id`)
 	) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;

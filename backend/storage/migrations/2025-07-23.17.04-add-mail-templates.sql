@@ -1,5 +1,5 @@
 CREATE TABLE
-	IF NOT EXISTS `mythicalpanel_mail_templates` (
+	IF NOT EXISTS `featherpanel_mail_templates` (
 		`id` INT AUTO_INCREMENT PRIMARY KEY,
 		`name` VARCHAR(255) NOT NULL,
 		`subject` VARCHAR(255) NOT NULL,

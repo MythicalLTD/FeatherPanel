@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -99,13 +99,13 @@ class ForgotPasswordController
         if (User::updateUser($userInfo['uuid'], ['mail_verify' => $resetToken])) {
 
             // Send reset password email
-            $resetUrl = 'https://' . $config->getSetting(ConfigInterface::APP_URL, 'mythicalpanel.mythical.systems') . '/auth/reset-password?token=' . $resetToken;
+            $resetUrl = 'https://' . $config->getSetting(ConfigInterface::APP_URL, 'featherpanel.mythical.systems') . '/auth/reset-password?token=' . $resetToken;
 
             ForgotPassword::send([
                 'email' => $userInfo['email'],
                 'subject' => 'Reset Password Request',
-                'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'MythicalPanel'),
-                'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'mythicalpanel.mythical.systems'),
+                'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'featherpanel.mythical.systems'),
                 'first_name' => $userInfo['first_name'],
                 'last_name' => $userInfo['last_name'],
                 'username' => $userInfo['username'],

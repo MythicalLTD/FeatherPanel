@@ -27,7 +27,7 @@ const openMobile = ref(false);
 // Load saved sidebar state from localStorage
 const getSavedSidebarState = (): boolean => {
     try {
-        const saved = localStorage.getItem('mythicalpanel-sidebar-expanded');
+        const saved = localStorage.getItem('featherpanel-sidebar-expanded');
         return saved ? JSON.parse(saved) : (props.defaultOpen ?? true);
     } catch {
         return props.defaultOpen ?? true;
@@ -44,7 +44,7 @@ function setOpen(value: boolean) {
 
     // Save sidebar state to localStorage
     try {
-        localStorage.setItem('mythicalpanel-sidebar-expanded', JSON.stringify(value));
+        localStorage.setItem('featherpanel-sidebar-expanded', JSON.stringify(value));
     } catch (error) {
         console.warn('Failed to save sidebar state to localStorage:', error);
     }

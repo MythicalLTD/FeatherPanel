@@ -1,5 +1,5 @@
 INSERT INTO
-	mythicalpanel_mail_templates (name, subject, body)
+	featherpanel_mail_templates (name, subject, body)
 VALUES
 	(
 		'server_unsuspended',

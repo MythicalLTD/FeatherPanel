@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -17,7 +17,7 @@ use App\App;
 
 class Allocation
 {
-    private static string $table = 'mythicalpanel_allocations';
+    private static string $table = 'featherpanel_allocations';
 
     /**
      * Get all allocations with optional filtering and pagination.
@@ -371,7 +371,7 @@ class Allocation
         $stmt = $pdo->prepare('
             SELECT a.*, n.name as node_name, n.fqdn as node_fqdn 
             FROM ' . self::$table . ' a 
-            LEFT JOIN mythicalpanel_nodes n ON a.node_id = n.id 
+            LEFT JOIN featherpanel_nodes n ON a.node_id = n.id 
             WHERE a.id = :id LIMIT 1
         ');
         $stmt->execute(['id' => $id]);
@@ -388,7 +388,7 @@ class Allocation
         $stmt = $pdo->prepare('
             SELECT a.*, s.name as server_name, s.uuid as server_uuid 
             FROM ' . self::$table . ' a 
-            LEFT JOIN mythicalpanel_servers s ON a.server_id = s.id 
+            LEFT JOIN featherpanel_servers s ON a.server_id = s.id 
             WHERE a.id = :id LIMIT 1
         ');
         $stmt->execute(['id' => $id]);
@@ -405,8 +405,8 @@ class Allocation
         $stmt = $pdo->prepare('
             SELECT a.*, n.name as node_name, n.fqdn as node_fqdn, s.name as server_name, s.uuid as server_uuid 
             FROM ' . self::$table . ' a 
-            LEFT JOIN mythicalpanel_nodes n ON a.node_id = n.id 
-            LEFT JOIN mythicalpanel_servers s ON a.server_id = s.id 
+            LEFT JOIN featherpanel_nodes n ON a.node_id = n.id 
+            LEFT JOIN featherpanel_servers s ON a.server_id = s.id 
             WHERE a.id = :id LIMIT 1
         ');
         $stmt->execute(['id' => $id]);

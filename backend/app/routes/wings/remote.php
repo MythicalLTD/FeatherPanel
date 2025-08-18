@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -15,6 +15,7 @@ use App\App;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Wings\Sftp\SftpAuthController;
 use App\Controllers\Wings\Activity\WingsActivityController;
 use App\Controllers\Wings\Server\WingsServerInfoController;
 use App\Controllers\Wings\Server\WingsServerListController;
@@ -109,6 +110,16 @@ return function (RouteCollection $routes): void {
         '/api/remote/activity',
         function (Request $request) {
             return (new WingsActivityController())->logActivity($request);
+        },
+        ['POST']
+    );
+
+    App::getInstance(true)->registerWingsRoute(
+        $routes,
+        'wings-sftp-auth',
+        '/api/remote/sftp/auth',
+        function (Request $request) {
+            return (new SftpAuthController())->authenticate($request);
         },
         ['POST']
     );

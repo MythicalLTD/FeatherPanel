@@ -579,7 +579,7 @@ const validationErrors = ref<Record<string, string>>({});
 // Load saved resource preferences
 function loadResourcePreferences() {
     try {
-        const saved = localStorage.getItem('mythicalpanel-resource-preferences');
+        const saved = localStorage.getItem('featherpanel-resource-preferences');
         if (saved) {
             const preferences = JSON.parse(saved);
             memoryUnit.value = preferences.memoryUnit || 'MiB';
@@ -608,7 +608,7 @@ function saveResourcePreferences() {
                 io: form.value.io,
             },
         };
-        localStorage.setItem('mythicalpanel-resource-preferences', JSON.stringify(preferences));
+        localStorage.setItem('featherpanel-resource-preferences', JSON.stringify(preferences));
     } catch (error) {
         console.error('Failed to save resource preferences:', error);
     }

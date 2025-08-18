@@ -5,7 +5,7 @@ contact_links:
     about: Please visit our Discord for help with your installation.
   - name: General Question
     url: https://discord.mythical.systems
-    about: Please visit our Discord for general questions about MythicalPanel.
+    about: Please visit our Discord for general questions about FeatherPanel.
   - name: Developer Documentation
     url: https://docs.mythical.systems
-    about: Please visit our documentation for help with developing on MythicalPanel.
+    about: Please visit our documentation for help with developing on FeatherPanel.

@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -14,11 +14,11 @@
 namespace App\Chat;
 
 /**
- * SpellVariable service/model for CRUD operations on the mythicalpanel_spell_variables table.
+ * SpellVariable service/model for CRUD operations on the featherpanel_spell_variables table.
  */
 class SpellVariable
 {
-    private static string $table = 'mythicalpanel_spell_variables';
+    private static string $table = 'featherpanel_spell_variables';
 
     /**
      * Whitelist of allowed field names for SQL queries to prevent injection.

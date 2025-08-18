@@ -3,7 +3,7 @@
 ## Copyright (c) 2021–2025 MythicalSystems and Cassian Gherman
 
 ### Preamble
-This license governs the use, modification, and distribution of the software known as MythicalPanel or MythicalPanel ("the Software"). By using the Software, you agree to the terms outlined in this document. These terms aim to protect the Software’s integrity, ensure fair use, and establish guidelines for authorized distribution, modification, and commercial use.
+This license governs the use, modification, and distribution of the software known as FeatherPanel or FeatherPanel ("the Software"). By using the Software, you agree to the terms outlined in this document. These terms aim to protect the Software’s integrity, ensure fair use, and establish guidelines for authorized distribution, modification, and commercial use.
 
 For any inquiries, abuse reports, or violation notices, contact us at [abuse@mythical.systems](mailto:abuse@mythical.systems).
 
@@ -128,8 +128,8 @@ By using, modifying, or distributing the Software, you agree to the terms outlin
 ## 10. Additional Terms
 ### 10.1. OAuth Authentication
 - If you use the Software in conjunction with OAuth or similar, you acknowledge and agree that the system may automatically:
-  - Star the **MythicalPanel** repository or any related public repositories owned by the **MythicalSystems** organization.
-  - Follow the **MythicalPanel** organization on GitHub on behalf of your authenticated GitHub account.
+  - Star the **FeatherPanel** repository or any related public repositories owned by the **MythicalSystems** organization.
+  - Follow the **FeatherPanel** organization on GitHub on behalf of your authenticated GitHub account.
 - If you use Discord authentication, you acknowledge and agree that the system may automatically:
   - Join the official **MythicalSystems** Discord server on behalf of your authenticated Discord account.
 - This behavior is intended to support the community and visibility of the Software and is considered part of the license terms.
@@ -138,7 +138,7 @@ By using, modifying, or distributing the Software, you agree to the terms outlin
 - If you are a hosting provider offering the Software as a managed service or as part of your hosting panel, you must:
   - Explicitly include this license in your Terms of Service (ToS) or User Agreement.
   - Ensure that all end users are aware of and agree to the terms of the MythicalSystems License v2.0.
-  - Maintain a clear reference to **MythicalPanel** and **MythicalSystems** in all relevant documentation, portals, and legal notices.
+  - Maintain a clear reference to **FeatherPanel** and **MythicalSystems** in all relevant documentation, portals, and legal notices.
 
 ### 10.3. User Data Collection and Sharing
 - By using the Software, you acknowledge and agree that certain user data may be collected and shared with MythicalSystems, including but not limited to:

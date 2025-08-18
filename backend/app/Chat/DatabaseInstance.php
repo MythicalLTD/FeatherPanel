@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -16,14 +16,14 @@ namespace App\Chat;
 use App\App;
 
 /**
- * DatabaseInstance service/model for CRUD operations on the mythicalpanel_databases table.
+ * DatabaseInstance service/model for CRUD operations on the featherpanel_databases table.
  */
 class DatabaseInstance
 {
     /**
      * @var string The databases table name
      */
-    private static string $table = 'mythicalpanel_databases';
+    private static string $table = 'featherpanel_databases';
 
     /**
      * Whitelist of allowed field names for SQL queries to prevent injection.
@@ -198,7 +198,7 @@ class DatabaseInstance
         $params = [];
 
         $sql = 'SELECT d.*, n.name as node_name FROM ' . self::$table . ' d';
-        $sql .= ' LEFT JOIN mythicalpanel_nodes n ON d.node_id = n.id';
+        $sql .= ' LEFT JOIN featherpanel_nodes n ON d.node_id = n.id';
         $sql .= ' WHERE 1=1';
 
         if (!empty($search)) {
@@ -346,7 +346,7 @@ class DatabaseInstance
         $stmt = $pdo->prepare('
             SELECT d.*, n.name as node_name, n.description as node_description 
             FROM ' . self::$table . ' d 
-            LEFT JOIN mythicalpanel_nodes n ON d.node_id = n.id 
+            LEFT JOIN featherpanel_nodes n ON d.node_id = n.id 
             WHERE d.id = :id LIMIT 1
         ');
         $stmt->execute(['id' => $id]);
@@ -363,7 +363,7 @@ class DatabaseInstance
         $stmt = $pdo->prepare('
             SELECT d.*, n.name as node_name, n.description as node_description 
             FROM ' . self::$table . ' d 
-            LEFT JOIN mythicalpanel_nodes n ON d.node_id = n.id 
+            LEFT JOIN featherpanel_nodes n ON d.node_id = n.id 
             ORDER BY d.name ASC
         ');
         $stmt->execute();

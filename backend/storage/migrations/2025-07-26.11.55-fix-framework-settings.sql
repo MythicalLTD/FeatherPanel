@@ -1,1 +1,1 @@
-ALTER TABLE `mythicalpanel_settings` ADD UNIQUE (`name`);
+ALTER TABLE `featherpanel_settings` ADD UNIQUE (`name`);

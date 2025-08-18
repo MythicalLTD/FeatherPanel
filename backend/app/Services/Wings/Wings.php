@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -14,13 +14,10 @@
 namespace App\Services\Wings;
 
 use App\Services\Wings\Services\JwtService;
-use App\Services\Wings\Services\FileService;
-use App\Services\Wings\Services\BackupService;
 use App\Services\Wings\Services\DockerService;
 use App\Services\Wings\Services\ServerService;
 use App\Services\Wings\Services\SystemService;
 use App\Services\Wings\Services\TransferService;
-use App\Services\Wings\Services\WebSocketService;
 
 /**
  * Main Wings API Client.

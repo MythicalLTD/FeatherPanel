@@ -63,23 +63,6 @@ const data = computed(() => {
             avatar: sessionStore.user?.avatar || '',
             avatar_alt: sessionStore.user?.username?.charAt(0) || '',
         },
-        servers: [
-            {
-                name: 'Minecraft Server',
-                logo: 'https://github.com/mythicalltd.png', // Use image URL
-                plan: 'running',
-            },
-            {
-                name: 'Python Bot',
-                logo: 'https://github.com/mythicalltd.png', // Use image URL
-                plan: 'stopped',
-            },
-            {
-                name: 'Discord Bot',
-                logo: 'https://github.com/mythicalltd.png', // Use image URL
-                plan: 'starting',
-            },
-        ],
         navMain: [
             {
                 name: 'Main',
@@ -191,55 +174,55 @@ const data = computed(() => {
             },
             {
                 title: t('nav.files'),
-                url: '#',
+                url: `/server/${route.params.uuidShort}/files`,
                 icon: Folder,
                 items: [
                     {
                         title: t('nav.files'),
-                        url: '#',
+                        url: `/server/${route.params.uuidShort}/files`,
                         icon: Folder,
                     },
                 ],
             },
             {
                 title: t('nav.databases'),
-                url: '#',
+                url: `/server/${route.params.uuidShort}/databases`,
                 icon: Database,
                 items: [
                     {
                         title: t('nav.databases'),
-                        url: '#',
+                        url: `/server/${route.params.uuidShort}/databases`,
                         icon: Database,
                     },
                 ],
             },
             {
                 title: t('nav.schedules'),
-                url: '#',
+                url: `/server/${route.params.uuidShort}/schedules`,
                 icon: Calendar,
                 items: [
                     {
                         title: t('nav.schedules'),
-                        url: '#',
+                        url: `/server/${route.params.uuidShort}/schedules`,
                         icon: Calendar,
                     },
                 ],
             },
             {
                 title: t('nav.users'),
-                url: '#',
+                url: `/server/${route.params.uuidShort}/users`,
                 icon: Users,
                 items: [
                     {
                         title: t('nav.users'),
-                        url: '#',
+                        url: `/server/${route.params.uuidShort}/users`,
                         icon: Users,
                     },
                 ],
             },
             {
                 title: t('nav.backups'),
-                url: '#',
+                url: `/server/${route.params.uuidShort}/backups`,
                 icon: Archive,
                 items: [
                     {
@@ -251,7 +234,7 @@ const data = computed(() => {
             },
             {
                 title: t('nav.network'),
-                url: '#',
+                url: `/server/${route.params.uuidShort}/network`,
                 icon: Globe,
                 items: [
                     {
@@ -263,24 +246,24 @@ const data = computed(() => {
             },
             {
                 title: t('nav.startup'),
-                url: '#',
+                url: `/server/${route.params.uuidShort}/startup`,
                 icon: PlayCircle,
                 items: [
                     {
                         title: t('nav.startup'),
-                        url: '#',
+                        url: `/server/${route.params.uuidShort}/startup`,
                         icon: PlayCircle,
                     },
                 ],
             },
             {
                 title: t('nav.settings'),
-                url: '#',
+                url: `/server/${route.params.uuidShort}/settings`,
                 icon: Settings2,
                 items: [
                     {
                         title: t('nav.settings'),
-                        url: '#',
+                        url: `/server/${route.params.uuidShort}/settings`,
                         icon: Settings2,
                     },
                 ],

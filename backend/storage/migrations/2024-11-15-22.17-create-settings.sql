@@ -1,5 +1,5 @@
 CREATE TABLE
-	IF NOT EXISTS `mythicalpanel_settings` (
+	IF NOT EXISTS `featherpanel_settings` (
 		`id` INT NOT NULL AUTO_INCREMENT,
 		`name` TEXT NOT NULL,
 		`value` TEXT NOT NULL,

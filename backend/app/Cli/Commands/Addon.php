@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -18,7 +18,7 @@ use App\Cli\CommandBuilder;
 
 class Addon extends App implements CommandBuilder
 {
-    public const ADDON_PASSWORD = 'mythicalpanel_development_kit_2025_addon_password';
+    public const ADDON_PASSWORD = 'featherpanel_development_kit_2025_addon_password';
 
     public static function execute(array $args): void
     {
@@ -104,7 +104,7 @@ class Addon extends App implements CommandBuilder
             return;
         }
 
-        $tempFile = sys_get_temp_dir() . '/' . uniqid('mythicalpanel_') . '.myd';
+        $tempFile = sys_get_temp_dir() . '/' . uniqid('featherpanel_') . '.myd';
         file_put_contents($tempFile, $response);
 
         self::installPlugin($tempFile);
@@ -137,7 +137,7 @@ class Addon extends App implements CommandBuilder
         }
 
         // Create temporary directory for extraction
-        $tempDir = sys_get_temp_dir() . '/' . uniqid('mythicalpanel_');
+        $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_');
         exec('mkdir -p ' . escapeshellarg($tempDir));
 
         // Extract the zip file with password
@@ -238,7 +238,7 @@ class Addon extends App implements CommandBuilder
             return;
         }
         // Create temporary directory for zip creation
-        $tempDir = sys_get_temp_dir() . '/' . uniqid('mythicalpanel_');
+        $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_');
         exec('mkdir -p ' . escapeshellarg($tempDir));
 
         // Copy plugin files to temp directory
@@ -348,7 +348,7 @@ class Addon extends App implements CommandBuilder
                 'version' => $version,
                 'target' => 'v3',
                 'author' => [$author],
-                'icon' => 'https://github.com/mythicalltd.png',
+                'icon' => 'http://cdn.mythical.systems/featherpanel/logo.png',
                 'requiredConfigs' => [],
                 'dependencies' => [
                     'php=8.1',

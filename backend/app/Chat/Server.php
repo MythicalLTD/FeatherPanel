@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -16,14 +16,14 @@ namespace App\Chat;
 use App\App;
 
 /**
- * Server service/model for CRUD operations on the mythicalpanel_servers table.
+ * Server service/model for CRUD operations on the featherpanel_servers table.
  */
 class Server
 {
     /**
      * @var string The servers table name
      */
-    private static string $table = 'mythicalpanel_servers';
+    private static string $table = 'featherpanel_servers';
 
     /**
      * Create a new server.
@@ -507,10 +507,10 @@ class Server
                        r.name as realm_name, r.description as realm_description,
                        sp.name as spell_name, sp.description as spell_description
                 FROM ' . self::$table . ' s
-                LEFT JOIN mythicalpanel_users u ON s.owner_id = u.id
-                LEFT JOIN mythicalpanel_nodes n ON s.node_id = n.id
-                LEFT JOIN mythicalpanel_realms r ON s.realms_id = r.id
-                LEFT JOIN mythicalpanel_spells sp ON s.spell_id = sp.id
+                LEFT JOIN featherpanel_users u ON s.owner_id = u.id
+                LEFT JOIN featherpanel_nodes n ON s.node_id = n.id
+                LEFT JOIN featherpanel_realms r ON s.realms_id = r.id
+                LEFT JOIN featherpanel_spells sp ON s.spell_id = sp.id
                 WHERE s.id = :id LIMIT 1';
         $stmt = $pdo->prepare($sql);
         $stmt->execute(['id' => $id]);
@@ -530,10 +530,10 @@ class Server
                        r.name as realm_name, r.description as realm_description,
                        sp.name as spell_name, sp.description as spell_description
                 FROM ' . self::$table . ' s
-                LEFT JOIN mythicalpanel_users u ON s.owner_id = u.id
-                LEFT JOIN mythicalpanel_nodes n ON s.node_id = n.id
-                LEFT JOIN mythicalpanel_realms r ON s.realms_id = r.id
-                LEFT JOIN mythicalpanel_spells sp ON s.spell_id = sp.id';
+                LEFT JOIN featherpanel_users u ON s.owner_id = u.id
+                LEFT JOIN featherpanel_nodes n ON s.node_id = n.id
+                LEFT JOIN featherpanel_realms r ON s.realms_id = r.id
+                LEFT JOIN featherpanel_spells sp ON s.spell_id = sp.id';
         $stmt = $pdo->query($sql);
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);

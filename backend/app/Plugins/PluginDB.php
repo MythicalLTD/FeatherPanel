@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -20,7 +20,7 @@ use App\Chat\Database;
  */
 class PluginDB extends Database
 {
-    public const PLUGIN_TABLE = 'mythicalpanel_addons';
+    public const PLUGIN_TABLE = 'featherpanel_addons';
 
     /**
      * Get all the plugins.
@@ -64,7 +64,7 @@ class PluginDB extends Database
             }
 
             $stmt = $conn->prepare('
-                INSERT INTO mythicalpanel_addons 
+                INSERT INTO featherpanel_addons 
                 (name) 
                 VALUES (:name)
             ');
@@ -103,7 +103,7 @@ class PluginDB extends Database
 
             $stmt = $conn->prepare("
                 SELECT id 
-                FROM mythicalpanel_addons 
+                FROM featherpanel_addons 
                 WHERE name = :name 
                 AND deleted = 'false'
                 LIMIT 1
@@ -133,7 +133,7 @@ class PluginDB extends Database
             $conn = Database::getPdoConnection();
 
             $stmt = $conn->prepare('
-                UPDATE mythicalpanel_addons 
+                UPDATE featherpanel_addons 
                 SET enabled = :enabled,
                     date = CURRENT_TIMESTAMP
                 WHERE name = :name
@@ -164,7 +164,7 @@ class PluginDB extends Database
 
             $stmt = $conn->prepare("
                 SELECT enabled 
-                FROM mythicalpanel_addons 
+                FROM featherpanel_addons 
                 WHERE name = :name 
                 AND deleted = 'false'
                 LIMIT 1
@@ -194,7 +194,7 @@ class PluginDB extends Database
             $conn = Database::getPdoConnection();
 
             $stmt = $conn->prepare("
-                UPDATE mythicalpanel_addons 
+                UPDATE featherpanel_addons 
                 SET deleted = 'true',
                     date = CURRENT_TIMESTAMP
                 WHERE name = :name
@@ -222,7 +222,7 @@ class PluginDB extends Database
 
             $stmt = $conn->prepare("
                 SELECT name, enabled, locked 
-                FROM mythicalpanel_addons 
+                FROM featherpanel_addons 
                 WHERE name = :name 
                 AND deleted = 'false'
                 LIMIT 1
@@ -255,7 +255,7 @@ class PluginDB extends Database
 
             $sql = "
                 SELECT name, enabled, locked 
-                FROM mythicalpanel_addons 
+                FROM featherpanel_addons 
                 WHERE deleted = 'false'
             ";
 
@@ -287,7 +287,7 @@ class PluginDB extends Database
     {
         try {
             $conn = Database::getPdoConnection();
-            $stmt = $conn->prepare('SELECT name FROM mythicalpanel_addons WHERE id = :id');
+            $stmt = $conn->prepare('SELECT name FROM featherpanel_addons WHERE id = :id');
             $stmt->execute([':id' => $id]);
 
             return $stmt->fetch(\PDO::FETCH_ASSOC)['name'];

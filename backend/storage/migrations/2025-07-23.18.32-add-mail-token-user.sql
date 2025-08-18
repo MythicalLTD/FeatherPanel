@@ -1,1 +1,1 @@
-ALTER TABLE `mythicalpanel_users` ADD `mail_verify` VARCHAR(255) NULL DEFAULT NULL AFTER `remember_token`;
+ALTER TABLE `featherpanel_users` ADD `mail_verify` VARCHAR(255) NULL DEFAULT NULL AFTER `remember_token`;

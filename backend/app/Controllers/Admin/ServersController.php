@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -239,7 +239,7 @@ class ServersController
 
         // Generate UUIDs
         $data['uuid'] = UUIDUtils::generateV4();
-        $data['uuidShort'] = Server::generateUuidShort();
+        $data['uuidShort'] = substr($data['uuid'], 0, 8);
 
         // Set default values for optional fields
         $data['status'] = $data['status'] ?? 'installing';

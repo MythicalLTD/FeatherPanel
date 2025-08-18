@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -18,7 +18,7 @@ class ConfigFactory
     private \PDO $db;
     private array $cache = [];
 
-    private string $table_name = 'mythicalpanel_settings';
+    private string $table_name = 'featherpanel_settings';
 
     public function __construct(\PDO $db)
     {

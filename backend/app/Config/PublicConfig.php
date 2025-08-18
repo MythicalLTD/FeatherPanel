@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -43,11 +43,11 @@ class PublicConfig extends ConfigFactory
         // Define settings configuration with defaults
         return [
             // App settings
-            ConfigInterface::APP_NAME => 'MythicalPanel',
+            ConfigInterface::APP_NAME => 'FeatherPanel',
             ConfigInterface::APP_LANG => 'en_US',
             ConfigInterface::APP_URL => 'framework.mythical.systems',
             ConfigInterface::APP_TIMEZONE => 'UTC',
-            ConfigInterface::APP_LOGO => 'https://github.com/mythicalltd.png',
+            ConfigInterface::APP_LOGO => 'http://cdn.mythical.systems/featherpanel/logo.png',
             ConfigInterface::APP_SUPPORT_URL => 'https://discord.gg/mythical',
 
             // Turnstile settings

@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -24,7 +24,7 @@ class Migrate extends App implements CommandBuilder
         $cliApp = App::getInstance();
 
         // Display header
-        $cliApp->send('&6&l[MythicalPanel] &r&eDatabase Migration Tool');
+        $cliApp->send('&6&l[FeatherPanel] &r&eDatabase Migration Tool');
         $cliApp->send('&7' . str_repeat('─', 50));
 
         if (!file_exists(__DIR__ . '/../../../storage/.env')) {
@@ -44,10 +44,10 @@ class Migrate extends App implements CommandBuilder
 
             // --- Fix duplicate settings before running migrations that add unique constraints ---
             $pdo = $db->getPdo();
-            $tableExists = $pdo->query("SHOW TABLES LIKE 'mythicalpanel_settings'")->rowCount() > 0;
+            $tableExists = $pdo->query("SHOW TABLES LIKE 'featherpanel_settings'")->rowCount() > 0;
             if ($tableExists) {
                 $cliApp->send('&e&l🔧 Cleaning duplicate settings...');
-                $fixSql = 'DELETE FROM mythicalpanel_settings WHERE id NOT IN (SELECT id FROM (SELECT MAX(id) as id FROM mythicalpanel_settings GROUP BY name) as keep_ids);';
+                $fixSql = 'DELETE FROM featherpanel_settings WHERE id NOT IN (SELECT id FROM (SELECT MAX(id) as id FROM featherpanel_settings GROUP BY name) as keep_ids);';
                 $deletedRows = $pdo->exec($fixSql);
                 if ($deletedRows > 0) {
                     $cliApp->send('&a&l✅ Cleaned &r&f' . $deletedRows . '&r&a duplicate settings');
@@ -68,7 +68,7 @@ class Migrate extends App implements CommandBuilder
          * Check if the migrations table exists.
          */
         try {
-            $query = $db->getPdo()->query("SHOW TABLES LIKE 'mythicalpanel_migrations'");
+            $query = $db->getPdo()->query("SHOW TABLES LIKE 'featherpanel_migrations'");
             if ($query->rowCount() > 0) {
                 $cliApp->send('&e&l📋 Migrations table already exists');
             } else {
@@ -105,7 +105,7 @@ class Migrate extends App implements CommandBuilder
             /**
              * Check if the migration was already executed.
              */
-            $stmt = $db->getPdo()->prepare("SELECT COUNT(*) FROM mythicalpanel_migrations WHERE script = :script AND migrated = 'true'");
+            $stmt = $db->getPdo()->prepare("SELECT COUNT(*) FROM featherpanel_migrations WHERE script = :script AND migrated = 'true'");
             $stmt->execute(['script' => $migrationName]);
             $migrationExists = $stmt->fetchColumn();
 
@@ -137,7 +137,7 @@ class Migrate extends App implements CommandBuilder
              * Save the migration to the database.
              */
             try {
-                $stmt = $db->getPdo()->prepare('INSERT INTO mythicalpanel_migrations (script, migrated) VALUES (:script, :migrated)');
+                $stmt = $db->getPdo()->prepare('INSERT INTO featherpanel_migrations (script, migrated) VALUES (:script, :migrated)');
                 $stmt->execute([
                     'script' => $migrationName,
                     'migrated' => 'true',
@@ -178,7 +178,7 @@ class Migrate extends App implements CommandBuilder
 
     private static function getMigrationSQL(): string
     {
-        return "CREATE TABLE IF NOT EXISTS `mythicalpanel_migrations` (
+        return "CREATE TABLE IF NOT EXISTS `featherpanel_migrations` (
             `id` INT NOT NULL AUTO_INCREMENT COMMENT 'The id of the migration!',
             `script` TEXT NOT NULL COMMENT 'The script to be migrated!',
             `migrated` ENUM('true','false') NOT NULL DEFAULT 'true' COMMENT 'Did we migrate this already?',

@@ -47,7 +47,7 @@
                     :has-prev="pagination.hasPrev"
                     :from="pagination.from"
                     :to="pagination.to"
-                    local-storage-key="mythicalpanel-node-databases-table-columns"
+                    local-storage-key="featherpanel-node-databases-table-columns"
                     @search="handleSearch"
                     @page-change="changePage"
                     @column-toggle="handleColumnToggle"

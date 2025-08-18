@@ -1,3 +1,3 @@
-ALTER TABLE `mythicalpanel_allocations` 
+ALTER TABLE `featherpanel_allocations` 
 ADD CONSTRAINT `allocations_server_id_foreign` 
-FOREIGN KEY (`server_id`) REFERENCES `mythicalpanel_servers` (`id`) ON DELETE SET NULL; 
+FOREIGN KEY (`server_id`) REFERENCES `featherpanel_servers` (`id`) ON DELETE SET NULL; 

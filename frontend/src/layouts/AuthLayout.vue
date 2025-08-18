@@ -21,7 +21,7 @@
                 >
                     <img
                         :src="String(settingsStore.appLogo)"
-                        alt="MythicalPanel Logo"
+                        alt="FeatherPanel Logo"
                         class="size-10 transition-all duration-300"
                     />
                     <span class="sr-only">{{ settingsStore.appName }}</span>

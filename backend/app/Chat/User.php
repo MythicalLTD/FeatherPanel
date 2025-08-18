@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -16,14 +16,14 @@ namespace App\Chat;
 use App\App;
 
 /**
- * User service/model for CRUD operations on the mythicalpanel_users table.
+ * User service/model for CRUD operations on the featherpanel_users table.
  */
 class User
 {
     /**
      * @var string The users table name
      */
-    private static string $table = 'mythicalpanel_users';
+    private static string $table = 'featherpanel_users';
 
     /**
      * Create a new user.

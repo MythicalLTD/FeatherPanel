@@ -1,5 +1,5 @@
 CREATE TABLE
-	IF NOT EXISTS `mythicalpanel_allocations` (
+	IF NOT EXISTS `featherpanel_allocations` (
 		`id` int (11) NOT NULL AUTO_INCREMENT,
 		`node_id` int (11) NOT NULL,
 		`ip` varchar(191) NOT NULL,
@@ -13,5 +13,5 @@ CREATE TABLE
 		UNIQUE KEY `allocations_node_id_ip_port_unique` (`node_id`, `ip`, `port`),
 		KEY `allocations_node_id_foreign` (`node_id`),
 		KEY `allocations_server_id_foreign` (`server_id`),
-		CONSTRAINT `allocations_node_id_foreign` FOREIGN KEY (`node_id`) REFERENCES `mythicalpanel_nodes` (`id`) ON DELETE CASCADE
+		CONSTRAINT `allocations_node_id_foreign` FOREIGN KEY (`node_id`) REFERENCES `featherpanel_nodes` (`id`) ON DELETE CASCADE
 	) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;

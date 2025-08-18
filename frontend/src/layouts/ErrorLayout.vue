@@ -26,7 +26,6 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
 import { Button } from '@/components/ui/button';
 import { useI18n } from 'vue-i18n';
 import { FileWarningIcon } from 'lucide-vue-next';
@@ -50,10 +49,9 @@ const props = defineProps({
 document.title = `${props.errorCode} - ${props.title}`;
 
 const { t: $t } = useI18n();
-const router = useRouter();
 
 function goHome() {
-    router.push('/');
+    window.location.href = '/';
 }
 </script>
 

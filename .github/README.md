@@ -1,7 +1,7 @@
 # ⚠️ WARNING ⚠️
 
-## **THIS IS A DEVELOP BRANCH – NEVER INSTALL MYTHICALPANEL FROM HERE**
+## **THIS IS A DEVELOP BRANCH – NEVER INSTALL Fea FROM HERE**
 
 ---
 
-API Documentation: https://www.postman.com/mythicalsystems/workspace/mythicalpanel
+API Documentation: https://www.postman.com/mythicalsystems/workspace/featherpanel

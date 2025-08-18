@@ -21,7 +21,7 @@
     "mythicalcore",
     "mythicaldash",
     "mythicaldoggo",
-    "mythicalpanel",
+    "featherpanel",
     "PHPHWID",
     "Predis",
     "qrcode",
@@ -49,7 +49,7 @@
   "editor.useTabStops": true,
   "editor.tabFocusMode": false,
   "workbench.sideBar.location": "left",
-  "window.title": "MythicalPanel",
+  "window.title": "FeatherPanel",
   "editor.insertSpaces": false,
   "editor.detectIndentation": false,
   "workbench.colorCustomizations": {

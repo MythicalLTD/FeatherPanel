@@ -1,5 +1,5 @@
 CREATE TABLE
-	IF NOT EXISTS `mythicalpanel_spell_variables` (
+	IF NOT EXISTS `featherpanel_spell_variables` (
 		`id` int (11) NOT NULL AUTO_INCREMENT,
 		`spell_id` int (11) NOT NULL,
 		`name` varchar(191) NOT NULL,
@@ -14,5 +14,5 @@ CREATE TABLE
 		`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`),
 		KEY `spell_variables_spell_id_foreign` (`spell_id`, `env_variable`),
-		CONSTRAINT `spell_variables_spell_id_foreign` FOREIGN KEY (`spell_id`) REFERENCES `mythicalpanel_spells` (`id`) ON DELETE CASCADE
+		CONSTRAINT `spell_variables_spell_id_foreign` FOREIGN KEY (`spell_id`) REFERENCES `featherpanel_spells` (`id`) ON DELETE CASCADE
 	) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;

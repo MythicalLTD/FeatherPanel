@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -38,10 +38,10 @@ class Setup extends App implements CommandBuilder
 
     public static function createDBConnection(App $cliApp): void
     {
-        $defultDBName = 'mythicalpanel';
+        $defultDBName = 'featherpanel';
         $defultDBHost = '127.0.0.1';
         $defultDBPort = '3306';
-        $defultDBUser = 'mythicalpanel';
+        $defultDBUser = 'featherpanel';
         $defultDBPassword = '';
 
         $cliApp->send("&7Please enter the database name &8[&e$defultDBName&8]&7");

@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of MythicalPanel.
+ * This file is part of FeatherPanel.
  * Please view the LICENSE file that was distributed with this source code.
  *
  * # MythicalSystems License v2.0
@@ -16,7 +16,7 @@ namespace App\Chat;
 use App\App;
 
 /**
- * ServerActivity service/model for CRUD operations on the mythicalpanel_server_activities table.
+ * ServerActivity service/model for CRUD operations on the featherpanel_server_activities table.
  *
  * This handles server-specific activities like:
  * - server:power.start
@@ -32,7 +32,7 @@ class ServerActivity
     /**
      * @var string The server activities table name
      */
-    private static string $table = 'mythicalpanel_server_activities';
+    private static string $table = 'featherpanel_server_activities';
 
     /**
      * Create a new server activity log.
@@ -239,8 +239,8 @@ class ServerActivity
         $pdo = Database::getPdoConnection();
         $sql = 'SELECT sa.*, s.name as server_name, s.uuid as server_uuid, n.name as node_name 
 				FROM ' . self::$table . ' sa
-				LEFT JOIN mythicalpanel_servers s ON sa.server_id = s.id
-				LEFT JOIN mythicalpanel_nodes n ON sa.node_id = n.id
+				LEFT JOIN featherpanel_servers s ON sa.server_id = s.id
+				LEFT JOIN featherpanel_nodes n ON sa.node_id = n.id
 				WHERE sa.user_id = :user_id 
 				ORDER BY sa.timestamp DESC 
 				LIMIT :limit';
