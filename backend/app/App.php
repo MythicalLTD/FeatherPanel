@@ -219,10 +219,14 @@ class App
             $controller = $parameters['_controller'];
             unset($parameters['_controller'], $parameters['_route']);
 
-            // Set route parameters (like _permission) as request attributes
+            // Set route parameters as request attributes
+            // - Special keys (starting with '_') are stored without the underscore (e.g., '_permission' -> 'permission')
+            // - Regular route params (e.g., 'uuidShort') are stored as-is for middleware/controllers to consume
             foreach ($parameters as $key => $value) {
                 if (str_starts_with($key, '_')) {
                     $request->attributes->set(ltrim($key, '_'), $value);
+                } else {
+                    $request->attributes->set($key, $value);
                 }
             }
 

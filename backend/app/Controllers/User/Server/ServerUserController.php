@@ -561,6 +561,64 @@ class ServerUserController
         ], 'Server reinstalled successfully', 200);
     }
 
+    public function deleteServer(Request $request, string $uuidShort): Response
+    {
+        // Get authenticated user
+        $user = $request->get('user');
+        if (!$user) {
+            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+        }
+
+        // Get server details
+        $server = Server::getServerByUuidShort($uuidShort);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
+        }
+
+        // Check if user owns the server
+        if ($server['owner_id'] != $user['id']) {
+            return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
+        }
+
+        // Get node information
+        $node = \App\Chat\Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $scheme = $node['scheme'];
+        $host = $node['fqdn'];
+        $port = $node['daemonListen'];
+        $token = $node['daemon_token'];
+
+        $timeout = (int) 30;
+        try {
+            $wings = new \App\Services\Wings\Wings(
+                $host,
+                $port,
+                $scheme,
+                $token,
+                $timeout
+            );
+
+            $response = $wings->getServer()->deleteServer($server['uuid']);
+            Server::hardDeleteServer((int) $server['id']);
+
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+                App::getInstance(true)->getLogger()->error('Failed to delete server: ' . $error);
+
+                return ApiResponse::error('Failed to delete server: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            return ApiResponse::success([], 'Server deleted successfully', 200);
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to send power action to Wings: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to send power action to Wings: ' . $e->getMessage(), 'FAILED_TO_SEND_POWER_ACTION_TO_WINGS', 500);
+        }
+    }
+
     /**
      * Validate a variable value against a rules string (e.g., "required|string|max:20", "required|regex:/^foo$/").
      * Returns an error message string if invalid, or null if valid.

@@ -20,6 +20,7 @@ export interface Server {
     memoryLimit?: number;
     disk: number;
     uuidShort: string;
+    uuid: string;
     started_at?: string;
     allocation?: ServerAllocation;
     spell?: ServerSpell;

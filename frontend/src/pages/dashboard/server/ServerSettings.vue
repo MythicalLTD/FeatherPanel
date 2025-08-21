@@ -167,7 +167,7 @@
                                         </Button>
                                     </div>
                                     <p class="text-xs text-muted-foreground">
-                                        Use the same password you use to log into this panel
+                                        {{ t('serverSettings.sftpPasswordHint') }}
                                     </p>
                                 </div>
                             </div>
@@ -201,12 +201,12 @@
                                         {{ t('serverSettings.sftpInfoDescription') }}
                                     </p>
                                     <div class="text-xs text-muted-foreground">
-                                        <p class="font-medium mb-1">Recommended SFTP Clients:</p>
+                                        <p class="font-medium mb-1">{{ t('serverSettings.recommendedClients') }}</p>
                                         <ul class="list-disc list-inside space-y-1">
-                                            <li>FileZilla (Windows, macOS, Linux)</li>
-                                            <li>WinSCP (Windows)</li>
-                                            <li>Cyberduck (macOS, Windows)</li>
-                                            <li>Nautilus/Files (Linux)</li>
+                                            <li>{{ t('serverSettings.sftpClientFileZilla') }}</li>
+                                            <li>{{ t('serverSettings.sftpClientWinSCP') }}</li>
+                                            <li>{{ t('serverSettings.sftpClientCyberduck') }}</li>
+                                            <li>{{ t('serverSettings.sftpClientNautilus') }}</li>
                                         </ul>
                                     </div>
                                 </div>
@@ -424,10 +424,10 @@ const editForm = ref<EditForm>({
 
 // Computed
 const breadcrumbs = computed(() => [
-    { text: 'Dashboard', href: '/dashboard' },
-    { text: 'Servers', href: '/dashboard' },
-    { text: server.value?.name || 'Server', href: `/server/${route.params.uuidShort}` },
-    { text: 'Settings', isCurrent: true, href: `/server/${route.params.uuidShort}/settings` },
+    { text: t('common.dashboard'), href: '/dashboard' },
+    { text: t('common.servers'), href: '/dashboard' },
+    { text: server.value?.name || t('common.server'), href: `/server/${route.params.uuidShort}` },
+    { text: t('common.settings'), isCurrent: true, href: `/server/${route.params.uuidShort}/settings` },
 ]);
 
 const hasChanges = computed(() => {

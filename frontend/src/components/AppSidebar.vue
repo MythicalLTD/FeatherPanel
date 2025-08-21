@@ -16,6 +16,8 @@ import {
     Server,
     Newspaper,
     FileText,
+    Clock,
+    Network,
 } from 'lucide-vue-next';
 import NavMain from '@/components/nav/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -70,6 +72,13 @@ const data = computed(() => {
                 url: '/dashboard',
                 icon: Home,
                 isActive: currentPath.startsWith('/dashboard'),
+            },
+            {
+                name: 'Activities',
+                title: t('nav.activities'),
+                url: '/dashboard/activities',
+                icon: Clock,
+                isActive: currentPath.startsWith('/dashboard/activities'),
             },
             {
                 name: 'Account',
@@ -173,6 +182,18 @@ const data = computed(() => {
                 ],
             },
             {
+                title: t('nav.activities'),
+                url: `/server/${route.params.uuidShort}/activities`,
+                icon: Clock,
+                items: [
+                    {
+                        title: t('nav.activities'),
+                        url: `/server/${route.params.uuidShort}/activities`,
+                        icon: Clock,
+                    },
+                ],
+            },
+            {
                 title: t('nav.files'),
                 url: `/server/${route.params.uuidShort}/files`,
                 icon: Folder,
@@ -233,14 +254,14 @@ const data = computed(() => {
                 ],
             },
             {
-                title: t('nav.network'),
-                url: `/server/${route.params.uuidShort}/network`,
-                icon: Globe,
+                title: 'Allocations',
+                url: `/server/${route.params.uuidShort}/allocations`,
+                icon: Network,
                 items: [
                     {
-                        title: t('nav.network'),
-                        url: '#',
-                        icon: Globe,
+                        title: 'Allocations',
+                        url: `/server/${route.params.uuidShort}/allocations`,
+                        icon: Network,
                     },
                 ],
             },

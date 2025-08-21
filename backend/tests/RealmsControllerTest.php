@@ -39,7 +39,7 @@ class RealmsControllerTest extends TestCase
                 'email' => $this->adminEmail,
                 'password' => password_hash('TestPassword123', PASSWORD_BCRYPT),
                 'role_id' => 4,
-                'avatar' => 'http://cdn.mythical.systems/featherpanel/logo.png',
+                'avatar' => 'https://cdn.mythical.systems/featherpanel/logo.png',
                 'remember_token' => bin2hex(random_bytes(16)),
             ]);
         }
@@ -87,7 +87,7 @@ class RealmsControllerTest extends TestCase
         $payload = [
             'name' => 'Test Realm',
             'description' => 'Unit test realm',
-            'logo' => 'http://cdn.mythical.systems/featherpanel/logo.png',
+            'logo' => 'https://cdn.mythical.systems/featherpanel/logo.png',
             'author' => 'testadmin@example.com',
         ];
         $request = Request::create('/api/admin/realms', 'PUT', [], [], [], [], json_encode($payload));

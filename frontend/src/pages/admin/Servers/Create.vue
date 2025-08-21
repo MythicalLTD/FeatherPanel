@@ -616,32 +616,16 @@
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label for="memory" class="block mb-2 font-medium">Memory</label>
-                                    <div class="flex gap-2">
-                                        <div class="relative flex-1">
-                                            <Input
-                                                id="memory"
-                                                v-model.number="form.memory"
-                                                type="number"
-                                                placeholder="1024"
-                                                min="128"
-                                                :class="{ 'border-red-500': validationErrors.memory }"
-                                                required
-                                            />
-                                            <span
-                                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
-                                                >{{ memoryUnit }}</span
-                                            >
-                                        </div>
-                                        <select
-                                            v-model="memoryUnit"
-                                            class="px-3 py-2 border rounded-md bg-background text-foreground"
-                                        >
-                                            <option value="MiB">MiB</option>
-                                            <option value="MB">MB</option>
-                                            <option value="GB">GB</option>
-                                        </select>
-                                    </div>
+                                    <label for="memory" class="block mb-2 font-medium">Memory (MiB)</label>
+                                    <Input
+                                        id="memory"
+                                        v-model.number="form.memory"
+                                        type="number"
+                                        placeholder="1024"
+                                        min="128"
+                                        :class="{ 'border-red-500': validationErrors.memory }"
+                                        required
+                                    />
                                     <p v-if="validationErrors.memory" class="text-xs text-red-500 mt-1">
                                         {{ validationErrors.memory }}
                                     </p>
@@ -651,32 +635,16 @@
                                     </p>
                                 </div>
                                 <div>
-                                    <label for="swap" class="block mb-2 font-medium">Swap</label>
-                                    <div class="flex gap-2">
-                                        <div class="relative flex-1">
-                                            <Input
-                                                id="swap"
-                                                v-model.number="form.swap"
-                                                type="number"
-                                                placeholder="0"
-                                                min="0"
-                                                :class="{ 'border-red-500': validationErrors.swap }"
-                                                required
-                                            />
-                                            <span
-                                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
-                                                >{{ swapUnit }}</span
-                                            >
-                                        </div>
-                                        <select
-                                            v-model="swapUnit"
-                                            class="px-3 py-2 border rounded-md bg-background text-foreground"
-                                        >
-                                            <option value="MiB">MiB</option>
-                                            <option value="MB">MB</option>
-                                            <option value="GB">GB</option>
-                                        </select>
-                                    </div>
+                                    <label for="swap" class="block mb-2 font-medium">Swap (MiB)</label>
+                                    <Input
+                                        id="swap"
+                                        v-model.number="form.swap"
+                                        type="number"
+                                        placeholder="0"
+                                        min="0"
+                                        :class="{ 'border-red-500': validationErrors.swap }"
+                                        required
+                                    />
                                     <p v-if="validationErrors.swap" class="text-xs text-red-500 mt-1">
                                         {{ validationErrors.swap }}
                                     </p>
@@ -686,32 +654,16 @@
                                     </p>
                                 </div>
                                 <div>
-                                    <label for="disk" class="block mb-2 font-medium">Disk Space</label>
-                                    <div class="flex gap-2">
-                                        <div class="relative flex-1">
-                                            <Input
-                                                id="disk"
-                                                v-model.number="form.disk"
-                                                type="number"
-                                                placeholder="1024"
-                                                min="1024"
-                                                :class="{ 'border-red-500': validationErrors.disk }"
-                                                required
-                                            />
-                                            <span
-                                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
-                                                >{{ diskUnit }}</span
-                                            >
-                                        </div>
-                                        <select
-                                            v-model="diskUnit"
-                                            class="px-3 py-2 border rounded-md bg-background text-foreground"
-                                        >
-                                            <option value="MiB">MiB</option>
-                                            <option value="MB">MB</option>
-                                            <option value="GB">GB</option>
-                                        </select>
-                                    </div>
+                                    <label for="disk" class="block mb-2 font-medium">Disk Space (MiB)</label>
+                                    <Input
+                                        id="disk"
+                                        v-model.number="form.disk"
+                                        type="number"
+                                        placeholder="1024"
+                                        min="1024"
+                                        :class="{ 'border-red-500': validationErrors.disk }"
+                                        required
+                                    />
                                     <p v-if="validationErrors.disk" class="text-xs text-red-500 mt-1">
                                         {{ validationErrors.disk }}
                                     </p>
@@ -721,32 +673,16 @@
                                     </p>
                                 </div>
                                 <div>
-                                    <label for="cpu" class="block mb-2 font-medium">CPU Limit</label>
-                                    <div class="flex gap-2">
-                                        <div class="relative flex-1">
-                                            <Input
-                                                id="cpu"
-                                                v-model.number="form.cpu"
-                                                type="number"
-                                                placeholder="100"
-                                                min="10"
-                                                max="100"
-                                                :class="{ 'border-red-500': validationErrors.cpu }"
-                                                required
-                                            />
-                                            <span
-                                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
-                                                >{{ cpuUnit }}</span
-                                            >
-                                        </div>
-                                        <select
-                                            v-model="cpuUnit"
-                                            class="px-3 py-2 border rounded-md bg-background text-foreground"
-                                        >
-                                            <option value="%">%</option>
-                                            <option value="cores">Cores</option>
-                                        </select>
-                                    </div>
+                                    <label for="cpu" class="block mb-2 font-medium">CPU Limit (%)</label>
+                                    <Input
+                                        id="cpu"
+                                        v-model.number="form.cpu"
+                                        type="number"
+                                        placeholder="100"
+                                        min="10"
+                                        :class="{ 'border-red-500': validationErrors.cpu }"
+                                        required
+                                    />
                                     <p v-if="validationErrors.cpu" class="text-xs text-red-500 mt-1">
                                         {{ validationErrors.cpu }}
                                     </p>
@@ -870,7 +806,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
@@ -986,82 +922,21 @@ const form = ref<CreateForm>({
     location_id: '',
 });
 
-// Unit selectors
-const memoryUnit = ref<'MiB' | 'MB' | 'GB'>('MiB');
-const swapUnit = ref<'MiB' | 'MB' | 'GB'>('MiB');
-const diskUnit = ref<'MiB' | 'MB' | 'GB'>('MiB');
-const cpuUnit = ref<'%' | 'cores'>('%');
+// Units are always fixed: MiB for memory/swap/disk, % for CPU
 
-// Load saved resource preferences
-function loadResourcePreferences() {
-    try {
-        const saved = localStorage.getItem('featherpanel-resource-preferences');
-        if (saved) {
-            const preferences = JSON.parse(saved);
-            memoryUnit.value = preferences.memoryUnit || 'MiB';
-            swapUnit.value = preferences.swapUnit || 'MiB';
-            diskUnit.value = preferences.diskUnit || 'MiB';
-            cpuUnit.value = preferences.cpuUnit || '%';
+// Resource preferences are no longer loaded since units are always fixed
 
-            // Load default values if they exist
-            if (preferences.defaultValues) {
-                form.value.memory = preferences.defaultValues.memory || 1024;
-                form.value.swap = preferences.defaultValues.swap || 0;
-                form.value.disk = preferences.defaultValues.disk || 1024;
-                form.value.cpu = preferences.defaultValues.cpu || 100;
-                form.value.io = preferences.defaultValues.io || 500;
-            }
-        }
-    } catch (error) {
-        console.error('Failed to load resource preferences:', error);
-    }
+// Resource preferences are no longer saved since units are always fixed
+
+// Conversion functions - simplified since we always use MiB
+function convertToMiB(value: number): number {
+    // Always return the value as-is since we only use MiB
+    return value;
 }
 
-// Save resource preferences
-function saveResourcePreferences() {
-    try {
-        const preferences = {
-            memoryUnit: memoryUnit.value,
-            swapUnit: swapUnit.value,
-            diskUnit: diskUnit.value,
-            cpuUnit: cpuUnit.value,
-            defaultValues: {
-                memory: form.value.memory,
-                swap: form.value.swap,
-                disk: form.value.disk,
-                cpu: form.value.cpu,
-                io: form.value.io,
-            },
-        };
-        localStorage.setItem('featherpanel-resource-preferences', JSON.stringify(preferences));
-    } catch (error) {
-        console.error('Failed to save resource preferences:', error);
-    }
-}
-
-// Conversion functions
-function convertToMiB(value: number, unit: 'MiB' | 'MB' | 'GB'): number {
-    switch (unit) {
-        case 'MiB':
-            return value;
-        case 'MB':
-            return value;
-        case 'GB':
-            return value * 1024;
-        default:
-            return value;
-    }
-}
-
-function convertToPercentage(value: number, unit: '%' | 'cores'): number {
-    switch (unit) {
-        case '%':
-            return value;
-        case 'cores':
-            return value * 100;
-        default:
-            return value;
-    }
+function convertToPercentage(value: number): number {
+    // Always return the value as-is since we only use percentage
+    return value;
 }
 
 // Dropdown data
@@ -1560,11 +1435,11 @@ async function submitCreate() {
             name: form.value.name,
             description: form.value.description,
             owner_id: Number(form.value.owner_id),
-            memory: convertToMiB(form.value.memory, memoryUnit.value),
-            swap: convertToMiB(form.value.swap, swapUnit.value),
-            disk: convertToMiB(form.value.disk, diskUnit.value),
+            memory: convertToMiB(form.value.memory),
+            swap: convertToMiB(form.value.swap),
+            disk: convertToMiB(form.value.disk),
             io: form.value.io,
-            cpu: convertToPercentage(form.value.cpu, cpuUnit.value),
+            cpu: convertToPercentage(form.value.cpu),
             allocation_id: Number(form.value.allocation_id),
             realms_id: Number(form.value.realms_id),
             spell_id: Number(form.value.spell_id),
@@ -1619,20 +1494,10 @@ async function submitCreate() {
 
 onMounted(() => {
     loadFormData();
-    loadResourcePreferences(); // Load saved preferences on mount
 });
 
 // Watch for changes in form.value and save preferences
-watch(
-    form,
-    () => {
-        saveResourcePreferences();
-    },
-    { deep: true },
-);
+// Note: Unit preferences are no longer saved since they're always fixed
 
-// Watch for changes in unit selectors
-watch([memoryUnit, swapUnit, diskUnit, cpuUnit], () => {
-    saveResourcePreferences();
-});
+// No need to watch unit selectors since they're always fixed
 </script>

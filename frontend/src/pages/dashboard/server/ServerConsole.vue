@@ -25,7 +25,7 @@
                             <div>
                                 <h4 class="font-medium text-sm">{{ t('serverConsole.componentVisibility') }}</h4>
                                 <p class="text-xs text-muted-foreground mt-1">
-                                    Choose whether to show or hide each component.
+                                    {{ t('serverConsole.componentVisibilityDescription') }}
                                 </p>
                             </div>
                             <div class="space-y-3">
@@ -436,14 +436,19 @@
                         </Button>
                         <Button variant="outline" @click="clearRecentCommands">
                             <Trash2 class="h-4 w-4 mr-2" />
-                            Clear Recent Commands
+                            {{ t('serverConsole.clearRecentCommands') }}
                         </Button>
                         <Button variant="outline" @click="debugRecentCommands">
                             <Settings class="h-4 w-4 mr-2" />
-                            Debug Commands
+                            {{ t('serverConsole.debugCommands') }}
                         </Button>
                         <Button variant="outline" @click="toggleCommandFiltering">
-                            {{ customization.terminal.filterCommands ? 'Disable' : 'Enable' }} Command Filtering
+                            {{
+                                customization.terminal.filterCommands
+                                    ? t('serverConsole.disable')
+                                    : t('serverConsole.enable')
+                            }}
+                            {{ t('serverConsole.commandFiltering') }}
                         </Button>
                         <Button class="flex-1" @click="async () => await saveAndApplyCustomization()">
                             <Save class="h-4 w-4 mr-2" />
@@ -741,9 +746,10 @@ const ansiConverter = new Convert({
 });
 
 const breadcrumbs = computed(() => [
-    { text: 'Dashboard', href: '/dashboard' },
-    { text: 'Servers', href: '/dashboard' },
-    { text: server.value?.name || 'Server', isCurrent: true, href: `/server/${route.params.uuidShort}` },
+    { text: t('common.dashboard'), href: '/dashboard' },
+    { text: t('common.servers'), href: '/dashboard' },
+    { text: server.value?.name || t('common.server'), href: `/server/${route.params.uuidShort}` },
+    { text: t('common.console'), isCurrent: true, href: `/server/${route.params.uuidShort}` },
 ]);
 
 // Wings connection status display
@@ -874,7 +880,7 @@ async function resetCustomization(): Promise<void> {
         },
     };
     await saveCustomization();
-    toast.success('Console layout reset to defaults');
+    toast.success(t('serverConsole.layoutResetToDefaults'));
 }
 
 async function saveAndApplyCustomization(): Promise<void> {
@@ -921,7 +927,7 @@ onMounted(async () => {
 
     // Add informative message for offline servers
     if (server.value?.status !== 'running') {
-        addTerminalLine('Console ready - Server is offline. Use the power buttons above to start the server.', 'info');
+        addTerminalLine(t('serverConsole.consoleReadyOffline'), 'info');
 
         // Initialize performance charts with zero data for offline servers
         const timestamp = Date.now();
@@ -1092,7 +1098,7 @@ function setupWebSocketHandlers(): void {
                 }
 
                 // Add status change to terminal
-                addTerminalLine(`Server status changed to: ${newStatus}`, 'info');
+                addTerminalLine(t('serverConsole.statusChanged', { status: newStatus }), 'info');
 
                 // Handle specific status transitions
                 if (newStatus === 'running') {
@@ -1126,33 +1132,33 @@ function setupWebSocketHandlers(): void {
                     console.warn('Failed to parse stats:', parseError);
                 }
             } else if (data.event === 'daemon error') {
-                addTerminalLine(`Daemon Error: ${data.args[0]}`, 'error');
+                addTerminalLine(t('serverConsole.daemonError', { message: String(data.args?.[0] ?? '') }), 'error');
             } else if (data.event === 'jwt error') {
-                addTerminalLine(`JWT Error: ${data.args[0]}`, 'error');
-                toast.error('Authentication error - please refresh the page');
+                addTerminalLine(t('serverConsole.jwtError', { message: String(data.args?.[0] ?? '') }), 'error');
+                toast.error(t('serverConsole.authErrorRefresh'));
             } else if (data.event === 'token expiring') {
-                addTerminalLine('Token expiring, attempting to reconnect...', 'warning');
+                addTerminalLine(t('serverConsole.tokenExpiringReconnecting'), 'warning');
                 // Token expiration is handled automatically by the WebSocket composable
             } else if (data.event === 'token expired') {
-                addTerminalLine('Token expired, please refresh the page', 'error');
+                addTerminalLine(t('serverConsole.tokenExpiredRefresh'), 'error');
                 // Page reload is handled automatically by the WebSocket composable
             } else if (data.event === 'install started') {
-                addTerminalLine('Server installation started...', 'info');
+                addTerminalLine(t('serverConsole.installStarted'), 'info');
             } else if (data.event === 'install output') {
                 addTerminalLine(data.args[0], 'info');
             } else if (data.event === 'install completed') {
-                addTerminalLine('Server installation completed!', 'info');
-                toast.success('Server installation completed');
+                addTerminalLine(t('serverConsole.installCompleted'), 'info');
+                toast.success(t('serverConsole.installCompleted'));
             } else if (data.event === 'backup completed') {
-                addTerminalLine('Backup completed successfully', 'info');
-                toast.success('Backup completed successfully');
+                addTerminalLine(t('serverConsole.backupCompleted'), 'info');
+                toast.success(t('serverConsole.backupCompleted'));
             } else if (data.event === 'transfer status') {
-                addTerminalLine(`Transfer status: ${data.args[0]}`, 'info');
+                addTerminalLine(t('serverConsole.transferStatus', { status: String(data.args?.[0] ?? '') }), 'info');
             } else if (data.event === 'transfer logs') {
                 addTerminalLine(data.args[0], 'info');
             } else if (data.event === 'deleted') {
-                addTerminalLine('Server has been deleted', 'error');
-                toast.error('Server has been deleted');
+                addTerminalLine(t('serverConsole.serverDeleted'), 'error');
+                toast.error(t('serverConsole.serverDeleted'));
                 router.push('/dashboard');
             }
         } catch {
@@ -1367,7 +1373,7 @@ async function startServer(): Promise<void> {
             }
         } else {
             // Fallback to API if Wings not available
-            toast.info('Using fallback API mode - Wings daemon unavailable');
+            toast.info(t('serverConsole.usingFallbackApiMode'));
 
             await axios.post(`/api/user/servers/${route.params.uuidShort}/power/start`);
             toast.success(t('serverConsole.serverStarting'));
@@ -1407,7 +1413,7 @@ async function stopServer(): Promise<void> {
             toast.success(t('serverConsole.serverStopping'));
         } else {
             // Fallback to API if Wings not available
-            toast.info('Using fallback API mode - Wings daemon unavailable');
+            toast.info(t('serverConsole.usingFallbackApiMode'));
 
             await axios.post(`/api/user/servers/${route.params.uuidShort}/power/stop`);
             toast.success(t('serverConsole.serverStopping'));
@@ -1449,7 +1455,7 @@ async function restartServer(): Promise<void> {
             toast.success(t('serverConsole.serverRestarting'));
         } else {
             // Fallback to API if Wings not available
-            toast.info('Using fallback API mode - Wings daemon unavailable');
+            toast.info(t('serverConsole.usingFallbackApiMode'));
 
             await axios.post(`/api/user/servers/${route.params.uuidShort}/power/restart`);
             toast.success(t('serverConsole.serverRestarting'));
@@ -1489,7 +1495,7 @@ async function killServer(): Promise<void> {
             toast.success(t('serverConsole.serverKilling'));
         } else {
             // Fallback to API if Wings not available
-            toast.info('Using fallback API mode - Wings daemon unavailable');
+            toast.info(t('serverConsole.usingFallbackApiMode'));
 
             await axios.post(`/api/user/servers/${route.params.uuidShort}/power/kill`);
             toast.success(t('serverConsole.serverKilling'));
@@ -1520,16 +1526,14 @@ function sendCommand(command: string): void {
     if (!command.trim()) return;
 
     if (!wingsWebSocket.isConnected) {
-        toast.warning(
-            "Can't reach the Wings daemon at this moment... Please wait for reconnection or use the power buttons",
-        );
+        toast.warning(t('serverConsole.wingsUnreachableWait'));
         return;
     }
 
     // Check if server is completely offline - only block commands for truly offline servers
     const currentStatus = wingsState.value || server.value?.status || 'unknown';
     if (currentStatus.toLowerCase() === 'offline') {
-        toast.warning(`Cannot send commands - server is ${currentStatus}. Start the server first.`);
+        toast.warning(t('serverConsole.cannotSendCommandsStatus', { status: currentStatus }));
         return;
     }
 
@@ -1559,12 +1563,12 @@ function sendCommand(command: string): void {
                 }),
             );
         } catch (error) {
-            addTerminalLine(`Failed to send command: ${error}`, 'error');
-            toast.error('Failed to send command to Wings daemon');
+            addTerminalLine(t('serverConsole.failedToSendCommand') + `: ${String(error)}`, 'error');
+            toast.error(t('serverConsole.failedToSendCommand'));
         }
     } else {
-        addTerminalLine('WebSocket not connected', 'error');
-        toast.warning('Cannot send command - Wings daemon connection lost');
+        addTerminalLine(t('serverConsole.websocketNotConnected'), 'error');
+        toast.warning(t('serverConsole.connectionLost'));
     }
 }
 
@@ -1640,7 +1644,7 @@ function clearRecentCommands(): void {
     commandTimeouts.clear();
     recentCommands.clear();
     console.log('Recent commands cleared');
-    toast.success('Recent commands cleared');
+    toast.success(t('serverConsole.recentCommandsCleared'));
 }
 
 function debugRecentCommands(): void {
@@ -1653,14 +1657,14 @@ function debugRecentCommands(): void {
 
     // Show in toast for easy viewing
     const commandsList = Array.from(recentCommands).join(', ') || 'None';
-    toast.info(`Recent commands: ${commandsList}`);
+    toast.info(t('serverConsole.recentCommandsDebug', { commands: commandsList }));
 }
 
 function toggleCommandFiltering(): void {
     customization.value.terminal.filterCommands = !customization.value.terminal.filterCommands;
     const status = customization.value.terminal.filterCommands ? 'enabled' : 'disabled';
     console.log(`Command filtering ${status}`);
-    toast.info(`Command filtering ${status}`);
+    toast.info(t('serverConsole.commandFilteringStatus', { status }));
 }
 
 // Console window/popup functions

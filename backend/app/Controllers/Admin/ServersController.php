@@ -22,6 +22,8 @@ use App\Chat\Server;
 use App\Chat\Activity;
 use App\Chat\Allocation;
 use App\Helpers\UUIDUtils;
+use App\Chat\SpellVariable;
+use App\Chat\ServerActivity;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
@@ -117,16 +119,76 @@ class ServersController
         $server['realm'] = Realm::getById($server['realms_id']);
         $server['spell'] = Spell::getSpellById($server['spell_id']);
         $server['allocation'] = Allocation::getAllocationById($server['allocation_id']);
+        $server['activity'] = ServerActivity::getActivitiesByServerId($server['id']);
+        $server['activity'] = array_reverse(array_slice($server['activity'], 0, 50));
 
-        // Get server variables with details
-        $server['variables'] = ServerVariable::getServerVariablesWithDetails($server['id']);
+        // Get server variables and spell variables
+        $serverVariables = ServerVariable::getServerVariablesByServerId($server['id']);
+        $spellVariables = SpellVariable::getVariablesBySpellId($server['spell_id']);
+
+        // Create a map of spell variables by their ID for easy lookup
+        $spellVariableMap = [];
+        foreach ($spellVariables as $spellVar) {
+            $spellVariableMap[$spellVar['id']] = $spellVar;
+        }
+
+        // Merge server variables with their corresponding spell variable definitions
+        $mergedVariables = [];
+        foreach ($serverVariables as $serverVar) {
+            $variableId = $serverVar['variable_id'];
+            if (isset($spellVariableMap[$variableId])) {
+                $spellVar = $spellVariableMap[$variableId];
+                $mergedVariables[] = [
+                    'id' => $serverVar['id'],
+                    'server_id' => $serverVar['server_id'],
+                    'variable_id' => $variableId,
+                    'variable_value' => $serverVar['variable_value'],
+                    'name' => $spellVar['name'],
+                    'description' => $spellVar['description'],
+                    'env_variable' => $spellVar['env_variable'],
+                    'default_value' => $spellVar['default_value'],
+                    'user_viewable' => $spellVar['user_viewable'],
+                    'user_editable' => $spellVar['user_editable'],
+                    'rules' => $spellVar['rules'],
+                    'field_type' => $spellVar['field_type'],
+                    'created_at' => $serverVar['created_at'],
+                    'updated_at' => $serverVar['updated_at'],
+                ];
+            }
+        }
+
+        $server['variables'] = $mergedVariables;
+
+        // Add SFTP information (similar to user controller)
+        $sftp = [
+            'host' => $server['node']['fqdn'],
+            'port' => $server['node']['daemonSFTP'] ?? 2022,
+            'username' => strtolower($server['owner']['username']) . '.' . $server['uuidShort'],
+            'password' => '#AUTH_PASSWORD#',
+            'url' => 'sftp://' . $server['node']['fqdn'] . ':' . ($server['node']['daemonSFTP'] ?? 2022) . '/' . strtolower($server['owner']['username']) . '.' . $server['uuidShort'],
+        ];
+        $server['sftp'] = $sftp;
 
         // Remove sensitive data from related objects
         if ($server['owner']) {
             unset($server['owner']['password'], $server['owner']['remember_token'], $server['owner']['two_fa_key']);
         }
 
-        return ApiResponse::success(['server' => $server], 'Server fetched successfully', 200);
+        // Remove sensitive node data
+        unset(
+            $server['node']['memory'],
+            $server['node']['memory_overallocate'],
+            $server['node']['disk'],
+            $server['node']['disk_overallocate'],
+            $server['node']['upload_size'],
+            $server['node']['daemon_token_id'],
+            $server['node']['daemon_token'],
+            $server['node']['daemonListen'],
+            $server['node']['daemonSFTP'],
+            $server['node']['daemonBase']
+        );
+
+        return ApiResponse::success($server, 'Server fetched successfully', 200);
     }
 
     public function create(Request $request): Response
@@ -260,8 +322,15 @@ class ServersController
             return ApiResponse::error('Failed to create server', 'FAILED_TO_CREATE_SERVER', 500);
         }
 
+        // Claim the allocation for this server
+        $allocationClaimed = Allocation::assignToServer($data['allocation_id'], $serverId);
+        if (!$allocationClaimed) {
+            App::getInstance(true)->getLogger()->error('Failed to claim allocation for server ID: ' . $serverId);
+            // Note: We don't fail the server creation, but log the error
+        }
+
         // Validate required spell variables
-        $spellVariables = \App\Chat\SpellVariable::getVariablesBySpellId($data['spell_id']);
+        $spellVariables = SpellVariable::getVariablesBySpellId($data['spell_id']);
         $requiredVariables = [];
         $providedVariables = isset($data['variables']) ? array_keys($data['variables']) : [];
 
@@ -400,31 +469,53 @@ class ServersController
         unset($data['id'], $data['uuid'], $data['uuidShort']);
 
         // Validate data types for numeric fields
-        $numericFields = ['node_id', 'owner_id', 'memory', 'disk', 'io', 'cpu', 'allocation_id', 'realms_id', 'spell_id'];
+        $numericFields = ['node_id', 'owner_id', 'memory', 'swap', 'disk', 'io', 'cpu', 'allocation_id', 'realms_id', 'spell_id', 'allocation_limit', 'database_limit', 'backup_limit', 'threads'];
         foreach ($data as $field => $value) {
             if (in_array($field, $numericFields)) {
-                if (!is_numeric($value) || (int) $value <= 0) {
-                    return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a positive integer', 'INVALID_DATA_TYPE', 400);
+                if (!is_numeric($value) || (int) $value < 0) {
+                    return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a non-negative integer', 'INVALID_DATA_TYPE', 400);
                 }
             }
         }
 
         // Validate string fields
-        $stringFields = ['name', 'description', 'startup', 'image'];
+        $stringFields = ['name', 'description', 'startup', 'image', 'external_id', 'status'];
         foreach ($data as $field => $value) {
-            if (in_array($field, $stringFields)) {
-                if (!is_string($value) || trim($value) === '') {
-                    return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a non-empty string', 'INVALID_DATA_TYPE', 400);
+            if (in_array($field, $stringFields) && isset($data[$field])) {
+                if (!is_string($value)) {
+                    return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a string', 'INVALID_DATA_TYPE', 400);
                 }
+                if (trim($value) === '' && in_array($field, ['name', 'startup', 'image'])) {
+                    return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' cannot be empty', 'INVALID_DATA_TYPE', 400);
+                }
+            }
+        }
+
+        // Validate boolean fields
+        $booleanFields = ['skip_scripts', 'oom_disabled'];
+        foreach ($data as $field => $value) {
+            if (in_array($field, $booleanFields) && isset($data[$field])) {
+                if (!is_bool($value) && !in_array($value, [0, 1, '0', '1'], true)) {
+                    return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a boolean value', 'INVALID_DATA_TYPE', 400);
+                }
+            }
+        }
+
+        // Validate status field if provided
+        if (isset($data['status'])) {
+            $validStatuses = ['installing', 'install_failed', 'suspended', 'running', 'stopping', 'stopped', 'starting', 'restarting', 'backuping', 'restoring_backup', 'deleting_backup', 'transferring', 'offline'];
+            if (!in_array($data['status'], $validStatuses, true)) {
+                return ApiResponse::error('Invalid status value. Must be one of: ' . implode(', ', $validStatuses), 'INVALID_STATUS', 400);
             }
         }
 
         // Validate field lengths
         $lengthRules = [
             'name' => [1, 191],
-            'description' => [1, 65535],
+            'description' => [0, 65535],
             'startup' => [1, 65535],
             'image' => [1, 191],
+            'external_id' => [0, 191],
         ];
 
         foreach ($data as $field => $value) {
@@ -444,12 +535,6 @@ class ServersController
         if (isset($data['memory']) && $data['memory'] < 128) {
             return ApiResponse::error('Memory must be at least 128 MB', 'INVALID_MEMORY_LIMIT', 400);
         }
-        if (isset($data['swap'])) {
-            // Swap can be 0 or positive
-            if (!is_numeric($data['swap']) || (int) $data['swap'] < 0) {
-                return ApiResponse::error('Swap must be a non-negative integer', 'INVALID_SWAP_LIMIT', 400);
-            }
-        }
         if (isset($data['disk']) && $data['disk'] < 1024) {
             return ApiResponse::error('Disk must be at least 1024 MB', 'INVALID_DISK_LIMIT', 400);
         }
@@ -467,8 +552,15 @@ class ServersController
         if (isset($data['node_id']) && !Node::getNodeById($data['node_id'])) {
             return ApiResponse::error('Invalid node_id: Node not found', 'INVALID_NODE_ID', 400);
         }
-        if (isset($data['allocation_id']) && !Allocation::getAllocationById($data['allocation_id'])) {
-            return ApiResponse::error('Invalid allocation_id: Allocation not found', 'INVALID_ALLOCATION_ID', 400);
+        if (isset($data['allocation_id'])) {
+            if (!Allocation::getAllocationById($data['allocation_id'])) {
+                return ApiResponse::error('Invalid allocation_id: Allocation not found', 'INVALID_ALLOCATION_ID', 400);
+            }
+            // Check if the new allocation is already in use by another server
+            $existingServer = Server::getServerByAllocationId($data['allocation_id']);
+            if ($existingServer && $existingServer['id'] !== $id) {
+                return ApiResponse::error('Allocation is already in use by another server', 'ALLOCATION_IN_USE', 400);
+            }
         }
         if (isset($data['realms_id']) && !Realm::getById($data['realms_id'])) {
             return ApiResponse::error('Invalid realms_id: Realm not found', 'INVALID_REALM_ID', 400);
@@ -477,9 +569,155 @@ class ServersController
             return ApiResponse::error('Invalid spell_id: Spell not found', 'INVALID_SPELL_ID', 400);
         }
 
-        $updated = Server::updateServerById($id, $data);
+        // Handle variables if provided (similar to user controller)
+        $variablesPayload = null;
+        if (isset($data['variables'])) {
+            if (!is_array($data['variables'])) {
+                return ApiResponse::error('Invalid variables payload', 'INVALID_VARIABLES', 400);
+            }
+
+            // Build a map of spell env_variable => id for the active/new spell
+            $activeSpellId = isset($data['spell_id']) ? (int) $data['spell_id'] : (int) $server['spell_id'];
+            $spellVars = SpellVariable::getVariablesBySpellId($activeSpellId);
+            $envToId = [];
+            foreach ($spellVars as $sv) {
+                $envToId[$sv['env_variable']] = (int) $sv['id'];
+            }
+
+            $variablesPayload = [];
+
+            // Two accepted formats:
+            // 1) Array of { variable_id, variable_value }
+            // 2) Associative map of env_variable => value
+            $looksLikeArrayFormat = !empty($data['variables']) && isset($data['variables'][0]) && is_array($data['variables'][0]) && (isset($data['variables'][0]['variable_id']) || isset($data['variables'][0]['variable_value']));
+
+            if ($looksLikeArrayFormat) {
+                foreach ($data['variables'] as $item) {
+                    if (is_array($item) && isset($item['variable_id']) && array_key_exists('variable_value', $item)) {
+                        $varId = (int) $item['variable_id'];
+                        $varVal = (string) $item['variable_value'];
+                        if ($varId <= 0) {
+                            return ApiResponse::error('Invalid variable_id in variables payload', 'INVALID_VARIABLE_ID', 400);
+                        }
+                        $variablesPayload[] = [
+                            'variable_id' => $varId,
+                            'variable_value' => $varVal,
+                        ];
+                    } else {
+                        return ApiResponse::error('Invalid variables item format', 'INVALID_VARIABLE_ITEM', 400);
+                    }
+                }
+            } else {
+                // Treat as env map format
+                foreach ($data['variables'] as $env => $value) {
+                    if (!is_string($env)) {
+                        return ApiResponse::error('Invalid variables map: env_variable keys must be strings', 'INVALID_VARIABLES_MAP', 400);
+                    }
+                    if (!array_key_exists($env, $envToId)) {
+                        // Skip unknown env variables silently (or log) rather than failing the whole request
+                        continue;
+                    }
+                    $variablesPayload[] = [
+                        'variable_id' => $envToId[$env],
+                        'variable_value' => (string) $value,
+                    ];
+                }
+            }
+        }
+
+        // Update the server fields (exclude variables from direct update payload)
+        $serverUpdateData = $data;
+        unset($serverUpdateData['variables']);
+
+        // Normalize integer/boolean fields to avoid empty-string writes
+        $intFields = [
+            'node_id',
+            'owner_id',
+            'memory',
+            'swap',
+            'disk',
+            'io',
+            'cpu',
+            'allocation_id',
+            'realms_id',
+            'spell_id',
+            'allocation_limit',
+            'database_limit',
+            'backup_limit',
+            'threads',
+            'skip_scripts',
+            'oom_disabled',
+            'suspended',
+        ];
+        foreach ($intFields as $f) {
+            if (array_key_exists($f, $serverUpdateData)) {
+                $value = $serverUpdateData[$f];
+                // Treat empty string as "not provided" to avoid SQL errors
+                if ($value === '' || $value === null) {
+                    unset($serverUpdateData[$f]);
+                } else {
+                    // Coerce booleans/strings to int for DB
+                    $serverUpdateData[$f] = (int) $value;
+                }
+            }
+        }
+        $updated = Server::updateServerById($id, $serverUpdateData);
         if (!$updated) {
             return ApiResponse::error('Failed to update server', 'FAILED_TO_UPDATE_SERVER', 500);
+        }
+
+        // Handle allocation changes if allocation_id is being updated
+        if (isset($data['allocation_id']) && $data['allocation_id'] !== $server['allocation_id']) {
+            // Unclaim the old allocation
+            if (isset($server['allocation_id'])) {
+                $oldAllocationUnclaimed = Allocation::unassignFromServer($server['allocation_id']);
+                if (!$oldAllocationUnclaimed) {
+                    App::getInstance(true)->getLogger()->error('Failed to unclaim old allocation (ID: ' . $server['allocation_id'] . ') for server ID: ' . $id);
+                }
+            }
+
+            // Claim the new allocation
+            $newAllocationClaimed = Allocation::assignToServer($data['allocation_id'], $id);
+            if (!$newAllocationClaimed) {
+                App::getInstance(true)->getLogger()->error('Failed to claim new allocation (ID: ' . $data['allocation_id'] . ') for server ID: ' . $id);
+            }
+        }
+
+        // Update variables if provided
+        if ($variablesPayload !== null) {
+            $ok = ServerVariable::createOrUpdateServerVariables((int) $id, $variablesPayload);
+            if (!$ok) {
+                return ApiResponse::error('Failed to update server variables', 'VARIABLES_UPDATE_FAILED', 500);
+            }
+        }
+
+        // Sync with Wings if node information is available
+        if (isset($data['node_id']) || isset($data['allocation_id']) || isset($data['spell_id']) || isset($data['variables'])) {
+            $nodeInfo = Node::getNodeById($data['node_id'] ?? $server['node_id']);
+            if ($nodeInfo) {
+                $scheme = $nodeInfo['scheme'];
+                $host = $nodeInfo['fqdn'];
+                $port = $nodeInfo['daemonListen'];
+                $token = $nodeInfo['daemon_token'];
+
+                $timeout = (int) 30;
+                try {
+                    $wings = new Wings(
+                        $host,
+                        $port,
+                        $scheme,
+                        $token,
+                        $timeout
+                    );
+
+                    $response = $wings->getServer()->syncServer($server['uuid']);
+                    if (!$response->isSuccessful()) {
+                        App::getInstance(true)->getLogger()->warning('Failed to sync server with Wings: ' . $response->getError());
+                    }
+                } catch (\Exception $e) {
+                    App::getInstance(true)->getLogger()->error('Failed to sync server with Wings: ' . $e->getMessage());
+                }
+            }
         }
 
         // Log activity
@@ -490,7 +728,22 @@ class ServersController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
-        return ApiResponse::success([], 'Server updated successfully', 200);
+        // Get updated server data for response
+        $updatedServer = Server::getServerById($id);
+
+        return ApiResponse::success([
+            'server' => [
+                'id' => $updatedServer['id'],
+                'uuid' => $updatedServer['uuid'],
+                'uuidShort' => $updatedServer['uuidShort'],
+                'name' => $updatedServer['name'],
+                'description' => $updatedServer['description'],
+                'startup' => $updatedServer['startup'],
+                'image' => $updatedServer['image'],
+                'status' => $updatedServer['status'],
+                'updated_at' => $updatedServer['updated_at'] ?? null,
+            ],
+        ], 'Server updated successfully', 200);
     }
 
     public function delete(Request $request, int $id): Response
@@ -498,6 +751,15 @@ class ServersController
         $server = Server::getServerById($id);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Unclaim the allocation before deleting the server
+        if (isset($server['allocation_id'])) {
+            $allocationUnclaimed = Allocation::unassignFromServer($server['allocation_id']);
+            if (!$allocationUnclaimed) {
+                App::getInstance(true)->getLogger()->error('Failed to unclaim allocation for server ID: ' . $id);
+                // Continue with deletion even if unclaiming fails
+            }
         }
 
         $deleted = Server::hardDeleteServer($id);
@@ -606,5 +868,86 @@ class ServersController
         $variables = ServerVariable::getServerVariablesWithDetails($id);
 
         return ApiResponse::success(['variables' => $variables], 'Server variables fetched successfully', 200);
+    }
+
+    public function suspend(Request $request, int $id): Response
+    {
+        $server = Server::getServerById($id);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $ok = Server::updateServerById($id, ['suspended' => 1]);
+        if (!$ok) {
+            return ApiResponse::error('Failed to suspend server', 'FAILED_TO_SUSPEND', 500);
+        }
+
+        Activity::createActivity([
+            'user_uuid' => $request->get('user')['uuid'],
+            'name' => 'suspend_server',
+            'context' => 'Suspended server ' . $server['name'],
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        $nodeInfo = Node::getNodeById($server['node_id']);
+        $scheme = $nodeInfo['scheme'];
+        $host = $nodeInfo['fqdn'];
+        $port = $nodeInfo['daemonListen'];
+        $token = $nodeInfo['daemon_token'];
+
+        $timeout = (int) 30;
+        try {
+            $wings = new Wings(
+                $host,
+                $port,
+                $scheme,
+                $token,
+                $timeout
+            );
+
+            $response = $wings->getServer()->killServer($server['uuid']);
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+                if ($response->getStatusCode() === 400) {
+                    return ApiResponse::error('Invalid server configuration: ' . $error, 'INVALID_SERVER_CONFIG', 400);
+                } elseif ($response->getStatusCode() === 401) {
+                    return ApiResponse::error('Unauthorized access to Wings daemon', 'WINGS_UNAUTHORIZED', 401);
+                } elseif ($response->getStatusCode() === 403) {
+                    return ApiResponse::error('Forbidden access to Wings daemon', 'WINGS_FORBIDDEN', 403);
+                } elseif ($response->getStatusCode() === 422) {
+                    return ApiResponse::error('Invalid server data: ' . $error, 'INVALID_SERVER_DATA', 422);
+                }
+
+                return ApiResponse::error('Failed to create server in Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to create server in Wings: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to create server in Wings: ' . $e->getMessage(), 'FAILED_TO_CREATE_SERVER_IN_WINGS', 500);
+        }
+
+        return ApiResponse::success([], 'Server suspended', 200);
+    }
+
+    public function unsuspend(Request $request, int $id): Response
+    {
+        $server = Server::getServerById($id);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $ok = Server::updateServerById($id, ['suspended' => 0]);
+        if (!$ok) {
+            return ApiResponse::error('Failed to unsuspend server', 'FAILED_TO_UNSUSPEND', 500);
+        }
+
+        Activity::createActivity([
+            'user_uuid' => $request->get('user')['uuid'],
+            'name' => 'unsuspend_server',
+            'context' => 'Unsuspended server ' . $server['name'],
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        return ApiResponse::success([], 'Server unsuspended', 200);
     }
 }

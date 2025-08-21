@@ -127,10 +127,10 @@
                                             </p>
                                         </div>
                                         <Badge
-                                            :variant="getStatusVariant(server.status)"
+                                            :variant="getStatusVariant(displayStatus(server))"
                                             class="bg-white/20 text-white border-white/30 hover:bg-white/30"
                                         >
-                                            {{ $t(`servers.status.${server.status}`) }}
+                                            {{ $t(`servers.status.${displayStatus(server)}`) }}
                                         </Badge>
                                     </div>
 
@@ -248,10 +248,10 @@
                                             </p>
                                         </div>
                                         <Badge
-                                            :variant="getStatusVariant(server.status)"
+                                            :variant="getStatusVariant(displayStatus(server))"
                                             class="bg-white/20 text-white border-white/30 hover:bg-white/30"
                                         >
-                                            {{ $t(`servers.status.${server.status}`) }}
+                                            {{ $t(`servers.status.${displayStatus(server)}`) }}
                                         </Badge>
                                     </div>
 
@@ -359,10 +359,10 @@
                                     </p>
                                 </div>
                                 <Badge
-                                    :variant="getStatusVariant(server.status)"
+                                    :variant="getStatusVariant(displayStatus(server))"
                                     class="bg-white/20 text-white border-white/30 hover:bg-white/30"
                                 >
-                                    {{ $t(`servers.status.${server.status}`) }}
+                                    {{ $t(`servers.status.${displayStatus(server)}`) }}
                                 </Badge>
                             </div>
 
@@ -573,12 +573,39 @@
             </div>
         </DialogContent>
     </Dialog>
+
+    <!-- Confirmation Dialog -->
+    <Dialog v-model:open="showConfirmDialog" @update:open="confirmLoading = false">
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>{{ confirmDialog.title }}</DialogTitle>
+            </DialogHeader>
+            <div class="py-4 text-sm text-muted-foreground">
+                {{ confirmDialog.description }}
+            </div>
+            <div class="flex justify-end gap-2">
+                <Button
+                    variant="outline"
+                    @click="
+                        showConfirmDialog = false;
+                        confirmAction = null;
+                    "
+                >
+                    {{ $t('servers.cancel') }}
+                </Button>
+                <Button :variant="confirmDialog.variant" :disabled="confirmLoading" @click="confirmAction?.()">
+                    {{ confirmDialog.confirmText }}
+                </Button>
+            </div>
+        </DialogContent>
+    </Dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import { useSessionStore } from '@/stores/session';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -601,9 +628,12 @@ import {
 } from 'lucide-vue-next';
 import axios from 'axios';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from 'vue-toastification';
 
 const sessionStore = useSessionStore();
 const router = useRouter();
+const toast = useToast();
+const { t } = useI18n();
 
 // Define emits
 const emit = defineEmits<{
@@ -639,6 +669,7 @@ interface Server {
     uuidShort: string;
     description: string;
     status: string;
+    suspended?: number;
     memory: number;
     disk: number;
     cpu: number;
@@ -694,6 +725,17 @@ const folderForm = ref({ name: '' });
 
 const serverFolders = ref<Folder[]>([]);
 const unassignedServers = ref<Server[]>([]);
+
+// Confirm dialog state
+const showConfirmDialog = ref(false);
+const confirmDialog = ref({
+    title: '' as string,
+    description: '' as string,
+    confirmText: '' as string,
+    variant: 'default' as 'default' | 'destructive',
+});
+const confirmAction = ref<null | (() => Promise<void> | void)>(null);
+const confirmLoading = ref(false);
 
 // Interval for periodic server validation
 let validationInterval: number | undefined = undefined;
@@ -846,11 +888,17 @@ function getStatusVariant(status: string): 'default' | 'secondary' | 'destructiv
             return 'secondary';
         case 'installing':
             return 'outline';
+        case 'suspended':
+            return 'destructive';
         case 'error':
             return 'destructive';
         default:
             return 'outline';
     }
+}
+
+function displayStatus(server: Server): string {
+    return server.suspended ? 'suspended' : server.status || 'unknown';
 }
 
 function formatMemory(memory: number): string {
@@ -868,6 +916,10 @@ function formatDisk(disk: number): string {
 }
 
 function openServerDetails(server: Server) {
+    if (server.suspended) {
+        toast.error("Sorry, but you can't access servers while they are suspended.");
+        return;
+    }
     router.push(`/server/${server.uuidShort}`);
 }
 
@@ -910,19 +962,38 @@ function saveFolder() {
 }
 
 function deleteFolder(folderId: number) {
-    if (confirm('Are you sure you want to delete this folder? All servers will be moved to unassigned.')) {
-        // Move all servers from deleted folder to unassigned
-        const folder = serverFolders.value.find((f) => f.id === folderId);
-        if (folder) {
+    const folder = serverFolders.value.find((f) => f.id === folderId);
+    if (!folder) return;
+
+    confirmDialog.value = {
+        title: t('servers.confirmDeleteFolderTitle'),
+        description: t('servers.confirmDeleteFolderDescription', { folderName: folder.name }),
+        confirmText: t('servers.confirm'),
+        variant: 'destructive',
+    };
+    confirmAction.value = async () => {
+        try {
+            confirmLoading.value = true;
+
+            // Move all servers from deleted folder to unassigned
             unassignedServers.value.push(...folder.servers);
+
+            // Remove folder
+            serverFolders.value = serverFolders.value.filter((f) => f.id !== folderId);
+
+            // Save to local storage
+            saveFoldersToStorage();
+
+            toast.success(t('servers.folderDeleted'));
+        } catch (error) {
+            console.error('Error deleting folder:', error);
+            toast.error(t('servers.folderDeleteFailed'));
+        } finally {
+            confirmLoading.value = false;
+            showConfirmDialog.value = false;
         }
-
-        // Remove folder
-        serverFolders.value = serverFolders.value.filter((f) => f.id !== folderId);
-
-        // Save to local storage
-        saveFoldersToStorage();
-    }
+    };
+    showConfirmDialog.value = true;
 }
 
 function toggleViewMode() {
@@ -959,14 +1030,16 @@ async function validateAndCleanupServers() {
                 saveFoldersToStorage();
                 console.log(`Validation complete: Removed ${removedCount} deleted servers from folders`);
                 // Show success message
-                alert(`Validation complete! Removed ${removedCount} deleted/non-existent servers from your folders.`);
+                toast.warning(
+                    `Validation complete! Removed ${removedCount} deleted/non-existent servers from your folders.`,
+                );
             } else {
-                alert('Validation complete! All servers in your folders are still valid.');
+                toast.info('Validation complete! All servers in your folders are still valid.');
             }
         }
     } catch (error) {
         console.error('Server validation failed:', error);
-        alert('Server validation failed. Please try again.');
+        toast.error('Server validation failed. Please try again.');
     } finally {
         loading.value = false;
     }
@@ -1051,11 +1124,29 @@ async function organizeServersIntoFolders() {
             return isValid;
         });
 
-        // For each server from the API, check if it's already assigned somewhere
-        servers.value.forEach((server) => {
+        // For each server from the API, check if it's already assigned somewhere and update existing data
+        servers.value.forEach((apiServer) => {
+            // Update existing server data in folders
+            serverFolders.value.forEach((folder) => {
+                folder.servers.forEach((folderServer) => {
+                    if (folderServer.id === apiServer.id) {
+                        // Update the server data with fresh API data
+                        Object.assign(folderServer, apiServer);
+                    }
+                });
+            });
+
+            // Update existing server data in unassigned
+            unassignedServers.value.forEach((unassignedServer) => {
+                if (unassignedServer.id === apiServer.id) {
+                    // Update the server data with fresh API data
+                    Object.assign(unassignedServer, apiServer);
+                }
+            });
+
             // If server is not assigned anywhere, add it to unassigned
-            if (!assignedServerIds.has(server.id) && !unassignedServerIds.has(server.id)) {
-                unassignedServers.value.push(server);
+            if (!assignedServerIds.has(apiServer.id) && !unassignedServerIds.has(apiServer.id)) {
+                unassignedServers.value.push(apiServer);
             }
         });
 

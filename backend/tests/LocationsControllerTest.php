@@ -39,7 +39,7 @@ class LocationsControllerTest extends TestCase
                 'email' => $this->adminEmail,
                 'password' => password_hash('TestPassword123', PASSWORD_BCRYPT),
                 'role_id' => 4,
-                'avatar' => 'http://cdn.mythical.systems/featherpanel/logo.png',
+                'avatar' => 'https://cdn.mythical.systems/featherpanel/logo.png',
                 'remember_token' => bin2hex(random_bytes(16)),
             ]);
         }

@@ -51,7 +51,9 @@ export default defineConfig({
         },
     },
     build: {
-        sourcemap: true,
+        sourcemap: false,
+        assetsInlineLimit: 0,
+        emptyOutDir: true,
         chunkSizeWarningLimit: 120000,
     },
     optimizeDeps: {

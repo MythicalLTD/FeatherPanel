@@ -17,6 +17,7 @@ use App\Helpers\ApiResponse;
 use App\Controllers\Admin\ServersController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Admin\ServerActivitiesController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
@@ -172,6 +173,66 @@ return function (RouteCollection $routes): void {
             }
 
             return (new ServersController())->getServerVariables($request, (int) $id);
+        },
+        Permissions::ADMIN_SERVERS_VIEW,
+    );
+
+    // Suspend a server
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-servers-suspend',
+        '/api/admin/servers/{id}/suspend',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid server ID', 'INVALID_SERVER_ID', 400);
+            }
+
+            return (new ServersController())->suspend($request, (int) $id);
+        },
+        Permissions::ADMIN_SERVERS_EDIT,
+        ['POST']
+    );
+
+    // Unsuspend a server
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-servers-unsuspend',
+        '/api/admin/servers/{id}/unsuspend',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid server ID', 'INVALID_SERVER_ID', 400);
+            }
+
+            return (new ServersController())->unsuspend($request, (int) $id);
+        },
+        Permissions::ADMIN_SERVERS_EDIT,
+        ['POST']
+    );
+
+    // Server activities (paginated)
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-server-activities',
+        '/api/admin/server-activities',
+        function (Request $request) {
+            return (new ServerActivitiesController())->index($request);
+        },
+        Permissions::ADMIN_SERVERS_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-server-activities-by-server',
+        '/api/admin/servers/{id}/activities',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid server ID', 'INVALID_SERVER_ID', 400);
+            }
+
+            return (new ServerActivitiesController())->byServer($request, (int) $id);
         },
         Permissions::ADMIN_SERVERS_VIEW,
     );

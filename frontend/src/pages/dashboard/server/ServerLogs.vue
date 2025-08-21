@@ -120,10 +120,10 @@ const ansiConverter = new Convert({
 });
 
 const breadcrumbs = computed(() => [
-    { text: 'Dashboard', href: '/dashboard' },
-    { text: 'Servers', href: '/dashboard' },
-    { text: server.value?.name || 'Server', href: `/server/${route.params.uuidShort}` },
-    { text: 'Logs', isCurrent: true, href: `/server/${route.params.uuidShort}/logs` },
+    { text: t('common.dashboard'), href: '/dashboard' },
+    { text: t('common.servers'), href: '/dashboard' },
+    { text: server.value?.name || t('common.server'), href: `/server/${route.params.uuidShort}` },
+    { text: t('common.logs'), isCurrent: true, href: `/server/${route.params.uuidShort}/logs` },
 ]);
 
 onMounted(async () => {

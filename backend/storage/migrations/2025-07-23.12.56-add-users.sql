@@ -9,7 +9,7 @@ CREATE TABLE
 		`external_id` INT NULL DEFAULT NULL,
 		`password` VARCHAR(255) NOT NULL,
 		`remember_token` VARCHAR(255) NOT NULL,
-		`avatar` VARCHAR(255) NOT NULL DEFAULT 'http://cdn.mythical.systems/featherpanel/logo.png',
+		`avatar` VARCHAR(255) NOT NULL DEFAULT 'https://cdn.mythical.systems/featherpanel/logo.png',
 		`uuid` CHAR(36) NOT NULL,
 		`first_ip` VARCHAR(45) NOT NULL DEFAULT '127.0.0.1',
 		`last_ip` VARCHAR(45) NOT NULL DEFAULT '127.0.0.1',

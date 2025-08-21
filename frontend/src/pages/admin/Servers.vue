@@ -61,8 +61,8 @@
 
                     <!-- Custom cell templates -->
                     <template #cell-status="{ item }">
-                        <Badge :variant="getStatusVariant((item as ApiServer).status || 'unknown')" class="capitalize">
-                            {{ (item as ApiServer).status || 'Unknown' }}
+                        <Badge :variant="getStatusVariant(displayStatus(item as ApiServer))" class="capitalize">
+                            {{ displayStatus(item as ApiServer) }}
                         </Badge>
                     </template>
 
@@ -183,10 +183,10 @@
                                         <div class="flex justify-between">
                                             <span class="text-muted-foreground">Status:</span>
                                             <Badge
-                                                :variant="getStatusVariant(selectedServer.status || 'unknown')"
+                                                :variant="getStatusVariant(displayStatus(selectedServer))"
                                                 class="capitalize"
                                             >
-                                                {{ selectedServer.status || 'Unknown' }}
+                                                {{ displayStatus(selectedServer) }}
                                             </Badge>
                                         </div>
                                         <div class="flex justify-between">
@@ -380,6 +380,7 @@ type ApiServer = {
     name: string;
     description: string;
     status?: string;
+    suspended?: number;
     skip_scripts: number;
     owner_id: number;
     memory: number;
@@ -586,6 +587,10 @@ function getStatusVariant(status: string): 'default' | 'secondary' | 'destructiv
         default:
             return 'secondary';
     }
+}
+
+function displayStatus(server: ApiServer): string {
+    return server.suspended ? 'suspended' : server.status || 'Unknown';
 }
 
 function formatMemory(mb: number): string {

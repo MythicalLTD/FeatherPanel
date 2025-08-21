@@ -64,31 +64,13 @@ defineProps<{ breadcrumbs?: BreadcrumbEntry[] }>();
                 </div>
             </header>
             <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
-                <transition name="content-fade" mode="in-out" appear>
-                    <slot />
-                </transition>
+                <slot />
             </div>
         </SidebarInset>
     </SidebarProvider>
 </template>
 
 <style scoped>
-/* Content fade transition */
-.content-fade-enter-active,
-.content-fade-leave-active {
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.content-fade-enter-from {
-    opacity: 0;
-    transform: translateY(8px);
-}
-
-.content-fade-leave-to {
-    opacity: 0;
-    transform: translateY(-8px);
-}
-
 /* Smooth sidebar transitions */
 :deep(.sidebar) {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

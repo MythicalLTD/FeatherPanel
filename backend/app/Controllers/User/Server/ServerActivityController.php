@@ -36,12 +36,16 @@ class ServerActivityController
         $perPage = max(1, min(100, (int) $request->query->get('per_page', 50)));
         $search = $request->query->get('search', '');
 
-        // Get activities with server information
+        // Get user's server IDs
+        $userServers = \App\Chat\Server::getServersByOwnerId((int) $user['id']);
+        $serverIds = array_map(static fn ($s) => (int) $s['id'], $userServers);
+
+        // Get activities for user's servers (include daemon events with NULL user_id)
         $result = ServerActivity::getActivitiesWithPagination(
             page: $page,
             perPage: $perPage,
             search: $search,
-            userId: $user['id']
+            serverIds: $serverIds,
         );
 
         // Add server information to activities
@@ -119,13 +123,13 @@ class ServerActivityController
         $perPage = max(1, min(100, (int) $request->query->get('per_page', 50)));
         $search = $request->query->get('search', '');
 
-        // Get activities for specific server, filtered by user
+        // Get activities for specific server. Ownership is enforced by ServerMiddleware,
+        // and many daemon-generated rows have NULL user_id, so do not filter by user here
         $result = ServerActivity::getActivitiesWithPagination(
             page: $page,
             perPage: $perPage,
             search: $search,
             serverId: $serverId,
-            userId: $user['id']
         );
 
         // Add server information to activities

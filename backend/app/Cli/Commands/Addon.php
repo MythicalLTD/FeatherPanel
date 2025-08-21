@@ -348,7 +348,7 @@ class Addon extends App implements CommandBuilder
                 'version' => $version,
                 'target' => 'v3',
                 'author' => [$author],
-                'icon' => 'http://cdn.mythical.systems/featherpanel/logo.png',
+                'icon' => 'https://cdn.mythical.systems/featherpanel/logo.png',
                 'requiredConfigs' => [],
                 'dependencies' => [
                     'php=8.1',

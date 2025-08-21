@@ -47,6 +47,26 @@ const clientRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/dashboard/server/ConsolePopup.vue'),
     },
     {
+        path: '/dashboard/activities',
+        name: 'AllServerActivities',
+        component: () => import('@/pages/dashboard/AllServerActivities.vue'),
+    },
+    {
+        path: '/server/:uuidShort/activities',
+        name: 'ServerActivities',
+        component: () => import('@/pages/dashboard/server/ServerActivities.vue'),
+    },
+    {
+        path: '/server/:uuidShort/allocations',
+        name: 'ServerAllocations',
+        component: () => import('@/pages/dashboard/server/Allocations.vue'),
+    },
+    {
+        path: '/server/:uuidShort/backups',
+        name: 'ServerBackups',
+        component: () => import('@/pages/dashboard/server/ServerBackups.vue'),
+    },
+    {
         path: '/',
         redirect: '/dashboard',
     },

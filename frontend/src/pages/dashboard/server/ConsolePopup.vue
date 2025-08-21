@@ -3,7 +3,7 @@
         <!-- Console Popup Header -->
         <div class="bg-sidebar border-b px-4 py-2 flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <h1 class="text-base font-medium">{{ server?.name || 'Console' }}</h1>
+                <h1 class="text-base font-medium">{{ server?.name || t('nav.console') }}</h1>
                 <Badge :variant="getStatusBadgeVariant(server?.status || 'offline')" class="text-xs">
                     {{ server?.status || 'offline' }}
                 </Badge>
@@ -19,7 +19,7 @@
                 <!-- Terminal Console -->
                 <div class="space-y-3">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-base font-medium">Terminal</h3>
+                        <h3 class="text-base font-medium">{{ t('serverConsole.terminalConsole') }}</h3>
                         <div class="flex items-center gap-1">
                             <Button
                                 variant="outline"
@@ -28,7 +28,7 @@
                                 @click="showTimestamps = !showTimestamps"
                             >
                                 <Clock class="h-3 w-3 mr-1" />
-                                {{ showTimestamps ? 'Hide' : 'Show' }} TS
+                                {{ showTimestamps ? t('serverConsole.hide') : t('serverConsole.show') }} TS
                             </Button>
                             <Button variant="outline" size="sm" class="h-7 px-2" @click="clearTerminal">
                                 <Trash2 class="h-3 w-3" />
@@ -59,6 +59,7 @@ import { Badge } from '@/components/ui/badge';
 import { X, Trash2, Clock } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
+import { useI18n } from 'vue-i18n';
 import type { Server, TerminalLine } from '@/types/server';
 import { useWingsWebSocket } from '@/composables/useWingsWebSocket';
 import ServerTerminal from '@/components/server/ServerTerminal.vue';
@@ -68,6 +69,7 @@ const route = useRoute();
 const router = useRouter();
 const sessionStore = useSessionStore();
 const toast = useToast();
+const { t } = useI18n();
 
 // Console settings
 const showTimestamps = ref(false);
@@ -117,21 +119,21 @@ function closeWindow(): void {
 // Console functions
 function clearTerminal(): void {
     terminalLines.value = [];
-    toast.success('Terminal cleared');
+    toast.success(t('serverConsole.terminalCleared'));
 }
 
 function sendCommand(command: string): void {
     if (!command.trim()) return;
 
     if (!wingsWebSocket.isConnected) {
-        toast.warning("Can't reach the Wings daemon at this moment...");
+        toast.warning(t('serverConsole.wingsUnreachable'));
         return;
     }
 
     // Check if server is offline
     const currentStatus = wingsWebSocket.wingsStatus?.value || server.value?.status || 'unknown';
     if (currentStatus.toLowerCase() === 'offline') {
-        toast.warning(`Cannot send commands - server is ${currentStatus}. Start the server first.`);
+        toast.warning(t('serverConsole.cannotSendCommandsStatus', { status: currentStatus }));
         return;
     }
 
@@ -157,12 +159,12 @@ function sendCommand(command: string): void {
                 }),
             );
         } catch (error) {
-            addTerminalLine(`Failed to send command: ${error}`, 'error');
-            toast.error('Failed to send command to Wings daemon');
+            addTerminalLine(t('serverConsole.failedToSendCommand') + `: ${String(error)}`, 'error');
+            toast.error(t('serverConsole.failedToSendCommand'));
         }
     } else {
-        addTerminalLine('WebSocket not connected', 'error');
-        toast.warning('Cannot send command - Wings daemon connection lost');
+        addTerminalLine(t('serverConsole.websocketNotConnected'), 'error');
+        toast.warning(t('serverConsole.connectionLost'));
     }
 }
 
@@ -244,12 +246,12 @@ function setupWebSocketHandlers(): void {
                 if (server.value) {
                     server.value.status = newStatus;
                 }
-                addTerminalLine(`Server status changed to: ${newStatus}`, 'info');
+                addTerminalLine(t('serverConsole.statusChanged', { status: newStatus }), 'info');
             } else if (data.event === 'daemon error') {
-                addTerminalLine(`Daemon Error: ${data.args[0]}`, 'error');
+                addTerminalLine(t('serverConsole.daemonError', { message: String(data.args?.[0] ?? '') }), 'error');
             } else if (data.event === 'jwt error') {
-                addTerminalLine(`JWT Error: ${data.args[0]}`, 'error');
-                toast.error('Authentication error - please refresh the page');
+                addTerminalLine(t('serverConsole.jwtError', { message: String(data.args?.[0] ?? '') }), 'error');
+                toast.error(t('serverConsole.authErrorRefresh'));
             }
         } catch {
             // Handle raw text output
@@ -270,12 +272,12 @@ onMounted(async () => {
         if (response.data.success) {
             server.value = response.data.data;
         } else {
-            toast.error('Failed to fetch server data');
+            toast.error(t('serverConsole.failedToFetch'));
             window.close();
             return;
         }
     } catch {
-        toast.error('Failed to fetch server data');
+        toast.error(t('serverConsole.failedToFetch'));
         window.close();
         return;
     }
@@ -305,7 +307,7 @@ onMounted(async () => {
     }
 
     // Add initial message
-    addTerminalLine('Console popup opened - monitoring server output...', 'info');
+    addTerminalLine(t('serverConsole.consolePopupOpened'), 'info');
 });
 
 onUnmounted(() => {

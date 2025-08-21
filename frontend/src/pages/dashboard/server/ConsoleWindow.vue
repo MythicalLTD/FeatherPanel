@@ -3,7 +3,7 @@
         <!-- Console Window Header -->
         <div class="bg-sidebar border-b px-4 py-3 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <h1 class="text-lg font-semibold">{{ server?.name || 'Server Console' }}</h1>
+                <h1 class="text-lg font-semibold">{{ server?.name || t('serverConsole.title') }}</h1>
                 <Badge :variant="getStatusBadgeVariant(server?.status || 'offline')">
                     {{ server?.status || 'offline' }}
                 </Badge>
@@ -11,7 +11,7 @@
             <div class="flex items-center gap-2">
                 <Button variant="outline" size="sm" @click="closeWindow">
                     <X class="h-4 w-4 mr-2" />
-                    Close Window
+                    {{ t('serverConsole.closeWindow') }}
                 </Button>
             </div>
         </div>
@@ -22,19 +22,20 @@
                 <!-- Terminal Console -->
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold">Terminal Console</h3>
+                        <h3 class="text-lg font-semibold">{{ t('serverConsole.terminalConsole') }}</h3>
                         <div class="flex items-center gap-2">
                             <Button variant="outline" size="sm" @click="showTimestamps = !showTimestamps">
                                 <Clock class="h-4 w-4 mr-2" />
-                                {{ showTimestamps ? 'Hide' : 'Show' }} Timestamps
+                                {{ showTimestamps ? t('serverConsole.hide') : t('serverConsole.show') }}
+                                {{ t('serverConsole.timestamps') }}
                             </Button>
                             <Button variant="outline" size="sm" @click="clearTerminal">
                                 <Trash2 class="h-4 w-4 mr-2" />
-                                Clear
+                                {{ t('serverConsole.clear') }}
                             </Button>
                             <Button variant="outline" size="sm" @click="downloadLogs">
                                 <Download class="h-4 w-4 mr-2" />
-                                Download Logs
+                                {{ t('serverConsole.downloadLogs') }}
                             </Button>
                         </div>
                     </div>
@@ -62,6 +63,7 @@ import { Badge } from '@/components/ui/badge';
 import { X, Trash2, Download, Clock } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
+import { useI18n } from 'vue-i18n';
 import type { Server, TerminalLine } from '@/types/server';
 import { useWingsWebSocket } from '@/composables/useWingsWebSocket';
 import ServerTerminal from '@/components/server/ServerTerminal.vue';
@@ -71,6 +73,7 @@ const route = useRoute();
 const router = useRouter();
 const sessionStore = useSessionStore();
 const toast = useToast();
+const { t } = useI18n();
 
 // Console settings
 const showTimestamps = ref(false);
@@ -120,26 +123,26 @@ function getStatusBadgeVariant(status: string) {
 // Console functions
 function clearTerminal(): void {
     terminalLines.value = [];
-    toast.success('Terminal cleared');
+    toast.success(t('serverConsole.terminalCleared'));
 }
 
 function downloadLogs(): void {
     // TODO: Implement log download
-    toast.info('Log download coming soon');
+    toast.info(t('serverConsole.logDownloadComingSoon'));
 }
 
 function sendCommand(command: string): void {
     if (!command.trim()) return;
 
     if (!wingsWebSocket.isConnected) {
-        toast.warning("Can't reach the Wings daemon at this moment...");
+        toast.warning(t('serverConsole.wingsUnreachable'));
         return;
     }
 
     // Check if server is offline
     const currentStatus = wingsWebSocket.wingsStatus?.value || server.value?.status || 'unknown';
     if (currentStatus.toLowerCase() === 'offline') {
-        toast.warning(`Cannot send commands - server is ${currentStatus}. Start the server first.`);
+        toast.warning(t('serverConsole.cannotSendCommandsStatus', { status: currentStatus }));
         return;
     }
 
@@ -165,12 +168,12 @@ function sendCommand(command: string): void {
                 }),
             );
         } catch (error) {
-            addTerminalLine(`Failed to send command: ${error}`, 'error');
-            toast.error('Failed to send command to Wings daemon');
+            addTerminalLine(t('serverConsole.failedToSendCommand') + `: ${String(error)}`, 'error');
+            toast.error(t('serverConsole.failedToSendCommand'));
         }
     } else {
-        addTerminalLine('WebSocket not connected', 'error');
-        toast.warning('Cannot send command - Wings daemon connection lost');
+        addTerminalLine(t('serverConsole.websocketNotConnected'), 'error');
+        toast.warning(t('serverConsole.connectionLost'));
     }
 }
 
@@ -252,12 +255,12 @@ function setupWebSocketHandlers(): void {
                 if (server.value) {
                     server.value.status = newStatus;
                 }
-                addTerminalLine(`Server status changed to: ${newStatus}`, 'info');
+                addTerminalLine(t('serverConsole.statusChanged', { status: newStatus }), 'info');
             } else if (data.event === 'daemon error') {
-                addTerminalLine(`Daemon Error: ${data.args[0]}`, 'error');
+                addTerminalLine(t('serverConsole.daemonError', { message: String(data.args?.[0] ?? '') }), 'error');
             } else if (data.event === 'jwt error') {
-                addTerminalLine(`JWT Error: ${data.args[0]}`, 'error');
-                toast.error('Authentication error - please refresh the page');
+                addTerminalLine(t('serverConsole.jwtError', { message: String(data.args?.[0] ?? '') }), 'error');
+                toast.error(t('serverConsole.authErrorRefresh'));
             }
         } catch {
             // Handle raw text output
@@ -278,12 +281,12 @@ onMounted(async () => {
         if (response.data.success) {
             server.value = response.data.data;
         } else {
-            toast.error('Failed to fetch server data');
+            toast.error(t('serverConsole.failedToFetch'));
             window.close();
             return;
         }
     } catch {
-        toast.error('Failed to fetch server data');
+        toast.error(t('serverConsole.failedToFetch'));
         window.close();
         return;
     }
@@ -313,7 +316,7 @@ onMounted(async () => {
     }
 
     // Add initial message
-    addTerminalLine('Console window opened - monitoring server output...', 'info');
+    addTerminalLine(t('serverConsole.consoleWindowOpened'), 'info');
 });
 
 onUnmounted(() => {

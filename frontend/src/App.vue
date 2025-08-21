@@ -52,14 +52,16 @@ export default defineComponent({
     <div class="app-container">
         <!-- Router view with smooth transitions -->
         <router-view v-slot="{ Component, route }">
-            <transition
-                :name="transitionName"
-                mode="in-out"
-                @enter="isPageTransitioning = false"
-                @leave="isPageTransitioning = true"
-            >
-                <component :is="Component" :key="route.fullPath" class="page-component" />
-            </transition>
+            <div :key="route.fullPath" class="page-wrapper">
+                <transition
+                    :name="transitionName"
+                    mode="out-in"
+                    @enter="isPageTransitioning = false"
+                    @leave="isPageTransitioning = true"
+                >
+                    <component :is="Component" class="page-component" />
+                </transition>
+            </div>
         </router-view>
     </div>
 </template>
@@ -67,6 +69,12 @@ export default defineComponent({
 <style>
 .app-container {
     position: relative;
+    min-height: 100vh;
+}
+
+.page-wrapper {
+    position: relative;
+    width: 100%;
     min-height: 100vh;
 }
 

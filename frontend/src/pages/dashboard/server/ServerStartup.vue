@@ -3,37 +3,34 @@
         <div class="space-y-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold tracking-tight">{{ t('serverStartup.title') || 'Startup' }}</h1>
+                    <h1 class="text-2xl font-bold tracking-tight">{{ t('serverStartup.title') }}</h1>
                     <p class="text-muted-foreground">
-                        {{
-                            t('serverStartup.description') ||
-                            'View and change startup command, Docker image, and variables.'
-                        }}
+                        {{ t('serverStartup.description') }}
                     </p>
                 </div>
                 <div class="flex gap-2">
                     <Button variant="outline" :disabled="loading" @click="fetchServer">
                         <RefreshCw class="h-4 w-4 mr-2" />
-                        {{ t('common.refresh') || 'Refresh' }}
+                        {{ t('common.refresh') }}
                     </Button>
                     <Button :disabled="saving || !hasChanges || hasErrors" @click="saveChanges">
                         <Save class="h-4 w-4 mr-2" />
-                        {{ saving ? t('common.saving') || 'Saving...' : t('common.saveChanges') || 'Save changes' }}
+                        {{ saving ? t('common.saving') : t('common.saveChanges') }}
                     </Button>
                 </div>
             </div>
 
             <div v-if="loading" class="flex items-center justify-center py-8">
                 <div class="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
-                <span class="ml-2">{{ t('common.loading') || 'Loading...' }}</span>
+                <span class="ml-2">{{ t('common.loading') }}</span>
             </div>
 
             <div v-else-if="server" class="space-y-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle>{{ t('serverStartup.startupCommand') || 'Startup command' }}</CardTitle>
+                        <CardTitle>{{ t('serverStartup.startupCommand') }}</CardTitle>
                         <CardDescription>
-                            {{ t('serverStartup.startupHelp') || 'Command used to start your server' }}
+                            {{ t('serverStartup.startupHelp') }}
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-3">
@@ -43,17 +40,15 @@
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>{{ t('serverStartup.dockerImage') || 'Docker image' }}</CardTitle>
+                        <CardTitle>{{ t('serverStartup.dockerImage') }}</CardTitle>
                         <CardDescription>
-                            {{ t('serverStartup.dockerHelp') || 'Advanced: select a Docker image for this server' }}
+                            {{ t('serverStartup.dockerHelp') }}
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-3">
                         <Input v-model="form.image" placeholder="ghcr.io/pterodactyl/yolks:java_21" />
                         <div v-if="availableDockerImages.length" class="text-xs text-muted-foreground">
-                            <span class="font-medium mr-2">{{
-                                t('serverStartup.availableImages') || 'Available:'
-                            }}</span>
+                            <span class="font-medium mr-2">{{ t('serverStartup.availableImages') }}</span>
                             <span class="inline-flex flex-wrap gap-2">
                                 <Button
                                     v-for="img in availableDockerImages"
@@ -72,12 +67,9 @@
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>{{ t('serverStartup.variables') || 'Variables' }}</CardTitle>
+                        <CardTitle>{{ t('serverStartup.variables') }}</CardTitle>
                         <CardDescription>
-                            {{
-                                t('serverStartup.variablesHelp') ||
-                                'Used by installation and runtime. Some changes may require reinstall.'
-                            }}
+                            {{ t('serverStartup.variablesHelp') }}
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-4">
@@ -97,7 +89,7 @@
                                 {{ variableErrors[v.variable_id] }}
                             </p>
                             <div class="text-[11px] text-muted-foreground flex items-center gap-2">
-                                <span>{{ t('serverStartup.rules') || 'Rules' }}:</span>
+                                <span>{{ t('serverStartup.rules') }}:</span>
                                 <code class="bg-muted px-2 py-0.5 rounded">{{ v.rules }}</code>
                             </div>
                         </div>
@@ -106,7 +98,7 @@
             </div>
 
             <div v-else class="text-center py-8 text-muted-foreground">
-                {{ error || t('serverStartup.notFound') || 'Server not found' }}
+                {{ error || t('serverStartup.notFound') }}
             </div>
         </div>
     </DashboardLayout>
@@ -172,10 +164,10 @@ const variableValues = ref<Record<number, string>>({});
 const variableErrors = ref<Record<number, string>>({});
 
 const breadcrumbs = computed(() => [
-    { text: 'Dashboard', href: '/dashboard' },
-    { text: 'Servers', href: '/dashboard' },
-    { text: server.value?.name || 'Server', href: `/server/${route.params.uuidShort}` },
-    { text: 'Startup', isCurrent: true, href: `/server/${route.params.uuidShort}/startup` },
+    { text: t('common.dashboard'), href: '/dashboard' },
+    { text: t('common.servers'), href: '/dashboard' },
+    { text: server.value?.name || t('common.server'), href: `/server/${route.params.uuidShort}` },
+    { text: t('serverStartup.title'), isCurrent: true, href: `/server/${route.params.uuidShort}/startup` },
 ]);
 
 const hasChanges = computed(() => {

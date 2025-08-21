@@ -43,7 +43,7 @@ class SpellsControllerTest extends TestCase
                 'email' => $this->adminEmail,
                 'password' => password_hash('TestPassword123', PASSWORD_BCRYPT),
                 'role_id' => 4,
-                'avatar' => 'http://cdn.mythical.systems/featherpanel/logo.png',
+                'avatar' => 'https://cdn.mythical.systems/featherpanel/logo.png',
                 'remember_token' => bin2hex(random_bytes(16)),
             ]);
         }
@@ -52,7 +52,7 @@ class SpellsControllerTest extends TestCase
         $realmId = Realm::create([
             'name' => 'Test Realm for Spells',
             'description' => 'Test realm for spell unit tests',
-            'logo' => 'http://cdn.mythical.systems/featherpanel/logo.png',
+            'logo' => 'https://cdn.mythical.systems/featherpanel/logo.png',
             'author' => $this->adminEmail,
         ]);
         $this->testRealmId = $realmId;

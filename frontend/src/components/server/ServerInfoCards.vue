@@ -55,7 +55,7 @@
                 <Fingerprint class="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div class="font-bold font-mono text-sm">{{ server?.uuidShort || 'N/A' }}</div>
+                <div class="font-bold font-mono text-sm">{{ server?.uuid || 'N/A' }}</div>
             </CardContent>
         </Card>
     </div>

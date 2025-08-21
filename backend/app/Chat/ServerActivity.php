@@ -271,6 +271,7 @@ class ServerActivity
         ?int $serverId = null,
         ?int $nodeId = null,
         ?int $userId = null,
+        ?array $serverIds = null,
     ): array {
         $pdo = Database::getPdoConnection();
         $where = [];
@@ -284,6 +285,17 @@ class ServerActivity
         if ($serverId !== null) {
             $where[] = 'server_id = :server_id';
             $params['server_id'] = $serverId;
+        }
+
+        if (is_array($serverIds) && !empty($serverIds)) {
+            // Build an IN (...) clause with named placeholders
+            $inPlaceholders = [];
+            foreach ($serverIds as $idx => $sid) {
+                $ph = ':sid' . $idx;
+                $inPlaceholders[] = $ph;
+                $params['sid' . $idx] = (int) $sid;
+            }
+            $where[] = 'server_id IN (' . implode(',', $inPlaceholders) . ')';
         }
 
         if ($nodeId !== null) {
