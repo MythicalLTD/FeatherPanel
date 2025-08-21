@@ -67,6 +67,16 @@ const clientRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/dashboard/server/ServerBackups.vue'),
     },
     {
+        path: '/server/:uuidShort/schedules',
+        name: 'ServerSchedules',
+        component: () => import('@/pages/dashboard/server/ServerSchedules.vue'),
+    },
+    {
+        path: '/server/:uuidShort/schedules/:scheduleId/tasks',
+        name: 'ServerTasks',
+        component: () => import('@/pages/dashboard/server/ServerTasks.vue'),
+    },
+    {
         path: '/',
         redirect: '/dashboard',
     },

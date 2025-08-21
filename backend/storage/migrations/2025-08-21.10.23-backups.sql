@@ -1,6 +1,6 @@
 CREATE TABLE
-	IF NOT EXISTS `featherpanel_backups` (
-		`id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+	IF NOT EXISTS `featherpanel_server_backups` (
+		`id` int(11) NOT NULL AUTO_INCREMENT,
 		`server_id` int(11) NOT NULL,
 		`uuid` char(36) NOT NULL,
 		`upload_id` text DEFAULT NULL,
@@ -19,4 +19,4 @@ CREATE TABLE
 		UNIQUE KEY `backups_uuid_unique` (`uuid`),
 		KEY `backups_server_id_foreign` (`server_id`),
 		CONSTRAINT `backups_server_id_foreign` FOREIGN KEY (`server_id`) REFERENCES `featherpanel_servers` (`id`) ON DELETE CASCADE
-	) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+	) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
