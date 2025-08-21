@@ -40,7 +40,11 @@
                 </template>
 
                 <template #cell-host="{ item }">
-                    <div class="text-sm text-muted-foreground">{{ (item as DatabaseItem).host_name }}</div>
+                    <div class="text-sm text-muted-foreground">
+                        {{ (item as DatabaseItem).database_host || 'N/A' }}:{{
+                            (item as DatabaseItem).database_port || 'N/A'
+                        }}
+                    </div>
                 </template>
 
                 <template #cell-remote="{ item }">
@@ -80,7 +84,7 @@
                 }
             "
         >
-            <DrawerContent>
+            <DrawerContent class="max-h-[90vh] overflow-y-auto">
                 <DrawerHeader>
                     <DrawerTitle>{{ t('serverDatabases.createDatabase') }}</DrawerTitle>
                     <DrawerDescription>{{ t('serverDatabases.createDatabaseDescription') }}</DrawerDescription>
@@ -113,7 +117,7 @@
                         </Label>
                         <Input
                             id="database-name"
-                            v-model="createForm.database"
+                            v-model="createForm.database_name"
                             type="text"
                             :placeholder="t('serverDatabases.databaseNamePlaceholder')"
                             required
@@ -167,96 +171,363 @@
             </DrawerContent>
         </Drawer>
 
-        <!-- Edit Database Drawer -->
-        <Drawer
-            class="w-full"
-            :open="viewDrawerOpen"
-            @update:open="
-                (val: boolean) => {
-                    if (!val) closeViewDrawer();
-                }
-            "
-        >
-            <DrawerContent v-if="viewingDatabase">
-                <DrawerHeader>
-                    <DrawerTitle>{{ t('serverDatabases.viewDatabase') }}</DrawerTitle>
-                    <DrawerDescription>{{ t('serverDatabases.viewDatabaseDescription') }}</DrawerDescription>
-                </DrawerHeader>
-                <div class="space-y-6 p-6">
-                    <!-- Database Host (Read-only) -->
-                    <div class="space-y-2">
-                        <Label class="text-sm font-medium">
-                            {{ t('serverDatabases.databaseHost') }}
-                        </Label>
-                        <Input :value="viewingDatabase.host_name" disabled class="bg-muted" />
-                        <p class="text-xs text-muted-foreground">
-                            {{ t('serverDatabases.databaseHostReadOnly') }}
-                        </p>
+        <!-- Database Info Dialog -->
+        <Dialog v-model:open="viewDialogOpen">
+            <DialogContent class="max-w-6xl max-h-[95vh] overflow-y-auto" v-if="viewingDatabase">
+                <DialogHeader class="pb-6">
+                    <DialogTitle class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Eye class="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold">{{ viewingDatabase.database }}</div>
+                            <div class="text-base text-muted-foreground font-normal">
+                                {{ t('serverDatabases.databaseCredentials') }}
+                            </div>
+                        </div>
+                    </DialogTitle>
+                </DialogHeader>
+
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 py-6">
+                    <!-- Connection Details -->
+                    <div class="space-y-6">
+                        <div
+                            class="border rounded-xl p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 border-blue-200 dark:border-blue-800"
+                        >
+                            <h3 class="font-bold text-lg mb-4 flex items-center gap-3 text-blue-800 dark:text-blue-200">
+                                <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
+                                {{ t('serverDatabases.connectionDetails') }}
+                            </h3>
+                            <div class="space-y-4">
+                                <!-- Host -->
+                                <div>
+                                    <Label class="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2 block">{{
+                                        t('serverDatabases.host')
+                                    }}</Label>
+                                    <div class="flex items-center gap-3">
+                                        <code
+                                            class="flex-1 p-3 bg-white dark:bg-gray-800 rounded-lg text-base font-mono border border-blue-200 dark:border-blue-700"
+                                        >
+                                            {{ viewingDatabase.database_host || 'N/A' }}
+                                        </code>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            class="h-10 w-10 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                                            @click="copyToClipboard(viewingDatabase.database_host || '')"
+                                        >
+                                            <Copy class="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <!-- Port -->
+                                <div>
+                                    <Label class="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2 block">{{
+                                        t('serverDatabases.port')
+                                    }}</Label>
+                                    <div class="flex items-center gap-3">
+                                        <code
+                                            class="flex-1 p-3 bg-white dark:bg-gray-800 rounded-lg text-base font-mono border border-blue-200 dark:border-blue-700"
+                                        >
+                                            {{ viewingDatabase.database_port || 'N/A' }}
+                                        </code>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            class="h-10 w-10 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                                            @click="copyToClipboard((viewingDatabase.database_port || '').toString())"
+                                        >
+                                            <Copy class="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <!-- Database Type -->
+                                <div>
+                                    <Label class="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2 block">{{
+                                        t('serverDatabases.type')
+                                    }}</Label>
+                                    <div class="flex items-center gap-3">
+                                        <code
+                                            class="flex-1 p-3 bg-white dark:bg-gray-800 rounded-lg text-base font-mono border border-blue-200 dark:border-blue-700"
+                                        >
+                                            {{ viewingDatabase.database_type || 'N/A' }}
+                                        </code>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            class="h-10 w-10 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                                            @click="copyToClipboard(viewingDatabase.database_type || '')"
+                                        >
+                                            <Copy class="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Database Info -->
+                        <div
+                            class="border rounded-xl p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/20 border-green-200 dark:border-green-800"
+                        >
+                            <h3
+                                class="font-bold text-lg mb-4 flex items-center gap-3 text-green-800 dark:text-green-200"
+                            >
+                                <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+                                {{ t('serverDatabases.databaseInformation') }}
+                            </h3>
+                            <div class="space-y-4">
+                                <!-- Database Name -->
+                                <div>
+                                    <Label class="text-sm font-medium text-green-700 dark:text-green-300 mb-2 block">{{
+                                        t('serverDatabases.name')
+                                    }}</Label>
+                                    <div class="flex items-center gap-3">
+                                        <code
+                                            class="flex-1 p-3 bg-white dark:bg-gray-800 rounded-lg text-base font-mono border border-green-200 dark:border-green-700"
+                                        >
+                                            {{ viewingDatabase.database }}
+                                        </code>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            class="h-10 w-10 p-0 hover:bg-green-100 dark:hover:bg-green-900/30"
+                                            @click="copyToClipboard(viewingDatabase.database)"
+                                        >
+                                            <Copy class="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <!-- Remote Access -->
+                                <div>
+                                    <Label class="text-sm font-medium text-green-700 dark:text-green-300 mb-2 block">{{
+                                        t('serverDatabases.remoteAccess')
+                                    }}</Label>
+                                    <div class="flex items-center gap-3">
+                                        <code
+                                            class="flex-1 p-3 bg-white dark:bg-gray-800 rounded-lg text-base font-mono border border-green-200 dark:border-green-700"
+                                        >
+                                            {{ viewingDatabase.remote }}
+                                        </code>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            class="h-10 w-10 p-0 hover:bg-green-100 dark:hover:bg-green-900/30"
+                                            @click="copyToClipboard(viewingDatabase.remote)"
+                                        >
+                                            <Copy class="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <!-- Max Connections -->
+                                <div>
+                                    <Label class="text-sm font-medium text-green-700 dark:text-green-300 mb-2 block">{{
+                                        t('serverDatabases.maxConnections')
+                                    }}</Label>
+                                    <div class="flex items-center gap-3">
+                                        <code
+                                            class="flex-1 p-3 bg-white dark:bg-gray-800 rounded-lg text-base font-mono border border-green-200 dark:border-green-700"
+                                        >
+                                            {{ viewingDatabase.max_connections || 0 }}
+                                        </code>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            class="h-10 w-10 p-0 hover:bg-green-100 dark:hover:bg-green-900/30"
+                                            @click="copyToClipboard((viewingDatabase.max_connections || 0).toString())"
+                                        >
+                                            <Copy class="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Database Name (Read-only) -->
-                    <div class="space-y-2">
-                        <Label class="text-sm font-medium">
-                            {{ t('serverDatabases.databaseName') }}
-                        </Label>
-                        <Input :value="viewingDatabase.database" disabled class="bg-muted" />
-                        <p class="text-xs text-muted-foreground">
-                            {{ t('serverDatabases.databaseNameReadOnly') }}
-                        </p>
-                    </div>
+                    <!-- Credentials & Actions -->
+                    <div class="space-y-4">
+                        <!-- Credentials -->
+                        <div
+                            class="border rounded-xl p-6 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/30 dark:to-orange-900/20 border-orange-200 dark:border-orange-800"
+                        >
+                            <h3
+                                class="font-bold text-lg mb-4 flex items-center gap-3 text-orange-800 dark:text-orange-200"
+                            >
+                                <span class="w-3 h-3 bg-orange-500 rounded-full"></span>
+                                {{ t('serverDatabases.loginCredentials') }}
+                            </h3>
+                            <div class="space-y-4">
+                                <!-- Username -->
+                                <div>
+                                    <Label
+                                        class="text-sm font-medium text-orange-700 dark:text-orange-300 mb-2 block"
+                                        >{{ t('serverDatabases.username') }}</Label
+                                    >
+                                    <div class="flex items-center gap-3">
+                                        <code
+                                            class="flex-1 p-3 bg-white dark:bg-gray-800 rounded-lg text-base font-mono border border-orange-200 dark:border-orange-700"
+                                        >
+                                            {{ viewingDatabase.username }}
+                                        </code>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            class="h-10 w-10 p-0 hover:bg-orange-100 dark:hover:bg-orange-900/30"
+                                            @click="copyToClipboard(viewingDatabase.username)"
+                                        >
+                                            <Copy class="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
 
-                    <!-- Username (Read-only) -->
-                    <div class="space-y-2">
-                        <Label class="text-sm font-medium">
-                            {{ t('serverDatabases.username') }}
-                        </Label>
-                        <Input :value="viewingDatabase.username" disabled class="bg-muted" />
-                        <p class="text-xs text-muted-foreground">
-                            {{ t('serverDatabases.usernameReadOnly') }}
-                        </p>
-                    </div>
+                                <!-- Password -->
+                                <div>
+                                    <Label
+                                        class="text-sm font-medium text-orange-700 dark:text-orange-300 mb-2 block"
+                                        >{{ t('serverDatabases.password') }}</Label
+                                    >
+                                    <div class="flex items-center gap-3">
+                                        <code
+                                            class="flex-1 p-3 bg-white dark:bg-gray-800 rounded-lg text-base font-mono border border-orange-200 dark:border-orange-700"
+                                        >
+                                            {{
+                                                showPassword
+                                                    ? viewingDatabase.password
+                                                    : '••••••••••••••••••••••••••••••••'
+                                            }}
+                                        </code>
+                                        <div class="flex gap-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                class="h-10 w-10 p-0 hover:bg-orange-100 dark:hover:bg-orange-900/30"
+                                                @click="showPassword = !showPassword"
+                                            >
+                                                <Eye v-if="!showPassword" class="h-4 w-4" />
+                                                <EyeOff v-else class="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                class="h-10 w-10 p-0 hover:bg-orange-100 dark:hover:bg-orange-900/30"
+                                                @click="copyToClipboard(viewingDatabase.password)"
+                                            >
+                                                <Copy class="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                    <!-- Remote Access (Read-only) -->
-                    <div class="space-y-2">
-                        <Label class="text-sm font-medium">
-                            {{ t('serverDatabases.remoteAccess') }}
-                        </Label>
-                        <Input :value="viewingDatabase.remote" disabled class="bg-muted" />
-                        <p class="text-xs text-muted-foreground">
-                            {{ t('serverDatabases.remoteAccessReadOnly') }}
-                        </p>
-                    </div>
+                        <!-- Connection String -->
+                        <div
+                            class="border rounded-xl p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 border-blue-200 dark:border-blue-800"
+                        >
+                            <h3 class="font-bold text-lg mb-4 flex items-center gap-3 text-blue-800 dark:text-blue-200">
+                                <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
+                                {{ t('serverDatabases.quickConnect') }}
+                            </h3>
+                            <div>
+                                <Label class="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2 block">{{
+                                    t('serverDatabases.connectionString')
+                                }}</Label>
+                                <div class="flex items-center gap-3">
+                                    <code
+                                        class="flex-1 p-3 bg-white dark:bg-gray-800 rounded-lg text-sm font-mono break-all border border-blue-200 dark:border-blue-700"
+                                    >
+                                        mysql://{{ viewingDatabase.username }}:{{
+                                            showPassword ? viewingDatabase.password : '[password]'
+                                        }}@{{ viewingDatabase.database_host }}:{{ viewingDatabase.database_port }}/{{
+                                            viewingDatabase.database
+                                        }}
+                                    </code>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        class="h-10 w-10 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                                        @click="
+                                            copyToClipboard(
+                                                `mysql://${viewingDatabase.username}:${viewingDatabase.password}@${viewingDatabase.database_host}:${viewingDatabase.database_port}/${viewingDatabase.database}`,
+                                            )
+                                        "
+                                    >
+                                        <Copy class="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                <p class="text-sm text-blue-600 dark:text-blue-400 mt-2">
+                                    {{ t('serverDatabases.connectionStringHelp') }}
+                                </p>
+                            </div>
+                        </div>
 
-                    <!-- Max Connections (Read-only) -->
-                    <div class="space-y-2">
-                        <Label class="text-sm font-medium">
-                            {{ t('serverDatabases.maxConnections') }}
-                        </Label>
-                        <Input :value="viewingDatabase.max_connections" disabled class="bg-muted" />
-                        <p class="text-xs text-muted-foreground">
-                            {{ t('serverDatabases.maxConnectionsReadOnly') }}
-                        </p>
+                        <!-- Metadata -->
+                        <div
+                            class="border rounded-xl p-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950/30 dark:to-gray-900/20 border-gray-200 dark:border-gray-800"
+                        >
+                            <h3 class="font-bold text-lg mb-4 flex items-center gap-3 text-gray-800 dark:text-gray-200">
+                                <span class="w-3 h-3 bg-gray-500 rounded-full"></span>
+                                {{ t('serverDatabases.metadata') }}
+                            </h3>
+                            <div class="text-sm text-gray-700 dark:text-gray-300">
+                                <div
+                                    class="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                                >
+                                    <span class="font-medium">{{ t('serverDatabases.created') }}:</span>
+                                    <span class="font-mono">{{ formatDate(viewingDatabase.created_at) }}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-
-                    <!-- Created At (Read-only) -->
-                    <div class="space-y-2">
-                        <Label class="text-sm font-medium">
-                            {{ t('serverDatabases.createdAt') }}
-                        </Label>
-                        <Input :value="formatDate(viewingDatabase.created_at)" disabled class="bg-muted" />
-                        <p class="text-xs text-muted-foreground">
-                            {{ t('serverDatabases.createdAtReadOnly') }}
-                        </p>
-                    </div>
-
-                    <DrawerFooter>
-                        <Button type="button" variant="outline" @click="closeViewDrawer">
-                            {{ t('common.close') }}
-                        </Button>
-                    </DrawerFooter>
                 </div>
-            </DrawerContent>
-        </Drawer>
+
+                <DialogFooter>
+                    <Button variant="ghost" size="sm" @click="clearRememberedChoice" class="mr-auto">
+                        {{ t('serverDatabases.resetWarning') }}
+                    </Button>
+                    <Button type="button" variant="outline" @click="closeViewDialog">
+                        {{ t('common.close') }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <!-- Sensitive Info Warning Dialog -->
+        <AlertDialog v-model:open="showSensitiveInfoWarning">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle class="flex items-center gap-2">
+                        <AlertTriangle class="h-5 w-5 text-orange-600" />
+                        {{ t('serverDatabases.sensitiveInfoWarning') }}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {{ t('serverDatabases.sensitiveInfoDescription') }}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-2">
+                        <input
+                            id="remember-choice"
+                            type="checkbox"
+                            v-model="rememberChoice"
+                            class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <Label for="remember-choice" class="text-sm">
+                            {{ t('serverDatabases.rememberChoice') }}
+                        </Label>
+                    </div>
+                </div>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>{{ t('common.cancel') }}</AlertDialogCancel>
+                    <AlertDialogAction @click="confirmViewSensitiveInfo">
+                        {{ t('serverDatabases.viewDatabase') }}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
 
         <!-- Confirmation Dialog -->
         <AlertDialog v-model:open="showConfirmDialog">
@@ -306,6 +577,7 @@ import {
     DrawerDescription,
     DrawerFooter,
 } from '@/components/ui/drawer';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -316,7 +588,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { RefreshCw, Plus, Trash2, Loader2, Eye } from 'lucide-vue-next';
+import { RefreshCw, Plus, Trash2, Loader2, Eye, EyeOff, Copy, AlertTriangle } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import type { TableColumn } from '@/kit/types';
@@ -334,6 +606,10 @@ type DatabaseItem = {
     updated_at: string;
     host_name?: string;
     host_type?: string;
+    database_host_name?: string; // Added for new drawer
+    database_type?: string; // Added for new drawer
+    database_host?: string; // Added for new drawer
+    database_port?: number; // Added for new drawer
 };
 
 type DatabaseHost = {
@@ -365,8 +641,9 @@ const pagination = ref({
 
 // Drawer states
 const createDrawerOpen = ref(false);
-const viewDrawerOpen = ref(false);
+const viewDialogOpen = ref(false);
 const viewingDatabase = ref<DatabaseItem | null>(null);
+const showPassword = ref(false);
 
 // Confirm dialog state
 const showConfirmDialog = ref(false);
@@ -379,10 +656,14 @@ const confirmDialog = ref({
 const confirmAction = ref<null | (() => Promise<void> | void)>(null);
 const confirmLoading = ref(false);
 
+// Sensitive info warning state
+const showSensitiveInfoWarning = ref(false);
+const rememberChoice = ref(false);
+
 // Form data
 const createForm = ref({
     database_host_id: '',
-    database: '',
+    database_name: '',
     remote: '%',
     max_connections: 0,
 });
@@ -423,8 +704,20 @@ async function fetchDatabases(page = pagination.value.current_page) {
         }
         databases.value = data.data.data || [];
         pagination.value = data.data.pagination;
-    } catch {
-        toast.error(t('serverDatabases.failedToFetch'));
+    } catch (error: unknown) {
+        if (error && typeof error === 'object' && 'response' in error) {
+            const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
+            if (axiosError.response?.data?.message) {
+                toast.error(axiosError.response.data.message);
+            } else if (axiosError.response?.data?.error_message) {
+                toast.error(axiosError.response.data.error_message);
+            } else {
+                toast.error(t('serverDatabases.failedToFetch'));
+            }
+        } else {
+            toast.error(t('serverDatabases.failedToFetch'));
+        }
+        console.error('Error fetching databases:', error);
     } finally {
         loading.value = false;
     }
@@ -435,8 +728,22 @@ async function fetchAvailableHosts() {
         const { data } = await axios.get(`/api/user/servers/${route.params.uuidShort}/databases/hosts`);
         if (data.success) {
             availableHosts.value = data.data || [];
+        } else {
+            toast.error(data.message || t('serverDatabases.failedToFetchHosts'));
         }
-    } catch (error) {
+    } catch (error: unknown) {
+        if (error && typeof error === 'object' && 'response' in error) {
+            const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
+            if (axiosError.response?.data?.message) {
+                toast.error(axiosError.response.data.message);
+            } else if (axiosError.response?.data?.error_message) {
+                toast.error(axiosError.response.data.error_message);
+            } else {
+                toast.error(t('serverDatabases.failedToFetchHosts'));
+            }
+        } else {
+            toast.error(t('serverDatabases.failedToFetchHosts'));
+        }
         console.error('Failed to fetch available hosts:', error);
     }
 }
@@ -470,7 +777,7 @@ function openCreateDatabaseDrawer() {
     createDrawerOpen.value = true;
     createForm.value = {
         database_host_id: '',
-        database: '',
+        database_name: '',
         remote: '%',
         max_connections: 0,
     };
@@ -483,6 +790,18 @@ function closeCreateDrawer() {
 async function createDatabase() {
     try {
         creating.value = true;
+
+        // Validate form data
+        if (!createForm.value.database_host_id || createForm.value.database_host_id === '') {
+            toast.error(t('serverDatabases.selectDatabaseHost'));
+            return;
+        }
+
+        if (!createForm.value.database_name.trim()) {
+            toast.error(t('serverDatabases.databaseNameRequired'));
+            return;
+        }
+
         const { data } = await axios.post(`/api/user/servers/${route.params.uuidShort}/databases`, createForm.value);
 
         if (!data.success) {
@@ -515,12 +834,41 @@ async function createDatabase() {
 // Edit database
 function openViewDatabaseDrawer(database: DatabaseItem) {
     viewingDatabase.value = database;
-    viewDrawerOpen.value = true;
+    showPassword.value = false; // Reset password visibility
+
+    // Check if user has already chosen to remember their choice
+    const hasRememberedChoice = localStorage.getItem('featherpanel-remember-sensitive-info');
+
+    if (hasRememberedChoice === 'true') {
+        // User chose to remember, show password directly
+        showPassword.value = true;
+        viewDialogOpen.value = true;
+    } else {
+        // Show warning first
+        showSensitiveInfoWarning.value = true;
+    }
 }
 
-function closeViewDrawer() {
-    viewDrawerOpen.value = false;
+function closeViewDialog() {
+    viewDialogOpen.value = false;
     viewingDatabase.value = null;
+    showPassword.value = false;
+}
+
+function clearRememberedChoice() {
+    localStorage.removeItem('featherpanel-remember-sensitive-info');
+    toast.success(t('serverDatabases.rememberedChoiceCleared'));
+}
+
+function copyToClipboard(text: string): void {
+    navigator.clipboard
+        .writeText(text)
+        .then(() => {
+            toast.success(t('common.copiedToClipboard'));
+        })
+        .catch(() => {
+            toast.error(t('common.failedToCopy'));
+        });
 }
 
 // Delete database
@@ -571,5 +919,20 @@ function onConfirmDialog() {
     if (!confirmAction.value) return;
     confirmLoading.value = true;
     confirmAction.value();
+}
+
+// Sensitive info warning logic
+function confirmViewSensitiveInfo() {
+    if (rememberChoice.value) {
+        // Remember user's choice
+        localStorage.setItem('featherpanel-remember-sensitive-info', 'true');
+        showPassword.value = true; // Show password in drawer
+    } else {
+        // Don't remember, hide password
+        showPassword.value = false; // Hide password in drawer
+    }
+
+    showSensitiveInfoWarning.value = false;
+    viewDialogOpen.value = true; // Open the dialog
 }
 </script>
