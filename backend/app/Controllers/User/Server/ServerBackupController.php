@@ -131,6 +131,14 @@ class ServerBackupController
         //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
         // }
 
+        // Check backup limit
+        $currentBackups = count(Backup::getBackupsByServerId($server['id']));
+        $backupLimit = (int) ($server['backup_limit'] ?? 1);
+
+        if ($currentBackups >= $backupLimit) {
+            return ApiResponse::error('Backup limit reached', 'BACKUP_LIMIT_REACHED', 400);
+        }
+
         // Parse request body
         $body = json_decode($request->getContent(), true);
         if (!$body) {

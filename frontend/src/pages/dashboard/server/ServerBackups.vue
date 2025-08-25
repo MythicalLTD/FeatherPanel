@@ -1,9 +1,32 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6">
+            <!-- Backup Limit Warning -->
+            <div
+                v-if="serverInfo && backups.length >= serverInfo.backup_limit"
+                class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 dark:bg-yellow-950/30 dark:border-yellow-800"
+            >
+                <div class="flex items-center gap-3">
+                    <div class="w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
+                        <span class="text-white text-xs font-bold">!</span>
+                    </div>
+                    <div>
+                        <h3 class="text-yellow-800 dark:text-yellow-200 font-medium">
+                            {{ t('serverBackups.backupLimitReached') }}
+                        </h3>
+                        <p class="text-yellow-700 dark:text-yellow-300 text-sm">
+                            {{ t('serverBackups.backupLimitReachedDescription', { limit: serverInfo.backup_limit }) }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <TableComponent
                 :title="t('serverBackups.title')"
-                :description="t('serverBackups.description')"
+                :description="
+                    t('serverBackups.description') +
+                    (serverInfo ? ` (${backups.length}/${serverInfo.backup_limit})` : '')
+                "
                 :columns="tableColumns"
                 :data="backups"
                 :search-placeholder="t('serverBackups.searchPlaceholder')"
@@ -25,7 +48,12 @@
                         <RefreshCw class="h-4 w-4 mr-2" />
                         {{ t('common.refresh') }}
                     </Button>
-                    <Button variant="default" size="sm" :disabled="loading" @click="showCreateBackupDrawer = true">
+                    <Button
+                        variant="default"
+                        size="sm"
+                        :disabled="loading || (serverInfo && backups.length >= serverInfo.backup_limit)"
+                        @click="showCreateBackupDrawer = true"
+                    >
                         <Plus class="h-4 w-4 mr-2" />
                         {{ t('serverBackups.createBackup') }}
                     </Button>
@@ -314,6 +342,7 @@ const backups = ref<BackupItem[]>([]);
 const loading = ref(false);
 const searchQuery = ref('');
 const server = ref<{ name: string } | null>(null);
+const serverInfo = ref<{ backup_limit: number } | null>(null);
 const pagination = ref({
     current_page: 1,
     per_page: 20,
@@ -379,17 +408,29 @@ const tableColumns: TableColumn[] = [
 async function fetchBackups(page = pagination.value.current_page) {
     try {
         loading.value = true;
-        const { data } = await axios.get(`/api/user/servers/${route.params.uuidShort}/backups`, {
-            params: { page, per_page: pagination.value.per_page, search: searchQuery.value || undefined },
-        });
-        if (!data.success) {
-            toast.error(data.message || t('serverBackups.failedToFetch'));
+
+        // Fetch both backups and server info
+        const [backupsResponse, serverResponse] = await Promise.all([
+            axios.get(`/api/user/servers/${route.params.uuidShort}/backups`, {
+                params: { page, per_page: pagination.value.per_page, search: searchQuery.value || undefined },
+            }),
+            axios.get(`/api/user/servers/${route.params.uuidShort}`),
+        ]);
+
+        if (!backupsResponse.data.success) {
+            toast.error(backupsResponse.data.message || t('serverBackups.failedToFetch'));
             return;
         }
 
-        backups.value = data.data.data || [];
+        if (serverResponse.data.success) {
+            serverInfo.value = {
+                backup_limit: serverResponse.data.data.backup_limit,
+            };
+        }
 
-        const p = data.data.pagination;
+        backups.value = backupsResponse.data.data.data || [];
+
+        const p = backupsResponse.data.data.pagination;
         pagination.value = {
             current_page: p.current_page,
             per_page: p.per_page,

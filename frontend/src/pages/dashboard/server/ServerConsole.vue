@@ -186,31 +186,7 @@
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div class="space-y-2">
-                                    <Label for="filterCommands">{{ t('serverConsole.filterCommandEchoes') }}</Label>
-                                    <Select
-                                        :model-value="customization.terminal.filterCommands ? 'enabled' : 'disabled'"
-                                        @update:model-value="
-                                            (value) => {
-                                                customization.terminal.filterCommands = value === 'enabled';
-                                            }
-                                        "
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue
-                                                :placeholder="
-                                                    customization.terminal.filterCommands
-                                                        ? t('serverConsole.enabled')
-                                                        : t('serverConsole.disabled')
-                                                "
-                                            />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="enabled">{{ t('serverConsole.enabled') }}</SelectItem>
-                                            <SelectItem value="disabled">{{ t('serverConsole.disabled') }}</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+
                                 <div class="space-y-2">
                                     <Label for="maxLines">{{ t('serverConsole.maxTerminalLines') }}</Label>
                                     <Select
@@ -434,22 +410,7 @@
                             <RotateCcw class="h-4 w-4 mr-2" />
                             {{ t('serverConsole.resetToDefaults') }}
                         </Button>
-                        <Button variant="outline" @click="clearRecentCommands">
-                            <Trash2 class="h-4 w-4 mr-2" />
-                            {{ t('serverConsole.clearRecentCommands') }}
-                        </Button>
-                        <Button variant="outline" @click="debugRecentCommands">
-                            <Settings class="h-4 w-4 mr-2" />
-                            {{ t('serverConsole.debugCommands') }}
-                        </Button>
-                        <Button variant="outline" @click="toggleCommandFiltering">
-                            {{
-                                customization.terminal.filterCommands
-                                    ? t('serverConsole.disable')
-                                    : t('serverConsole.enable')
-                            }}
-                            {{ t('serverConsole.commandFiltering') }}
-                        </Button>
+
                         <Button class="flex-1" @click="async () => await saveAndApplyCustomization()">
                             <Save class="h-4 w-4 mr-2" />
                             {{ t('serverConsole.saveAndApply') }}
@@ -500,28 +461,12 @@
 
             <!-- Terminal Console -->
             <div v-if="!customization.components.terminal" class="space-y-4">
-                <!-- Terminal Controls -->
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-semibold">{{ t('serverConsole.terminalConsole') }}</h3>
-                    <div class="flex items-center gap-2">
-                        <Button variant="outline" size="sm" @click="openConsoleInNewWindow">
-                            <ExternalLink class="h-4 w-4 mr-2" />
-                            {{ t('serverConsole.openInNewWindow') }}
-                        </Button>
-                        <Button variant="outline" size="sm" @click="openConsolePopup">
-                            <Maximize2 class="h-4 w-4 mr-2" />
-                            {{ t('serverConsole.openPopup') }}
-                        </Button>
-                    </div>
-                </div>
-
                 <ServerTerminal
                     :terminal-lines="filteredTerminalLines"
                     :wings-web-socket="wingsWebSocket"
                     :show-timestamps="customization.terminal.showTimestamps"
                     @clear="clearTerminal"
                     @download-logs="downloadLogs"
-                    @send-command="sendCommand"
                 />
             </div>
 
@@ -554,7 +499,7 @@ import ServerInfoCards from '@/components/server/ServerInfoCards.vue';
 import ServerPerformance from '@/components/server/ServerPerformance.vue';
 import ServerTerminal from '@/components/server/ServerTerminal.vue';
 import { Button } from '@/components/ui/button';
-import { Settings, RotateCcw, Save, ExternalLink, Maximize2 } from 'lucide-vue-next';
+import { Settings, RotateCcw, Save } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import { useI18n } from 'vue-i18n';
@@ -595,7 +540,6 @@ const customization = ref({
     terminal: {
         autoScroll: true, // enabled by default
         showTimestamps: false, // disabled by default
-        filterCommands: true, // enabled by default
         maxLines: 100, // 100 by default
         filters: [] as ConsoleFilter[],
     },
@@ -621,10 +565,6 @@ const isNavigatingAway = ref(false);
 // Track if WebSocket handlers are set up to prevent duplicates
 const handlersSetup = ref(false);
 let messageHandler: ((event: MessageEvent) => void) | null = null;
-
-// Track recent commands to filter out echoes
-const recentCommands = new Set<string>();
-const commandTimeouts = new Map<string, number>();
 
 const server = ref<Server | null>(null);
 const loading = ref(false);
@@ -867,7 +807,7 @@ async function resetCustomization(): Promise<void> {
         terminal: {
             autoScroll: true, // enabled by default
             showTimestamps: false, // disabled by default
-            filterCommands: true, // enabled by default
+
             maxLines: 100, // 100 by default
             filters: [],
         },
@@ -995,11 +935,6 @@ onUnmounted(() => {
     handlersSetup.value = false;
     messageHandler = null;
 
-    // Clean up command tracking
-    commandTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
-    commandTimeouts.clear();
-    recentCommands.clear();
-
     wingsWebSocket.cleanup();
     if (statsInterval) {
         clearInterval(statsInterval);
@@ -1047,39 +982,8 @@ function setupWebSocketHandlers(): void {
                 // Filter out command echoes - don't show output that matches recent commands
                 const trimmedOutput = output.trim();
 
-                // Check if this output is likely a command echo
-                let isCommandEcho = false;
-                console.log(
-                    `Checking for command echo: "${trimmedOutput}" (filtering ${customization.value.terminal.filterCommands ? 'enabled' : 'disabled'})`,
-                );
-                if (customization.value.terminal.filterCommands) {
-                    for (const recentCommand of recentCommands) {
-                        const trimmedCommand = recentCommand.trim();
-
-                        // More comprehensive command echo detection:
-                        // 1. Exact match (most common case)
-                        // 2. Output starts with command + space (command with arguments)
-                        // 3. Output starts with '> ' + command (server prompt style)
-                        // 4. Output is just the command (Wings echo case)
-                        // 5. Output matches command after removing common prefixes
-                        // 6. Check if output contains just the command (for multi-line commands)
-                        if (
-                            trimmedOutput === trimmedCommand ||
-                            trimmedOutput.startsWith(trimmedCommand + ' ') ||
-                            trimmedOutput.startsWith('> ' + trimmedCommand) ||
-                            trimmedOutput.replace(/^[>:\s]+/, '') === trimmedCommand ||
-                            (trimmedOutput.includes(trimmedCommand) &&
-                                trimmedOutput.length === trimmedCommand.length) ||
-                            trimmedOutput.replace(/\s+/g, '') === trimmedCommand.replace(/\s+/g, '') ||
-                            trimmedOutput.toLowerCase() === trimmedCommand.toLowerCase() ||
-                            trimmedOutput.toLowerCase().includes(trimmedCommand.toLowerCase())
-                        ) {
-                            isCommandEcho = true;
-                            console.log(`Filtering command echo: "${trimmedOutput}" matches "${trimmedCommand}"`);
-                            break;
-                        }
-                    }
-                }
+                // Since console is read-only, we don't need to filter command echoes
+                const isCommandEcho = false;
 
                 if (!isCommandEcho) {
                     // Clean up Wings daemon console output prefixes before adding to terminal
@@ -1087,7 +991,6 @@ function setupWebSocketHandlers(): void {
                     addTerminalLine(cleanedOutput, 'output');
                 } else {
                     console.log(`Filtered out command echo: "${trimmedOutput}"`);
-                    console.log(`Recent commands: [${Array.from(recentCommands).join(', ')}]`);
                 }
             } else if (data.event === 'status') {
                 // Update server status and Wings state
@@ -1522,56 +1425,6 @@ function downloadLogs(): void {
     toast.info(t('serverConsole.logDownloadComingSoon'));
 }
 
-function sendCommand(command: string): void {
-    if (!command.trim()) return;
-
-    if (!wingsWebSocket.isConnected) {
-        toast.warning(t('serverConsole.wingsUnreachableWait'));
-        return;
-    }
-
-    // Check if server is completely offline - only block commands for truly offline servers
-    const currentStatus = wingsState.value || server.value?.status || 'unknown';
-    if (currentStatus.toLowerCase() === 'offline') {
-        toast.warning(t('serverConsole.cannotSendCommandsStatus', { status: currentStatus }));
-        return;
-    }
-
-    // Add command to terminal
-    addTerminalLine(`> ${command}`, 'command');
-
-    // Add command to recent commands set
-    const trimmedCommand = command.trim();
-    recentCommands.add(trimmedCommand);
-    console.log(`Added command to recent commands: "${trimmedCommand}" (total: ${recentCommands.size})`);
-
-    // Set a timeout to remove the command from recent commands after a delay
-    const timeoutId = setTimeout(() => {
-        const trimmedCommand = command.trim();
-        recentCommands.delete(trimmedCommand);
-        console.log(`Removed command from recent commands: "${trimmedCommand}" (remaining: ${recentCommands.size})`);
-    }, 3000); // 3 second delay - increased to catch Wings echoes
-    commandTimeouts.set(command.trim(), timeoutId);
-
-    // Send command via WebSocket using correct API format
-    if (wingsWebSocket.websocket.value && wingsWebSocket.websocket.value.readyState === WebSocket.OPEN) {
-        try {
-            wingsWebSocket.websocket.value.send(
-                JSON.stringify({
-                    event: 'send command',
-                    args: [command],
-                }),
-            );
-        } catch (error) {
-            addTerminalLine(t('serverConsole.failedToSendCommand') + `: ${String(error)}`, 'error');
-            toast.error(t('serverConsole.failedToSendCommand'));
-        }
-    } else {
-        addTerminalLine(t('serverConsole.websocketNotConnected'), 'error');
-        toast.warning(t('serverConsole.connectionLost'));
-    }
-}
-
 function requestServerStats(): void {
     if (wingsWebSocket.websocket.value && wingsWebSocket.websocket.value.readyState === WebSocket.OPEN) {
         try {
@@ -1636,65 +1489,5 @@ function addFilter(): void {
 function removeFilter(index: number): void {
     customization.value.terminal.filters.splice(index, 1);
     toast.success(t('serverConsole.filterRemoved'));
-}
-
-function clearRecentCommands(): void {
-    // Clear all recent commands and timeouts
-    commandTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
-    commandTimeouts.clear();
-    recentCommands.clear();
-    console.log('Recent commands cleared');
-    toast.success(t('serverConsole.recentCommandsCleared'));
-}
-
-function debugRecentCommands(): void {
-    console.log('=== Recent Commands Debug ===');
-    console.log('Recent commands:', Array.from(recentCommands));
-    console.log('Command timeouts:', Array.from(commandTimeouts.entries()));
-    console.log('Total recent commands:', recentCommands.size);
-    console.log('Total timeouts:', commandTimeouts.size);
-    console.log('============================');
-
-    // Show in toast for easy viewing
-    const commandsList = Array.from(recentCommands).join(', ') || 'None';
-    toast.info(t('serverConsole.recentCommandsDebug', { commands: commandsList }));
-}
-
-function toggleCommandFiltering(): void {
-    customization.value.terminal.filterCommands = !customization.value.terminal.filterCommands;
-    const status = customization.value.terminal.filterCommands ? 'enabled' : 'disabled';
-    console.log(`Command filtering ${status}`);
-    toast.info(t('serverConsole.commandFilteringStatus', { status }));
-}
-
-// Console window/popup functions
-function openConsoleInNewWindow(): void {
-    const consoleWindow = window.open(
-        `/server/${route.params.uuidShort}/console-window`,
-        'server-console',
-        'width=1000,height=800,scrollbars=yes,resizable=yes,menubar=no,toolbar=no,location=no,status=no',
-    );
-
-    if (consoleWindow) {
-        consoleWindow.focus();
-        toast.success(t('serverConsole.consoleOpenedInNewWindow'));
-    } else {
-        toast.error(t('serverConsole.popupBlocked'));
-    }
-}
-
-function openConsolePopup(): void {
-    const popupWindow = window.open(
-        `/server/${route.params.uuidShort}/console-popup`,
-        'console-popup',
-        'width=800,height=600,scrollbars=yes,resizable=yes,menubar=no,toolbar=no,location=no,status=no',
-    );
-
-    if (popupWindow) {
-        popupWindow.focus();
-        toast.success(t('serverConsole.consoleOpenedInPopup'));
-    } else {
-        toast.error(t('serverConsole.popupBlocked'));
-    }
 }
 </script>

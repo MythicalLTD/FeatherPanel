@@ -21,9 +21,9 @@
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="FeatherPanel Game Server Dashboard" />
 
-        <link rel="icon" type="image/png" href="https://cdn.mythical.systems/featherpanel/logo.png" />
-        <link rel="apple-touch-icon" href="https://cdn.mythical.systems/featherpanel/logo.png" />
-        <link rel="shortcut icon" href="https://cdn.mythical.systems/featherpanel/logo.png" />
+        <link rel="icon" type="image/png" href="https://cdn.mythical.systems/featherpanel/logo.png" crossorigin="anonymous" />
+        <link rel="apple-touch-icon" href="https://cdn.mythical.systems/featherpanel/logo.png" crossorigin="anonymous" />
+        <link rel="shortcut icon" href="https://cdn.mythical.systems/featherpanel/logo.png" crossorigin="anonymous" />
         <meta
             name="twitter:description"
             content="Professional game server management dashboard for Minecraft and other games"
@@ -32,7 +32,7 @@
         <meta name="robots" content="index, follow" />
         <meta
             http-equiv="Content-Security-Policy"
-            content="script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: ws: wss:;"
+            content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com https://devsv.mythical.systems; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: ws: wss:;"
         />
         <title>FeatherPanel</title>
 
@@ -318,7 +318,7 @@
             <!-- FEATHERPANEL_APP_PLACEHOLDER_END -->
         </div>
 
-        <script type="module" src="/src/main.ts"></script>
+        <script type="module" src="/src/main.ts" crossorigin></script>
 
         <!-- Preloader Script -->
         <script>

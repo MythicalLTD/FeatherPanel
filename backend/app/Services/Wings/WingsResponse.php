@@ -21,14 +21,14 @@ namespace App\Services\Wings;
  */
 class WingsResponse
 {
-    private array $data;
+    private array|string $data;
     private int $statusCode;
     private bool $success;
 
     /**
      * Create a new WingsResponse instance.
      */
-    public function __construct(array $data, int $statusCode = 200)
+    public function __construct(array|string $data, int $statusCode = 200)
     {
         $this->data = $data;
         $this->statusCode = $statusCode;
@@ -46,8 +46,21 @@ class WingsResponse
     /**
      * Get the response data.
      */
-    public function getData(): array
+    public function getData(): array|string
     {
+        return $this->data;
+    }
+
+    /**
+     * Get the raw response body as a string.
+     * Useful for file downloads or when you need the unprocessed response.
+     */
+    public function getRawBody(): string
+    {
+        if (is_array($this->data)) {
+            return json_encode($this->data);
+        }
+
         return $this->data;
     }
 
@@ -64,12 +77,14 @@ class WingsResponse
      */
     public function getError(): string
     {
-        if (isset($this->data['error'])) {
-            return $this->data['error'];
-        }
+        if (is_array($this->data)) {
+            if (isset($this->data['error'])) {
+                return $this->data['error'];
+            }
 
-        if (isset($this->data['message'])) {
-            return $this->data['message'];
+            if (isset($this->data['message'])) {
+                return $this->data['message'];
+            }
         }
 
         return 'Unknown error';
@@ -80,7 +95,11 @@ class WingsResponse
      */
     public function get(string $key, $default = null)
     {
-        return $this->data[$key] ?? $default;
+        if (is_array($this->data)) {
+            return $this->data[$key] ?? $default;
+        }
+
+        return $default;
     }
 
     /**
@@ -88,7 +107,11 @@ class WingsResponse
      */
     public function has(string $key): bool
     {
-        return isset($this->data[$key]);
+        if (is_array($this->data)) {
+            return isset($this->data[$key]);
+        }
+
+        return false;
     }
 
     /**
@@ -96,6 +119,10 @@ class WingsResponse
      */
     public function toArray(): array
     {
-        return $this->data;
+        if (is_array($this->data)) {
+            return $this->data;
+        }
+
+        return ['content' => $this->data];
     }
 }

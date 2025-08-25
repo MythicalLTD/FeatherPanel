@@ -243,6 +243,40 @@ class ServerService
     }
 
     /**
+     * Get file contents as raw string.
+     * This method bypasses JSON decoding and returns the raw file content.
+     * Useful for file downloads and when you need the actual file content.
+     */
+    public function getFileContentsRaw(string $serverUuid, string $file, bool $download = false): WingsResponse
+    {
+        try {
+            $encodedFile = urlencode($file);
+            $downloadParam = $download ? 'true' : 'false';
+            $rawResponse = $this->connection->getRaw("/api/servers/{$serverUuid}/files/contents?file={$encodedFile}&download={$downloadParam}");
+
+            return new WingsResponse($rawResponse, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Download a file from the server.
+     * This method is specifically for file downloads and returns raw content.
+     */
+    public function downloadFile(string $serverUuid, string $file): WingsResponse
+    {
+        try {
+            $encodedFile = urlencode($file);
+            $rawResponse = $this->connection->getRaw("/api/servers/{$serverUuid}/files/contents?file={$encodedFile}&download=true");
+
+            return new WingsResponse($rawResponse, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Write file contents.
      */
     public function writeFile(string $serverUuid, string $file, string $content): WingsResponse

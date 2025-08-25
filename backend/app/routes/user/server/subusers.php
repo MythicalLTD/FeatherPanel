@@ -85,29 +85,6 @@ return function (RouteCollection $routes): void {
         ['GET']
     );
 
-    // Update a subuser
-    App::getInstance(true)->registerServerRoute(
-        $routes,
-        'session-server-update-subuser',
-        '/api/user/servers/{uuidShort}/subusers/{subuserId}',
-        function (Request $request, array $args) {
-            $uuidShort = $args['uuidShort'] ?? null;
-            $subuserId = $args['subuserId'] ?? null;
-            if (!$uuidShort || !$subuserId) {
-                return ApiResponse::error('Missing or invalid parameters', 'INVALID_PARAMETERS', 400);
-            }
-
-            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
-            if (!$server) {
-                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-            }
-
-            return (new \App\Controllers\User\Server\SubuserController())->updateSubuser($request, $server['uuid'], (int) $subuserId);
-        },
-        'uuidShort',
-        ['PUT', 'PATCH']
-    );
-
     // Delete a subuser
     App::getInstance(true)->registerServerRoute(
         $routes,

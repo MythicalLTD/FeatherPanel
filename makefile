@@ -54,6 +54,7 @@ help:
 	@echo -e "  ${GREEN}make set-prod${NC}    ${PROD} Sets APP_DEBUG to false for production\n"
 	@echo -e "  ${GREEN}make set-dev${NC}     ${DEV} Sets APP_DEBUG to true for development"
 	@echo -e "  ${GREEN}make get-frontend${NC} ${DEV} Uses the official frontend repository instead of the local one"
+	@echo -e "  ${GREEN}make download-addon-phpmyadmin${NC} ${PACKAGE} Downloads and sets up phpMyAdmin in frontend/dist/pma"
 	@echo -e "${YELLOW}Use 'make <command>' to execute a command${NC}\n"
 
 # Frontend tasks
@@ -154,3 +155,44 @@ set-dev:
 	@echo -e "${GREEN}${INFO} Setting APP_DEBUG to true...${NC}"
 	@find $(BACKEND_DIR) -type f -name "*.php" -exec $(SED) -i 's/define('\''APP_DEBUG'\'', false);/define('\''APP_DEBUG'\'', true);/g' {} +
 	@echo -e "${GREEN}${CHECK} Development mode set successfully!${NC}\n"
+
+download-addon-phpmyadmin: 
+	@echo -e "\n${BOLD}${BLUE}Downloading phpMyAdmin${NC} ${PACKAGE}"
+	@echo -e "${CYAN}=========================${NC}"
+	@echo -e "${YELLOW}${WARN} Checking for existing phpMyAdmin installation...${NC}"
+	@if [ -d "$(FRONTEND_DIR)/dist/pma" ]; then \
+		echo -e "${YELLOW}${WARN} Removing existing phpMyAdmin installation...${NC}"; \
+		rm -rf $(FRONTEND_DIR)/dist/pma; \
+		echo -e "${GREEN}${CHECK} Existing installation removed${NC}"; \
+	else \
+		echo -e "${GREEN}${INFO} No existing installation found${NC}"; \
+	fi
+	@echo -e "${GREEN}${INFO} Downloading phpMyAdmin 5.2.2...${NC}"
+	@cd $(FRONTEND_DIR)/dist && wget -q https://files.phpmyadmin.net/phpMyAdmin/5.2.2/phpMyAdmin-5.2.2-all-languages.zip
+	@echo -e "${GREEN}${CHECK} Download complete${NC}\n"
+	@echo -e "${GREEN}${INFO} Extracting phpMyAdmin...${NC}"
+	@cd $(FRONTEND_DIR)/dist && unzip -q phpMyAdmin-5.2.2-all-languages.zip
+	@echo -e "${GREEN}${CHECK} Extraction complete${NC}\n"
+	@echo -e "${GREEN}${INFO} Renaming directory to 'pma'...${NC}"
+	@cd $(FRONTEND_DIR)/dist && mv phpMyAdmin-5.2.2-all-languages pma
+	@echo -e "${GREEN}${CHECK} Directory renamed to 'pma'${NC}\n"
+	@echo -e "${GREEN}${INFO} Cleaning up zip file...${NC}"
+	@cd $(FRONTEND_DIR)/dist && rm phpMyAdmin-5.2.2-all-languages.zip
+	@echo -e "${GREEN}${CHECK} Cleanup complete${NC}\n"
+	@echo -e "${GREEN}${INFO} Configuring phpMyAdmin...${NC}"
+	@cd $(FRONTEND_DIR)/dist/pma && cp config.sample.inc.php config.inc.php
+	@cd $(FRONTEND_DIR)/dist/pma && $(SED) -i 's/$cfg\['\''blowfish_secret'\''\] = '\'''\'';/$cfg\['\''blowfish_secret'\''\] = '\''$(shell openssl rand -base64 32 | tr -d "=+/" | cut -c1-32)'\'';/' config.inc.php
+	@cd $(FRONTEND_DIR)/dist/pma && echo '$$cfg["ThemeDefault"] = "darkwolf";' >> config.inc.php
+	@cd $(FRONTEND_DIR)/dist/pma && echo '$$cfg["AllowArbitraryServer"] = true;' >> config.inc.php
+	@echo -e "${GREEN}${CHECK} Configuration complete${NC}\n"
+	@echo -e "${GREEN}${INFO} Downloading darkwolf theme...${NC}"
+	@cd $(FRONTEND_DIR)/dist/pma/themes && wget -q https://files.phpmyadmin.net/themes/darkwolf/5.2/darkwolf-5.2.zip
+	@echo -e "${GREEN}${CHECK} Theme download complete${NC}\n"
+	@echo -e "${GREEN}${INFO} Installing darkwolf theme...${NC}"
+	@cd $(FRONTEND_DIR)/dist/pma/themes && unzip -q darkwolf-5.2.zip
+	@cd $(FRONTEND_DIR)/dist/pma/themes && if [ ! -d "darkwolf" ]; then mv darkwolf-5.2 darkwolf; fi
+	@echo -e "${GREEN}${CHECK} Theme installation complete${NC}\n"
+	@echo -e "${GREEN}${INFO} Cleaning up theme files...${NC}"
+	@cd $(FRONTEND_DIR)/dist/pma/themes && rm darkwolf-5.2.zip
+	@echo -e "${GREEN}${CHECK} Theme cleanup complete${NC}\n"
+	@echo -e "${GREEN}${ROCKET} phpMyAdmin setup complete!${NC}\n" 

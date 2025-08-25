@@ -139,6 +139,52 @@ class WingsConnection
     }
 
     /**
+     * Make a GET request to the Wings API and return raw response.
+     * Useful for file downloads and other non-JSON responses.
+     *
+     * @param string $endpoint The API endpoint (without base URL)
+     * @param array $headers Additional headers to include
+     *
+     * @throws WingsConnectionException
+     * @throws WingsAuthenticationException
+     * @throws WingsRequestException
+     *
+     * @return string The raw response body
+     */
+    public function getRaw(string $endpoint, array $headers = []): string
+    {
+        $url = $this->baseUrl . $endpoint;
+
+        // Merge headers
+        $requestHeaders = array_merge($this->defaultHeaders, $headers);
+
+        // Create request
+        $request = new Request('GET', $url, $requestHeaders);
+
+        try {
+            // Send request asynchronously and wait for response
+            $response = $this->client->sendAsync($request)->wait();
+            $httpCode = $response->getStatusCode();
+            $responseBody = $response->getBody()->getContents();
+
+            // Handle HTTP errors
+            if ($httpCode >= 400) {
+                // Try to decode as JSON for error messages
+                $responseData = json_decode($responseBody, true);
+                $this->handleHttpError($httpCode, $responseData, $endpoint);
+            }
+
+            return $responseBody;
+        } catch (\GuzzleHttp\Exception\ConnectException $e) {
+            throw new WingsConnectionException('Connection failed: ' . $e->getMessage());
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            throw new WingsConnectionException('Request failed: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            throw new WingsConnectionException('Unexpected error: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Make a POST request to the Wings API.
      *
      * @param string $endpoint The API endpoint (without base URL)

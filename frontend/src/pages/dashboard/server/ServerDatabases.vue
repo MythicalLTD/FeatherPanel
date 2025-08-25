@@ -1,9 +1,36 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6">
+            <!-- Database Limit Warning -->
+            <div
+                v-if="serverInfo && databases.length >= serverInfo.database_limit"
+                class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 dark:bg-yellow-950/30 dark:border-yellow-800"
+            >
+                <div class="flex items-center gap-3">
+                    <div class="w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
+                        <span class="text-white text-xs font-bold">!</span>
+                    </div>
+                    <div>
+                        <h3 class="text-yellow-800 dark:text-yellow-200 font-medium">
+                            {{ t('serverDatabases.databaseLimitReached') }}
+                        </h3>
+                        <p class="text-yellow-700 dark:text-yellow-300 text-sm">
+                            {{
+                                t('serverDatabases.databaseLimitReachedDescription', {
+                                    limit: serverInfo.database_limit,
+                                })
+                            }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <TableComponent
                 :title="t('serverDatabases.title')"
-                :description="t('serverDatabases.description')"
+                :description="
+                    t('serverDatabases.description') +
+                    (serverInfo ? ` (${databases.length}/${serverInfo.database_limit})` : '')
+                "
                 :columns="tableColumns"
                 :data="databases"
                 :search-placeholder="t('serverDatabases.searchPlaceholder')"
@@ -25,7 +52,10 @@
                         <RefreshCw class="h-4 w-4 mr-2" />
                         {{ t('common.refresh') }}
                     </Button>
-                    <Button @click="openCreateDatabaseDrawer">
+                    <Button
+                        :disabled="serverInfo && databases.length >= serverInfo.database_limit"
+                        @click="openCreateDatabaseDrawer"
+                    >
                         <Plus class="h-4 w-4 mr-2" />
                         {{ t('serverDatabases.createDatabase') }}
                     </Button>
@@ -171,11 +201,19 @@
             </DrawerContent>
         </Drawer>
 
-        <!-- Database Info Dialog -->
-        <Dialog v-model:open="viewDialogOpen">
-            <DialogContent class="max-w-6xl max-h-[95vh] overflow-y-auto" v-if="viewingDatabase">
-                <DialogHeader class="pb-6">
-                    <DialogTitle class="flex items-center gap-4">
+        <!-- Database Info Drawer -->
+        <Drawer
+            class="w-full"
+            :open="viewDrawerOpen"
+            @update:open="
+                (val: boolean) => {
+                    if (!val) closeViewDrawer();
+                }
+            "
+        >
+            <DrawerContent v-if="viewingDatabase" class="max-h-[90vh] overflow-y-auto">
+                <DrawerHeader>
+                    <DrawerTitle class="flex items-center gap-4">
                         <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                             <Eye class="h-6 w-6 text-primary" />
                         </div>
@@ -185,10 +223,10 @@
                                 {{ t('serverDatabases.databaseCredentials') }}
                             </div>
                         </div>
-                    </DialogTitle>
-                </DialogHeader>
+                    </DrawerTitle>
+                </DrawerHeader>
 
-                <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 py-6">
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 py-6 px-6">
                     <!-- Connection Details -->
                     <div class="space-y-6">
                         <div
@@ -484,16 +522,16 @@
                     </div>
                 </div>
 
-                <DialogFooter>
-                    <Button variant="ghost" size="sm" @click="clearRememberedChoice" class="mr-auto">
+                <DrawerFooter class="px-6">
+                    <Button variant="ghost" size="sm" class="mr-auto" @click="clearRememberedChoice">
                         {{ t('serverDatabases.resetWarning') }}
                     </Button>
-                    <Button type="button" variant="outline" @click="closeViewDialog">
+                    <Button type="button" variant="outline" @click="closeViewDrawer">
                         {{ t('common.close') }}
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </DrawerFooter>
+            </DrawerContent>
+        </Drawer>
 
         <!-- Sensitive Info Warning Dialog -->
         <AlertDialog v-model:open="showSensitiveInfoWarning">
@@ -511,8 +549,8 @@
                     <div class="flex items-center space-x-2">
                         <input
                             id="remember-choice"
-                            type="checkbox"
                             v-model="rememberChoice"
+                            type="checkbox"
                             class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                         />
                         <Label for="remember-choice" class="text-sm">
@@ -577,7 +615,6 @@ import {
     DrawerDescription,
     DrawerFooter,
 } from '@/components/ui/drawer';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -630,6 +667,7 @@ const loading = ref(false);
 const creating = ref(false);
 const searchQuery = ref('');
 const server = ref<{ name: string } | null>(null);
+const serverInfo = ref<{ database_limit: number } | null>(null);
 const pagination = ref({
     current_page: 1,
     per_page: 20,
@@ -641,7 +679,7 @@ const pagination = ref({
 
 // Drawer states
 const createDrawerOpen = ref(false);
-const viewDialogOpen = ref(false);
+const viewDrawerOpen = ref(false);
 const viewingDatabase = ref<DatabaseItem | null>(null);
 const showPassword = ref(false);
 
@@ -695,15 +733,28 @@ onMounted(async () => {
 async function fetchDatabases(page = pagination.value.current_page) {
     try {
         loading.value = true;
-        const { data } = await axios.get(`/api/user/servers/${route.params.uuidShort}/databases`, {
-            params: { page, per_page: pagination.value.per_page, search: searchQuery.value || undefined },
-        });
-        if (!data.success) {
-            toast.error(data.message || t('serverDatabases.failedToFetch'));
+
+        // Fetch both databases and server info
+        const [databasesResponse, serverResponse] = await Promise.all([
+            axios.get(`/api/user/servers/${route.params.uuidShort}/databases`, {
+                params: { page, per_page: pagination.value.per_page, search: searchQuery.value || undefined },
+            }),
+            axios.get(`/api/user/servers/${route.params.uuidShort}`),
+        ]);
+
+        if (!databasesResponse.data.success) {
+            toast.error(databasesResponse.data.message || t('serverDatabases.failedToFetch'));
             return;
         }
-        databases.value = data.data.data || [];
-        pagination.value = data.data.pagination;
+
+        if (serverResponse.data.success) {
+            serverInfo.value = {
+                database_limit: serverResponse.data.data.database_limit,
+            };
+        }
+
+        databases.value = databasesResponse.data.data.data || [];
+        pagination.value = databasesResponse.data.data.pagination;
     } catch (error: unknown) {
         if (error && typeof error === 'object' && 'response' in error) {
             const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
@@ -842,15 +893,15 @@ function openViewDatabaseDrawer(database: DatabaseItem) {
     if (hasRememberedChoice === 'true') {
         // User chose to remember, show password directly
         showPassword.value = true;
-        viewDialogOpen.value = true;
+        viewDrawerOpen.value = true;
     } else {
         // Show warning first
         showSensitiveInfoWarning.value = true;
     }
 }
 
-function closeViewDialog() {
-    viewDialogOpen.value = false;
+function closeViewDrawer() {
+    viewDrawerOpen.value = false;
     viewingDatabase.value = null;
     showPassword.value = false;
 }
@@ -933,6 +984,6 @@ function confirmViewSensitiveInfo() {
     }
 
     showSensitiveInfoWarning.value = false;
-    viewDialogOpen.value = true; // Open the dialog
+    viewDrawerOpen.value = true; // Open the drawer
 }
 </script>

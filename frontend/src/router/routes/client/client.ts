@@ -37,16 +37,6 @@ const clientRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/dashboard/server/ServerStartup.vue'),
     },
     {
-        path: '/server/:uuidShort/console-window',
-        name: 'ServerConsoleWindow',
-        component: () => import('@/pages/dashboard/server/ConsoleWindow.vue'),
-    },
-    {
-        path: '/server/:uuidShort/console-popup',
-        name: 'ServerConsolePopup',
-        component: () => import('@/pages/dashboard/server/ConsolePopup.vue'),
-    },
-    {
         path: '/dashboard/activities',
         name: 'AllServerActivities',
         component: () => import('@/pages/dashboard/AllServerActivities.vue'),
@@ -75,6 +65,16 @@ const clientRoutes: RouteRecordRaw[] = [
         path: '/server/:uuidShort/schedules/:scheduleId/tasks',
         name: 'ServerTasks',
         component: () => import('@/pages/dashboard/server/ServerTasks.vue'),
+    },
+    {
+        path: '/server/:uuidShort/files',
+        name: 'ServerFiles',
+        component: () => import('@/pages/dashboard/server/ServerFiles.vue'),
+    },
+    {
+        path: '/server/:uuidShort/files/edit',
+        name: 'ServerFileEditor',
+        component: () => import('@/pages/dashboard/server/ServerFileEditor.vue'),
     },
     {
         path: '/server/:uuidShort/users',
