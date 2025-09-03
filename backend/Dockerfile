@@ -30,6 +30,7 @@ RUN apt-get update && apt-get install -y \
     nginx \
     supervisor \
     mariadb-client \
+	cron \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -102,6 +103,13 @@ RUN mkdir -p /var/log/supervisor \
 # Copy and make init script executable
 COPY init.sh /usr/local/bin/init.sh
 RUN chmod +x /usr/local/bin/init.sh
+
+
+# Add cronjobs for www-data user
+RUN echo '* * * * * php /var/www/html/storage/cron/runner.php >> /dev/null 2>&1' > /var/spool/cron/crontabs/www-data \
+    && echo '* * * * * bash /var/www/html/storage/cron/runner.bash >> /dev/null 2>&1' >> /var/spool/cron/crontabs/www-data \
+    && chmod 600 /var/spool/cron/crontabs/www-data \
+    && chown www-data:crontab /var/spool/cron/crontabs/www-data
 
 # Expose port 80
 EXPOSE 80
