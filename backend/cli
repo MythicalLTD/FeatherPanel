@@ -3,9 +3,9 @@
 
 use App\Cli\App;
 if (!empty($_SERVER['DOCUMENT_ROOT'])) {
-	define('APP_PUBLIC', $_SERVER['DOCUMENT_ROOT'] . '/');
+	define('APP_PUBLIC', $_SERVER['DOCUMENT_ROOT']);
 } else {
-	define('APP_PUBLIC', __DIR__ . '/');
+	define('APP_PUBLIC', __DIR__);
 }
 
 define("ENV_PATH", APP_PUBLIC . "/storage/");
