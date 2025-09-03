@@ -209,9 +209,13 @@ function displayMessage(item: ActivityItem): string {
 
     // Prefer explicit message
     if (meta && typeof meta.message === 'string' && meta.message.trim()) {
+        const parsedMetaMessage = tryParseJson(meta.message);
+        if (parsedMetaMessage != null) return summarizeJson(parsedMetaMessage);
         return meta.message;
     }
     if (typeof item.message === 'string' && item.message.trim()) {
+        const parsedItemMessage = tryParseJson(item.message);
+        if (parsedItemMessage != null) return summarizeJson(parsedItemMessage);
         return item.message;
     }
 
@@ -263,5 +267,44 @@ function displayMessage(item: ActivityItem): string {
         }
     }
     return '';
+}
+
+function tryParseJson(value: string): unknown | null {
+    const t = value.trim();
+    if (!(t.startsWith('{') || t.startsWith('['))) return null;
+    try {
+        return JSON.parse(t);
+    } catch {
+        return null;
+    }
+}
+
+function summarizeJson(value: unknown): string {
+    if (Array.isArray(value)) {
+        if (value.length === 0) return '[]';
+        const sample = value
+            .slice(0, 5)
+            .map((v) => summarizePrimitive(v))
+            .join(', ');
+        return value.length > 5 ? `[${sample}, …]` : `[${sample}]`;
+    }
+    if (value && typeof value === 'object') {
+        const entries = Object.entries(value as Record<string, unknown>);
+        if (entries.length === 0) return '{}';
+        const sample = entries
+            .slice(0, 6)
+            .map(([k, v]) => `${k}: ${summarizePrimitive(v)}`)
+            .join(', ');
+        return entries.length > 6 ? `{ ${sample}, … }` : `{ ${sample} }`;
+    }
+    return summarizePrimitive(value);
+}
+
+function summarizePrimitive(v: unknown): string {
+    if (v == null) return 'null';
+    if (typeof v === 'string') return v.length > 80 ? `${v.slice(0, 77)}…` : v;
+    if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+    if (typeof v === 'object') return '{…}';
+    return String(v);
 }
 </script>
