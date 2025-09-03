@@ -786,16 +786,23 @@ class ServerUserController
 
 	/**
 	 * Get user permissions for a specific server.
-	 * This is a placeholder - implement based on your permission system.
+	 * Returns full permissions for server owners, or subuser permissions for subusers.
 	 *
+	 * @param int $userId The user ID
 	 * @param int $serverId The server ID
 	 *
 	 * @return array The user's permissions
 	 */
 	private function getUserServerPermissions(int $userId, int $serverId): array
 	{
-		// TODO: Implement based on permission system
-		$permissions = [
+		// Get server to check ownership
+		$server = Server::getServerById($serverId);
+		if (!$server) {
+			return [];
+		}
+
+		// Full permissions array (for owner and subuser)
+		$fullPermissions = [
 			// Basic connection - REQUIRED for any WebSocket access
 			'websocket.connect',
 
@@ -806,6 +813,22 @@ class ServerUserController
 			'control.start',             // Start server
 			'control.stop',              // Stop server
 			'control.restart',           // Restart server
+			'control.kill',              // Kill server
+
+			// Server management
+			'control.settings',          // Modify server settings
+			'control.startup',           // Modify startup command
+			'control.sftp',              // SFTP access
+			'control.database',          // Database management
+			'control.backup',            // Backup management
+			'control.allocation',        // Allocation management
+
+			// File operations
+			'files.read',                // Read files
+			'files.write',               // Write files
+			'files.delete',              // Delete files
+			'files.upload',              // Upload files
+			'files.download',            // Download files
 
 			// Receive events
 			'admin.websocket.errors',    // See detailed error messages
@@ -814,6 +837,19 @@ class ServerUserController
 			'backup.read',               // See backup events
 		];
 
-		return $permissions;
+		// If user is the server owner, give full permissions
+		if ((int) $server['owner_id'] === $userId) {
+			return $fullPermissions;
+		}
+
+		// Check if user is a subuser
+		$subuser = Subuser::getSubuserByUserAndServer($userId, $serverId);
+		if ($subuser) {
+			// Subusers now have full access as well
+			return $fullPermissions;
+		}
+
+		// User is neither owner nor subuser
+		return [];
 	}
 }
