@@ -60,6 +60,6 @@ To test loally, please follow these improved and detailed steps:
 
 **Need help?**  
 - [API Documentation](https://www.postman.com/mythicalsystems/workspace/mythicalpanel)
-- [Discord Support](https://discord.gg/mythical)
+- [Discord Support](https://discord.mythical.systems)
 
 Enjoy testing FeatherPanel!
