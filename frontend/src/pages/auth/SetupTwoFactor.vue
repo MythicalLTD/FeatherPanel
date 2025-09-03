@@ -23,7 +23,6 @@ const props = defineProps<{
 
 const { t } = useI18n();
 
-
 const qrCodeUrl = ref('');
 const secret = ref('');
 const code = ref('');
@@ -124,7 +123,10 @@ async function verify2FA(e: Event) {
                             />
                         </div>
                         <div v-if="settingsStore.turnstile_enabled" class="grid gap-3">
-                            <Turnstile v-model="form.turnstile_token" :site-key="settingsStore.turnstile_key_pub as string" />
+                            <Turnstile
+                                v-model="form.turnstile_token"
+                                :site-key="settingsStore.turnstile_key_pub as string"
+                            />
                         </div>
                         <Button type="submit" class="w-full" :disabled="loading">
                             <span v-if="loading">{{ t('api_errors.TWO_FACTOR_LOADING') }}</span>

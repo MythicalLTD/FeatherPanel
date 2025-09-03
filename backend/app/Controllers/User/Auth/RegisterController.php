@@ -51,9 +51,9 @@ class RegisterController
             }
         }
 
-		if ($config->getSetting(ConfigInterface::REGISTRATION_ENABLED, 'true') == 'false') {
-			return ApiResponse::error('Registration is not enabled', 'REGISTRATION_NOT_ENABLED');
-		}
+        if ($config->getSetting(ConfigInterface::REGISTRATION_ENABLED, 'true') == 'false') {
+            return ApiResponse::error('Registration is not enabled', 'REGISTRATION_NOT_ENABLED');
+        }
 
         // Validate required fields
         $requiredFields = ['username', 'email', 'password', 'first_name', 'last_name'];
@@ -129,11 +129,11 @@ class RegisterController
             return ApiResponse::error('Failed to create user', 'FAILED_TO_CREATE_USER');
         }
 
-		if ($user == 1) {
-			User::updateUser($userInfo['uuid'], [
-				'role_id' => 4
-			]);
-		}
+        if ($user == 1) {
+            User::updateUser($userInfo['uuid'], [
+                'role_id' => 4,
+            ]);
+        }
 
         Welcome::send([
             'email' => $data['email'],

@@ -16,88 +16,88 @@ namespace App\Controllers\User\Server\Power;
 use App\App;
 use App\Chat\Server;
 use App\Helpers\ApiResponse;
-use App\Helpers\ServerGateway;
 use App\Services\Wings\Wings;
+use App\Helpers\ServerGateway;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class ServerPowerController
 {
-	public function sendPowerAction(Request $request, string $uuidShort, string $action): Response
-	{
-		// Get authenticated user
-		$user = $request->get('user');
-		if (!$user) {
-			return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
-		}
+    public function sendPowerAction(Request $request, string $uuidShort, string $action): Response
+    {
+        // Get authenticated user
+        $user = $request->get('user');
+        if (!$user) {
+            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+        }
 
-		// Get server details
-		$server = Server::getServerByUuidShort($uuidShort);
-		if (!$server) {
-			return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
-		}
+        // Get server details
+        $server = Server::getServerByUuidShort($uuidShort);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
+        }
 
-		if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
-			return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
-		}
+        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+            return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
+        }
 
-		// Send power action
-		$allowedActions = ['start', 'stop', 'restart', 'kill'];
-		if (!in_array($action, $allowedActions)) {
-			return ApiResponse::error('Invalid power action', 'INVALID_POWER_ACTION', 400);
-		}
+        // Send power action
+        $allowedActions = ['start', 'stop', 'restart', 'kill'];
+        if (!in_array($action, $allowedActions)) {
+            return ApiResponse::error('Invalid power action', 'INVALID_POWER_ACTION', 400);
+        }
 
-		// Get node information
-		$node = \App\Chat\Node::getNodeById($server['node_id']);
-		if (!$node) {
-			return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
-		}
+        // Get node information
+        $node = \App\Chat\Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
 
-		$scheme = $node['scheme'];
-		$host = $node['fqdn'];
-		$port = $node['daemonListen'];
-		$token = $node['daemon_token'];
+        $scheme = $node['scheme'];
+        $host = $node['fqdn'];
+        $port = $node['daemonListen'];
+        $token = $node['daemon_token'];
 
-		$timeout = (int) 30;
-		try {
-			$wings = new Wings(
-				$host,
-				$port,
-				$scheme,
-				$token,
-				$timeout
-			);
+        $timeout = (int) 30;
+        try {
+            $wings = new Wings(
+                $host,
+                $port,
+                $scheme,
+                $token,
+                $timeout
+            );
 
-			if ($action === 'start') {
-				$response = $wings->getServer()->startServer($server['uuid']);
-			} elseif ($action === 'stop') {
-				$response = $wings->getServer()->stopServer($server['uuid']);
-			} elseif ($action === 'restart') {
-				$response = $wings->getServer()->restartServer($server['uuid']);
-			} elseif ($action === 'kill') {
-				$response = $wings->getServer()->killServer($server['uuid']);
-			}
+            if ($action === 'start') {
+                $response = $wings->getServer()->startServer($server['uuid']);
+            } elseif ($action === 'stop') {
+                $response = $wings->getServer()->stopServer($server['uuid']);
+            } elseif ($action === 'restart') {
+                $response = $wings->getServer()->restartServer($server['uuid']);
+            } elseif ($action === 'kill') {
+                $response = $wings->getServer()->killServer($server['uuid']);
+            }
 
-			if (!$response->isSuccessful()) {
-				$error = $response->getError();
-				if ($response->getStatusCode() === 400) {
-					return ApiResponse::error('Invalid server configuration: ' . $error, 'INVALID_SERVER_CONFIG', 400);
-				} elseif ($response->getStatusCode() === 401) {
-					return ApiResponse::error('Unauthorized access to Wings daemon', 'WINGS_UNAUTHORIZED', 401);
-				} elseif ($response->getStatusCode() === 403) {
-					return ApiResponse::error('Forbidden access to Wings daemon', 'WINGS_FORBIDDEN', 403);
-				} elseif ($response->getStatusCode() === 422) {
-					return ApiResponse::error('Invalid server data: ' . $error, 'INVALID_SERVER_DATA', 422);
-				}
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+                if ($response->getStatusCode() === 400) {
+                    return ApiResponse::error('Invalid server configuration: ' . $error, 'INVALID_SERVER_CONFIG', 400);
+                } elseif ($response->getStatusCode() === 401) {
+                    return ApiResponse::error('Unauthorized access to Wings daemon', 'WINGS_UNAUTHORIZED', 401);
+                } elseif ($response->getStatusCode() === 403) {
+                    return ApiResponse::error('Forbidden access to Wings daemon', 'WINGS_FORBIDDEN', 403);
+                } elseif ($response->getStatusCode() === 422) {
+                    return ApiResponse::error('Invalid server data: ' . $error, 'INVALID_SERVER_DATA', 422);
+                }
 
-				return ApiResponse::error('Failed to send power action to Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
-			}
-		} catch (\Exception $e) {
-			App::getInstance(true)->getLogger()->error('Failed to send power action to Wings: ' . $e->getMessage());
+                return ApiResponse::error('Failed to send power action to Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to send power action to Wings: ' . $e->getMessage());
 
-			return ApiResponse::error('Failed to send power action to Wings: ' . $e->getMessage(), 'FAILED_TO_SEND_POWER_ACTION_TO_WINGS', 500);
-		}
+            return ApiResponse::error('Failed to send power action to Wings: ' . $e->getMessage(), 'FAILED_TO_SEND_POWER_ACTION_TO_WINGS', 500);
+        }
 
-		return ApiResponse::success(['response' => $response->getData()], 'Response from Wings', 200);
-	}
+        return ApiResponse::success(['response' => $response->getData()], 'Response from Wings', 200);
+    }
 }

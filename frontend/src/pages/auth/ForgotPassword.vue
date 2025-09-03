@@ -119,7 +119,11 @@ async function onSubmit(e: Event) {
                         <Label for="email">{{ $t('auth.email') }}</Label>
                         <Input id="email" v-model="form.email" type="email" required />
                     </div>
-                    <Turnstile v-if="settingsStore.turnstile_enabled" v-model="form.turnstile_token" :site-key="settingsStore.turnstile_key_pub as string" />
+                    <Turnstile
+                        v-if="settingsStore.turnstile_enabled"
+                        v-model="form.turnstile_token"
+                        :site-key="settingsStore.turnstile_key_pub as string"
+                    />
                     <Button type="submit" class="w-full" :disabled="loading">
                         <span v-if="loading">{{ $t('auth.sendingReset') }}</span>
                         <span v-else>{{ $t('auth.sendReset') }}</span>

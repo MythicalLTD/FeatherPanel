@@ -31,7 +31,7 @@ class App extends Utils\MinecraftColorCodeSupport
         $validDirs = [
             '/var/www/featherpanel',
             '/var/www/html',
-            '/var/www/featherpanel/backend'
+            '/var/www/featherpanel/backend',
         ];
         if (!in_array($cwd, $validDirs, true)) {
             exit('We detected that you are not running this command from the root directory of App. Please run this command from the root directory.');

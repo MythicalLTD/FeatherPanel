@@ -17,12 +17,12 @@ use App\Controllers\System\SettingsController;
 use Symfony\Component\Routing\RouteCollection;
 
 return function (RouteCollection $routes): void {
-	App::getInstance(true)->registerApiRoute(
-		$routes,
-		'settings',
-		'/api/system/settings',
-		function (Request $request) {
-			return (new SettingsController())->index($request);
-		},
-	);
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'settings',
+        '/api/system/settings',
+        function (Request $request) {
+            return (new SettingsController())->index($request);
+        },
+    );
 };

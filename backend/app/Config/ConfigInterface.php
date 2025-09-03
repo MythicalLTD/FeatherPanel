@@ -44,8 +44,8 @@ interface ConfigInterface
      */
     public const LEGAL_TOS = 'legal_tos';
     public const LEGAL_PRIVACY = 'legal_privacy';
-	/**
-	 * Registration.
-	 */
-	public const REGISTRATION_ENABLED = 'registration_enabled';
+    /**
+     * Registration.
+     */
+    public const REGISTRATION_ENABLED = 'registration_enabled';
 }

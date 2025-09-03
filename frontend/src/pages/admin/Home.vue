@@ -47,45 +47,14 @@
                     Retry
                 </Button>
             </div>
-
-            <!-- System Updates -->
-            <Card class="rounded-xl">
-                <CardHeader class="flex flex-row items-center justify-between pb-2">
-                    <CardTitle class="text-base">System Updates</CardTitle>
-                    <Badge variant="secondary" class="text-xs">{{ systemUpdates.length }} new updates</Badge>
-                </CardHeader>
-                <CardContent class="pt-0">
-                    <ul class="space-y-4">
-                        <li v-for="update in systemUpdates" :key="update.title" class="p-3 rounded-lg bg-muted">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="font-semibold text-primary">{{ update.title }}</span>
-                                <span class="text-xs text-muted-foreground">{{ update.date }}</span>
-                            </div>
-                            <div class="text-muted-foreground text-sm mb-2">{{ update.description }}</div>
-                            <div class="flex gap-2">
-                                <Button
-                                    v-for="link in update.links"
-                                    :key="link.label"
-                                    variant="link"
-                                    size="sm"
-                                    class="p-0 h-auto"
-                                >
-                                    {{ link.label }}
-                                </Button>
-                            </div>
-                        </li>
-                    </ul>
-                </CardContent>
-            </Card>
         </main>
     </DashboardLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Users, Server, Network, Sparkles, MessageCircle as Discord } from 'lucide-vue-next';
 import { useSessionStore } from '@/stores/session';
@@ -124,40 +93,6 @@ const quickStatsArr = computed(() => {
         { label: 'Server Spells', value: stats.spells, icon: Sparkles },
     ];
 });
-
-const systemUpdates = ref([
-    {
-        title: 'Security Patch 3.2',
-        description:
-            'A critical security patch has been applied to address recent vulnerabilities. Please review the changelog for details.',
-        date: '2025-03-10',
-        links: [
-            { label: 'View changelog', url: '#' },
-            { label: 'Security notice', url: '#' },
-        ],
-    },
-    {
-        title: 'API Rate Limits Increased',
-        description:
-            'API rate limits have been increased for all users. This should improve integration performance for most clients.',
-        date: '2025-03-05',
-        links: [{ label: 'API Docs', url: '#' }],
-    },
-    {
-        title: 'Maintenance Scheduled',
-        description:
-            'Scheduled maintenance will occur on March 15th, 2025, from 2:00 AM to 4:00 AM UTC. Expect brief downtime during this window.',
-        date: '2025-03-01',
-        links: [{ label: 'Maintenance details', url: '#' }],
-    },
-    {
-        title: 'New Feature: Dark Mode',
-        description:
-            'Dark mode is now available! Switch themes in your profile settings for a more comfortable viewing experience.',
-        date: '2025-02-28',
-        links: [{ label: 'How to use', url: '#' }],
-    },
-]);
 
 const openDocumentation = () => {
     window.open('https://docs.mythical.systems', '_blank');

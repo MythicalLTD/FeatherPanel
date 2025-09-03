@@ -29,8 +29,6 @@ const success = ref('');
 const tokenValid = ref(false);
 const submitting = ref(false);
 
-    
-
 onMounted(async () => {
     await settingsStore.fetchSettings();
     const token = route.query.token as string;
@@ -168,7 +166,11 @@ async function onSubmit(e: Event) {
                             <Label for="confirmPassword">{{ $t('auth.confirmPassword') }}</Label>
                             <Input id="confirmPassword" v-model="form.confirmPassword" type="password" required />
                         </div>
-                        <Turnstile v-if="settingsStore.turnstile_enabled" v-model="form.turnstile_token" :site-key="settingsStore.turnstile_key_pub as string" />
+                        <Turnstile
+                            v-if="settingsStore.turnstile_enabled"
+                            v-model="form.turnstile_token"
+                            :site-key="settingsStore.turnstile_key_pub as string"
+                        />
                         <Button type="submit" class="w-full" :disabled="submitting">
                             <span v-if="submitting">{{ $t('auth.resettingPassword') }}</span>
                             <span v-else>{{ $t('auth.reset') }}</span>

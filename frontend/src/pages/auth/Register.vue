@@ -31,8 +31,6 @@ const loading = ref(false);
 const error = ref('');
 const success = ref('');
 
-    
-
 function validateForm(): string | null {
     const requiredFields: Array<keyof typeof form.value> = ['username', 'email', 'password', 'first_name', 'last_name'];
     for (const field of requiredFields) {
@@ -230,7 +228,11 @@ async function onSubmit(e: Event) {
                             maxlength="255"
                         />
                     </div>
-                    <Turnstile v-if="settingsStore.turnstile_enabled" v-model="form.turnstile_token" :site-key="settingsStore.turnstile_key_pub as string" />
+                    <Turnstile
+                        v-if="settingsStore.turnstile_enabled"
+                        v-model="form.turnstile_token"
+                        :site-key="settingsStore.turnstile_key_pub as string"
+                    />
                     <Button type="submit" class="w-full" :disabled="loading">
                         <span v-if="loading">{{ $t('auth.registering') }}</span>
                         <span v-else>{{ $t('auth.register') }}</span>
