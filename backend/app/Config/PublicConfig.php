@@ -59,6 +59,7 @@ class PublicConfig extends ConfigFactory
 
             // Email settings
             ConfigInterface::SMTP_ENABLED => 'false',
+            ConfigInterface::REGISTRATION_ENABLED => 'true',
 
         ];
 

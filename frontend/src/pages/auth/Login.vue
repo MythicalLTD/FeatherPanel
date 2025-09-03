@@ -30,13 +30,11 @@ const loading = ref(false);
 const error = ref('');
 const success = ref('');
 
-const turnstileKey = settingsStore.settings?.turnstile_key_public as string;
-const turnstileEnabled = settingsStore.settings?.turnstile_enabled as boolean;
 function validateForm(): string | null {
     if (!form.value.email || !form.value.password) {
         return $t('api_errors.MISSING_REQUIRED_FIELDS');
     }
-    if (turnstileEnabled) {
+    if (settingsStore.turnstile_enabled) {
         if (!form.value.turnstile_token) {
             return $t('api_errors.TURNSTILE_TOKEN_REQUIRED');
         }
@@ -107,6 +105,7 @@ async function onSubmit(e: Event) {
         const payload = {
             email: form.value.email,
             password: form.value.password,
+            turnstile_token: form.value.turnstile_token,
         };
         const res = await axios.put('/api/user/auth/login', payload, {
             headers: { 'Content-Type': 'application/json' },
@@ -144,34 +143,34 @@ async function onSubmit(e: Event) {
             <div class="flex flex-col gap-6">
                 <div class="flex flex-col gap-4">
                     <div class="grid gap-3">
-                        <Label for="email">Email</Label>
-                        <Input id="email" v-model="form.email" type="email" :placeholder="'m@example.com'" required />
+                        <Label for="email">{{ $t('auth.email') }}</Label>
+                        <Input id="email" v-model="form.email" type="email" required />
                     </div>
                     <div class="grid gap-3">
-                        <Label for="password">Password</Label>
-                        <Input
-                            id="password"
-                            v-model="form.password"
-                            type="password"
-                            :placeholder="'********'"
-                            required
-                        />
+                        <Label for="password">{{ $t('auth.password') }}</Label>
+                        <Input id="password" v-model="form.password" type="password" required />
                     </div>
-                    <Turnstile v-if="turnstileEnabled" v-model="form.turnstile_token" :site-key="turnstileKey" />
+                    <Turnstile
+                        v-if="settingsStore.turnstile_enabled"
+                        v-model="form.turnstile_token"
+                        :site-key="settingsStore.turnstile_key_pub as string"
+                    />
                     <Button type="submit" class="w-full" :disabled="loading">
-                        <span v-if="loading">Login...</span>
-                        <span v-else>Login</span>
+                        <span v-if="loading">{{ $t('auth.loggingIn') }}</span>
+                        <span v-else>{{ $t('auth.login') }}</span>
                     </Button>
                     <div v-if="error" class="text-center text-sm text-red-500">{{ error }}</div>
                     <div v-if="success" class="text-center text-sm text-green-500">{{ success }}</div>
                     <div class="text-center text-sm">
                         <router-link to="/auth/forgot-password" class="underline underline-offset-4">
-                            Forgot Password?
+                            {{ $t('auth.forgotPassword') }}
                         </router-link>
                     </div>
-                    <div class="text-center text-sm">
-                        Don't have an account?
-                        <router-link to="/auth/register" class="underline underline-offset-4"> Register </router-link>
+                    <div v-if="settingsStore.registrationEnabled" class="text-center text-sm">
+                        {{ $t('auth.noAccount') }}
+                        <router-link to="/auth/register" class="underline underline-offset-4">
+                            {{ $t('auth.register') }}
+                        </router-link>
                     </div>
                 </div>
             </div>

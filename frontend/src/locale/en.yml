@@ -55,6 +55,20 @@ auth:
     firstNamePlaceholder: 'First Name'
     lastName: 'Last Name'
     lastNamePlaceholder: 'Last Name'
+    # Button states
+    loggingIn: 'Login...'
+    registering: 'Register...'
+    sendingReset: 'Send Reset Link...'
+    resettingPassword: 'Reset Password...'
+    # Success messages
+    loginSuccess: 'Login successful! Redirecting...'
+    registrationSuccess: 'Registration successful!'
+    passwordResetSuccess: 'Password reset successful.'
+    # Error messages
+    tokenRequired: 'Token is required.'
+    invalidToken: 'Invalid token.'
+    tokenExpired: 'This password reset link is invalid or has expired.'
+    unknownError: 'An unknown error occurred. Please try again.'
     # Logout translations
     loggingOut: 'Logging Out'
     logoutMessage: 'Please wait while we securely log you out and clean up your session data.'

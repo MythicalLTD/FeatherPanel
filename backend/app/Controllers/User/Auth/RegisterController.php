@@ -51,6 +51,10 @@ class RegisterController
             }
         }
 
+		if ($config->getSetting(ConfigInterface::REGISTRATION_ENABLED, 'false') == 'false') {
+			return ApiResponse::error('Registration is not enabled', 'REGISTRATION_NOT_ENABLED');
+		}
+
         // Validate required fields
         $requiredFields = ['username', 'email', 'password', 'first_name', 'last_name'];
         $missingFields = [];

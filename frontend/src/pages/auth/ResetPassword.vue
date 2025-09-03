@@ -28,8 +28,8 @@ const error = ref('');
 const success = ref('');
 const tokenValid = ref(false);
 const submitting = ref(false);
-const turnstileEnabled = settingsStore.settings?.turnstile_enabled as boolean;
-const turnstileKey = settingsStore.turnstileKeyPub as string;
+
+    
 
 onMounted(async () => {
     await settingsStore.fetchSettings();
@@ -73,8 +73,8 @@ function validateForm(): string | null {
     if (!form.value.password || !form.value.confirmPassword) {
         return $t('api_errors.MISSING_REQUIRED_FIELDS');
     }
-    if (settingsStore.settings?.turnstile_enabled == 'true') {
-        if (!form.value.turnstile_token) {
+    if (settingsStore.turnstile_enabled) {
+        if (settingsStore.turnstile_enabled) {
             return $t('api_errors.TURNSTILE_TOKEN_REQUIRED');
         }
     }
@@ -155,47 +155,37 @@ async function onSubmit(e: Event) {
 
 <template>
     <div :class="cn('flex flex-col gap-6', props.class)">
-        <div v-if="loading" class="text-center text-sm">Loading...</div>
+        <div v-if="loading" class="text-center text-sm">{{ $t('common.loading') }}</div>
         <div v-else>
             <form v-if="tokenValid" @submit="onSubmit">
                 <div class="flex flex-col gap-6">
                     <div class="flex flex-col gap-4">
                         <div class="grid gap-3">
-                            <Label for="password">Password</Label>
-                            <Input
-                                id="password"
-                                v-model="form.password"
-                                type="password"
-                                :placeholder="'********'"
-                                required
-                            />
+                            <Label for="password">{{ $t('auth.password') }}</Label>
+                            <Input id="password" v-model="form.password" type="password" required />
                         </div>
                         <div class="grid gap-3">
-                            <Label for="confirmPassword">Confirm Password</Label>
-                            <Input
-                                id="confirmPassword"
-                                v-model="form.confirmPassword"
-                                type="password"
-                                :placeholder="'********'"
-                                required
-                            />
+                            <Label for="confirmPassword">{{ $t('auth.confirmPassword') }}</Label>
+                            <Input id="confirmPassword" v-model="form.confirmPassword" type="password" required />
                         </div>
-                        <Turnstile v-if="turnstileEnabled" v-model="form.turnstile_token" :site-key="turnstileKey" />
+                        <Turnstile v-if="settingsStore.turnstile_enabled" v-model="form.turnstile_token" :site-key="settingsStore.turnstile_key_pub as string" />
                         <Button type="submit" class="w-full" :disabled="submitting">
-                            <span v-if="submitting">Reset Password...</span>
-                            <span v-else>Reset Password</span>
+                            <span v-if="submitting">{{ $t('auth.resettingPassword') }}</span>
+                            <span v-else>{{ $t('auth.reset') }}</span>
                         </Button>
                         <div v-if="error" class="text-center text-sm text-red-500">{{ error }}</div>
                         <div v-if="success" class="text-center text-sm text-green-500">{{ success }}</div>
                         <div class="text-center text-sm">
-                            Remember your password?
-                            <router-link to="/auth/login" class="underline underline-offset-4"> Login </router-link>
+                            {{ $t('auth.remembered') }}
+                            <router-link to="/auth/login" class="underline underline-offset-4">
+                                {{ $t('auth.login') }}
+                            </router-link>
                         </div>
                     </div>
                 </div>
             </form>
             <div v-else class="text-center text-sm text-red-500">
-                {{ error || 'This password reset link is invalid or has expired.' }}
+                {{ error || $t('auth.invalidToken') }}
             </div>
         </div>
     </div>

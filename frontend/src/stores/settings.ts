@@ -5,9 +5,21 @@ export const useSettingsStore = defineStore('settings', {
     state: () => ({
         settings: null as null | Record<string, unknown>,
         loaded: false,
+        loading: false,
     }),
     actions: {
         async fetchSettings() {
+            // Prevent multiple simultaneous fetches
+            if (this.loading) {
+                return;
+            }
+
+            // Return cached settings if already loaded
+            if (this.loaded && this.settings) {
+                return;
+            }
+
+            this.loading = true;
             try {
                 const res = await axios.get('/api/system/settings');
                 const json = res.data;
@@ -15,6 +27,7 @@ export const useSettingsStore = defineStore('settings', {
                     this.settings = json.data.settings;
                     this.loaded = true;
                 } else {
+                    console.warn('Settings API response invalid:', json);
                     this.settings = null;
                     this.loaded = false;
                 }
@@ -22,6 +35,8 @@ export const useSettingsStore = defineStore('settings', {
                 console.error('Failed to fetch settings:', e);
                 this.settings = null;
                 this.loaded = false;
+            } finally {
+                this.loading = false;
             }
         },
         setSettings(settings: Record<string, unknown>) {
@@ -35,10 +50,11 @@ export const useSettingsStore = defineStore('settings', {
         appLang: (state) => state.settings?.app_lang || 'en_US',
         appUrl: (state) => state.settings?.app_url || '',
         appTimezone: (state) => state.settings?.app_timezone || 'UTC',
-        turnstileEnabled: (state) => state.settings?.turnstile_enabled === 'true',
-        turnstileKeyPub: (state) => state.settings?.turnstile_key_pub || '',
+        turnstile_enabled: (state) => state.settings?.turnstile_enabled === 'true',
+        turnstile_key_pub: (state) => state.settings?.turnstile_key_pub || '',
         legalTos: (state) => state.settings?.legal_tos || '',
         legalPrivacy: (state) => state.settings?.legal_privacy || '',
         smtpEnabled: (state) => state.settings?.smtp_enabled === 'true',
+        registrationEnabled: (state) => state.settings?.registration_enabled === 'true',
     },
 });

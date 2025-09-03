@@ -46,6 +46,7 @@ class SettingsController
 				ConfigInterface::TURNSTILE_ENABLED,
 				ConfigInterface::TURNSTILE_KEY_PUB,
 				ConfigInterface::TURNSTILE_KEY_PRIV,
+				ConfigInterface::REGISTRATION_ENABLED,
 			],
         ],
         'email' => [
@@ -263,6 +264,17 @@ class SettingsController
 				'validation' => 'required|string|max:255',
 				'options' => [],
 				'category' => 'other',
+			],
+			ConfigInterface::REGISTRATION_ENABLED => [
+				'name' => ConfigInterface::REGISTRATION_ENABLED,
+				'value' => $this->app->getConfig()->getSetting(ConfigInterface::REGISTRATION_ENABLED, 'false'),
+				'description' => 'Can users register themselves?',
+				'type' => 'select',
+				'required' => true,
+				'placeholder' => 'false',
+				'validation' => 'required|string|max:255',
+				'options' => ['true', 'false'],
+				'category' => 'security',
 			],
         ];
     }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, type HTMLAttributes } from 'vue';
+import { ref, type HTMLAttributes } from 'vue';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -26,8 +26,7 @@ const form = ref({
     turnstile_token: '',
     code: '',
 });
-const turnstileKey = settingsStore.settings?.turnstile_key_public as string;
-const turnstileEnabled = computed(() => settingsStore.settings?.turnstile_enabled === 'true');
+
 async function verify2FA(e: Event) {
     e.preventDefault();
     error.value = '';
@@ -67,8 +66,11 @@ async function verify2FA(e: Event) {
                             required
                         />
                     </div>
-                    <div v-if="turnstileEnabled" class="grid gap-3">
-                        <Turnstile v-model="form.turnstile_token" :site-key="turnstileKey" />
+                    <div v-if="settingsStore.turnstile_enabled" class="grid gap-3">
+                        <Turnstile
+                            v-model="form.turnstile_token"
+                            :site-key="settingsStore.turnstile_key_pub as string"
+                        />
                     </div>
                     <Button type="submit" class="w-full" :disabled="loading">
                         <span v-if="loading">{{ t('api_errors.TWO_FACTOR_LOADING') }}</span>

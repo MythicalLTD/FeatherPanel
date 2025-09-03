@@ -31,8 +31,8 @@ const loading = ref(false);
 const error = ref('');
 const success = ref('');
 
-const turnstileKey = settingsStore.turnstileKeyPub as string;
-const turnstileEnabled = settingsStore.settings?.turnstile_enabled as boolean;
+    
+
 function validateForm(): string | null {
     const requiredFields: Array<keyof typeof form.value> = ['username', 'email', 'password', 'first_name', 'last_name'];
     for (const field of requiredFields) {
@@ -152,7 +152,7 @@ async function onSubmit(e: Event) {
             first_name: form.value.first_name,
             last_name: form.value.last_name,
         };
-        if (form.value.turnstile_token) {
+        if (settingsStore.turnstile_enabled) {
             payload.turnstile_token = form.value.turnstile_token;
         }
         const res = await axios.put('/api/user/auth/register', payload, {
@@ -181,24 +181,22 @@ async function onSubmit(e: Event) {
                 <div class="flex flex-col gap-4">
                     <div class="flex flex-col md:flex-row gap-3">
                         <div class="w-full md:w-1/2 flex flex-col gap-2">
-                            <Label for="firstName">First Name</Label>
+                            <Label for="firstName">{{ $t('auth.firstName') }}</Label>
                             <Input
                                 id="firstName"
                                 v-model="form.first_name"
                                 type="text"
-                                :placeholder="'First Name'"
                                 required
                                 minlength="3"
                                 maxlength="64"
                             />
                         </div>
                         <div class="w-full md:w-1/2 flex flex-col gap-2">
-                            <Label for="lastName">Last Name</Label>
+                            <Label for="lastName">{{ $t('auth.lastName') }}</Label>
                             <Input
                                 id="lastName"
                                 v-model="form.last_name"
                                 type="text"
-                                :placeholder="'Last Name'"
                                 required
                                 minlength="3"
                                 maxlength="64"
@@ -206,24 +204,15 @@ async function onSubmit(e: Event) {
                         </div>
                     </div>
                     <div class="grid gap-3">
-                        <Label for="email">Email</Label>
-                        <Input
-                            id="email"
-                            v-model="form.email"
-                            type="email"
-                            :placeholder="'m@example.com'"
-                            required
-                            minlength="3"
-                            maxlength="255"
-                        />
+                        <Label for="email">{{ $t('auth.email') }}</Label>
+                        <Input id="email" v-model="form.email" type="email" required minlength="3" maxlength="255" />
                     </div>
                     <div class="grid gap-3">
-                        <Label for="username">Username</Label>
+                        <Label for="username">{{ $t('auth.username') }}</Label>
                         <Input
                             id="username"
                             v-model="form.username"
                             type="text"
-                            :placeholder="'username'"
                             required
                             minlength="3"
                             maxlength="64"
@@ -231,27 +220,28 @@ async function onSubmit(e: Event) {
                         />
                     </div>
                     <div class="grid gap-3">
-                        <Label for="password">Password</Label>
+                        <Label for="password">{{ $t('auth.password') }}</Label>
                         <Input
                             id="password"
                             v-model="form.password"
                             type="password"
-                            :placeholder="'********'"
                             required
                             minlength="8"
                             maxlength="255"
                         />
                     </div>
-                    <Turnstile v-if="turnstileEnabled" v-model="form.turnstile_token" :site-key="turnstileKey" />
+                    <Turnstile v-if="settingsStore.turnstile_enabled" v-model="form.turnstile_token" :site-key="settingsStore.turnstile_key_pub as string" />
                     <Button type="submit" class="w-full" :disabled="loading">
-                        <span v-if="loading">Register...</span>
-                        <span v-else>Register</span>
+                        <span v-if="loading">{{ $t('auth.registering') }}</span>
+                        <span v-else>{{ $t('auth.register') }}</span>
                     </Button>
                     <div v-if="error" class="text-center text-sm text-red-500">{{ error }}</div>
                     <div v-if="success" class="text-center text-sm text-green-500">{{ success }}</div>
                     <div class="text-center text-sm">
-                        Already have an account?
-                        <router-link to="/auth/login" class="underline underline-offset-4"> Login </router-link>
+                        {{ $t('auth.alreadyAccount') }}
+                        <router-link to="/auth/login" class="underline underline-offset-4">
+                            {{ $t('auth.login') }}
+                        </router-link>
                     </div>
                 </div>
             </div>
