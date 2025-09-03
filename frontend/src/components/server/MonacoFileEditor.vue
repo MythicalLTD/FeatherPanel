@@ -21,21 +21,21 @@
                         </SelectItem>
                     </SelectContent>
                 </Select>
-                
+
                 <!-- Theme Toggle -->
                 <Button variant="outline" size="sm" class="gap-1" @click="toggleTheme">
                     <Monitor v-if="editorTheme === 'vs'" class="h-4 w-4" />
                     <Sun v-else-if="editorTheme === 'vs-light'" class="h-4 w-4" />
                     <Moon v-else class="h-4 w-4" />
                 </Button>
-                
+
                 <!-- Save Button -->
                 <Button :disabled="!hasChanges || saving" class="gap-2" @click="saveFile">
                     <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
                     <Save v-else class="h-4 w-4" />
                     {{ saving ? t('fileEditor.saving') : t('fileEditor.save') }}
                 </Button>
-                
+
                 <!-- Close Button -->
                 <Button variant="outline" class="p-2" @click="closeEditor">
                     <X class="h-4 w-4" />
@@ -49,12 +49,8 @@
                 <span class="text-muted-foreground">
                     {{ t('fileEditor.size') }}: {{ formatFileSize(originalContent.length) }}
                 </span>
-                <span class="text-muted-foreground">
-                    {{ t('fileEditor.lines') }}: {{ lineCount }}
-                </span>
-                <span class="text-muted-foreground">
-                    {{ t('fileEditor.encoding') }}: UTF-8
-                </span>
+                <span class="text-muted-foreground"> {{ t('fileEditor.lines') }}: {{ lineCount }} </span>
+                <span class="text-muted-foreground"> {{ t('fileEditor.encoding') }}: UTF-8 </span>
             </div>
             <div class="flex items-center gap-4">
                 <span v-if="hasChanges" class="text-orange-600 dark:text-orange-400">
@@ -280,14 +276,15 @@ const detectLanguage = (fileName: string): string => {
 // Get file icon based on extension/language
 const getFileIcon = () => {
     const ext = props.fileName.split('.').pop()?.toLowerCase();
-    
+
     if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp', 'ico'].includes(ext || '')) return Image;
     if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(ext || '')) return Video;
     if (['mp3', 'wav', 'flac', 'aac', 'ogg', 'wma'].includes(ext || '')) return Music;
     if (['zip', 'tar', 'gz', 'rar', '7z', 'bz2'].includes(ext || '')) return Archive;
-    if (['js', 'ts', 'vue', 'html', 'css', 'php', 'py', 'java', 'cpp', 'c', 'go', 'rs', 'rb'].includes(ext || '')) return Code;
+    if (['js', 'ts', 'vue', 'html', 'css', 'php', 'py', 'java', 'cpp', 'c', 'go', 'rs', 'rb'].includes(ext || ''))
+        return Code;
     if (['txt', 'md', 'json', 'xml', 'yml', 'yaml', 'log', 'conf'].includes(ext || '')) return FileText;
-    
+
     return File;
 };
 
@@ -303,13 +300,15 @@ const formatFileSize = (bytes: number): string => {
 // Editor event handlers
 const onEditorMount = (editor: unknown) => {
     const monacoEditor = editor as {
-        onDidChangeCursorPosition: (callback: (e: { position: { lineNumber: number; column: number } }) => void) => void;
+        onDidChangeCursorPosition: (
+            callback: (e: { position: { lineNumber: number; column: number } }) => void,
+        ) => void;
         addCommand: (keybinding: number, action: () => void) => void;
         KeyMod: { CtrlCmd: number };
         KeyCode: { KeyS: number; KeyW: number };
         focus: () => void;
     };
-    
+
     // Track cursor position
     monacoEditor.onDidChangeCursorPosition((e: { position: { lineNumber: number; column: number } }) => {
         cursorPosition.value = {
@@ -338,7 +337,7 @@ const onContentChange = () => {
 // Actions
 const saveFile = async () => {
     if (props.readonly || saving.value) return;
-    
+
     saving.value = true;
     try {
         emit('save', editorContent.value);
@@ -406,7 +405,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 onMounted(() => {
     // Auto-detect language from filename
     selectedLanguage.value = detectLanguage(props.fileName);
-    
+
     // Add keyboard shortcuts
     document.addEventListener('keydown', handleKeydown);
 });
@@ -416,10 +415,13 @@ onUnmounted(() => {
 });
 
 // Watch for prop changes
-watch(() => props.content, (newContent) => {
-    editorContent.value = newContent;
-    originalContent.value = newContent;
-});
+watch(
+    () => props.content,
+    (newContent) => {
+        editorContent.value = newContent;
+        originalContent.value = newContent;
+    },
+);
 </script>
 
 <style scoped>

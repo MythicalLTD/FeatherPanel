@@ -751,6 +751,7 @@ async function fetchDatabases(page = pagination.value.current_page) {
             serverInfo.value = {
                 database_limit: serverResponse.data.data.database_limit,
             };
+            server.value = { name: serverResponse.data.data.name };
         }
 
         databases.value = databasesResponse.data.data.data || [];

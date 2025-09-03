@@ -543,6 +543,7 @@ const breadcrumbs = computed(() => [
 ]);
 
 onMounted(async () => {
+    await fetchServer();
     await fetchSchedules();
 });
 
@@ -571,6 +572,17 @@ async function fetchSchedules(page = pagination.value.current_page) {
         toast.error(t('serverSchedules.failedToFetch'));
     } finally {
         loading.value = false;
+    }
+}
+
+async function fetchServer() {
+    try {
+        const { data } = await axios.get(`/api/user/servers/${route.params.uuidShort}`);
+        if (data?.success && data?.data) {
+            server.value = { name: data.data.name };
+        }
+    } catch {
+        // non-blocking
     }
 }
 

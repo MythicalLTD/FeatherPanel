@@ -426,6 +426,7 @@ async function fetchBackups(page = pagination.value.current_page) {
             serverInfo.value = {
                 backup_limit: serverResponse.data.data.backup_limit,
             };
+            server.value = { name: serverResponse.data.data.name };
         }
 
         backups.value = backupsResponse.data.data.data || [];

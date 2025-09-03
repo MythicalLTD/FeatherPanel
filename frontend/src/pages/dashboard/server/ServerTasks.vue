@@ -505,10 +505,11 @@ const editForm = ref({
     sequence_id: '1',
 });
 
+const server = ref<{ name: string } | null>(null);
 const breadcrumbs = computed(() => [
     { text: t('common.dashboard'), href: '/dashboard' },
     { text: t('common.servers'), href: '/dashboard' },
-    { text: t('common.server'), href: `/server/${route.params.uuidShort}` },
+    { text: server.value?.name || t('common.server'), href: `/server/${route.params.uuidShort}` },
     { text: t('serverSchedules.title'), href: `/server/${route.params.uuidShort}/schedules` },
     {
         text: t('serverTasks.title'),
@@ -522,6 +523,7 @@ const sortedTasks = computed(() => {
 });
 
 onMounted(async () => {
+    await fetchServer();
     await fetchSchedule();
     await fetchTasks();
 });
@@ -554,6 +556,17 @@ async function fetchTasks() {
         toast.error(t('serverTasks.failedToFetch'));
     } finally {
         loading.value = false;
+    }
+}
+
+async function fetchServer() {
+    try {
+        const { data } = await axios.get(`/api/user/servers/${route.params.uuidShort}`);
+        if (data?.success && data?.data) {
+            server.value = { name: data.data.name };
+        }
+    } catch {
+        // non-blocking
     }
 }
 
