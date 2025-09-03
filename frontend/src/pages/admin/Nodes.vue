@@ -1423,10 +1423,10 @@ type Node = {
     description?: string;
     fqdn: string;
     location_id?: number;
-    public: string;
+    public: number | string | boolean;
     scheme: string;
-    behind_proxy: string;
-    maintenance_mode: string;
+    behind_proxy: number | string | boolean;
+    maintenance_mode: number | string | boolean;
     memory: number;
     memory_overallocate: number;
     disk: number;
@@ -1760,10 +1760,14 @@ function onEdit(node: Node) {
         description: node.description || '',
         fqdn: node.fqdn,
         location_id: node.location_id,
-        public: node.public ? 'true' : 'false',
+        public: node.public === 1 || node.public === '1' || node.public === true ? 'true' : 'false',
         scheme: node.scheme || 'https',
-        behind_proxy: node.behind_proxy ? 'true' : 'false',
-        maintenance_mode: node.maintenance_mode || 'false',
+        behind_proxy:
+            node.behind_proxy === 1 || node.behind_proxy === '1' || node.behind_proxy === true ? 'true' : 'false',
+        maintenance_mode:
+            node.maintenance_mode === 1 || node.maintenance_mode === '1' || node.maintenance_mode === true
+                ? 'true'
+                : 'false',
         memory: node.memory || 0,
         memory_overallocate: node.memory_overallocate || 0,
         disk: node.disk || 0,
@@ -1857,17 +1861,20 @@ async function submitForm() {
     if (Object.keys(formErrors.value).length > 0) return;
     formLoading.value = true;
     try {
+        // Convert string boolean values to actual booleans/integers for API
+        const submitData = {
+            ...form.value,
+            location_id: form.value.location_id ? Number(form.value.location_id) : undefined,
+            public: form.value.public === 'true' ? 1 : 0,
+            behind_proxy: form.value.behind_proxy === 'true' ? 1 : 0,
+            maintenance_mode: form.value.maintenance_mode === 'true' ? 1 : 0,
+        };
+
         if (drawerMode.value === 'create') {
-            await axios.put('/api/admin/nodes', {
-                ...form.value,
-                location_id: form.value.location_id ? Number(form.value.location_id) : undefined,
-            });
+            await axios.put('/api/admin/nodes', submitData);
             message.value = { type: 'success', text: 'Node created successfully' };
         } else if (drawerMode.value === 'edit' && editingNodeId.value) {
-            await axios.patch(`/api/admin/nodes/${editingNodeId.value}`, {
-                ...form.value,
-                location_id: form.value.location_id ? Number(form.value.location_id) : undefined,
-            });
+            await axios.patch(`/api/admin/nodes/${editingNodeId.value}`, submitData);
             message.value = { type: 'success', text: 'Node updated successfully' };
         }
         await fetchNodes();
