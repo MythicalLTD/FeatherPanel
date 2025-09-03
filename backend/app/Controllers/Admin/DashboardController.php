@@ -13,14 +13,37 @@
 
 namespace App\Controllers\Admin;
 
+use App\Chat\User;
+use App\Chat\Node;
+use App\Chat\Spell;
+use App\Chat\Server;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class DashboardController
 {
-    public function index(Request $request): Response
-    {
-        return ApiResponse::success([], 'SUCCESS', 200);
-    }
+	public function index(Request $request): Response
+	{
+		try {
+			// Get counts for dashboard statistics
+			$userCount = User::getCount();
+			$nodeCount = Node::getNodesCount();
+			$spellCount = Spell::getSpellsCount();
+			$serverCount = Server::getCount();
+
+			$dashboardData = [
+				'count'=> [
+					'users' => $userCount,
+					'nodes' => $nodeCount,
+					'spells' => $spellCount,
+					'servers' => $serverCount,
+				]
+			];
+
+			return ApiResponse::success($dashboardData, 'Successfully fetched dashboard statistics', 200);
+		} catch (\Exception $e) {
+			return ApiResponse::error('Failed to fetch dashboard statistics: ' . $e->getMessage(), 500);
+		}
+	}
 }

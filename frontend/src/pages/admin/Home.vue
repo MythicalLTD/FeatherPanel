@@ -23,8 +23,13 @@
                     v-for="stat in quickStatsArr"
                     :key="stat.label"
                     class="flex flex-col items-center justify-center p-6 rounded-xl"
+                    :class="{ 'opacity-50': dashboardStore.isLoading }"
                 >
-                    <div class="text-2xl font-bold text-foreground mb-1">{{ stat.value }}</div>
+                    <div class="text-2xl font-bold text-foreground mb-1">
+                        <span v-if="dashboardStore.isLoading" class="animate-pulse">...</span>
+                        <span v-else-if="dashboardStore.hasError" class="text-destructive">Error</span>
+                        <span v-else>{{ stat.value }}</span>
+                    </div>
                     <div class="text-muted-foreground text-sm mb-3">{{ stat.label }}</div>
                     <div class="bg-primary/10 rounded-full p-2 flex items-center justify-center">
                         <component :is="stat.icon" :size="28" class="text-primary" />
@@ -32,64 +37,46 @@
                 </Card>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Recent Activity -->
-                <Card class="rounded-xl">
-                    <CardHeader class="flex flex-row items-center justify-between pb-2">
-                        <CardTitle class="text-base">Recent Activity</CardTitle>
-                    </CardHeader>
-                    <CardContent class="pt-0">
-                        <ul class="divide-y divide-border">
-                            <li
-                                v-for="activity in recentActivity"
-                                :key="activity.id"
-                                class="py-3 flex items-center gap-3"
-                            >
-                                <Avatar>
-                                    <AvatarImage :src="activity.avatar" :alt="activity.user" />
-                                    <AvatarFallback>{{ activity.user[0] }}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <span class="font-semibold text-foreground">{{ activity.user }}</span
-                                    ><br />
-                                    <span class="text-muted-foreground"> {{ activity.action }}</span>
-                                    <div class="text-xs text-muted-foreground">{{ activity.timeAgo }}</div>
-                                </div>
-                            </li>
-                        </ul>
-                    </CardContent>
-                </Card>
-
-                <!-- System Updates -->
-                <Card class="rounded-xl">
-                    <CardHeader class="flex flex-row items-center justify-between pb-2">
-                        <CardTitle class="text-base">System Updates</CardTitle>
-                        <Badge variant="secondary" class="text-xs">{{ systemUpdates.length }} new updates</Badge>
-                    </CardHeader>
-                    <CardContent class="pt-0">
-                        <ul class="space-y-4">
-                            <li v-for="update in systemUpdates" :key="update.title" class="p-3 rounded-lg bg-muted">
-                                <div class="flex items-center justify-between mb-1">
-                                    <span class="font-semibold text-primary">{{ update.title }}</span>
-                                    <span class="text-xs text-muted-foreground">{{ update.date }}</span>
-                                </div>
-                                <div class="text-muted-foreground text-sm mb-2">{{ update.description }}</div>
-                                <div class="flex gap-2">
-                                    <Button
-                                        v-for="link in update.links"
-                                        :key="link.label"
-                                        variant="link"
-                                        size="sm"
-                                        class="p-0 h-auto"
-                                    >
-                                        {{ link.label }}
-                                    </Button>
-                                </div>
-                            </li>
-                        </ul>
-                    </CardContent>
-                </Card>
+            <!-- Error Message -->
+            <div v-if="dashboardStore.hasError" class="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                <div class="flex items-center gap-2 text-destructive">
+                    <span class="font-medium">Failed to load dashboard statistics</span>
+                </div>
+                <p class="text-sm text-muted-foreground mt-1">{{ dashboardStore.error }}</p>
+                <Button variant="outline" size="sm" class="mt-2" @click="dashboardStore.fetchDashboardStats()">
+                    Retry
+                </Button>
             </div>
+
+            <!-- System Updates -->
+            <Card class="rounded-xl">
+                <CardHeader class="flex flex-row items-center justify-between pb-2">
+                    <CardTitle class="text-base">System Updates</CardTitle>
+                    <Badge variant="secondary" class="text-xs">{{ systemUpdates.length }} new updates</Badge>
+                </CardHeader>
+                <CardContent class="pt-0">
+                    <ul class="space-y-4">
+                        <li v-for="update in systemUpdates" :key="update.title" class="p-3 rounded-lg bg-muted">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-semibold text-primary">{{ update.title }}</span>
+                                <span class="text-xs text-muted-foreground">{{ update.date }}</span>
+                            </div>
+                            <div class="text-muted-foreground text-sm mb-2">{{ update.description }}</div>
+                            <div class="flex gap-2">
+                                <Button
+                                    v-for="link in update.links"
+                                    :key="link.label"
+                                    variant="link"
+                                    size="sm"
+                                    class="p-0 h-auto"
+                                >
+                                    {{ link.label }}
+                                </Button>
+                            </div>
+                        </li>
+                    </ul>
+                </CardContent>
+            </Card>
         </main>
     </DashboardLayout>
 </template>
@@ -100,57 +87,44 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { BookOpen, Users, Server, Network, Egg, MessageCircle as Discord } from 'lucide-vue-next';
+import { BookOpen, Users, Server, Network, Sparkles, MessageCircle as Discord } from 'lucide-vue-next';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
+import { useDashboardStore } from '@/stores/dashboard';
 
 const settingsStore = useSettingsStore();
 const sessionStore = useSessionStore();
+const dashboardStore = useDashboardStore();
 
 onMounted(async () => {
     await settingsStore.fetchSettings();
     await sessionStore.checkSessionOrRedirect();
+    await dashboardStore.fetchDashboardStats();
 });
 
-// Mock Data
+// User name
 const userName = computed(() => sessionStore.user?.first_name + ' ' + sessionStore.user?.last_name);
 
-const quickStats = ref({
-    servers: 1,
-    users: 7,
-    nodes: 3,
-    eggs: 15,
+// Dashboard stats from API
+const quickStatsArr = computed(() => {
+    const stats = dashboardStore.stats;
+    if (!stats) {
+        return [
+            { label: 'Total Servers', value: '...', icon: Server },
+            { label: 'Total Users', value: '...', icon: Users },
+            { label: 'Active Nodes', value: '...', icon: Network },
+            { label: 'Server Spells', value: '...', icon: Sparkles },
+        ];
+    }
+
+    return [
+        { label: 'Total Servers', value: stats.servers, icon: Server },
+        { label: 'Total Users', value: stats.users, icon: Users },
+        { label: 'Active Nodes', value: stats.nodes, icon: Network },
+        { label: 'Server Spells', value: stats.spells, icon: Sparkles },
+    ];
 });
-const quickStatsArr = computed(() => [
-    { label: 'Total Servers', value: quickStats.value.servers, icon: Server },
-    { label: 'Total Users', value: quickStats.value.users, icon: Users },
-    { label: 'Active Nodes', value: quickStats.value.nodes, icon: Network },
-    { label: 'Server Eggs', value: quickStats.value.eggs, icon: Egg },
-]);
-const recentActivity = ref([
-    {
-        id: 1,
-        user: 'testdsjakfdjaskd',
-        avatar: 'https://i.pravatar.cc/40?u=1',
-        action: 'Viewed user testdsjakfdjaskd',
-        timeAgo: '3 days ago',
-    },
-    {
-        id: 2,
-        user: 'testdsjakfdjaskd',
-        avatar: 'https://i.pravatar.cc/40?u=2',
-        action: 'Viewed create server page',
-        timeAgo: '1 week ago',
-    },
-    {
-        id: 3,
-        user: 'testdsjakfdjaskd',
-        avatar: 'https://i.pravatar.cc/40?u=3',
-        action: 'Viewed all servers',
-        timeAgo: '1 week ago',
-    },
-]);
+
 const systemUpdates = ref([
     {
         title: 'Security Patch 3.2',
