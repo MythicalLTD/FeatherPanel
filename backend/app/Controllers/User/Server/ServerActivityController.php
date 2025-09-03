@@ -15,6 +15,7 @@ namespace App\Controllers\User\Server;
 
 use App\Chat\ServerActivity;
 use App\Chat\Server;
+use App\Chat\Subuser;
 use App\Chat\User;
 use App\Helpers\ApiResponse;
 use App\Helpers\ServerGateway;
@@ -51,17 +52,23 @@ class ServerActivityController
 		$perPage = max(1, min(100, (int) $request->query->get('per_page', 50)));
 		$search = $request->query->get('search', '');
 
-		// Get all servers and filter by user access
-		$allServers = Server::getAllServers();
-		$userServers = [];
+		// Get servers the user owns
+		$ownedServers = Server::getServersByOwnerId((int) $user['id']);
 
-		foreach ($allServers as $server) {
-			if ($this->userCanAccessServer($request, $server)) {
-				$userServers[] = $server;
+		// Get servers where user is a subuser
+		$subusers = Subuser::getSubusersByUserId((int) $user['id']);
+
+		// Combine and deduplicate server IDs
+		$serverIds = [];
+		foreach ($ownedServers as $server) {
+			$serverIds[] = (int) $server['id'];
+		}
+		foreach ($subusers as $subuser) {
+			$serverId = (int) $subuser['server_id'];
+			if (!in_array($serverId, $serverIds, true)) {
+				$serverIds[] = $serverId;
 			}
 		}
-
-		$serverIds = array_map(static fn($s) => (int) $s['id'], $userServers);
 
 		// Get activities for user's servers (include daemon events with NULL user_id)
 		$result = ServerActivity::getActivitiesWithPagination(

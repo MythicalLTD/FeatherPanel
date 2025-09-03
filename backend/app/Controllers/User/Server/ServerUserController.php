@@ -18,6 +18,7 @@ use App\Chat\Server;
 use App\Chat\SpellVariable;
 use App\Chat\ServerActivity;
 use App\Chat\ServerVariable;
+use App\Chat\Subuser;
 use App\Helpers\ApiResponse;
 use App\Helpers\ServerGateway;
 use App\Config\ConfigInterface;
@@ -63,36 +64,108 @@ class ServerUserController
 			$limit = 100;
 		}
 
-		// Get user's servers with pagination and search
-		$servers = Server::searchServers(
+		// Get servers the user owns
+		$ownedServers = Server::searchServers(
 			page: $page,
 			limit: $limit,
 			search: $search,
 			ownerId: $user['id']
 		);
 
-		// Add related data to each server.
-		foreach ($servers as &$server) {
-			$server['node'] = \App\Chat\Node::getNodeById($server['node_id']);
-			$server['realm'] = \App\Chat\Realm::getById($server['realms_id']);
-			$server['spell'] = \App\Chat\Spell::getSpellById($server['spell_id']);
-			$server['allocation'] = \App\Chat\Allocation::getAllocationById($server['allocation_id']);
-			unset(
-				$server['node']['memory'],
-				$server['node']['memory_overallocate'],
-				$server['node']['disk'],
-				$server['node']['disk_overallocate'],
-				$server['node']['upload_size'],
-				$server['node']['daemon_token_id'],
-				$server['node']['daemon_token'],
-				$server['node']['daemonListen'],
-				$server['node']['daemonSFTP'],
-				$server['node']['daemonBase']
-			);
+		// Get servers where user is a subuser
+		$subusers = Subuser::getSubusersByUserId((int) $user['id']);
+		$subuserServerIds = array_map(static fn($subuser) => (int) $subuser['server_id'], $subusers);
 
+		// Create a map of subuser data by server ID for easy lookup
+		$subuserMap = [];
+		foreach ($subusers as $subuser) {
+			$subuserMap[(int) $subuser['server_id']] = $subuser;
 		}
 
-		$total = Server::getCount($search, $user['id']);
+		// Get subuser servers individually
+		$subuserServers = [];
+		foreach ($subuserServerIds as $serverId) {
+			$server = Server::getServerById($serverId);
+			if ($server) {
+				// Apply search filter
+				if (
+					empty($search) ||
+					stripos($server['name'], $search) !== false ||
+					stripos($server['description'] ?? '', $search) !== false
+				) {
+					$subuserServers[] = $server;
+				}
+			}
+		}
+
+		// Combine owned and subuser servers
+		$allServers = array_merge($ownedServers, $subuserServers);
+
+		// Apply client-side pagination since we combined results
+		$totalServers = count($allServers);
+		$offset = ($page - 1) * $limit;
+		$servers = array_slice($allServers, $offset, $limit);
+
+		// Add related data to each server.
+		foreach ($servers as &$server) {
+			// Check if user is a subuser of this server
+			$isSubuser = isset($subuserMap[(int) $server['id']]);
+			$server['is_subuser'] = $isSubuser;
+
+			// Add subuser permissions if applicable
+			if ($isSubuser) {
+				$subuserData = $subuserMap[(int) $server['id']];
+				$server['subuser_permissions'] = json_decode($subuserData['permissions'] ?? '[]', true) ?: [];
+				$server['subuser_id'] = (int) $subuserData['id'];
+			} else {
+				$server['subuser_permissions'] = [];
+				$server['subuser_id'] = null;
+			}
+
+			$node = \App\Chat\Node::getNodeById($server['node_id']);
+			$server['node'] = [
+				'name' => $node['name'] ?? null,
+				'maintenance_mode' => $node['maintenance_mode'] ?? null,
+				'fqdn' => $node['fqdn'] ?? null,
+				'behind_proxy' => $node['behind_proxy'] ?? null,
+			];
+			$server['realm'] = \App\Chat\Realm::getById($server['realms_id']);
+			$server['realm'] = [
+				'name' => $server['realm']['name'] ?? null,
+				'description' => $server['realm']['description'] ?? null,
+				'logo' => $server['realm']['logo'] ?? null,
+			];
+			$server['spell'] = \App\Chat\Spell::getSpellById($server['spell_id']);
+			$server['spell'] = [
+				'name' => $server['spell']['name'] ?? null,
+				'description' => $server['spell']['description'] ?? null,
+				'banner' => $server['spell']['banner'] ?? null,
+			];
+			$server['allocation'] = \App\Chat\Allocation::getAllocationById($server['allocation_id']);
+			$server['allocation'] = [
+				'ip' => $server['allocation']['ip'] ?? null,
+				'port' => $server['allocation']['port'] ?? null,
+				'ip_alias' => $server['allocation']['ip_alias'] ?? null,
+			];
+
+			unset(
+				$server['external_id'],
+				$server['node_id'],
+				$server['skip_scripts'],
+				$server['allocation_id'],
+				$server['realms_id'],
+				$server['spell_id'],
+				$server['startup'],
+				$server['image'],
+				$server['last_error'],
+				$server['installed_at'],
+				$server['updated_at'],
+				$server['created_at']
+			);
+		}
+
+		// Use the total count from our combined results
+		$total = $totalServers;
 		$totalPages = ceil($total / $limit);
 		$from = ($page - 1) * $limit + 1;
 		$to = min($from + $limit - 1, $total);
