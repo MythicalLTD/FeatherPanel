@@ -51,7 +51,7 @@ class RegisterController
             }
         }
 
-		if ($config->getSetting(ConfigInterface::REGISTRATION_ENABLED, 'false') == 'false') {
+		if ($config->getSetting(ConfigInterface::REGISTRATION_ENABLED, 'true') == 'false') {
 			return ApiResponse::error('Registration is not enabled', 'REGISTRATION_NOT_ENABLED');
 		}
 
