@@ -125,6 +125,12 @@ class RegisterController
             return ApiResponse::error('Failed to create user', 'FAILED_TO_CREATE_USER');
         }
 
+		if ($user == 1) {
+			User::updateUser($userInfo['uuid'], [
+				'role_id' => 4
+			]);
+		}
+
         Welcome::send([
             'email' => $data['email'],
             'subject' => 'Welcome to ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),

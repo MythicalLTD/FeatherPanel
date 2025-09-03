@@ -160,6 +160,9 @@ async function onSubmit(e: Event) {
         });
         if (res.data && res.data.success) {
             success.value = res.data.message || 'Registration successful!';
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1200);
         } else {
             error.value = getErrorMessage(res.data);
         }

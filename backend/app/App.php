@@ -38,538 +38,554 @@ use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 
 class App
 {
-    public static App $instance;
-    public Database $db;
-    public RouteCollection $routes;
-    public array $middleware = [];
+	public static App $instance;
+	public Database $db;
+	public RouteCollection $routes;
+	public array $middleware = [];
 
-    public function __construct(bool $softBoot, bool $isCron = false, bool $testMode = false)
-    {
-        /**
-         * Load the environment variables.
-         */
-        $this->loadEnv();
+	public function __construct(bool $softBoot, bool $isCron = false, bool $testMode = false)
+	{
+		/**
+		 * Load the environment variables.
+		 */
+		$this->loadEnv();
 
-        /**
-         * Instance.
-         */
-        self::$instance = $this;
+		/**
+		 * Instance.
+		 */
+		self::$instance = $this;
 
-        /**
-         * Soft boot.
-         *
-         * If the soft boot is true, we do not want to initialize the database connection or the router.
-         *
-         * This is useful for commands or other things that do not require the database connection.
-         *
-         * This is also a lite way to boot the application without initializing the database connection or the router!.
-         */
-        if ($softBoot) {
-            return;
-        }
+		/**
+		 * Soft boot.
+		 *
+		 * If the soft boot is true, we do not want to initialize the database connection or the router.
+		 *
+		 * This is useful for commands or other things that do not require the database connection.
+		 *
+		 * This is also a lite way to boot the application without initializing the database connection or the router!.
+		 */
+		if ($softBoot) {
+			return;
+		}
 
-        if ($isCron) {
-            define('CRON_MODE', true);
-        }
+		if ($isCron) {
+			define('CRON_MODE', true);
+		}
 
-        // If running in test mode, skip Redis and plugin manager, just init DB
-        if ($testMode) {
-            $this->db = new Database($_ENV['DATABASE_HOST'], $_ENV['DATABASE_DATABASE'], $_ENV['DATABASE_USER'], $_ENV['DATABASE_PASSWORD'], $_ENV['DATABASE_PORT']);
+		// If running in test mode, skip Redis and plugin manager, just init DB
+		if ($testMode) {
+			$this->db = new Database($_ENV['DATABASE_HOST'], $_ENV['DATABASE_DATABASE'], $_ENV['DATABASE_USER'], $_ENV['DATABASE_PASSWORD'], $_ENV['DATABASE_PORT']);
 
-            return;
-        }
+			return;
+		}
 
-        /**
-         * @global \App\Plugins\PluginManager $pluginManager
-         * @global \App\Plugins\Events\PluginEvent $eventManager
-         */
-        global $pluginManager, $eventManager;
+		/**
+		 * @global \App\Plugins\PluginManager $pluginManager
+		 * @global \App\Plugins\Events\PluginEvent $eventManager
+		 */
+		global $pluginManager, $eventManager;
 
-        /**
-         * Redis.
-         */
-        $redis = new FastChat\Redis();
-        if ($redis->testConnection() == false) {
-            define('REDIS_ENABLED', false);
-        } else {
-            define('REDIS_ENABLED', true);
-        }
+		/**
+		 * Redis.
+		 */
+		$redis = new FastChat\Redis();
+		if ($redis->testConnection() == false) {
+			define('REDIS_ENABLED', false);
+		} else {
+			define('REDIS_ENABLED', true);
+		}
 
-        if (!defined('CRON_MODE')) {
-            // @phpstan-ignore-next-line
-            $rateLimiter = new RedisRateLimiter(Rate::perMinute(999999999), new \Redis(), 'rate_limiting');
-            try {
-                $rateLimiter->limit(CloudFlareRealIP::getRealIP());
-            } catch (LimitExceeded $e) {
-                self::getLogger()->error('User: ' . $e->getMessage());
-                http_response_code(429);
-                header('Content-Type: application/json');
-                header('Cache-Control: no-cache, private');
-                echo json_encode([
-                    'status' => 'error',
-                    'message' => 'You are being rate limited!',
-                    'exception' => $e->getMessage(),
-                    'success' => false,
-                    'error_code' => 'RATE_LIMIT_EXCEEDED',
-                    'error_message' => 'You are being rate limited!',
-                ]);
-                exit;
-            }
-        }
+		if (!defined('CRON_MODE')) {
+			// Properly connect \Redis to container service host
+			$redisHost = $_ENV['REDIS_HOST'] ?? 'redis';
+			$redisPort = (int) ($_ENV['REDIS_PORT'] ?? 6379);
+			$redisPassword = $_ENV['REDIS_PASSWORD'] ?? '';
 
-        /**
-         * Database Connection.
-         */
-        try {
-            $this->db = new Database($_ENV['DATABASE_HOST'], $_ENV['DATABASE_DATABASE'], $_ENV['DATABASE_USER'], $_ENV['DATABASE_PASSWORD'], $_ENV['DATABASE_PORT']);
-        } catch (\Exception $e) {
-            self::getLogger()->error('Database connection failed: ' . $e->getMessage());
-            http_response_code(500);
-            header('Content-Type: application/json');
-            header('Cache-Control: no-cache, private');
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Database connection failed',
-                'exception' => $e->getMessage(),
-                'success' => false,
-                'error_code' => 'DATABASE_CONNECTION_FAILED',
-                'error_message' => 'Database connection failed',
-            ]);
-            exit;
-        }
+			$redisExt = new \Redis();
+			try {
+				$redisExt->connect($redisHost, $redisPort, 2.0);
+				if ($redisPassword !== '') {
+					$redisExt->auth($redisPassword);
+				}
+			} catch (\Throwable $e) {
+				// Fall back to disabled rate limiting if Redis is unavailable
+				self::getLogger()->warning('Redis connection for rate limiter failed: ' . $e->getMessage());
+			}
 
-        /**
-         * Initialize the plugin manager.
-         */
-        if (!defined('CRON_MODE')) {
-            $pluginManager->loadKernel();
-            define('LOGGER', $this->getLogger());
-        }
+			// @phpstan-ignore-next-line
+			$rateLimiter = new RedisRateLimiter(Rate::perMinute(999999999), $redisExt, 'rate_limiting');
+			try {
+				$rateLimiter->limit(CloudFlareRealIP::getRealIP());
+			} catch (LimitExceeded $e) {
+				self::getLogger()->error('User: ' . $e->getMessage());
+				http_response_code(429);
+				header('Content-Type: application/json');
+				header('Cache-Control: no-cache, private');
+				echo json_encode([
+					'status' => 'error',
+					'message' => 'You are being rate limited!',
+					'exception' => $e->getMessage(),
+					'success' => false,
+					'error_code' => 'RATE_LIMIT_EXCEEDED',
+					'error_message' => 'You are being rate limited!',
+				]);
+				exit;
+			}
+		}
 
-        if ($isCron) {
-            return;
-        }
+		/**
+		 * Database Connection.
+		 */
+		try {
+			$this->db = new Database($_ENV['DATABASE_HOST'], $_ENV['DATABASE_DATABASE'], $_ENV['DATABASE_USER'], $_ENV['DATABASE_PASSWORD'], $_ENV['DATABASE_PORT']);
+		} catch (\Exception $e) {
+			self::getLogger()->error('Database connection failed: ' . $e->getMessage());
+			http_response_code(500);
+			header('Content-Type: application/json');
+			header('Cache-Control: no-cache, private');
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Database connection failed',
+				'exception' => $e->getMessage(),
+				'success' => false,
+				'error_code' => 'DATABASE_CONNECTION_FAILED',
+				'error_message' => 'Database connection failed',
+			]);
+			exit;
+		}
 
-        $timezone = $this->getConfig()->getSetting(ConfigInterface::APP_TIMEZONE, 'UTC');
-        if (!@date_default_timezone_set($timezone)) {
-            self::getLogger()->warning("Invalid timezone '$timezone', falling back to UTC.");
-            date_default_timezone_set('UTC');
-        }
+		/**
+		 * Initialize the plugin manager.
+		 */
+		if (!defined('CRON_MODE')) {
+			$pluginManager->loadKernel();
+			define('LOGGER', $this->getLogger());
+		}
 
-        $this->routes = new RouteCollection();
-        $this->registerApiRoutes($this->routes);
-        $eventManager->emit(
-            AppEvent::onRouterReady(),
-        );
-        $this->dispatchSymfonyRouter();
-    }
+		if ($isCron) {
+			return;
+		}
 
-    /**
-     * Register all api endpoints using Symfony Routing.
-     *
-     * @param RouteCollection $routes The Symfony RouteCollection instance
-     */
-    public function registerApiRoutes(RouteCollection $routes): void
-    {
-        $routesDir = __DIR__ . '/routes';
+		$timezone = $this->getConfig()->getSetting(ConfigInterface::APP_TIMEZONE, 'UTC');
+		if (!@date_default_timezone_set($timezone)) {
+			self::getLogger()->warning("Invalid timezone '$timezone', falling back to UTC.");
+			date_default_timezone_set('UTC');
+		}
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($routesDir, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::SELF_FIRST
-        );
+		$this->routes = new RouteCollection();
+		$this->registerApiRoutes($this->routes);
+		$eventManager->emit(
+			AppEvent::onRouterReady(),
+		);
+		$this->dispatchSymfonyRouter();
+	}
 
-        foreach ($iterator as $file) {
-            if ($file->isFile() && $file->getExtension() === 'php') {
-                $register = require $file->getPathname();
-                if (is_callable($register)) {
-                    $register($routes);
-                }
-            }
-        }
-    }
+	/**
+	 * Register all api endpoints using Symfony Routing.
+	 *
+	 * @param RouteCollection $routes The Symfony RouteCollection instance
+	 */
+	public function registerApiRoutes(RouteCollection $routes): void
+	{
+		$routesDir = __DIR__ . '/routes';
 
-    /**
-     * Dispatch the request using Symfony Routing and handle middleware.
-     */
-    public function dispatchSymfonyRouter(): void
-    {
-        $request = Request::createFromGlobals();
-        $context = new RequestContext();
-        $context->fromRequest($request);
-        $matcher = new UrlMatcher($this->routes, $context);
+		$iterator = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator($routesDir, \FilesystemIterator::SKIP_DOTS),
+			\RecursiveIteratorIterator::SELF_FIRST
+		);
 
-        // Log all registered routes at startup
-        $routeList = [];
-        foreach ($this->routes as $name => $route) {
-            $routeList[] = [
-                'name' => $name,
-                'path' => $route->getPath(),
-                'methods' => $route->getMethods(),
-            ];
-        }
-        self::getLogger()->debug('Registered routes: ' . json_encode($routeList));
+		foreach ($iterator as $file) {
+			if ($file->isFile() && $file->getExtension() === 'php') {
+				$register = require $file->getPathname();
+				if (is_callable($register)) {
+					$register($routes);
+				}
+			}
+		}
+	}
 
-        // Log the incoming request
-        self::getLogger()->debug('Attempting to match route: ' . $request->getMethod() . ' ' . $request->getPathInfo());
+	/**
+	 * Dispatch the request using Symfony Routing and handle middleware.
+	 */
+	public function dispatchSymfonyRouter(): void
+	{
+		$request = Request::createFromGlobals();
+		$context = new RequestContext();
+		$context->fromRequest($request);
+		$matcher = new UrlMatcher($this->routes, $context);
 
-        try {
-            $parameters = $matcher->match($request->getPathInfo());
-            self::getLogger()->debug('Matched route: ' . ($parameters['_route'] ?? 'unknown') . ' with params: ' . json_encode($parameters));
+		// Log all registered routes at startup
+		$routeList = [];
+		foreach ($this->routes as $name => $route) {
+			$routeList[] = [
+				'name' => $name,
+				'path' => $route->getPath(),
+				'methods' => $route->getMethods(),
+			];
+		}
+		self::getLogger()->debug('Registered routes: ' . json_encode($routeList));
 
-            $controller = $parameters['_controller'];
-            unset($parameters['_controller'], $parameters['_route']);
+		// Log the incoming request
+		self::getLogger()->debug('Attempting to match route: ' . $request->getMethod() . ' ' . $request->getPathInfo());
 
-            // Set route parameters as request attributes
-            // - Special keys (starting with '_') are stored without the underscore (e.g., '_permission' -> 'permission')
-            // - Regular route params (e.g., 'uuidShort') are stored as-is for middleware/controllers to consume
-            foreach ($parameters as $key => $value) {
-                if (str_starts_with($key, '_')) {
-                    $request->attributes->set(ltrim($key, '_'), $value);
-                } else {
-                    $request->attributes->set($key, $value);
-                }
-            }
+		try {
+			$parameters = $matcher->match($request->getPathInfo());
+			self::getLogger()->debug('Matched route: ' . ($parameters['_route'] ?? 'unknown') . ' with params: ' . json_encode($parameters));
 
-            // Per-route middleware support
-            $routeMiddleware = [];
-            if (isset($parameters['_middleware']) && is_array($parameters['_middleware'])) {
-                foreach ($parameters['_middleware'] as $middlewareClass) {
-                    $routeMiddleware[] = new $middlewareClass();
-                }
-            }
+			$controller = $parameters['_controller'];
+			unset($parameters['_controller'], $parameters['_route']);
 
-            // Use route middleware if defined, otherwise global
-            $middlewareStack = $routeMiddleware ?: $this->middleware;
-            $middlewareStack[] = function ($request) use ($controller, $parameters) {
-                // Remove special keys
-                unset($parameters['_controller'], $parameters['_route'], $parameters['_middleware']);
+			// Set route parameters as request attributes
+			// - Special keys (starting with '_') are stored without the underscore (e.g., '_permission' -> 'permission')
+			// - Regular route params (e.g., 'uuidShort') are stored as-is for middleware/controllers to consume
+			foreach ($parameters as $key => $value) {
+				if (str_starts_with($key, '_')) {
+					$request->attributes->set(ltrim($key, '_'), $value);
+				} else {
+					$request->attributes->set($key, $value);
+				}
+			}
 
-                // Always pass parameters as a single associative array after the request
-                return call_user_func($controller, $request, $parameters);
-            };
+			// Per-route middleware support
+			$routeMiddleware = [];
+			if (isset($parameters['_middleware']) && is_array($parameters['_middleware'])) {
+				foreach ($parameters['_middleware'] as $middlewareClass) {
+					$routeMiddleware[] = new $middlewareClass();
+				}
+			}
 
-            $response = array_reduce(
-                array_reverse($middlewareStack),
-                function ($next, $middleware) {
-                    return function ($request) use ($middleware, $next) {
-                        if (is_object($middleware) && method_exists($middleware, 'handle')) {
-                            return $middleware->handle($request, $next);
-                        }
+			// Use route middleware if defined, otherwise global
+			$middlewareStack = $routeMiddleware ?: $this->middleware;
+			$middlewareStack[] = function ($request) use ($controller, $parameters) {
+				// Remove special keys
+				unset($parameters['_controller'], $parameters['_route'], $parameters['_middleware']);
 
-                        return $middleware($request, $next);
-                    };
-                },
-                function ($request) {
-                    return new Response('No controller found', 500);
-                }
-            )($request);
+				// Always pass parameters as a single associative array after the request
+				return call_user_func($controller, $request, $parameters);
+			};
 
-            if (!$response instanceof Response) {
-                $response = new Response($response);
-            }
-        } catch (ResourceNotFoundException $e) {
-            // Log all registered routes for debugging
-            $allRoutes = [];
-            foreach ($this->routes as $name => $route) {
-                $allRoutes[] = $route->getPath();
-            }
-            $response = ApiResponse::error('The api route does not exist! [' . $request->getPathInfo() . ']', 'API_ROUTE_NOT_FOUND', 404, null);
-        } catch (MethodNotAllowedException $e) {
-            $response = ApiResponse::error('Method not allowed for this route. Allowed: ' . implode(', ', $e->getAllowedMethods()), 'METHOD_NOT_ALLOWED', 405, null);
-        } catch (\Exception $e) {
-            self::getLogger()->error(
-                'Exception in router: [' . get_class($e) . '] ' .
-                'Message: ' . $e->getMessage() .
-                ' Code: ' . $e->getCode() .
-                ' File: ' . $e->getFile() .
-                ' Line: ' . $e->getLine() .
-                ' Trace: ' . $e->getTraceAsString()
-            );
-            $response = ApiResponse::exception('An error occurred: ' . $e->getMessage(), $e->getCode(), $e->getTrace());
-        }
-        $response->send();
-    }
+			$response = array_reduce(
+				array_reverse($middlewareStack),
+				function ($next, $middleware) {
+					return function ($request) use ($middleware, $next) {
+						if (is_object($middleware) && method_exists($middleware, 'handle')) {
+							return $middleware->handle($request, $next);
+						}
 
-    /**
-     * Register an admin route that requires a specific permission.
-     *
-     * This helper will automatically add both the AuthMiddleware and AdminMiddleware to the route,
-     * and set the required permission as a route attribute.
-     *
-     * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
-     * @param string $name The name of the route
-     * @param string $path The URL path for the route (e.g. '/api/admin/dashboard')
-     * @param callable $controller The controller to handle the request
-     * @param Permissions|string $permission The permission node required to access this route
-     * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
-     */
-    public function registerAdminRoute(RouteCollection $routes, string $name, string $path, callable $controller, Permissions|string $permission, array $methods = ['GET']): void
-    {
-        $routes->add($name, new Route(
-            $path,
-            [
-                '_controller' => $controller,
-                '_middleware' => [
-                    AuthMiddleware::class,
-                    AdminMiddleware::class,
-                ],
-                '_permission' => $permission,
-            ],
-            [], // requirements
-            [], // options
-            '', // host
-            [], // schemes
-            $methods
-        ));
-    }
+						return $middleware($request, $next);
+					};
+				},
+				function ($request) {
+					return new Response('No controller found', 500);
+				}
+			)($request);
 
-    /**
-     * Register an auth route.
-     *
-     * This route requires the user to be logged in!
-     *
-     * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
-     * @param string $name The name of the route
-     * @param string $path The URL path for the route (e.g. '/api/user/profile')
-     * @param callable $controller The controller to handle the request
-     * @param array $methods the HTTP methods allowed for this route (default: ['GET'])
-     *
-     * This will automatically add the AuthMiddleware to the route, ensuring only authenticated users can access it
-     */
-    public function registerAuthRoute(RouteCollection $routes, string $name, string $path, callable $controller, array $methods = ['GET']): void
-    {
-        $routes->add($name, new Route(
-            $path,
-            [
-                '_controller' => $controller,
-                '_middleware' => [AuthMiddleware::class],
-            ],
-            [], // requirements
-            [], // options
-            '', // host
-            [], // schemes
-            $methods
-        ));
-    }
+			if (!$response instanceof Response) {
+				$response = new Response($response);
+			}
+		} catch (ResourceNotFoundException $e) {
+			// Log all registered routes for debugging
+			$allRoutes = [];
+			foreach ($this->routes as $name => $route) {
+				$allRoutes[] = $route->getPath();
+			}
+			$response = ApiResponse::error('The api route does not exist! [' . $request->getPathInfo() . ']', 'API_ROUTE_NOT_FOUND', 404, null);
+		} catch (MethodNotAllowedException $e) {
+			$response = ApiResponse::error('Method not allowed for this route. Allowed: ' . implode(', ', $e->getAllowedMethods()), 'METHOD_NOT_ALLOWED', 405, null);
+		} catch (\Exception $e) {
+			self::getLogger()->error(
+				'Exception in router: [' . get_class($e) . '] ' .
+				'Message: ' . $e->getMessage() .
+				' Code: ' . $e->getCode() .
+				' File: ' . $e->getFile() .
+				' Line: ' . $e->getLine() .
+				' Trace: ' . $e->getTraceAsString()
+			);
+			$response = ApiResponse::exception('An error occurred: ' . $e->getMessage(), $e->getCode(), $e->getTrace());
+		}
+		$response->send();
+	}
 
-    /**
-     * Register a server route.
-     *
-     * This route requires the user to be logged in!
-     *
-     * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
-     * @param string $name The name of the route
-     * @param string $path The URL path for the route (e.g. '/api/server/data')
-     * @param callable $controller The controller to handle the request
-     * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
-     */
-    public function registerServerRoute(RouteCollection $routes, string $name, string $path, callable $controller, string $serverShortUuid, array $methods = ['GET']): void
-    {
-        $routes->add($name, new Route(
-            $path,
-            [
-                '_controller' => $controller,
-                '_middleware' => [AuthMiddleware::class, ServerMiddleware::class],
-                '_server' => $serverShortUuid,
-            ],
-            [], // requirements
-            [], // options
-            '', // host
-            [], // schemes
-            $methods
-        ));
-    }
+	/**
+	 * Register an admin route that requires a specific permission.
+	 *
+	 * This helper will automatically add both the AuthMiddleware and AdminMiddleware to the route,
+	 * and set the required permission as a route attribute.
+	 *
+	 * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
+	 * @param string $name The name of the route
+	 * @param string $path The URL path for the route (e.g. '/api/admin/dashboard')
+	 * @param callable $controller The controller to handle the request
+	 * @param Permissions|string $permission The permission node required to access this route
+	 * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
+	 */
+	public function registerAdminRoute(RouteCollection $routes, string $name, string $path, callable $controller, Permissions|string $permission, array $methods = ['GET']): void
+	{
+		$routes->add($name, new Route(
+			$path,
+			[
+				'_controller' => $controller,
+				'_middleware' => [
+					AuthMiddleware::class,
+					AdminMiddleware::class,
+				],
+				'_permission' => $permission,
+			],
+			[], // requirements
+			[], // options
+			'', // host
+			[], // schemes
+			$methods
+		));
+	}
 
-    /**
-     * Register a public API route.
-     *
-     * This route does not require authentication or any middleware by default.
-     *
-     * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
-     * @param string $name The name of the route
-     * @param string $path The URL path for the route (e.g. '/api/public/data')
-     * @param callable $controller The controller to handle the request
-     * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
-     */
-    public function registerApiRoute(RouteCollection $routes, string $name, string $path, callable $controller, array $methods = ['GET']): void
-    {
-        $routes->add($name, new Route(
-            $path,
-            [
-                '_controller' => $controller,
-                '_middleware' => [],
-            ],
-            [], // requirements
-            [], // options
-            '', // host
-            [], // schemes
-            $methods
-        ));
-    }
+	/**
+	 * Register an auth route.
+	 *
+	 * This route requires the user to be logged in!
+	 *
+	 * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
+	 * @param string $name The name of the route
+	 * @param string $path The URL path for the route (e.g. '/api/user/profile')
+	 * @param callable $controller The controller to handle the request
+	 * @param array $methods the HTTP methods allowed for this route (default: ['GET'])
+	 *
+	 * This will automatically add the AuthMiddleware to the route, ensuring only authenticated users can access it
+	 */
+	public function registerAuthRoute(RouteCollection $routes, string $name, string $path, callable $controller, array $methods = ['GET']): void
+	{
+		$routes->add($name, new Route(
+			$path,
+			[
+				'_controller' => $controller,
+				'_middleware' => [AuthMiddleware::class],
+			],
+			[], // requirements
+			[], // options
+			'', // host
+			[], // schemes
+			$methods
+		));
+	}
 
-    /**
-     * Register a Wings route.
-     *
-     * This route does not require authentication or any middleware by default.
-     *
-     * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
-     * @param string $name The name of the route
-     * @param string $path The URL path for the route (e.g. '/api/wings/data')
-     * @param callable $controller The controller to handle the request
-     * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
-     */
-    public function registerWingsRoute(RouteCollection $routes, string $name, string $path, callable $controller, array $methods = ['GET']): void
-    {
-        $routes->add($name, new Route(
-            $path,
-            [
-                '_controller' => $controller,
-                '_middleware' => [WingsMiddleware::class],
-            ],
-            [], // requirements
-            [], // options
-            '', // host
-            [], // schemes
-            $methods
-        ));
-    }
+	/**
+	 * Register a server route.
+	 *
+	 * This route requires the user to be logged in!
+	 *
+	 * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
+	 * @param string $name The name of the route
+	 * @param string $path The URL path for the route (e.g. '/api/server/data')
+	 * @param callable $controller The controller to handle the request
+	 * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
+	 */
+	public function registerServerRoute(RouteCollection $routes, string $name, string $path, callable $controller, string $serverShortUuid, array $methods = ['GET']): void
+	{
+		$routes->add($name, new Route(
+			$path,
+			[
+				'_controller' => $controller,
+				'_middleware' => [AuthMiddleware::class, ServerMiddleware::class],
+				'_server' => $serverShortUuid,
+			],
+			[], // requirements
+			[], // options
+			'', // host
+			[], // schemes
+			$methods
+		));
+	}
 
-    /**
-     * Load the environment variables.
-     */
-    public function loadEnv(): void
-    {
-        try {
-            if (file_exists(__DIR__ . '/../storage/.env')) {
-                $dotenv = \Dotenv\Dotenv::createImmutable(__DIR__ . '/../storage/');
-                $dotenv->load();
+	/**
+	 * Register a public API route.
+	 *
+	 * This route does not require authentication or any middleware by default.
+	 *
+	 * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
+	 * @param string $name The name of the route
+	 * @param string $path The URL path for the route (e.g. '/api/public/data')
+	 * @param callable $controller The controller to handle the request
+	 * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
+	 */
+	public function registerApiRoute(RouteCollection $routes, string $name, string $path, callable $controller, array $methods = ['GET']): void
+	{
+		$routes->add($name, new Route(
+			$path,
+			[
+				'_controller' => $controller,
+				'_middleware' => [],
+			],
+			[], // requirements
+			[], // options
+			'', // host
+			[], // schemes
+			$methods
+		));
+	}
 
-            } else {
-                echo 'No .env file found';
-                exit;
-            }
-        } catch (\Exception $e) {
-            echo $e->getMessage();
-            exit;
-        }
-    }
+	/**
+	 * Register a Wings route.
+	 *
+	 * This route does not require authentication or any middleware by default.
+	 *
+	 * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
+	 * @param string $name The name of the route
+	 * @param string $path The URL path for the route (e.g. '/api/wings/data')
+	 * @param callable $controller The controller to handle the request
+	 * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
+	 */
+	public function registerWingsRoute(RouteCollection $routes, string $name, string $path, callable $controller, array $methods = ['GET']): void
+	{
+		$routes->add($name, new Route(
+			$path,
+			[
+				'_controller' => $controller,
+				'_middleware' => [WingsMiddleware::class],
+			],
+			[], // requirements
+			[], // options
+			'', // host
+			[], // schemes
+			$methods
+		));
+	}
 
-    /**
-     * Update the value of an environment variable.
-     *
-     * @param string $key The key of the environment variable
-     * @param string $value The value of the environment variable
-     * @param bool $encode If the value should be encoded
-     *
-     * @return bool If the value was updated
-     */
-    public function updateEnvValue(string $key, string $value, bool $encode): bool
-    {
-        $envFile = __DIR__ . '/../storage/.env'; // Path to your .env file
-        if (!file_exists($envFile)) {
-            return false; // Return false if .env file doesn't exist
-        }
+	/**
+	 * Load the environment variables.
+	 */
+	public function loadEnv(): void
+	{
+		try {
+			if (file_exists(__DIR__ . '/../storage/.env')) {
+				$dotenv = \Dotenv\Dotenv::createImmutable(__DIR__ . '/../storage/');
+				$dotenv->load();
 
-        // Read the .env file into an array of lines
-        $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+			} else {
+				echo 'No .env file found';
+				exit;
+			}
+		} catch (\Exception $e) {
+			echo $e->getMessage();
+			exit;
+		}
+	}
 
-        $updated = false;
-        foreach ($lines as &$line) {
-            // Skip comments and lines that don't contain '='
-            if (strpos(trim($line), '#') === 0 || strpos($line, '=') === false) {
-                continue;
-            }
+	/**
+	 * Update the value of an environment variable.
+	 *
+	 * @param string $key The key of the environment variable
+	 * @param string $value The value of the environment variable
+	 * @param bool $encode If the value should be encoded
+	 *
+	 * @return bool If the value was updated
+	 */
+	public function updateEnvValue(string $key, string $value, bool $encode): bool
+	{
+		$envFile = __DIR__ . '/../storage/.env'; // Path to your .env file
+		if (!file_exists($envFile)) {
+			return false; // Return false if .env file doesn't exist
+		}
 
-            // Split the line into key and value
-            [$envKey, $envValue] = explode('=', $line, 2);
+		// Read the .env file into an array of lines
+		$lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
-            // Trim whitespace from the key
-            if (trim($envKey) === $key) {
-                // Update the value
-                $line = "$key=\"$value\"";
-                $updated = true;
-            }
-        }
+		$updated = false;
+		foreach ($lines as &$line) {
+			// Skip comments and lines that don't contain '='
+			if (strpos(trim($line), '#') === 0 || strpos($line, '=') === false) {
+				continue;
+			}
 
-        // If the key doesn't exist, add it
-        if (!$updated) {
-            $lines[] = "$key=$value";
-        }
+			// Split the line into key and value
+			[$envKey, $envValue] = explode('=', $line, 2);
 
-        // Write the updated lines back to the .env file
-        return file_put_contents($envFile, implode(PHP_EOL, $lines)) !== false;
-    }
+			// Trim whitespace from the key
+			if (trim($envKey) === $key) {
+				// Update the value
+				$line = "$key=\"$value\"";
+				$updated = true;
+			}
+		}
 
-    /**
-     * Get the config factory.
-     */
-    public function getConfig(): ConfigFactory
-    {
-        if (isset(self::$instance->db)) {
-            return new ConfigFactory(self::$instance->db->getPdo());
-        }
-        throw new \Exception('Database connection is not initialized.');
-    }
+		// If the key doesn't exist, add it
+		if (!$updated) {
+			$lines[] = "$key=$value";
+		}
 
-    /**
-     * Get the database.
-     */
-    public function getDatabase(): Database
-    {
-        return $this->db;
-    }
+		// Write the updated lines back to the .env file
+		return file_put_contents($envFile, implode(PHP_EOL, $lines)) !== false;
+	}
 
-    /**
-     * Get the logger factory.
-     */
-    public function getLogger(): LoggerFactory
-    {
-        return new LoggerFactory(__DIR__ . '/../storage/logs/App.log');
-    }
+	/**
+	 * Get the config factory.
+	 */
+	public function getConfig(): ConfigFactory
+	{
+		if (isset(self::$instance->db)) {
+			return new ConfigFactory(self::$instance->db->getPdo());
+		}
+		throw new \Exception('Database connection is not initialized.');
+	}
 
-    /**
-     * Get the web server logger factory.
-     */
-    public function getWebServerLogger(): LoggerFactory
-    {
-        return new LoggerFactory(__DIR__ . '/../storage/logs/featherpanel-web.log');
-    }
+	/**
+	 * Get the database.
+	 */
+	public function getDatabase(): Database
+	{
+		return $this->db;
+	}
 
-    /**
-     * Get the instance of the App class.
-     */
-    public static function getInstance(bool $softBoot, bool $isCron = false, bool $testMode = false): App
-    {
-        if (!isset(self::$instance)) {
-            self::$instance = new self($softBoot, $isCron, $testMode);
-        }
+	/**
+	 * Get the logger factory.
+	 */
+	public function getLogger(): LoggerFactory
+	{
+		return new LoggerFactory(__DIR__ . '/../storage/logs/App.log');
+	}
 
-        return self::$instance;
-    }
+	/**
+	 * Get the web server logger factory.
+	 */
+	public function getWebServerLogger(): LoggerFactory
+	{
+		return new LoggerFactory(__DIR__ . '/../storage/logs/featherpanel-web.log');
+	}
 
-    /**
-     * Generate a random code.
-     */
-    public function generateCode(): string
-    {
-        $code = base64_encode(random_bytes(64));
-        $code = str_replace('=', '', $code);
-        $code = str_replace('+', '', $code);
-        $code = str_replace('/', '', $code);
+	/**
+	 * Get the instance of the App class.
+	 */
+	public static function getInstance(bool $softBoot, bool $isCron = false, bool $testMode = false): App
+	{
+		if (!isset(self::$instance)) {
+			self::$instance = new self($softBoot, $isCron, $testMode);
+		}
 
-        return $code;
-    }
+		return self::$instance;
+	}
 
-    /**
-     * Generate a random pin.
-     */
-    public function generatePin(): int
-    {
-        return random_int(100000, 999999);
-    }
+	/**
+	 * Generate a random code.
+	 */
+	public function generateCode(): string
+	{
+		$code = base64_encode(random_bytes(64));
+		$code = str_replace('=', '', $code);
+		$code = str_replace('+', '', $code);
+		$code = str_replace('/', '', $code);
 
-    public function addMiddleware($middleware): void
-    {
-        $this->middleware[] = $middleware;
-    }
+		return $code;
+	}
+
+	/**
+	 * Generate a random pin.
+	 */
+	public function generatePin(): int
+	{
+		return random_int(100000, 999999);
+	}
+
+	public function addMiddleware($middleware): void
+	{
+		$this->middleware[] = $middleware;
+	}
 }

@@ -27,7 +27,13 @@ class App extends Utils\MinecraftColorCodeSupport
         $this->handleCustomCommands($commandName, $args);
         self::$instance = $this;
 
-        if (getcwd() !== '/var/www/featherpanel') {
+        $cwd = getcwd();
+        $validDirs = [
+            '/var/www/featherpanel',
+            '/var/www/html',
+            '/var/www/featherpanel/backend'
+        ];
+        if (!in_array($cwd, $validDirs, true)) {
             exit('We detected that you are not running this command from the root directory of App. Please run this command from the root directory.');
         }
 
