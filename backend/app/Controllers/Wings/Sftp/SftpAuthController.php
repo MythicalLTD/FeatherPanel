@@ -17,6 +17,9 @@ use App\App;
 use App\Chat\User;
 use App\Chat\Server;
 use App\Chat\Subuser;
+use App\Helpers\ServerGateway;
+use App\Helpers\PermissionHelper;
+use App\Permissions;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -263,26 +266,13 @@ class SftpAuthController
 	 */
 	private function userHasServerAccess(int $userId, int $serverId): bool
 	{
-		// Get server details
+		$user = User::getUserById($userId);
 		$server = Server::getServerById($serverId);
-		if (!$server) {
+		if (!$user || !$server) {
 			return false;
 		}
 
-		// Check if user is the owner
-		if ($server['owner_id'] == $userId) {
-			return true;
-		}
-
-		// Check subuser relationship
-		$subuser = Subuser::getSubuserByUserAndServer($userId, $serverId);
-		if ($subuser) {
-			return true;
-		}
-
-		// TODO: Implement additional access control logic here (teams/roles)
-
-		return false;
+		return ServerGateway::canUserAccessServer($user['uuid'], $server['uuid']);
 	}
 
 	/**
@@ -299,6 +289,24 @@ class SftpAuthController
 		$server = Server::getServerById($serverId);
 		if (!$server) {
 			return [];
+		}
+
+		// Admins with server management permissions get full file access
+		$user = User::getUserById($userId);
+		if (
+			$user && (
+				PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_SERVERS_VIEW)
+				|| PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_SERVERS_EDIT)
+				|| PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_SERVERS_DELETE)
+			)
+		) {
+			return [
+				'file.read',
+				'file.read-content',
+				'file.create',
+				'file.update',
+				'file.delete',
+			];
 		}
 
 		// Check if user is the owner

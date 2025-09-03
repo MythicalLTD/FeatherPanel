@@ -18,470 +18,477 @@ use App\Chat\Server;
 use App\Chat\Subuser;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
+use App\Helpers\ServerGateway;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class SubuserController
 {
-    /**
-     * Get all subusers for a server.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     *
-     * @return Response The HTTP response
-     */
-    public function getSubusers(Request $request, string $serverUuid): Response
-    {
-        // Get server info
-        $server = Server::getServerByUuid($serverUuid);
-        if (!$server) {
-            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
+	/**
+	 * Centralized check using ServerGateway with current request user.
+	 */
+	private function userCanAccessServer(Request $request, array $server): bool
+	{
+		$currentUser = $request->get('user');
+		if (!$currentUser || !isset($currentUser['uuid'])) {
+			return false;
+		}
 
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
+		return ServerGateway::canUserAccessServer($currentUser['uuid'], $server['uuid']);
+	}
 
-        // Get page and per_page from query parameters
-        $page = max(1, (int) $request->query->get('page', 1));
-        $perPage = max(1, min(100, (int) $request->query->get('per_page', 20)));
-        $search = $request->query->get('search', '');
+	/**
+	 * Get all subusers for a server.
+	 *
+	 * @param Request $request The HTTP request
+	 * @param string $serverUuid The server UUID
+	 *
+	 * @return Response The HTTP response
+	 */
+	public function getSubusers(Request $request, string $serverUuid): Response
+	{
+		// Get server info
+		$server = Server::getServerByUuid($serverUuid);
+		if (!$server) {
+			return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+		}
 
-        // Get subusers from database with pagination and user details
-        $subusers = Subuser::getSubusersWithDetailsByServerId($server['id']);
+		if (!$this->userCanAccessServer($request, $server)) {
+			return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
+		}
 
-        // Apply search filter if provided
-        if (!empty($search)) {
-            $subusers = array_filter($subusers, function ($subuser) use ($search) {
-                return stripos($subuser['username'], $search) !== false
-                    || stripos($subuser['email'], $search) !== false;
-            });
-        }
+		// Get page and per_page from query parameters
+		$page = max(1, (int) $request->query->get('page', 1));
+		$perPage = max(1, min(100, (int) $request->query->get('per_page', 20)));
+		$search = $request->query->get('search', '');
 
-        // Apply pagination
-        $total = count($subusers);
-        $offset = ($page - 1) * $perPage;
-        $subusers = array_slice($subusers, $offset, $perPage);
+		// Get subusers from database with pagination and user details
+		$subusers = Subuser::getSubusersWithDetailsByServerId($server['id']);
 
-        return ApiResponse::success([
-            'data' => $subusers,
-            'pagination' => [
-                'current_page' => $page,
-                'per_page' => $perPage,
-                'total' => $total,
-                'last_page' => ceil($total / $perPage),
-                'from' => ($page - 1) * $perPage + 1,
-                'to' => min($page * $perPage, $total),
-            ],
-        ]);
-    }
+		// Apply search filter if provided
+		if (!empty($search)) {
+			$subusers = array_filter($subusers, function ($subuser) use ($search) {
+				return stripos($subuser['username'], $search) !== false
+					|| stripos($subuser['email'], $search) !== false;
+			});
+		}
 
-    /**
-     * Get a specific subuser.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $subuserId The subuser ID
-     *
-     * @return Response The HTTP response
-     */
-    public function getSubuser(Request $request, string $serverUuid, int $subuserId): Response
-    {
-        // Get server info
-        $server = Server::getServerByUuid($serverUuid);
-        if (!$server) {
-            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
+		// Apply pagination
+		$total = count($subusers);
+		$offset = ($page - 1) * $perPage;
+		$subusers = array_slice($subusers, $offset, $perPage);
 
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
+		return ApiResponse::success([
+			'data' => $subusers,
+			'pagination' => [
+				'current_page' => $page,
+				'per_page' => $perPage,
+				'total' => $total,
+				'last_page' => ceil($total / $perPage),
+				'from' => ($page - 1) * $perPage + 1,
+				'to' => min($page * $perPage, $total),
+			],
+		]);
+	}
 
-        // Get subuser info
-        $subuser = Subuser::getSubuserById($subuserId);
-        if (!$subuser) {
-            return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
-        }
+	/**
+	 * Get a specific subuser.
+	 *
+	 * @param Request $request The HTTP request
+	 * @param string $serverUuid The server UUID
+	 * @param int $subuserId The subuser ID
+	 *
+	 * @return Response The HTTP response
+	 */
+	public function getSubuser(Request $request, string $serverUuid, int $subuserId): Response
+	{
+		// Get server info
+		$server = Server::getServerByUuid($serverUuid);
+		if (!$server) {
+			return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+		}
 
-        // Verify subuser belongs to this server
-        if ($subuser['server_id'] != $server['id']) {
-            return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
-        }
+		if (!$this->userCanAccessServer($request, $server)) {
+			return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
+		}
 
-        return ApiResponse::success($subuser);
-    }
+		// Get subuser info
+		$subuser = Subuser::getSubuserById($subuserId);
+		if (!$subuser) {
+			return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
+		}
 
-    /**
-     * Create a new subuser.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     *
-     * @return Response The HTTP response
-     */
-    public function createSubuser(Request $request, string $serverUuid): Response
-    {
-        // Get server info
-        $server = Server::getServerByUuid($serverUuid);
-        if (!$server) {
-            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
+		// Verify subuser belongs to this server
+		if ($subuser['server_id'] != $server['id']) {
+			return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
+		}
 
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
+		return ApiResponse::success($subuser);
+	}
 
-        // Get request data
-        $data = json_decode($request->getContent(), true);
-        if (!$data) {
-            return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400);
-        }
+	/**
+	 * Create a new subuser.
+	 *
+	 * @param Request $request The HTTP request
+	 * @param string $serverUuid The server UUID
+	 *
+	 * @return Response The HTTP response
+	 */
+	public function createSubuser(Request $request, string $serverUuid): Response
+	{
+		// Get server info
+		$server = Server::getServerByUuid($serverUuid);
+		if (!$server) {
+			return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+		}
 
-        // Validate required fields
-        $required = ['email'];
-        foreach ($required as $field) {
-            if (!isset($data[$field]) || empty($data[$field])) {
-                return ApiResponse::error("Missing required field: $field", 'MISSING_REQUIRED_FIELD', 400);
-            }
-        }
+		if (!$this->userCanAccessServer($request, $server)) {
+			return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
+		}
 
-        // Validate email format
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            return ApiResponse::error('Invalid email format', 'INVALID_EMAIL_FORMAT', 400);
-        }
+		// Get request data
+		$data = json_decode($request->getContent(), true);
+		if (!$data) {
+			return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400);
+		}
 
-        // Find user by email
-        $user = User::getUserByEmail($data['email']);
-        if (!$user) {
-            return ApiResponse::error('User not found with this email', 'USER_NOT_FOUND', 404);
-        }
+		// Validate required fields
+		$required = ['email'];
+		foreach ($required as $field) {
+			if (!isset($data[$field]) || empty($data[$field])) {
+				return ApiResponse::error("Missing required field: $field", 'MISSING_REQUIRED_FIELD', 400);
+			}
+		}
 
-        // Check if user is trying to add themselves
-        $currentUser = $request->get('user');
-        if ($currentUser && $currentUser['id'] == $user['id']) {
-            return ApiResponse::error('Cannot add yourself as a subuser', 'CANNOT_ADD_SELF', 400);
-        }
+		// Validate email format
+		if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+			return ApiResponse::error('Invalid email format', 'INVALID_EMAIL_FORMAT', 400);
+		}
 
-        // Check if subuser already exists for this user+server combination
-        $existingSubuser = Subuser::getSubuserByUserAndServer($user['id'], $server['id']);
-        if ($existingSubuser) {
-            return ApiResponse::error('User is already a subuser for this server', 'SUBUSER_ALREADY_EXISTS', 400);
-        }
+		// Find user by email
+		$user = User::getUserByEmail($data['email']);
+		if (!$user) {
+			return ApiResponse::error('User not found with this email', 'USER_NOT_FOUND', 404);
+		}
 
-        // Prepare subuser data
-        $subuserData = [
-            'user_id' => $user['id'],
-            'server_id' => $server['id'],
-            'permissions' => json_encode(['*']),
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ];
+		// Check if user is trying to add themselves
+		$currentUser = $request->get('user');
+		if ($currentUser && $currentUser['id'] == $user['id']) {
+			return ApiResponse::error('Cannot add yourself as a subuser', 'CANNOT_ADD_SELF', 400);
+		}
 
-        // Create subuser
-        $subuserId = Subuser::createSubuser($subuserData);
-        if (!$subuserId) {
-            return ApiResponse::error('Failed to create subuser', 'CREATE_FAILED', 500);
-        }
+		// Check if subuser already exists for this user+server combination
+		$existingSubuser = Subuser::getSubuserByUserAndServer($user['id'], $server['id']);
+		if ($existingSubuser) {
+			return ApiResponse::error('User is already a subuser for this server', 'SUBUSER_ALREADY_EXISTS', 400);
+		}
 
-        // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'subuser_created',
-            'metadata' => json_encode([
-                'user_id' => $user['id'],
-                'username' => $user['username'],
-                'email' => $user['email'],
-                'permissions' => '*',
-            ]),
-            'user_id' => $request->get('user')['id'] ?? null,
-        ]);
+		// Prepare subuser data
+		$subuserData = [
+			'user_id' => $user['id'],
+			'server_id' => $server['id'],
+			'permissions' => json_encode(['*']),
+			'created_at' => date('Y-m-d H:i:s'),
+			'updated_at' => date('Y-m-d H:i:s'),
+		];
 
-        // Get created subuser with details
-        $subuser = Subuser::getSubuserWithDetails($subuserId);
+		// Create subuser
+		$subuserId = Subuser::createSubuser($subuserData);
+		if (!$subuserId) {
+			return ApiResponse::error('Failed to create subuser', 'CREATE_FAILED', 500);
+		}
 
-        return ApiResponse::success($subuser, 'Subuser created successfully', 201);
-    }
+		// Log activity
+		ServerActivity::createActivity([
+			'server_id' => $server['id'],
+			'node_id' => $server['node_id'],
+			'event' => 'subuser_created',
+			'metadata' => json_encode([
+				'user_id' => $user['id'],
+				'username' => $user['username'],
+				'email' => $user['email'],
+				'permissions' => '*',
+			]),
+			'user_id' => $request->get('user')['id'] ?? null,
+		]);
 
-    /**
-     * Update a subuser.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $subuserId The subuser ID
-     *
-     * @return Response The HTTP response
-     */
-    public function updateSubuser(Request $request, string $serverUuid, int $subuserId): Response
-    {
-        // Get server info
-        $server = Server::getServerByUuid($serverUuid);
-        if (!$server) {
-            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
+		// Get created subuser with details
+		$subuser = Subuser::getSubuserWithDetails($subuserId);
 
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
+		return ApiResponse::success($subuser, 'Subuser created successfully', 201);
+	}
 
-        // Get subuser info
-        $subuser = Subuser::getSubuserById($subuserId);
-        if (!$subuser) {
-            return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
-        }
+	/**
+	 * Update a subuser.
+	 *
+	 * @param Request $request The HTTP request
+	 * @param string $serverUuid The server UUID
+	 * @param int $subuserId The subuser ID
+	 *
+	 * @return Response The HTTP response
+	 */
+	public function updateSubuser(Request $request, string $serverUuid, int $subuserId): Response
+	{
+		// Get server info
+		$server = Server::getServerByUuid($serverUuid);
+		if (!$server) {
+			return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+		}
 
-        // Verify subuser belongs to this server
-        if ($subuser['server_id'] != $server['id']) {
-            return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
-        }
+		if (!$this->userCanAccessServer($request, $server)) {
+			return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
+		}
 
-        // Get request data
-        $data = json_decode($request->getContent(), true);
-        if (!$data) {
-            return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400);
-        }
+		// Get subuser info
+		$subuser = Subuser::getSubuserById($subuserId);
+		if (!$subuser) {
+			return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
+		}
 
-        // Add updated_at timestamp
-        $data['updated_at'] = date('Y-m-d H:i:s');
+		// Verify subuser belongs to this server
+		if ($subuser['server_id'] != $server['id']) {
+			return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
+		}
 
-        // Update subuser
-        $success = Subuser::updateSubuser($subuserId, $data);
-        if (!$success) {
-            return ApiResponse::error('Failed to update subuser', 'UPDATE_FAILED', 500);
-        }
+		// Get request data
+		$data = json_decode($request->getContent(), true);
+		if (!$data) {
+			return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400);
+		}
 
-        // Log activity
-        $user = User::getUserById($subuser['user_id']);
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'subuser_updated',
-            'metadata' => json_encode([
-                'user_id' => $user['id'],
-                'username' => $user['username'],
-                'email' => $user['email'],
-            ]),
-            'user_id' => $request->get('user')['id'] ?? null,
-        ]);
+		// Add updated_at timestamp
+		$data['updated_at'] = date('Y-m-d H:i:s');
 
-        // Get updated subuser
-        $updatedSubuser = Subuser::getSubuserWithDetails($subuserId);
+		// Update subuser
+		$success = Subuser::updateSubuser($subuserId, $data);
+		if (!$success) {
+			return ApiResponse::error('Failed to update subuser', 'UPDATE_FAILED', 500);
+		}
 
-        return ApiResponse::success($updatedSubuser, 'Subuser updated successfully');
-    }
+		// Log activity
+		$user = User::getUserById($subuser['user_id']);
+		ServerActivity::createActivity([
+			'server_id' => $server['id'],
+			'node_id' => $server['node_id'],
+			'event' => 'subuser_updated',
+			'metadata' => json_encode([
+				'user_id' => $user['id'],
+				'username' => $user['username'],
+				'email' => $user['email'],
+			]),
+			'user_id' => $request->get('user')['id'] ?? null,
+		]);
 
-    /**
-     * Delete a subuser.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $subuserId The subuser ID
-     *
-     * @return Response The HTTP response
-     */
-    public function deleteSubuser(Request $request, string $serverUuid, int $subuserId): Response
-    {
-        // Get server info
-        $server = Server::getServerByUuid($serverUuid);
-        if (!$server) {
-            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
+		// Get updated subuser
+		$updatedSubuser = Subuser::getSubuserWithDetails($subuserId);
 
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
+		return ApiResponse::success($updatedSubuser, 'Subuser updated successfully');
+	}
 
-        // Get subuser info
-        $subuser = Subuser::getSubuserById($subuserId);
-        if (!$subuser) {
-            return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
-        }
+	/**
+	 * Delete a subuser.
+	 *
+	 * @param Request $request The HTTP request
+	 * @param string $serverUuid The server UUID
+	 * @param int $subuserId The subuser ID
+	 *
+	 * @return Response The HTTP response
+	 */
+	public function deleteSubuser(Request $request, string $serverUuid, int $subuserId): Response
+	{
+		// Get server info
+		$server = Server::getServerByUuid($serverUuid);
+		if (!$server) {
+			return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+		}
 
-        // Verify subuser belongs to this server
-        if ($subuser['server_id'] != $server['id']) {
-            return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
-        }
+		if (!$this->userCanAccessServer($request, $server)) {
+			return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
+		}
 
-        // Get user info for logging
-        $user = User::getUserById($subuser['user_id']);
+		// Get subuser info
+		$subuser = Subuser::getSubuserById($subuserId);
+		if (!$subuser) {
+			return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
+		}
 
-        // Delete subuser
-        $success = Subuser::deleteSubuser($subuserId);
-        if (!$success) {
-            return ApiResponse::error('Failed to delete subuser', 'DELETE_FAILED', 500);
-        }
+		// Verify subuser belongs to this server
+		if ($subuser['server_id'] != $server['id']) {
+			return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
+		}
 
-        // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'subuser_deleted',
-            'metadata' => json_encode([
-                'user_id' => $user['id'],
-                'username' => $user['username'],
-                'email' => $user['email'],
-            ]),
-            'user_id' => $request->get('user')['id'] ?? null,
-        ]);
+		// Get user info for logging
+		$user = User::getUserById($subuser['user_id']);
 
-        return ApiResponse::success(null, 'Subuser deleted successfully');
-    }
+		// Delete subuser
+		$success = Subuser::deleteSubuser($subuserId);
+		if (!$success) {
+			return ApiResponse::error('Failed to delete subuser', 'DELETE_FAILED', 500);
+		}
 
-    /**
-     * Get subuser with details (user and server info).
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $subuserId The subuser ID
-     *
-     * @return Response The HTTP response
-     */
-    public function getSubuserWithDetails(Request $request, string $serverUuid, int $subuserId): Response
-    {
-        // Get server info
-        $server = Server::getServerByUuid($serverUuid);
-        if (!$server) {
-            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
+		// Log activity
+		ServerActivity::createActivity([
+			'server_id' => $server['id'],
+			'node_id' => $server['node_id'],
+			'event' => 'subuser_deleted',
+			'metadata' => json_encode([
+				'user_id' => $user['id'],
+				'username' => $user['username'],
+				'email' => $user['email'],
+			]),
+			'user_id' => $request->get('user')['id'] ?? null,
+		]);
 
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
+		return ApiResponse::success(null, 'Subuser deleted successfully');
+	}
 
-        // Get subuser with details
-        $subuser = Subuser::getSubuserWithDetails($subuserId);
-        if (!$subuser) {
-            return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
-        }
+	/**
+	 * Get subuser with details (user and server info).
+	 *
+	 * @param Request $request The HTTP request
+	 * @param string $serverUuid The server UUID
+	 * @param int $subuserId The subuser ID
+	 *
+	 * @return Response The HTTP response
+	 */
+	public function getSubuserWithDetails(Request $request, string $serverUuid, int $subuserId): Response
+	{
+		// Get server info
+		$server = Server::getServerByUuid($serverUuid);
+		if (!$server) {
+			return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+		}
 
-        // Verify subuser belongs to this server
-        if ($subuser['server_id'] != $server['id']) {
-            return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
-        }
+		if (!$this->userCanAccessServer($request, $server)) {
+			return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
+		}
 
-        return ApiResponse::success($subuser);
-    }
+		// Get subuser with details
+		$subuser = Subuser::getSubuserWithDetails($subuserId);
+		if (!$subuser) {
+			return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
+		}
 
-    /**
-     * Get all subusers with details for a server.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     *
-     * @return Response The HTTP response
-     */
-    public function getSubusersWithDetails(Request $request, string $serverUuid): Response
-    {
-        // Get server info
-        $server = Server::getServerByUuid($serverUuid);
-        if (!$server) {
-            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
+		// Verify subuser belongs to this server
+		if ($subuser['server_id'] != $server['id']) {
+			return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
+		}
 
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
+		return ApiResponse::success($subuser);
+	}
 
-        // Get subusers with details
-        $subusers = Subuser::getSubusersWithDetailsByServerId($server['id']);
+	/**
+	 * Get all subusers with details for a server.
+	 *
+	 * @param Request $request The HTTP request
+	 * @param string $serverUuid The server UUID
+	 *
+	 * @return Response The HTTP response
+	 */
+	public function getSubusersWithDetails(Request $request, string $serverUuid): Response
+	{
+		// Get server info
+		$server = Server::getServerByUuid($serverUuid);
+		if (!$server) {
+			return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+		}
 
-        return ApiResponse::success($subusers);
-    }
+		if (!$this->userCanAccessServer($request, $server)) {
+			return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
+		}
 
-    /**
-     * Search for users by email to add as subusers.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     *
-     * @return Response The HTTP response
-     */
-    public function searchUsers(Request $request, string $serverUuid): Response
-    {
-        // Get server info
-        $server = Server::getServerByUuid($serverUuid);
-        if (!$server) {
-            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
+		// Get subusers with details
+		$subusers = Subuser::getSubusersWithDetailsByServerId($server['id']);
 
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
+		return ApiResponse::success($subusers);
+	}
 
-        // Get search query
-        $search = $request->query->get('search', '');
-        if (empty($search)) {
-            return ApiResponse::error('Search query is required', 'MISSING_SEARCH_QUERY', 400);
-        }
+	/**
+	 * Search for users by email to add as subusers.
+	 *
+	 * @param Request $request The HTTP request
+	 * @param string $serverUuid The server UUID
+	 *
+	 * @return Response The HTTP response
+	 */
+	public function searchUsers(Request $request, string $serverUuid): Response
+	{
+		// Get server info
+		$server = Server::getServerByUuid($serverUuid);
+		if (!$server) {
+			return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+		}
 
-        // Search for users by email or username
-        $users = User::searchUsers(
-            page: 1,
-            limit: 10,
-            search: $search
-        );
+		// TODO: Add user permission check here
+		// if (!$this->userCanAccessServer($request, $server)) {
+		//     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
+		// }
 
-        // Filter out users who are already subusers for this server
-        $existingSubuserIds = array_map(
-            fn ($subuser) => $subuser['user_id'],
-            Subuser::getSubusersByServerId($server['id'])
-        );
+		// Get search query
+		$search = $request->query->get('search', '');
+		if (empty($search)) {
+			return ApiResponse::error('Search query is required', 'MISSING_SEARCH_QUERY', 400);
+		}
 
-        $availableUsers = array_filter($users, function ($user) use ($existingSubuserIds) {
-            return !in_array($user['id'], $existingSubuserIds);
-        });
+		// Search for users by email or username
+		$users = User::searchUsers(
+			page: 1,
+			limit: 10,
+			search: $search
+		);
 
-        // Format user data for response
-        $formattedUsers = array_map(function ($user) {
-            return [
-                'id' => $user['id'],
-                'username' => $user['username'],
-                'email' => $user['email'],
-                'uuid' => $user['uuid'],
-                'first_name' => $user['first_name'] ?? '',
-                'last_name' => $user['last_name'] ?? '',
-            ];
-        }, $availableUsers);
+		// Filter out users who are already subusers for this server
+		$existingSubuserIds = array_map(
+			fn($subuser) => $subuser['user_id'],
+			Subuser::getSubusersByServerId($server['id'])
+		);
 
-        return ApiResponse::success([
-            'users' => $formattedUsers,
-            'total' => count($formattedUsers),
-        ]);
-    }
+		$availableUsers = array_filter($users, function ($user) use ($existingSubuserIds) {
+			return !in_array($user['id'], $existingSubuserIds);
+		});
 
-    /**
-     * Get valid permissions list.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     *
-     * @return Response The HTTP response
-     */
-    public function getValidPermissions(Request $request, string $serverUuid): Response
-    {
-        // Get server info
-        $server = Server::getServerByUuid($serverUuid);
-        if (!$server) {
-            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
+		// Format user data for response
+		$formattedUsers = array_map(function ($user) {
+			return [
+				'id' => $user['id'],
+				'username' => $user['username'],
+				'email' => $user['email'],
+				'uuid' => $user['uuid'],
+				'first_name' => $user['first_name'] ?? '',
+				'last_name' => $user['last_name'] ?? '',
+			];
+		}, $availableUsers);
 
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
+		return ApiResponse::success([
+			'users' => $formattedUsers,
+			'total' => count($formattedUsers),
+		]);
+	}
 
-        return ApiResponse::success([
-            'permissions' => ['*'],
-            'total' => 1,
-        ]);
-    }
+	/**
+	 * Get valid permissions list.
+	 *
+	 * @param Request $request The HTTP request
+	 * @param string $serverUuid The server UUID
+	 *
+	 * @return Response The HTTP response
+	 */
+	public function getValidPermissions(Request $request, string $serverUuid): Response
+	{
+		// Get server info
+		$server = Server::getServerByUuid($serverUuid);
+		if (!$server) {
+			return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+		}
+
+		// TODO: Add user permission check here
+		// if (!$this->userCanAccessServer($request, $server)) {
+		//     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
+		// }
+
+		return ApiResponse::success([
+			'permissions' => ['*'],
+			'total' => 1,
+		]);
+	}
 }
