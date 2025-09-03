@@ -32,8 +32,11 @@
                 </template>
 
                 <template #cell-message="{ item }">
-                    <div class="text-sm text-muted-foreground">
-                        {{ displayMessage(item as ActivityItem) }}
+                    <div class="text-sm text-muted-foreground flex items-center justify-between gap-2">
+                        <span class="truncate">{{ displayMessage(item as ActivityItem) }}</span>
+                        <Button variant="outline" size="sm" @click="openDetails(item as ActivityItem)">{{
+                            t('common.view') || 'View'
+                        }}</Button>
                     </div>
                 </template>
 
@@ -44,6 +47,58 @@
                 </template>
             </TableComponent>
         </div>
+
+        <!-- Activity Details Dialog -->
+        <Dialog v-model:open="detailsOpen">
+            <DialogContent class="max-w-3xl">
+                <DialogHeader>
+                    <DialogTitle>{{ t('serverActivities.title') }} - {{ selectedItem?.event }}</DialogTitle>
+                    <DialogDescription>
+                        {{ t('serverActivities.recentAction') || 'Detailed information for the selected event.' }}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <div class="text-xs text-muted-foreground">Event</div>
+                            <div class="font-medium break-words">{{ selectedItem?.event }}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-muted-foreground">Time</div>
+                            <div class="font-medium">
+                                {{ formatDate(selectedItem?.timestamp || selectedItem?.created_at) }}
+                            </div>
+                        </div>
+                        <div class="md:col-span-2">
+                            <div class="text-xs text-muted-foreground">Message</div>
+                            <div class="font-medium break-words">{{ baseMessage }}</div>
+                        </div>
+                    </div>
+
+                    <div v-if="detailsPairs.length" class="bg-muted/30 rounded-md p-3 border">
+                        <h4 class="text-sm font-medium mb-2">Metadata</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <div v-for="pair in detailsPairs" :key="pair.key" class="text-sm">
+                                <div class="text-xs text-muted-foreground">{{ pair.key }}</div>
+                                <div class="font-mono break-words">{{ pair.value }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="rawJson" class="space-y-1">
+                        <div class="text-xs text-muted-foreground">Raw JSON</div>
+                        <pre
+                            class="text-xs bg-muted/30 p-3 rounded-md overflow-x-auto border"
+                        ><code>{{ rawJson }}</code></pre>
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button variant="outline" @click="detailsOpen = false">{{ t('common.close') }}</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </DashboardLayout>
 </template>
 
@@ -58,6 +113,14 @@ import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 
 type ActivityMetadata = {
     message?: string;
@@ -108,6 +171,7 @@ const breadcrumbs = computed(() => [
 ]);
 
 onMounted(async () => {
+    await fetchServer();
     await fetchActivities();
 });
 
@@ -160,6 +224,62 @@ async function fetchActivities(page = pagination.value.current_page) {
     } finally {
         loading.value = false;
     }
+}
+
+async function fetchServer() {
+    try {
+        const { data } = await axios.get(`/api/user/servers/${route.params.uuidShort}`);
+        if (data?.success && data?.data) {
+            server.value = { name: data.data.name };
+        }
+    } catch {
+        // Non-blocking; breadcrumbs will fallback to generic label
+    }
+}
+
+// Details dialog state
+const detailsOpen = ref(false);
+const selectedItem = ref<ActivityItem | null>(null);
+const baseMessage = computed(() => {
+    const item = selectedItem.value;
+    if (!item) return '';
+    const meta = normalizeMetadata(item.metadata);
+    if (meta && typeof meta.message === 'string' && meta.message.trim()) {
+        const parsed = tryParseJson(meta.message);
+        if (parsed != null) return summarizeJson(parsed);
+        return meta.message;
+    }
+    if (typeof item.message === 'string' && item.message.trim()) {
+        const parsed = tryParseJson(item.message);
+        if (parsed != null) return summarizeJson(parsed);
+        return item.message;
+    }
+    return displayMessage(item);
+});
+
+const detailsPairs = computed(() => {
+    const item = selectedItem.value;
+    if (!item) return [] as Array<{ key: string; value: string }>;
+    const meta = normalizeMetadata(item.metadata);
+    if (!meta) return [] as Array<{ key: string; value: string }>;
+    const entries = Object.entries(meta as Record<string, unknown>);
+    return entries.map(([k, v]) => ({ key: k, value: summarizePrimitive(v) }));
+});
+
+const rawJson = computed(() => {
+    const item = selectedItem.value;
+    if (!item) return '';
+    const meta = normalizeMetadata(item.metadata);
+    try {
+        return meta ? JSON.stringify(meta, null, 2) : '';
+    } catch {
+        return '';
+    }
+});
+
+function openDetails(item: ActivityItem) {
+    selectedItem.value = item;
+    detailsOpen.value = true;
 }
 
 function normalizeMetadata(m: unknown): ActivityMetadata | undefined {
@@ -260,8 +380,9 @@ function displayMessage(item: ActivityItem): string {
 
     // Fallbacks
     if (meta && Object.keys(meta).length > 0) {
+        // Always present metadata in a summarized/parsed form to avoid noisy blobs
         try {
-            return JSON.stringify(meta);
+            return summarizeJson(meta);
         } catch {
             // noop
         }

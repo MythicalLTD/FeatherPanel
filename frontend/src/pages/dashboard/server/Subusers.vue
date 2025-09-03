@@ -234,10 +234,11 @@ const confirmAction = ref<null | (() => Promise<void> | void)>(null);
 const confirmLoading = ref(false);
 
 // Computed
+const serverBasic = ref<{ name?: string } | null>(null);
 const breadcrumbs = computed(() => [
     { text: t('common.dashboard'), href: '/dashboard' },
     { text: t('common.servers'), href: '/dashboard' },
-    { text: t('common.server'), href: `/server/${route.params.uuidShort}` },
+    { text: serverBasic.value?.name || t('common.server'), href: `/server/${route.params.uuidShort}` },
     { text: t('serverSubusers.title'), isCurrent: true, href: `/server/${route.params.uuidShort}/users` },
 ]);
 
@@ -360,8 +361,20 @@ function onConfirmDialog() {
     confirmAction.value();
 }
 
+async function fetchServerBasic() {
+    try {
+        const { data } = await axios.get(`/api/user/servers/${route.params.uuidShort}`);
+        if (data?.success && data?.data) {
+            serverBasic.value = { name: data.data.name };
+        }
+    } catch {
+        // non-blocking
+    }
+}
+
 // Lifecycle
 onMounted(() => {
+    fetchServerBasic();
     fetchSubusers();
 });
 

@@ -11,6 +11,7 @@ common:
     dashboard: 'Dashboard'
     servers: 'Servers'
     server: 'Server'
+    view: 'View'
     settings: 'Settings'
     actions: 'Actions'
     cancel: 'Cancel'
