@@ -19,7 +19,6 @@ interface ConfigInterface
      * App.
      */
     public const APP_NAME = 'app_name';
-    public const APP_LANG = 'app_lang';
     public const APP_URL = 'app_url';
     public const APP_TIMEZONE = 'app_timezone';
     public const APP_LOGO = 'app_logo';

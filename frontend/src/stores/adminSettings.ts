@@ -4,7 +4,7 @@ import axios from 'axios';
 export interface BaseSetting {
     name: string;
     description: string;
-    type: 'text' | 'select' | 'textarea' | 'toggle';
+    type: 'text' | 'select' | 'textarea' | 'toggle' | 'number';
     required: boolean;
     placeholder: string;
     validation: string;
@@ -35,7 +35,13 @@ export interface ToggleSetting extends BaseSetting {
     options: string[];
 }
 
-export type Setting = TextSetting | SelectSetting | TextareaSetting | ToggleSetting;
+export interface NumberSetting extends BaseSetting {
+    type: 'number';
+    value: number;
+    options: string[];
+}
+
+export type Setting = TextSetting | SelectSetting | TextareaSetting | ToggleSetting | NumberSetting;
 
 export interface Category {
     id: string;

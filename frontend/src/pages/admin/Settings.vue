@@ -97,6 +97,17 @@
                                     class="max-w-md"
                                 />
 
+                                <!-- Number Input -->
+                                <Input
+                                    v-else-if="setting.type === 'number'"
+                                    :id="String(key)"
+                                    v-model.number="setting.value"
+                                    type="number"
+                                    :placeholder="setting.placeholder"
+                                    :required="setting.required"
+                                    class="max-w-md"
+                                />
+
                                 <!-- Select Input -->
                                 <Select v-else-if="setting.type === 'select'" v-model="setting.value">
                                     <SelectTrigger class="max-w-md">
@@ -104,7 +115,12 @@
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem v-for="option in setting.options" :key="option" :value="option">
-                                            {{ option }}
+                                            <template v-if="option === 'true' || option === 'false'">
+                                                {{ option === 'true' ? 'Enabled' : 'Disabled' }}
+                                            </template>
+                                            <template v-else>
+                                                {{ option }}
+                                            </template>
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>

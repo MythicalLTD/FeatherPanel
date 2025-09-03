@@ -30,7 +30,6 @@ services:
     networks:
       - featherpanel_network
 
-  # PHP Backend with nginx + PHP-FPM
   backend:
     build:
       context: ./backend
@@ -57,7 +56,6 @@ services:
     networks:
       - featherpanel_network
 
-  # Vue.js Frontend
   frontend:
     build:
       context: ./frontend

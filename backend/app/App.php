@@ -13,6 +13,7 @@
 
 namespace App;
 
+use App\Helpers\XChaCha20;
 use RateLimit\Rate;
 use App\Chat\Database;
 use App\Helpers\ApiResponse;
@@ -486,13 +487,22 @@ class App
 			return false; // Return false if .env file doesn't exist
 		}
 
-		// Read the .env file into an array of lines
-		$lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+		// Read the .env file into an array of lines (preserve all lines including empty and comments)
+		$lines = file($envFile, FILE_IGNORE_NEW_LINES);
+		if ($lines === false) {
+			$this->getLogger()->error('Failed to read .env file');
+			return false;
+		}
 
 		$updated = false;
 		foreach ($lines as &$line) {
-			// Skip comments and lines that don't contain '='
-			if (strpos(trim($line), '#') === 0 || strpos($line, '=') === false) {
+			// Skip comments and empty lines - preserve them as is
+			if (empty(trim($line)) || strpos(trim($line), '#') === 0) {
+				continue;
+			}
+
+			// Only process lines that contain '='
+			if (strpos($line, '=') === false) {
 				continue;
 			}
 
@@ -501,19 +511,53 @@ class App
 
 			// Trim whitespace from the key
 			if (trim($envKey) === $key) {
-				// Update the value
+				// Update the value while preserving the original format
 				$line = "$key=\"$value\"";
 				$updated = true;
+				break; // Exit loop once we find and update the key
 			}
 		}
 
-		// If the key doesn't exist, add it
+		// If the key doesn't exist, add it at the end
 		if (!$updated) {
-			$lines[] = "$key=$value";
+			$lines[] = "$key=\"$value\"";
 		}
 
-		// Write the updated lines back to the .env file
-		return file_put_contents($envFile, implode(PHP_EOL, $lines)) !== false;
+		// Check if we have write permissions
+		if (!is_writable($envFile)) {
+			$this->getLogger()->error('Cannot write to .env file - insufficient permissions');
+			return false;
+		}
+
+		// Create a backup of the original .env file before writing
+		$backupFile = $envFile . '.backup.' . date('Y-m-d_H-i-s');
+		if (!copy($envFile, $backupFile)) {
+			$this->getLogger()->error('Failed to create backup of .env file');
+			return false;
+		}
+
+		// Try to write the file with proper line endings
+		try {
+			$content = implode(PHP_EOL, $lines);
+			if (file_put_contents($envFile, $content) === false) {
+				// Restore from backup if write fails
+				copy($backupFile, $envFile);
+				$this->getLogger()->error('Failed to write to .env file - restored from backup');
+				return false;
+			}
+
+			// Clean up backup file after successful write
+			unlink($backupFile);
+			return true;
+		} catch (\Exception $e) {
+			// Restore from backup if an exception occurs
+			if (file_exists($backupFile)) {
+				copy($backupFile, $envFile);
+				unlink($backupFile);
+			}
+			$this->getLogger()->error('Failed to write to .env file: ' . $e->getMessage() . ' - restored from backup');
+			return false;
+		}
 	}
 
 	/**
@@ -587,5 +631,27 @@ class App
 	public function addMiddleware($middleware): void
 	{
 		$this->middleware[] = $middleware;
+	}
+
+	public function getEnvValue(string $key): string
+	{
+		return $_ENV[$key];
+	}
+
+	public function encryptValue(string $value): string
+	{
+		return XChaCha20::encrypt($value, $_ENV['DATABASE_ENCRYPTION_KEY'], true);
+	}
+
+	public function decryptValue(string $value): string
+	{
+		// Ensure the nonce is the correct length before decryption
+		$data = base64_decode($value);
+		$nonceLength = SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES;
+		$nonce = mb_substr($data, 0, $nonceLength, '8bit');
+		if (strlen($nonce) !== $nonceLength) {
+			return $value;
+		}
+		return XChaCha20::decrypt($value, $_ENV['DATABASE_ENCRYPTION_KEY'], true);
 	}
 }
