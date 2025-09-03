@@ -59,5 +59,11 @@ if [ $migration_exit_code -ne 0 ]; then
 fi
 echo "Migrations finished."
 
+# Set everything to be owned by www-data with 777 permissions
+echo "Setting ownership and permissions..."
+chown -R www-data:www-data /var/www/html
+chmod -R 777 /var/www/html
+echo "Ownership and permissions set."
+
 # Start the main application
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
