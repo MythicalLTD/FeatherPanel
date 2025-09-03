@@ -39,6 +39,16 @@ while [ $attempt -lt $max_attempts ]; do
 	sleep 3
 done
 
+# Make sure composer packages are installed
+echo "Installing composer packages..."
+COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader
+composer_exit_code=$?
+if [ $composer_exit_code -ne 0 ]; then
+    echo "Composer packages failed with exit code $composer_exit_code"
+    exit $composer_exit_code
+fi
+echo "Composer packages installed."
+
 # Run migrations
 echo "Running migrations..."
 php /var/www/html/cli migrate
