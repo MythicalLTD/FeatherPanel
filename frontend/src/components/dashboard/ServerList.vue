@@ -97,7 +97,12 @@
                         <div
                             v-for="server in folder.servers"
                             :key="server.id"
-                            class="group bg-card border-2 border-border rounded-lg hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-primary/20 hover:scale-[1.02] overflow-hidden"
+                            class="group bg-card border-2 border-border rounded-lg transition-all duration-200 overflow-hidden"
+                            :class="{
+                                'cursor-pointer hover:shadow-lg hover:border-primary/20 hover:scale-[1.02]':
+                                    isServerAccessible(server),
+                                'cursor-not-allowed opacity-75': !isServerAccessible(server),
+                            }"
                             @click="openServerDetails(server)"
                             @contextmenu.prevent="showContextMenu($event, server, folder.id)"
                         >
@@ -115,6 +120,29 @@
                                     class="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300"
                                 />
 
+                                <!-- Access Restriction Overlay -->
+                                <div
+                                    v-if="!isServerAccessible(server)"
+                                    class="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20"
+                                >
+                                    <div class="text-center text-white p-4">
+                                        <div class="text-sm font-semibold mb-2">
+                                            {{
+                                                server.node?.maintenance_mode
+                                                    ? $t('servers.nodeMaintenance')
+                                                    : getAccessRestrictionReason(server)
+                                            }}
+                                        </div>
+                                        <div class="text-xs opacity-90 leading-relaxed">
+                                            {{
+                                                server.node?.maintenance_mode
+                                                    ? 'Sorry, but the node where your server currently is is under maintenance. Please come back later.'
+                                                    : $t('servers.accessRestrictedDescription')
+                                            }}
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Content overlaid on banner -->
                                 <div class="relative z-10 p-4 h-full flex flex-col justify-between">
                                     <div class="flex items-start justify-between">
@@ -126,12 +154,22 @@
                                                 {{ server.description || $t('servers.noDescription') }}
                                             </p>
                                         </div>
-                                        <Badge
-                                            :variant="getStatusVariant(displayStatus(server))"
-                                            class="bg-white/20 text-white border-white/30 hover:bg-white/30"
-                                        >
-                                            {{ $t(`servers.status.${displayStatus(server)}`) }}
-                                        </Badge>
+                                        <div class="flex flex-col gap-1">
+                                            <Badge
+                                                :variant="getStatusVariant(displayStatus(server))"
+                                                class="bg-white/20 text-white border-white/30 hover:bg-white/30"
+                                            >
+                                                {{ $t(`servers.status.${displayStatus(server)}`) }}
+                                            </Badge>
+                                            <!-- Subuser Access Badge -->
+                                            <Badge
+                                                v-if="server.is_subuser"
+                                                variant="outline"
+                                                class="bg-blue-500/20 text-blue-100 border-blue-300/30 text-xs"
+                                            >
+                                                {{ $t('servers.subuserAccess') }}
+                                            </Badge>
+                                        </div>
                                     </div>
 
                                     <!-- Spell name at bottom of header -->
@@ -218,7 +256,12 @@
                         <div
                             v-for="server in unassignedServers"
                             :key="server.id"
-                            class="group bg-card border-2 border-border rounded-lg hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-primary/20 hover:scale-[1.02] overflow-hidden"
+                            class="group bg-card border-2 border-border rounded-lg transition-all duration-200 overflow-hidden"
+                            :class="{
+                                'cursor-pointer hover:shadow-lg hover:border-primary/20 hover:scale-[1.02]':
+                                    isServerAccessible(server),
+                                'cursor-not-allowed opacity-75': !isServerAccessible(server),
+                            }"
                             @click="openServerDetails(server)"
                             @contextmenu.prevent="showContextMenu($event, server, null)"
                         >
@@ -236,6 +279,29 @@
                                     class="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300"
                                 />
 
+                                <!-- Access Restriction Overlay -->
+                                <div
+                                    v-if="!isServerAccessible(server)"
+                                    class="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20"
+                                >
+                                    <div class="text-center text-white p-4">
+                                        <div class="text-sm font-semibold mb-2">
+                                            {{
+                                                server.node?.maintenance_mode
+                                                    ? $t('servers.nodeMaintenance')
+                                                    : getAccessRestrictionReason(server)
+                                            }}
+                                        </div>
+                                        <div class="text-xs opacity-90 leading-relaxed">
+                                            {{
+                                                server.node?.maintenance_mode
+                                                    ? 'Sorry, but the node where your server currently is is under maintenance. Please come back later.'
+                                                    : $t('servers.accessRestrictedDescription')
+                                            }}
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Content overlaid on banner -->
                                 <div class="relative z-10 p-4 h-full flex flex-col justify-between">
                                     <div class="flex items-start justify-between">
@@ -247,12 +313,22 @@
                                                 {{ server.description || $t('servers.noDescription') }}
                                             </p>
                                         </div>
-                                        <Badge
-                                            :variant="getStatusVariant(displayStatus(server))"
-                                            class="bg-white/20 text-white border-white/30 hover:bg-white/30"
-                                        >
-                                            {{ $t(`servers.status.${displayStatus(server)}`) }}
-                                        </Badge>
+                                        <div class="flex flex-col gap-1">
+                                            <Badge
+                                                :variant="getStatusVariant(displayStatus(server))"
+                                                class="bg-white/20 text-white border-white/30 hover:bg-white/30"
+                                            >
+                                                {{ $t(`servers.status.${displayStatus(server)}`) }}
+                                            </Badge>
+                                            <!-- Subuser Access Badge -->
+                                            <Badge
+                                                v-if="server.is_subuser"
+                                                variant="outline"
+                                                class="bg-blue-500/20 text-blue-100 border-blue-300/30 text-xs"
+                                            >
+                                                {{ $t('servers.subuserAccess') }}
+                                            </Badge>
+                                        </div>
                                     </div>
 
                                     <!-- Spell name at bottom of header -->
@@ -329,7 +405,12 @@
                 <div
                     v-for="server in servers"
                     :key="server.id"
-                    class="group bg-card border-2 border-border rounded-lg hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-primary/20 hover:scale-[1.02] overflow-hidden"
+                    class="group bg-card border-2 border-border rounded-lg transition-all duration-200 overflow-hidden"
+                    :class="{
+                        'cursor-pointer hover:shadow-lg hover:border-primary/20 hover:scale-[1.02]':
+                            isServerAccessible(server),
+                        'cursor-not-allowed opacity-75': !isServerAccessible(server),
+                    }"
                     @click="openServerDetails(server)"
                     @contextmenu.prevent="showContextMenu($event, server, null)"
                 >
@@ -347,6 +428,17 @@
                             class="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300"
                         />
 
+                        <!-- Access Restriction Overlay -->
+                        <div
+                            v-if="!isServerAccessible(server)"
+                            class="absolute inset-0 bg-red-500/20 flex items-center justify-center z-20"
+                        >
+                            <div class="text-center text-white">
+                                <div class="text-sm font-semibold">{{ getAccessRestrictionReason(server) }}</div>
+                                <div class="text-xs opacity-80">{{ $t('servers.accessRestrictedDescription') }}</div>
+                            </div>
+                        </div>
+
                         <!-- Content overlaid on banner -->
                         <div class="relative z-10 p-4 h-full flex flex-col justify-between">
                             <div class="flex items-start justify-between">
@@ -358,12 +450,22 @@
                                         {{ server.description || $t('servers.noDescription') }}
                                     </p>
                                 </div>
-                                <Badge
-                                    :variant="getStatusVariant(displayStatus(server))"
-                                    class="bg-white/20 text-white border-white/30 hover:bg-white/30"
-                                >
-                                    {{ $t(`servers.status.${displayStatus(server)}`) }}
-                                </Badge>
+                                <div class="flex flex-col gap-1">
+                                    <Badge
+                                        :variant="getStatusVariant(displayStatus(server))"
+                                        class="bg-white/20 text-white border-white/30 hover:bg-white/30"
+                                    >
+                                        {{ $t(`servers.status.${displayStatus(server)}`) }}
+                                    </Badge>
+                                    <!-- Subuser Access Badge -->
+                                    <Badge
+                                        v-if="server.is_subuser"
+                                        variant="outline"
+                                        class="bg-blue-500/20 text-blue-100 border-blue-300/30 text-xs"
+                                    >
+                                        {{ $t('servers.subuserAccess') }}
+                                    </Badge>
+                                </div>
                             </div>
 
                             <!-- Spell name at bottom of header -->
@@ -644,6 +746,7 @@ interface ServerNode {
     id: number;
     name: string;
     fqdn: string;
+    maintenance_mode?: number;
 }
 
 interface ServerRealm {
@@ -677,6 +780,9 @@ interface Server {
     realms_id: number;
     spell_id: number;
     allocation_id: number;
+    is_subuser?: boolean;
+    subuser_permissions?: string[];
+    subuser_id?: number | null;
     node?: ServerNode;
     realm?: ServerRealm;
     spell?: ServerSpell;
@@ -915,9 +1021,46 @@ function formatDisk(disk: number): string {
     return `${disk} MB`;
 }
 
-function openServerDetails(server: Server) {
+function isServerAccessible(server: Server): boolean {
+    // Check if server is suspended
     if (server.suspended) {
-        toast.error("Sorry, but you can't access servers while they are suspended.");
+        return false;
+    }
+
+    // Check if node is in maintenance mode
+    if (server.node?.maintenance_mode) {
+        return false;
+    }
+
+    return true;
+}
+
+function getAccessRestrictionReason(server: Server): string | null {
+    if (server.suspended) {
+        return t('servers.status.suspended');
+    }
+
+    if (server.node?.maintenance_mode) {
+        return t('servers.nodeMaintenance');
+    }
+
+    return null;
+}
+
+function openServerDetails(server: Server) {
+    if (!isServerAccessible(server)) {
+        if (server.node?.maintenance_mode) {
+            toast.error(
+                'Sorry, but the node where your server currently is is under maintenance. Please come back later.',
+            );
+        } else {
+            const reason = getAccessRestrictionReason(server);
+            if (reason) {
+                toast.error(t('servers.accessRestrictedDescription') + ` (${reason})`);
+            } else {
+                toast.error(t('servers.accessRestrictedDescription'));
+            }
+        }
         return;
     }
     router.push(`/server/${server.uuidShort}`);

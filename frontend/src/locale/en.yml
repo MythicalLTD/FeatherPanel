@@ -230,6 +230,19 @@ servers:
         suspended: 'Suspended'
         null: 'Offline'
     clickToView: 'Click to view details'
+    # Subuser Access
+    subuserAccess: 'Subuser Access'
+    subuserAccessDescription: 'You have limited access to this server'
+    subuserPermissions: 'Subuser Permissions'
+    ownerAccess: 'Owner Access'
+    ownerAccessDescription: 'You own this server'
+    # Node Maintenance
+    nodeMaintenance: 'Node Maintenance'
+    nodeMaintenanceDescription: 'This server is temporarily unavailable due to node maintenance'
+    nodeMaintenanceTooltip: 'Server is under maintenance - access restricted'
+    # Access Restrictions
+    accessRestricted: 'Access Restricted'
+    accessRestrictedDescription: 'This server is not accessible at the moment'
     # Folder System
     createFolder: 'Create Folder'
     editFolder: 'Edit Folder'
