@@ -20,373 +20,429 @@ use App\App;
  */
 class DatabaseInstance
 {
-    /**
-     * @var string The databases table name
-     */
-    private static string $table = 'featherpanel_databases';
+	/**
+	 * @var string The databases table name
+	 */
+	private static string $table = 'featherpanel_databases';
 
-    /**
-     * Whitelist of allowed field names for SQL queries to prevent injection.
-     */
-    private static array $allowedFields = [
-        'name',
-        'node_id',
-        'database_type',
-        'database_port',
-        'database_username',
-        'database_password',
-        'database_host',
-    ];
+	/**
+	 * Whitelist of allowed field names for SQL queries to prevent injection.
+	 */
+	private static array $allowedFields = [
+		'name',
+		'node_id',
+		'database_type',
+		'database_port',
+		'database_username',
+		'database_password',
+		'database_host',
+	];
 
-    /**
-     * Create a new database instance.
-     *
-     * @param array $data Associative array of database fields
-     *
-     * @return int|false The new database's ID or false on failure
-     */
-    public static function createDatabase(array $data): int|false
-    {
-        // Required fields for database creation
-        $required = [
-            'name',
-            'node_id',
-            'database_type',
-            'database_port',
-            'database_username',
-            'database_password',
-            'database_host',
-        ];
+	/**
+	 * Create a new database instance.
+	 *
+	 * @param array $data Associative array of database fields
+	 *
+	 * @return int|false The new database's ID or false on failure
+	 */
+	public static function createDatabase(array $data): int|false
+	{
+		// Required fields for database creation
+		$required = [
+			'name',
+			'node_id',
+			'database_type',
+			'database_port',
+			'database_username',
+			'database_password',
+			'database_host',
+		];
 
-        $columns = self::getColumns();
-        $columns = array_map(fn ($c) => $c['Field'], $columns);
-        $missing = array_diff($required, $columns);
-        if (!empty($missing)) {
-            $sanitizedData = self::sanitizeDataForLogging($data);
-            App::getInstance(true)->getLogger()->error('Missing required fields: ' . implode(', ', $missing) . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+		$columns = self::getColumns();
+		$columns = array_map(fn($c) => $c['Field'], $columns);
+		$missing = array_diff($required, $columns);
+		if (!empty($missing)) {
+			$sanitizedData = self::sanitizeDataForLogging($data);
+			App::getInstance(true)->getLogger()->error('Missing required fields: ' . implode(', ', $missing) . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
 
-            return false;
-        }
+			return false;
+		}
 
-        foreach ($required as $field) {
-            if (!isset($data[$field])) {
-                $sanitizedData = self::sanitizeDataForLogging($data);
-                App::getInstance(true)->getLogger()->error('Missing required field: ' . $field . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+		foreach ($required as $field) {
+			if (!isset($data[$field])) {
+				$sanitizedData = self::sanitizeDataForLogging($data);
+				App::getInstance(true)->getLogger()->error('Missing required field: ' . $field . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
 
-                return false;
-            }
+				return false;
+			}
 
-            // Special validation for different field types
-            if ($field === 'node_id') {
-                if (!is_numeric($data[$field]) || (int) $data[$field] <= 0) {
-                    $sanitizedData = self::sanitizeDataForLogging($data);
-                    App::getInstance(true)->getLogger()->error('Invalid node_id: ' . $data[$field] . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+			// Special validation for different field types
+			if ($field === 'node_id') {
+				if (!is_numeric($data[$field]) || (int) $data[$field] <= 0) {
+					$sanitizedData = self::sanitizeDataForLogging($data);
+					App::getInstance(true)->getLogger()->error('Invalid node_id: ' . $data[$field] . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
 
-                    return false;
-                }
-            } elseif ($field === 'database_port') {
-                if (!is_numeric($data[$field]) || (int) $data[$field] < 1 || (int) $data[$field] > 65535) {
-                    $sanitizedData = self::sanitizeDataForLogging($data);
-                    App::getInstance(true)->getLogger()->error('Invalid database_port: ' . $data[$field] . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+					return false;
+				}
+			} elseif ($field === 'database_port') {
+				if (!is_numeric($data[$field]) || (int) $data[$field] < 1 || (int) $data[$field] > 65535) {
+					$sanitizedData = self::sanitizeDataForLogging($data);
+					App::getInstance(true)->getLogger()->error('Invalid database_port: ' . $data[$field] . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
 
-                    return false;
-                }
-            } elseif ($field === 'database_type') {
-                $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis'];
-                if (!in_array($data[$field], $allowedTypes)) {
-                    $sanitizedData = self::sanitizeDataForLogging($data);
-                    App::getInstance(true)->getLogger()->error('Invalid database_type: ' . $data[$field] . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+					return false;
+				}
+			} elseif ($field === 'database_type') {
+				$allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis'];
+				if (!in_array($data[$field], $allowedTypes)) {
+					$sanitizedData = self::sanitizeDataForLogging($data);
+					App::getInstance(true)->getLogger()->error('Invalid database_type: ' . $data[$field] . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
 
-                    return false;
-                }
-            } else {
-                // String fields validation
-                if (!is_string($data[$field]) || trim($data[$field]) === '') {
-                    $sanitizedData = self::sanitizeDataForLogging($data);
-                    App::getInstance(true)->getLogger()->error('Missing required field: ' . $field . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+					return false;
+				}
+			} else {
+				// String fields validation
+				if (!is_string($data[$field]) || trim($data[$field]) === '') {
+					$sanitizedData = self::sanitizeDataForLogging($data);
+					App::getInstance(true)->getLogger()->error('Missing required field: ' . $field . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
 
-                    return false;
-                }
-            }
-        }
+					return false;
+				}
+			}
+		}
 
-        // Validate node_id exists
-        if (!Node::getNodeById($data['node_id'])) {
-            $sanitizedData = self::sanitizeDataForLogging($data);
-            App::getInstance(true)->getLogger()->error('Invalid node_id: ' . $data['node_id'] . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+		// Validate node_id exists
+		if (!Node::getNodeById($data['node_id'])) {
+			$sanitizedData = self::sanitizeDataForLogging($data);
+			App::getInstance(true)->getLogger()->error('Invalid node_id: ' . $data['node_id'] . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
 
-            return false;
-        }
+			return false;
+		}
 
-        // Filter data to only include allowed fields
-        $filteredData = array_intersect_key($data, array_flip(self::$allowedFields));
+		// Encrypt sensitive fields before storing
+		if (isset($data['database_password']) && is_string($data['database_password']) && $data['database_password'] !== '') {
+			$data['database_password'] = App::getInstance(true)->encryptValue($data['database_password']);
+		}
 
-        $pdo = Database::getPdoConnection();
-        $fields = array_keys($filteredData);
-        $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`,`', $fields) . '`) VALUES (' . implode(',', $placeholders) . ')';
-        $stmt = $pdo->prepare($sql);
-        if ($stmt->execute($filteredData)) {
-            return (int) $pdo->lastInsertId();
-        }
+		// Filter data to only include allowed fields
+		$filteredData = array_intersect_key($data, array_flip(self::$allowedFields));
 
-        $sanitizedData = self::sanitizeDataForLogging($data);
-        App::getInstance(true)->getLogger()->error('Failed to create database: ' . $sql . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData) . ' and error: ' . json_encode($stmt->errorInfo()));
+		$pdo = Database::getPdoConnection();
+		$fields = array_keys($filteredData);
+		$placeholders = array_map(fn($f) => ':' . $f, $fields);
+		$sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`,`', $fields) . '`) VALUES (' . implode(',', $placeholders) . ')';
+		$stmt = $pdo->prepare($sql);
+		if ($stmt->execute($filteredData)) {
+			return (int) $pdo->lastInsertId();
+		}
 
-        return false;
-    }
+		$sanitizedData = self::sanitizeDataForLogging($data);
+		App::getInstance(true)->getLogger()->error('Failed to create database: ' . $sql . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData) . ' and error: ' . json_encode($stmt->errorInfo()));
 
-    /**
-     * Fetch a database by ID.
-     */
-    public static function getDatabaseById(int $id): ?array
-    {
-        if ($id <= 0) {
-            return null;
-        }
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
-        $stmt->execute(['id' => $id]);
+		return false;
+	}
 
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
-    }
+	/**
+	 * Fetch a database by ID.
+	 */
+	public static function getDatabaseById(int $id): ?array
+	{
+		if ($id <= 0) {
+			return null;
+		}
+		$pdo = Database::getPdoConnection();
+		$stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
+		$stmt->execute(['id' => $id]);
 
-    /**
-     * Fetch databases by node ID.
-     */
-    public static function getDatabasesByNodeId(int $nodeId): array
-    {
-        if ($nodeId <= 0) {
-            return [];
-        }
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE node_id = :node_id ORDER BY name ASC');
-        $stmt->execute(['node_id' => $nodeId]);
+		$row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+		if ($row) {
+			$row = self::decryptSensitiveFields($row);
+		}
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
-    }
+		return $row;
+	}
 
-    /**
-     * Fetch all databases with optional filtering.
-     */
-    public static function getAllDatabases(): array
-    {
-        $pdo = Database::getPdoConnection();
-        $sql = 'SELECT * FROM ' . self::$table;
+	/**
+	 * Fetch databases by node ID.
+	 */
+	public static function getDatabasesByNodeId(int $nodeId): array
+	{
+		if ($nodeId <= 0) {
+			return [];
+		}
+		$pdo = Database::getPdoConnection();
+		$stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE node_id = :node_id ORDER BY name ASC');
+		$stmt->execute(['node_id' => $nodeId]);
 
-        $sql .= ' ORDER BY name ASC';
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute();
+		$rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+		foreach ($rows as &$row) {
+			$row = self::decryptSensitiveFields($row);
+		}
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
-    }
+		return $rows;
+	}
 
-    /**
-     * Search databases with pagination and filtering.
-     */
-    public static function searchDatabases(
-        int $page = 1,
-        int $limit = 10,
-        string $search = '',
-        array $fields = [],
-        string $sortBy = 'name',
-        string $sortOrder = 'ASC',
-        ?int $nodeId = null,
-    ): array {
-        $pdo = Database::getPdoConnection();
-        $offset = ($page - 1) * $limit;
-        $params = [];
+	/**
+	 * Fetch all databases with optional filtering.
+	 */
+	public static function getAllDatabases(): array
+	{
+		$pdo = Database::getPdoConnection();
+		$sql = 'SELECT * FROM ' . self::$table;
 
-        $sql = 'SELECT d.*, n.name as node_name FROM ' . self::$table . ' d';
-        $sql .= ' LEFT JOIN featherpanel_nodes n ON d.node_id = n.id';
-        $sql .= ' WHERE 1=1';
+		$sql .= ' ORDER BY name ASC';
+		$stmt = $pdo->prepare($sql);
+		$stmt->execute();
 
-        if (!empty($search)) {
-            $sql .= ' AND (d.name LIKE :search OR d.database_host LIKE :search)';
-            $params['search'] = '%' . $search . '%';
-        }
+		$rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+		foreach ($rows as &$row) {
+			$row = self::decryptSensitiveFields($row);
+		}
 
-        if ($nodeId !== null) {
-            $sql .= ' AND d.node_id = :node_id';
-            $params['node_id'] = $nodeId;
-        }
+		return $rows;
+	}
 
-        $sql .= ' ORDER BY d.' . $sortBy . ' ' . $sortOrder;
-        $sql .= ' LIMIT :limit OFFSET :offset';
+	/**
+	 * Search databases with pagination and filtering.
+	 */
+	public static function searchDatabases(
+		int $page = 1,
+		int $limit = 10,
+		string $search = '',
+		array $fields = [],
+		string $sortBy = 'name',
+		string $sortOrder = 'ASC',
+		?int $nodeId = null,
+	): array {
+		$pdo = Database::getPdoConnection();
+		$offset = ($page - 1) * $limit;
+		$params = [];
 
-        $stmt = $pdo->prepare($sql);
-        foreach ($params as $key => $value) {
-            $stmt->bindValue($key, $value);
-        }
-        $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
-        $stmt->bindValue('offset', $offset, \PDO::PARAM_INT);
-        $stmt->execute();
+		$sql = 'SELECT d.*, n.name as node_name FROM ' . self::$table . ' d';
+		$sql .= ' LEFT JOIN featherpanel_nodes n ON d.node_id = n.id';
+		$sql .= ' WHERE 1=1';
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
-    }
+		if (!empty($search)) {
+			$sql .= ' AND (d.name LIKE :search OR d.database_host LIKE :search)';
+			$params['search'] = '%' . $search . '%';
+		}
 
-    /**
-     * Get total count of databases with optional filtering.
-     */
-    public static function getDatabasesCount(
-        string $search = '',
-        ?int $nodeId = null,
-    ): int {
-        $pdo = Database::getPdoConnection();
-        $params = [];
+		if ($nodeId !== null) {
+			$sql .= ' AND d.node_id = :node_id';
+			$params['node_id'] = $nodeId;
+		}
 
-        $sql = 'SELECT COUNT(*) FROM ' . self::$table . ' WHERE 1=1';
+		$sql .= ' ORDER BY d.' . $sortBy . ' ' . $sortOrder;
+		$sql .= ' LIMIT :limit OFFSET :offset';
 
-        if (!empty($search)) {
-            $sql .= ' AND (name LIKE :search OR database_host LIKE :search)';
-            $params['search'] = '%' . $search . '%';
-        }
+		$stmt = $pdo->prepare($sql);
+		foreach ($params as $key => $value) {
+			$stmt->bindValue($key, $value);
+		}
+		$stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
+		$stmt->bindValue('offset', $offset, \PDO::PARAM_INT);
+		$stmt->execute();
 
-        if ($nodeId !== null) {
-            $sql .= ' AND node_id = :node_id';
-            $params['node_id'] = $nodeId;
-        }
+		$rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+		foreach ($rows as &$row) {
+			$row = self::decryptSensitiveFields($row);
+		}
 
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
+		return $rows;
+	}
 
-        return (int) $stmt->fetchColumn();
-    }
+	/**
+	 * Get total count of databases with optional filtering.
+	 */
+	public static function getDatabasesCount(
+		string $search = '',
+		?int $nodeId = null,
+	): int {
+		$pdo = Database::getPdoConnection();
+		$params = [];
 
-    /**
-     * Update a database by ID.
-     */
-    public static function updateDatabase(int $id, array $data): bool
-    {
-        if ($id <= 0) {
-            App::getInstance(true)->getLogger()->error('Invalid ID: ' . $id . ' for database update with data: ' . json_encode($data));
+		$sql = 'SELECT COUNT(*) FROM ' . self::$table . ' WHERE 1=1';
 
-            return false;
-        }
+		if (!empty($search)) {
+			$sql .= ' AND (name LIKE :search OR database_host LIKE :search)';
+			$params['search'] = '%' . $search . '%';
+		}
 
-        // Validate node_id if provided
-        if (isset($data['node_id']) && !Node::getNodeById($data['node_id'])) {
-            App::getInstance(true)->getLogger()->error('Invalid node_id: ' . $data['node_id'] . ' for database update with data: ' . json_encode($data));
+		if ($nodeId !== null) {
+			$sql .= ' AND node_id = :node_id';
+			$params['node_id'] = $nodeId;
+		}
 
-            return false;
-        }
+		$stmt = $pdo->prepare($sql);
+		$stmt->execute($params);
 
-        // Validate database_type if provided
-        if (isset($data['database_type'])) {
-            $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis'];
-            if (!in_array($data['database_type'], $allowedTypes)) {
-                App::getInstance(true)->getLogger()->error('Invalid database_type: ' . $data['database_type'] . ' for database update with data: ' . json_encode($data));
+		return (int) $stmt->fetchColumn();
+	}
 
-                return false;
-            }
-        }
+	/**
+	 * Update a database by ID.
+	 */
+	public static function updateDatabase(int $id, array $data): bool
+	{
+		if ($id <= 0) {
+			App::getInstance(true)->getLogger()->error('Invalid ID: ' . $id . ' for database update with data: ' . json_encode($data));
 
-        // Validate database_port if provided
-        if (isset($data['database_port'])) {
-            if (!is_numeric($data['database_port']) || (int) $data['database_port'] < 1 || (int) $data['database_port'] > 65535) {
-                App::getInstance(true)->getLogger()->error('Invalid database_port: ' . $data['database_port'] . ' for database update with data: ' . json_encode($data));
+			return false;
+		}
 
-                return false;
-            }
-        }
+		// Validate node_id if provided
+		if (isset($data['node_id']) && !Node::getNodeById($data['node_id'])) {
+			App::getInstance(true)->getLogger()->error('Invalid node_id: ' . $data['node_id'] . ' for database update with data: ' . json_encode($data));
 
-        // Filter data to only include allowed fields
-        $filteredData = array_intersect_key($data, array_flip(self::$allowedFields));
+			return false;
+		}
 
-        $pdo = Database::getPdoConnection();
-        $fields = array_keys($filteredData);
-        $set = array_map(fn ($f) => "`$f` = :$f", $fields);
-        $sql = 'UPDATE ' . self::$table . ' SET ' . implode(',', $set) . ' WHERE id = :id';
+		// Validate database_type if provided
+		if (isset($data['database_type'])) {
+			$allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis'];
+			if (!in_array($data['database_type'], $allowedTypes)) {
+				App::getInstance(true)->getLogger()->error('Invalid database_type: ' . $data['database_type'] . ' for database update with data: ' . json_encode($data));
 
-        $params = $filteredData;
-        $params['id'] = $id;
+				return false;
+			}
+		}
 
-        $stmt = $pdo->prepare($sql);
+		// Validate database_port if provided
+		if (isset($data['database_port'])) {
+			if (!is_numeric($data['database_port']) || (int) $data['database_port'] < 1 || (int) $data['database_port'] > 65535) {
+				App::getInstance(true)->getLogger()->error('Invalid database_port: ' . $data['database_port'] . ' for database update with data: ' . json_encode($data));
 
-        return $stmt->execute($params);
-    }
+				return false;
+			}
+		}
 
-    /**
-     * Hard delete a database by ID.
-     */
-    public static function hardDeleteDatabase(int $id): bool
-    {
-        if ($id <= 0) {
-            App::getInstance(true)->getLogger()->error('Invalid ID: ' . $id . ' for database deletion');
+		// Encrypt sensitive fields before storing
+		if (isset($data['database_password']) && is_string($data['database_password']) && $data['database_password'] !== '') {
+			$data['database_password'] = App::getInstance(true)->encryptValue($data['database_password']);
+		}
 
-            return false;
-        }
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
+		// Filter data to only include allowed fields
+		$filteredData = array_intersect_key($data, array_flip(self::$allowedFields));
 
-        return $stmt->execute(['id' => $id]);
-    }
+		$pdo = Database::getPdoConnection();
+		$fields = array_keys($filteredData);
+		$set = array_map(fn($f) => "`$f` = :$f", $fields);
+		$sql = 'UPDATE ' . self::$table . ' SET ' . implode(',', $set) . ' WHERE id = :id';
 
-    /**
-     * Get table columns information.
-     */
-    public static function getColumns(): array
-    {
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('DESCRIBE ' . self::$table);
-        $stmt->execute();
+		$params = $filteredData;
+		$params['id'] = $id;
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
-    }
+		$stmt = $pdo->prepare($sql);
 
-    /**
-     * Get database with node information.
-     */
-    public static function getDatabaseWithNode(int $id): ?array
-    {
-        if ($id <= 0) {
-            return null;
-        }
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('
+		return $stmt->execute($params);
+	}
+
+	/**
+	 * Hard delete a database by ID.
+	 */
+	public static function hardDeleteDatabase(int $id): bool
+	{
+		if ($id <= 0) {
+			App::getInstance(true)->getLogger()->error('Invalid ID: ' . $id . ' for database deletion');
+
+			return false;
+		}
+		$pdo = Database::getPdoConnection();
+		$stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
+
+		return $stmt->execute(['id' => $id]);
+	}
+
+	/**
+	 * Get table columns information.
+	 */
+	public static function getColumns(): array
+	{
+		$pdo = Database::getPdoConnection();
+		$stmt = $pdo->prepare('DESCRIBE ' . self::$table);
+		$stmt->execute();
+
+		return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+	}
+
+	/**
+	 * Get database with node information.
+	 */
+	public static function getDatabaseWithNode(int $id): ?array
+	{
+		if ($id <= 0) {
+			return null;
+		}
+		$pdo = Database::getPdoConnection();
+		$stmt = $pdo->prepare('
             SELECT d.*, n.name as node_name, n.description as node_description 
             FROM ' . self::$table . ' d 
             LEFT JOIN featherpanel_nodes n ON d.node_id = n.id 
             WHERE d.id = :id LIMIT 1
         ');
-        $stmt->execute(['id' => $id]);
+		$stmt->execute(['id' => $id]);
 
-        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
-    }
+		$row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+		if ($row) {
+			$row = self::decryptSensitiveFields($row);
+		}
 
-    /**
-     * Get all databases with node information.
-     */
-    public static function getAllDatabasesWithNode(): array
-    {
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('
+		return $row;
+	}
+
+	/**
+	 * Get all databases with node information.
+	 */
+	public static function getAllDatabasesWithNode(): array
+	{
+		$pdo = Database::getPdoConnection();
+		$stmt = $pdo->prepare('
             SELECT d.*, n.name as node_name, n.description as node_description 
             FROM ' . self::$table . ' d 
             LEFT JOIN featherpanel_nodes n ON d.node_id = n.id 
             ORDER BY d.name ASC
         ');
-        $stmt->execute();
+		$stmt->execute();
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
-    }
+		$rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+		foreach ($rows as &$row) {
+			$row = self::decryptSensitiveFields($row);
+		}
 
-    /**
-     * Sanitize data for logging by excluding sensitive fields.
-     */
-    private static function sanitizeDataForLogging(array $data): array
-    {
-        $sensitiveFields = [
-            'database_password',
-        ];
+		return $rows;
+	}
 
-        $sanitized = $data;
-        foreach ($sensitiveFields as $field) {
-            if (isset($sanitized[$field])) {
-                $sanitized[$field] = '[REDACTED]';
-            }
-        }
+	/**
+	 * Sanitize data for logging by excluding sensitive fields.
+	 */
+	private static function sanitizeDataForLogging(array $data): array
+	{
+		$sensitiveFields = [
+			'database_password',
+		];
 
-        return $sanitized;
-    }
+		$sanitized = $data;
+		foreach ($sensitiveFields as $field) {
+			if (isset($sanitized[$field])) {
+				$sanitized[$field] = '[REDACTED]';
+			}
+		}
+
+		return $sanitized;
+	}
+
+	/**
+	 * Decrypt sensitive fields for application usage.
+	 */
+	private static function decryptSensitiveFields(array $row): array
+	{
+		try {
+			if (isset($row['database_password']) && is_string($row['database_password']) && $row['database_password'] !== '') {
+				$row['database_password'] = App::getInstance(true)->decryptValue($row['database_password']);
+			}
+		} catch (\Throwable $e) {
+			App::getInstance(true)->getLogger()->error('Failed to decrypt database sensitive fields: ' . $e->getMessage());
+		}
+
+		return $row;
+	}
 }

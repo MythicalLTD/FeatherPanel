@@ -4,3 +4,4 @@ dockerfiles/mariadb/data
 ./yarn.lock
 ./count-results/
 /frontend/.vite
+*.fpa

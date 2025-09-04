@@ -88,7 +88,7 @@ class Addon extends App implements CommandBuilder
     {
         self::getInstance()->send('&5&lMythical&d&lPanel &7- &d&lAddons &7- &d&lOnline Install');
         self::getInstance()->send('');
-        self::getInstance()->send('&7Please enter the url of the .myd file:');
+        self::getInstance()->send('&7Please enter the url of the .fpa file:');
         $url = trim(fgets(STDIN));
 
         if (!filter_var($url, FILTER_VALIDATE_URL)) {
@@ -104,7 +104,7 @@ class Addon extends App implements CommandBuilder
             return;
         }
 
-        $tempFile = sys_get_temp_dir() . '/' . uniqid('featherpanel_') . '.myd';
+        $tempFile = sys_get_temp_dir() . '/' . uniqid('featherpanel_') . '.fpa';
         file_put_contents($tempFile, $response);
 
         self::installPlugin($tempFile);
@@ -117,11 +117,11 @@ class Addon extends App implements CommandBuilder
         if ($tempFile) {
             $filePath = $tempFile;
         } else {
-            self::getInstance()->send('&7Please enter the path to the .myd file:');
+            self::getInstance()->send('&7Please enter the path to the .fpa file:');
             $workDir = getcwd();
             $filePath = trim(fgets(STDIN));
             $filePath = str_replace($workDir . '/', '', $filePath);
-            $filePath = $filePath . '.myd';
+            $filePath = $filePath . '.fpa';
         }
 
         if (!file_exists($filePath)) {
@@ -130,8 +130,8 @@ class Addon extends App implements CommandBuilder
             return;
         }
 
-        if (!preg_match('/\.myd$/', $filePath)) {
-            self::getInstance()->send('&cInvalid file format! File must end with .myd');
+        if (!preg_match('/\.fpa$/', $filePath)) {
+            self::getInstance()->send('&cInvalid file format! File must end with .fpa');
 
             return;
         }
@@ -230,7 +230,7 @@ class Addon extends App implements CommandBuilder
         }
         $workDir = getcwd();
         $pluginDir = APP_ADDONS_DIR . '/' . $identifier;
-        $exportFile = $workDir . '/' . $identifier . '.myd';
+        $exportFile = $workDir . '/' . $identifier . '.fpa';
         if (file_exists($exportFile)) {
             self::getInstance()->send('&cExport file already exists!');
             self::getInstance()->send('&7Please delete before exporting again.');
