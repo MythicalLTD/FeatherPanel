@@ -13,7 +13,7 @@
                 </Button>
                 <Button variant="outline" size="sm" :disabled="loading" @click="validateAndCleanupServers">
                     <Shield class="h-4 w-4 mr-2" />
-                    Validate Servers
+                    {{ $t('servers.validate') }}
                 </Button>
                 <Button variant="outline" size="sm" :disabled="loading" @click="fetchServers">
                     <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': loading }" />
@@ -35,14 +35,16 @@
             </div>
             <div class="flex items-center gap-2">
                 <Button
-                    variant="outline"
+                    :variant="viewMode === 'folders' ? 'default' : 'outline'"
                     size="sm"
-                    :class="{ 'bg-primary text-primary-foreground': viewMode === 'folders' }"
-                    @click="toggleViewMode"
+                    @click="viewMode = 'folders'"
                 >
-                    <FolderOpen v-if="viewMode === 'folders'" class="h-4 w-4 mr-2" />
-                    <List v-else class="h-4 w-4 mr-2" />
-                    {{ viewMode === 'folders' ? $t('servers.folderView') : $t('servers.listView') }}
+                    <FolderOpen class="h-4 w-4 mr-2" />
+                    {{ $t('servers.folderView') }}
+                </Button>
+                <Button :variant="viewMode === 'list' ? 'default' : 'outline'" size="sm" @click="viewMode = 'list'">
+                    <List class="h-4 w-4 mr-2" />
+                    {{ $t('servers.listView') }}
                 </Button>
             </div>
         </div>
@@ -136,7 +138,7 @@
                                         <div class="text-xs opacity-90 leading-relaxed">
                                             {{
                                                 server.node?.maintenance_mode
-                                                    ? 'Sorry, but the node where your server currently is is under maintenance. Please come back later.'
+                                                    ? $t('servers.nodeMaintenanceLong')
                                                     : $t('servers.accessRestrictedDescription')
                                             }}
                                         </div>
@@ -295,7 +297,7 @@
                                         <div class="text-xs opacity-90 leading-relaxed">
                                             {{
                                                 server.node?.maintenance_mode
-                                                    ? 'Sorry, but the node where your server currently is is under maintenance. Please come back later.'
+                                                    ? $t('servers.nodeMaintenanceLong')
                                                     : $t('servers.accessRestrictedDescription')
                                             }}
                                         </div>
@@ -871,7 +873,7 @@ onMounted(async () => {
     if (serverFolders.value.length === 0) {
         serverFolders.value.push({
             id: Date.now(),
-            name: 'My Servers',
+            name: t('servers.defaultFolderName'),
             servers: [],
         });
         saveFoldersToStorage();
@@ -1050,9 +1052,7 @@ function getAccessRestrictionReason(server: Server): string | null {
 function openServerDetails(server: Server) {
     if (!isServerAccessible(server)) {
         if (server.node?.maintenance_mode) {
-            toast.error(
-                'Sorry, but the node where your server currently is is under maintenance. Please come back later.',
-            );
+            toast.error(t('servers.nodeMaintenanceLong'));
         } else {
             const reason = getAccessRestrictionReason(server);
             if (reason) {
@@ -1139,10 +1139,6 @@ function deleteFolder(folderId: number) {
     showConfirmDialog.value = true;
 }
 
-function toggleViewMode() {
-    viewMode.value = viewMode.value === 'folders' ? 'list' : 'folders';
-}
-
 async function validateAndCleanupServers() {
     try {
         loading.value = true;
@@ -1173,16 +1169,14 @@ async function validateAndCleanupServers() {
                 saveFoldersToStorage();
                 console.log(`Validation complete: Removed ${removedCount} deleted servers from folders`);
                 // Show success message
-                toast.warning(
-                    `Validation complete! Removed ${removedCount} deleted/non-existent servers from your folders.`,
-                );
+                toast.warning(t('servers.validationCompleteRemoved', { count: removedCount }));
             } else {
-                toast.info('Validation complete! All servers in your folders are still valid.');
+                toast.info(t('servers.validationCompleteAllValid'));
             }
         }
     } catch (error) {
         console.error('Server validation failed:', error);
-        toast.error('Server validation failed. Please try again.');
+        toast.error(t('servers.validationFailed'));
     } finally {
         loading.value = false;
     }
@@ -1377,7 +1371,7 @@ function moveServerToFolder(server: Server, targetFolderId: number | null) {
 function createFolderForServer(server: Server) {
     if (!server) return;
 
-    const newFolderName = `Folder for ${server.name}`;
+    const newFolderName = t('servers.folderFor', { serverName: server.name });
     const newFolder: Folder = {
         id: Date.now(),
         name: newFolderName,

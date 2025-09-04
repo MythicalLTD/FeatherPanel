@@ -278,6 +278,13 @@ servers:
     folderDeleted: 'Folder deleted successfully'
     folderDeleteFailed: 'Failed to delete folder'
     current: '(Current)'
+    validate: 'Validate Servers'
+    defaultFolderName: 'My Servers'
+    folderFor: 'Folder for {serverName}'
+    nodeMaintenanceLong: 'Sorry, but the node where your server currently is is under maintenance. Please come back later.'
+    validationCompleteRemoved: 'Validation complete! Removed {count} deleted/non-existent servers from your folders.'
+    validationCompleteAllValid: 'Validation complete! All servers in your folders are still valid.'
+    validationFailed: 'Server validation failed. Please try again.'
 
 # Server Console
 serverConsole:
