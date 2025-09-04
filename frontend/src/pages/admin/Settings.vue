@@ -3,9 +3,12 @@
         <div class="min-h-screen bg-background">
             <!-- Loading State -->
             <div v-if="loading" class="flex items-center justify-center py-12">
-                <div class="flex items-center gap-3">
-                    <div class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
-                    <span class="text-muted-foreground">Loading settings...</span>
+                <div class="text-center">
+                    <div
+                        class="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent mx-auto mb-4"
+                    ></div>
+                    <h3 class="text-lg font-semibold mb-2">Loading Settings</h3>
+                    <p class="text-muted-foreground">Please wait while we fetch your configuration...</p>
                 </div>
             </div>
 
@@ -36,12 +39,12 @@
                             v-for="category in categories"
                             :key="category.id"
                             :class="[
-                                'flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors',
+                                'flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200',
                                 selectedCategory === category.id
                                     ? 'border-primary text-primary'
                                     : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground',
                             ]"
-                            @click="selectedCategory = category.id"
+                            @click="switchCategory(category.id)"
                         >
                             <component :is="getCategoryIcon(category.icon)" class="h-4 w-4" />
                             <span>{{ category.name }}</span>
@@ -52,8 +55,18 @@
                     </nav>
                 </div>
 
+                <!-- Category Loading State -->
+                <div v-if="categoryLoading" class="flex items-center justify-center py-8">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"
+                        ></div>
+                        <span class="text-muted-foreground">Loading category settings...</span>
+                    </div>
+                </div>
+
                 <!-- Category Content -->
-                <div v-if="currentCategorySettings" class="space-y-6">
+                <div v-else-if="currentCategorySettings" class="space-y-6 animate-in fade-in-50 duration-300">
                     <div class="bg-card rounded-lg border shadow-sm">
                         <div class="flex items-center space-x-3 p-6 border-b">
                             <component
@@ -71,7 +84,10 @@
                             <div
                                 v-for="(setting, key) in currentCategorySettings.settings"
                                 :key="String(key)"
-                                class="space-y-3"
+                                class="space-y-3 animate-in slide-in-from-left-2 duration-200"
+                                :style="{
+                                    animationDelay: `${Object.keys(currentCategorySettings.settings).indexOf(String(key)) * 50}ms`,
+                                }"
                             >
                                 <div class="flex items-start justify-between">
                                     <div class="space-y-1 flex-1">
@@ -166,7 +182,10 @@
                 </div>
 
                 <!-- Empty Category -->
-                <div v-else class="bg-card rounded-lg border p-12 text-center shadow-sm">
+                <div
+                    v-else
+                    class="bg-card rounded-lg border p-12 text-center shadow-sm animate-in fade-in-50 duration-300"
+                >
                     <Settings class="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 class="text-lg font-semibold mb-2">No Settings Available</h3>
                     <p class="text-muted-foreground">This category doesn't have any configurable settings yet.</p>
@@ -198,6 +217,7 @@ const adminSettingsStore = useAdminSettingsStore();
 // State
 const selectedCategory = ref('app');
 const originalSettings = ref<Record<string, Setting> | null>(null);
+const categoryLoading = ref(false);
 
 // Computed
 const loading = computed(() => adminSettingsStore.loading);
@@ -224,6 +244,18 @@ const getCategoryIcon = (iconName: string) => {
         palette: Palette,
     };
     return icons[iconName] || Settings;
+};
+
+const switchCategory = async (categoryId: string) => {
+    if (selectedCategory.value === categoryId) return;
+
+    categoryLoading.value = true;
+
+    // Small delay to show loading state and make transition feel smoother
+    await new Promise((resolve) => setTimeout(resolve, 150));
+
+    selectedCategory.value = categoryId;
+    categoryLoading.value = false;
 };
 
 const fetchSettings = async () => {
