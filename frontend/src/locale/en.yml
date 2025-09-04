@@ -82,6 +82,8 @@ account:
     settings: 'Settings'
     editProfile: 'Edit Profile'
     editProfileDescription: 'Update your personal information and profile details'
+    loadingProfile: 'Loading profile...'
+    loadingSettings: 'Loading settings...'
     profileInformation: 'Profile Information'
     memberSince: 'Member since'
     username: 'Username'
@@ -116,6 +118,7 @@ account:
     sessionManagement: 'Session Management'
     sessionManagementDescription: 'Manage your active sessions and devices'
     logout: 'Logout'
+    logoutError: 'Failed to logout'
     loggedOut: 'Successfully logged out'
     logoutFailed: 'Failed to logout'
     activity:

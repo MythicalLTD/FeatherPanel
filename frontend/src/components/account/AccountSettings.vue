@@ -5,7 +5,15 @@
             <p class="text-sm text-muted-foreground">{{ $t('account.securitySettingsDescription') }}</p>
         </div>
 
-        <div class="space-y-6">
+        <!-- Loading State -->
+        <div v-if="loading" class="flex items-center justify-center py-12">
+            <div class="flex items-center gap-3">
+                <div class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+                <span class="text-muted-foreground">{{ $t('account.loadingSettings') }}</span>
+            </div>
+        </div>
+
+        <div v-else class="space-y-6">
             <!-- Two-Factor Authentication -->
             <div class="space-y-4">
                 <div class="flex items-center justify-between">
@@ -67,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSessionStore } from '@/stores/session';
 import { useRouter } from 'vue-router';
@@ -85,6 +93,7 @@ const toast = useToast();
 
 // Form state
 const isSubmitting = ref(false);
+const loading = ref(true);
 
 // Computed user data with proper typing
 const user = computed<UserInfo | null>(() => sessionStore.user);
@@ -98,25 +107,30 @@ const handle2FAChange = (checked: boolean) => {
 
 // Show delete account confirmation
 const showDeleteConfirmation = async () => {
-    await sessionStore.checkSessionOrRedirect();
-    // You can implement a confirmation dialog here
-    toast.error($t('account.deleteAccountNotImplemented'));
+    // Implementation here
 };
 
 // Handle logout
 const handleLogout = async () => {
     try {
         isSubmitting.value = true;
-
-        // Logout and redirect to login page
         await sessionStore.logout();
-        toast.success($t('account.loggedOut'));
         router.push('/auth/login');
-    } catch (error: unknown) {
+    } catch (error) {
         console.error('Error during logout:', error);
-        toast.error($t('account.logoutFailed'));
+        toast.error($t('account.logoutError'));
     } finally {
         isSubmitting.value = false;
     }
 };
+
+// Initialize on mount
+onMounted(async () => {
+    try {
+        loading.value = true;
+        await sessionStore.checkSessionOrRedirect();
+    } finally {
+        loading.value = false;
+    }
+});
 </script>

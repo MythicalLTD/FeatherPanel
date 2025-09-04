@@ -5,7 +5,15 @@
             <p class="text-sm text-muted-foreground">{{ $t('account.editProfileDescription') }}</p>
         </div>
 
-        <form class="space-y-4" @submit.prevent="handleSubmit">
+        <!-- Loading State -->
+        <div v-if="loading" class="flex items-center justify-center py-12">
+            <div class="flex items-center gap-3">
+                <div class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+                <span class="text-muted-foreground">{{ $t('account.loadingProfile') }}</span>
+            </div>
+        </div>
+
+        <form v-else class="space-y-4" @submit.prevent="handleSubmit">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormItem>
                     <Label for="username">{{ $t('account.username') }}</Label>
@@ -116,6 +124,7 @@ const formData = ref({
 
 // Form state
 const isSubmitting = ref(false);
+const loading = ref(true);
 
 // Initialize form with current user data
 const initializeForm = () => {
@@ -186,7 +195,12 @@ const handleSubmit = async () => {
 
 // Initialize form on mount
 onMounted(async () => {
-    await sessionStore.checkSessionOrRedirect();
-    await initializeForm();
+    try {
+        loading.value = true;
+        await sessionStore.checkSessionOrRedirect();
+        await initializeForm();
+    } finally {
+        loading.value = false;
+    }
 });
 </script>
