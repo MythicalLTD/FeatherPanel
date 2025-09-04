@@ -156,16 +156,24 @@
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    <TableRow v-for="server in dummyServers" :key="server.id">
+                                    <TableRow v-for="server in ownedServers" :key="server.id">
                                         <TableCell>{{ server.name }}</TableCell>
                                         <TableCell>
                                             <Badge :variant="server.status === 'Online' ? 'secondary' : 'destructive'">
-                                                {{ server.status }}
+                                                {{ server.status || 'Offline' }}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell>{{ server.created }}</TableCell>
+                                        <TableCell>{{ server.created_at }}</TableCell>
                                         <TableCell class="text-right">
-                                            <Button size="sm" variant="outline">View</Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                @click="goToServerManage(server.uuidShort)"
+                                                >View Server (Client)</Button
+                                            >
+                                            <Button size="sm" variant="outline" @click="goToServerEdit(server.id)"
+                                                >Edit Server (Admin)</Button
+                                            >
                                         </TableCell>
                                     </TableRow>
                                 </TableBody>
@@ -540,11 +548,10 @@ const editForm = ref<EditForm>({
 // Store roles for dropdown
 const availableRoles = ref<{ id: string; name: string; display_name: string; color: string }[]>([]);
 
-const dummyServers = [
-    { id: 1, name: 'Survival SMP', status: 'Online', created: '2024-01-10' },
-    { id: 2, name: 'Creative World', status: 'Offline', created: '2024-02-15' },
-    { id: 3, name: 'Skyblock', status: 'Online', created: '2024-03-01' },
-];
+// Owned servers list
+const ownedServers = ref<
+    { id: number; name: string; description?: string; status?: string; uuidShort: string; created_at: string }[]
+>([]);
 
 // Table columns configuration
 const tableColumns: TableColumn[] = [
@@ -609,6 +616,9 @@ async function onView(user: ApiUser) {
     try {
         const { data } = await axios.get(`/api/admin/users/${user.uuid}`);
         selectedUser.value = data.data.user;
+        // Load owned servers for this user
+        const serversRes = await axios.get(`/api/admin/users/${user.uuid}/servers`);
+        ownedServers.value = serversRes.data?.data?.servers || [];
     } catch {
         selectedUser.value = null;
         message.value = { type: 'error', text: 'Failed to fetch user details' };
@@ -658,6 +668,7 @@ function onCancelDelete() {
 function closeView() {
     viewing.value = false;
     selectedUser.value = null;
+    ownedServers.value = [];
 }
 
 async function openEditDrawer(user: ApiUser) {
@@ -794,6 +805,14 @@ function openCreateDrawer() {
 function closeCreateDrawer() {
     createDrawerOpen.value = false;
     drawerMessage.value = null;
+}
+
+function goToServerEdit(id: number) {
+    window.location.assign(`/admin/servers/${id}/edit`);
+}
+
+function goToServerManage(uuidShort: string) {
+    window.location.assign(`/server/${uuidShort}`);
 }
 
 async function submitCreate() {

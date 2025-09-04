@@ -344,4 +344,24 @@ class UsersController
 
         return ApiResponse::success([], 'User deleted successfully', 200);
     }
+
+    public function ownedServers(Request $request, string $uuid): Response
+    {
+        $user = \App\Chat\User::getUserByUuid($uuid);
+        if (!$user) {
+            return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
+        }
+
+        $servers = \App\Chat\Server::searchServers(
+            page: 1,
+            limit: 1000,
+            search: '',
+            fields: ['id', 'name', 'description', 'status', 'uuidShort', 'uuid', 'created_at'],
+            sortBy: 'id',
+            sortOrder: 'ASC',
+            ownerId: (int) $user['id']
+        );
+
+        return ApiResponse::success(['servers' => $servers], 'Owned servers fetched', 200);
+    }
 }

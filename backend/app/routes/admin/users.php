@@ -82,4 +82,19 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_USERS_CREATE,
         ['PUT']
     );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-users-owned-servers',
+        '/api/admin/users/{uuid}/servers',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid || !is_string($uuid)) {
+                return ApiResponse::error('Missing or invalid UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new UsersController())->ownedServers($request, $uuid);
+        },
+        Permissions::ADMIN_USERS_VIEW,
+        ['GET']
+    );
 };
