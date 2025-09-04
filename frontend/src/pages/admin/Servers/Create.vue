@@ -679,7 +679,6 @@
                                         v-model.number="form.cpu"
                                         type="number"
                                         placeholder="100"
-                                        min="10"
                                         :class="{ 'border-red-500': validationErrors.cpu }"
                                         required
                                     />
@@ -1274,8 +1273,8 @@ function validateForm(): boolean {
     }
 
     // Resource validation
-    if (form.value.memory < 128) {
-        validationErrors.value.memory = 'Memory must be at least 128 MB';
+    if (form.value.memory !== 0 && form.value.memory < 256) {
+        validationErrors.value.memory = 'Memory must be 0 (unlimited) or at least 256 MB';
     } else if (form.value.memory > 1048576) {
         // 1TB in MB
         validationErrors.value.memory = 'Memory cannot exceed 1TB (1048576 MB)';
@@ -1287,20 +1286,19 @@ function validateForm(): boolean {
         // 1TB in MB
         validationErrors.value.swap = 'Swap cannot exceed 1TB (1048576 MB)';
     }
-
-    if (form.value.disk < 1024) {
-        validationErrors.value.disk = 'Disk must be at least 1024 MB';
-    } else if (form.value.disk > 1048576) {
-        // 1TB in MB
-        validationErrors.value.disk = 'Disk cannot exceed 1TB (1048576 MB)';
+    if (form.value.disk !== 0 && form.value.disk < 1024) {
+        validationErrors.value.disk = 'Disk must be 0 (unlimited) or at least 1024 MB';
+    } else if (form.value.disk > 10485760) {
+        // 10TB in MB
+        validationErrors.value.disk = 'Disk cannot exceed 10TB (10485760 MB)';
     }
 
     if (form.value.io < 10 || form.value.io > 1000) {
         validationErrors.value.io = 'IO must be between 10 and 1000';
     }
 
-    if (form.value.cpu < 10 || form.value.cpu > 100) {
-        validationErrors.value.cpu = 'CPU must be between 10% and 100%';
+    if (form.value.cpu < 0 || form.value.cpu > 1000000) {
+        validationErrors.value.cpu = 'CPU must be between 0 and 1,000,000';
     }
 
     // Feature limits validation
