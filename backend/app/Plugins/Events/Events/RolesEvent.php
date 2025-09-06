@@ -17,18 +17,61 @@ use App\Plugins\Events\PluginEvent;
 
 class RolesEvent implements PluginEvent
 {
+    // Roles Management Events
+    /**
+     * Callback: array roles list.
+     */
+    public static function onRolesRetrieved(): string
+    {
+        return 'featherpanel:admin:roles:retrieved';
+    }
+
+    /**
+     * Callback: int role id, array role data.
+     */
+    public static function onRoleRetrieved(): string
+    {
+        return 'featherpanel:admin:roles:role:retrieved';
+    }
+
+    /**
+     * Callback: array role data.
+     */
     public static function onRoleCreated(): string
     {
-        return 'roles::onRoleCreated';
+        return 'featherpanel:admin:roles:role:created';
     }
 
+    /**
+     * Callback: int role id, array old data, array new data.
+     */
     public static function onRoleUpdated(): string
     {
-        return 'roles::onRoleUpdated';
+        return 'featherpanel:admin:roles:role:updated';
     }
 
+    /**
+     * Callback: int role id, array role data.
+     */
     public static function onRoleDeleted(): string
     {
-        return 'roles::onRoleDeleted';
+        return 'featherpanel:admin:roles:role:deleted';
+    }
+
+    // Roles Error Events
+    /**
+     * Callback: string error message, array context.
+     */
+    public static function onRolesError(): string
+    {
+        return 'featherpanel:admin:roles:error';
+    }
+
+    /**
+     * Callback: int role id, string error message.
+     */
+    public static function onRoleNotFound(): string
+    {
+        return 'featherpanel:admin:roles:role:not:found';
     }
 }

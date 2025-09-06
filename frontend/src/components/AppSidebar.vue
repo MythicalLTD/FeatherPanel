@@ -18,7 +18,7 @@ import {
     FileText,
     Clock,
     Network,
-	Key,
+    Key,
 } from 'lucide-vue-next';
 import NavMain from '@/components/nav/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -106,7 +106,7 @@ const data = computed(() => {
                       },
                   ]
                 : []),
-			...(sessionStore.hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)
+            ...(sessionStore.hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)
                 ? [
                       {
                           name: 'API Keys',

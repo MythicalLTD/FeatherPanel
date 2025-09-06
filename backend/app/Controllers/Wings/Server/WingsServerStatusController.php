@@ -16,6 +16,7 @@ namespace App\Controllers\Wings\Server;
 use App\Chat\Node;
 use App\Chat\Server;
 use App\Helpers\ApiResponse;
+use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -103,6 +104,20 @@ class WingsServerStatusController
             return ApiResponse::error('Failed to update server status', 'UPDATE_FAILED', 500);
         }
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            WingsEvent::onWingsServerStatusUpdated(),
+            [
+                'server_uuid' => $uuid,
+                'server' => $server,
+                'node' => $node,
+                'old_state' => $server['status'],
+                'new_state' => $state,
+                'update_data' => $updateData,
+            ]
+        );
+
         return ApiResponse::success([
             'message' => 'Server status updated successfully',
             'state' => $state,
@@ -135,6 +150,18 @@ class WingsServerStatusController
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            WingsEvent::onWingsServerStatusRetrieved(),
+            [
+                'server_uuid' => $uuid,
+                'server' => $server,
+                'node' => $node,
+                'state' => $server['status'] ?? 'offline',
+            ]
+        );
 
         return ApiResponse::success([
             'state' => $server['status'] ?? 'offline',

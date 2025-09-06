@@ -18,6 +18,7 @@ use App\Chat\Activity;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\SettingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -289,6 +290,17 @@ class SettingsController
 
         $organizedSettings = $this->organizeSettingsByCategory();
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            SettingsEvent::onSettingsRetrieved(),
+            [
+                'settings' => $this->settings,
+                'categories' => $this->settingsCategories,
+                'organized_settings' => $organizedSettings,
+            ]
+        );
+
         return ApiResponse::success([
             'settings' => $this->settings,
             'categories' => $this->settingsCategories,
@@ -310,6 +322,15 @@ class SettingsController
             ];
         }
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            SettingsEvent::onSettingsByCategoryRetrieved(),
+            [
+                'categories' => $categories,
+            ]
+        );
+
         return ApiResponse::success(['categories' => $categories], 'Categories fetched successfully', 200);
     }
 
@@ -328,6 +349,17 @@ class SettingsController
             }
         }
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            SettingsEvent::onSettingsByCategoryRetrieved(),
+            [
+                'category' => $category,
+                'category_config' => $categoryConfig,
+                'settings' => $categorySettings,
+            ]
+        );
+
         return ApiResponse::success([
             'category' => $categoryConfig,
             'settings' => $categorySettings,
@@ -339,6 +371,16 @@ class SettingsController
         if (!isset($this->settings[$setting])) {
             return ApiResponse::error('Setting not found', 404);
         }
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            SettingsEvent::onSettingRetrieved(),
+            [
+                'setting_name' => $setting,
+                'setting_data' => $this->settings[$setting],
+            ]
+        );
 
         return ApiResponse::success(['setting' => $this->settings[$setting]], 'Setting fetched successfully', 200);
     }
@@ -383,6 +425,17 @@ class SettingsController
                 'context' => 'Updated settings: ' . implode(', ', $updatedSettings),
                 'ip_address' => CloudFlareRealIP::getRealIP(),
             ]);
+
+            // Emit event
+            global $eventManager;
+            $eventManager->emit(
+                SettingsEvent::onSettingsUpdated(),
+                [
+                    'updated_settings' => $updatedSettings,
+                    'settings_data' => $data,
+                    'user' => $request->get('user'),
+                ]
+            );
         }
 
         return ApiResponse::success([

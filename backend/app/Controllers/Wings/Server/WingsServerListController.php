@@ -20,6 +20,7 @@ use App\Chat\Server;
 use App\Chat\Allocation;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
+use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -338,6 +339,18 @@ class WingsServerListController
             'to' => max(0, min($page * $perPage, $total)),
             'total' => $total,
         ];
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            WingsEvent::onWingsRemoteServersRetrieved(),
+            [
+                'node' => $node,
+                'servers' => $data,
+                'pagination' => $meta,
+                'total' => $total,
+            ]
+        );
 
         return ApiResponse::sendManualResponse([
             'data' => $data,

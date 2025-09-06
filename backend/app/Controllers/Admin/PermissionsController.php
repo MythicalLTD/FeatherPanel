@@ -19,6 +19,7 @@ use App\Helpers\ApiResponse;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\PermissionsEvent;
 
 class PermissionsController
 {
@@ -121,6 +122,16 @@ class PermissionsController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            PermissionsEvent::onPermissionCreated(),
+            [
+                'permission' => $permission,
+                'created_by' => $admin,
+            ]
+        );
+
         return ApiResponse::success(['permission' => $permission], 'Permission created successfully', 201);
     }
 
@@ -165,6 +176,17 @@ class PermissionsController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            PermissionsEvent::onPermissionUpdated(),
+            [
+                'permission' => $permission,
+                'updated_data' => $data,
+                'updated_by' => $admin,
+            ]
+        );
+
         return ApiResponse::success(['permission' => $permission], 'Permission updated successfully', 200);
     }
 
@@ -186,6 +208,16 @@ class PermissionsController
             'context' => 'Deleted permission: ' . $permission['permission'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            PermissionsEvent::onPermissionDeleted(),
+            [
+                'permission' => $permission,
+                'deleted_by' => $admin,
+            ]
+        );
 
         return ApiResponse::success([], 'Permission deleted successfully', 200);
     }

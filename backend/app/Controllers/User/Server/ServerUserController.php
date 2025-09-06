@@ -23,6 +23,7 @@ use App\Helpers\ApiResponse;
 use App\Helpers\ServerGateway;
 use App\Config\ConfigInterface;
 use App\Services\Wings\Services\Wings;
+use App\Plugins\Events\Events\ServerEvent;
 use App\Services\Wings\Services\JwtService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -547,6 +548,13 @@ class ServerUserController
             return ApiResponse::error('Failed to send power action to Wings: ' . $e->getMessage(), 'FAILED_TO_SEND_POWER_ACTION_TO_WINGS', 500);
         }
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerUpdated(),
+            ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid']]
+        );
+
         return ApiResponse::success([
             'server' => [
                 'id' => $updatedServer['id'],
@@ -624,6 +632,13 @@ class ServerUserController
             return ApiResponse::error('Failed to send power action to Wings: ' . $e->getMessage(), 'FAILED_TO_SEND_POWER_ACTION_TO_WINGS', 500);
         }
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerReinstalled(),
+            ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid']]
+        );
+
         return ApiResponse::success([
             'server' => [
                 'id' => $updatedServer['id'],
@@ -684,6 +699,13 @@ class ServerUserController
 
                 return ApiResponse::error('Failed to delete server: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
             }
+
+            // Emit event
+            global $eventManager;
+            $eventManager->emit(
+                ServerEvent::onServerDeleted(),
+                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid']]
+            );
 
             return ApiResponse::success([], 'Server deleted successfully', 200);
         } catch (\Exception $e) {

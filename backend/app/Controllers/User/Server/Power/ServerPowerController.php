@@ -18,6 +18,7 @@ use App\Chat\Server;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -97,6 +98,13 @@ class ServerPowerController
 
             return ApiResponse::error('Failed to send power action to Wings: ' . $e->getMessage(), 'FAILED_TO_SEND_POWER_ACTION_TO_WINGS', 500);
         }
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerPowerAction(),
+            ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'action' => $action]
+        );
 
         return ApiResponse::success(['response' => $response->getData()], 'Response from Wings', 200);
     }

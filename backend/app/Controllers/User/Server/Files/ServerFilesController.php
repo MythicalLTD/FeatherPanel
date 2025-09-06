@@ -19,6 +19,7 @@ use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -139,6 +140,13 @@ class ServerFilesController
                 'file_exists' => file_exists($path),
             ]);
 
+            // Emit event
+            global $eventManager;
+            $eventManager->emit(
+                ServerEvent::onServerFileWritten(),
+                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'file_path' => $path]
+            );
+
             return ApiResponse::success($response->getData(), 'File written successfully');
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'write file');
@@ -172,6 +180,13 @@ class ServerFilesController
                 'files' => $data['files'],
                 'user_id' => $user['id'] ?? null,
             ]);
+
+            // Emit event
+            global $eventManager;
+            $eventManager->emit(
+                ServerEvent::onServerFileRenamed(),
+                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'old_path' => $data['path'], 'new_path' => $data['new_name']]
+            );
 
             return ApiResponse::success($response->getData(), 'File renamed successfully');
         } catch (\Exception $e) {
@@ -208,6 +223,13 @@ class ServerFilesController
                 'file_count' => count($data['files']),
             ]);
 
+            // Emit event
+            global $eventManager;
+            $eventManager->emit(
+                ServerEvent::onServerFilesDeleted(),
+                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid']]
+            );
+
             return ApiResponse::success($response->getData(), 'Files deleted successfully');
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'delete files');
@@ -242,6 +264,13 @@ class ServerFilesController
                 'user_id' => $user['id'] ?? null,
                 'file_count' => count($data['files']),
             ]);
+
+            // Emit event
+            global $eventManager;
+            $eventManager->emit(
+                ServerEvent::onServerFilesCopied(),
+                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'file_paths' => $data['files']]
+            );
 
             return ApiResponse::success($response->getData(), 'Files copied successfully');
         } catch (\Exception $e) {
@@ -278,6 +307,13 @@ class ServerFilesController
                 'full_path' => rtrim($data['path'], '/') . '/' . $data['name'],
             ]);
 
+            // Emit event
+            global $eventManager;
+            $eventManager->emit(
+                ServerEvent::onServerDirectoryCreated(),
+                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'directory_path' => rtrim($data['path'], '/') . '/' . $data['name']]
+            );
+
             return ApiResponse::success($response->getData(), 'Directory created successfully');
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'create directory');
@@ -313,6 +349,13 @@ class ServerFilesController
                 'file_count' => count($data['files']),
             ]);
 
+            // Emit event
+            global $eventManager;
+            $eventManager->emit(
+                ServerEvent::onServerFileCompressed(),
+                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'file_path' => $data['root']]
+            );
+
             return ApiResponse::success($response->getData(), 'Files compressed successfully');
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'compress files');
@@ -347,6 +390,13 @@ class ServerFilesController
                 'user_id' => $user['id'] ?? null,
             ]);
 
+            // Emit event
+            global $eventManager;
+            $eventManager->emit(
+                ServerEvent::onServerFileDecompressed(),
+                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'file_path' => $data['root']]
+            );
+
             return ApiResponse::success($response->getData(), 'Archive decompressed successfully');
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'decompress archive');
@@ -378,6 +428,13 @@ class ServerFilesController
                 'user_id' => $user['id'] ?? null,
                 'file_count' => count($data['files']),
             ]);
+
+            // Emit event
+            global $eventManager;
+            $eventManager->emit(
+                ServerEvent::onServerFilePermissionsChanged(),
+                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'file_path' => $data['root'], 'permissions' => $data['mode']]
+            );
 
             return ApiResponse::success($response->getData(), 'File permissions changed successfully');
         } catch (\Exception $e) {
@@ -479,6 +536,13 @@ class ServerFilesController
                 'user_id' => $user['id'] ?? null,
             ]);
 
+            // Emit event
+            global $eventManager;
+            $eventManager->emit(
+                ServerEvent::onServerPullProcessDeleted(),
+                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'pull_id' => $pullId]
+            );
+
             return ApiResponse::success($response->getData(), 'Pull process deleted successfully');
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'delete pull process');
@@ -524,6 +588,13 @@ class ServerFilesController
                 'user_id' => $user['id'] ?? null,
                 'file_size' => strlen($fileContent),
             ]);
+
+            // Emit event
+            global $eventManager;
+            $eventManager->emit(
+                ServerEvent::onServerFileUploaded(),
+                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'file_path' => $path]
+            );
 
             return ApiResponse::success($response->getData(), 'File uploaded successfully');
         } catch (\Exception $e) {

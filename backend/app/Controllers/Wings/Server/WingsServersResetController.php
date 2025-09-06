@@ -16,6 +16,7 @@ namespace App\Controllers\Wings\Server;
 use App\Chat\Node;
 use App\Chat\Server;
 use App\Helpers\ApiResponse;
+use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -39,7 +40,17 @@ class WingsServersResetController
         }
 
         // Reset each server's status
-        Server::resetAllServerStatuses($node['id']);
+        $resetResult = Server::resetAllServerStatuses($node['id']);
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            WingsEvent::onWingsServersResetCompleted(),
+            [
+                'node' => $node,
+                'reset_result' => $resetResult,
+            ]
+        );
 
         return ApiResponse::sendManualResponse([
             'success' => true,

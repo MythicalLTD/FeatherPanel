@@ -20,6 +20,7 @@ use App\Chat\ServerDatabase;
 use App\Helpers\ApiResponse;
 use App\Chat\DatabaseInstance;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -211,6 +212,13 @@ class ServerDatabaseController
                 'user_id' => $request->get('user')['id'] ?? null,
             ]);
 
+            // Emit event
+            global $eventManager;
+            $eventManager->emit(
+                ServerEvent::onServerDatabaseCreated(),
+                ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'database_id' => $databaseId]
+            );
+
             return ApiResponse::success([
                 'id' => $databaseId,
                 'database_name' => $databaseName,
@@ -295,6 +303,13 @@ class ServerDatabaseController
             'user_id' => $request->get('user')['id'] ?? null,
         ]);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerDatabaseUpdated(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'database_id' => $databaseId]
+        );
+
         return ApiResponse::success([
             'message' => 'Database updated successfully',
         ]);
@@ -360,6 +375,13 @@ class ServerDatabaseController
                 ]),
                 'user_id' => $request->get('user')['id'] ?? null,
             ]);
+
+            // Emit event
+            global $eventManager;
+            $eventManager->emit(
+                ServerEvent::onServerDatabaseDeleted(),
+                ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'database_id' => $databaseId]
+            );
 
             return ApiResponse::success([
                 'message' => 'Database deleted successfully',

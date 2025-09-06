@@ -16,6 +16,7 @@ namespace App\Controllers\Wings;
 use App\Chat\Node;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
+use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -63,6 +64,17 @@ class WingsAdminController
 
         $utilization = $wings->getSystem()->getSystemUtilization();
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            WingsEvent::onWingsNodeUtilizationRetrieved(),
+            [
+                'node_id' => $id,
+                'node' => $node,
+                'utilization' => $utilization,
+            ]
+        );
+
         return ApiResponse::success(['node' => $node, 'utilization' => $utilization], 'Node utilization', 200);
     }
 
@@ -91,6 +103,17 @@ class WingsAdminController
 
         $dockerDiskUsage = $wings->getDocker()->getDockerDiskUsage();
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            WingsEvent::onWingsDockerDiskUsageRetrieved(),
+            [
+                'node_id' => $id,
+                'node' => $node,
+                'docker_disk_usage' => $dockerDiskUsage,
+            ]
+        );
+
         return ApiResponse::success(['node' => $node, 'dockerDiskUsage' => $dockerDiskUsage], 'Node docker disk usage', 200);
     }
 
@@ -118,6 +141,17 @@ class WingsAdminController
         );
 
         $dockerPrune = $wings->getDocker()->pruneDockerImages();
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            WingsEvent::onWingsDockerPruneCompleted(),
+            [
+                'node_id' => $id,
+                'node' => $node,
+                'docker_prune' => $dockerPrune,
+            ]
+        );
 
         return ApiResponse::success(['node' => $node, 'dockerPrune' => $dockerPrune], 'Node docker prune', 200);
     }
@@ -159,6 +193,17 @@ class WingsAdminController
 
         $ips = $wings->getSystem()->getSystemIPs();
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            WingsEvent::onWingsNodeIpsRetrieved(),
+            [
+                'node_id' => $id,
+                'node' => $node,
+                'ips' => $ips,
+            ]
+        );
+
         return ApiResponse::success(['node' => $node, 'ips' => $ips], 'Node IPs', 200);
     }
 
@@ -198,6 +243,17 @@ class WingsAdminController
         }
 
         $system = $wings->getSystem()->getDetailedSystemInfo();
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            WingsEvent::onWingsNodeSystemInfoRetrieved(),
+            [
+                'node_id' => $id,
+                'node' => $node,
+                'system_info' => $system,
+            ]
+        );
 
         return ApiResponse::success(['node' => $node, 'wings' => $system], 'Node system information', 200);
     }

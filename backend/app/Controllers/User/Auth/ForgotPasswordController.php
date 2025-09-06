@@ -92,6 +92,17 @@ class ForgotPasswordController
         // Login user
         $userInfo = User::getUserByEmail($data['email']);
         if ($userInfo == null) {
+            // Emit forgot password failed event
+            global $eventManager;
+            $eventManager->emit(
+                AuthEvent::onAuthForgotPasswordFailed(),
+                [
+                    'email' => $data['email'],
+                    'reason' => 'EMAIL_DOES_NOT_EXIST',
+                    'ip_address' => CloudFlareRealIP::getRealIP(),
+                ]
+            );
+
             return ApiResponse::error('Email does not exist', 'EMAIL_DOES_NOT_EXIST');
         }
         $resetToken = bin2hex(random_bytes(32));

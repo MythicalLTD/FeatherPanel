@@ -17,6 +17,7 @@ use App\Chat\Node;
 use App\Chat\Spell;
 use App\Chat\Server;
 use App\Helpers\ApiResponse;
+use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -98,6 +99,19 @@ class WingsServerInstallController
             'script' => $script,
         ];
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            WingsEvent::onWingsServerInstallRetrieved(),
+            [
+                'server_uuid' => $uuid,
+                'server' => $server,
+                'node' => $node,
+                'spell' => $spell,
+                'install_config' => $installConfig,
+            ]
+        );
+
         return ApiResponse::sendManualResponse($installConfig, 200);
     }
 
@@ -167,7 +181,20 @@ class WingsServerInstallController
             // Update server status and installed_at timestamp
             Server::updateServerInstallationStatus($server['id'], $status, $installedAt);
 
-            // TODO: Implement event system for installation notifications
+            // Emit event
+            global $eventManager;
+            $eventManager->emit(
+                WingsEvent::onWingsServerInstallCompleted(),
+                [
+                    'server_uuid' => $uuid,
+                    'server' => $server,
+                    'node' => $node,
+                    'successful' => $successful,
+                    'reinstall' => $reinstall,
+                    'status' => $status,
+                    'installed_at' => $installedAt->format('Y-m-d H:i:s'),
+                ]
+            );
 
             return ApiResponse::sendManualResponse([], 204);
 

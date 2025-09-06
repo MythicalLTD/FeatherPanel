@@ -19,6 +19,7 @@ use App\Chat\UserSshKey;
 use App\Helpers\ApiResponse;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\UserEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -166,6 +167,12 @@ class UserSshKeyController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        global $eventManager;
+        $eventManager->emit(
+            UserEvent::onUserSshKeyCreated(),
+            ['user_uuid' => $user['uuid'], 'ssh_key_id' => $sshKeyId]
+        );
+
         return ApiResponse::success($sshKey, 'SSH key created successfully', 201);
     }
 
@@ -236,6 +243,12 @@ class UserSshKeyController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        global $eventManager;
+        $eventManager->emit(
+            UserEvent::onUserSshKeyUpdated(),
+            ['user_uuid' => $user['uuid'], 'ssh_key_id' => $id]
+        );
+
         return ApiResponse::success($updatedSshKey, 'SSH key updated successfully', 200);
     }
 
@@ -276,6 +289,12 @@ class UserSshKeyController
             'context' => 'Deleted SSH key: ' . $existingSshKey['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        global $eventManager;
+        $eventManager->emit(
+            UserEvent::onUserSshKeyDeleted(),
+            ['user_uuid' => $user['uuid'], 'ssh_key_id' => $id]
+        );
 
         return ApiResponse::success(null, 'SSH key deleted successfully', 200);
     }
@@ -338,6 +357,12 @@ class UserSshKeyController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        global $eventManager;
+        $eventManager->emit(
+            UserEvent::onUserSshKeyUpdated(),
+            ['user_uuid' => $user['uuid'], 'ssh_key_id' => $id]
+        );
+
         return ApiResponse::success($restoredSshKey, 'SSH key restored successfully', 200);
     }
 
@@ -386,6 +411,12 @@ class UserSshKeyController
             'context' => 'Permanently deleted SSH key: ' . $sshKey['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        global $eventManager;
+        $eventManager->emit(
+            UserEvent::onUserSshKeyDeleted(),
+            ['user_uuid' => $user['uuid'], 'ssh_key_id' => $id]
+        );
 
         return ApiResponse::success(null, 'SSH key permanently deleted successfully', 200);
     }

@@ -21,6 +21,7 @@ use App\Permissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use App\Helpers\PermissionHelper;
+use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -163,6 +164,19 @@ class WingsActivityController
                 $errors[] = "Activity at index {$index}: " . $e->getMessage();
             }
         }
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            WingsEvent::onWingsActivityLogged(),
+            [
+                'node' => $node,
+                'activities' => $activities,
+                'processed_count' => $processedCount,
+                'error_count' => count($errors),
+                'errors' => $errors,
+            ]
+        );
 
         // Return response
         if (empty($errors)) {

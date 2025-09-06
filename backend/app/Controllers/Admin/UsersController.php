@@ -22,6 +22,7 @@ use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use App\Mail\templates\Welcome;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\UserEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -256,6 +257,17 @@ class UsersController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            UserEvent::onUserCreated(),
+            [
+                'user' => $data,
+                'user_id' => $userId,
+                'created_by' => $request->get('user'),
+            ]
+        );
+
         return ApiResponse::success(['user_id' => $userId], 'User created successfully', 201);
     }
 
@@ -328,6 +340,17 @@ class UsersController
             ]);
         }
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            UserEvent::onUserUpdated(),
+            [
+                'user' => $user,
+                'updated_data' => $data,
+                'updated_by' => $request->get('user'),
+            ]
+        );
+
         return ApiResponse::success([], 'User updated successfully', 200);
     }
 
@@ -341,6 +364,16 @@ class UsersController
         if (!$deleted) {
             return ApiResponse::error('Failed to delete user', 'FAILED_TO_DELETE_USER', 500);
         }
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            UserEvent::onUserDeleted(),
+            [
+                'user' => $user,
+                'deleted_by' => $request->get('user'),
+            ]
+        );
 
         return ApiResponse::success([], 'User deleted successfully', 200);
     }

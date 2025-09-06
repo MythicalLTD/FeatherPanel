@@ -17,6 +17,7 @@ use App\Chat\Node;
 use App\Chat\Backup;
 use App\Chat\Server;
 use App\Helpers\ApiResponse;
+use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -78,6 +79,23 @@ class WingsBackupController
         for ($i = 1; $i <= $totalParts; ++$i) {
             $parts[] = "https://example.com/upload/part{$i}"; // Mock URLs
         }
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            WingsEvent::onWingsBackupUploadInfoRetrieved(),
+            [
+                'backup_uuid' => $backupUuid,
+                'backup' => $backup,
+                'server' => $server,
+                'node' => $node,
+                'upload_info' => [
+                    'parts' => $parts,
+                    'part_size' => $partSize,
+                    'total_size' => $size,
+                ],
+            ]
+        );
 
         return ApiResponse::success([
             'parts' => $parts,
@@ -159,6 +177,19 @@ class WingsBackupController
             return ApiResponse::error('Failed to update backup', 'UPDATE_FAILED', 500);
         }
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            WingsEvent::onWingsBackupCompletionReported(),
+            [
+                'backup_uuid' => $backupUuid,
+                'backup' => $backup,
+                'server' => $server,
+                'node' => $node,
+                'completion_data' => $updateData,
+            ]
+        );
+
         return ApiResponse::success(null, 'Backup completion reported successfully', 204);
     }
 
@@ -217,6 +248,19 @@ class WingsBackupController
         // Log the restoration completion
         // In a real implementation, you might want to update the backup record
         // or create a restoration log entry
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            WingsEvent::onWingsBackupRestorationReported(),
+            [
+                'backup_uuid' => $backupUuid,
+                'backup' => $backup,
+                'server' => $server,
+                'node' => $node,
+                'restoration_data' => $body,
+            ]
+        );
 
         return ApiResponse::success(null, 'Backup restoration reported successfully', 204);
     }

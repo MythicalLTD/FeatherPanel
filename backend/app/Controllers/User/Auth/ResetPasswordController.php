@@ -64,6 +64,17 @@ class ResetPasswordController
 
             $userInfo = User::getUserByMailVerify($data['token']);
             if ($userInfo == null) {
+                // Emit password reset failed event
+                global $eventManager;
+                $eventManager->emit(
+                    AuthEvent::onAuthPasswordResetFailed(),
+                    [
+                        'token' => $data['token'],
+                        'reason' => 'INVALID_TOKEN',
+                        'ip_address' => CloudFlareRealIP::getRealIP(),
+                    ]
+                );
+
                 return ApiResponse::error('Invalid token', 'INVALID_TOKEN');
             }
 

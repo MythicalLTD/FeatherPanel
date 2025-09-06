@@ -17,6 +17,7 @@ use App\Chat\Activity;
 use App\Chat\Location;
 use App\Helpers\ApiResponse;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\LocationsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -130,6 +131,16 @@ class LocationsController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            LocationsEvent::onLocationCreated(),
+            [
+                'location' => $location,
+                'created_by' => $admin,
+            ]
+        );
+
         return ApiResponse::success(['location' => $location], 'Location created successfully', 201);
     }
 
@@ -185,6 +196,17 @@ class LocationsController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            LocationsEvent::onLocationUpdated(),
+            [
+                'location' => $location,
+                'updated_data' => $data,
+                'updated_by' => $admin,
+            ]
+        );
+
         return ApiResponse::success(['location' => $location], 'Location updated successfully', 200);
     }
 
@@ -206,6 +228,16 @@ class LocationsController
             'context' => 'Deleted location: ' . $location['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            LocationsEvent::onLocationDeleted(),
+            [
+                'location' => $location,
+                'deleted_by' => $admin,
+            ]
+        );
 
         return ApiResponse::success([], 'Location deleted successfully', 200);
     }

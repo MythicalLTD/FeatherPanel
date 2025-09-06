@@ -28,6 +28,7 @@ use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -446,6 +447,17 @@ class ServersController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerCreated(),
+            [
+                'server_id' => $serverId,
+                'server_data' => $data,
+                'created_by' => $request->get('user'),
+            ]
+        );
+
         return ApiResponse::success(['server_id' => $serverId], 'Server created successfully', 201);
     }
 
@@ -731,6 +743,17 @@ class ServersController
         // Get updated server data for response
         $updatedServer = Server::getServerById($id);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerUpdated(),
+            [
+                'server' => $updatedServer,
+                'updated_data' => $data,
+                'updated_by' => $request->get('user'),
+            ]
+        );
+
         return ApiResponse::success([
             'server' => [
                 'id' => $updatedServer['id'],
@@ -809,6 +832,16 @@ class ServersController
             'context' => 'Deleted server ' . $server['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerDeleted(),
+            [
+                'server' => $server,
+                'deleted_by' => $request->get('user'),
+            ]
+        );
 
         return ApiResponse::success([], 'Server deleted successfully', 200);
     }
@@ -926,6 +959,16 @@ class ServersController
             return ApiResponse::error('Failed to create server in Wings: ' . $e->getMessage(), 'FAILED_TO_CREATE_SERVER_IN_WINGS', 500);
         }
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerSuspended(),
+            [
+                'server' => $server,
+                'suspended_by' => $request->get('user'),
+            ]
+        );
+
         return ApiResponse::success([], 'Server suspended', 200);
     }
 
@@ -947,6 +990,16 @@ class ServersController
             'context' => 'Unsuspended server ' . $server['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerUnsuspended(),
+            [
+                'server' => $server,
+                'unsuspended_by' => $request->get('user'),
+            ]
+        );
 
         return ApiResponse::success([], 'Server unsuspended', 200);
     }

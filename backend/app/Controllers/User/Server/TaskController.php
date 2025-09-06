@@ -19,6 +19,7 @@ use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
 use App\Helpers\ApiResponse;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -214,6 +215,13 @@ class TaskController
             ]),
         ]);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerTaskCreated(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'schedule_id' => $scheduleId, 'task_id' => $taskId]
+        );
+
         return ApiResponse::success([
             'id' => $taskId,
             'action' => $body['action'],
@@ -294,6 +302,13 @@ class TaskController
             ]),
         ]);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerTaskUpdated(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'schedule_id' => $scheduleId, 'task_id' => $taskId]
+        );
+
         return ApiResponse::success(null, 'Task updated successfully', 200);
     }
 
@@ -371,6 +386,13 @@ class TaskController
             ]),
         ]);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerTaskSequenceUpdated(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'schedule_id' => $scheduleId, 'task_id' => $taskId]
+        );
+
         return ApiResponse::success(null, 'Task sequence updated successfully', 200);
     }
 
@@ -438,6 +460,13 @@ class TaskController
                 'new_status' => $statusText,
             ]),
         ]);
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerTaskStatusToggled(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'schedule_id' => $scheduleId, 'task_id' => $taskId]
+        );
 
         return ApiResponse::success([
             'is_queued' => $newQueuedStatus ? 1 : 0,
@@ -515,6 +544,13 @@ class TaskController
                 'sequence_id' => $task['sequence_id'],
             ]),
         ]);
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerTaskDeleted(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'schedule_id' => $scheduleId, 'task_id' => $taskId]
+        );
 
         return ApiResponse::success(null, 'Task deleted successfully', 200);
     }

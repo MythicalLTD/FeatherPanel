@@ -24,6 +24,7 @@ use App\Config\ConfigInterface;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
 use App\CloudFlare\CloudFlareTurnstile;
+use App\Plugins\Events\Events\UserEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -134,6 +135,12 @@ class SessionController
         if (isset($data['password'])) {
             $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
         }
+
+        global $eventManager;
+        $eventManager->emit(
+            UserEvent::onUserUpdate(),
+            ['user_uuid' => $user['uuid']]
+        );
 
         return ApiResponse::success($data, 'Session created', 200);
     }

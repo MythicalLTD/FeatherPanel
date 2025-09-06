@@ -92,12 +92,45 @@ class LoginController
         // Login user
         $userInfo = User::getUserByEmail($data['email']);
         if ($userInfo == null) {
+            // Emit login failed event
+            global $eventManager;
+            $eventManager->emit(
+                AuthEvent::onAuthLoginFailed(),
+                [
+                    'email' => $data['email'],
+                    'reason' => 'EMAIL_DOES_NOT_EXIST',
+                    'ip_address' => CloudFlareRealIP::getRealIP(),
+                ]
+            );
+
             return ApiResponse::error('Email does not exist', 'EMAIL_DOES_NOT_EXIST');
         }
         if ($userInfo['banned'] == 'true') {
+            // Emit login failed event
+            global $eventManager;
+            $eventManager->emit(
+                AuthEvent::onAuthLoginFailed(),
+                [
+                    'user' => $userInfo,
+                    'reason' => 'USER_BANNED',
+                    'ip_address' => CloudFlareRealIP::getRealIP(),
+                ]
+            );
+
             return ApiResponse::error('User is banned', 'USER_BANNED');
         }
         if (!password_verify($data['password'], $userInfo['password'])) {
+            // Emit login failed event
+            global $eventManager;
+            $eventManager->emit(
+                AuthEvent::onAuthLoginFailed(),
+                [
+                    'user' => $userInfo,
+                    'reason' => 'INVALID_PASSWORD',
+                    'ip_address' => CloudFlareRealIP::getRealIP(),
+                ]
+            );
+
             return ApiResponse::error('Invalid password', 'INVALID_PASSWORD');
         }
 

@@ -21,6 +21,7 @@ use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -232,6 +233,13 @@ class ServerBackupController
             ]),
         ]);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerBackupCreated(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'backup_uuid' => $backupUuid]
+        );
+
         return ApiResponse::success([
             'id' => $backupId,
             'uuid' => $backupUuid,
@@ -341,6 +349,13 @@ class ServerBackupController
             ]),
         ]);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerBackupRestored(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'backup_uuid' => $backupUuid]
+        );
+
         return ApiResponse::success(null, 'Backup restoration initiated successfully', 202);
     }
 
@@ -392,6 +407,13 @@ class ServerBackupController
             ]),
         ]);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerBackupLocked(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'backup_uuid' => $backupUuid]
+        );
+
         return ApiResponse::success(null, 'Backup locked successfully', 200);
     }
 
@@ -442,6 +464,13 @@ class ServerBackupController
                 'backup_name' => $backup['name'],
             ]),
         ]);
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerBackupUnlocked(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'backup_uuid' => $backupUuid]
+        );
 
         return ApiResponse::success(null, 'Backup unlocked successfully', 200);
     }
@@ -538,6 +567,13 @@ class ServerBackupController
                 'backup_name' => $backup['name'],
             ]),
         ]);
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerBackupDeleted(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'backup_uuid' => $backupUuid]
+        );
 
         return ApiResponse::success(null, 'Backup deleted successfully');
     }

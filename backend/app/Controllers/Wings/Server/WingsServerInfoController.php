@@ -20,6 +20,7 @@ use App\Chat\Server;
 use App\Chat\Allocation;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
+use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -403,6 +404,20 @@ class WingsServerInfoController
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to generate server configuration: ' . $e->getMessage(), 'CONFIG_ERROR', 500);
         }
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            WingsEvent::onWingsServerInfoRetrieved(),
+            [
+                'server_uuid' => $uuid,
+                'server' => $server,
+                'node' => $node,
+                'spell' => $spell,
+                'realm' => $realm,
+                'allocation' => $allocation,
+            ]
+        );
 
         return ApiResponse::sendManualResponse($wingsConfig, 200);
     }

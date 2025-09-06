@@ -17,6 +17,7 @@ use App\Chat\Server;
 use App\Chat\Allocation;
 use App\Helpers\ApiResponse;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -114,6 +115,13 @@ class ServerAllocationController
             return ApiResponse::error('Failed to delete allocation', 'ALLOCATION_DELETE_FAILED', 500);
         }
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerAllocationDeleted(),
+            ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'allocation_id' => $allocationId]
+        );
+
         return ApiResponse::success([
             'message' => 'Allocation deleted successfully',
             'deleted_allocation_id' => $allocationId,
@@ -158,6 +166,13 @@ class ServerAllocationController
         if (!$success) {
             return ApiResponse::error('Failed to set primary allocation', 'PRIMARY_ALLOCATION_UPDATE_FAILED', 500);
         }
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerAllocationUpdated(),
+            ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'allocation_id' => $allocationId]
+        );
 
         return ApiResponse::success([
             'message' => 'Primary allocation updated successfully',
@@ -222,6 +237,13 @@ class ServerAllocationController
         }
 
         $message = "Successfully assigned allocation {$updatedAllocation['ip']}:{$updatedAllocation['port']} to your server";
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerAllocationCreated(),
+            ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'allocation_id' => $updatedAllocation['id']]
+        );
 
         return ApiResponse::success([
             'assigned_allocation' => $updatedAllocation,

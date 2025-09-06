@@ -18,6 +18,7 @@ use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
 use App\Helpers\ApiResponse;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -196,6 +197,13 @@ class ServerScheduleController
             ]),
         ]);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerScheduleCreated(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'schedule_id' => $scheduleId]
+        );
+
         return ApiResponse::success([
             'id' => $scheduleId,
             'name' => $body['name'],
@@ -274,6 +282,13 @@ class ServerScheduleController
             ]),
         ]);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerScheduleUpdated(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'schedule_id' => $scheduleId]
+        );
+
         return ApiResponse::success(null, 'Schedule updated successfully', 200);
     }
 
@@ -329,6 +344,13 @@ class ServerScheduleController
                 'new_status' => $newStatus,
             ]),
         ]);
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerScheduleStatusToggled(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'schedule_id' => $scheduleId]
+        );
 
         return ApiResponse::success([
             'is_active' => $updatedSchedule['is_active'],
@@ -388,6 +410,13 @@ class ServerScheduleController
                 'schedule_name' => $schedule['name'],
             ]),
         ]);
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerScheduleDeleted(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'schedule_id' => $scheduleId]
+        );
 
         return ApiResponse::success(null, 'Schedule deleted successfully', 200);
     }

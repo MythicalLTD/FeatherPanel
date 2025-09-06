@@ -17,23 +17,83 @@ use App\Plugins\Events\PluginEvent;
 
 class UserEvent implements PluginEvent
 {
+    /**
+     * Callback: string user uuid, string api key id.
+     */
+    public static function onUserApiKeyCreated(): string
+    {
+        return 'featherpanel:user:api:create';
+    }
+
+    /**
+     * Callback: string user uuid, string api key id.
+     */
+    public static function onUserApiKeyUpdated(): string
+    {
+        return 'featherpanel:user:api:update';
+    }
+
+    /**
+     * Callback: string user uuid, string api key id.
+     */
+    public static function onUserApiKeyDeleted(): string
+    {
+        return 'featherpanel:user:api:delete';
+    }
+
+    /**
+     * Callback: string user uuid.
+     */
     public static function onUserUpdate(): string
     {
-        return 'user:update';
+        return 'featherpanel:user:update';
     }
 
-    public static function onUserDelete(): string
+    /**
+     * Callback: string user uuid, string ssh key id.
+     */
+    public static function onUserSshKeyCreated(): string
     {
-        return 'user:delete';
+        return 'featherpanel:user:ssh:create';
     }
 
-    public static function newSupportPin(): string
+    /**
+     * Callback: string user uuid, string ssh key id.
+     */
+    public static function onUserSshKeyUpdated(): string
     {
-        return 'user:new_support_pin';
+        return 'featherpanel:user:ssh:update';
     }
 
-    public static function resetApiKey(): string
+    /**
+     * Callback: string user uuid, string ssh key id.
+     */
+    public static function onUserSshKeyDeleted(): string
     {
-        return 'user:reset_api_key';
+        return 'featherpanel:user:ssh:delete';
+    }
+
+    /**
+     * Callback: array user data, int user id, array created by.
+     */
+    public static function onUserCreated(): string
+    {
+        return 'featherpanel:user:created';
+    }
+
+    /**
+     * Callback: array user data, array updated data, array updated by.
+     */
+    public static function onUserUpdated(): string
+    {
+        return 'featherpanel:user:updated';
+    }
+
+    /**
+     * Callback: array user data, array deleted by.
+     */
+    public static function onUserDeleted(): string
+    {
+        return 'featherpanel:user:deleted';
     }
 }

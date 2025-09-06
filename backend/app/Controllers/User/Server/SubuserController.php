@@ -19,6 +19,7 @@ use App\Chat\Subuser;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -202,6 +203,13 @@ class SubuserController
         // Get created subuser with details
         $subuser = Subuser::getSubuserWithDetails($subuserId);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerSubuserCreated(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'subuser_id' => $subuserId]
+        );
+
         return ApiResponse::success($subuser, 'Subuser created successfully', 201);
     }
 
@@ -269,6 +277,13 @@ class SubuserController
         // Get updated subuser
         $updatedSubuser = Subuser::getSubuserWithDetails($subuserId);
 
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerSubuserUpdated(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'subuser_id' => $subuserId]
+        );
+
         return ApiResponse::success($updatedSubuser, 'Subuser updated successfully');
     }
 
@@ -325,6 +340,13 @@ class SubuserController
             ]),
             'user_id' => $request->get('user')['id'] ?? null,
         ]);
+
+        // Emit event
+        global $eventManager;
+        $eventManager->emit(
+            ServerEvent::onServerSubuserDeleted(),
+            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'subuser_id' => $subuserId]
+        );
 
         return ApiResponse::success(null, 'Subuser deleted successfully');
     }

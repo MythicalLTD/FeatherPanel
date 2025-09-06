@@ -21,6 +21,7 @@ use App\Chat\Subuser;
 use App\Helpers\ApiResponse;
 use App\Helpers\ServerGateway;
 use App\Helpers\PermissionHelper;
+use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -98,6 +99,21 @@ class SftpAuthController
 
             // Log successful authentication
             App::getInstance(true)->getLogger()->info('SFTP auth success');
+
+            // Emit event
+            global $eventManager;
+            $eventManager->emit(
+                WingsEvent::onWingsSftpAuthentication(),
+                [
+                    'server' => $server,
+                    'user' => $user,
+                    'permissions' => $permissions,
+                    'auth_type' => $type,
+                    'ip' => $ip,
+                    'session_id' => $sessionId,
+                    'client_version' => $clientVersion,
+                ]
+            );
 
             // Return success response in exact schema format
             return ApiResponse::sendManualResponse([
