@@ -27,10 +27,11 @@
                 <Card>
                     <div class="p-6">
                         <Tabs v-model="activeTab" class="w-full">
-                            <TabsList class="grid w-full grid-cols-5">
+                            <TabsList class="grid w-full grid-cols-6">
                                 <TabsTrigger value="profile">{{ $t('account.profile') }}</TabsTrigger>
                                 <TabsTrigger value="settings">{{ $t('account.settings') }}</TabsTrigger>
                                 <TabsTrigger value="ssh-keys">{{ $t('account.sshKeys.title') }}</TabsTrigger>
+                                <TabsTrigger value="api-keys">{{ $t('account.apiKeys.title') }}</TabsTrigger>
                                 <TabsTrigger value="activity">{{ $t('account.activity.title') }}</TabsTrigger>
                                 <TabsTrigger value="mail">{{ $t('account.mail.title') }}</TabsTrigger>
                             </TabsList>
@@ -42,6 +43,9 @@
                             </TabsContent>
                             <TabsContent value="ssh-keys" class="mt-6">
                                 <SshKeys />
+                            </TabsContent>
+                            <TabsContent value="api-keys" class="mt-6">
+                                <ApiKeys />
                             </TabsContent>
                             <TabsContent value="activity" class="mt-6">
                                 <Activity />
@@ -70,6 +74,7 @@ import AccountSettings from '@/components/account/AccountSettings.vue';
 import Activity from '@/components/account/Activity.vue';
 import MailList from '@/components/account/MailList.vue';
 import SshKeys from '@/components/account/SshKeys.vue';
+import ApiKeys from '@/components/account/ApiKeys.vue';
 import type { UserInfo } from '@/stores/session';
 
 const { t: $t } = useI18n();

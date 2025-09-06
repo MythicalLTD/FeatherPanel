@@ -18,6 +18,7 @@ import {
     FileText,
     Clock,
     Network,
+	Key,
 } from 'lucide-vue-next';
 import NavMain from '@/components/nav/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -102,6 +103,16 @@ const data = computed(() => {
                           title: t('nav.users'),
                           url: '/admin/users',
                           icon: Users,
+                      },
+                  ]
+                : []),
+			...(sessionStore.hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)
+                ? [
+                      {
+                          name: 'API Keys',
+                          title: t('nav.apiKeys'),
+                          url: '/admin/api-keys',
+                          icon: Key,
                       },
                   ]
                 : []),

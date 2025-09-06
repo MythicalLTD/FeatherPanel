@@ -66,6 +66,11 @@ const adminRoutes: RouteRecordRaw[] = [
         name: 'AdminSettings',
         component: () => import('@/pages/admin/Settings.vue'),
     },
+    {
+        path: '/admin/api-keys',
+        name: 'AdminApiKeys',
+        component: () => import('@/pages/admin/ApiKeys.vue'),
+    },
 ];
 
 export default adminRoutes;
