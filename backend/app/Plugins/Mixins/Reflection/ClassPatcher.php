@@ -429,8 +429,11 @@ class ClassPatcher
                 $paramStr = '';
 
                 if ($param->hasType()) {
-                    $typeName = $param->getType()->getName();
-                    $paramStr .= $typeName . ' ';
+                    $type = $param->getType();
+                    if ($type instanceof \ReflectionNamedType) {
+                        $typeName = $type->getName();
+                        $paramStr .= $typeName . ' ';
+                    }
                 }
 
                 $paramStr .= '$' . $param->getName();
@@ -444,7 +447,13 @@ class ClassPatcher
             }
 
             $paramList = implode(', ', $parameters);
-            $returnType = $method->hasReturnType() ? ': ' . $method->getReturnType()->getName() : '';
+            $returnType = '';
+            if ($method->hasReturnType()) {
+                $type = $method->getReturnType();
+                if ($type instanceof \ReflectionNamedType) {
+                    $returnType = ': ' . $type->getName();
+                }
+            }
 
             $code .= "    public function {$methodName}({$paramList}){$returnType} {\n";
             $code .= "        // Method override for {$methodName}\n";

@@ -141,7 +141,10 @@ class ProxyGenerator
                     foreach ($method->getParameters() as $param) {
                         $paramStr = '';
                         if ($param->hasType()) {
-                            $paramStr .= $param->getType()->getName() . ' ';
+                            $type = $param->getType();
+                            if ($type instanceof \ReflectionNamedType) {
+                                $paramStr .= $type->getName() . ' ';
+                            }
                         }
 
                         $paramStr .= '$' . $param->getName();
@@ -154,7 +157,13 @@ class ProxyGenerator
                     }
 
                     $paramsStr = implode(', ', $params);
-                    $returnType = $method->hasReturnType() ? ': ' . $method->getReturnType()->getName() : '';
+                    $returnType = '';
+                    if ($method->hasReturnType()) {
+                        $type = $method->getReturnType();
+                        if ($type instanceof \ReflectionNamedType) {
+                            $returnType = ': ' . $type->getName();
+                        }
+                    }
 
                     $code .= "\n    public function {$methodName}({$paramsStr}){$returnType} {\n";
                     $code .= "        return \\App\\Plugins\\Mixins\\Reflection\\ClassPatcher::executeMethod(\$this, '{$methodName}', func_get_args());\n";
