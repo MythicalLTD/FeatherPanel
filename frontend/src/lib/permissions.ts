@@ -163,6 +163,16 @@ class Permissions {
     /** Delete redirect links */
     public static ADMIN_REDIRECT_LINKS_DELETE = 'admin.redirect_links.delete';
 
+    // Admin Plugins Permissions
+    /** View plugins */
+    public static ADMIN_PLUGINS_VIEW = 'admin.plugins.view';
+    /** Install plugins */
+    public static ADMIN_PLUGINS_INSTALL = 'admin.plugins.install';
+    /** Uninstall plugins */
+    public static ADMIN_PLUGINS_UNINSTALL = 'admin.plugins.uninstall';
+    /** Manage plugins */
+    public static ADMIN_PLUGINS_MANAGE = 'admin.plugins.manage';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -228,6 +238,10 @@ class Permissions {
             { constant: 'ADMIN_REDIRECT_LINKS_CREATE', value: Permissions.ADMIN_REDIRECT_LINKS_CREATE, category: 'Admin Redirect Links', description: 'Create new redirect links' },
             { constant: 'ADMIN_REDIRECT_LINKS_EDIT', value: Permissions.ADMIN_REDIRECT_LINKS_EDIT, category: 'Admin Redirect Links', description: 'Edit existing redirect links' },
             { constant: 'ADMIN_REDIRECT_LINKS_DELETE', value: Permissions.ADMIN_REDIRECT_LINKS_DELETE, category: 'Admin Redirect Links', description: 'Delete redirect links' },
+            { constant: 'ADMIN_PLUGINS_VIEW', value: Permissions.ADMIN_PLUGINS_VIEW, category: 'Admin Plugins', description: 'View plugins' },
+            { constant: 'ADMIN_PLUGINS_INSTALL', value: Permissions.ADMIN_PLUGINS_INSTALL, category: 'Admin Plugins', description: 'Install plugins' },
+            { constant: 'ADMIN_PLUGINS_UNINSTALL', value: Permissions.ADMIN_PLUGINS_UNINSTALL, category: 'Admin Plugins', description: 'Uninstall plugins' },
+            { constant: 'ADMIN_PLUGINS_MANAGE', value: Permissions.ADMIN_PLUGINS_MANAGE, category: 'Admin Plugins', description: 'Manage plugins' },
         ];
     }
 }

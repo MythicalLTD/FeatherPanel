@@ -179,6 +179,16 @@ class Permissions
     /** Delete redirect links */
     public const ADMIN_REDIRECT_LINKS_DELETE = 'admin.redirect_links.delete';
 
+    // Admin Plugins Permissions
+    /** View plugins */
+    public const ADMIN_PLUGINS_VIEW = 'admin.plugins.view';
+    /** Install plugins */
+    public const ADMIN_PLUGINS_INSTALL = 'admin.plugins.install';
+    /** Uninstall plugins */
+    public const ADMIN_PLUGINS_UNINSTALL = 'admin.plugins.uninstall';
+    /** Manage plugins */
+    public const ADMIN_PLUGINS_MANAGE = 'admin.plugins.manage';
+
     /**
      * Returns all permission nodes with metadata.
      * @return array
@@ -545,6 +555,30 @@ class Permissions
                 'value' => self::ADMIN_REDIRECT_LINKS_DELETE,
                 'category' => 'Admin Redirect Links',
                 'description' => 'Delete redirect links'
+            ],
+            [
+                'constant' => 'ADMIN_PLUGINS_VIEW',
+                'value' => self::ADMIN_PLUGINS_VIEW,
+                'category' => 'Admin Plugins',
+                'description' => 'View plugins'
+            ],
+            [
+                'constant' => 'ADMIN_PLUGINS_INSTALL',
+                'value' => self::ADMIN_PLUGINS_INSTALL,
+                'category' => 'Admin Plugins',
+                'description' => 'Install plugins'
+            ],
+            [
+                'constant' => 'ADMIN_PLUGINS_UNINSTALL',
+                'value' => self::ADMIN_PLUGINS_UNINSTALL,
+                'category' => 'Admin Plugins',
+                'description' => 'Uninstall plugins'
+            ],
+            [
+                'constant' => 'ADMIN_PLUGINS_MANAGE',
+                'value' => self::ADMIN_PLUGINS_MANAGE,
+                'category' => 'Admin Plugins',
+                'description' => 'Manage plugins'
             ],
         ];
     }

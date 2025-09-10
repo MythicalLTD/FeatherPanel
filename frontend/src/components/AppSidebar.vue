@@ -198,6 +198,16 @@ const data = computed(() => {
                       },
                   ]
                 : []),
+            ...(sessionStore.hasPermission(Permissions.ADMIN_PLUGINS_VIEW)
+                ? [
+                      {
+                          name: 'Plugins',
+                          title: t('nav.plugins'),
+                          url: '/admin/plugins',
+                          icon: PlayCircle,
+                      },
+                  ]
+                : []),
         ],
         navServer: [
             {

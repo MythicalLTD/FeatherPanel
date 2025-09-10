@@ -82,6 +82,11 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/RedirectLinks.vue'),
     },
     {
+        path: '/admin/plugins',
+        name: 'AdminPlugins',
+        component: () => import('@/pages/admin/Plugins.vue'),
+    },
+    {
         path: '/admin/api-keys',
         name: 'AdminApiKeys',
         component: () => import('@/pages/admin/ApiKeys.vue'),

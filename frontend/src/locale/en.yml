@@ -1106,6 +1106,7 @@ nav:
     mailTemplates: 'Mail Templates'
     images: 'Images'
     redirectLinks: 'Redirect Links'
+    plugins: 'Plugins'
 # User Menu
 user:
     adminPanel: 'Admin Panel'

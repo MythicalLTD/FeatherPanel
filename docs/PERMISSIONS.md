@@ -4,9 +4,9 @@ This document provides a comprehensive overview of all permission nodes used in 
 
 ## Overview
 
-- **Total Permissions:** 60
-- **Categories:** 16
-- **With Descriptions:** 60
+- **Total Permissions:** 64
+- **Categories:** 17
+- **With Descriptions:** 64
 
 ## Format
 
@@ -177,6 +177,15 @@ if (auth.user.hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)) {
 | `ADMIN_REDIRECT_LINKS_EDIT` | `admin.redirect_links.edit` | Edit existing redirect links |
 | `ADMIN_REDIRECT_LINKS_DELETE` | `admin.redirect_links.delete` | Delete redirect links |
 
+## Admin Plugins
+
+| Permission | Node | Description |
+|------------|------|-------------|
+| `ADMIN_PLUGINS_VIEW` | `admin.plugins.view` | View plugins |
+| `ADMIN_PLUGINS_INSTALL` | `admin.plugins.install` | Install plugins |
+| `ADMIN_PLUGINS_UNINSTALL` | `admin.plugins.uninstall` | Uninstall plugins |
+| `ADMIN_PLUGINS_MANAGE` | `admin.plugins.manage` | Manage plugins |
+
 ## Adding New Permissions
 
 To add a new permission node:
@@ -199,4 +208,4 @@ To add a new permission node:
 
 ---
 
-*This documentation was auto-generated on 2025-09-10 18:14:00*
+*This documentation was auto-generated on 2025-09-10 20:26:44*

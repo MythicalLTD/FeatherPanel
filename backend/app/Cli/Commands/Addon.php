@@ -42,7 +42,7 @@ class Addon extends App implements CommandBuilder
                     // Install an addon from the online repository.
                     self::onlineInstallPlugin();
                     break;
-				case 'online-list':
+                case 'online-list':
                     // List all addons from the online repository.
                     self::onlineList();
                     break;
@@ -97,6 +97,7 @@ class Addon extends App implements CommandBuilder
 
         if (empty($addonName) || !preg_match('/^[a-zA-Z0-9_\-]+$/', $addonName)) {
             self::getInstance()->send('&cInvalid addon name! Only alphanumeric, dash, and underscore are allowed.');
+
             return;
         }
 
@@ -107,6 +108,7 @@ class Addon extends App implements CommandBuilder
         $response = @file_get_contents($url);
         if ($response === false) {
             self::getInstance()->send('&cFailed to download plugin! Please check the addon name and try again.');
+
             return;
         }
 
@@ -120,23 +122,26 @@ class Addon extends App implements CommandBuilder
     {
         self::getInstance()->send('&5&lMythical&d&lPanel &7- &d&lAddons &7- &d&lOnline Addon List');
         self::getInstance()->send('');
-        $url = "https://cdn.mythical.systems/featherpanel/packages/list.json";
+        $url = 'https://cdn.mythical.systems/featherpanel/packages/list.json';
         self::getInstance()->send("&7Fetching online addon list from: &b{$url}");
-		self::getInstance()->send('');
+        self::getInstance()->send('');
         $response = @file_get_contents($url);
         if ($response === false) {
             self::getInstance()->send('&cFailed to fetch online addon list!');
+
             return;
         }
 
         $addons = json_decode($response, true);
         if (!is_array($addons)) {
             self::getInstance()->send('&cInvalid response from online addon list!');
+
             return;
         }
 
         if (empty($addons)) {
             self::getInstance()->send('&7No addons found in the online repository.');
+
             return;
         }
 
@@ -144,7 +149,7 @@ class Addon extends App implements CommandBuilder
             $name = $addon['name'] ?? 'Unknown';
             $identifier = $addon['identifier'] ?? 'unknown';
             $version = $addon['version'] ?? 'N/A';
-			$author = $addon['author'] ?? 'Unknown';
+            $author = $addon['author'] ?? 'Unknown';
             $description = $addon['description'] ?? '';
             self::getInstance()->send("&7#&e{$identifier}&7 | &b{$name} &8> &d{$version} &8> &7{$description} &8> By &7{$author}");
         }

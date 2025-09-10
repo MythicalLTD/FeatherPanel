@@ -93,3 +93,9 @@ ADMIN_REDIRECT_LINKS_VIEW=admin.redirect_links.view | Admin Redirect Links | Vie
 ADMIN_REDIRECT_LINKS_CREATE=admin.redirect_links.create | Admin Redirect Links | Create new redirect links
 ADMIN_REDIRECT_LINKS_EDIT=admin.redirect_links.edit | Admin Redirect Links | Edit existing redirect links
 ADMIN_REDIRECT_LINKS_DELETE=admin.redirect_links.delete | Admin Redirect Links | Delete redirect links
+
+# Plugins
+ADMIN_PLUGINS_VIEW=admin.plugins.view | Admin Plugins | View plugins
+ADMIN_PLUGINS_INSTALL=admin.plugins.install | Admin Plugins | Install plugins
+ADMIN_PLUGINS_UNINSTALL=admin.plugins.uninstall | Admin Plugins | Uninstall plugins
+ADMIN_PLUGINS_MANAGE=admin.plugins.manage | Admin Plugins | Manage plugins
