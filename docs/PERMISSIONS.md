@@ -154,22 +154,22 @@ if (auth.user.hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)) {
 
 To add a new permission node:
 
-1. Edit `permission_nodes.txt` in the root directory
+1. Edit `permission_nodes.fpperm` in the root directory
 2. Add your permission in the format: `CONSTANT_NAME=permission.node.value | Category | Description`
 3. Run `php App permissionExport` to regenerate all files
 4. Rebuild the frontend if necessary
 
 ## File Locations
 
-- **Source:** `permission_nodes.txt` (root directory)
+- **Source:** `permission_nodes.fpperm` (root directory)
 - **PHP:** `backend/app/Permissions.php`
 - **TypeScript:** `frontend/src/App/Permissions.ts`
 - **Documentation:** `docs/PERMISSIONS.md` (this file)
 
 ## Auto-Generation
 
-⚠️ **Important:** All generated files are automatically created from `permission_nodes.txt`. Manual modifications to the generated files will be overwritten when the export command is run.
+⚠️ **Important:** All generated files are automatically created from `permission_nodes.fpperm`. Manual modifications to the generated files will be overwritten when the export command is run.
 
 ---
 
-*This documentation was auto-generated on 2025-09-04 19:39:37*
+*This documentation was auto-generated on 2025-09-06 18:18:17*

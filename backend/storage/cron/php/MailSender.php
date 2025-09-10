@@ -19,11 +19,10 @@ class MailSender implements TimeTask
 	 */
 	public function run()
 	{
-		$this->sendMails();
 		$cron = new Cron('mail-sender', '1M');
 		try {
 			$cron->runIfDue(function () {
-				// No-op, handled above
+				$this->sendMails();
 			});
 		} catch (\Exception $e) {
 			$app = \App\App::getInstance(false, true);

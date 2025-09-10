@@ -21,6 +21,7 @@ namespace App\Cache;
 class Cache
 {
     protected static $cacheDir = APP_CACHE_DIR . '/other';
+    protected static $cacheExt = '.fpc';
 
     /**
      * Stores a value in the cache with a specified expiration time.
@@ -36,7 +37,7 @@ class Cache
         if (!is_dir(self::$cacheDir)) {
             mkdir(self::$cacheDir, 0777, true);
         }
-        $filename = self::$cacheDir . '/' . md5($key);
+        $filename = self::$cacheDir . '/' . md5($key) . self::$cacheExt;
         $data = [
             'expires' => time() + ($minutes * 60),
             'value' => $value,
@@ -53,7 +54,7 @@ class Cache
      */
     public static function get($key)
     {
-        $filename = self::$cacheDir . '/' . md5($key);
+        $filename = self::$cacheDir . '/' . md5($key) . self::$cacheExt;
         if (!file_exists($filename)) {
             return null;
         }
@@ -76,7 +77,7 @@ class Cache
      */
     public static function forget($key)
     {
-        $filename = self::$cacheDir . '/' . md5($key);
+        $filename = self::$cacheDir . '/' . md5($key) . self::$cacheExt;
         if (file_exists($filename)) {
             unlink($filename);
         }
@@ -89,7 +90,7 @@ class Cache
      */
     public static function clear()
     {
-        $files = glob(self::$cacheDir . '/*');
+        $files = glob(self::$cacheDir . '/*' . self::$cacheExt);
         foreach ($files as $file) {
             if (is_file($file)) {
                 unlink($file);
@@ -106,7 +107,7 @@ class Cache
      */
     public static function exists($key)
     {
-        $filename = self::$cacheDir . '/' . md5($key);
+        $filename = self::$cacheDir . '/' . md5($key) . self::$cacheExt;
         if (!is_file($filename)) {
             return false;
         }

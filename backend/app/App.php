@@ -590,7 +590,7 @@ class App
      */
     public function getLogger(): LoggerFactory
     {
-        return new LoggerFactory(__DIR__ . '/../storage/logs/App.log');
+        return new LoggerFactory(__DIR__ . '/../storage/logs/App.fplog');
     }
 
     /**
@@ -598,7 +598,7 @@ class App
      */
     public function getWebServerLogger(): LoggerFactory
     {
-        return new LoggerFactory(__DIR__ . '/../storage/logs/featherpanel-web.log');
+        return new LoggerFactory(__DIR__ . '/../storage/logs/featherpanel-web.fplog');
     }
 
     /**
