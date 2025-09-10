@@ -35,6 +35,7 @@ use App\Cli\Utils\MinecraftColorCodeSupport;
 use App\Cron\Cron;
 use App\Cron\TimeTask;
 use App\Services\Wings\Wings;
+use App\Chat\TimedTask;
 
 class ServerScheduleProcessor implements TimeTask
 {
@@ -47,10 +48,13 @@ class ServerScheduleProcessor implements TimeTask
 		try {
 			$cron->runIfDue(function () {
 				$this->processSchedules();
+				// Report cron heartbeat
+				TimedTask::markRun('server-schedule-processor', true, 'Processed schedules heartbeat');
 			});
 		} catch (\Exception $e) {
 			$app = App::getInstance(false, true);
 			$app->getLogger()->error('Failed to process server schedules: ' . $e->getMessage());
+			TimedTask::markRun('server-schedule-processor', false, $e->getMessage());
 		}
 	}
 

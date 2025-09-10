@@ -16,6 +16,11 @@ const errorRoutes: RouteRecordRaw[] = [
         name: '500',
         component: () => import('@/pages/errors/ServerError.vue'),
     },
+    {
+        path: '/redirect/:slug',
+        name: 'Redirect',
+        component: () => import('@/pages/Redirect.vue'),
+    },
 ];
 
 export default errorRoutes;

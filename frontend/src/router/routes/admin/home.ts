@@ -67,6 +67,21 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/Settings.vue'),
     },
     {
+        path: '/admin/mail-templates',
+        name: 'AdminMailTemplates',
+        component: () => import('@/pages/admin/MailTemplates.vue'),
+    },
+    {
+        path: '/admin/images',
+        name: 'AdminImages',
+        component: () => import('@/pages/admin/Images.vue'),
+    },
+    {
+        path: '/admin/redirect-links',
+        name: 'AdminRedirectLinks',
+        component: () => import('@/pages/admin/RedirectLinks.vue'),
+    },
+    {
         path: '/admin/api-keys',
         name: 'AdminApiKeys',
         component: () => import('@/pages/admin/ApiKeys.vue'),

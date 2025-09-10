@@ -4,13 +4,22 @@
             <!-- Header -->
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold">{{ t('serverFiles.title') }}</h1>
+                    <h1 class="text-2xl font-bold flex items-center gap-2">
+                        {{ t('serverFiles.title') }}
+                        <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                            {{ filteredFiles.length }} / {{ files.length }}
+                        </span>
+                    </h1>
                     <p class="text-muted-foreground">{{ t('serverFiles.description') }}</p>
                 </div>
                 <div class="flex gap-2">
                     <Button variant="outline" :disabled="loading" @click="refreshFiles">
                         <RefreshCw class="h-4 w-4 mr-2" />
                         {{ t('common.refresh') }}
+                    </Button>
+                    <Button variant="outline" :disabled="loading" @click="showCreateFileDialog = true">
+                        <FileText class="h-4 w-4 mr-2" />
+                        {{ t('serverFiles.newFile') }}
                     </Button>
                     <Button variant="outline" :disabled="loading" @click="showUploadDialog = true">
                         <Upload class="h-4 w-4 mr-2" />
@@ -23,30 +32,42 @@
                 </div>
             </div>
 
-            <!-- Breadcrumb Navigation -->
+            <!-- Breadcrumb Navigation + Search -->
             <Card>
                 <CardContent class="p-4">
-                    <div class="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" :disabled="loading" @click="navigateToPath('/')">
-                            <Home class="h-4 w-4" />
-                        </Button>
-                        <Separator orientation="vertical" class="h-4" />
-                        <div class="flex items-center gap-1">
-                            <template v-for="(segment, index) in pathSegments" :key="index">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    class="text-muted-foreground hover:text-foreground"
-                                    :disabled="loading"
-                                    @click="navigateToPath(getPathUpTo(index))"
-                                >
-                                    {{ segment }}
-                                </Button>
-                                <ChevronRight
-                                    v-if="index < pathSegments.length - 1"
-                                    class="h-4 w-4 text-muted-foreground"
-                                />
-                            </template>
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <Button variant="ghost" size="sm" :disabled="loading" @click="navigateToPath('/')">
+                                <Home class="h-4 w-4" />
+                            </Button>
+                            <Separator orientation="vertical" class="h-4" />
+                            <div class="flex items-center gap-1">
+                                <template v-for="(segment, index) in pathSegments" :key="index">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        class="text-muted-foreground hover:text-foreground"
+                                        :disabled="loading"
+                                        @click="navigateToPath(getPathUpTo(index))"
+                                    >
+                                        {{ segment }}
+                                    </Button>
+                                    <ChevronRight
+                                        v-if="index < pathSegments.length - 1"
+                                        class="h-4 w-4 text-muted-foreground"
+                                    />
+                                </template>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 w-80 max-w-full">
+                            <Input
+                                ref="searchInput"
+                                v-model="searchQuery"
+                                :placeholder="t('serverFiles.searchPlaceholder')"
+                                :disabled="loading || files.length === 0"
+                                @keydown.escape="clearSearch"
+                            />
+                            <Button variant="ghost" size="sm" :disabled="!searchQuery" @click="clearSearch">X</Button>
                         </div>
                     </div>
                 </CardContent>
@@ -64,10 +85,7 @@
                                 <Download class="h-4 w-4 mr-2" />
                                 {{ t('serverFiles.download') }}
                             </Button>
-                            <Button variant="outline" size="sm" :disabled="loading" @click="copySelected">
-                                <Copy class="h-4 w-4 mr-2" />
-                                {{ t('serverFiles.copy') }}
-                            </Button>
+                            <!-- Copy removed for mass actions -->
                             <Button variant="outline" size="sm" :disabled="loading" @click="compressSelected">
                                 <Archive class="h-4 w-4 mr-2" />
                                 {{ t('serverFiles.compress') }}
@@ -170,7 +188,7 @@
                         <!-- File Rows -->
                         <div class="space-y-1">
                             <div
-                                v-for="file in files"
+                                v-for="file in filteredFiles"
                                 :key="file.name"
                                 class="border-b last:border-b-0 hover:bg-muted/50 transition-colors"
                             >
@@ -208,7 +226,10 @@
                                             class="text-sm truncate cursor-pointer hover:text-primary"
                                             @click="handleFileClick(file)"
                                         >
-                                            {{ file.name }}
+                                            <template v-for="(seg, i) in getHighlightSegments(file.name)" :key="i">
+                                                <mark v-if="seg.match">{{ seg.text }}</mark>
+                                                <span v-else>{{ seg.text }}</span>
+                                            </template>
                                         </span>
                                     </div>
                                     <div class="w-20 text-sm text-muted-foreground">
@@ -237,7 +258,7 @@
                                                     <Download class="h-4 w-4 mr-2" />
                                                     {{ t('serverFiles.download') }}
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem @click="copyFile(file)">
+                                                <DropdownMenuItem @click="copySingle(file.name)">
                                                     <Copy class="h-4 w-4 mr-2" />
                                                     {{ t('serverFiles.copy') }}
                                                 </DropdownMenuItem>
@@ -340,6 +361,73 @@
                         <FolderPlus class="h-4 w-4 mr-2" />
                         {{ t('serverFiles.create') }}
                     </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <!-- Create File Dialog -->
+        <Dialog v-model:open="showCreateFileDialog">
+            <DialogContent class="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>{{ t('serverFiles.createFile') }}</DialogTitle>
+                    <DialogDescription>{{ t('serverFiles.createFileDescription') }}</DialogDescription>
+                </DialogHeader>
+                <div class="space-y-4">
+                    <div class="space-y-2">
+                        <Label for="newFileName">{{ t('serverFiles.fileName') }}</Label>
+                        <Input
+                            id="newFileName"
+                            v-model="newFileNameForCreate"
+                            :placeholder="t('serverFiles.fileNamePlaceholder')"
+                        />
+                    </div>
+                    <div class="space-y-2">
+                        <Label for="newFileContent"
+                            >{{ t('serverFiles.initialContent') }} ({{ t('common.optional') }})</Label
+                        >
+                        <textarea
+                            id="newFileContent"
+                            v-model="newFileContent"
+                            class="w-full h-40 rounded-md border bg-background p-2 text-sm"
+                        ></textarea>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" @click="showCreateFileDialog = false">
+                        {{ t('common.cancel') }}
+                    </Button>
+                    <Button :disabled="!newFileNameForCreate" @click="createFile">
+                        <FileText class="h-4 w-4 mr-2" />
+                        {{ t('serverFiles.create') }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <!-- Copy Dialog removed: single-file copy runs immediately -->
+
+        <!-- Delete Confirmation Dialog -->
+        <Dialog v-model:open="showDeleteDialog">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>{{ t('serverFiles.confirmDeleteTitle') }}</DialogTitle>
+                    <DialogDescription>
+                        <template v-if="deleteMode === 'single'">
+                            {{ t('serverFiles.confirmDelete', { name: deleteSingleName }) }}
+                        </template>
+                        <template v-else>
+                            {{
+                                t('serverFiles.confirmDeleteSelected', {
+                                    count: selectedFiles.length,
+                                    files: selectedFiles.join(', '),
+                                })
+                            }}
+                        </template>
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button variant="outline" @click="showDeleteDialog = false">{{ t('common.cancel') }}</Button>
+                    <Button variant="destructive" @click="confirmDeleteProceed">{{ t('serverFiles.delete') }}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -507,6 +595,12 @@ const uploading = ref(false);
 const files = ref<FileItem[]>([]);
 const currentPath = ref('/');
 const selectedFiles = ref<string[]>([]);
+const searchQuery = ref('');
+const searchInput = ref<HTMLInputElement>();
+const showCreateFileDialog = ref(false);
+const newFileNameForCreate = ref('');
+const newFileContent = ref('');
+// Copy dialog removed – single-file copy only
 
 // Dialog states
 const showUploadDialog = ref(false);
@@ -557,12 +651,18 @@ const pathSegments = computed(() => {
     return currentPath.value.split('/').filter((segment) => segment.length > 0);
 });
 
+const filteredFiles = computed(() => {
+    const query = searchQuery.value.trim().toLowerCase();
+    if (!query) return files.value;
+    return (files.value || []).filter((f) => f.name.toLowerCase().includes(query));
+});
+
 const allFilesSelected = computed(() => {
-    return files.value.length > 0 && selectedFiles.value.length === files.value.length;
+    return filteredFiles.value.length > 0 && selectedFiles.value.length === filteredFiles.value.length;
 });
 
 const someFilesSelected = computed(() => {
-    return selectedFiles.value.length > 0 && selectedFiles.value.length < files.value.length;
+    return selectedFiles.value.length > 0 && selectedFiles.value.length < filteredFiles.value.length;
 });
 
 // Lifecycle
@@ -630,8 +730,8 @@ const getPathUpTo = (index: number) => {
 
 const toggleSelectAll = (checked: boolean) => {
     if (checked) {
-        // Select all files and folders
-        selectedFiles.value = [...files.value.map((f) => f.name)];
+        // Select all files and folders from filtered results
+        selectedFiles.value = [...filteredFiles.value.map((f) => f.name)];
     } else {
         clearSelection();
     }
@@ -649,6 +749,95 @@ const toggleFileSelection = (fileName: string) => {
 const clearSelection = () => {
     selectedFiles.value = [];
 };
+
+const clearSearch = () => {
+    searchQuery.value = '';
+    if (searchInput.value) {
+        searchInput.value.focus();
+    }
+};
+const copySingle = async (fileName: string) => {
+    try {
+        const base = currentPath.value === '/' ? '' : currentPath.value.replace(/^\//, '');
+        const rel = base ? `${base}/${fileName}`.replace(/\/+/g, '/') : fileName;
+        const destination = `/${rel}`;
+        const response = await axios.post(`/api/user/servers/${route.params.uuidShort}/copy-files`, {
+            location: destination,
+            files: [rel],
+        });
+        if (response.data.success) {
+            toast.success(t('serverFiles.filesCopied', { count: 1 }));
+            refreshFiles();
+        } else {
+            toast.error(response.data.message || t('serverFiles.copyError'));
+        }
+    } catch (error) {
+        console.error('Error copying file:', error);
+        const err = error as { response?: { data?: { message?: string } } };
+        toast.error(err.response?.data?.message || t('serverFiles.copyError'));
+    }
+};
+
+const getHighlightSegments = (name: string) => {
+    const q = searchQuery.value.trim();
+    if (!q) return [{ text: name, match: false }];
+    const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(safe, 'ig');
+    const parts: Array<{ text: string; match: boolean }> = [];
+    let lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(name)) !== null) {
+        if (m.index > lastIndex) {
+            parts.push({ text: name.slice(lastIndex, m.index), match: false });
+        }
+        parts.push({ text: m[0], match: true });
+        lastIndex = m.index + m[0].length;
+    }
+    if (lastIndex < name.length) {
+        parts.push({ text: name.slice(lastIndex), match: false });
+    }
+    return parts;
+};
+
+// Create file
+const createFile = async () => {
+    if (!newFileNameForCreate.value) return;
+    try {
+        const fullPath =
+            (currentPath.value.endsWith('/') ? currentPath.value : currentPath.value + '/') +
+            newFileNameForCreate.value;
+        const response = await axios.post(
+            `/api/user/servers/${route.params.uuidShort}/write-file?path=${encodeURIComponent(fullPath)}`,
+            newFileContent.value,
+            { headers: { 'Content-Type': 'text/plain' } },
+        );
+
+        if (response.data.success) {
+            toast.success(t('serverFiles.fileCreated'));
+            showCreateFileDialog.value = false;
+            newFileNameForCreate.value = '';
+            newFileContent.value = '';
+            refreshFiles();
+        } else {
+            toast.error(response.data.message || t('serverFiles.createFileError'));
+        }
+    } catch (error) {
+        console.error('Error creating file:', error);
+        const err = error as { response?: { data?: { message?: string } } };
+        toast.error(err.response?.data?.message || t('serverFiles.createFileError'));
+    }
+};
+
+// Keyboard shortcut to focus search
+onMounted(() => {
+    const handler = (e: KeyboardEvent) => {
+        if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            e.preventDefault();
+            searchInput.value?.focus();
+        }
+    };
+    window.addEventListener('keydown', handler);
+});
 
 const handleFileClick = (file: FileItem) => {
     if (file.file) {
@@ -896,28 +1085,14 @@ const confirmRename = async () => {
     }
 };
 
-const deleteFile = async (file: FileItem) => {
-    if (!confirm(t('serverFiles.confirmDelete', { name: file.name }))) return;
+const showDeleteDialog = ref(false);
+const deleteMode = ref<'single' | 'multi'>('single');
+const deleteSingleName = ref('');
 
-    try {
-        const response = await axios.delete(`/api/user/servers/${route.params.uuidShort}/delete-files`, {
-            data: {
-                root: currentPath.value,
-                files: [file.name],
-            },
-        });
-
-        if (response.data.success) {
-            toast.success(t('serverFiles.fileDeleted'));
-            refreshFiles();
-        } else {
-            toast.error(response.data.message || t('serverFiles.deleteError'));
-        }
-    } catch (error) {
-        console.error('Error deleting file:', error);
-        const err = error as { response?: { data?: { message?: string } } };
-        toast.error(err.response?.data?.message || t('serverFiles.deleteError'));
-    }
+const deleteFile = (file: FileItem) => {
+    deleteMode.value = 'single';
+    deleteSingleName.value = file.name;
+    showDeleteDialog.value = true;
 };
 
 const deleteSelected = async () => {
@@ -925,68 +1100,52 @@ const deleteSelected = async () => {
         toast.error(t('serverFiles.noFilesSelected'));
         return;
     }
+    deleteMode.value = 'multi';
+    showDeleteDialog.value = true;
+};
 
-    const fileNames = selectedFiles.value.join(', ');
-    if (!confirm(t('serverFiles.confirmDeleteSelected', { count: selectedFiles.value.length, files: fileNames })))
-        return;
-
+const confirmDeleteProceed = async () => {
     loading.value = true;
     try {
-        const response = await axios.delete(`/api/user/servers/${route.params.uuidShort}/delete-files`, {
-            data: {
-                root: currentPath.value,
-                files: selectedFiles.value,
-            },
-        });
-
-        if (response.data.success) {
-            toast.success(t('serverFiles.filesDeleted', { count: selectedFiles.value.length }));
-            clearSelection();
-            refreshFiles();
+        if (deleteMode.value === 'single') {
+            const response = await axios.delete(`/api/user/servers/${route.params.uuidShort}/delete-files`, {
+                data: {
+                    root: currentPath.value,
+                    files: [deleteSingleName.value],
+                },
+            });
+            if (response.data.success) {
+                toast.success(t('serverFiles.fileDeleted'));
+                refreshFiles();
+            } else {
+                toast.error(response.data.message || t('serverFiles.deleteError'));
+            }
         } else {
-            toast.error(response.data.message || t('serverFiles.deleteError'));
+            const response = await axios.delete(`/api/user/servers/${route.params.uuidShort}/delete-files`, {
+                data: {
+                    root: currentPath.value,
+                    files: selectedFiles.value,
+                },
+            });
+            if (response.data.success) {
+                toast.success(t('serverFiles.filesDeleted', { count: selectedFiles.value.length }));
+                clearSelection();
+                refreshFiles();
+            } else {
+                toast.error(response.data.message || t('serverFiles.deleteError'));
+            }
         }
     } catch (error) {
-        console.error('Error deleting files:', error);
+        console.error('Error deleting file(s):', error);
         const err = error as { response?: { data?: { message?: string } } };
         toast.error(err.response?.data?.message || t('serverFiles.deleteError'));
     } finally {
         loading.value = false;
+        showDeleteDialog.value = false;
     }
 };
 
-const copyFile = (file: FileItem) => {
-    // Implementation for copy functionality
-    const filePath = currentPath.value.endsWith('/')
-        ? currentPath.value + file.name
-        : currentPath.value + '/' + file.name;
-
-    // For now, copy the path to clipboard
-    navigator.clipboard
-        .writeText(filePath)
-        .then(() => {
-            toast.success(t('serverFiles.pathCopied'));
-        })
-        .catch(() => {
-            toast.error(t('serverFiles.copyError'));
-        });
-};
-
-const copySelected = () => {
-    // Implementation for copy selected functionality
-    const paths = selectedFiles.value.map((fileName) => {
-        return currentPath.value.endsWith('/') ? currentPath.value + fileName : currentPath.value + '/' + fileName;
-    });
-
-    navigator.clipboard
-        .writeText(paths.join('\n'))
-        .then(() => {
-            toast.success(t('serverFiles.pathsCopied'));
-        })
-        .catch(() => {
-            toast.error(t('serverFiles.copyError'));
-        });
-};
+// Mass copy disabled by design
 
 const compressSelected = async () => {
     if (selectedFiles.value.length === 0) {

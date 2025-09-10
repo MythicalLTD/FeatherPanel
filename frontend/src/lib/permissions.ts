@@ -133,6 +133,36 @@ class Permissions {
     /** Unsuspend servers */
     public static ADMIN_SERVERS_UNSUSPEND = 'admin.servers.unsuspend';
 
+    // Admin Email Templates Permissions
+    /** View email templates */
+    public static ADMIN_TEMPLATE_EMAIL_VIEW = 'admin.email.templates.view';
+    /** Create new email templates */
+    public static ADMIN_TEMPLATE_EMAIL_CREATE = 'admin.email.templates.create';
+    /** Edit existing email templates */
+    public static ADMIN_TEMPLATE_EMAIL_EDIT = 'admin.email.templates.edit';
+    /** Delete email templates */
+    public static ADMIN_TEMPLATE_EMAIL_DELETE = 'admin.email.templates.delete';
+
+    // Admin Images Permissions
+    /** View images */
+    public static ADMIN_IMAGES_VIEW = 'admin.images.view';
+    /** Create new images */
+    public static ADMIN_IMAGES_CREATE = 'admin.images.create';
+    /** Edit existing images */
+    public static ADMIN_IMAGES_EDIT = 'admin.images.edit';
+    /** Delete images */
+    public static ADMIN_IMAGES_DELETE = 'admin.images.delete';
+
+    // Admin Redirect Links Permissions
+    /** View redirect links */
+    public static ADMIN_REDIRECT_LINKS_VIEW = 'admin.redirect_links.view';
+    /** Create new redirect links */
+    public static ADMIN_REDIRECT_LINKS_CREATE = 'admin.redirect_links.create';
+    /** Edit existing redirect links */
+    public static ADMIN_REDIRECT_LINKS_EDIT = 'admin.redirect_links.edit';
+    /** Delete redirect links */
+    public static ADMIN_REDIRECT_LINKS_DELETE = 'admin.redirect_links.delete';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -186,6 +216,18 @@ class Permissions {
             { constant: 'ADMIN_SERVERS_REINSTALL', value: Permissions.ADMIN_SERVERS_REINSTALL, category: 'Admin Servers', description: 'Reinstall servers' },
             { constant: 'ADMIN_SERVERS_SUSPEND', value: Permissions.ADMIN_SERVERS_SUSPEND, category: 'Admin Servers', description: 'Suspend servers' },
             { constant: 'ADMIN_SERVERS_UNSUSPEND', value: Permissions.ADMIN_SERVERS_UNSUSPEND, category: 'Admin Servers', description: 'Unsuspend servers' },
+            { constant: 'ADMIN_TEMPLATE_EMAIL_VIEW', value: Permissions.ADMIN_TEMPLATE_EMAIL_VIEW, category: 'Admin Email Templates', description: 'View email templates' },
+            { constant: 'ADMIN_TEMPLATE_EMAIL_CREATE', value: Permissions.ADMIN_TEMPLATE_EMAIL_CREATE, category: 'Admin Email Templates', description: 'Create new email templates' },
+            { constant: 'ADMIN_TEMPLATE_EMAIL_EDIT', value: Permissions.ADMIN_TEMPLATE_EMAIL_EDIT, category: 'Admin Email Templates', description: 'Edit existing email templates' },
+            { constant: 'ADMIN_TEMPLATE_EMAIL_DELETE', value: Permissions.ADMIN_TEMPLATE_EMAIL_DELETE, category: 'Admin Email Templates', description: 'Delete email templates' },
+            { constant: 'ADMIN_IMAGES_VIEW', value: Permissions.ADMIN_IMAGES_VIEW, category: 'Admin Images', description: 'View images' },
+            { constant: 'ADMIN_IMAGES_CREATE', value: Permissions.ADMIN_IMAGES_CREATE, category: 'Admin Images', description: 'Create new images' },
+            { constant: 'ADMIN_IMAGES_EDIT', value: Permissions.ADMIN_IMAGES_EDIT, category: 'Admin Images', description: 'Edit existing images' },
+            { constant: 'ADMIN_IMAGES_DELETE', value: Permissions.ADMIN_IMAGES_DELETE, category: 'Admin Images', description: 'Delete images' },
+            { constant: 'ADMIN_REDIRECT_LINKS_VIEW', value: Permissions.ADMIN_REDIRECT_LINKS_VIEW, category: 'Admin Redirect Links', description: 'View redirect links' },
+            { constant: 'ADMIN_REDIRECT_LINKS_CREATE', value: Permissions.ADMIN_REDIRECT_LINKS_CREATE, category: 'Admin Redirect Links', description: 'Create new redirect links' },
+            { constant: 'ADMIN_REDIRECT_LINKS_EDIT', value: Permissions.ADMIN_REDIRECT_LINKS_EDIT, category: 'Admin Redirect Links', description: 'Edit existing redirect links' },
+            { constant: 'ADMIN_REDIRECT_LINKS_DELETE', value: Permissions.ADMIN_REDIRECT_LINKS_DELETE, category: 'Admin Redirect Links', description: 'Delete redirect links' },
         ];
     }
 }

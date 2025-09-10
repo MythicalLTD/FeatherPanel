@@ -342,10 +342,8 @@ const saveFile = async () => {
     try {
         emit('save', editorContent.value);
         originalContent.value = editorContent.value;
-        toast(t('fileEditor.saveSuccess'), { type: TYPE.SUCCESS });
     } catch (error) {
         console.error('Error saving file:', error);
-        toast(t('fileEditor.saveError'), { type: TYPE.ERROR });
     } finally {
         saving.value = false;
     }

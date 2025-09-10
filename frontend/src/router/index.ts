@@ -10,15 +10,25 @@ import adminRoutes from './routes/admin/home';
 // Combine all routes
 const routes: RouteRecordRaw[] = [...authRoutes, ...clientRoutes, ...errorRoutes, ...adminRoutes];
 
-// Add catch-all route for 404
+// Add catch-all route for 404 (with redirect check)
 routes.push({
     path: '/:pathMatch(.*)*',
-    redirect: '/404',
+    component: () => import('@/pages/errors/NotFound.vue'),
 });
 
 const router = createRouter({
     history: createWebHistory(),
     routes,
+});
+
+// Add debug logging for route changes
+router.beforeEach((to, from, next) => {
+    console.log('[REDIRECT DEBUG] Router: Navigating from', from.path, 'to', to.path);
+    next();
+});
+
+router.afterEach((to) => {
+    console.log('[REDIRECT DEBUG] Router: Navigation completed to', to.path);
 });
 
 export default router;

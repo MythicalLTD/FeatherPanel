@@ -10,6 +10,7 @@ use App\Cron\TimeTask;
 use App\Chat\MailQueue;
 use App\Chat\MailList;
 use App\Chat\User;
+use App\Chat\TimedTask;
 use PDO;
 
 class MailSender implements TimeTask
@@ -23,10 +24,12 @@ class MailSender implements TimeTask
 		try {
 			$cron->runIfDue(function () {
 				$this->sendMails();
+				TimedTask::markRun('mail-sender', true, 'Mail sender heartbeat');
 			});
 		} catch (\Exception $e) {
 			$app = \App\App::getInstance(false, true);
 			$app->getLogger()->error('Failed to send mail: ' . $e->getMessage());
+			TimedTask::markRun('mail-sender', false, $e->getMessage());
 		}
 	}
 

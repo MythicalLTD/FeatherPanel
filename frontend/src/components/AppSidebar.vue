@@ -19,6 +19,8 @@ import {
     Clock,
     Network,
     Key,
+    ImageIcon,
+    Link,
 } from 'lucide-vue-next';
 import NavMain from '@/components/nav/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -153,6 +155,36 @@ const data = computed(() => {
                           title: t('nav.servers'),
                           url: '/admin/servers',
                           icon: Server,
+                      },
+                  ]
+                : []),
+            ...(sessionStore.hasPermission(Permissions.ADMIN_TEMPLATE_EMAIL_VIEW)
+                ? [
+                      {
+                          name: 'Mail Templates',
+                          title: t('nav.mailTemplates'),
+                          url: '/admin/mail-templates',
+                          icon: FileText,
+                      },
+                  ]
+                : []),
+            ...(sessionStore.hasPermission(Permissions.ADMIN_IMAGES_VIEW)
+                ? [
+                      {
+                          name: 'Images',
+                          title: t('nav.images'),
+                          url: '/admin/images',
+                          icon: ImageIcon,
+                      },
+                  ]
+                : []),
+            ...(sessionStore.hasPermission(Permissions.ADMIN_REDIRECT_LINKS_VIEW)
+                ? [
+                      {
+                          name: 'Redirect Links',
+                          title: t('nav.redirectLinks'),
+                          url: '/admin/redirect-links',
+                          icon: Link,
                       },
                   ]
                 : []),

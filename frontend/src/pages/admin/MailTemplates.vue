@@ -1,0 +1,649 @@
+<template>
+    <DashboardLayout :breadcrumbs="[{ text: 'Mail Templates', isCurrent: true, href: '/admin/mail-templates' }]">
+        <div class="min-h-screen bg-background">
+            <!-- Loading State -->
+            <div v-if="loading" class="flex items-center justify-center py-12">
+                <div class="flex items-center gap-3">
+                    <div class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+                    <span class="text-muted-foreground">Loading mail templates...</span>
+                </div>
+            </div>
+
+            <!-- Error State -->
+            <div
+                v-else-if="message?.type === 'error'"
+                class="flex flex-col items-center justify-center py-12 text-center"
+            >
+                <div class="text-red-500 mb-4">
+                    <svg class="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                        />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-muted-foreground mb-2">Failed to load mail templates</h3>
+                <p class="text-sm text-muted-foreground max-w-sm">
+                    {{ message.text }}
+                </p>
+                <Button class="mt-4" @click="fetchTemplates">Try Again</Button>
+            </div>
+
+            <!-- Templates Table -->
+            <div v-else class="p-6">
+                <TableComponent
+                    title="Mail Templates"
+                    description="Manage email templates for your system."
+                    :columns="tableColumns"
+                    :data="templates"
+                    :search-placeholder="'Search by name or subject...'"
+                    :server-side-pagination="true"
+                    :total-records="pagination.total"
+                    :total-pages="Math.ceil(pagination.total / pagination.pageSize)"
+                    :current-page="pagination.page"
+                    :has-next="pagination.hasNext"
+                    :has-prev="pagination.hasPrev"
+                    :from="pagination.from"
+                    :to="pagination.to"
+                    local-storage-key="featherpanel-mail-templates-table-columns"
+                    @search="handleSearch"
+                    @page-change="changePage"
+                    @column-toggle="handleColumnToggle"
+                >
+                    <template #header-actions>
+                        <div class="flex gap-2">
+                            <Button variant="outline" size="sm" @click="openCreateDrawer">
+                                <Plus class="h-4 w-4 mr-2" />
+                                Create Template
+                            </Button>
+                            <Button variant="outline" size="sm" @click="toggleIncludeDeleted">
+                                <EyeOff v-if="includeDeleted" class="h-4 w-4 mr-2" />
+                                <Eye v-else class="h-4 w-4 mr-2" />
+                                {{ includeDeleted ? 'Hide Deleted' : 'Show Deleted' }}
+                            </Button>
+                        </div>
+                    </template>
+
+                    <!-- Custom cell templates -->
+                    <template #cell-name="{ item }">
+                        <div class="flex items-center gap-2">
+                            <Mail class="h-4 w-4 text-muted-foreground" />
+                            <span class="font-medium">{{ (item as unknown as MailTemplate).name }}</span>
+                        </div>
+                    </template>
+
+                    <template #cell-subject="{ item }">
+                        <span class="text-sm">{{ (item as unknown as MailTemplate).subject }}</span>
+                    </template>
+
+                    <template #cell-body="{ item }">
+                        <div class="max-w-xs">
+                            <p class="text-sm text-muted-foreground truncate">
+                                {{ (item as unknown as MailTemplate).body.substring(0, 100) }}
+                                {{ (item as unknown as MailTemplate).body.length > 100 ? '...' : '' }}
+                            </p>
+                        </div>
+                    </template>
+
+                    <template #cell-created_at="{ item }">
+                        <span class="text-sm text-muted-foreground">
+                            {{ formatDate((item as unknown as MailTemplate).created_at) }}
+                        </span>
+                    </template>
+
+                    <template #cell-updated_at="{ item }">
+                        <span class="text-sm text-muted-foreground">
+                            {{ formatDate((item as unknown as MailTemplate).updated_at) }}
+                        </span>
+                    </template>
+
+                    <template #cell-actions="{ item }">
+                        <div class="flex gap-2">
+                            <Button size="sm" variant="outline" @click="onView(item as unknown as MailTemplate)">
+                                <Eye :size="16" />
+                            </Button>
+                            <Button size="sm" variant="secondary" @click="onEdit(item as unknown as MailTemplate)">
+                                <Pencil :size="16" />
+                            </Button>
+                            <Button size="sm" variant="outline" @click="onPreview(item as unknown as MailTemplate)">
+                                <Eye :size="16" />
+                            </Button>
+                            <template v-if="confirmDeleteRow === (item as unknown as MailTemplate).id">
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    :loading="deleting"
+                                    @click="confirmDelete(item as unknown as MailTemplate)"
+                                >
+                                    Confirm Delete
+                                </Button>
+                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
+                                    Cancel
+                                </Button>
+                            </template>
+                            <template v-else>
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    :disabled="deleting"
+                                    @click="onDelete(item as unknown as MailTemplate)"
+                                >
+                                    <Trash2 :size="16" />
+                                </Button>
+                            </template>
+                        </div>
+                    </template>
+                </TableComponent>
+            </div>
+        </div>
+
+        <!-- View Drawer -->
+        <Drawer
+            :open="viewDrawerOpen"
+            @update:open="
+                (val) => {
+                    if (!val) closeViewDrawer();
+                }
+            "
+        >
+            <DrawerContent v-if="selectedTemplate">
+                <DrawerHeader>
+                    <DrawerTitle>Template Details</DrawerTitle>
+                    <DrawerDescription>Viewing details for template: {{ selectedTemplate.name }}</DrawerDescription>
+                </DrawerHeader>
+
+                <div class="px-6 pb-6 space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <Label class="text-sm font-medium">Name</Label>
+                            <p class="text-sm text-muted-foreground mt-1">{{ selectedTemplate.name }}</p>
+                        </div>
+                        <div>
+                            <Label class="text-sm font-medium">Subject</Label>
+                            <p class="text-sm text-muted-foreground mt-1">{{ selectedTemplate.subject }}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <Label class="text-sm font-medium">Body</Label>
+                        <div class="mt-2 p-4 bg-muted rounded-lg">
+                            <pre class="text-sm whitespace-pre-wrap">{{ selectedTemplate.body }}</pre>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <Label class="text-sm font-medium">Created At</Label>
+                            <p class="text-sm text-muted-foreground mt-1">
+                                {{ formatDate(selectedTemplate.created_at) }}
+                            </p>
+                        </div>
+                        <div>
+                            <Label class="text-sm font-medium">Updated At</Label>
+                            <p class="text-sm text-muted-foreground mt-1">
+                                {{ formatDate(selectedTemplate.updated_at) }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <DrawerFooter>
+                    <DrawerClose as-child>
+                        <Button variant="outline">Close</Button>
+                    </DrawerClose>
+                </DrawerFooter>
+            </DrawerContent>
+        </Drawer>
+
+        <!-- Edit Drawer -->
+        <Drawer
+            :open="editDrawerOpen"
+            @update:open="
+                (val) => {
+                    if (!val) closeEditDrawer();
+                }
+            "
+        >
+            <DrawerContent v-if="editingTemplate">
+                <DrawerHeader>
+                    <DrawerTitle>Edit Template</DrawerTitle>
+                    <DrawerDescription>Edit details for template: {{ editingTemplate.name }}</DrawerDescription>
+                </DrawerHeader>
+
+                <form class="px-6 pb-6 space-y-6" @submit.prevent="updateTemplate">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <Label for="edit-name">Name</Label>
+                            <Input id="edit-name" v-model="editingTemplate.name" placeholder="Template name" required />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="edit-subject">Subject</Label>
+                            <Input
+                                id="edit-subject"
+                                v-model="editingTemplate.subject"
+                                placeholder="Email subject"
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <Label for="edit-body">Body</Label>
+                        <Textarea
+                            id="edit-body"
+                            v-model="editingTemplate.body"
+                            placeholder="Enter email template body (HTML supported)"
+                            class="min-h-96 font-mono text-sm"
+                            rows="15"
+                        />
+                    </div>
+
+                    <div class="flex gap-2">
+                        <Button type="submit" :loading="updating">
+                            {{ updating ? 'Updating...' : 'Update Template' }}
+                        </Button>
+                        <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
+                    </div>
+                </form>
+            </DrawerContent>
+        </Drawer>
+
+        <!-- Create Drawer -->
+        <Drawer
+            :open="createDrawerOpen"
+            @update:open="
+                (val) => {
+                    if (!val) closeCreateDrawer();
+                }
+            "
+        >
+            <DrawerContent>
+                <DrawerHeader>
+                    <DrawerTitle>Create Template</DrawerTitle>
+                    <DrawerDescription>Fill in the details to create a new email template.</DrawerDescription>
+                </DrawerHeader>
+
+                <form class="px-6 pb-6 space-y-6" @submit.prevent="createTemplate">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <Label for="create-name">Name</Label>
+                            <Input id="create-name" v-model="newTemplate.name" placeholder="Template name" required />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="create-subject">Subject</Label>
+                            <Input
+                                id="create-subject"
+                                v-model="newTemplate.subject"
+                                placeholder="Email subject"
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <Label for="create-body">Body</Label>
+                        <Textarea
+                            id="create-body"
+                            v-model="newTemplate.body"
+                            placeholder="Enter email template body (HTML supported)"
+                            class="min-h-96 font-mono text-sm"
+                            rows="15"
+                        />
+                    </div>
+
+                    <div class="flex gap-2">
+                        <Button type="submit" :loading="creating">
+                            {{ creating ? 'Creating...' : 'Create Template' }}
+                        </Button>
+                        <Button type="button" variant="outline" @click="closeCreateDrawer">Cancel</Button>
+                    </div>
+                </form>
+            </DrawerContent>
+        </Drawer>
+
+        <!-- Preview Drawer -->
+        <Drawer
+            :open="previewDrawerOpen"
+            @update:open="
+                (val) => {
+                    if (!val) closePreviewDrawer();
+                }
+            "
+        >
+            <DrawerContent v-if="previewTemplate">
+                <DrawerHeader>
+                    <DrawerTitle>Template Preview</DrawerTitle>
+                    <DrawerDescription>Preview for template: {{ previewTemplate.name }}</DrawerDescription>
+                </DrawerHeader>
+
+                <div class="px-6 pb-6">
+                    <div class="space-y-4">
+                        <div>
+                            <Label class="text-sm font-medium">Subject</Label>
+                            <p class="text-sm text-muted-foreground mt-1">{{ previewTemplate.subject }}</p>
+                        </div>
+
+                        <div>
+                            <Label class="text-sm font-medium">Body Preview</Label>
+                            <div class="mt-2 border rounded-lg p-4 bg-white dark:bg-gray-900">
+                                <!-- eslint-disable-next-line vue/no-v-html -->
+                                <div class="prose prose-sm max-w-none" v-html="previewTemplate.body"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <DrawerFooter>
+                    <DrawerClose as-child>
+                        <Button variant="outline">Close</Button>
+                    </DrawerClose>
+                </DrawerFooter>
+            </DrawerContent>
+        </Drawer>
+    </DashboardLayout>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, watch } from 'vue';
+import { useToast } from 'vue-toastification';
+import axios from 'axios';
+import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import TableComponent from '@/kit/TableComponent.vue';
+import type { TableColumn } from '@/kit/types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+    Drawer,
+    DrawerContent,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerDescription,
+    DrawerFooter,
+    DrawerClose,
+} from '@/components/ui/drawer';
+import { Plus, Eye, Pencil, Trash2, EyeOff, Mail } from 'lucide-vue-next';
+
+// Types
+interface MailTemplate {
+    id: number;
+    name: string;
+    subject: string;
+    body: string;
+    created_at: string;
+    updated_at: string;
+    deleted: string;
+}
+
+interface Message {
+    type: 'success' | 'error' | 'info' | 'warning';
+    text: string;
+}
+
+// Reactive state
+const loading = ref(true);
+const templates = ref<MailTemplate[]>([]);
+const pagination = ref({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+    hasNext: false,
+    hasPrev: false,
+    from: 0,
+    to: 0,
+});
+const message = ref<Message | null>(null);
+const searchQuery = ref('');
+const includeDeleted = ref(false);
+
+// Drawer states
+const viewDrawerOpen = ref(false);
+const editDrawerOpen = ref(false);
+const createDrawerOpen = ref(false);
+const previewDrawerOpen = ref(false);
+
+// Selected items
+const selectedTemplate = ref<MailTemplate | null>(null);
+const editingTemplate = ref<MailTemplate | null>(null);
+const previewTemplate = ref<MailTemplate | null>(null);
+
+// Form states
+const creating = ref(false);
+const updating = ref(false);
+const deleting = ref(false);
+const confirmDeleteRow = ref<number | null>(null);
+
+// New template form
+const newTemplate = ref({
+    name: '',
+    subject: '',
+    body: '<h1>Welcome!</h1>\n<p>This is a sample email template.</p>',
+});
+
+// Table columns configuration
+const tableColumns: TableColumn[] = [
+    { key: 'name', label: 'Name', searchable: true },
+    { key: 'subject', label: 'Subject', searchable: true },
+    { key: 'body', label: 'Body Preview', searchable: false },
+    { key: 'created_at', label: 'Created' },
+    { key: 'updated_at', label: 'Updated' },
+    { key: 'actions', label: 'Actions', headerClass: 'w-[120px] font-semibold' },
+];
+
+const toast = useToast();
+
+async function fetchTemplates() {
+    loading.value = true;
+    try {
+        const { data } = await axios.get('/api/admin/mail-templates', {
+            params: {
+                page: pagination.value.page,
+                limit: pagination.value.pageSize,
+                search: searchQuery.value || undefined,
+                include_deleted: includeDeleted.value,
+            },
+        });
+        templates.value = data.data.templates || [];
+
+        // Map the API response pagination to our expected format
+        const apiPagination = data.data.pagination;
+        pagination.value = {
+            page: apiPagination.current_page,
+            pageSize: apiPagination.per_page,
+            total: apiPagination.total_records,
+            hasNext: apiPagination.has_next,
+            hasPrev: apiPagination.has_prev,
+            from: apiPagination.from,
+            to: apiPagination.to,
+        };
+    } catch (error) {
+        console.error('Error fetching templates:', error);
+        message.value = {
+            type: 'error',
+            text: error instanceof Error ? error.message : 'Failed to fetch templates',
+        };
+    } finally {
+        loading.value = false;
+    }
+}
+
+const handleSearch = (query: string) => {
+    searchQuery.value = query;
+    pagination.value.page = 1;
+    fetchTemplates();
+};
+
+const changePage = (page: number) => {
+    pagination.value.page = page;
+    fetchTemplates();
+};
+
+const handleColumnToggle = (columns: string[]) => {
+    // Column preferences are automatically saved by the TableComponent
+    console.log('Columns changed:', columns);
+};
+
+const toggleIncludeDeleted = () => {
+    includeDeleted.value = !includeDeleted.value;
+    pagination.value.page = 1;
+    fetchTemplates();
+};
+
+// Drawer methods
+const openViewDrawer = (template: MailTemplate) => {
+    selectedTemplate.value = template;
+    viewDrawerOpen.value = true;
+};
+
+const closeViewDrawer = () => {
+    viewDrawerOpen.value = false;
+    selectedTemplate.value = null;
+};
+
+const openEditDrawer = (template: MailTemplate) => {
+    editingTemplate.value = { ...template };
+    editDrawerOpen.value = true;
+};
+
+const closeEditDrawer = () => {
+    editDrawerOpen.value = false;
+    editingTemplate.value = null;
+};
+
+const openCreateDrawer = () => {
+    newTemplate.value = {
+        name: '',
+        subject: '',
+        body: '<h1>Welcome!</h1>\n<p>This is a sample email template.</p>',
+    };
+    createDrawerOpen.value = true;
+};
+
+const closeCreateDrawer = () => {
+    createDrawerOpen.value = false;
+    newTemplate.value = {
+        name: '',
+        subject: '',
+        body: '<h1>Welcome!</h1>\n<p>This is a sample email template.</p>',
+    };
+};
+
+const openPreviewDrawer = (template: MailTemplate) => {
+    previewTemplate.value = template;
+    previewDrawerOpen.value = true;
+};
+
+const closePreviewDrawer = () => {
+    previewDrawerOpen.value = false;
+    previewTemplate.value = null;
+};
+
+async function createTemplate() {
+    if (!newTemplate.value.name || !newTemplate.value.subject || !newTemplate.value.body) {
+        toast.error('Please fill in all required fields');
+        return;
+    }
+
+    try {
+        creating.value = true;
+        const { data } = await axios.post('/api/admin/mail-templates', newTemplate.value);
+
+        if (data && data.success) {
+            toast.success('Template created successfully');
+            closeCreateDrawer();
+            await fetchTemplates();
+        } else {
+            toast.error(data?.message || 'Failed to create template');
+        }
+    } catch (error) {
+        console.error('Error creating template:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to create template');
+    } finally {
+        creating.value = false;
+    }
+}
+
+async function updateTemplate() {
+    if (!editingTemplate.value) return;
+
+    try {
+        updating.value = true;
+        const { data } = await axios.patch(
+            `/api/admin/mail-templates/${editingTemplate.value.id}`,
+            editingTemplate.value,
+        );
+
+        if (data && data.success) {
+            toast.success('Template updated successfully');
+            closeEditDrawer();
+            await fetchTemplates();
+        } else {
+            toast.error(data?.message || 'Failed to update template');
+        }
+    } catch (error) {
+        console.error('Error updating template:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to update template');
+    } finally {
+        updating.value = false;
+    }
+}
+
+const onDelete = (template: MailTemplate) => {
+    confirmDeleteRow.value = template.id;
+};
+
+const onCancelDelete = () => {
+    confirmDeleteRow.value = null;
+};
+
+async function confirmDelete(template: MailTemplate) {
+    deleting.value = true;
+    let success = false;
+    try {
+        const response = await axios.delete(`/api/admin/mail-templates/${template.id}`);
+        if (response.data && response.data.success) {
+            toast.success('Template deleted successfully');
+            await fetchTemplates();
+            success = true;
+        } else {
+            toast.error(response.data?.message || 'Failed to delete template');
+        }
+    } catch (error) {
+        console.error('Error deleting template:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to delete template');
+    } finally {
+        deleting.value = false;
+        if (success) confirmDeleteRow.value = null;
+    }
+}
+
+// Action handlers
+const onView = (template: MailTemplate) => {
+    openViewDrawer(template);
+};
+
+const onEdit = (template: MailTemplate) => {
+    openEditDrawer(template);
+};
+
+const onPreview = (template: MailTemplate) => {
+    openPreviewDrawer(template);
+};
+
+// Utility functions
+const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+};
+
+onMounted(fetchTemplates);
+watch([() => pagination.value.page, () => pagination.value.pageSize, searchQuery], fetchTemplates);
+</script>

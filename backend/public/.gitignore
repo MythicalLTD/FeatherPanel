@@ -2,3 +2,7 @@
 /attachments/announcements/
 /attachments/images/
 /attachments/imgs/
+/attachments/*.png
+/attachments/*.jpg
+/attachments/*.webp
+

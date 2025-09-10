@@ -4,9 +4,9 @@ This document provides a comprehensive overview of all permission nodes used in 
 
 ## Overview
 
-- **Total Permissions:** 48
-- **Categories:** 13
-- **With Descriptions:** 48
+- **Total Permissions:** 60
+- **Categories:** 16
+- **With Descriptions:** 60
 
 ## Format
 
@@ -150,6 +150,33 @@ if (auth.user.hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)) {
 | `ADMIN_SERVERS_SUSPEND` | `admin.servers.suspend` | Suspend servers |
 | `ADMIN_SERVERS_UNSUSPEND` | `admin.servers.unsuspend` | Unsuspend servers |
 
+## Admin Email Templates
+
+| Permission | Node | Description |
+|------------|------|-------------|
+| `ADMIN_TEMPLATE_EMAIL_VIEW` | `admin.email.templates.view` | View email templates |
+| `ADMIN_TEMPLATE_EMAIL_CREATE` | `admin.email.templates.create` | Create new email templates |
+| `ADMIN_TEMPLATE_EMAIL_EDIT` | `admin.email.templates.edit` | Edit existing email templates |
+| `ADMIN_TEMPLATE_EMAIL_DELETE` | `admin.email.templates.delete` | Delete email templates |
+
+## Admin Images
+
+| Permission | Node | Description |
+|------------|------|-------------|
+| `ADMIN_IMAGES_VIEW` | `admin.images.view` | View images |
+| `ADMIN_IMAGES_CREATE` | `admin.images.create` | Create new images |
+| `ADMIN_IMAGES_EDIT` | `admin.images.edit` | Edit existing images |
+| `ADMIN_IMAGES_DELETE` | `admin.images.delete` | Delete images |
+
+## Admin Redirect Links
+
+| Permission | Node | Description |
+|------------|------|-------------|
+| `ADMIN_REDIRECT_LINKS_VIEW` | `admin.redirect_links.view` | View redirect links |
+| `ADMIN_REDIRECT_LINKS_CREATE` | `admin.redirect_links.create` | Create new redirect links |
+| `ADMIN_REDIRECT_LINKS_EDIT` | `admin.redirect_links.edit` | Edit existing redirect links |
+| `ADMIN_REDIRECT_LINKS_DELETE` | `admin.redirect_links.delete` | Delete redirect links |
+
 ## Adding New Permissions
 
 To add a new permission node:
@@ -172,4 +199,4 @@ To add a new permission node:
 
 ---
 
-*This documentation was auto-generated on 2025-09-06 18:18:17*
+*This documentation was auto-generated on 2025-09-10 18:14:00*
