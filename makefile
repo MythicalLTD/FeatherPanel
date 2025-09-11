@@ -88,7 +88,7 @@ release:
 	@echo -e "${YELLOW}${WARN} Starting comprehensive release build...${NC}\n"
 
 	@echo -e "${PURPLE}${INFO} Exporting permissions...${NC}"
-	@php app ExportPermissions
+	@php app exportPermissions
 	@echo -e "${GREEN}${CHECK} Permissions exported${NC}\n"
 
 	

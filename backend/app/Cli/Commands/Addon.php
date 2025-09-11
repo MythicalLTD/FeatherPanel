@@ -38,14 +38,6 @@ class Addon extends App implements CommandBuilder
                     // Install an addon.
                     self::installPlugin();
                     break;
-                case 'online-install':
-                    // Install an addon from the online repository.
-                    self::onlineInstallPlugin();
-                    break;
-                case 'online-list':
-                    // List all addons from the online repository.
-                    self::onlineList();
-                    break;
                 case 'uninstall':
                     // Uninstall an addon.
                     self::uninstallPlugin();
@@ -84,74 +76,6 @@ class Addon extends App implements CommandBuilder
             $description = $addonConfig['plugin']['description'];
             $identifier = $addonConfig['plugin']['identifier'];
             self::getInstance()->send("&7#&e{$identifier}&7 | &b{$name} &8> &d{$version} &8> &7{$description}");
-        }
-        self::getInstance()->send('');
-    }
-
-    public static function onlineInstallPlugin(): void
-    {
-        self::getInstance()->send('&5&lMythical&d&lPanel &7- &d&lAddons &7- &d&lOnline Install');
-        self::getInstance()->send('');
-        self::getInstance()->send('&7Please enter the name of the addon to install (do not include .fpa):');
-        $addonName = trim(fgets(STDIN));
-
-        if (empty($addonName) || !preg_match('/^[a-zA-Z0-9_\-]+$/', $addonName)) {
-            self::getInstance()->send('&cInvalid addon name! Only alphanumeric, dash, and underscore are allowed.');
-
-            return;
-        }
-
-        $url = "https://cdn.mythical.systems/featherpanel/packages/{$addonName}.fpa";
-
-        self::getInstance()->send("&7Attempting to download: &b{$url}");
-
-        $response = @file_get_contents($url);
-        if ($response === false) {
-            self::getInstance()->send('&cFailed to download plugin! Please check the addon name and try again.');
-
-            return;
-        }
-
-        $tempFile = sys_get_temp_dir() . '/' . uniqid('featherpanel_') . '.fpa';
-        file_put_contents($tempFile, $response);
-
-        self::installPlugin($tempFile);
-    }
-
-    public static function onlineList(): void
-    {
-        self::getInstance()->send('&5&lMythical&d&lPanel &7- &d&lAddons &7- &d&lOnline Addon List');
-        self::getInstance()->send('');
-        $url = 'https://cdn.mythical.systems/featherpanel/packages/list.json';
-        self::getInstance()->send("&7Fetching online addon list from: &b{$url}");
-        self::getInstance()->send('');
-        $response = @file_get_contents($url);
-        if ($response === false) {
-            self::getInstance()->send('&cFailed to fetch online addon list!');
-
-            return;
-        }
-
-        $addons = json_decode($response, true);
-        if (!is_array($addons)) {
-            self::getInstance()->send('&cInvalid response from online addon list!');
-
-            return;
-        }
-
-        if (empty($addons)) {
-            self::getInstance()->send('&7No addons found in the online repository.');
-
-            return;
-        }
-
-        foreach ($addons as $addon) {
-            $name = $addon['name'] ?? 'Unknown';
-            $identifier = $addon['identifier'] ?? 'unknown';
-            $version = $addon['version'] ?? 'N/A';
-            $author = $addon['author'] ?? 'Unknown';
-            $description = $addon['description'] ?? '';
-            self::getInstance()->send("&7#&e{$identifier}&7 | &b{$name} &8> &d{$version} &8> &7{$description} &8> By &7{$author}");
         }
         self::getInstance()->send('');
     }
