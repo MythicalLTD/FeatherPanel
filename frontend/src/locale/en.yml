@@ -936,6 +936,7 @@ serverFiles:
     compress: 'Compress'
     delete: 'Delete'
     parentDirectory: '..'
+    folder: 'Folder'
     emptyFolder: 'This folder is empty'
     emptyFolderDescription: 'Upload files or create folders to get started'
     searchPlaceholder: 'Search files...'

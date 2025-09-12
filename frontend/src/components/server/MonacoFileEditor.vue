@@ -1,18 +1,20 @@
 <template>
     <div class="flex flex-col h-full">
         <!-- Editor Header -->
-        <div class="flex items-center justify-between p-4 border-b bg-muted/50">
-            <div class="flex items-center gap-3">
-                <component :is="getFileIcon()" class="h-5 w-5 text-muted-foreground" />
-                <div>
-                    <h3 class="font-semibold">{{ fileName }}</h3>
-                    <p class="text-sm text-muted-foreground">{{ filePath }}</p>
+        <div
+            class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border-b bg-muted/50 gap-3 sm:gap-0"
+        >
+            <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                <component :is="getFileIcon()" class="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
+                <div class="min-w-0 flex-1">
+                    <h3 class="font-semibold text-sm sm:text-base truncate">{{ fileName }}</h3>
+                    <p class="text-xs sm:text-sm text-muted-foreground truncate">{{ filePath }}</p>
                 </div>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1 sm:gap-2 w-full sm:w-auto">
                 <!-- Language Selector -->
                 <Select v-model="selectedLanguage" @update:model-value="changeLanguage">
-                    <SelectTrigger class="w-32">
+                    <SelectTrigger class="w-24 sm:w-32 text-xs sm:text-sm">
                         <SelectValue :placeholder="t('fileEditor.language')" />
                     </SelectTrigger>
                     <SelectContent>
@@ -23,37 +25,48 @@
                 </Select>
 
                 <!-- Theme Toggle -->
-                <Button variant="outline" size="sm" class="gap-1" @click="toggleTheme">
-                    <Monitor v-if="editorTheme === 'vs'" class="h-4 w-4" />
-                    <Sun v-else-if="editorTheme === 'vs-light'" class="h-4 w-4" />
-                    <Moon v-else class="h-4 w-4" />
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="gap-1 h-8 w-8 sm:h-9 sm:w-auto p-0 sm:px-3"
+                    @click="toggleTheme"
+                >
+                    <Monitor v-if="editorTheme === 'vs'" class="h-3 w-3 sm:h-4 sm:w-4" />
+                    <Sun v-else-if="editorTheme === 'vs-light'" class="h-3 w-3 sm:h-4 sm:w-4" />
+                    <Moon v-else class="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span class="hidden sm:inline">{{
+                        editorTheme === 'vs-dark' ? 'Dark' : editorTheme === 'vs-light' ? 'Light' : 'Auto'
+                    }}</span>
                 </Button>
 
                 <!-- Save Button -->
-                <Button :disabled="!hasChanges || saving" class="gap-2" @click="saveFile">
-                    <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
-                    <Save v-else class="h-4 w-4" />
-                    {{ saving ? t('fileEditor.saving') : t('fileEditor.save') }}
+                <Button :disabled="!hasChanges || saving" class="gap-1 h-8 sm:h-9 text-xs sm:text-sm" @click="saveFile">
+                    <Loader2 v-if="saving" class="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                    <Save v-else class="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span class="hidden sm:inline">{{ saving ? t('fileEditor.saving') : t('fileEditor.save') }}</span>
                 </Button>
 
                 <!-- Close Button -->
-                <Button variant="outline" class="p-2" @click="closeEditor">
-                    <X class="h-4 w-4" />
+                <Button variant="outline" class="h-8 w-8 sm:h-9 sm:w-auto p-0 sm:px-3" @click="closeEditor">
+                    <X class="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span class="hidden sm:inline ml-1">{{ t('common.close') }}</span>
                 </Button>
             </div>
         </div>
 
         <!-- File Info Bar -->
-        <div class="flex items-center justify-between px-4 py-2 bg-background border-b text-sm">
-            <div class="flex items-center gap-4">
+        <div
+            class="flex flex-col sm:flex-row items-start sm:items-center justify-between px-3 sm:px-4 py-2 bg-background border-b text-xs sm:text-sm gap-2 sm:gap-0"
+        >
+            <div class="flex items-center gap-2 sm:gap-4 flex-wrap">
                 <span class="text-muted-foreground">
                     {{ t('fileEditor.size') }}: {{ formatFileSize(originalContent.length) }}
                 </span>
                 <span class="text-muted-foreground"> {{ t('fileEditor.lines') }}: {{ lineCount }} </span>
-                <span class="text-muted-foreground"> {{ t('fileEditor.encoding') }}: UTF-8 </span>
+                <span class="hidden sm:inline text-muted-foreground"> {{ t('fileEditor.encoding') }}: UTF-8 </span>
             </div>
-            <div class="flex items-center gap-4">
-                <span v-if="hasChanges" class="text-orange-600 dark:text-orange-400">
+            <div class="flex items-center gap-2 sm:gap-4 flex-wrap">
+                <span v-if="hasChanges" class="text-orange-600 dark:text-orange-400 text-xs">
                     {{ t('fileEditor.unsavedChanges') }}
                 </span>
                 <span class="text-muted-foreground">
@@ -77,21 +90,25 @@
         </div>
 
         <!-- Editor Footer -->
-        <div class="flex items-center justify-between px-4 py-2 border-t bg-muted/30 text-sm">
-            <div class="flex items-center gap-4">
-                <Button variant="ghost" size="sm" :disabled="!canFormat" @click="formatDocument">
-                    <AlignLeft class="h-4 w-4 mr-2" />
-                    {{ t('fileEditor.format') }}
+        <div
+            class="flex flex-col sm:flex-row items-start sm:items-center justify-between px-3 sm:px-4 py-2 border-t bg-muted/30 text-xs sm:text-sm gap-2 sm:gap-0"
+        >
+            <div class="flex items-center gap-2 sm:gap-4 flex-wrap">
+                <Button variant="ghost" size="sm" :disabled="!canFormat" class="h-8 text-xs" @click="formatDocument">
+                    <AlignLeft class="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                    <span class="hidden sm:inline">{{ t('fileEditor.format') }}</span>
                 </Button>
-                <Button variant="ghost" size="sm" @click="findAndReplace">
-                    <Search class="h-4 w-4 mr-2" />
-                    {{ t('fileEditor.findReplace') }}
+                <Button variant="ghost" size="sm" class="h-8 text-xs" @click="findAndReplace">
+                    <Search class="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                    <span class="hidden sm:inline">{{ t('fileEditor.findReplace') }}</span>
                 </Button>
             </div>
             <div class="flex items-center gap-2">
-                <span class="text-muted-foreground">{{ selectedLanguage.toUpperCase() }}</span>
-                <Separator orientation="vertical" class="h-4" />
-                <span class="text-muted-foreground">{{ editorTheme === 'vs-dark' ? 'Dark' : 'Light' }}</span>
+                <span class="text-muted-foreground text-xs">{{ selectedLanguage.toUpperCase() }}</span>
+                <Separator orientation="vertical" class="h-3 sm:h-4" />
+                <span class="text-muted-foreground text-xs">{{
+                    editorTheme === 'vs-dark' ? 'Dark' : editorTheme === 'vs-light' ? 'Light' : 'Auto'
+                }}</span>
             </div>
         </div>
     </div>
@@ -186,38 +203,59 @@ const availableLanguages = [
 ];
 
 // Monaco Editor options
-const editorOptions = computed(() => ({
-    automaticLayout: true,
-    fontSize: 14,
-    fontFamily: 'JetBrains Mono, Fira Code, Monaco, Consolas, monospace',
-    lineNumbers: 'on',
-    roundedSelection: false,
-    scrollBeyondLastLine: false,
-    readOnly: props.readonly,
-    minimap: { enabled: true },
-    wordWrap: 'on',
-    tabSize: 4,
-    insertSpaces: true,
-    detectIndentation: true,
-    trimAutoWhitespace: true,
-    formatOnPaste: true,
-    formatOnType: true,
-    suggestOnTriggerCharacters: true,
-    acceptSuggestionOnEnter: 'on',
-    snippetSuggestions: 'top',
-    quickSuggestions: true,
-    parameterHints: { enabled: true },
-    hover: { enabled: true },
-    contextmenu: true,
-    mouseWheelZoom: true,
-    bracketPairColorization: { enabled: true },
-    guides: {
-        bracketPairs: true,
-        indentation: true,
-    },
-    renderWhitespace: 'selection',
-    renderControlCharacters: true,
-}));
+const editorOptions = computed(() => {
+    return {
+        automaticLayout: true,
+        fontSize: isMobile.value ? 12 : 14,
+        fontFamily: 'JetBrains Mono, Fira Code, Monaco, Consolas, monospace',
+        lineNumbers: 'on',
+        roundedSelection: false,
+        scrollBeyondLastLine: false,
+        readOnly: props.readonly,
+        minimap: { enabled: !isMobile.value }, // Disable minimap on mobile
+        wordWrap: 'on',
+        tabSize: 4,
+        insertSpaces: true,
+        detectIndentation: true,
+        trimAutoWhitespace: true,
+        formatOnPaste: true,
+        formatOnType: true,
+        suggestOnTriggerCharacters: true,
+        snippetSuggestions: 'top',
+        quickSuggestions: !isMobile.value, // Disable quick suggestions on mobile for better performance
+        parameterHints: { enabled: !isMobile.value }, // Disable parameter hints on mobile
+        hover: { enabled: !isMobile.value }, // Disable hover on mobile
+        contextmenu: !isMobile.value, // Disable context menu on mobile
+        mouseWheelZoom: !isMobile.value, // Disable mouse wheel zoom on mobile
+        bracketPairColorization: { enabled: true },
+        guides: {
+            bracketPairs: !isMobile.value, // Disable bracket pair guides on mobile
+            indentation: true,
+        },
+        renderWhitespace: isMobile.value ? 'none' : 'selection', // Less visual clutter on mobile
+        renderControlCharacters: !isMobile.value, // Disable control characters on mobile
+        // Mobile-specific optimizations
+        scrollbar: {
+            vertical: isMobile.value ? 'auto' : 'auto',
+            horizontal: isMobile.value ? 'auto' : 'auto',
+            verticalScrollbarSize: isMobile.value ? 8 : 12,
+            horizontalScrollbarSize: isMobile.value ? 8 : 12,
+        },
+        // Touch-friendly settings
+        mouseWheelScrollSensitivity: isMobile.value ? 0.5 : 1,
+        fastScrollSensitivity: isMobile.value ? 0.5 : 1,
+        // Disable some features that don't work well on mobile
+        folding: !isMobile.value,
+        foldingStrategy: isMobile.value ? 'indentation' : 'auto',
+        showFoldingControls: isMobile.value ? 'never' : 'mouseover',
+        // Better mobile keyboard handling
+        acceptSuggestionOnCommitCharacter: !isMobile.value,
+        acceptSuggestionOnEnter: isMobile.value ? 'smart' : 'on',
+        // Optimize for touch
+        multiCursorModifier: isMobile.value ? 'ctrlCmd' : 'alt',
+        accessibilitySupport: 'off', // Disable for better mobile performance
+    };
+});
 
 // Computed properties
 const hasChanges = computed(() => editorContent.value !== originalContent.value);
@@ -399,6 +437,18 @@ const handleKeydown = (event: KeyboardEvent) => {
     }
 };
 
+// Mobile detection and resize handling
+const isMobile = ref(window.innerWidth < 640);
+
+const handleResize = () => {
+    isMobile.value = window.innerWidth < 640;
+    // Trigger editor layout update when switching between mobile/desktop
+    if (monacoEditor.value?.getEditor) {
+        const editor = monacoEditor.value.getEditor();
+        editor.layout();
+    }
+};
+
 // Lifecycle
 onMounted(() => {
     // Auto-detect language from filename
@@ -406,10 +456,14 @@ onMounted(() => {
 
     // Add keyboard shortcuts
     document.addEventListener('keydown', handleKeydown);
+
+    // Add resize listener for mobile/desktop switching
+    window.addEventListener('resize', handleResize);
 });
 
 onUnmounted(() => {
     document.removeEventListener('keydown', handleKeydown);
+    window.removeEventListener('resize', handleResize);
 });
 
 // Watch for prop changes

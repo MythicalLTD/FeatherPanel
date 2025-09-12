@@ -3,29 +3,29 @@
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6">
             <!-- Header Section -->
-            <div class="flex items-center justify-between">
+            <div class="space-y-4">
                 <div>
-                    <h1 class="text-2xl font-bold">{{ t('serverLogs.title') }}</h1>
-                    <p class="text-muted-foreground">{{ t('serverLogs.description') }}</p>
+                    <h1 class="text-xl sm:text-2xl font-bold">{{ t('serverLogs.title') }}</h1>
+                    <p class="text-sm sm:text-base text-muted-foreground">{{ t('serverLogs.description') }}</p>
                 </div>
-                <div class="flex gap-2">
-                    <Button variant="outline" :disabled="loading" @click="refreshLogs">
-                        <RefreshCw class="h-4 w-4 mr-2" />
-                        {{ t('serverLogs.refresh') }}
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <Button variant="outline" :disabled="loading" class="flex-1 sm:flex-none" @click="refreshLogs">
+                        <RefreshCw class="h-4 w-4 sm:mr-2" />
+                        <span class="hidden sm:inline">{{ t('serverLogs.refresh') }}</span>
                     </Button>
-                    <Button variant="outline" :disabled="loading" @click="downloadLogs">
-                        <Download class="h-4 w-4 mr-2" />
-                        {{ t('serverLogs.download') }}
+                    <Button variant="outline" :disabled="loading" class="flex-1 sm:flex-none" @click="downloadLogs">
+                        <Download class="h-4 w-4 sm:mr-2" />
+                        <span class="hidden sm:inline">{{ t('serverLogs.download') }}</span>
                     </Button>
                 </div>
             </div>
 
             <!-- Navigation Tabs -->
             <div class="border-b">
-                <nav class="flex space-x-8">
+                <nav class="flex space-x-4 sm:space-x-8 overflow-x-auto">
                     <router-link
                         :to="`/server/${route.params.uuidShort}/logs`"
-                        class="border-b-2 border-transparent py-2 px-1 text-sm font-medium transition-colors hover:text-foreground"
+                        class="border-b-2 border-transparent py-2 px-1 text-xs sm:text-sm font-medium transition-colors hover:text-foreground whitespace-nowrap flex-shrink-0"
                         :class="{
                             'border-primary text-foreground': $route.path === `/server/${route.params.uuidShort}/logs`,
                             'text-muted-foreground': $route.path !== `/server/${route.params.uuidShort}/logs`,
@@ -35,7 +35,7 @@
                     </router-link>
                     <router-link
                         :to="`/server/${route.params.uuidShort}/logs/install`"
-                        class="border-b-2 border-transparent py-2 px-1 text-sm font-medium transition-colors hover:text-foreground"
+                        class="border-b-2 border-transparent py-2 px-1 text-xs sm:text-sm font-medium transition-colors hover:text-foreground whitespace-nowrap flex-shrink-0"
                         :class="{
                             'border-primary text-foreground':
                                 $route.path === `/server/${route.params.uuidShort}/logs/install`,
@@ -48,33 +48,38 @@
             </div>
 
             <!-- Logs Display -->
-            <Card>
-                <CardHeader>
-                    <CardTitle class="flex items-center gap-2">
-                        <FileText class="h-5 w-5" />
+            <Card class="overflow-hidden">
+                <CardHeader class="pb-3 sm:pb-6">
+                    <CardTitle class="flex items-center gap-2 text-base sm:text-lg">
+                        <FileText class="h-4 w-4 sm:h-5 sm:w-5" />
                         {{ t('serverLogs.serverLogs') }}
                     </CardTitle>
-                    <CardDescription> {{ t('serverLogs.lastUpdated') }}: {{ lastUpdated }} </CardDescription>
+                    <CardDescription class="text-xs sm:text-sm">
+                        {{ t('serverLogs.lastUpdated') }}: {{ lastUpdated }}
+                    </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent class="overflow-x-auto">
                     <div v-if="loading" class="flex items-center justify-center py-8">
                         <div
                             class="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"
                         ></div>
-                        <span class="ml-2">{{ t('serverLogs.loading') }}</span>
+                        <span class="ml-2 text-sm">{{ t('serverLogs.loading') }}</span>
                     </div>
 
                     <div v-else-if="logs.length === 0" class="text-center py-8 text-muted-foreground">
-                        {{ t('serverLogs.noLogs') }}
+                        <p class="text-sm">{{ t('serverLogs.noLogs') }}</p>
                     </div>
 
-                    <div v-else class="space-y-2">
+                    <div v-else class="space-y-2 min-w-0">
                         <div
                             v-for="(log, index) in logs"
                             :key="index"
-                            class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg font-mono text-sm"
+                            class="p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg font-mono text-xs sm:text-sm min-w-0"
                         >
-                            <div v-html="log"></div>
+                            <div
+                                class="break-all whitespace-pre-wrap overflow-x-auto max-w-full min-w-0"
+                                v-html="log"
+                            ></div>
                         </div>
                     </div>
                 </CardContent>

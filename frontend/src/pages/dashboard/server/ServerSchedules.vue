@@ -21,10 +21,6 @@
                 @column-toggle="handleColumnToggle"
             >
                 <template #header-actions>
-                    <Button variant="outline" size="sm" :disabled="loading" @click="refresh">
-                        <RefreshCw class="h-4 w-4 mr-2" />
-                        {{ t('common.refresh') }}
-                    </Button>
                     <Button @click="openCreateScheduleDrawer">
                         <Plus class="h-4 w-4 mr-2" />
                         {{ t('serverSchedules.createSchedule') }}
@@ -443,7 +439,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RefreshCw, Plus, Pencil, Power, Trash2, Loader2, ExternalLink, ListTodo } from 'lucide-vue-next';
+import { Plus, Pencil, Power, Trash2, Loader2, ExternalLink, ListTodo } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import TableComponent from '@/kit/TableComponent.vue';
@@ -589,10 +585,6 @@ async function fetchServer() {
 function changePage(page: number) {
     if (page < 1) return;
     fetchSchedules(page);
-}
-
-function refresh() {
-    fetchSchedules();
 }
 
 function handleSearch(query: string) {

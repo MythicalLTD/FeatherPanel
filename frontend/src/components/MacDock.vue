@@ -231,10 +231,10 @@ const handleItemLeave = () => {
     }
 }
 
-/* Hide dock on very small screens */
-@media (max-width: 480px) {
+/* Hide dock on mobile devices */
+@media (max-width: 768px) {
     .mac-dock-container {
-        display: none;
+        display: none !important;
     }
 }
 </style>

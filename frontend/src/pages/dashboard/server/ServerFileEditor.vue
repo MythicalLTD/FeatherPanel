@@ -10,15 +10,21 @@
                 @save="handleSave"
                 @close="handleClose"
             />
-            <div v-else-if="loading" class="flex items-center justify-center py-8">
-                <div class="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
-                <span class="ml-2">{{ t('serverFiles.loading') }}</span>
+            <div v-else-if="loading" class="flex items-center justify-center py-8 px-4">
+                <div
+                    class="animate-spin h-6 w-6 sm:h-8 sm:w-8 border-2 border-primary border-t-transparent rounded-full"
+                ></div>
+                <span class="ml-2 text-sm sm:text-base">{{ t('serverFiles.loading') }}</span>
             </div>
-            <div v-else class="flex items-center justify-center py-8">
-                <div class="text-center">
-                    <h3 class="text-lg font-semibold text-muted-foreground">{{ t('fileEditor.loadError') }}</h3>
-                    <p class="text-sm text-muted-foreground mt-2">{{ t('serverFiles.failedToFetchServer') }}</p>
-                    <Button class="mt-4" @click="handleClose">
+            <div v-else class="flex items-center justify-center py-8 px-4">
+                <div class="text-center max-w-md">
+                    <h3 class="text-base sm:text-lg font-semibold text-muted-foreground">
+                        {{ t('fileEditor.loadError') }}
+                    </h3>
+                    <p class="text-xs sm:text-sm text-muted-foreground mt-2">
+                        {{ t('serverFiles.failedToFetchServer') }}
+                    </p>
+                    <Button class="mt-4 w-full sm:w-auto" @click="handleClose">
                         {{ t('common.back') }}
                     </Button>
                 </div>
@@ -194,5 +200,29 @@ onMounted(async () => {
 :deep(.dashboard-content) {
     height: 100%;
     overflow: hidden;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+    :deep(.dashboard-layout) {
+        height: 100vh;
+        height: 100dvh; /* Use dynamic viewport height for mobile */
+    }
+
+    /* Ensure Monaco editor takes full available space on mobile */
+    :deep(.monaco-editor) {
+        min-height: calc(100vh - 200px);
+        min-height: calc(100dvh - 200px);
+    }
+
+    /* Better touch targets for mobile */
+    :deep(.monaco-editor .monaco-editor-background) {
+        touch-action: pan-x pan-y;
+    }
+
+    /* Optimize scrollbars for mobile */
+    :deep(.monaco-editor .monaco-scrollable-element) {
+        -webkit-overflow-scrolling: touch;
+    }
 }
 </style>

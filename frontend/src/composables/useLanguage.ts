@@ -7,9 +7,7 @@ export interface Language {
     flag: string;
 }
 
-export const availableLanguages: Language[] = [
-    { code: 'en', name: 'English', flag: '🇺🇸' },
-];
+export const availableLanguages: Language[] = [{ code: 'en', name: 'English', flag: '🇺🇸' }];
 
 export function useLanguage() {
     const { locale } = useI18n();

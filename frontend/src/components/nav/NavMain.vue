@@ -21,12 +21,20 @@ defineProps<{
 
 <template>
     <SidebarGroup>
-        <SidebarGroupLabel>{{ name }}</SidebarGroupLabel>
-        <SidebarMenu>
+        <SidebarGroupLabel class="text-xs sm:text-sm font-medium text-muted-foreground px-2 py-1.5">
+            {{ name }}
+        </SidebarGroupLabel>
+        <SidebarMenu class="space-y-1">
             <SidebarMenuItem v-for="item in items" :key="item.title">
-                <SidebarMenuButton :tooltip="item.title" :to="item.url" goto :is-active="item.isActive">
-                    <component :is="item.icon" v-if="item.icon" />
-                    <span>{{ item.title }}</span>
+                <SidebarMenuButton
+                    :tooltip="item.title"
+                    :to="item.url"
+                    goto
+                    :is-active="item.isActive"
+                    class="text-sm sm:text-base px-2 py-2 sm:py-2.5"
+                >
+                    <component :is="item.icon" v-if="item.icon" class="h-4 w-4 sm:h-5 sm:w-5" />
+                    <span class="truncate">{{ item.title }}</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
         </SidebarMenu>

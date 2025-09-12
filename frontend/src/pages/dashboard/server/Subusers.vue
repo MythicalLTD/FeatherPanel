@@ -2,19 +2,19 @@
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6">
             <!-- Header -->
-            <div class="flex items-center justify-between">
+            <div class="space-y-4">
                 <div>
-                    <h1 class="text-2xl font-bold">{{ t('serverSubusers.title') }}</h1>
-                    <p class="text-muted-foreground">{{ t('serverSubusers.description') }}</p>
+                    <h1 class="text-xl sm:text-2xl font-bold">{{ t('serverSubusers.title') }}</h1>
+                    <p class="text-sm sm:text-base text-muted-foreground">{{ t('serverSubusers.description') }}</p>
                 </div>
-                <div class="flex gap-2">
-                    <Button variant="outline" :disabled="loading" @click="refresh">
-                        <RefreshCw class="h-4 w-4 mr-2" />
-                        {{ t('serverSubusers.refresh') }}
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <Button variant="outline" :disabled="loading" class="flex-1 sm:flex-none" @click="refresh">
+                        <RefreshCw class="h-4 w-4 sm:mr-2" />
+                        <span class="hidden sm:inline">{{ t('serverSubusers.refresh') }}</span>
                     </Button>
-                    <Button :disabled="loading" @click="openAddDialog">
-                        <Plus class="h-4 w-4 mr-2" />
-                        {{ t('serverSubusers.addSubuser') }}
+                    <Button :disabled="loading" class="flex-1 sm:flex-none" @click="openAddDialog">
+                        <Plus class="h-4 w-4 sm:mr-2" />
+                        <span class="hidden sm:inline">{{ t('serverSubusers.addSubuser') }}</span>
                     </Button>
                 </div>
             </div>
@@ -24,8 +24,8 @@
                 <CardHeader>
                     <CardTitle>{{ t('serverSubusers.subusers') }}</CardTitle>
                     <CardDescription>{{ t('serverSubusers.subusersDescription') }}</CardDescription>
-                    <div class="mt-4 flex items-center gap-2">
-                        <div class="relative w-full max-w-md">
+                    <div class="mt-4 flex flex-col sm:flex-row gap-2">
+                        <div class="relative w-full">
                             <Search class="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <input
                                 v-model="searchQuery"
@@ -35,7 +35,7 @@
                                 @keyup.enter="onRunSearch"
                             />
                         </div>
-                        <Button variant="outline" :disabled="loading" @click="onRunSearch">
+                        <Button variant="outline" :disabled="loading" class="w-full sm:w-auto" @click="onRunSearch">
                             {{ t('serverSubusers.search') }}
                         </Button>
                     </div>
@@ -57,31 +57,38 @@
                         </div>
                     </div>
 
-                    <div v-else class="space-y-4">
+                    <div v-else class="space-y-3">
                         <div
                             v-for="sub in subusers"
                             :key="sub.id"
-                            class="flex items-center justify-between p-4 border rounded-lg"
+                            class="flex items-center justify-between p-3 sm:p-4 border rounded-lg"
                         >
-                            <div class="flex-1">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                                        <Users class="h-4 w-4" />
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 sm:gap-3">
+                                    <div
+                                        class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0"
+                                    >
+                                        <Users class="h-3 w-3 sm:h-4 sm:w-4" />
                                     </div>
-                                    <div>
-                                        <div class="font-medium">{{ sub.username || sub.email }}</div>
-                                        <div class="text-sm text-muted-foreground">{{ sub.email }}</div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="font-medium text-sm sm:text-base truncate">
+                                            {{ sub.username || sub.email }}
+                                        </div>
+                                        <div class="text-xs sm:text-sm text-muted-foreground truncate">
+                                            {{ sub.email }}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2 flex-shrink-0">
                                 <Button
                                     variant="outline"
                                     size="sm"
                                     :disabled="deletingId === sub.id"
+                                    class="h-8 w-8 p-0"
                                     @click="confirmDelete(sub)"
                                 >
-                                    <Trash2 class="h-4 w-4" />
+                                    <Trash2 class="h-3 w-3 sm:h-4 sm:w-4" />
                                 </Button>
                             </div>
                         </div>
@@ -89,30 +96,36 @@
                         <!-- Pagination -->
                         <div
                             v-if="pagination.total > pagination.per_page"
-                            class="flex items-center justify-between pt-2"
+                            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2"
                         >
-                            <div class="text-sm text-muted-foreground">
+                            <div class="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
                                 {{ t('serverSubusers.showing') }} {{ pagination.from }}-{{ pagination.to }}
                                 {{ t('serverSubusers.of') }}
                                 {{ pagination.total }}
                             </div>
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center justify-center gap-2">
                                 <Button
                                     variant="outline"
                                     size="sm"
                                     :disabled="pagination.current_page <= 1 || loading"
+                                    class="flex-1 sm:flex-none"
                                     @click="goToPage(pagination.current_page - 1)"
                                 >
-                                    {{ t('common.prev') }}
+                                    <span class="hidden sm:inline">{{ t('common.prev') }}</span>
+                                    <span class="sm:hidden">‹</span>
                                 </Button>
-                                <div class="text-sm">{{ pagination.current_page }} / {{ pagination.last_page }}</div>
+                                <div class="text-xs sm:text-sm px-2">
+                                    {{ pagination.current_page }} / {{ pagination.last_page }}
+                                </div>
                                 <Button
                                     variant="outline"
                                     size="sm"
                                     :disabled="pagination.current_page >= pagination.last_page || loading"
+                                    class="flex-1 sm:flex-none"
                                     @click="goToPage(pagination.current_page + 1)"
                                 >
-                                    {{ t('common.next') }}
+                                    <span class="hidden sm:inline">{{ t('common.next') }}</span>
+                                    <span class="sm:hidden">›</span>
                                 </Button>
                             </div>
                         </div>
@@ -123,7 +136,7 @@
 
         <!-- Add Subuser Dialog -->
         <Dialog v-model:open="showAddDialog">
-            <DialogContent>
+            <DialogContent class="mx-4 sm:mx-0">
                 <DialogHeader>
                     <DialogTitle>{{ t('serverSubusers.addSubuser') }}</DialogTitle>
                     <DialogDescription>{{ t('serverSubusers.addSubuserDialogDescription') }}</DialogDescription>
@@ -138,11 +151,20 @@
                         @keyup.enter="createSubuser"
                     />
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" :disabled="addLoading" @click="showAddDialog = false">
+                <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <Button
+                        variant="outline"
+                        :disabled="addLoading"
+                        class="w-full sm:w-auto"
+                        @click="showAddDialog = false"
+                    >
                         {{ t('common.cancel') }}
                     </Button>
-                    <Button :disabled="addLoading || !isValidEmail(addEmail)" @click="createSubuser">
+                    <Button
+                        :disabled="addLoading || !isValidEmail(addEmail)"
+                        class="w-full sm:w-auto"
+                        @click="createSubuser"
+                    >
                         <Loader2 v-if="addLoading" class="h-4 w-4 mr-2 animate-spin" />
                         {{ t('serverSubusers.add') }}
                     </Button>
@@ -152,18 +174,28 @@
 
         <!-- Confirmation Dialog -->
         <Dialog v-model:open="showConfirmDialog">
-            <DialogContent>
+            <DialogContent class="mx-4 sm:mx-0">
                 <DialogHeader>
                     <DialogTitle>{{ confirmDialog.title }}</DialogTitle>
                     <DialogDescription>
                         {{ confirmDialog.description }}
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter>
-                    <Button variant="outline" :disabled="confirmLoading" @click="showConfirmDialog = false">
+                <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <Button
+                        variant="outline"
+                        :disabled="confirmLoading"
+                        class="w-full sm:w-auto"
+                        @click="showConfirmDialog = false"
+                    >
                         {{ t('common.cancel') }}
                     </Button>
-                    <Button :variant="confirmDialog.variant" :disabled="confirmLoading" @click="onConfirmDialog">
+                    <Button
+                        :variant="confirmDialog.variant"
+                        :disabled="confirmLoading"
+                        class="w-full sm:w-auto"
+                        @click="onConfirmDialog"
+                    >
                         <Loader2 v-if="confirmLoading" class="h-4 w-4 mr-2 animate-spin" />
                         {{ confirmDialog.confirmText }}
                     </Button>

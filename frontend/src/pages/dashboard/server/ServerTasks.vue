@@ -2,23 +2,25 @@
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6">
             <!-- Header with back button and create task button -->
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <Button variant="outline" size="sm" @click="$router.back()">
-                        <ArrowLeft class="h-4 w-4 mr-2" />
-                        {{ t('common.back') }}
+            <div class="space-y-4">
+                <div class="flex items-center gap-2 sm:gap-4">
+                    <Button variant="outline" size="sm" class="flex-shrink-0" @click="$router.back()">
+                        <ArrowLeft class="h-4 w-4 sm:mr-2" />
+                        <span class="hidden sm:inline">{{ t('common.back') }}</span>
                     </Button>
-                    <div>
-                        <h1 class="text-2xl font-bold">{{ t('serverTasks.title') }}</h1>
-                        <p class="text-muted-foreground">
+                    <div class="min-w-0 flex-1">
+                        <h1 class="text-xl sm:text-2xl font-bold">{{ t('serverTasks.title') }}</h1>
+                        <p class="text-sm sm:text-base text-muted-foreground truncate">
                             {{ t('serverTasks.description', { scheduleName: schedule?.name || '' }) }}
                         </p>
                     </div>
                 </div>
-                <Button @click="openCreateTaskDrawer">
-                    <Plus class="h-4 w-4 mr-2" />
-                    {{ t('serverTasks.createTask') }}
-                </Button>
+                <div class="flex justify-end">
+                    <Button class="flex-1 sm:flex-none" @click="openCreateTaskDrawer">
+                        <Plus class="h-4 w-4 sm:mr-2" />
+                        <span class="hidden sm:inline">{{ t('serverTasks.createTask') }}</span>
+                    </Button>
+                </div>
             </div>
 
             <!-- Task List -->
@@ -29,9 +31,9 @@
 
                 <div v-else-if="tasks.length === 0" class="text-center py-8">
                     <div class="text-muted-foreground">
-                        <ListCheck class="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p class="text-lg font-medium">{{ t('serverTasks.noTasks') }}</p>
-                        <p class="text-sm">{{ t('serverTasks.noTasksDescription') }}</p>
+                        <ListCheck class="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-4 opacity-50" />
+                        <p class="text-base sm:text-lg font-medium">{{ t('serverTasks.noTasks') }}</p>
+                        <p class="text-xs sm:text-sm">{{ t('serverTasks.noTasksDescription') }}</p>
                     </div>
                 </div>
 
@@ -39,31 +41,27 @@
                     <div
                         v-for="task in sortedTasks"
                         :key="task.id"
-                        class="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
+                        class="border rounded-lg p-3 sm:p-4 hover:bg-muted/50 transition-colors"
                     >
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="flex items-center gap-2">
+                        <!-- Mobile Layout -->
+                        <div class="sm:hidden space-y-3">
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-center gap-2 flex-wrap">
                                     <Badge variant="outline" class="text-xs">
                                         {{ task.sequence_id }}
                                     </Badge>
-                                    <Badge :variant="getActionVariant(task.action)" class="capitalize">
+                                    <Badge :variant="getActionVariant(task.action)" class="capitalize text-xs">
                                         {{ task.action }}
                                     </Badge>
-                                    <Badge v-if="task.is_queued" variant="secondary">
+                                    <Badge v-if="task.is_queued" variant="secondary" class="text-xs">
                                         {{ t('serverTasks.queued') }}
                                     </Badge>
                                 </div>
-                                <div class="text-sm text-muted-foreground">
-                                    {{ task.payload || t('serverTasks.noPayload') }}
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <!-- Sequence Controls -->
                                 <div class="flex items-center gap-1">
                                     <Button
                                         size="sm"
                                         variant="outline"
+                                        class="h-8 w-8 p-0"
                                         :disabled="task.sequence_id <= 1"
                                         @click="moveTaskUp(task)"
                                     >
@@ -72,33 +70,108 @@
                                     <Button
                                         size="sm"
                                         variant="outline"
+                                        class="h-8 w-8 p-0"
                                         :disabled="task.sequence_id >= sortedTasks.length"
                                         @click="moveTaskDown(task)"
                                     >
                                         <ChevronDown class="h-3 w-3" />
                                     </Button>
                                 </div>
-
-                                <!-- Action Buttons -->
-                                <Button size="sm" variant="outline" @click="openEditTaskDrawer(task)">
-                                    <Pencil class="h-4 w-4" />
-                                </Button>
-
-                                <Button size="sm" variant="destructive" @click="deleteTask(task)">
-                                    <Trash2 class="h-4 w-4" />
-                                </Button>
+                            </div>
+                            <div class="text-xs text-muted-foreground break-all">
+                                {{ task.payload || t('serverTasks.noPayload') }}
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="text-xs text-muted-foreground space-y-1">
+                                    <div v-if="task.time_offset > 0">
+                                        {{ t('serverTasks.timeOffset', { offset: task.time_offset }) }}
+                                    </div>
+                                    <div v-if="task.continue_on_failure">
+                                        {{ t('serverTasks.continueOnFailure') }}
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        class="h-8 w-8 p-0"
+                                        @click="openEditTaskDrawer(task)"
+                                    >
+                                        <Pencil class="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        class="h-8 w-8 p-0"
+                                        @click="deleteTask(task)"
+                                    >
+                                        <Trash2 class="h-3 w-3" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Task Details -->
-                        <div class="mt-3 text-xs text-muted-foreground space-y-1">
-                            <div class="flex items-center gap-4">
-                                <span v-if="task.time_offset > 0">
-                                    {{ t('serverTasks.timeOffset', { offset: task.time_offset }) }}
-                                </span>
-                                <span v-if="task.continue_on_failure">
-                                    {{ t('serverTasks.continueOnFailure') }}
-                                </span>
+                        <!-- Desktop Layout -->
+                        <div class="hidden sm:block">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <Badge variant="outline" class="text-xs">
+                                            {{ task.sequence_id }}
+                                        </Badge>
+                                        <Badge :variant="getActionVariant(task.action)" class="capitalize">
+                                            {{ task.action }}
+                                        </Badge>
+                                        <Badge v-if="task.is_queued" variant="secondary">
+                                            {{ t('serverTasks.queued') }}
+                                        </Badge>
+                                    </div>
+                                    <div class="text-sm text-muted-foreground">
+                                        {{ task.payload || t('serverTasks.noPayload') }}
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <!-- Sequence Controls -->
+                                    <div class="flex items-center gap-1">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            :disabled="task.sequence_id <= 1"
+                                            @click="moveTaskUp(task)"
+                                        >
+                                            <ChevronUp class="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            :disabled="task.sequence_id >= sortedTasks.length"
+                                            @click="moveTaskDown(task)"
+                                        >
+                                            <ChevronDown class="h-3 w-3" />
+                                        </Button>
+                                    </div>
+
+                                    <!-- Action Buttons -->
+                                    <Button size="sm" variant="outline" @click="openEditTaskDrawer(task)">
+                                        <Pencil class="h-4 w-4" />
+                                    </Button>
+
+                                    <Button size="sm" variant="destructive" @click="deleteTask(task)">
+                                        <Trash2 class="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <!-- Task Details -->
+                            <div class="mt-3 text-xs text-muted-foreground space-y-1">
+                                <div class="flex items-center gap-4">
+                                    <span v-if="task.time_offset > 0">
+                                        {{ t('serverTasks.timeOffset', { offset: task.time_offset }) }}
+                                    </span>
+                                    <span v-if="task.continue_on_failure">
+                                        {{ t('serverTasks.continueOnFailure') }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -117,18 +190,20 @@
             "
         >
             <DrawerContent>
-                <DrawerHeader>
-                    <DrawerTitle>{{ t('serverTasks.createTask') }}</DrawerTitle>
-                    <DrawerDescription>{{ t('serverTasks.createTaskDescription') }}</DrawerDescription>
+                <DrawerHeader class="pb-3 sm:pb-6">
+                    <DrawerTitle class="text-base sm:text-lg">{{ t('serverTasks.createTask') }}</DrawerTitle>
+                    <DrawerDescription class="text-xs sm:text-sm">{{
+                        t('serverTasks.createTaskDescription')
+                    }}</DrawerDescription>
                 </DrawerHeader>
-                <form class="space-y-6 p-6" @submit.prevent="createTask">
+                <form class="space-y-4 sm:space-y-6 p-4 sm:p-6" @submit.prevent="createTask">
                     <!-- Task Action -->
                     <div class="space-y-2">
-                        <Label for="task-action" class="text-sm font-medium">
+                        <Label for="task-action" class="text-xs sm:text-sm font-medium">
                             {{ t('serverTasks.action') }}
                         </Label>
                         <Select v-model="createForm.action" required>
-                            <SelectTrigger class="w-full">
+                            <SelectTrigger class="w-full text-sm">
                                 <SelectValue placeholder="Select action type" />
                             </SelectTrigger>
                             <SelectContent>
@@ -144,14 +219,14 @@
 
                     <!-- Task Payload -->
                     <div class="space-y-2">
-                        <Label for="task-payload" class="text-sm font-medium">
+                        <Label for="task-payload" class="text-xs sm:text-sm font-medium">
                             {{ t('serverTasks.payload') }}
                         </Label>
 
                         <!-- Power Action Dropdown -->
                         <div v-if="createForm.action === 'power'">
                             <Select v-model="createForm.payload" required>
-                                <SelectTrigger class="w-full">
+                                <SelectTrigger class="w-full text-sm">
                                     <SelectValue placeholder="Select power action" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -169,6 +244,7 @@
                                 id="task-payload"
                                 v-model="createForm.payload"
                                 placeholder="*.log,temp/*,cache/* (optional ignored files)"
+                                class="text-sm"
                             />
                         </div>
 
@@ -178,6 +254,7 @@
                                 id="task-payload"
                                 v-model="createForm.payload"
                                 placeholder="Enter command to execute"
+                                class="text-sm"
                                 required
                             />
                         </div>
@@ -188,6 +265,7 @@
                                 id="task-payload"
                                 v-model="createForm.payload"
                                 :placeholder="getPayloadPlaceholder(createForm.action)"
+                                class="text-sm"
                                 required
                             />
                         </div>
@@ -199,7 +277,7 @@
 
                     <!-- Time Offset -->
                     <div class="space-y-2">
-                        <Label for="task-time-offset" class="text-sm font-medium">
+                        <Label for="task-time-offset" class="text-xs sm:text-sm font-medium">
                             {{ t('serverTasks.timeOffset') }}
                         </Label>
                         <Input
@@ -209,6 +287,7 @@
                             min="0"
                             step="1"
                             placeholder="0"
+                            class="text-sm"
                         />
                         <p class="text-xs text-muted-foreground">
                             {{ t('serverTasks.timeOffsetHelp') }}
@@ -217,11 +296,11 @@
 
                     <!-- Continue on Failure -->
                     <div class="space-y-2">
-                        <Label for="task-continue-on-failure" class="text-sm font-medium">
+                        <Label for="task-continue-on-failure" class="text-xs sm:text-sm font-medium">
                             {{ t('serverTasks.continueOnFailure') }}
                         </Label>
                         <Select v-model="createForm.continue_on_failure">
-                            <SelectTrigger class="w-full">
+                            <SelectTrigger class="w-full text-sm">
                                 <SelectValue placeholder="Select option" />
                             </SelectTrigger>
                             <SelectContent>
@@ -234,13 +313,13 @@
                         </p>
                     </div>
 
-                    <div class="flex justify-end space-x-2">
-                        <Button type="button" variant="outline" @click="closeCreateTaskDrawer">
+                    <div class="flex flex-col sm:flex-row gap-2 sm:justify-end">
+                        <Button type="button" variant="outline" class="w-full sm:w-auto" @click="closeCreateTaskDrawer">
                             {{ t('common.cancel') }}
                         </Button>
-                        <Button type="submit" :disabled="creating">
-                            <Loader2 v-if="creating" class="h-4 w-4 mr-2 animate-spin" />
-                            {{ t('serverTasks.create') }}
+                        <Button type="submit" :disabled="creating" class="w-full sm:w-auto">
+                            <Loader2 v-if="creating" class="h-4 w-4 sm:mr-2 animate-spin" />
+                            <span class="hidden sm:inline">{{ t('serverTasks.create') }}</span>
                         </Button>
                     </div>
                 </form>
@@ -258,18 +337,20 @@
             "
         >
             <DrawerContent v-if="editingTask">
-                <DrawerHeader>
-                    <DrawerTitle>{{ t('serverTasks.editTask') }}</DrawerTitle>
-                    <DrawerDescription>{{ t('serverTasks.editTaskDescription') }}</DrawerDescription>
+                <DrawerHeader class="pb-3 sm:pb-6">
+                    <DrawerTitle class="text-base sm:text-lg">{{ t('serverTasks.editTask') }}</DrawerTitle>
+                    <DrawerDescription class="text-xs sm:text-sm">{{
+                        t('serverTasks.editTaskDescription')
+                    }}</DrawerDescription>
                 </DrawerHeader>
-                <form class="space-y-6 p-6" @submit.prevent="updateTask">
+                <form class="space-y-4 sm:space-y-6 p-4 sm:p-6" @submit.prevent="updateTask">
                     <!-- Task Action -->
                     <div class="space-y-2">
-                        <Label for="edit-task-action" class="text-sm font-medium">
+                        <Label for="edit-task-action" class="text-xs sm:text-sm font-medium">
                             {{ t('serverTasks.action') }}
                         </Label>
                         <Select v-model="editForm.action" required>
-                            <SelectTrigger class="w-full">
+                            <SelectTrigger class="w-full text-sm">
                                 <SelectValue placeholder="Select action type" />
                             </SelectTrigger>
                             <SelectContent>
@@ -282,7 +363,7 @@
 
                     <!-- Sequence ID -->
                     <div class="space-y-2">
-                        <Label for="edit-task-sequence" class="text-sm font-medium">
+                        <Label for="edit-task-sequence" class="text-xs sm:text-sm font-medium">
                             {{ t('serverTasks.sequenceId') }}
                         </Label>
                         <Input
@@ -293,6 +374,7 @@
                             :max="Math.max(sortedTasks.length, parseInt(editForm.sequence_id) || 1)"
                             step="1"
                             placeholder="1"
+                            class="text-sm"
                         />
                         <p class="text-xs text-muted-foreground">
                             {{ t('serverTasks.sequenceIdHelp') }}
@@ -301,14 +383,14 @@
 
                     <!-- Task Payload -->
                     <div class="space-y-2">
-                        <Label for="edit-task-payload" class="text-sm font-medium">
+                        <Label for="edit-task-payload" class="text-xs sm:text-sm font-medium">
                             {{ t('serverTasks.payload') }}
                         </Label>
 
                         <!-- Power Action Dropdown -->
                         <div v-if="editForm.action === 'power'">
                             <Select v-model="editForm.payload" required>
-                                <SelectTrigger class="w-full">
+                                <SelectTrigger class="w-full text-sm">
                                     <SelectValue placeholder="Select power action" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -326,6 +408,7 @@
                                 id="edit-task-payload"
                                 v-model="editForm.payload"
                                 placeholder="*.log,temp/*,cache/* (optional ignored files)"
+                                class="text-sm"
                             />
                         </div>
 
@@ -335,6 +418,7 @@
                                 id="edit-task-payload"
                                 v-model="editForm.payload"
                                 placeholder="Enter command to execute"
+                                class="text-sm"
                                 required
                             />
                         </div>
@@ -345,6 +429,7 @@
                                 id="edit-task-payload"
                                 v-model="editForm.payload"
                                 :placeholder="getPayloadPlaceholder(editForm.action)"
+                                class="text-sm"
                                 required
                             />
                         </div>
@@ -356,7 +441,7 @@
 
                     <!-- Time Offset -->
                     <div class="space-y-2">
-                        <Label for="edit-task-time-offset" class="text-sm font-medium">
+                        <Label for="edit-task-time-offset" class="text-xs sm:text-sm font-medium">
                             {{ t('serverTasks.timeOffset') }}
                         </Label>
                         <Input
@@ -366,16 +451,17 @@
                             min="0"
                             step="1"
                             placeholder="0"
+                            class="text-sm"
                         />
                     </div>
 
                     <!-- Continue on Failure -->
                     <div class="space-y-2">
-                        <Label for="edit-task-continue-on-failure" class="text-sm font-medium">
+                        <Label for="edit-task-continue-on-failure" class="text-xs sm:text-sm font-medium">
                             {{ t('serverTasks.continueOnFailure') }}
                         </Label>
                         <Select v-model="editForm.continue_on_failure">
-                            <SelectTrigger class="w-full">
+                            <SelectTrigger class="w-full text-sm">
                                 <SelectValue placeholder="Select option" />
                             </SelectTrigger>
                             <SelectContent>
@@ -385,13 +471,13 @@
                         </Select>
                     </div>
 
-                    <div class="flex justify-end space-x-2">
-                        <Button type="button" variant="outline" @click="closeEditTaskDrawer">
+                    <div class="flex flex-col sm:flex-row gap-2 sm:justify-end">
+                        <Button type="button" variant="outline" class="w-full sm:w-auto" @click="closeEditTaskDrawer">
                             {{ t('common.cancel') }}
                         </Button>
-                        <Button type="submit" :disabled="updating">
-                            <Loader2 v-if="updating" class="h-4 w-4 mr-2 animate-spin" />
-                            {{ t('serverTasks.update') }}
+                        <Button type="submit" :disabled="updating" class="w-full sm:w-auto">
+                            <Loader2 v-if="updating" class="h-4 w-4 sm:mr-2 animate-spin" />
+                            <span class="hidden sm:inline">{{ t('serverTasks.update') }}</span>
                         </Button>
                     </div>
                 </form>
@@ -400,20 +486,30 @@
 
         <!-- Confirmation Dialog -->
         <Dialog v-model:open="showConfirmDialog">
-            <DialogContent>
+            <DialogContent class="mx-4 sm:mx-0">
                 <DialogHeader>
-                    <DialogTitle>{{ confirmDialog.title }}</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle class="text-base sm:text-lg">{{ confirmDialog.title }}</DialogTitle>
+                    <DialogDescription class="text-xs sm:text-sm">
                         {{ confirmDialog.description }}
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter>
-                    <Button variant="outline" :disabled="confirmLoading" @click="showConfirmDialog = false">
+                <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <Button
+                        variant="outline"
+                        :disabled="confirmLoading"
+                        class="w-full sm:w-auto"
+                        @click="showConfirmDialog = false"
+                    >
                         {{ t('common.cancel') }}
                     </Button>
-                    <Button :variant="confirmDialog.variant" :disabled="confirmLoading" @click="onConfirmDialog">
-                        <Loader2 v-if="confirmLoading" class="h-4 w-4 mr-2 animate-spin" />
-                        {{ confirmDialog.confirmText }}
+                    <Button
+                        :variant="confirmDialog.variant"
+                        :disabled="confirmLoading"
+                        class="w-full sm:w-auto"
+                        @click="onConfirmDialog"
+                    >
+                        <Loader2 v-if="confirmLoading" class="h-4 w-4 sm:mr-2 animate-spin" />
+                        <span class="hidden sm:inline">{{ confirmDialog.confirmText }}</span>
                     </Button>
                 </DialogFooter>
             </DialogContent>

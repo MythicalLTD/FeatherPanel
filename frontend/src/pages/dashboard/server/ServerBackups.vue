@@ -44,10 +44,6 @@
                 @column-toggle="handleColumnToggle"
             >
                 <template #header-actions>
-                    <Button variant="outline" size="sm" :disabled="loading" @click="refresh">
-                        <RefreshCw class="h-4 w-4 mr-2" />
-                        {{ t('common.refresh') }}
-                    </Button>
                     <Button
                         variant="default"
                         size="sm"
@@ -313,7 +309,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 
-import { RefreshCw, Plus, RotateCcw, Download, Trash2, Loader2, Lock, Unlock } from 'lucide-vue-next';
+import { Plus, RotateCcw, Download, Trash2, Loader2, Lock, Unlock } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import TableComponent from '@/kit/TableComponent.vue';
@@ -657,10 +653,6 @@ async function unlockBackup(backup: BackupItem) {
 function changePage(page: number) {
     if (page < 1) return;
     fetchBackups(page);
-}
-
-function refresh() {
-    fetchBackups();
 }
 
 function handleSearch(query: string) {

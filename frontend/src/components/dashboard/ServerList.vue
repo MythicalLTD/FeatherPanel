@@ -1,21 +1,31 @@
 <template>
     <div class="space-y-6">
         <!-- Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="space-y-4">
             <div>
                 <h3 class="text-lg font-semibold">{{ $t('servers.title') }}</h3>
                 <p class="text-sm text-muted-foreground">{{ $t('servers.description') }}</p>
             </div>
-            <div class="flex items-center gap-2">
-                <Button variant="outline" size="sm" @click="createFolder">
-                    <FolderPlus class="h-4 w-4 mr-2" />
-                    {{ $t('servers.createFolder') }}
-                </Button>
-                <Button variant="outline" size="sm" :disabled="loading" @click="validateAndCleanupServers">
-                    <Shield class="h-4 w-4 mr-2" />
-                    {{ $t('servers.validate') }}
-                </Button>
-                <Button variant="outline" size="sm" :disabled="loading" @click="fetchServers">
+            <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+                <div class="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" class="flex-1 sm:flex-none" @click="createFolder">
+                        <FolderPlus class="h-4 w-4 mr-2" />
+                        <span class="hidden sm:inline">{{ $t('servers.createFolder') }}</span>
+                        <span class="sm:hidden">{{ $t('servers.createFolder') }}</span>
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        class="flex-1 sm:flex-none"
+                        :disabled="loading"
+                        @click="validateAndCleanupServers"
+                    >
+                        <Shield class="h-4 w-4 mr-2" />
+                        <span class="hidden sm:inline">{{ $t('servers.validate') }}</span>
+                        <span class="sm:hidden">{{ $t('servers.validate') }}</span>
+                    </Button>
+                </div>
+                <Button variant="outline" size="sm" class="w-full sm:w-auto" :disabled="loading" @click="fetchServers">
                     <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': loading }" />
                     {{ $t('servers.refresh') }}
                 </Button>
@@ -23,7 +33,7 @@
         </div>
 
         <!-- Search and Filters -->
-        <div class="flex flex-col sm:flex-row gap-4">
+        <div class="flex flex-col gap-4">
             <div class="relative flex-1">
                 <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -37,14 +47,22 @@
                 <Button
                     :variant="viewMode === 'folders' ? 'default' : 'outline'"
                     size="sm"
+                    class="flex-1 sm:flex-none"
                     @click="viewMode = 'folders'"
                 >
                     <FolderOpen class="h-4 w-4 mr-2" />
-                    {{ $t('servers.folderView') }}
+                    <span class="hidden sm:inline">{{ $t('servers.folderView') }}</span>
+                    <span class="sm:hidden">{{ $t('servers.folderView') }}</span>
                 </Button>
-                <Button :variant="viewMode === 'list' ? 'default' : 'outline'" size="sm" @click="viewMode = 'list'">
+                <Button
+                    :variant="viewMode === 'list' ? 'default' : 'outline'"
+                    size="sm"
+                    class="flex-1 sm:flex-none"
+                    @click="viewMode = 'list'"
+                >
                     <List class="h-4 w-4 mr-2" />
-                    {{ $t('servers.listView') }}
+                    <span class="hidden sm:inline">{{ $t('servers.listView') }}</span>
+                    <span class="sm:hidden">{{ $t('servers.listView') }}</span>
                 </Button>
             </div>
         </div>
@@ -95,7 +113,7 @@
                     </div>
 
                     <!-- Servers in Folder -->
-                    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                         <div
                             v-for="server in folder.servers"
                             :key="server.id"
@@ -109,7 +127,7 @@
                             @contextmenu.prevent="showContextMenu($event, server, folder.id)"
                         >
                             <!-- Spell Banner - Full Width, No Padding -->
-                            <div class="relative w-full h-32">
+                            <div class="relative w-full h-24 sm:h-32">
                                 <!-- Spell Banner Background -->
                                 <div
                                     v-if="server.spell?.banner"
@@ -146,20 +164,22 @@
                                 </div>
 
                                 <!-- Content overlaid on banner -->
-                                <div class="relative z-10 p-4 h-full flex flex-col justify-between">
+                                <div class="relative z-10 p-3 sm:p-4 h-full flex flex-col justify-between">
                                     <div class="flex items-start justify-between">
                                         <div class="flex-1 min-w-0">
-                                            <h3 class="text-lg font-bold text-white drop-shadow-sm truncate">
+                                            <h3
+                                                class="text-base sm:text-lg font-bold text-white drop-shadow-sm truncate"
+                                            >
                                                 {{ server.name }}
                                             </h3>
-                                            <p class="text-sm text-white/80 drop-shadow-sm truncate mt-1">
+                                            <p class="text-xs sm:text-sm text-white/80 drop-shadow-sm truncate mt-1">
                                                 {{ server.description || $t('servers.noDescription') }}
                                             </p>
                                         </div>
                                         <div class="flex flex-col gap-1">
                                             <Badge
                                                 :variant="getStatusVariant(displayStatus(server))"
-                                                class="bg-white/20 text-white border-white/30 hover:bg-white/30"
+                                                class="bg-white/20 text-white border-white/30 hover:bg-white/30 text-xs"
                                             >
                                                 {{ $t(`servers.status.${displayStatus(server)}`) }}
                                             </Badge>
@@ -175,8 +195,8 @@
                                     </div>
 
                                     <!-- Spell name at bottom of header -->
-                                    <div class="flex items-center gap-2 text-sm">
-                                        <Sparkles class="h-4 w-4 text-white drop-shadow-sm" />
+                                    <div class="flex items-center gap-2 text-xs sm:text-sm">
+                                        <Sparkles class="h-3 w-3 sm:h-4 sm:w-4 text-white drop-shadow-sm" />
                                         <span class="text-white/90 font-medium drop-shadow-sm"
                                             >{{ $t('servers.spell') }}:</span
                                         >
@@ -188,48 +208,52 @@
                             </div>
 
                             <!-- Card Content -->
-                            <div class="p-4 bg-card">
-                                <div class="space-y-3">
+                            <div class="p-3 sm:p-4 bg-card">
+                                <div class="space-y-2 sm:space-y-3">
                                     <!-- Server Info -->
-                                    <div class="grid grid-cols-2 gap-3 text-sm">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
                                         <div class="flex items-center gap-2">
-                                            <Server class="h-4 w-4 text-muted-foreground" />
+                                            <Server class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                                             <span class="text-muted-foreground">{{ $t('servers.node') }}:</span>
                                             <span class="font-medium truncate">{{ server.node?.name || 'N/A' }}</span>
                                         </div>
                                         <div class="flex items-center gap-2">
-                                            <Hash class="h-4 w-4 text-muted-foreground" />
+                                            <Hash class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                                             <span class="text-muted-foreground">{{ $t('servers.realm') }}:</span>
                                             <span class="font-medium truncate">{{ server.realm?.name || 'N/A' }}</span>
                                         </div>
                                     </div>
 
                                     <!-- Resources -->
-                                    <div class="grid grid-cols-3 gap-2 text-xs">
+                                    <div class="grid grid-cols-3 gap-1 sm:gap-2 text-xs">
                                         <div
-                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                            class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div class="font-semibold text-primary">
+                                            <div class="font-semibold text-primary text-xs sm:text-sm">
                                                 {{ formatMemory(server.memory) }}
                                             </div>
-                                            <div class="text-muted-foreground">{{ $t('servers.memory') }}</div>
+                                            <div class="text-muted-foreground text-xs">{{ $t('servers.memory') }}</div>
                                         </div>
                                         <div
-                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                            class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div class="font-semibold text-primary">{{ formatDisk(server.disk) }}</div>
-                                            <div class="text-muted-foreground">{{ $t('servers.disk') }}</div>
+                                            <div class="font-semibold text-primary text-xs sm:text-sm">
+                                                {{ formatDisk(server.disk) }}
+                                            </div>
+                                            <div class="text-muted-foreground text-xs">{{ $t('servers.disk') }}</div>
                                         </div>
                                         <div
-                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                            class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div class="font-semibold text-primary">{{ server.cpu }}%</div>
-                                            <div class="text-muted-foreground">{{ $t('servers.cpu') }}</div>
+                                            <div class="font-semibold text-primary text-xs sm:text-sm">
+                                                {{ server.cpu }}%
+                                            </div>
+                                            <div class="text-muted-foreground text-xs">{{ $t('servers.cpu') }}</div>
                                         </div>
                                     </div>
 
                                     <!-- Click indicator -->
-                                    <div class="flex items-center justify-end pt-2">
+                                    <div class="flex items-center justify-end pt-1 sm:pt-2">
                                         <div
                                             class="text-xs text-muted-foreground group-hover:text-primary transition-colors"
                                         >
@@ -254,7 +278,7 @@
                         </div>
                     </div>
 
-                    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                         <div
                             v-for="server in unassignedServers"
                             :key="server.id"
@@ -268,7 +292,7 @@
                             @contextmenu.prevent="showContextMenu($event, server, null)"
                         >
                             <!-- Spell Banner - Full Width, No Padding -->
-                            <div class="relative w-full h-32">
+                            <div class="relative w-full h-24 sm:h-32">
                                 <!-- Spell Banner Background -->
                                 <div
                                     v-if="server.spell?.banner"
@@ -305,20 +329,22 @@
                                 </div>
 
                                 <!-- Content overlaid on banner -->
-                                <div class="relative z-10 p-4 h-full flex flex-col justify-between">
+                                <div class="relative z-10 p-3 sm:p-4 h-full flex flex-col justify-between">
                                     <div class="flex items-start justify-between">
                                         <div class="flex-1 min-w-0">
-                                            <h3 class="text-lg font-bold text-white drop-shadow-sm truncate">
+                                            <h3
+                                                class="text-base sm:text-lg font-bold text-white drop-shadow-sm truncate"
+                                            >
                                                 {{ server.name }}
                                             </h3>
-                                            <p class="text-sm text-white/80 drop-shadow-sm truncate mt-1">
+                                            <p class="text-xs sm:text-sm text-white/80 drop-shadow-sm truncate mt-1">
                                                 {{ server.description || $t('servers.noDescription') }}
                                             </p>
                                         </div>
                                         <div class="flex flex-col gap-1">
                                             <Badge
                                                 :variant="getStatusVariant(displayStatus(server))"
-                                                class="bg-white/20 text-white border-white/30 hover:bg-white/30"
+                                                class="bg-white/20 text-white border-white/30 hover:bg-white/30 text-xs"
                                             >
                                                 {{ $t(`servers.status.${displayStatus(server)}`) }}
                                             </Badge>
@@ -334,8 +360,8 @@
                                     </div>
 
                                     <!-- Spell name at bottom of header -->
-                                    <div class="flex items-center gap-2 text-sm">
-                                        <Sparkles class="h-4 w-4 text-white drop-shadow-sm" />
+                                    <div class="flex items-center gap-2 text-xs sm:text-sm">
+                                        <Sparkles class="h-3 w-3 sm:h-4 sm:w-4 text-white drop-shadow-sm" />
                                         <span class="text-white/90 font-medium drop-shadow-sm"
                                             >{{ $t('servers.spell') }}:</span
                                         >
@@ -347,48 +373,52 @@
                             </div>
 
                             <!-- Card Content -->
-                            <div class="p-4 bg-card">
-                                <div class="space-y-3">
+                            <div class="p-3 sm:p-4 bg-card">
+                                <div class="space-y-2 sm:space-y-3">
                                     <!-- Server Info -->
-                                    <div class="grid grid-cols-2 gap-3 text-sm">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
                                         <div class="flex items-center gap-2">
-                                            <Server class="h-4 w-4 text-muted-foreground" />
+                                            <Server class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                                             <span class="text-muted-foreground">{{ $t('servers.node') }}:</span>
                                             <span class="font-medium truncate">{{ server.node?.name || 'N/A' }}</span>
                                         </div>
                                         <div class="flex items-center gap-2">
-                                            <Hash class="h-4 w-4 text-muted-foreground" />
+                                            <Hash class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                                             <span class="text-muted-foreground">{{ $t('servers.realm') }}:</span>
                                             <span class="font-medium truncate">{{ server.realm?.name || 'N/A' }}</span>
                                         </div>
                                     </div>
 
                                     <!-- Resources -->
-                                    <div class="grid grid-cols-3 gap-2 text-xs">
+                                    <div class="grid grid-cols-3 gap-1 sm:gap-2 text-xs">
                                         <div
-                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                            class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div class="font-semibold text-primary">
+                                            <div class="font-semibold text-primary text-xs sm:text-sm">
                                                 {{ formatMemory(server.memory) }}
                                             </div>
-                                            <div class="text-muted-foreground">{{ $t('servers.memory') }}</div>
+                                            <div class="text-muted-foreground text-xs">{{ $t('servers.memory') }}</div>
                                         </div>
                                         <div
-                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                            class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div class="font-semibold text-primary">{{ formatDisk(server.disk) }}</div>
-                                            <div class="text-muted-foreground">{{ $t('servers.disk') }}</div>
+                                            <div class="font-semibold text-primary text-xs sm:text-sm">
+                                                {{ formatDisk(server.disk) }}
+                                            </div>
+                                            <div class="text-muted-foreground text-xs">{{ $t('servers.disk') }}</div>
                                         </div>
                                         <div
-                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                            class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div class="font-semibold text-primary">{{ server.cpu }}%</div>
-                                            <div class="text-muted-foreground">{{ $t('servers.cpu') }}</div>
+                                            <div class="font-semibold text-primary text-xs sm:text-sm">
+                                                {{ server.cpu }}%
+                                            </div>
+                                            <div class="text-muted-foreground text-xs">{{ $t('servers.cpu') }}</div>
                                         </div>
                                     </div>
 
                                     <!-- Click indicator -->
-                                    <div class="flex items-center justify-end pt-2">
+                                    <div class="flex items-center justify-end pt-1 sm:pt-2">
                                         <div
                                             class="text-xs text-muted-foreground group-hover:text-primary transition-colors"
                                         >
@@ -403,7 +433,7 @@
             </div>
 
             <!-- List View (Original) -->
-            <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div v-else class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 <div
                     v-for="server in servers"
                     :key="server.id"
@@ -532,8 +562,11 @@
             </div>
 
             <!-- Pagination -->
-            <div v-if="pagination.total_pages > 1" class="flex items-center justify-between">
-                <div class="text-sm text-muted-foreground">
+            <div
+                v-if="pagination.total_pages > 1"
+                class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+            >
+                <div class="text-sm text-muted-foreground text-center sm:text-left">
                     {{
                         $t('servers.showing', {
                             from: pagination.from,
@@ -542,17 +575,18 @@
                         })
                     }}
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center justify-center gap-2">
                     <Button
                         variant="outline"
                         size="sm"
+                        class="flex-1 sm:flex-none"
                         :disabled="!pagination.has_prev"
                         @click="changePage(pagination.current_page - 1)"
                     >
                         <ChevronLeft class="h-4 w-4" />
-                        {{ $t('servers.previous') }}
+                        <span class="hidden sm:inline ml-1">{{ $t('servers.previous') }}</span>
                     </Button>
-                    <div class="flex items-center gap-1">
+                    <div class="flex items-center gap-1 px-2">
                         <span class="text-sm font-medium">{{ pagination.current_page }}</span>
                         <span class="text-sm text-muted-foreground">/</span>
                         <span class="text-sm text-muted-foreground">{{ pagination.total_pages }}</span>
@@ -560,10 +594,11 @@
                     <Button
                         variant="outline"
                         size="sm"
+                        class="flex-1 sm:flex-none"
                         :disabled="!pagination.has_next"
                         @click="changePage(pagination.current_page + 1)"
                     >
-                        {{ $t('servers.next') }}
+                        <span class="hidden sm:inline mr-1">{{ $t('servers.next') }}</span>
                         <ChevronRight class="h-4 w-4" />
                     </Button>
                 </div>
@@ -595,8 +630,8 @@
     <!-- Context Menu for Server Actions -->
     <div
         v-if="contextMenu.show"
-        class="fixed z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[200px] context-menu"
-        :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
+        class="fixed z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[200px] max-w-[90vw] context-menu"
+        :style="contextMenuStyle"
         @click.stop
     >
         <div class="px-3 py-2 text-sm font-medium border-b border-border">
@@ -861,6 +896,18 @@ const filteredServers = computed(() => {
             server.realm?.name.toLowerCase().includes(query) ||
             server.spell?.name.toLowerCase().includes(query),
     );
+});
+
+const contextMenuStyle = computed(() => {
+    if (!contextMenu.value.show) return {};
+
+    const maxX = typeof window !== 'undefined' ? window.innerWidth - 220 : contextMenu.value.x;
+    const maxY = typeof window !== 'undefined' ? window.innerHeight - 200 : contextMenu.value.y;
+
+    return {
+        left: Math.min(contextMenu.value.x, maxX) + 'px',
+        top: Math.min(contextMenu.value.y, maxY) + 'px',
+    };
 });
 
 onMounted(async () => {

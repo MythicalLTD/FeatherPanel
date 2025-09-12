@@ -2,29 +2,33 @@
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6">
             <!-- Header -->
-            <div class="flex items-center justify-between">
+            <div class="space-y-4">
                 <div>
-                    <h1 class="text-2xl font-bold">{{ t('serverAllocations.title') }}</h1>
-                    <p class="text-muted-foreground">{{ t('serverAllocations.description') }}</p>
+                    <h1 class="text-xl sm:text-2xl font-bold">{{ t('serverAllocations.title') }}</h1>
+                    <p class="text-sm sm:text-base text-muted-foreground">{{ t('serverAllocations.description') }}</p>
                 </div>
-                <div class="flex gap-2">
-                    <Button variant="outline" :disabled="loading" @click="refresh">
-                        <RefreshCw class="h-4 w-4 mr-2" />
-                        {{ t('serverAllocations.refresh') }}
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <Button variant="outline" :disabled="loading" class="flex-1 sm:flex-none" @click="refresh">
+                        <RefreshCw class="h-4 w-4 sm:mr-2" />
+                        <span class="hidden sm:inline">{{ t('serverAllocations.refresh') }}</span>
                     </Button>
-                    <Button :disabled="!serverInfo?.can_add_more || loading || autoAllocating" @click="autoAllocate">
-                        <Zap class="h-4 w-4 mr-2" />
-                        {{ t('serverAllocations.autoAllocate') }}
+                    <Button
+                        :disabled="!serverInfo?.can_add_more || loading || autoAllocating"
+                        class="flex-1 sm:flex-none"
+                        @click="autoAllocate"
+                    >
+                        <Zap class="h-4 w-4 sm:mr-2" />
+                        <span class="hidden sm:inline">{{ t('serverAllocations.autoAllocate') }}</span>
                     </Button>
                 </div>
             </div>
 
             <!-- Allocation Status -->
-            <div v-if="serverInfo" class="bg-card border rounded-lg p-4">
-                <div class="flex items-center justify-between">
+            <div v-if="serverInfo" class="bg-card border rounded-lg p-3 sm:p-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
-                        <h3 class="font-medium">{{ t('serverAllocations.allocationStatus') }}</h3>
-                        <p class="text-sm text-muted-foreground">
+                        <h3 class="font-medium text-sm sm:text-base">{{ t('serverAllocations.allocationStatus') }}</h3>
+                        <p class="text-xs sm:text-sm text-muted-foreground">
                             {{
                                 t('serverAllocations.allocationStatusDescription', {
                                     current: serverInfo.current_allocations,
@@ -33,11 +37,11 @@
                             }}
                         </p>
                     </div>
-                    <div class="text-right">
-                        <div class="text-2xl font-bold text-primary">
+                    <div class="text-center sm:text-right">
+                        <div class="text-xl sm:text-2xl font-bold text-primary">
                             {{ serverInfo.current_allocations }}/{{ serverInfo.allocation_limit }}
                         </div>
-                        <div class="text-sm text-muted-foreground">
+                        <div class="text-xs sm:text-sm text-muted-foreground">
                             {{
                                 serverInfo.can_add_more
                                     ? t('serverAllocations.canAddMore')
@@ -56,20 +60,29 @@
                     <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
                         <div class="flex items-start gap-2">
                             <Info class="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                            <div class="text-sm text-blue-800">
+                            <div class="text-xs sm:text-sm text-blue-800">
                                 <p class="font-medium mb-1">{{ t('serverAllocations.allocationManagement') }}:</p>
                                 <ul class="space-y-1 text-xs">
                                     <li>
                                         • <strong>{{ t('serverAllocations.autoAllocate') }}:</strong>
-                                        {{ t('serverAllocations.autoAllocateDescription') }}
+                                        <span class="hidden sm:inline">{{
+                                            t('serverAllocations.autoAllocateDescription')
+                                        }}</span>
+                                        <span class="sm:hidden">Auto-assign available allocation</span>
                                     </li>
                                     <li>
                                         • <strong>{{ t('serverAllocations.setPrimary') }}:</strong>
-                                        {{ t('serverAllocations.setPrimaryDescription') }}
+                                        <span class="hidden sm:inline">{{
+                                            t('serverAllocations.setPrimaryDescription')
+                                        }}</span>
+                                        <span class="sm:hidden">Set as main connection</span>
                                     </li>
                                     <li>
                                         • <strong>{{ t('serverAllocations.delete') }}:</strong>
-                                        {{ t('serverAllocations.deleteDescription') }}
+                                        <span class="hidden sm:inline">{{
+                                            t('serverAllocations.deleteDescription')
+                                        }}</span>
+                                        <span class="sm:hidden">Remove allocation</span>
                                     </li>
                                 </ul>
                             </div>
@@ -95,28 +108,33 @@
                         </div>
                     </div>
 
-                    <div v-else class="space-y-4">
+                    <div v-else class="space-y-3">
                         <div
                             v-for="allocation in allocations"
                             :key="allocation.id"
-                            class="flex items-center justify-between p-4 border rounded-lg"
+                            class="flex items-center justify-between p-3 sm:p-4 border rounded-lg"
                         >
-                            <div class="flex-1">
-                                <div class="flex items-center gap-4">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                                        <span class="font-mono text-sm">{{ allocation.ip }}:{{ allocation.port }}</span>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 sm:gap-4">
+                                    <div class="flex items-center gap-2 flex-shrink-0">
+                                        <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500"></div>
+                                        <span class="font-mono text-xs sm:text-sm"
+                                            >{{ allocation.ip }}:{{ allocation.port }}</span
+                                        >
                                     </div>
-                                    <div v-if="allocation.ip_alias" class="text-sm text-muted-foreground">
+                                    <div
+                                        v-if="allocation.ip_alias"
+                                        class="text-xs sm:text-sm text-muted-foreground truncate"
+                                    >
                                         ({{ allocation.ip_alias }})
                                     </div>
                                 </div>
-                                <div class="mt-1 text-sm text-muted-foreground">
+                                <div class="mt-1 text-xs sm:text-sm text-muted-foreground truncate">
                                     <span v-if="allocation.notes">{{ allocation.notes }}</span>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <Badge v-if="allocation.is_primary" variant="secondary">
+                            <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                                <Badge v-if="allocation.is_primary" variant="secondary" class="text-xs">
                                     {{ t('serverAllocations.primary') }}
                                 </Badge>
                                 <Button
@@ -124,18 +142,20 @@
                                     variant="outline"
                                     size="sm"
                                     :disabled="settingPrimary === allocation.id"
+                                    class="h-8 w-8 p-0"
                                     @click="setPrimaryAllocation(allocation.id)"
                                 >
-                                    <Star class="h-4 w-4" />
+                                    <Star class="h-3 w-3 sm:h-4 sm:w-4" />
                                 </Button>
                                 <Button
                                     v-if="!allocation.is_primary"
                                     variant="outline"
                                     size="sm"
                                     :disabled="deletingAllocation === allocation.id"
+                                    class="h-8 w-8 p-0"
                                     @click="deleteAllocation(allocation.id)"
                                 >
-                                    <Trash2 class="h-4 w-4" />
+                                    <Trash2 class="h-3 w-3 sm:h-4 sm:w-4" />
                                 </Button>
                             </div>
                         </div>
@@ -146,18 +166,28 @@
 
         <!-- Confirmation Dialog -->
         <Dialog v-model:open="showConfirmDialog">
-            <DialogContent>
+            <DialogContent class="mx-4 sm:mx-0">
                 <DialogHeader>
                     <DialogTitle>{{ confirmDialog.title }}</DialogTitle>
                     <DialogDescription>
                         {{ confirmDialog.description }}
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter>
-                    <Button variant="outline" :disabled="confirmLoading" @click="showConfirmDialog = false">
+                <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <Button
+                        variant="outline"
+                        :disabled="confirmLoading"
+                        class="w-full sm:w-auto"
+                        @click="showConfirmDialog = false"
+                    >
                         {{ t('common.cancel') }}
                     </Button>
-                    <Button :variant="confirmDialog.variant" :disabled="confirmLoading" @click="onConfirmDialog">
+                    <Button
+                        :variant="confirmDialog.variant"
+                        :disabled="confirmLoading"
+                        class="w-full sm:w-auto"
+                        @click="onConfirmDialog"
+                    >
                         <Loader2 v-if="confirmLoading" class="h-4 w-4 mr-2 animate-spin" />
                         {{ confirmDialog.confirmText }}
                     </Button>

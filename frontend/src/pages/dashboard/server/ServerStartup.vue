@@ -1,21 +1,27 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6">
-            <div class="flex items-center justify-between">
+            <div class="space-y-4">
                 <div>
-                    <h1 class="text-2xl font-bold tracking-tight">{{ t('serverStartup.title') }}</h1>
-                    <p class="text-muted-foreground">
+                    <h1 class="text-xl sm:text-2xl font-bold tracking-tight">{{ t('serverStartup.title') }}</h1>
+                    <p class="text-sm sm:text-base text-muted-foreground">
                         {{ t('serverStartup.description') }}
                     </p>
                 </div>
-                <div class="flex gap-2">
-                    <Button variant="outline" :disabled="loading" @click="fetchServer">
-                        <RefreshCw class="h-4 w-4 mr-2" />
-                        {{ t('common.refresh') }}
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <Button variant="outline" :disabled="loading" class="flex-1 sm:flex-none" @click="fetchServer">
+                        <RefreshCw class="h-4 w-4 sm:mr-2" />
+                        <span class="hidden sm:inline">{{ t('common.refresh') }}</span>
                     </Button>
-                    <Button :disabled="saving || !hasChanges || hasErrors" @click="saveChanges">
-                        <Save class="h-4 w-4 mr-2" />
-                        {{ saving ? t('common.saving') : t('common.saveChanges') }}
+                    <Button
+                        :disabled="saving || !hasChanges || hasErrors"
+                        class="flex-1 sm:flex-none"
+                        @click="saveChanges"
+                    >
+                        <Save class="h-4 w-4 sm:mr-2" />
+                        <span class="hidden sm:inline">{{
+                            saving ? t('common.saving') : t('common.saveChanges')
+                        }}</span>
                     </Button>
                 </div>
             </div>
@@ -27,70 +33,78 @@
 
             <div v-else-if="server" class="space-y-6">
                 <Card>
-                    <CardHeader>
-                        <CardTitle>{{ t('serverStartup.startupCommand') }}</CardTitle>
-                        <CardDescription>
+                    <CardHeader class="pb-3 sm:pb-6">
+                        <CardTitle class="text-base sm:text-lg">{{ t('serverStartup.startupCommand') }}</CardTitle>
+                        <CardDescription class="text-xs sm:text-sm">
                             {{ t('serverStartup.startupHelp') }}
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-3">
-                        <Textarea v-model="form.startup" rows="5" class="font-mono text-sm" />
+                        <Textarea v-model="form.startup" rows="4" class="font-mono text-xs sm:text-sm" />
                     </CardContent>
                 </Card>
 
                 <Card>
-                    <CardHeader>
-                        <CardTitle>{{ t('serverStartup.dockerImage') }}</CardTitle>
-                        <CardDescription>
+                    <CardHeader class="pb-3 sm:pb-6">
+                        <CardTitle class="text-base sm:text-lg">{{ t('serverStartup.dockerImage') }}</CardTitle>
+                        <CardDescription class="text-xs sm:text-sm">
                             {{ t('serverStartup.dockerHelp') }}
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-3">
-                        <Input v-model="form.image" placeholder="ghcr.io/pterodactyl/yolks:java_21" />
+                        <Input
+                            v-model="form.image"
+                            placeholder="ghcr.io/pterodactyl/yolks:java_21"
+                            class="text-xs sm:text-sm"
+                        />
                         <div v-if="availableDockerImages.length" class="text-xs text-muted-foreground">
                             <span class="font-medium mr-2">{{ t('serverStartup.availableImages') }}</span>
-                            <span class="inline-flex flex-wrap gap-2">
+                            <div class="flex flex-wrap gap-1 sm:gap-2 mt-2">
                                 <Button
                                     v-for="img in availableDockerImages"
                                     :key="img"
                                     type="button"
                                     variant="outline"
                                     size="sm"
+                                    class="text-xs h-7 px-2"
                                     @click="form.image = img"
                                 >
-                                    {{ img }}
+                                    <span class="truncate max-w-[200px] sm:max-w-none">{{ img }}</span>
                                 </Button>
-                            </span>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card>
-                    <CardHeader>
-                        <CardTitle>{{ t('serverStartup.variables') }}</CardTitle>
-                        <CardDescription>
+                    <CardHeader class="pb-3 sm:pb-6">
+                        <CardTitle class="text-base sm:text-lg">{{ t('serverStartup.variables') }}</CardTitle>
+                        <CardDescription class="text-xs sm:text-sm">
                             {{ t('serverStartup.variablesHelp') }}
                         </CardDescription>
                     </CardHeader>
-                    <CardContent class="space-y-4">
-                        <div v-for="v in variables" :key="v.variable_id" class="border rounded-lg p-4 space-y-2">
-                            <div class="flex items-center justify-between">
-                                <div class="font-medium">{{ v.name }}</div>
-                                <Badge variant="secondary">{{ v.env_variable }}</Badge>
+                    <CardContent class="space-y-3 sm:space-y-4">
+                        <div v-for="v in variables" :key="v.variable_id" class="border rounded-lg p-3 sm:p-4 space-y-2">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <div class="font-medium text-sm sm:text-base">{{ v.name }}</div>
+                                <Badge variant="secondary" class="text-xs w-fit">{{ v.env_variable }}</Badge>
                             </div>
                             <div class="text-xs text-muted-foreground">{{ v.description }}</div>
                             <Input
                                 v-model="variableValues[v.variable_id]"
                                 :placeholder="v.default_value || ''"
                                 :disabled="!v.user_editable"
+                                class="text-xs sm:text-sm"
                                 @input="() => validateOneVariable(v)"
                             />
                             <p v-if="variableErrors[v.variable_id]" class="text-xs text-red-500">
                                 {{ variableErrors[v.variable_id] }}
                             </p>
-                            <div class="text-[11px] text-muted-foreground flex items-center gap-2">
+                            <div
+                                class="text-[10px] sm:text-[11px] text-muted-foreground flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2"
+                            >
                                 <span>{{ t('serverStartup.rules') }}:</span>
-                                <code class="bg-muted px-2 py-0.5 rounded">{{ v.rules }}</code>
+                                <code class="bg-muted px-2 py-0.5 rounded text-xs break-all">{{ v.rules }}</code>
                             </div>
                         </div>
                     </CardContent>

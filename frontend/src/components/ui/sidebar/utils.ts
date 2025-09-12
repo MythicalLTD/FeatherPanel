@@ -2,7 +2,7 @@ import type { ComputedRef, Ref } from 'vue';
 import { createContext } from 'reka-ui';
 
 export const SIDEBAR_WIDTH = '16rem';
-export const SIDEBAR_WIDTH_MOBILE = '18rem';
+export const SIDEBAR_WIDTH_MOBILE = '16rem';
 export const SIDEBAR_WIDTH_ICON = '3rem';
 export const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
 

@@ -1,9 +1,7 @@
 <template>
     <DashboardLayout :breadcrumbs="[{ text: $t('dashboard.title'), isCurrent: true, href: '/dashboard' }]">
         <div class="flex flex-col gap-6">
-            <div class="flex items-center gap-4">
-                <h1 class="text-2xl font-bold">{{ $t('dashboard.title') }}</h1>
-            </div>
+            <div class="flex items-center gap-4"></div>
 
             <!-- Server List Section -->
             <ServerList />

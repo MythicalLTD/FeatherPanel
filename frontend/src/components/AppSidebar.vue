@@ -92,27 +92,27 @@ const isSidebarVisible = computed(() => {
 <template>
     <Sidebar v-if="isSidebarVisible" v-bind="props">
         <SidebarHeader class="flex-shrink-0">
-            <div class="flex items-center justify-center px-4 py-3">
+            <div class="flex items-center justify-center px-3 py-3 sm:px-4">
                 <div class="flex items-center gap-2 min-w-0 cursor-pointer flex-shrink-0" @click="router.push('/')">
                     <img
                         v-if="settingsStore.appLogo"
                         :src="String(settingsStore.appLogo || '')"
                         :alt="String(settingsStore.appName || '')"
-                        class="h-8 w-8 object-contain flex-shrink-0"
+                        class="h-6 w-6 sm:h-8 sm:w-8 object-contain flex-shrink-0"
                     />
                     <div
                         v-else
-                        class="h-8 w-8 bg-primary rounded flex items-center justify-center text-white font-bold text-lg flex-shrink-0"
+                        class="h-6 w-6 sm:h-8 sm:w-8 bg-primary rounded flex items-center justify-center text-white font-bold text-sm sm:text-lg flex-shrink-0"
                     >
                         {{ String(settingsStore.appName || '').charAt(0) || 'M' }}
                     </div>
-                    <span v-if="state === 'expanded'" class="font-medium text-lg truncate ml-2">
+                    <span v-if="state === 'expanded'" class="font-medium text-base sm:text-lg truncate ml-2">
                         {{ settingsStore.appName || '' }}
                     </span>
                 </div>
             </div>
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent class="px-2 sm:px-0">
             <NavMain
                 v-if="router.currentRoute.value.path.startsWith('/dashboard')"
                 :name="t('nav.dashboard')"
@@ -129,7 +129,7 @@ const isSidebarVisible = computed(() => {
                 :items="data.navAdmin"
             />
         </SidebarContent>
-        <SidebarFooter>
+        <SidebarFooter class="px-2 sm:px-0">
             <NavUser :user="user" />
         </SidebarFooter>
         <SidebarRail />

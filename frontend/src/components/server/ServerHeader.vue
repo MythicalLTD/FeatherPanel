@@ -8,34 +8,50 @@
         </div>
 
         <!-- Server Control Buttons -->
-        <div class="flex items-center gap-3">
+        <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-3">
             <Button
                 variant="default"
-                size="lg"
-                class="bg-green-600 hover:bg-green-700"
+                size="sm"
+                class="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                 :disabled="isStartDisabled || loading"
                 @click="$emit('start')"
             >
                 <Power class="h-4 w-4 mr-2" />
-                Start
+                <span class="hidden sm:inline">Start</span>
+                <span class="sm:hidden">Start</span>
             </Button>
-            <Button variant="outline" size="lg" :disabled="isRestartDisabled || loading" @click="$emit('restart')">
+            <Button
+                variant="outline"
+                size="sm"
+                class="w-full sm:w-auto"
+                :disabled="isRestartDisabled || loading"
+                @click="$emit('restart')"
+            >
                 <RefreshCw class="h-4 w-4 mr-2" />
-                Restart
-            </Button>
-            <Button variant="destructive" size="lg" :disabled="isStopDisabled || loading" @click="$emit('stop')">
-                <Square class="h-4 w-4 mr-2" />
-                Stop
+                <span class="hidden sm:inline">Restart</span>
+                <span class="sm:hidden">Restart</span>
             </Button>
             <Button
                 variant="destructive"
-                size="lg"
-                class="bg-red-800 hover:bg-red-900"
+                size="sm"
+                class="w-full sm:w-auto"
+                :disabled="isStopDisabled || loading"
+                @click="$emit('stop')"
+            >
+                <Square class="h-4 w-4 mr-2" />
+                <span class="hidden sm:inline">Stop</span>
+                <span class="sm:hidden">Stop</span>
+            </Button>
+            <Button
+                variant="destructive"
+                size="sm"
+                class="bg-red-800 hover:bg-red-900 w-full sm:w-auto"
                 :disabled="isKillDisabled || loading"
                 @click="$emit('kill')"
             >
                 <Zap class="h-4 w-4 mr-2" />
-                Kill
+                <span class="hidden sm:inline">Kill</span>
+                <span class="sm:hidden">Kill</span>
             </Button>
         </div>
     </div>

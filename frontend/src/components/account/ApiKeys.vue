@@ -1,21 +1,31 @@
 <template>
     <div class="space-y-6">
         <!-- Header -->
-        <div class="flex items-center justify-between">
+        <div class="space-y-4">
             <div>
                 <h3 class="text-lg font-semibold">{{ $t('account.apiKeys.title') }}</h3>
                 <p class="text-sm text-muted-foreground">{{ $t('account.apiKeys.description') }}</p>
             </div>
-            <div class="flex items-center gap-2">
-                <Button variant="outline" size="sm" @click="openApiDocumentation">
-                    <ExternalLink class="h-4 w-4 mr-2" />
-                    {{ $t('account.apiKeys.apiDocs') }}
-                </Button>
-                <Button variant="outline" size="sm" :disabled="loading" @click="fetchApiClients">
-                    <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': loading }" />
-                    {{ $t('account.apiKeys.refresh') }}
-                </Button>
-                <Button @click="showCreateModal = true">
+            <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+                <div class="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" class="flex-1 sm:flex-none" @click="openApiDocumentation">
+                        <ExternalLink class="h-4 w-4 mr-2" />
+                        <span class="hidden sm:inline">{{ $t('account.apiKeys.apiDocs') }}</span>
+                        <span class="sm:hidden">{{ $t('account.apiKeys.apiDocs') }}</span>
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        class="flex-1 sm:flex-none"
+                        :disabled="loading"
+                        @click="fetchApiClients"
+                    >
+                        <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': loading }" />
+                        <span class="hidden sm:inline">{{ $t('account.apiKeys.refresh') }}</span>
+                        <span class="sm:hidden">{{ $t('account.apiKeys.refresh') }}</span>
+                    </Button>
+                </div>
+                <Button class="w-full sm:w-auto" @click="showCreateModal = true">
                     <Plus class="h-4 w-4 mr-2" />
                     {{ $t('account.apiKeys.addKey') }}
                 </Button>
@@ -40,12 +50,12 @@
         </div>
 
         <!-- Search and Stats -->
-        <div class="flex items-center gap-4">
-            <div class="relative flex-1 max-w-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <div class="relative flex-1">
                 <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input v-model="searchQuery" :placeholder="$t('account.apiKeys.searchPlaceholder')" class="pl-10" />
             </div>
-            <div class="text-sm text-muted-foreground">
+            <div class="text-sm text-muted-foreground text-center sm:text-left">
                 {{ $t('account.apiKeys.totalKeys', { count: filteredApiClients.length }) }}
             </div>
         </div>
@@ -76,53 +86,72 @@
                 :key="client.id"
                 class="bg-card border rounded-lg p-4 hover:shadow-md transition-shadow"
             >
-                <div class="flex items-start justify-between mb-3">
-                    <div class="flex-1">
-                        <h4 class="font-medium text-foreground mb-1">{{ client.name }}</h4>
-                        <div class="flex items-center gap-2 mb-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                class="h-6 px-2 text-xs"
-                                @click="viewClientDetails(client)"
-                            >
-                                <Eye class="h-3 w-3 mr-1" />
-                                {{ $t('account.apiKeys.viewDetails') }}
-                            </Button>
-                            <Button variant="outline" size="sm" class="h-6 px-2 text-xs" @click="editClient(client)">
-                                <Edit class="h-3 w-3 mr-1" />
-                                {{ $t('account.apiKeys.edit') }}
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                class="h-6 px-2 text-xs"
-                                @click="regenerateKeys(client)"
-                            >
-                                <RefreshCw class="h-3 w-3 mr-1" />
-                                {{ $t('account.apiKeys.regenerateKeys') }}
-                            </Button>
+                <div class="space-y-3">
+                    <!-- Header with name and status -->
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-medium text-foreground mb-1 truncate">{{ client.name }}</h4>
+                            <div class="text-xs text-muted-foreground">
+                                <span class="font-mono break-all">{{
+                                    client.public_key ? client.public_key.substring(0, 20) + '...' : ''
+                                }}</span>
+                            </div>
                         </div>
-                        <div class="text-xs text-muted-foreground">
-                            <span class="font-mono">{{
-                                client.public_key ? client.public_key.substring(0, 20) + '...' : ''
-                            }}</span>
+                        <div class="flex items-center gap-2 ml-2 flex-shrink-0">
+                            <Badge variant="default" class="text-xs">
+                                {{ $t('account.apiKeys.statuses.active') }}
+                            </Badge>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2 ml-4">
-                        <Badge variant="default" class="text-xs">
-                            {{ $t('account.apiKeys.statuses.active') }}
-                        </Badge>
-                    </div>
-                </div>
 
-                <div class="flex items-center justify-between text-xs text-muted-foreground">
-                    <div class="flex items-center gap-1">
-                        <Clock class="h-3 w-3" />
-                        <span>{{ formatDate(client.created_at) }}</span>
+                    <!-- Action buttons - responsive layout -->
+                    <div class="flex flex-wrap gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class="h-7 px-2 text-xs flex-1 sm:flex-none"
+                            @click="viewClientDetails(client)"
+                        >
+                            <Eye class="h-3 w-3 mr-1" />
+                            <span class="hidden sm:inline">{{ $t('account.apiKeys.viewDetails') }}</span>
+                            <span class="sm:hidden">{{ $t('account.apiKeys.viewDetails') }}</span>
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class="h-7 px-2 text-xs flex-1 sm:flex-none"
+                            @click="editClient(client)"
+                        >
+                            <Edit class="h-3 w-3 mr-1" />
+                            <span class="hidden sm:inline">{{ $t('account.apiKeys.edit') }}</span>
+                            <span class="sm:hidden">{{ $t('account.apiKeys.edit') }}</span>
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class="h-7 px-2 text-xs flex-1 sm:flex-none"
+                            @click="regenerateKeys(client)"
+                        >
+                            <RefreshCw class="h-3 w-3 mr-1" />
+                            <span class="hidden sm:inline">{{ $t('account.apiKeys.regenerateKeys') }}</span>
+                            <span class="sm:hidden">{{ $t('account.apiKeys.regenerateKeys') }}</span>
+                        </Button>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <Button variant="destructive" size="sm" class="h-6 px-2 text-xs" @click="deleteClient(client)">
+
+                    <!-- Footer with date and delete -->
+                    <div
+                        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-muted-foreground"
+                    >
+                        <div class="flex items-center gap-1">
+                            <Clock class="h-3 w-3" />
+                            <span>{{ formatDate(client.created_at) }}</span>
+                        </div>
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            class="h-7 px-2 text-xs w-full sm:w-auto"
+                            @click="deleteClient(client)"
+                        >
                             <Trash2 class="h-3 w-3 mr-1" />
                             {{ $t('account.apiKeys.delete') }}
                         </Button>
@@ -150,7 +179,7 @@
 
         <!-- Create/Edit API Client Modal -->
         <Dialog :open="showCreateModal || showEditModal" @update:open="closeModals">
-            <DialogContent class="max-w-2xl">
+            <DialogContent class="max-w-2xl mx-4 sm:mx-0">
                 <DialogHeader>
                     <DialogTitle>
                         {{ showEditModal ? $t('account.apiKeys.editKey') : $t('account.apiKeys.addKey') }}
@@ -187,14 +216,20 @@
                         </p>
                     </FormItem>
 
-                    <div class="flex gap-3 pt-4">
-                        <Button type="submit" :disabled="isSubmitting" class="min-w-[120px]">
+                    <div class="flex flex-col sm:flex-row gap-3 pt-4">
+                        <Button type="submit" :disabled="isSubmitting" class="w-full sm:min-w-[120px] sm:w-auto">
                             <span v-if="isSubmitting">{{ $t('account.apiKeys.saving') }}</span>
                             <span v-else>{{
                                 showEditModal ? $t('account.apiKeys.updateKey') : $t('account.apiKeys.addKey')
                             }}</span>
                         </Button>
-                        <Button type="button" variant="outline" :disabled="isSubmitting" @click="closeModals">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            class="w-full sm:w-auto"
+                            :disabled="isSubmitting"
+                            @click="closeModals"
+                        >
                             {{ $t('account.apiKeys.cancel') }}
                         </Button>
                     </div>
@@ -204,9 +239,9 @@
 
         <!-- View Client Details Modal -->
         <Dialog :open="showViewModal" @update:open="showViewModal = false">
-            <DialogContent class="max-w-2xl">
+            <DialogContent class="max-w-2xl mx-4 sm:mx-0">
                 <DialogHeader>
-                    <DialogTitle>{{ selectedClient?.name }}</DialogTitle>
+                    <DialogTitle class="truncate">{{ selectedClient?.name }}</DialogTitle>
                     <DialogDescription>
                         {{ $t('account.apiKeys.clientDetails') }}
                         <div class="mt-2 text-xs text-muted-foreground">
@@ -216,12 +251,12 @@
                 </DialogHeader>
 
                 <div v-if="selectedClient" class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                         <div>
                             <span class="font-medium text-muted-foreground"
                                 >{{ $t('account.apiKeys.clientName') }}:</span
                             >
-                            <p class="mt-1">{{ selectedClient.name }}</p>
+                            <p class="mt-1 break-words">{{ selectedClient.name }}</p>
                         </div>
                         <div>
                             <span class="font-medium text-muted-foreground"
@@ -234,13 +269,13 @@
                     <div>
                         <span class="font-medium text-muted-foreground">{{ $t('account.apiKeys.publicKey') }}:</span>
                         <div class="mt-2 p-3 bg-muted rounded-md">
-                            <pre class="text-xs font-mono break-all whitespace-pre-wrap">{{
+                            <pre class="text-xs font-mono break-all whitespace-pre-wrap overflow-x-auto">{{
                                 selectedClient.public_key
                             }}</pre>
                             <Button
                                 variant="outline"
                                 size="sm"
-                                class="mt-2 h-6 px-2 text-xs"
+                                class="mt-2 h-7 px-2 text-xs w-full sm:w-auto"
                                 @click="copyToClipboard(selectedClient.public_key || '')"
                             >
                                 <Copy class="h-3 w-3 mr-1" />
@@ -252,23 +287,25 @@
                     <div v-if="selectedClient.private_key">
                         <span class="font-medium text-muted-foreground">{{ $t('account.apiKeys.privateKey') }}:</span>
                         <div class="mt-2 p-3 bg-muted rounded-md">
-                            <pre class="text-xs font-mono break-all whitespace-pre-wrap">{{
+                            <pre class="text-xs font-mono break-all whitespace-pre-wrap overflow-x-auto">{{
                                 selectedClient.private_key
                             }}</pre>
-                            <div class="flex items-center gap-2 mt-2">
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    class="h-6 px-2 text-xs"
+                                    class="h-7 px-2 text-xs w-full sm:w-auto"
                                     @click="copyToClipboard(selectedClient.private_key || '')"
                                 >
                                     <Copy class="h-3 w-3 mr-1" />
                                     {{ $t('account.apiKeys.copyKey') }}
                                 </Button>
-                                <AlertTriangle class="h-4 w-4 text-yellow-500" />
-                                <span class="text-xs text-yellow-600">{{
-                                    $t('account.apiKeys.privateKeyWarning')
-                                }}</span>
+                                <div class="flex items-center gap-2">
+                                    <AlertTriangle class="h-4 w-4 text-yellow-500 flex-shrink-0" />
+                                    <span class="text-xs text-yellow-600">{{
+                                        $t('account.apiKeys.privateKeyWarning')
+                                    }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -278,17 +315,17 @@
 
         <!-- Delete Confirmation Modal -->
         <AlertDialog :open="showDeleteModal" @update:open="showDeleteModal = false">
-            <AlertDialogContent>
+            <AlertDialogContent class="mx-4 sm:mx-0">
                 <AlertDialogHeader>
                     <AlertDialogTitle>{{ $t('account.apiKeys.confirmDelete') }}</AlertDialogTitle>
                     <AlertDialogDescription>
                         {{ $t('account.apiKeys.deleteWarning') }}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>{{ $t('account.apiKeys.cancel') }}</AlertDialogCancel>
+                <AlertDialogFooter class="flex-col sm:flex-row gap-2">
+                    <AlertDialogCancel class="w-full sm:w-auto">{{ $t('account.apiKeys.cancel') }}</AlertDialogCancel>
                     <AlertDialogAction
-                        class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        class="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto"
                         @click="confirmDelete"
                     >
                         {{ $t('account.apiKeys.confirmDelete') }}
@@ -299,16 +336,16 @@
 
         <!-- Regenerate Keys Confirmation Modal -->
         <AlertDialog :open="showRegenerateModal" @update:open="showRegenerateModal = false">
-            <AlertDialogContent>
+            <AlertDialogContent class="mx-4 sm:mx-0">
                 <AlertDialogHeader>
                     <AlertDialogTitle>{{ $t('account.apiKeys.confirmRegenerate') }}</AlertDialogTitle>
                     <AlertDialogDescription>
                         {{ $t('account.apiKeys.regenerateWarning') }}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>{{ $t('account.apiKeys.cancel') }}</AlertDialogCancel>
-                    <AlertDialogAction @click="confirmRegenerate">
+                <AlertDialogFooter class="flex-col sm:flex-row gap-2">
+                    <AlertDialogCancel class="w-full sm:w-auto">{{ $t('account.apiKeys.cancel') }}</AlertDialogCancel>
+                    <AlertDialogAction class="w-full sm:w-auto" @click="confirmRegenerate">
                         {{ $t('account.apiKeys.confirmRegenerate') }}
                     </AlertDialogAction>
                 </AlertDialogFooter>

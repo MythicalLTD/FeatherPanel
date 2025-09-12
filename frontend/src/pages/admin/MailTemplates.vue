@@ -58,11 +58,6 @@
                                 <Plus class="h-4 w-4 mr-2" />
                                 Create Template
                             </Button>
-                            <Button variant="outline" size="sm" @click="toggleIncludeDeleted">
-                                <EyeOff v-if="includeDeleted" class="h-4 w-4 mr-2" />
-                                <Eye v-else class="h-4 w-4 mr-2" />
-                                {{ includeDeleted ? 'Hide Deleted' : 'Show Deleted' }}
-                            </Button>
                         </div>
                     </template>
 
@@ -365,7 +360,7 @@ import {
     DrawerFooter,
     DrawerClose,
 } from '@/components/ui/drawer';
-import { Plus, Eye, Pencil, Trash2, EyeOff, Mail } from 'lucide-vue-next';
+import { Plus, Eye, Pencil, Trash2, Mail } from 'lucide-vue-next';
 
 // Types
 interface MailTemplate {
@@ -484,12 +479,6 @@ const changePage = (page: number) => {
 const handleColumnToggle = (columns: string[]) => {
     // Column preferences are automatically saved by the TableComponent
     console.log('Columns changed:', columns);
-};
-
-const toggleIncludeDeleted = () => {
-    includeDeleted.value = !includeDeleted.value;
-    pagination.value.page = 1;
-    fetchTemplates();
 };
 
 // Drawer methods

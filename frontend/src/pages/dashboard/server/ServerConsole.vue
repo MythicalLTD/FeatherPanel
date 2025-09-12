@@ -4,14 +4,24 @@
         <div class="space-y-6">
             <!-- Customization Toggle Button -->
             <div class="flex justify-end">
-                <Button variant="outline" size="sm" @click="showCustomization = !showCustomization">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="w-full sm:w-auto"
+                    @click="showCustomization = !showCustomization"
+                >
                     <Settings class="h-4 w-4 mr-2" />
-                    {{ showCustomization ? t('serverConsole.hideLayout') : t('serverConsole.customizeLayout') }}
+                    <span class="hidden sm:inline">{{
+                        showCustomization ? t('serverConsole.hideLayout') : t('serverConsole.customizeLayout')
+                    }}</span>
+                    <span class="sm:hidden">{{
+                        showCustomization ? t('serverConsole.hideLayout') : t('serverConsole.customizeLayout')
+                    }}</span>
                 </Button>
             </div>
 
             <!-- Customization Panel -->
-            <Card v-if="showCustomization" class="p-6">
+            <Card v-if="showCustomization" class="p-4 sm:p-6">
                 <CardHeader>
                     <CardTitle class="flex items-center gap-2">
                         <Settings class="h-5 w-5" />
@@ -19,7 +29,7 @@
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                         <!-- Component Visibility -->
                         <div class="space-y-4">
                             <div>
@@ -341,38 +351,42 @@
                     </div>
 
                     <!-- Console Filters Section -->
-                    <div class="mt-8 pt-6 border-t">
+                    <div class="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t">
                         <h4 class="font-medium text-sm mb-4">{{ t('serverConsole.consoleFilters') }}</h4>
                         <div class="space-y-4">
                             <!-- Add New Filter -->
-                            <div class="flex gap-2">
+                            <div class="flex flex-col sm:flex-row gap-2">
                                 <Input
                                     v-model="newFilter.pattern"
                                     :placeholder="t('serverConsole.filterPattern')"
                                     class="flex-1"
                                 />
-                                <Select
-                                    :model-value="newFilter.type"
-                                    @update:model-value="
-                                        (value) => (newFilter.type = value as 'hide' | 'replace' | 'highlight')
-                                    "
-                                >
-                                    <SelectTrigger class="w-32">
-                                        <SelectValue :placeholder="t('serverConsole.filterType')" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="hide">{{ t('serverConsole.hide') }}</SelectItem>
-                                        <SelectItem value="replace">{{ t('serverConsole.replace') }}</SelectItem>
-                                        <SelectItem value="highlight">{{ t('serverConsole.highlight') }}</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <Input
-                                    v-if="newFilter.type === 'replace'"
-                                    v-model="newFilter.replacement"
-                                    :placeholder="t('serverConsole.replacementText')"
-                                    class="w-32"
-                                />
-                                <Button size="sm" @click="addFilter">
+                                <div class="flex gap-2">
+                                    <Select
+                                        :model-value="newFilter.type"
+                                        @update:model-value="
+                                            (value) => (newFilter.type = value as 'hide' | 'replace' | 'highlight')
+                                        "
+                                    >
+                                        <SelectTrigger class="w-full sm:w-32">
+                                            <SelectValue :placeholder="t('serverConsole.filterType')" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="hide">{{ t('serverConsole.hide') }}</SelectItem>
+                                            <SelectItem value="replace">{{ t('serverConsole.replace') }}</SelectItem>
+                                            <SelectItem value="highlight">{{
+                                                t('serverConsole.highlight')
+                                            }}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <Input
+                                        v-if="newFilter.type === 'replace'"
+                                        v-model="newFilter.replacement"
+                                        :placeholder="t('serverConsole.replacementText')"
+                                        class="w-full sm:w-32"
+                                    />
+                                </div>
+                                <Button size="sm" class="w-full sm:w-auto" @click="addFilter">
                                     <Plus class="h-4 w-4 mr-2" />
                                     {{ t('serverConsole.addFilter') }}
                                 </Button>
@@ -383,20 +397,25 @@
                                 <div
                                     v-for="(filter, index) in customization.terminal.filters"
                                     :key="index"
-                                    class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                                    class="flex flex-col sm:flex-row sm:items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
                                 >
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <Badge :variant="getFilterBadgeVariant(filter.type)">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                                            <Badge :variant="getFilterBadgeVariant(filter.type)" class="w-fit">
                                                 {{ t(`serverConsole.${filter.type}`) }}
                                             </Badge>
-                                            <span class="text-sm font-mono">{{ filter.pattern }}</span>
+                                            <span class="text-sm font-mono break-all">{{ filter.pattern }}</span>
                                         </div>
                                         <div v-if="filter.type === 'replace'" class="text-xs text-muted-foreground">
                                             → {{ filter.replacement }}
                                         </div>
                                     </div>
-                                    <Button variant="outline" size="sm" @click="removeFilter(index)">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        class="w-full sm:w-auto"
+                                        @click="removeFilter(index)"
+                                    >
                                         <Trash2 class="h-4 w-4" />
                                     </Button>
                                 </div>
@@ -405,13 +424,17 @@
                     </div>
 
                     <!-- Reset Button -->
-                    <div class="mt-6 pt-4 border-t flex gap-3">
-                        <Button variant="outline" @click="async () => await resetCustomization()">
+                    <div class="mt-6 pt-4 border-t flex flex-col sm:flex-row gap-3">
+                        <Button
+                            variant="outline"
+                            class="w-full sm:w-auto"
+                            @click="async () => await resetCustomization()"
+                        >
                             <RotateCcw class="h-4 w-4 mr-2" />
                             {{ t('serverConsole.resetToDefaults') }}
                         </Button>
 
-                        <Button class="flex-1" @click="async () => await saveAndApplyCustomization()">
+                        <Button class="w-full sm:flex-1" @click="async () => await saveAndApplyCustomization()">
                             <Save class="h-4 w-4 mr-2" />
                             {{ t('serverConsole.saveAndApply') }}
                         </Button>
@@ -434,7 +457,7 @@
             <!-- Wings Connection Status Banner -->
             <div
                 v-if="!customization.components.wingsStatus"
-                class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border"
+                class="flex items-start sm:items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border"
                 :class="{
                     'border-green-200 bg-green-50 dark:bg-green-900/20': wingsConnectionInfo.status === 'healthy',
                     'border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20': wingsConnectionInfo.status === 'error',
@@ -442,11 +465,11 @@
                     'border-blue-200 bg-blue-50 dark:bg-blue-900/20': wingsConnectionInfo.status === 'connecting',
                 }"
             >
-                <span class="text-lg">{{ wingsConnectionInfo.icon }}</span>
-                <span class="text-sm font-medium" :class="wingsConnectionInfo.color">
+                <span class="text-lg flex-shrink-0">{{ wingsConnectionInfo.icon }}</span>
+                <span class="text-sm font-medium flex-1 min-w-0" :class="wingsConnectionInfo.color">
                     {{ wingsConnectionInfo.message }}
                 </span>
-                <div v-if="wingsConnectionInfo.status === 'connecting'" class="ml-auto">
+                <div v-if="wingsConnectionInfo.status === 'connecting'" class="flex-shrink-0">
                     <div class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
                 </div>
             </div>

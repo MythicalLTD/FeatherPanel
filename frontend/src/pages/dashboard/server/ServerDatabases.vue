@@ -48,10 +48,6 @@
                 @column-toggle="handleColumnToggle"
             >
                 <template #header-actions>
-                    <Button variant="outline" size="sm" :disabled="loading" @click="refresh">
-                        <RefreshCw class="h-4 w-4 mr-2" />
-                        {{ t('common.refresh') }}
-                    </Button>
                     <Button
                         :disabled="serverInfo && databases.length >= serverInfo.database_limit"
                         @click="openCreateDatabaseDrawer"
@@ -625,7 +621,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { RefreshCw, Plus, Trash2, Loader2, Eye, EyeOff, Copy, AlertTriangle } from 'lucide-vue-next';
+import { Plus, Trash2, Loader2, Eye, EyeOff, Copy, AlertTriangle } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import type { TableColumn } from '@/kit/types';
@@ -803,10 +799,6 @@ async function fetchAvailableHosts() {
 function changePage(page: number) {
     if (page < 1) return;
     fetchDatabases(page);
-}
-
-function refresh() {
-    fetchDatabases();
 }
 
 function handleSearch(query: string) {

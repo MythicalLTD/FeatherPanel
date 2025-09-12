@@ -36,41 +36,43 @@ const isSidebarVisible = computed(() => useLocalStorage('sidebar-visibility', 'v
         <AppSidebar />
         <SidebarInset>
             <header
-                class="flex h-16 shrink-0 items-center gap-2 transition-all duration-300 ease-out group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12"
+                class="flex h-14 sm:h-16 shrink-0 items-center gap-2 transition-all duration-300 ease-out group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
             >
-                <div class="flex items-center gap-2 px-4">
+                <div class="flex items-center gap-2 px-3 sm:px-4 w-full">
                     <SidebarTrigger
                         v-if="isSidebarVisible"
-                        class="-ml-1 transition-transform duration-200 hover:scale-105"
+                        class="-ml-1 transition-transform duration-200 hover:scale-105 flex-shrink-0"
                     />
                     <Separator
                         v-if="isSidebarVisible"
                         orientation="vertical"
-                        class="mr-2 h-4 transition-opacity duration-200"
+                        class="mr-2 h-4 transition-opacity duration-200 flex-shrink-0"
                     />
-                    <Breadcrumb>
-                        <BreadcrumbList>
+                    <Breadcrumb class="min-w-0 flex-1">
+                        <BreadcrumbList class="flex-wrap">
                             <template v-for="(crumb, i) in breadcrumbs" :key="i">
-                                <BreadcrumbItem v-if="!crumb.isCurrent">
+                                <BreadcrumbItem v-if="!crumb.isCurrent" class="flex-shrink-0">
                                     <router-link
                                         :to="crumb.href || '#'"
-                                        class="transition-colors duration-200 hover:text-primary"
+                                        class="transition-colors duration-200 hover:text-primary text-sm sm:text-base truncate"
                                     >
                                         {{ crumb.text }}
                                     </router-link>
                                 </BreadcrumbItem>
-                                <BreadcrumbItem v-else>
-                                    <BreadcrumbPage class="transition-colors duration-200">
+                                <BreadcrumbItem v-else class="flex-shrink-0">
+                                    <BreadcrumbPage
+                                        class="transition-colors duration-200 text-sm sm:text-base font-medium truncate"
+                                    >
                                         {{ crumb.text }}
                                     </BreadcrumbPage>
                                 </BreadcrumbItem>
-                                <BreadcrumbSeparator v-if="i < (breadcrumbs?.length || 0) - 1" />
+                                <BreadcrumbSeparator v-if="i < (breadcrumbs?.length || 0) - 1" class="flex-shrink-0" />
                             </template>
                         </BreadcrumbList>
                     </Breadcrumb>
                 </div>
             </header>
-            <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
+            <div class="flex flex-1 flex-col gap-4 p-3 sm:p-4 pt-0">
                 <slot />
             </div>
 

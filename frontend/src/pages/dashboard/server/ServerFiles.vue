@@ -2,51 +2,71 @@
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6">
             <!-- Header -->
-            <div class="flex items-center justify-between">
+            <div class="space-y-4">
                 <div>
-                    <h1 class="text-2xl font-bold flex items-center gap-2">
+                    <h1 class="text-xl sm:text-2xl font-bold flex items-center gap-2">
                         {{ t('serverFiles.title') }}
                         <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                             {{ filteredFiles.length }} / {{ files.length }}
                         </span>
                     </h1>
-                    <p class="text-muted-foreground">{{ t('serverFiles.description') }}</p>
+                    <p class="text-sm sm:text-base text-muted-foreground">{{ t('serverFiles.description') }}</p>
                 </div>
-                <div class="flex gap-2">
-                    <Button variant="outline" :disabled="loading" @click="refreshFiles">
-                        <RefreshCw class="h-4 w-4 mr-2" />
-                        {{ t('common.refresh') }}
-                    </Button>
-                    <Button variant="outline" :disabled="loading" @click="showCreateFileDialog = true">
-                        <FileText class="h-4 w-4 mr-2" />
-                        {{ t('serverFiles.newFile') }}
-                    </Button>
-                    <Button variant="outline" :disabled="loading" @click="showUploadDialog = true">
-                        <Upload class="h-4 w-4 mr-2" />
-                        {{ t('serverFiles.uploadFile') }}
-                    </Button>
-                    <Button :disabled="loading" @click="showCreateFolderDialog = true">
-                        <FolderPlus class="h-4 w-4 mr-2" />
-                        {{ t('serverFiles.createFolder') }}
-                    </Button>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <div class="flex flex-wrap gap-2">
+                        <Button variant="outline" :disabled="loading" class="flex-1 sm:flex-none" @click="refreshFiles">
+                            <RefreshCw class="h-4 w-4 sm:mr-2" />
+                            <span class="hidden sm:inline">{{ t('common.refresh') }}</span>
+                        </Button>
+                        <Button
+                            variant="outline"
+                            :disabled="loading"
+                            class="flex-1 sm:flex-none"
+                            @click="showCreateFileDialog = true"
+                        >
+                            <FileText class="h-4 w-4 sm:mr-2" />
+                            <span class="hidden sm:inline">{{ t('serverFiles.newFile') }}</span>
+                        </Button>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <Button
+                            variant="outline"
+                            :disabled="loading"
+                            class="flex-1 sm:flex-none"
+                            @click="showUploadDialog = true"
+                        >
+                            <Upload class="h-4 w-4 sm:mr-2" />
+                            <span class="hidden sm:inline">{{ t('serverFiles.uploadFile') }}</span>
+                        </Button>
+                        <Button :disabled="loading" class="flex-1 sm:flex-none" @click="showCreateFolderDialog = true">
+                            <FolderPlus class="h-4 w-4 sm:mr-2" />
+                            <span class="hidden sm:inline">{{ t('serverFiles.createFolder') }}</span>
+                        </Button>
+                    </div>
                 </div>
             </div>
 
             <!-- Breadcrumb Navigation + Search -->
             <Card>
-                <CardContent class="p-4">
-                    <div class="flex items-center justify-between gap-2">
-                        <div class="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" :disabled="loading" @click="navigateToPath('/')">
+                <CardContent class="p-3 sm:p-4">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                :disabled="loading"
+                                class="flex-shrink-0"
+                                @click="navigateToPath('/')"
+                            >
                                 <Home class="h-4 w-4" />
                             </Button>
-                            <Separator orientation="vertical" class="h-4" />
-                            <div class="flex items-center gap-1">
+                            <Separator orientation="vertical" class="h-4 hidden sm:block" />
+                            <div class="flex items-center gap-1 min-w-0 overflow-x-auto">
                                 <template v-for="(segment, index) in pathSegments" :key="index">
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        class="text-muted-foreground hover:text-foreground"
+                                        class="text-muted-foreground hover:text-foreground whitespace-nowrap flex-shrink-0"
                                         :disabled="loading"
                                         @click="navigateToPath(getPathUpTo(index))"
                                     >
@@ -54,20 +74,28 @@
                                     </Button>
                                     <ChevronRight
                                         v-if="index < pathSegments.length - 1"
-                                        class="h-4 w-4 text-muted-foreground"
+                                        class="h-4 w-4 text-muted-foreground flex-shrink-0"
                                     />
                                 </template>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 w-80 max-w-full">
+                        <div class="flex items-center gap-2 w-full sm:w-80">
                             <Input
                                 ref="searchInput"
                                 v-model="searchQuery"
                                 :placeholder="t('serverFiles.searchPlaceholder')"
                                 :disabled="loading || files.length === 0"
+                                class="flex-1"
                                 @keydown.escape="clearSearch"
                             />
-                            <Button variant="ghost" size="sm" :disabled="!searchQuery" @click="clearSearch">X</Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                :disabled="!searchQuery"
+                                class="flex-shrink-0"
+                                @click="clearSearch"
+                                >X</Button
+                            >
                         </div>
                     </div>
                 </CardContent>
@@ -75,27 +103,45 @@
 
             <!-- File Actions Toolbar -->
             <Card v-if="selectedFiles.length > 0">
-                <CardContent class="p-4">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-muted-foreground">
+                <CardContent class="p-3 sm:p-4">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <span class="text-sm text-muted-foreground text-center sm:text-left">
                             {{ t('serverFiles.selectedFiles', { count: selectedFiles.length }) }}
                         </span>
-                        <div class="flex gap-2">
-                            <Button variant="outline" size="sm" :disabled="loading" @click="downloadSelected">
-                                <Download class="h-4 w-4 mr-2" />
-                                {{ t('serverFiles.download') }}
+                        <div class="flex flex-wrap gap-2 justify-center sm:justify-end">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                :disabled="loading"
+                                class="flex-1 sm:flex-none"
+                                @click="downloadSelected"
+                            >
+                                <Download class="h-4 w-4 sm:mr-2" />
+                                <span class="hidden sm:inline">{{ t('serverFiles.download') }}</span>
                             </Button>
-                            <!-- Copy removed for mass actions -->
-                            <Button variant="outline" size="sm" :disabled="loading" @click="compressSelected">
-                                <Archive class="h-4 w-4 mr-2" />
-                                {{ t('serverFiles.compress') }}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                :disabled="loading"
+                                class="flex-1 sm:flex-none"
+                                @click="compressSelected"
+                            >
+                                <Archive class="h-4 w-4 sm:mr-2" />
+                                <span class="hidden sm:inline">{{ t('serverFiles.compress') }}</span>
                             </Button>
-                            <Button variant="destructive" size="sm" :disabled="loading" @click="deleteSelected">
-                                <Trash2 class="h-4 w-4 mr-2" />
-                                {{ t('serverFiles.delete') }}
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                :disabled="loading"
+                                class="flex-1 sm:flex-none"
+                                @click="deleteSelected"
+                            >
+                                <Trash2 class="h-4 w-4 sm:mr-2" />
+                                <span class="hidden sm:inline">{{ t('serverFiles.delete') }}</span>
                             </Button>
-                            <Button variant="ghost" size="sm" @click="clearSelection">
-                                <X class="h-4 w-4" />
+                            <Button variant="ghost" size="sm" class="flex-1 sm:flex-none" @click="clearSelection">
+                                <X class="h-4 w-4 sm:mr-2" />
+                                <span class="hidden sm:inline">Clear</span>
                             </Button>
                         </div>
                     </div>
@@ -125,9 +171,9 @@
 
                     <div v-else>
                         <!-- File List Header -->
-                        <div class="border-b pb-4 mb-4">
+                        <div class="border-b pb-3 sm:pb-4 mb-3 sm:mb-4">
                             <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-4">
+                                <div class="flex items-center gap-2 sm:gap-4">
                                     <div class="flex items-center gap-2">
                                         <!-- Custom Select All Checkbox -->
                                         <div
@@ -159,10 +205,10 @@
                                                 class="w-2 h-0.5 bg-primary-foreground rounded"
                                             ></div>
                                         </div>
-                                        <span class="text-sm font-medium">{{ t('serverFiles.name') }}</span>
+                                        <span class="text-xs sm:text-sm font-medium">{{ t('serverFiles.name') }}</span>
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-4">
+                                <div class="hidden sm:flex items-center gap-4">
                                     <span class="text-sm font-medium w-20">{{ t('serverFiles.size') }}</span>
                                     <span class="text-sm font-medium w-24">{{ t('serverFiles.modified') }}</span>
                                     <span class="text-sm font-medium w-20">{{ t('serverFiles.actions') }}</span>
@@ -172,16 +218,16 @@
 
                         <!-- Go Up Directory -->
                         <div v-if="currentPath !== '/'" class="border-b hover:bg-muted/50 transition-colors">
-                            <div class="flex items-center gap-4 p-4 cursor-pointer" @click="navigateUp">
+                            <div class="flex items-center gap-2 sm:gap-4 p-3 sm:p-4 cursor-pointer" @click="navigateUp">
                                 <div class="flex items-center gap-2">
                                     <div class="w-4"></div>
                                     <FolderUp class="h-4 w-4 text-muted-foreground" />
-                                    <span class="text-sm">{{ t('serverFiles.parentDirectory') }}</span>
+                                    <span class="text-xs sm:text-sm">{{ t('serverFiles.parentDirectory') }}</span>
                                 </div>
                                 <div class="flex-1"></div>
-                                <div class="w-20"></div>
-                                <div class="w-24"></div>
-                                <div class="w-20"></div>
+                                <div class="hidden sm:block w-20"></div>
+                                <div class="hidden sm:block w-24"></div>
+                                <div class="hidden sm:block w-20"></div>
                             </div>
                         </div>
 
@@ -192,7 +238,107 @@
                                 :key="file.name"
                                 class="border-b last:border-b-0 hover:bg-muted/50 transition-colors"
                             >
-                                <div class="flex items-center gap-4 p-4">
+                                <!-- Mobile Layout -->
+                                <div class="sm:hidden p-3">
+                                    <div class="flex items-start gap-3">
+                                        <div class="flex items-center gap-2 flex-1 min-w-0">
+                                            <!-- Custom File Checkbox -->
+                                            <div
+                                                class="relative flex items-center justify-center w-4 h-4 border-2 rounded-sm cursor-pointer transition-all duration-200 flex-shrink-0"
+                                                :class="{
+                                                    'border-primary bg-primary': selectedFiles.includes(file.name),
+                                                    'border-muted-foreground hover:border-primary':
+                                                        !selectedFiles.includes(file.name),
+                                                }"
+                                                @click="toggleFileSelection(file.name)"
+                                            >
+                                                <svg
+                                                    v-if="selectedFiles.includes(file.name)"
+                                                    class="w-3 h-3 text-primary-foreground"
+                                                    fill="currentColor"
+                                                    viewBox="0 0 20 20"
+                                                >
+                                                    <path
+                                                        fill-rule="evenodd"
+                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                        clip-rule="evenodd"
+                                                    />
+                                                </svg>
+                                            </div>
+                                            <component
+                                                :is="getFileIcon(file)"
+                                                class="h-4 w-4 text-muted-foreground flex-shrink-0"
+                                            />
+                                            <div class="min-w-0 flex-1">
+                                                <div
+                                                    class="text-sm truncate cursor-pointer hover:text-primary"
+                                                    @click="handleFileClick(file)"
+                                                >
+                                                    <template
+                                                        v-for="(seg, i) in getHighlightSegments(file.name)"
+                                                        :key="i"
+                                                    >
+                                                        <mark v-if="seg.match">{{ seg.text }}</mark>
+                                                        <span v-else>{{ seg.text }}</span>
+                                                    </template>
+                                                </div>
+                                                <div class="text-xs text-muted-foreground mt-1">
+                                                    {{
+                                                        file.file ? formatFileSize(file.size) : t('serverFiles.folder')
+                                                    }}
+                                                    • {{ formatDate(file.modified) }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger as-child>
+                                                <Button variant="ghost" size="sm" class="h-8 w-8 p-0 flex-shrink-0">
+                                                    <MoreVertical class="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem v-if="file.file" @click="openMonacoEditor(file)">
+                                                    <Code class="h-4 w-4 mr-2" />
+                                                    {{ t('serverFiles.edit') }}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem @click="renameFile(file)">
+                                                    <FileEdit class="h-4 w-4 mr-2" />
+                                                    {{ t('serverFiles.rename') }}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem v-if="file.file" @click="downloadFile(file)">
+                                                    <Download class="h-4 w-4 mr-2" />
+                                                    {{ t('serverFiles.download') }}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem @click="copySingle(file.name)">
+                                                    <Copy class="h-4 w-4 mr-2" />
+                                                    {{ t('serverFiles.copy') }}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    v-if="file.file && isArchive(file)"
+                                                    @click="extractFile(file)"
+                                                >
+                                                    <Archive class="h-4 w-4 mr-2" />
+                                                    {{ t('serverFiles.extract') }}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem @click="changePermissions(file)">
+                                                    <Settings class="h-4 w-4 mr-2" />
+                                                    {{ t('serverFiles.permissions') }}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    class="text-destructive focus:text-destructive"
+                                                    @click="deleteFile(file)"
+                                                >
+                                                    <Trash2 class="h-4 w-4 mr-2" />
+                                                    {{ t('serverFiles.delete') }}
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                </div>
+
+                                <!-- Desktop Layout -->
+                                <div class="hidden sm:flex items-center gap-4 p-4">
                                     <div class="flex items-center gap-2 flex-1">
                                         <!-- Custom File Checkbox -->
                                         <div
@@ -294,7 +440,7 @@
 
         <!-- Upload File Dialog -->
         <Dialog v-model:open="showUploadDialog">
-            <DialogContent class="sm:max-w-md">
+            <DialogContent class="mx-4 sm:mx-0 sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>{{ t('serverFiles.uploadFile') }}</DialogTitle>
                     <DialogDescription>{{ t('serverFiles.uploadFileDescription') }}</DialogDescription>
@@ -323,11 +469,16 @@
                         </div>
                     </div>
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" :disabled="uploading" @click="showUploadDialog = false">
+                <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <Button
+                        variant="outline"
+                        :disabled="uploading"
+                        class="w-full sm:w-auto"
+                        @click="showUploadDialog = false"
+                    >
                         {{ t('common.cancel') }}
                     </Button>
-                    <Button :disabled="!selectedFile || uploading" @click="uploadFile">
+                    <Button :disabled="!selectedFile || uploading" class="w-full sm:w-auto" @click="uploadFile">
                         <Upload class="h-4 w-4 mr-2" />
                         {{ uploading ? t('serverFiles.uploading') : t('serverFiles.upload') }}
                     </Button>
@@ -337,7 +488,7 @@
 
         <!-- Create Folder Dialog -->
         <Dialog v-model:open="showCreateFolderDialog">
-            <DialogContent class="sm:max-w-md">
+            <DialogContent class="mx-4 sm:mx-0 sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>{{ t('serverFiles.createFolder') }}</DialogTitle>
                     <DialogDescription>{{ t('serverFiles.createFolderDescription') }}</DialogDescription>
@@ -353,11 +504,11 @@
                         />
                     </div>
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" @click="showCreateFolderDialog = false">
+                <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <Button variant="outline" class="w-full sm:w-auto" @click="showCreateFolderDialog = false">
                         {{ t('common.cancel') }}
                     </Button>
-                    <Button :disabled="!newFolderName" @click="createFolder">
+                    <Button :disabled="!newFolderName" class="w-full sm:w-auto" @click="createFolder">
                         <FolderPlus class="h-4 w-4 mr-2" />
                         {{ t('serverFiles.create') }}
                     </Button>
@@ -367,7 +518,7 @@
 
         <!-- Create File Dialog -->
         <Dialog v-model:open="showCreateFileDialog">
-            <DialogContent class="sm:max-w-lg">
+            <DialogContent class="mx-4 sm:mx-0 sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>{{ t('serverFiles.createFile') }}</DialogTitle>
                     <DialogDescription>{{ t('serverFiles.createFileDescription') }}</DialogDescription>
@@ -392,11 +543,11 @@
                         ></textarea>
                     </div>
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" @click="showCreateFileDialog = false">
+                <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <Button variant="outline" class="w-full sm:w-auto" @click="showCreateFileDialog = false">
                         {{ t('common.cancel') }}
                     </Button>
-                    <Button :disabled="!newFileNameForCreate" @click="createFile">
+                    <Button :disabled="!newFileNameForCreate" class="w-full sm:w-auto" @click="createFile">
                         <FileText class="h-4 w-4 mr-2" />
                         {{ t('serverFiles.create') }}
                     </Button>
@@ -408,7 +559,7 @@
 
         <!-- Delete Confirmation Dialog -->
         <Dialog v-model:open="showDeleteDialog">
-            <DialogContent class="sm:max-w-md">
+            <DialogContent class="mx-4 sm:mx-0 sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>{{ t('serverFiles.confirmDeleteTitle') }}</DialogTitle>
                     <DialogDescription>
@@ -425,16 +576,20 @@
                         </template>
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter>
-                    <Button variant="outline" @click="showDeleteDialog = false">{{ t('common.cancel') }}</Button>
-                    <Button variant="destructive" @click="confirmDeleteProceed">{{ t('serverFiles.delete') }}</Button>
+                <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <Button variant="outline" class="w-full sm:w-auto" @click="showDeleteDialog = false">{{
+                        t('common.cancel')
+                    }}</Button>
+                    <Button variant="destructive" class="w-full sm:w-auto" @click="confirmDeleteProceed">{{
+                        t('serverFiles.delete')
+                    }}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
 
         <!-- Rename Dialog -->
         <Dialog v-model:open="showRenameDialog">
-            <DialogContent class="sm:max-w-md">
+            <DialogContent class="mx-4 sm:mx-0 sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>{{ t('serverFiles.renameFile') }}</DialogTitle>
                     <DialogDescription>{{ t('serverFiles.renameFileDescription') }}</DialogDescription>
@@ -445,11 +600,11 @@
                         <Input id="newName" v-model="newFileName" @keyup.enter="confirmRename" />
                     </div>
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" @click="showRenameDialog = false">
+                <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <Button variant="outline" class="w-full sm:w-auto" @click="showRenameDialog = false">
                         {{ t('common.cancel') }}
                     </Button>
-                    <Button :disabled="!newFileName" @click="confirmRename">
+                    <Button :disabled="!newFileName" class="w-full sm:w-auto" @click="confirmRename">
                         <FileEdit class="h-4 w-4 mr-2" />
                         {{ t('serverFiles.rename') }}
                     </Button>
@@ -459,7 +614,7 @@
 
         <!-- Permissions Dialog -->
         <Dialog v-model:open="showPermissionsDialog">
-            <DialogContent class="sm:max-w-md">
+            <DialogContent class="mx-4 sm:mx-0 sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>{{ t('serverFiles.changePermissions') }}</DialogTitle>
                     <DialogDescription>{{ t('serverFiles.changePermissionsDescription') }}</DialogDescription>
@@ -475,11 +630,11 @@
                         />
                     </div>
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" @click="showPermissionsDialog = false">
+                <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <Button variant="outline" class="w-full sm:w-auto" @click="showPermissionsDialog = false">
                         {{ t('common.cancel') }}
                     </Button>
-                    <Button :disabled="!newPermissions" @click="confirmPermissions">
+                    <Button :disabled="!newPermissions" class="w-full sm:w-auto" @click="confirmPermissions">
                         <Settings class="h-4 w-4 mr-2" />
                         {{ t('serverFiles.change') }}
                     </Button>
@@ -489,7 +644,7 @@
 
         <!-- Pull File Dialog -->
         <Dialog v-model:open="showPullDialog">
-            <DialogContent class="sm:max-w-md">
+            <DialogContent class="mx-4 sm:mx-0 sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>{{ t('serverFiles.pullFile') }}</DialogTitle>
                     <DialogDescription>{{ t('serverFiles.pullFileDescription') }}</DialogDescription>
@@ -508,11 +663,11 @@
                         />
                     </div>
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" @click="showPullDialog = false">
+                <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <Button variant="outline" class="w-full sm:w-auto" @click="showPullDialog = false">
                         {{ t('common.cancel') }}
                     </Button>
-                    <Button :disabled="!pullUrl" @click="pullFile">
+                    <Button :disabled="!pullUrl" class="w-full sm:w-auto" @click="pullFile">
                         <Download class="h-4 w-4 mr-2" />
                         {{ t('serverFiles.pull') }}
                     </Button>
