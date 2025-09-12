@@ -173,7 +173,8 @@
                     <!-- Navigation buttons only for create mode -->
                     <div v-if="drawerMode === 'create'" class="flex items-center justify-between mt-4">
                         <div class="flex-1 font-semibold">
-                            Step {{ currentStep + 1 }} of {{ steps.length }}: {{ steps[currentStep].label }}
+                            Step {{ currentStep + 1 }} of {{ steps.length }}:
+                            {{ steps[currentStep]?.label || 'Unknown' }}
                         </div>
                         <div class="flex gap-2">
                             <Button v-if="currentStep > 0" type="button" size="sm" variant="outline" @click="prevStep">
@@ -1691,7 +1692,10 @@ function prevStep() {
 function validateStep(stepIdx: number): boolean {
     // Clear previous errors for this step
     const errors: Record<string, string> = {};
-    if (steps[stepIdx].key === 'basic') {
+    const step = steps[stepIdx];
+    if (!step) return false;
+
+    if (step.key === 'basic') {
         if (!form.value.name || form.value.name.trim() === '') errors.name = 'Name is required';
         if (!form.value.fqdn || form.value.fqdn.trim() === '') {
             errors.fqdn = 'FQDN is required';
@@ -1704,17 +1708,17 @@ function validateStep(stepIdx: number): boolean {
             }
         }
     }
-    if (steps[stepIdx].key === 'config') {
+    if (step.key === 'config') {
         if (!form.value.daemonBase || form.value.daemonBase.trim() === '')
             errors.daemonBase = 'Daemon file directory is required';
         if (form.value.memory === undefined || form.value.memory < 0) errors.memory = 'Total memory is required';
         if (form.value.disk === undefined || form.value.disk < 0) errors.disk = 'Total disk space is required';
     }
-    if (steps[stepIdx].key === 'network') {
+    if (step.key === 'network') {
         if (!form.value.daemonListen) errors.daemonListen = 'Daemon port is required';
         if (!form.value.daemonSFTP) errors.daemonSFTP = 'Daemon SFTP port is required';
     }
-    if (steps[stepIdx].key === 'advanced') {
+    if (step.key === 'advanced') {
         if (form.value.upload_size === undefined || form.value.upload_size < 1)
             errors.upload_size = 'Upload size limit is required and must be at least 1';
     }
@@ -2163,7 +2167,7 @@ function isPrivateIP(ip: string): boolean {
     if (octets[0] === 10) return true;
 
     // 172.16.0.0/12
-    if (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) return true;
+    if (octets[0] === 172 && octets[1] && octets[1] >= 16 && octets[1] <= 31) return true;
 
     // 192.168.0.0/16
     if (octets[0] === 192 && octets[1] === 168) return true;

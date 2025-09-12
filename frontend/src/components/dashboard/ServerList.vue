@@ -1133,7 +1133,7 @@ function saveFolder() {
     if (editingFolder.value) {
         // Edit existing folder
         const index = serverFolders.value.findIndex((f) => f.id === editingFolder.value!.id);
-        if (index !== -1) {
+        if (index !== -1 && serverFolders.value[index]) {
             serverFolders.value[index].name = folderForm.value.name;
         }
     } else {

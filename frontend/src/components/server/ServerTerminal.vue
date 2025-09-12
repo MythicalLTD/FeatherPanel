@@ -149,12 +149,18 @@ function navigateHistory(direction: 'up' | 'down'): void {
 
         if (historyIndex.value < commandHistory.value.length - 1) {
             historyIndex.value++;
-            terminalInput.value = commandHistory.value[commandHistory.value.length - 1 - historyIndex.value];
+            const historyItem = commandHistory.value[commandHistory.value.length - 1 - historyIndex.value];
+            if (historyItem) {
+                terminalInput.value = historyItem;
+            }
         }
     } else if (direction === 'down') {
         if (historyIndex.value > 0) {
             historyIndex.value--;
-            terminalInput.value = commandHistory.value[commandHistory.value.length - 1 - historyIndex.value];
+            const historyItem = commandHistory.value[commandHistory.value.length - 1 - historyIndex.value];
+            if (historyItem) {
+                terminalInput.value = historyItem;
+            }
         } else if (historyIndex.value === 0) {
             historyIndex.value = -1;
             terminalInput.value = originalInput.value;

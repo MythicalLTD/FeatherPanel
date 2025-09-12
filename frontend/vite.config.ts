@@ -6,6 +6,7 @@ import vueJsx from '@vitejs/plugin-vue-jsx';
 import vueDevTools from 'vite-plugin-vue-devtools';
 import ViteYaml from '@modyfi/vite-plugin-yaml';
 import tailwindcss from '@tailwindcss/vite';
+import path from 'node:path';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -51,10 +52,30 @@ export default defineConfig({
         },
     },
     build: {
-        sourcemap: false,
+        minify: false,
+        sourcemap: true,
         assetsInlineLimit: 0,
-        emptyOutDir: true,
+        emptyOutDir: false,
         chunkSizeWarningLimit: 120000,
+        // Output filenames without [hash]
+        rollupOptions: {
+            output: {
+                // Keep entry/chunk names predictable (no hash)
+                entryFileNames: `assets/[name].js`,
+                chunkFileNames: `assets/[name].js`,
+                // For assets (images, css) keep original name + ext (no hash)
+                assetFileNames: ({ name }) => {
+                    // attempt to preserve original file name where possible
+                    if (!name) return 'assets/[name][extname]';
+                    const ext = path.extname(name);
+                    const base = path.basename(name, ext);
+                    return `assets/${base}${ext}`;
+                },
+                // Optional: preserve module/order for easier diffing
+                // manualChunks: undefined
+            },
+        },
+        target: 'esnext'
     },
     optimizeDeps: {
         include: ['vue', 'vue-router', 'pinia', 'vue-i18n'],

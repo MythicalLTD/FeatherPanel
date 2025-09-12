@@ -406,7 +406,10 @@ const changeLanguage = (newLanguage: unknown) => {
 const toggleTheme = () => {
     const themes: Array<'vs' | 'vs-light' | 'vs-dark'> = ['vs-light', 'vs', 'vs-dark'];
     const currentIndex = themes.indexOf(editorTheme.value);
-    editorTheme.value = themes[(currentIndex + 1) % themes.length];
+    const nextTheme = themes[(currentIndex + 1) % themes.length];
+    if (nextTheme) {
+        editorTheme.value = nextTheme;
+    }
 };
 
 const formatDocument = () => {

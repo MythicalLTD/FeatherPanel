@@ -27,8 +27,11 @@ export function useLanguage() {
             locale.value = language.code.toUpperCase();
         } else {
             // Fallback to English
-            currentLanguage.value = availableLanguages[0];
-            locale.value = 'EN';
+            const fallbackLanguage = availableLanguages[0];
+            if (fallbackLanguage) {
+                currentLanguage.value = fallbackLanguage;
+                locale.value = 'EN';
+            }
         }
     };
 

@@ -1095,8 +1095,11 @@ const removeSetting = async (key: string) => {
 const onUploadPlugin = async (evt: Event) => {
     const target = evt.target as HTMLInputElement;
     if (!target.files || target.files.length === 0) return;
-    pendingUploadFile.value = target.files[0];
-    confirmUploadOpen.value = true;
+    const file = target.files[0];
+    if (file) {
+        pendingUploadFile.value = file;
+        confirmUploadOpen.value = true;
+    }
 };
 
 const performUpload = async () => {

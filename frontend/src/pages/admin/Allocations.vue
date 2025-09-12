@@ -480,7 +480,7 @@ function isPrivateIP(ip: string): boolean {
     if (octets[0] === 10) return true;
 
     // 172.16.0.0/12
-    if (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) return true;
+    if (octets[0] === 172 && octets[1] && octets[1] >= 16 && octets[1] <= 31) return true;
 
     // 192.168.0.0/16
     if (octets[0] === 192 && octets[1] === 168) return true;

@@ -99,7 +99,10 @@ function drawChart(): void {
 
     // Draw current value label
     if (props.data.length > 0) {
-        drawValueLabel(props.data[props.data.length - 1].value);
+        const lastDataPoint = props.data[props.data.length - 1];
+        if (lastDataPoint) {
+            drawValueLabel(lastDataPoint.value);
+        }
     }
 }
 
