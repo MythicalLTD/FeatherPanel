@@ -24,7 +24,7 @@ defineProps<{
         <SidebarGroupLabel>{{ name }}</SidebarGroupLabel>
         <SidebarMenu>
             <SidebarMenuItem v-for="item in items" :key="item.title">
-                <SidebarMenuButton :tooltip="item.title" :to="item.url" goto :class="{ active: item.isActive }">
+                <SidebarMenuButton :tooltip="item.title" :to="item.url" goto :is-active="item.isActive">
                     <component :is="item.icon" v-if="item.icon" />
                     <span>{{ item.title }}</span>
                 </SidebarMenuButton>

@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useSessionStore } from '@/stores/session';
 import { useRouter, useRoute } from 'vue-router';
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, watchEffect } from 'vue';
 import { useSettingsStore } from '@/stores/settings';
 import Permissions from '@/lib/permissions';
 
@@ -61,6 +61,7 @@ const route = useRoute();
 const data = computed(() => {
     // Get current route path
     const currentPath = router.currentRoute.value.path;
+    console.log('Current path:', currentPath);
     return {
         user: {
             name: sessionStore.user?.username || '',
@@ -97,6 +98,7 @@ const data = computed(() => {
                 title: t('nav.dashboard'),
                 url: '/admin',
                 icon: Home,
+                isActive: currentPath.startsWith('/admin') && currentPath === '/admin',
             },
             ...(sessionStore.hasPermission(Permissions.ADMIN_USERS_VIEW)
                 ? [
@@ -105,6 +107,7 @@ const data = computed(() => {
                           title: t('nav.users'),
                           url: '/admin/users',
                           icon: Users,
+                          isActive: currentPath.startsWith('/admin/users'),
                       },
                   ]
                 : []),
@@ -115,6 +118,7 @@ const data = computed(() => {
                           title: t('nav.apiKeys'),
                           url: '/admin/api-keys',
                           icon: Key,
+                          isActive: currentPath.startsWith('/admin/api-keys'),
                       },
                   ]
                 : []),
@@ -125,6 +129,7 @@ const data = computed(() => {
                           title: t('nav.locations'),
                           url: '/admin/locations',
                           icon: Globe,
+                          isActive: currentPath.startsWith('/admin/locations'),
                       },
                   ]
                 : []),
@@ -135,6 +140,7 @@ const data = computed(() => {
                           title: t('nav.realms'),
                           url: '/admin/realms',
                           icon: Newspaper,
+                          isActive: currentPath.startsWith('/admin/realms'),
                       },
                   ]
                 : []),
@@ -145,6 +151,7 @@ const data = computed(() => {
                           title: t('nav.roles'),
                           url: '/admin/roles',
                           icon: Users,
+                          isActive: currentPath.startsWith('/admin/roles'),
                       },
                   ]
                 : []),
@@ -155,6 +162,7 @@ const data = computed(() => {
                           title: t('nav.servers'),
                           url: '/admin/servers',
                           icon: Server,
+                          isActive: currentPath.startsWith('/admin/servers'),
                       },
                   ]
                 : []),
@@ -165,6 +173,7 @@ const data = computed(() => {
                           title: t('nav.mailTemplates'),
                           url: '/admin/mail-templates',
                           icon: FileText,
+                          isActive: currentPath.startsWith('/admin/mail-templates'),
                       },
                   ]
                 : []),
@@ -175,6 +184,7 @@ const data = computed(() => {
                           title: t('nav.images'),
                           url: '/admin/images',
                           icon: ImageIcon,
+                          isActive: currentPath.startsWith('/admin/images'),
                       },
                   ]
                 : []),
@@ -185,6 +195,7 @@ const data = computed(() => {
                           title: t('nav.redirectLinks'),
                           url: '/admin/redirect-links',
                           icon: Link,
+                          isActive: currentPath.startsWith('/admin/redirect-links'),
                       },
                   ]
                 : []),
@@ -195,6 +206,7 @@ const data = computed(() => {
                           title: t('nav.settings'),
                           url: '/admin/settings',
                           icon: Settings2,
+                          isActive: currentPath.startsWith('/admin/settings'),
                       },
                   ]
                 : []),
@@ -205,6 +217,7 @@ const data = computed(() => {
                           title: t('nav.plugins'),
                           url: '/admin/plugins',
                           icon: PlayCircle,
+                          isActive: currentPath.startsWith('/admin/plugins'),
                       },
                   ]
                 : []),
@@ -214,6 +227,7 @@ const data = computed(() => {
                 title: t('nav.console'),
                 url: `/server/${route.params.uuidShort}`,
                 icon: SquareTerminal,
+                isActive: currentPath === `/server/${route.params.uuidShort}`,
                 items: [
                     {
                         title: t('nav.console'),
@@ -226,6 +240,7 @@ const data = computed(() => {
                 title: t('nav.logs'),
                 url: `/server/${route.params.uuidShort}/logs`,
                 icon: FileText,
+                isActive: currentPath.startsWith(`/server/${route.params.uuidShort}/logs`),
                 items: [
                     {
                         title: t('nav.logs'),
@@ -238,6 +253,7 @@ const data = computed(() => {
                 title: t('nav.activities'),
                 url: `/server/${route.params.uuidShort}/activities`,
                 icon: Clock,
+                isActive: currentPath.startsWith(`/server/${route.params.uuidShort}/activities`),
                 items: [
                     {
                         title: t('nav.activities'),
@@ -250,6 +266,7 @@ const data = computed(() => {
                 title: t('nav.files'),
                 url: `/server/${route.params.uuidShort}/files`,
                 icon: Folder,
+                isActive: currentPath.startsWith(`/server/${route.params.uuidShort}/files`),
                 items: [
                     {
                         title: t('nav.files'),
@@ -262,6 +279,7 @@ const data = computed(() => {
                 title: t('nav.databases'),
                 url: `/server/${route.params.uuidShort}/databases`,
                 icon: Database,
+                isActive: currentPath.startsWith(`/server/${route.params.uuidShort}/databases`),
                 items: [
                     {
                         title: t('nav.databases'),
@@ -274,6 +292,7 @@ const data = computed(() => {
                 title: t('nav.schedules'),
                 url: `/server/${route.params.uuidShort}/schedules`,
                 icon: Calendar,
+                isActive: currentPath.startsWith(`/server/${route.params.uuidShort}/schedules`),
                 items: [
                     {
                         title: t('nav.schedules'),
@@ -286,6 +305,7 @@ const data = computed(() => {
                 title: t('nav.users'),
                 url: `/server/${route.params.uuidShort}/users`,
                 icon: Users,
+                isActive: currentPath.startsWith(`/server/${route.params.uuidShort}/users`),
                 items: [
                     {
                         title: t('nav.users'),
@@ -298,6 +318,7 @@ const data = computed(() => {
                 title: t('nav.backups'),
                 url: `/server/${route.params.uuidShort}/backups`,
                 icon: Archive,
+                isActive: currentPath.startsWith(`/server/${route.params.uuidShort}/backups`),
                 items: [
                     {
                         title: t('nav.backups'),
@@ -310,6 +331,7 @@ const data = computed(() => {
                 title: 'Allocations',
                 url: `/server/${route.params.uuidShort}/allocations`,
                 icon: Network,
+                isActive: currentPath.startsWith(`/server/${route.params.uuidShort}/allocations`),
                 items: [
                     {
                         title: 'Allocations',
@@ -322,6 +344,7 @@ const data = computed(() => {
                 title: t('nav.startup'),
                 url: `/server/${route.params.uuidShort}/startup`,
                 icon: PlayCircle,
+                isActive: currentPath.startsWith(`/server/${route.params.uuidShort}/startup`),
                 items: [
                     {
                         title: t('nav.startup'),
@@ -334,6 +357,7 @@ const data = computed(() => {
                 title: t('nav.settings'),
                 url: `/server/${route.params.uuidShort}/settings`,
                 icon: Settings2,
+                isActive: currentPath.startsWith(`/server/${route.params.uuidShort}/settings`),
                 items: [
                     {
                         title: t('nav.settings'),
@@ -344,6 +368,26 @@ const data = computed(() => {
             },
         ],
     };
+});
+
+// Debug: Log active states
+watchEffect(() => {
+    console.log(
+        'Dashboard items active states:',
+        data.value.navMain.map((item) => ({ title: item.title, isActive: item.isActive })),
+    );
+    if (data.value.navAdmin.length > 0) {
+        console.log(
+            'Admin items active states:',
+            data.value.navAdmin.map((item) => ({ title: item.title, isActive: item.isActive })),
+        );
+    }
+    if (data.value.navServer.length > 0) {
+        console.log(
+            'Server items active states:',
+            data.value.navServer.map((item) => ({ title: item.title, isActive: item.isActive })),
+        );
+    }
 });
 
 const user = computed(() => {

@@ -51,7 +51,7 @@
             <!-- Cron Status -->
             <div v-if="cronRecent || cronSummary" class="space-y-3">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-xl font-semibold">Cron Status</h2>
+                    <h2 class="text-xl font-semibold">Automation Tasks Status</h2>
                     <div v-if="cronRecent" class="text-xs text-muted-foreground">Updated just now</div>
                 </div>
                 <div v-if="cronSummary" class="text-sm text-muted-foreground bg-muted/50 border rounded-md p-4">
