@@ -27,9 +27,10 @@
                 <Card>
                     <div class="p-6">
                         <Tabs v-model="activeTab" class="w-full">
-                            <TabsList class="grid w-full grid-cols-6">
+                            <TabsList class="grid w-full grid-cols-7">
                                 <TabsTrigger value="profile">{{ $t('account.profile') }}</TabsTrigger>
                                 <TabsTrigger value="settings">{{ $t('account.settings') }}</TabsTrigger>
+                                <TabsTrigger value="appearance">{{ $t('account.appearance') }}</TabsTrigger>
                                 <TabsTrigger value="ssh-keys">{{ $t('account.sshKeys.title') }}</TabsTrigger>
                                 <TabsTrigger value="api-keys">{{ $t('account.apiKeys.title') }}</TabsTrigger>
                                 <TabsTrigger value="activity">{{ $t('account.activity.title') }}</TabsTrigger>
@@ -40,6 +41,9 @@
                             </TabsContent>
                             <TabsContent value="settings" class="mt-6">
                                 <AccountSettings />
+                            </TabsContent>
+                            <TabsContent value="appearance" class="mt-6">
+                                <AppearanceSettings />
                             </TabsContent>
                             <TabsContent value="ssh-keys" class="mt-6">
                                 <SshKeys />
@@ -71,6 +75,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import AccountProfile from '@/components/account/AccountProfile.vue';
 import AccountSettings from '@/components/account/AccountSettings.vue';
+import AppearanceSettings from '@/components/account/AppearanceSettings.vue';
 import Activity from '@/components/account/Activity.vue';
 import MailList from '@/components/account/MailList.vue';
 import SshKeys from '@/components/account/SshKeys.vue';

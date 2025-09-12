@@ -99,9 +99,33 @@ const registerPlugins = async () => {
     }
 };
 
+// Initialize background settings immediately
+const initializeBackground = () => {
+    // Load background settings from localStorage
+    const savedBackground = localStorage.getItem('background_image');
+    const savedOpacity = localStorage.getItem('background_opacity');
+    const savedBlur = localStorage.getItem('background_blur');
+
+    if (savedBackground) {
+        document.body.style.setProperty('--background-image', `url(${savedBackground})`);
+        document.body.classList.add('has-custom-background');
+    }
+
+    if (savedOpacity) {
+        document.documentElement.style.setProperty('--background-opacity', `${parseInt(savedOpacity) / 100}`);
+    }
+
+    if (savedBlur) {
+        document.documentElement.style.setProperty('--background-blur', `${savedBlur}px`);
+    }
+};
+
 // Mount the app with error boundary and performance monitoring
 const mountApp = async () => {
     try {
+        // Initialize background settings before mounting
+        initializeBackground();
+
         await registerPlugins();
 
         // Performance optimization: Use requestAnimationFrame for mounting

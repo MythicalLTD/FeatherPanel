@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type LucideIcon } from 'lucide-vue-next';
+import { type Component } from 'vue';
 import {
     SidebarGroup,
     SidebarGroupLabel,
@@ -13,7 +13,7 @@ defineProps<{
     items: {
         title: string;
         url: string;
-        icon?: LucideIcon;
+        icon?: Component;
         isActive?: boolean;
     }[];
 }>();

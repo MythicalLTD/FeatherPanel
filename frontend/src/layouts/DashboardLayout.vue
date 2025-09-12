@@ -6,6 +6,8 @@ export const containerClass = 'w-full h-full';
 
 <script setup lang="ts">
 import AppSidebar from '@/components/AppSidebar.vue';
+import AppFooter from '@/components/AppFooter.vue';
+import MacDock from '@/components/MacDock.vue';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -15,7 +17,8 @@ import {
 } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import BackgroundPicker from '@/components/BackgroundPicker.vue';
+import { useLocalStorage } from '@vueuse/core';
+import { computed } from 'vue';
 
 export interface BreadcrumbEntry {
     text: string;
@@ -24,6 +27,8 @@ export interface BreadcrumbEntry {
 }
 
 defineProps<{ breadcrumbs?: BreadcrumbEntry[] }>();
+
+const isSidebarVisible = computed(() => useLocalStorage('sidebar-visibility', 'visible').value !== 'hidden');
 </script>
 
 <template>
@@ -34,8 +39,15 @@ defineProps<{ breadcrumbs?: BreadcrumbEntry[] }>();
                 class="flex h-16 shrink-0 items-center gap-2 transition-all duration-300 ease-out group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12"
             >
                 <div class="flex items-center gap-2 px-4">
-                    <SidebarTrigger class="-ml-1 transition-transform duration-200 hover:scale-105" />
-                    <Separator orientation="vertical" class="mr-2 h-4 transition-opacity duration-200" />
+                    <SidebarTrigger
+                        v-if="isSidebarVisible"
+                        class="-ml-1 transition-transform duration-200 hover:scale-105"
+                    />
+                    <Separator
+                        v-if="isSidebarVisible"
+                        orientation="vertical"
+                        class="mr-2 h-4 transition-opacity duration-200"
+                    />
                     <Breadcrumb>
                         <BreadcrumbList>
                             <template v-for="(crumb, i) in breadcrumbs" :key="i">
@@ -57,16 +69,17 @@ defineProps<{ breadcrumbs?: BreadcrumbEntry[] }>();
                         </BreadcrumbList>
                     </Breadcrumb>
                 </div>
-
-                <!-- Background Picker - Right side of header -->
-                <div class="ml-auto mr-4">
-                    <BackgroundPicker />
-                </div>
             </header>
             <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
                 <slot />
             </div>
+
+            <!-- Footer -->
+            <AppFooter />
         </SidebarInset>
+
+        <!-- macOS Dock -->
+        <MacDock />
     </SidebarProvider>
 </template>
 
