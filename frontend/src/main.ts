@@ -143,4 +143,27 @@ const mountApp = async () => {
     }
 };
 
-mountApp();
+// Import plugin services
+import { pluginLoader } from './services/pluginLoader';
+import { pluginAPI } from './services/pluginAPI';
+
+// Load plugin CSS and JS
+const loadCustomResources = async () => {
+    try {
+        await pluginLoader.loadAllPlugins();
+    } catch (error) {
+        console.error('Failed to load plugin resources:', error);
+    }
+};
+
+// Initialize app and plugins
+const initializeApp = async () => {
+    await mountApp();
+
+    // Initialize plugin API with app and router references
+    pluginAPI.initialize(app, router);
+
+    await loadCustomResources();
+};
+
+initializeApp();

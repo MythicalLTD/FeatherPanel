@@ -17,6 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ApiResponse
 {
+	const prettyPrint = true;
     public static function success(?array $data = null, string $message = 'OK', int $status = 200): Response
     {
         return new Response(json_encode([
@@ -26,7 +27,7 @@ class ApiResponse
             'error' => false,
             'error_message' => null,
             'error_code' => null,
-        ]), $status, ['Content-Type' => 'application/json']);
+        ], self::prettyPrint ? JSON_PRETTY_PRINT : 0), $status, ['Content-Type' => 'application/json']);
     }
 
     public static function error(string $error_message = 'Error', ?string $error_code = null, int $status = 400, ?array $data = null): Response
@@ -45,7 +46,7 @@ class ApiResponse
                     'status' => $status,
                 ],
             ],
-        ]), $status, ['Content-Type' => 'application/json']);
+        ], self::prettyPrint ? JSON_PRETTY_PRINT : 0), $status, ['Content-Type' => 'application/json']);
     }
 
     public static function exception(string $message = 'Error', ?string $error = null, array $trace = []): Response
@@ -69,7 +70,7 @@ class ApiResponse
                 ],
             ],
             'trace' => $trace,
-        ]), 500, ['Content-Type' => 'application/json']);
+        ], self::prettyPrint ? JSON_PRETTY_PRINT : 0), 500, ['Content-Type' => 'application/json']);
     }
 
     public static function sendManualResponse(array $data, int $status = 200): Response

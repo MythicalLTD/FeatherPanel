@@ -1000,20 +1000,15 @@ function setupWebSocketHandlers(): void {
             if (data.event === 'console output') {
                 // Handle console output from Wings
                 const output = data.args[0];
-                console.log(`Received console output: "${output}"`);
 
                 // Filter out command echoes - don't show output that matches recent commands
-                const trimmedOutput = output.trim();
-
-                // Since console is read-only, we don't need to filter command echoes
+                	// Since console is read-only, we don't need to filter command echoes
                 const isCommandEcho = false;
 
                 if (!isCommandEcho) {
                     // Clean up Wings daemon console output prefixes before adding to terminal
                     const cleanedOutput = output.replace(/^>\s*/gm, '');
                     addTerminalLine(cleanedOutput, 'output');
-                } else {
-                    console.log(`Filtered out command echo: "${trimmedOutput}"`);
                 }
             } else if (data.event === 'status') {
                 // Update server status and Wings state
@@ -1216,13 +1211,6 @@ function handleApiError(error: unknown, action: string): void {
 }
 
 function addTerminalLine(content: string, type: 'output' | 'error' | 'warning' | 'info' | 'command' = 'output'): void {
-    // Debug: Log raw content to see what's causing the '>' characters
-    if (type === 'output' && content.includes('>')) {
-        console.log('Raw content with >:', content);
-        console.log('Content length:', content.length);
-        console.log('First few characters:', content.substring(0, 10));
-    }
-
     // First replace brand names with custom app name
     const brandReplacedContent = replaceBrandNames(content);
 
@@ -1239,11 +1227,6 @@ function addTerminalLine(content: string, type: 'output' | 'error' | 'warning' |
     // Process ANSI content for output lines, but not for command/info lines
     const processedContent =
         type === 'output' || type === 'error' ? processAnsiContent(cleanedContent) : cleanedContent;
-
-    // Debug: Log processed content
-    if (type === 'output' && processedContent.includes('>')) {
-        console.log('Processed content with >:', processedContent);
-    }
 
     const newLine: TerminalLine = {
         id: Date.now() + Math.random(),

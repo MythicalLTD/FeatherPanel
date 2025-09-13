@@ -1116,6 +1116,11 @@ const performUpload = async () => {
         await fetchPlugins();
         message.value = { type: 'success', text: 'Plugin installed successfully' };
         banner.value = { type: 'success', text: 'Plugin installed successfully' };
+
+        // Reload page to load plugin CSS/JS
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
     } catch (e) {
         message.value = { type: 'error', text: e instanceof Error ? e.message : 'Upload failed' };
         banner.value = { type: 'error', text: e instanceof Error ? e.message : 'Upload failed' };
@@ -1164,6 +1169,11 @@ const onlineInstall = async (identifier: string) => {
         await fetchPlugins();
         message.value = { type: 'success', text: `Installed ${identifier}` };
         banner.value = { type: 'success', text: `Installed ${identifier} successfully` };
+
+        // Reload page to load plugin CSS/JS
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
     } catch (e) {
         message.value = { type: 'error', text: e instanceof Error ? e.message : 'Install failed' };
         banner.value = { type: 'error', text: e instanceof Error ? e.message : 'Install failed' };
@@ -1199,6 +1209,11 @@ const installFromUrl = async () => {
         message.value = { type: 'success', text: `Installed ${data.data?.identifier || 'plugin'}` };
         installUrl.value = '';
         banner.value = { type: 'success', text: `Installed ${data.data?.identifier || 'plugin'}` };
+
+        // Reload page to load plugin CSS/JS
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
     } catch (e) {
         message.value = { type: 'error', text: e instanceof Error ? e.message : 'Install from URL failed' };
         banner.value = { type: 'error', text: e instanceof Error ? e.message : 'Install from URL failed' };
@@ -1234,6 +1249,11 @@ const onUninstall = async (plugin: Plugin) => {
         await fetchPlugins();
         message.value = { type: 'success', text: 'Plugin uninstalled' };
         banner.value = { type: 'success', text: `${plugin.name || plugin.identifier} uninstalled` };
+
+        // Reload page to remove plugin CSS/JS
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
     } catch (e) {
         message.value = { type: 'error', text: e instanceof Error ? e.message : 'Uninstall failed' };
         banner.value = { type: 'error', text: e instanceof Error ? e.message : 'Uninstall failed' };

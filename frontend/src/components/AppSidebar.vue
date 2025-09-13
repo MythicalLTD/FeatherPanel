@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useSessionStore } from '@/stores/session';
 import { useRouter } from 'vue-router';
-import { computed, onMounted, watchEffect } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useSettingsStore } from '@/stores/settings';
 import { useNavigation } from '@/composables/useNavigation';
 import { useSidebarState } from '@/composables/useSidebarState';
@@ -52,26 +52,6 @@ const data = computed(() => ({
     navAdmin: sidebarNavigation.value.navAdmin,
     navServer: sidebarNavigation.value.navServer,
 }));
-
-// Debug: Log active states
-watchEffect(() => {
-    console.log(
-        'Dashboard items active states:',
-        data.value.navMain.map((item) => ({ title: item.title, isActive: item.isActive })),
-    );
-    if (data.value.navAdmin.length > 0) {
-        console.log(
-            'Admin items active states:',
-            data.value.navAdmin.map((item) => ({ title: item.title, isActive: item.isActive })),
-        );
-    }
-    if (data.value.navServer.length > 0) {
-        console.log(
-            'Server items active states:',
-            data.value.navServer.map((item) => ({ title: item.title, isActive: item.isActive })),
-        );
-    }
-});
 
 const user = computed(() => {
     return {
