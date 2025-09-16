@@ -36,84 +36,245 @@
                 <Button class="mt-4" @click="fetchSpells">Try Again</Button>
             </div>
 
-            <!-- Spells Table -->
+            <!-- Spells Tabs -->
             <div v-else class="p-6">
-                <TableComponent
-                    :title="'Spells'"
-                    :description="
-                        currentRealm
-                            ? `Managing spells for realm: ${currentRealm.name}`
-                            : 'Manage all spells in your system.'
-                    "
-                    :columns="tableColumns"
-                    :data="spells"
-                    :search-placeholder="'Search by name, description, or author...'"
-                    :server-side-pagination="true"
-                    :total-records="pagination.total"
-                    :total-pages="Math.ceil(pagination.total / pagination.pageSize)"
-                    :current-page="pagination.page"
-                    :has-next="pagination.hasNext"
-                    :has-prev="pagination.hasPrev"
-                    :from="pagination.from"
-                    :to="pagination.to"
-                    local-storage-key="featherpanel-spells-table-columns"
-                    @search="handleSearch"
-                    @page-change="changePage"
-                    @column-toggle="handleColumnToggle"
-                >
-                    <template #header-actions>
-                        <div class="flex gap-2">
-                            <Button variant="outline" size="sm" @click="openCreateDrawer">
-                                <Plus class="h-4 w-4 mr-2" />
-                                Create Spell
-                            </Button>
-                            <label class="inline-block">
-                                <Button variant="outline" size="sm" as="span">
-                                    <Upload class="h-4 w-4 mr-2" />
-                                    Import Spell
-                                </Button>
-                                <input type="file" accept="application/json" class="hidden" @change="onImportSpell" />
-                            </label>
-                        </div>
-                    </template>
+                <!-- Header -->
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                    <div>
+                        <h1 class="text-3xl font-bold text-foreground mb-1">Spells</h1>
+                        <p class="text-muted-foreground">
+                            {{
+                                currentRealm
+                                    ? `Managing spells for realm: ${currentRealm.name}`
+                                    : 'Manage all spells in your system.'
+                            }}
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <Tabs v-model="activeTab">
+                            <TabsList>
+                                <TabsTrigger value="installed">Installed</TabsTrigger>
+                                <TabsTrigger value="online">Online</TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+                    </div>
+                </div>
 
-                    <!-- Custom cell templates -->
-                    <template #cell-realm="{ item }">
-                        {{ (item as Spell).realm_name || '-' }}
-                    </template>
+                <Tabs v-model="activeTab">
+                    <TabsContent value="installed">
+                        <TableComponent
+                            :title="'Installed Spells'"
+                            :description="'Manage your locally installed spells'"
+                            :columns="tableColumns"
+                            :data="spells"
+                            :search-placeholder="'Search by name, description, or author...'"
+                            :server-side-pagination="true"
+                            :total-records="pagination.total"
+                            :total-pages="Math.ceil(pagination.total / pagination.pageSize)"
+                            :current-page="pagination.page"
+                            :has-next="pagination.hasNext"
+                            :has-prev="pagination.hasPrev"
+                            :from="pagination.from"
+                            :to="pagination.to"
+                            local-storage-key="featherpanel-spells-table-columns"
+                            @search="handleSearch"
+                            @page-change="changePage"
+                            @column-toggle="handleColumnToggle"
+                        >
+                            <template #header-actions>
+                                <div class="flex gap-2">
+                                    <Button variant="outline" size="sm" @click="openCreateDrawer">
+                                        <Plus class="h-4 w-4 mr-2" />
+                                        Create Spell
+                                    </Button>
+                                    <label class="inline-block">
+                                        <Button variant="outline" size="sm" as="span">
+                                            <Upload class="h-4 w-4 mr-2" />
+                                            Import Spell
+                                        </Button>
+                                        <input
+                                            type="file"
+                                            accept="application/json"
+                                            class="hidden"
+                                            @change="onImportSpell"
+                                        />
+                                    </label>
+                                </div>
+                            </template>
 
-                    <template #cell-actions="{ item }">
-                        <div class="flex gap-2">
-                            <Button size="sm" variant="outline" @click="onView(item as Spell)">
-                                <Eye :size="16" />
-                            </Button>
-                            <Button size="sm" variant="secondary" @click="onEdit(item as Spell)">
-                                <Pencil :size="16" />
-                            </Button>
-                            <Button size="sm" variant="outline" @click="onExport(item as Spell)">
-                                <Download :size="16" />
-                            </Button>
-                            <template v-if="confirmDeleteRow === (item as Spell).id">
-                                <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    :loading="deleting"
-                                    @click="confirmDelete(item as Spell)"
-                                >
-                                    Confirm Delete
-                                </Button>
-                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
-                                    Cancel
-                                </Button>
+                            <!-- Custom cell templates -->
+                            <template #cell-realm="{ item }">
+                                {{ (item as Spell).realm_name || '-' }}
                             </template>
-                            <template v-else>
-                                <Button size="sm" variant="destructive" @click="onDelete(item as Spell)">
-                                    <Trash2 :size="16" />
-                                </Button>
+
+                            <!-- Description cell: limit to 100 chars and add ... if more -->
+                            <template #cell-description="{ item }">
+                                <span>
+                                    {{
+                                        (item as Spell).description && typeof (item as Spell).description === 'string'
+                                            ? (item as Spell).description!.length > 120
+                                                ? (item as Spell).description!.slice(0, 120) + '...'
+                                                : (item as Spell).description
+                                            : '-'
+                                    }}
+                                </span>
                             </template>
+                            <template #cell-actions="{ item }">
+                                <div class="flex gap-2">
+                                    <Button size="sm" variant="outline" @click="onView(item as Spell)">
+                                        <Eye :size="16" />
+                                    </Button>
+                                    <Button size="sm" variant="secondary" @click="onEdit(item as Spell)">
+                                        <Pencil :size="16" />
+                                    </Button>
+                                    <Button size="sm" variant="outline" @click="onExport(item as Spell)">
+                                        <Download :size="16" />
+                                    </Button>
+                                    <template v-if="confirmDeleteRow === (item as Spell).id">
+                                        <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            :loading="deleting"
+                                            @click="confirmDelete(item as Spell)"
+                                        >
+                                            Confirm Delete
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            :disabled="deleting"
+                                            @click="onCancelDelete"
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </template>
+                                    <template v-else>
+                                        <Button size="sm" variant="destructive" @click="onDelete(item as Spell)">
+                                            <Trash2 :size="16" />
+                                        </Button>
+                                    </template>
+                                </div>
+                            </template>
+                        </TableComponent>
+                    </TabsContent>
+
+                    <TabsContent value="online">
+                        <div class="flex flex-wrap items-center justify-between mb-3 gap-2">
+                            <div class="flex items-center gap-2">
+                                <div class="relative">
+                                    <Input
+                                        v-model="onlineSearch"
+                                        placeholder="Search online spells..."
+                                        class="pr-10 w-64"
+                                        @keyup.enter="fetchOnlineSpells"
+                                    />
+                                    <button
+                                        class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                                        @click="fetchOnlineSpells"
+                                    >
+                                        <CloudDownload class="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div v-if="onlinePagination" class="text-xs text-muted-foreground">
+                                Page {{ onlinePagination.current_page }} / {{ onlinePagination.total_pages }} •
+                                {{ onlinePagination.total_records }} results
+                            </div>
                         </div>
-                    </template>
-                </TableComponent>
+
+                        <div v-if="onlineLoading" class="flex items-center justify-center py-8">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"
+                                ></div>
+                                <span class="text-muted-foreground">Loading online spells...</span>
+                            </div>
+                        </div>
+                        <div v-else-if="onlineError" class="text-center py-8">
+                            <AlertCircle class="h-8 w-8 mx-auto mb-2 text-destructive" />
+                            <p class="text-destructive">{{ onlineError }}</p>
+                            <Button size="sm" variant="outline" class="mt-2" @click="fetchOnlineSpells"
+                                >Try Again</Button
+                            >
+                        </div>
+                        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <Card v-for="spell in onlineSpells" :key="spell.identifier">
+                                <div class="p-4">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="flex items-center gap-3">
+                                            <div
+                                                class="h-10 w-10 rounded bg-muted flex items-center justify-center overflow-hidden"
+                                            >
+                                                <img
+                                                    v-if="spell.icon"
+                                                    :src="spell.icon"
+                                                    :alt="spell.name"
+                                                    class="h-8 w-8 object-contain"
+                                                />
+                                                <Settings v-else class="h-5 w-5 text-muted-foreground" />
+                                            </div>
+                                            <div>
+                                                <div class="font-semibold">
+                                                    {{ spell.name }}
+                                                    <span class="text-xs text-muted-foreground"
+                                                        >({{ spell.identifier }})</span
+                                                    >
+                                                </div>
+                                                <div class="text-xs text-muted-foreground">
+                                                    <template v-if="spell.latest_version?.version"
+                                                        >v{{ spell.latest_version.version }} •
+                                                    </template>
+                                                    <template v-if="spell.author">by {{ spell.author }}</template>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Badge v-if="spell.verified" variant="secondary">Verified</Badge>
+                                        <Badge v-else variant="outline">Unverified</Badge>
+                                    </div>
+                                    <p class="text-sm text-muted-foreground mt-2 line-clamp-3">
+                                        {{ spell.description }}
+                                    </p>
+                                    <p v-if="!spell.verified" class="mt-1 text-xs text-yellow-700">
+                                        This spell is not verified. Review the source before installing.
+                                    </p>
+                                    <div class="mt-2 text-xs text-muted-foreground flex flex-wrap gap-1">
+                                        <span v-for="tag in spell.tags" :key="tag" class="px-2 py-0.5 rounded bg-muted"
+                                            >#{{ tag }}</span
+                                        >
+                                    </div>
+                                    <div class="mt-2 text-xs text-muted-foreground flex items-center justify-between">
+                                        <span v-if="spell.downloads">{{ spell.downloads }} downloads</span>
+                                        <a
+                                            v-if="spell.website"
+                                            :href="spell.website"
+                                            target="_blank"
+                                            class="hover:underline"
+                                            >Website</a
+                                        >
+                                    </div>
+                                    <div class="mt-3 flex justify-end">
+                                        <template v-if="installedSpellIds.has(spell.identifier)">
+                                            <Button size="sm" variant="outline" disabled>Installed</Button>
+                                        </template>
+                                        <template v-else>
+                                            <Button
+                                                size="sm"
+                                                :disabled="installingOnlineId === spell.identifier"
+                                                @click="openOnlineInstallDialog(spell)"
+                                            >
+                                                <div
+                                                    v-if="installingOnlineId === spell.identifier"
+                                                    class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                                                ></div>
+                                                Install
+                                            </Button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </Card>
+                        </div>
+                    </TabsContent>
+                </Tabs>
             </div>
         </div>
 
@@ -819,18 +980,53 @@
                 </Tabs>
             </DrawerContent>
         </Drawer>
+
+        <!-- Confirm Online Install Dialog -->
+        <Dialog v-model:open="confirmOnlineOpen">
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Install Spell</DialogTitle>
+                    <DialogDescription>
+                        {{ selectedSpellForInstall?.name }} ({{ selectedSpellForInstall?.identifier }})
+                    </DialogDescription>
+                </DialogHeader>
+                <div v-if="selectedSpellForInstall && !selectedSpellForInstall.verified" class="text-sm">
+                    <div class="text-yellow-700">
+                        Warning: This spell is not verified. Installing unverified spells can be unsafe.
+                    </div>
+                </div>
+                <div v-if="!currentRealm" class="text-sm">
+                    <div class="text-red-700">Error: You must select a realm before installing spells.</div>
+                </div>
+                <DialogFooter>
+                    <DialogClose as-child>
+                        <Button variant="outline">Cancel</Button>
+                    </DialogClose>
+                    <Button
+                        :disabled="installingOnlineId === selectedSpellForInstall?.identifier || !currentRealm"
+                        @click="proceedOnlineInstall"
+                    >
+                        <div
+                            v-if="installingOnlineId === selectedSpellForInstall?.identifier"
+                            class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                        ></div>
+                        Install
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </DashboardLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
-import { Eye, Pencil, Trash2, Download, Plus, Upload } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Download, Plus, Upload, CloudDownload, Settings, AlertCircle } from 'lucide-vue-next';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import axios from 'axios';
@@ -844,6 +1040,17 @@ import {
     DrawerClose,
 } from '@/components/ui/drawer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+    DialogClose,
+} from '@/components/ui/dialog';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
 
@@ -898,6 +1105,29 @@ type SpellVariable = {
     rules?: string;
     created_at?: string;
     updated_at?: string;
+};
+
+type OnlineSpell = {
+    id: number;
+    identifier: string;
+    name: string;
+    description?: string;
+    icon?: string | null;
+    website?: string | null;
+    author?: string | null;
+    author_email?: string | null;
+    maintainers: string[];
+    tags: string[];
+    verified: boolean;
+    downloads: number;
+    created_at?: string | null;
+    updated_at?: string | null;
+    latest_version: {
+        version?: string | null;
+        download_url?: string | null;
+        file_size?: number | null;
+        created_at?: string | null;
+    };
 };
 
 const route = useRoute();
@@ -989,6 +1219,18 @@ const variableForm = ref<SpellVariable>({
 const activeEditTab = ref('general');
 const addingVariable = ref(false);
 const confirmDeleteVariableRow = ref<number | null>(null);
+
+// Online spells functionality
+const activeTab = ref<'installed' | 'online'>('installed');
+const onlineSpells = ref<OnlineSpell[]>([]);
+const onlineLoading = ref(false);
+const onlineError = ref<string | null>(null);
+const installingOnlineId = ref<string | null>(null);
+const onlinePagination = ref<{ current_page: number; total_pages: number; total_records: number } | null>(null);
+const onlineSearch = ref('');
+const confirmOnlineOpen = ref(false);
+const selectedSpellForInstall = ref<OnlineSpell | null>(null);
+const installedSpellIds = computed<Set<string>>(() => new Set(spells.value.map((s) => s.name)));
 
 // Table columns configuration
 const tableColumns: TableColumn[] = [
@@ -1539,4 +1781,71 @@ async function confirmDeleteVariable(variable: SpellVariable) {
 }
 
 watch(editingSpell, fetchSpellVariables);
+
+// Online spells functions
+const fetchOnlineSpells = async () => {
+    onlineLoading.value = true;
+    onlineError.value = null;
+    try {
+        const q = onlineSearch.value ? `?q=${encodeURIComponent(onlineSearch.value)}` : '';
+        const { data } = await axios.get(`/api/admin/spells/online/list${q}`);
+        onlineSpells.value = Array.isArray(data.data?.spells) ? (data.data.spells as OnlineSpell[]) : [];
+        onlinePagination.value = data.data?.pagination ?? null;
+    } catch (e) {
+        onlineError.value = e instanceof Error ? e.message : 'Failed to load online spells';
+    } finally {
+        onlineLoading.value = false;
+    }
+};
+
+const openOnlineInstallDialog = (spell: OnlineSpell) => {
+    selectedSpellForInstall.value = spell;
+    confirmOnlineOpen.value = true;
+};
+
+const proceedOnlineInstall = async () => {
+    if (!selectedSpellForInstall.value || !currentRealm.value) return;
+    await onlineInstall(selectedSpellForInstall.value.identifier);
+    confirmOnlineOpen.value = false;
+    selectedSpellForInstall.value = null;
+};
+
+const onlineInstall = async (identifier: string) => {
+    installingOnlineId.value = identifier;
+    try {
+        await axios.post('/api/admin/spells/online/install', {
+            identifier,
+            realm_id: currentRealm.value?.id,
+        });
+        await fetchSpells();
+        message.value = { type: 'success', text: `Installed ${identifier}` };
+        setTimeout(() => {
+            message.value = null;
+        }, 4000);
+    } catch (e) {
+        message.value = { type: 'error', text: e instanceof Error ? e.message : 'Install failed' };
+        setTimeout(() => {
+            message.value = null;
+        }, 4000);
+    } finally {
+        installingOnlineId.value = null;
+    }
+};
+
+// Watch for tab changes to load online spells
+watch(activeTab, (v) => {
+    if (v === 'online' && !onlineLoading.value && onlineSpells.value.length === 0) {
+        fetchOnlineSpells();
+    }
+});
 </script>
+
+<style scoped>
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+</style>
