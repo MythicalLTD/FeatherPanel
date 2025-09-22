@@ -31,8 +31,48 @@
                 <Button class="mt-4" @click="fetchTemplates">Try Again</Button>
             </div>
 
-            <!-- Templates Table -->
+            <!-- Mass Email Card -->
             <div v-else class="p-6">
+                <div class="mb-6">
+                    <div
+                        class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6"
+                    >
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                                <Mail class="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-blue-900 dark:text-blue-100">Mass Email</h3>
+                                <p class="text-sm text-blue-700 dark:text-blue-300">
+                                    Send HTML emails to all users in your system
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="flex-1">
+                                <p class="text-sm text-blue-800 dark:text-blue-200 mb-2">
+                                    Create and send personalized HTML emails to all users with valid email addresses.
+                                </p>
+                                <div class="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                        />
+                                    </svg>
+                                    <span>Emails will be queued and sent via your SMTP configuration</span>
+                                </div>
+                            </div>
+                            <Button class="bg-blue-600 hover:bg-blue-700 text-white" @click="openMassEmailDrawer">
+                                <Mail class="h-4 w-4 mr-2" />
+                                Send Mass Email
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
                 <TableComponent
                     title="Mail Templates"
                     description="Manage email templates for your system."
@@ -337,6 +377,94 @@
                 </DrawerFooter>
             </DrawerContent>
         </Drawer>
+
+        <!-- Mass Email Drawer -->
+        <Drawer
+            :open="massEmailDrawerOpen"
+            @update:open="
+                (val) => {
+                    if (!val) closeMassEmailDrawer();
+                }
+            "
+        >
+            <DrawerContent>
+                <DrawerHeader>
+                    <DrawerTitle>Send Mass Email</DrawerTitle>
+                    <DrawerDescription>Create and send HTML emails to all users in your system.</DrawerDescription>
+                </DrawerHeader>
+
+                <form class="px-6 pb-6 space-y-6" @submit.prevent="sendMassEmail">
+                    <div class="space-y-2">
+                        <Label for="mass-email-subject">Subject</Label>
+                        <Input
+                            id="mass-email-subject"
+                            v-model="massEmailData.subject"
+                            placeholder="Email subject line"
+                            required
+                        />
+                    </div>
+
+                    <div class="space-y-2">
+                        <Label for="mass-email-body">Email Body (HTML)</Label>
+                        <Textarea
+                            id="mass-email-body"
+                            v-model="massEmailData.body"
+                            placeholder="Enter your email content with HTML formatting..."
+                            class="min-h-96 font-mono text-sm"
+                            rows="15"
+                            required
+                        />
+                        <p class="text-xs text-muted-foreground">
+                            You can use HTML tags like &lt;h1&gt;, &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;a&gt;,
+                            etc.
+                        </p>
+                    </div>
+
+                    <div
+                        class="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4"
+                    >
+                        <div class="flex items-start gap-3">
+                            <svg
+                                class="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                                />
+                            </svg>
+                            <div>
+                                <h4 class="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
+                                    Important Notice
+                                </h4>
+                                <p class="text-sm text-yellow-700 dark:text-yellow-300">
+                                    This will send emails to ALL users with valid email addresses in your system. Make
+                                    sure your content is appropriate and test thoroughly before sending.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <Button type="submit" :loading="sendingMassEmail" :disabled="sendingMassEmail">
+                            {{ sendingMassEmail ? 'Sending...' : 'Send to All Users' }}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            :disabled="sendingMassEmail"
+                            @click="closeMassEmailDrawer"
+                        >
+                            Cancel
+                        </Button>
+                    </div>
+                </form>
+            </DrawerContent>
+        </Drawer>
     </DashboardLayout>
 </template>
 
@@ -399,6 +527,7 @@ const viewDrawerOpen = ref(false);
 const editDrawerOpen = ref(false);
 const createDrawerOpen = ref(false);
 const previewDrawerOpen = ref(false);
+const massEmailDrawerOpen = ref(false);
 
 // Selected items
 const selectedTemplate = ref<MailTemplate | null>(null);
@@ -409,6 +538,7 @@ const previewTemplate = ref<MailTemplate | null>(null);
 const creating = ref(false);
 const updating = ref(false);
 const deleting = ref(false);
+const sendingMassEmail = ref(false);
 const confirmDeleteRow = ref<number | null>(null);
 
 // New template form
@@ -416,6 +546,12 @@ const newTemplate = ref({
     name: '',
     subject: '',
     body: '<h1>Welcome!</h1>\n<p>This is a sample email template.</p>',
+});
+
+// Mass email form
+const massEmailData = ref({
+    subject: '',
+    body: '<h1>Important Update</h1>\n<p>Hello!</p>\n<p>We have an important announcement to share with you.</p>\n<p>Best regards,<br>Your Team</p>',
 });
 
 // Table columns configuration
@@ -530,6 +666,22 @@ const closePreviewDrawer = () => {
     previewTemplate.value = null;
 };
 
+const openMassEmailDrawer = () => {
+    massEmailData.value = {
+        subject: '',
+        body: '<h1>Important Update</h1>\n<p>Hello!</p>\n<p>We have an important announcement to share with you.</p>\n<p>Best regards,<br>Your Team</p>',
+    };
+    massEmailDrawerOpen.value = true;
+};
+
+const closeMassEmailDrawer = () => {
+    massEmailDrawerOpen.value = false;
+    massEmailData.value = {
+        subject: '',
+        body: '<h1>Important Update</h1>\n<p>Hello!</p>\n<p>We have an important announcement to share with you.</p>\n<p>Best regards,<br>Your Team</p>',
+    };
+};
+
 async function createTemplate() {
     if (!newTemplate.value.name || !newTemplate.value.subject || !newTemplate.value.body) {
         toast.error('Please fill in all required fields');
@@ -606,6 +758,34 @@ async function confirmDelete(template: MailTemplate) {
     } finally {
         deleting.value = false;
         if (success) confirmDeleteRow.value = null;
+    }
+}
+
+async function sendMassEmail() {
+    if (!massEmailData.value.subject || !massEmailData.value.body) {
+        toast.error('Please fill in all required fields');
+        return;
+    }
+
+    try {
+        sendingMassEmail.value = true;
+        const { data } = await axios.post('/api/admin/mail-templates/mass-email', massEmailData.value);
+
+        if (data && data.success) {
+            const result = data.data;
+            toast.success(`Mass email queued successfully! ${result.queued_count} emails queued for delivery.`);
+            if (result.failed_count > 0) {
+                toast.warning(`${result.failed_count} emails failed to queue.`);
+            }
+            closeMassEmailDrawer();
+        } else {
+            toast.error(data?.message || 'Failed to send mass email');
+        }
+    } catch (error) {
+        console.error('Error sending mass email:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to send mass email');
+    } finally {
+        sendingMassEmail.value = false;
     }
 }
 

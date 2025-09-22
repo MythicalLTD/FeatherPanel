@@ -13,7 +13,10 @@
 
 namespace App\Controllers\Admin;
 
+use App\Chat\User;
 use App\Chat\Activity;
+use App\Chat\MailList;
+use App\Chat\MailQueue;
 use App\Chat\MailTemplate;
 use App\Helpers\ApiResponse;
 use App\CloudFlare\CloudFlareRealIP;
@@ -230,6 +233,10 @@ class MailTemplatesController
             return ApiResponse::error('Mail template not found', 'TEMPLATE_NOT_FOUND', 404);
         }
 
+        if ($id >= 1 && $id <= 10) {
+            return ApiResponse::error('Cannot delete system mail templates', 'SYSTEM_TEMPLATE_DELETE_FAILED', 400);
+        }
+
         $deleted = MailTemplate::softDelete($id);
         if (!$deleted) {
             return ApiResponse::error('Failed to delete mail template', 'FAILED_TO_DELETE_TEMPLATE', 500);
@@ -290,5 +297,119 @@ class MailTemplatesController
         ]);
 
         return ApiResponse::success([], 'Mail template permanently deleted successfully', 200);
+    }
+
+    /**
+     * Send mass email to all users with valid email addresses.
+     *
+     * This endpoint queues emails for delivery to all active users.
+     * The emails will be processed by the mail sender cron job.
+     */
+    public function sendMassEmail(Request $request): Response
+    {
+        $data = json_decode($request->getContent(), true);
+
+        if (empty($data)) {
+            return ApiResponse::error('No data provided', 'NO_DATA_PROVIDED', 400);
+        }
+
+        // Required fields validation
+        $requiredFields = ['subject', 'body'];
+        $missingFields = [];
+        foreach ($requiredFields as $field) {
+            if (!isset($data[$field]) || trim($data[$field]) === '') {
+                $missingFields[] = $field;
+            }
+        }
+
+        if (!empty($missingFields)) {
+            return ApiResponse::error('Missing required fields: ' . implode(', ', $missingFields), 'MISSING_REQUIRED_FIELDS', 400);
+        }
+
+        // Validate data types and length
+        $validationRules = [
+            'subject' => ['string', 1, 255],
+            'body' => ['string', 1, 65535],
+        ];
+
+        foreach ($validationRules as $field => [$type, $minLength, $maxLength]) {
+            if (!is_string($data[$field])) {
+                return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a string', 'INVALID_DATA_TYPE', 400);
+            }
+
+            $length = strlen($data[$field]);
+            if ($length < $minLength) {
+                return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . " must be at least $minLength characters long", 'INVALID_DATA_LENGTH', 400);
+            }
+            if ($length > $maxLength) {
+                return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . " must be less than $maxLength characters long", 'INVALID_DATA_LENGTH', 400);
+            }
+        }
+
+        // Get all active users with valid emails
+        $users = User::getAllUsers(false);
+        $validUsers = array_filter($users, function ($user) {
+            return !empty($user['email']) && filter_var($user['email'], FILTER_VALIDATE_EMAIL);
+        });
+
+        if (empty($validUsers)) {
+            return ApiResponse::error('No valid users found to send emails to', 'NO_VALID_USERS', 400);
+        }
+
+        $queuedCount = 0;
+        $failedCount = 0;
+
+        // Queue emails for each valid user
+        foreach ($validUsers as $user) {
+            // Create mail queue entry
+            $queueData = [
+                'user_uuid' => $user['uuid'],
+                'subject' => $data['subject'],
+                'body' => $data['body'],
+                'status' => 'pending',
+                'locked' => 'false',
+                'created_at' => date('Y-m-d H:i:s'),
+                'deleted' => 'false',
+            ];
+
+            $queueId = MailQueue::create($queueData);
+
+            if ($queueId) {
+                // Create mail list entry
+                $listData = [
+                    'queue_id' => $queueId,
+                    'user_uuid' => $user['uuid'],
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'deleted' => 'false',
+                ];
+
+                if (MailList::create($listData)) {
+                    ++$queuedCount;
+                } else {
+                    ++$failedCount;
+                }
+            } else {
+                ++$failedCount;
+            }
+        }
+
+        // Log activity
+        Activity::createActivity([
+            'user_uuid' => $request->get('user')['uuid'] ?? null,
+            'name' => 'send_mass_email',
+            'context' => "Sent mass email to $queuedCount users. Subject: " . $data['subject'],
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        $message = "Mass email queued successfully. $queuedCount emails queued for delivery.";
+        if ($failedCount > 0) {
+            $message .= " $failedCount emails failed to queue.";
+        }
+
+        return ApiResponse::success([
+            'queued_count' => $queuedCount,
+            'failed_count' => $failedCount,
+            'total_users' => count($validUsers),
+        ], $message, 200);
     }
 }

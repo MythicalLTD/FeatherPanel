@@ -22,10 +22,10 @@ use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use App\Mail\templates\Welcome;
 use App\CloudFlare\CloudFlareRealIP;
-use App\Mail\templates\AccountDeleted;
-use App\Plugins\Events\Events\UserEvent;
 use App\Mail\templates\AccountBanned;
+use App\Mail\templates\AccountDeleted;
 use App\Mail\templates\AccountUnBanned;
+use App\Plugins\Events\Events\UserEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -277,7 +277,7 @@ class UsersController
     public function update(Request $request, string $uuid): Response
     {
         $user = \App\Chat\User::getUserByUuid($uuid);
-		$config = App::getInstance(true)->getConfig();
+        $config = App::getInstance(true)->getConfig();
         if (!$user) {
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
         }
@@ -355,38 +355,38 @@ class UsersController
             ]
         );
 
-		if (isset($data['banned'])) {
-			if ($data['banned'] == 'true') {
-				AccountBanned::send([
-					'email' => $user['email'],
-					'subject' => 'Your account has been suspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-					'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-					'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'featherpanel.mythical.systems'),
-					'first_name' => $user['first_name'],
-					'last_name' => $user['last_name'],
-					'username' => $user['username'],
-					'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
-					'uuid' => $user['uuid'],
-					'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
-					'suspension_time' => date('Y-m-d H:i:s'),
-				]);
-			} else {
-				AccountUnBanned::send([
-					'email' => $user['email'],
-					'subject' => 'Your account has been unsuspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-					'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-					'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'featherpanel.mythical.systems'),
-					'first_name' => $user['first_name'],
-					'last_name' => $user['last_name'],
-					'username' => $user['username'],
-					'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
-					'uuid' => $user['uuid'],
-					'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
-					'unsuspend_time' => date('Y-m-d H:i:s'),
-				]);
-			}
-		}
-		
+        if (isset($data['banned'])) {
+            if ($data['banned'] == 'true') {
+                AccountBanned::send([
+                    'email' => $user['email'],
+                    'subject' => 'Your account has been suspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                    'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                    'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'featherpanel.mythical.systems'),
+                    'first_name' => $user['first_name'],
+                    'last_name' => $user['last_name'],
+                    'username' => $user['username'],
+                    'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+                    'uuid' => $user['uuid'],
+                    'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+                    'suspension_time' => date('Y-m-d H:i:s'),
+                ]);
+            } else {
+                AccountUnBanned::send([
+                    'email' => $user['email'],
+                    'subject' => 'Your account has been unsuspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                    'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                    'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'featherpanel.mythical.systems'),
+                    'first_name' => $user['first_name'],
+                    'last_name' => $user['last_name'],
+                    'username' => $user['username'],
+                    'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+                    'uuid' => $user['uuid'],
+                    'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+                    'unsuspend_time' => date('Y-m-d H:i:s'),
+                ]);
+            }
+        }
+
         return ApiResponse::success([], 'User updated successfully', 200);
     }
 

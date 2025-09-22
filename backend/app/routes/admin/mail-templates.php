@@ -127,4 +127,16 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_TEMPLATE_EMAIL_DELETE,
         ['DELETE']
     );
+
+    // Send mass email to all users
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-mail-templates-mass-email',
+        '/api/admin/mail-templates/mass-email',
+        function (Request $request) {
+            return (new MailTemplatesController())->sendMassEmail($request);
+        },
+        Permissions::ADMIN_TEMPLATE_EMAIL_CREATE,
+        ['POST']
+    );
 };

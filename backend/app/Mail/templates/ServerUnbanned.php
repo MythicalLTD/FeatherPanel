@@ -19,94 +19,94 @@ use App\Chat\MailTemplate;
 
 class ServerUnbanned
 {
-	/**
-	 * Get the account deleted email template.
-	 */
-	public static function getTemplate(array $data): string
-	{
-		if (isset($data['app_name']) && isset($data['app_url']) && isset($data['first_name']) && isset($data['last_name']) && isset($data['email']) && isset($data['username']) && isset($data['app_support_url'])) {
-			return self::parseTemplate(MailTemplate::getByName('server_unsuspended')['body'] ?? '', [
-				'app_name' => $data['app_name'],
-				'app_url' => $data['app_url'],
-				'first_name' => $data['first_name'],
-				'last_name' => $data['last_name'],
-				'email' => $data['email'],
-				'username' => $data['username'],
-				'dashboard_url' => $data['app_url'] . '/dashboard',
-				'support_url' => $data['app_support_url'],
-				'server_name' => $data['server_name'],
-			]);
-		}
+    /**
+     * Get the account deleted email template.
+     */
+    public static function getTemplate(array $data): string
+    {
+        if (isset($data['app_name']) && isset($data['app_url']) && isset($data['first_name']) && isset($data['last_name']) && isset($data['email']) && isset($data['username']) && isset($data['app_support_url'])) {
+            return self::parseTemplate(MailTemplate::getByName('server_unsuspended')['body'] ?? '', [
+                'app_name' => $data['app_name'],
+                'app_url' => $data['app_url'],
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'email' => $data['email'],
+                'username' => $data['username'],
+                'dashboard_url' => $data['app_url'] . '/dashboard',
+                'support_url' => $data['app_support_url'],
+                'server_name' => $data['server_name'],
+            ]);
+        }
 
-		return '';
-	}
+        return '';
+    }
 
-	/**
-	 * Parse the welcome email template.
-	 */
-	public static function parseTemplate(string $template, array $data): string
-	{
-		$template = str_replace('{app_name}', $data['app_name'], $template);
-		$template = str_replace('{app_url}', $data['app_url'], $template);
-		$template = str_replace('{first_name}', $data['first_name'], $template);
-		$template = str_replace('{last_name}', $data['last_name'], $template);
-		$template = str_replace('{email}', $data['email'], $template);
-		$template = str_replace('{username}', $data['username'], $template);
-		$template = str_replace('{dashboard_url}', $data['dashboard_url'], $template);
-		$template = str_replace('{support_url}', $data['support_url'], $template);
-		$template = str_replace('{server_name}', $data['server_name'], $template);
+    /**
+     * Parse the welcome email template.
+     */
+    public static function parseTemplate(string $template, array $data): string
+    {
+        $template = str_replace('{app_name}', $data['app_name'], $template);
+        $template = str_replace('{app_url}', $data['app_url'], $template);
+        $template = str_replace('{first_name}', $data['first_name'], $template);
+        $template = str_replace('{last_name}', $data['last_name'], $template);
+        $template = str_replace('{email}', $data['email'], $template);
+        $template = str_replace('{username}', $data['username'], $template);
+        $template = str_replace('{dashboard_url}', $data['dashboard_url'], $template);
+        $template = str_replace('{support_url}', $data['support_url'], $template);
+        $template = str_replace('{server_name}', $data['server_name'], $template);
 
-		return $template;
-	}
+        return $template;
+    }
 
-	/**
-	 * Send the welcome email.
-	 */
-	public static function send(array $data): void
-	{
-		if (
-			!isset($data['email'])
-			|| !isset($data['subject'])
-			|| !isset($data['app_name'])
-			|| !isset($data['app_url'])
-			|| !isset($data['first_name'])
-			|| !isset($data['last_name'])
-			|| !isset($data['username'])
-			|| !isset($data['app_support_url'])
-			|| !isset($data['uuid'])
-			|| !isset($data['enabled'])
-			|| !isset($data['server_name'])
-		) {
-			return;
-		}
+    /**
+     * Send the welcome email.
+     */
+    public static function send(array $data): void
+    {
+        if (
+            !isset($data['email'])
+            || !isset($data['subject'])
+            || !isset($data['app_name'])
+            || !isset($data['app_url'])
+            || !isset($data['first_name'])
+            || !isset($data['last_name'])
+            || !isset($data['username'])
+            || !isset($data['app_support_url'])
+            || !isset($data['uuid'])
+            || !isset($data['enabled'])
+            || !isset($data['server_name'])
+        ) {
+            return;
+        }
 
-		if ($data['server_name'] == '') {
-			return;
-		}
+        if ($data['server_name'] == '') {
+            return;
+        }
 
-		if ($data['enabled'] == 'false') {
-			return;
-		}
+        if ($data['enabled'] == 'false') {
+            return;
+        }
 
-		$template = self::getTemplate($data);
+        $template = self::getTemplate($data);
 
-		$id = MailQueue::create([
-			'user_uuid' => $data['uuid'],
-			'subject' => $data['subject'],
-			'body' => $template,
-		]);
+        $id = MailQueue::create([
+            'user_uuid' => $data['uuid'],
+            'subject' => $data['subject'],
+            'body' => $template,
+        ]);
 
-		if ($id == false) {
-			return;
-		}
+        if ($id == false) {
+            return;
+        }
 
-		$mailID = MailList::create([
-			'queue_id' => $id,
-			'user_uuid' => $data['uuid'],
-		]);
-		if ($mailID == false) {
-			return;
-		}
+        $mailID = MailList::create([
+            'queue_id' => $id,
+            'user_uuid' => $data['uuid'],
+        ]);
+        if ($mailID == false) {
+            return;
+        }
 
-	}
+    }
 }

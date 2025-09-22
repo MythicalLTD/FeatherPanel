@@ -1,4 +1,5 @@
 export { default as Drawer } from './Drawer.vue';
+export { default as DrawerBody } from './DrawerBody.vue';
 export { default as DrawerClose } from './DrawerClose.vue';
 export { default as DrawerContent } from './DrawerContent.vue';
 export { default as DrawerDescription } from './DrawerDescription.vue';
