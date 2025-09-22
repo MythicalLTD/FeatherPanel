@@ -27,12 +27,12 @@ class ForgotPassword
         if (isset($data['app_name']) && isset($data['app_url']) && isset($data['first_name']) && isset($data['last_name']) && isset($data['email']) && isset($data['username']) && isset($data['app_support_url']) && isset($data['reset_url'])) {
             return self::parseTemplate(MailTemplate::getByName('forgot_password')['body'] ?? '', [
                 'app_name' => $data['app_name'],
-                'app_url' => 'https://' . $data['app_url'],
+                'app_url' => $data['app_url'],
                 'first_name' => $data['first_name'],
                 'last_name' => $data['last_name'],
                 'email' => $data['email'],
                 'username' => $data['username'],
-                'dashboard_url' => 'https://' . $data['app_url'] . '/dashboard',
+                'dashboard_url' => $data['app_url'] . '/dashboard',
                 'support_url' => $data['app_support_url'],
                 'reset_url' => $data['reset_url'],
             ]);
