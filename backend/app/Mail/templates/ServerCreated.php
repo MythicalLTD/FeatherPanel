@@ -17,7 +17,7 @@ use App\Chat\MailList;
 use App\Chat\MailQueue;
 use App\Chat\MailTemplate;
 
-class AccountDeleted
+class ServerCreated
 {
     /**
      * Get the account deleted email template.
@@ -25,7 +25,7 @@ class AccountDeleted
     public static function getTemplate(array $data): string
     {
         if (isset($data['app_name']) && isset($data['app_url']) && isset($data['first_name']) && isset($data['last_name']) && isset($data['email']) && isset($data['username']) && isset($data['app_support_url'])) {
-            return self::parseTemplate(MailTemplate::getByName('account_deleted')['body'] ?? '', [
+            return self::parseTemplate(MailTemplate::getByName('server_created')['body'] ?? '', [
                 'app_name' => $data['app_name'],
                 'app_url' => $data['app_url'],
                 'first_name' => $data['first_name'],
@@ -34,6 +34,9 @@ class AccountDeleted
                 'username' => $data['username'],
                 'dashboard_url' => $data['app_url'] . '/dashboard',
                 'support_url' => $data['app_support_url'],
+                'server_name' => $data['server_name'],
+                'server_ip' => $data['server_ip'],
+                'panel_url' => $data['app_url'] . '/dashboard',
             ]);
         }
 
@@ -53,6 +56,9 @@ class AccountDeleted
         $template = str_replace('{username}', $data['username'], $template);
         $template = str_replace('{dashboard_url}', $data['dashboard_url'], $template);
         $template = str_replace('{support_url}', $data['support_url'], $template);
+        $template = str_replace('{server_name}', $data['server_name'], $template);
+        $template = str_replace('{server_ip}', $data['server_ip'], $template);
+        $template = str_replace('{panel_url}', $data['panel_url'], $template);
 
         return $template;
     }
@@ -73,7 +79,14 @@ class AccountDeleted
             || !isset($data['app_support_url'])
             || !isset($data['uuid'])
             || !isset($data['enabled'])
+            || !isset($data['server_name'])
+            || !isset($data['server_ip'])
+            || !isset($data['panel_url'])
         ) {
+            return;
+        }
+
+        if ($data['server_name'] == '' || $data['server_ip'] == '' || $data['panel_url'] == '') {
             return;
         }
 

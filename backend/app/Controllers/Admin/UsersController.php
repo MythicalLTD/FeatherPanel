@@ -22,7 +22,10 @@ use App\Helpers\ApiResponse;
 use App\Config\ConfigInterface;
 use App\Mail\templates\Welcome;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Mail\templates\AccountDeleted;
 use App\Plugins\Events\Events\UserEvent;
+use App\Mail\templates\AccountBanned;
+use App\Mail\templates\AccountUnBanned;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -274,6 +277,7 @@ class UsersController
     public function update(Request $request, string $uuid): Response
     {
         $user = \App\Chat\User::getUserByUuid($uuid);
+		$config = App::getInstance(true)->getConfig();
         if (!$user) {
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
         }
@@ -351,11 +355,44 @@ class UsersController
             ]
         );
 
+		if (isset($data['banned'])) {
+			if ($data['banned'] == 'true') {
+				AccountBanned::send([
+					'email' => $user['email'],
+					'subject' => 'Your account has been suspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+					'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+					'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'featherpanel.mythical.systems'),
+					'first_name' => $user['first_name'],
+					'last_name' => $user['last_name'],
+					'username' => $user['username'],
+					'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+					'uuid' => $user['uuid'],
+					'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+					'suspension_time' => date('Y-m-d H:i:s'),
+				]);
+			} else {
+				AccountUnBanned::send([
+					'email' => $user['email'],
+					'subject' => 'Your account has been unsuspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+					'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+					'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'featherpanel.mythical.systems'),
+					'first_name' => $user['first_name'],
+					'last_name' => $user['last_name'],
+					'username' => $user['username'],
+					'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+					'uuid' => $user['uuid'],
+					'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+					'unsuspend_time' => date('Y-m-d H:i:s'),
+				]);
+			}
+		}
+		
         return ApiResponse::success([], 'User updated successfully', 200);
     }
 
     public function delete(Request $request, string $uuid): Response
     {
+        $config = App::getInstance(true)->getConfig();
         $user = \App\Chat\User::getUserByUuid($uuid);
         if (!$user) {
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
@@ -374,6 +411,32 @@ class UsersController
                 'deleted_by' => $request->get('user'),
             ]
         );
+
+        Activity::createActivity([
+            'user_uuid' => $user['uuid'],
+            'name' => 'delete_user',
+            'context' => 'User deleted by admin',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        try {
+            AccountDeleted::send([
+                'email' => $user['email'],
+                'subject' => 'Welcome to ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'featherpanel.mythical.systems'),
+                'first_name' => $user['first_name'],
+                'last_name' => $user['last_name'],
+                'username' => $user['username'],
+                'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+                'uuid' => $user['uuid'],
+                'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+            ]);
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to send account deleted email: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to send account deleted email: ' . $e->getMessage(), 'FAILED_TO_SEND_ACCOUNT_DELETED_EMAIL', 500);
+        }
 
         return ApiResponse::success([], 'User deleted successfully', 200);
     }

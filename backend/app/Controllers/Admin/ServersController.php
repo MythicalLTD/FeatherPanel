@@ -26,8 +26,13 @@ use App\Chat\SpellVariable;
 use App\Chat\ServerActivity;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
+use App\Mail\templates\ServerBanned;
+use App\Mail\templates\ServerDeleted;
+use App\Mail\templates\ServerUnbanned;
 use App\Services\Wings\Wings;
+use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Mail\templates\ServerCreated;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -199,6 +204,12 @@ class ServersController
             return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
         }
 
+        $user = User::getUserById($data['owner_id']);
+        if (!$user) {
+            return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
+        }
+
+        $config = App::getInstance(true)->getConfig();
         // Required fields for server creation
         $requiredFields = [
             'node_id',
@@ -457,6 +468,29 @@ class ServersController
                 'created_by' => $request->get('user'),
             ]
         );
+
+        try {
+            $allocation = Allocation::getAllocationById($data['allocation_id']);
+            ServerCreated::send([
+                'email' => $user['email'],
+                'subject' => 'New server created on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'featherpanel.mythical.systems'),
+                'first_name' => $user['first_name'],
+                'last_name' => $user['last_name'],
+                'username' => $user['username'],
+                'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+                'uuid' => $user['uuid'],
+                'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+                'server_name' => $data['name'],
+                'server_ip' => $allocation['ip'] . ':' . $allocation['port'],
+                'panel_url' => $config->getSetting(ConfigInterface::APP_URL, 'featherpanel.mythical.systems') . '/dashboard',
+            ]);
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to send server created email: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to send server created email: ' . $e->getMessage(), 'FAILED_TO_SEND_SERVER_CREATED_EMAIL', 500);
+        }
 
         return ApiResponse::success(['server_id' => $serverId], 'Server created successfully', 201);
     }
@@ -785,6 +819,9 @@ class ServersController
             }
         }
 
+		$config = App::getInstance(true)->getConfig();
+		$user = User::getUserById($server['owner_id']);
+
         $deleted = Server::hardDeleteServer($id);
         if (!$deleted) {
             return ApiResponse::error('Failed to delete server', 'FAILED_TO_DELETE_SERVER', 500);
@@ -842,6 +879,25 @@ class ServersController
                 'deleted_by' => $request->get('user'),
             ]
         );
+
+		try {
+			ServerDeleted::send([
+				'email' => $user['email'],
+				'subject' => 'Server deleted on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+				'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+				'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'featherpanel.mythical.systems'),
+				'first_name' => $user['first_name'],
+				'last_name' => $user['last_name'],
+				'username' => $user['username'],
+				'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+				'uuid' => $user['uuid'],
+				'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+				'server_name' => $server['name'],
+				'deletion_time' => date('Y-m-d H:i:s'),
+			]);
+		} catch (\Exception $e) {
+			App::getInstance(true)->getLogger()->error('Failed to send server deleted email: ' . $e->getMessage());
+		}
 
         return ApiResponse::success([], 'Server deleted successfully', 200);
     }
@@ -914,8 +970,10 @@ class ServersController
         if (!$ok) {
             return ApiResponse::error('Failed to suspend server', 'FAILED_TO_SUSPEND', 500);
         }
+		$config = App::getInstance(true)->getConfig();
+		$user = User::getUserById($server['owner_id']);
 
-        Activity::createActivity([
+		Activity::createActivity([
             'user_uuid' => $request->get('user')['uuid'],
             'name' => 'suspend_server',
             'context' => 'Suspended server ' . $server['name'],
@@ -969,6 +1027,24 @@ class ServersController
             ]
         );
 
+		try {
+			ServerBanned::send([
+				'email' => $user['email'],
+				'subject' => 'Server suspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+				'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+				'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'featherpanel.mythical.systems'),
+				'first_name' => $user['first_name'],
+				'last_name' => $user['last_name'],
+				'username' => $user['username'],
+				'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+				'uuid' => $user['uuid'],
+				'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+				'server_name' => $server['name'],
+			]);
+		} catch (\Exception $e) {
+			App::getInstance(true)->getLogger()->error('Failed to send server suspended email: ' . $e->getMessage());
+		}
+
         return ApiResponse::success([], 'Server suspended', 200);
     }
 
@@ -984,7 +1060,11 @@ class ServersController
             return ApiResponse::error('Failed to unsuspend server', 'FAILED_TO_UNSUSPEND', 500);
         }
 
-        Activity::createActivity([
+		$config = App::getInstance(true)->getConfig();
+		$user = User::getUserById($server['owner_id']);
+
+
+		Activity::createActivity([
             'user_uuid' => $request->get('user')['uuid'],
             'name' => 'unsuspend_server',
             'context' => 'Unsuspended server ' . $server['name'],
@@ -1001,6 +1081,25 @@ class ServersController
             ]
         );
 
-        return ApiResponse::success([], 'Server unsuspended', 200);
+		try {
+			ServerUnbanned::send([
+				'email' => $user['email'],
+				'subject' => 'Server unsuspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+				'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+				'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'featherpanel.mythical.systems'),
+				'first_name' => $user['first_name'],
+				'last_name' => $user['last_name'],
+				'username' => $user['username'],
+				'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+				'uuid' => $user['uuid'],
+				'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+				'server_name' => $server['name'],
+			]);
+		} catch (\Exception $e) {
+			App::getInstance(true)->getLogger()->error('Failed to send server suspended email: ' . $e->getMessage());
+		}
+
+
+		return ApiResponse::success([], 'Server unsuspended', 200);
     }
 }

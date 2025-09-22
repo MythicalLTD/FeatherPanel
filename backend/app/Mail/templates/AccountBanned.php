@@ -17,7 +17,7 @@ use App\Chat\MailList;
 use App\Chat\MailQueue;
 use App\Chat\MailTemplate;
 
-class AccountDeleted
+class AccountBanned
 {
     /**
      * Get the account deleted email template.
@@ -25,7 +25,7 @@ class AccountDeleted
     public static function getTemplate(array $data): string
     {
         if (isset($data['app_name']) && isset($data['app_url']) && isset($data['first_name']) && isset($data['last_name']) && isset($data['email']) && isset($data['username']) && isset($data['app_support_url'])) {
-            return self::parseTemplate(MailTemplate::getByName('account_deleted')['body'] ?? '', [
+            return self::parseTemplate(MailTemplate::getByName('account_suspended')['body'] ?? '', [
                 'app_name' => $data['app_name'],
                 'app_url' => $data['app_url'],
                 'first_name' => $data['first_name'],
@@ -34,6 +34,7 @@ class AccountDeleted
                 'username' => $data['username'],
                 'dashboard_url' => $data['app_url'] . '/dashboard',
                 'support_url' => $data['app_support_url'],
+                'suspension_time' => $data['suspension_time'],
             ]);
         }
 
@@ -53,6 +54,7 @@ class AccountDeleted
         $template = str_replace('{username}', $data['username'], $template);
         $template = str_replace('{dashboard_url}', $data['dashboard_url'], $template);
         $template = str_replace('{support_url}', $data['support_url'], $template);
+        $template = str_replace('{suspension_time}', $data['suspension_time'], $template);
 
         return $template;
     }
@@ -73,11 +75,12 @@ class AccountDeleted
             || !isset($data['app_support_url'])
             || !isset($data['uuid'])
             || !isset($data['enabled'])
+            || !isset($data['suspension_time'])
         ) {
             return;
         }
 
-        if ($data['enabled'] == 'false') {
+        if ($data['enabled'] == 'false' || $data['suspension_time'] == '') {
             return;
         }
 
