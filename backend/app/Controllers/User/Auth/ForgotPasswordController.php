@@ -109,10 +109,14 @@ class ForgotPasswordController
 
         if (User::updateUser($userInfo['uuid'], ['mail_verify' => $resetToken])) {
 
-            // Send reset password email
-            $resetUrl = 'https://' . $config->getSetting(ConfigInterface::APP_URL, 'featherpanel.mythical.systems') . '/auth/reset-password?token=' . $resetToken;
+			// Send reset password email
+			$appUrl = $config->getSetting(ConfigInterface::APP_URL, 'cloud.mythical.systems');
+			if (!preg_match('#^https?://#i', $appUrl)) {
+				$appUrl = 'https://' . ltrim($appUrl, '/');
+			}
+			$resetUrl = rtrim($appUrl, '/') . '/auth/reset-password?token=' . $resetToken;
 
-            ForgotPassword::send([
+			ForgotPassword::send([
                 'email' => $userInfo['email'],
                 'subject' => 'Reset Password Request',
                 'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),

@@ -13,6 +13,9 @@ import Toast from 'vue-toastification';
 const app = createApp(App, {
     // Disable production tip
     productionTip: false,
+    // Disable devtools
+    devtools: false
+	
 });
 
 const pinia = createPinia();
@@ -127,7 +130,11 @@ const mountApp = async () => {
         initializeBackground();
 
         await registerPlugins();
-
+        // Preserve HTML comments in templates
+        app.config.compilerOptions = {
+            ...app.config.compilerOptions,
+            comments: true,
+        };
         // Performance optimization: Use requestAnimationFrame for mounting
         requestAnimationFrame(() => {
             app.mount('#app');
