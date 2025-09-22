@@ -17,19 +17,6 @@ class UpdateEnv implements TimeTask
 		$cron = new Cron('update-env', '1H');
 		try {
 			$cron->runIfDue(function () {
-				$app = \App\App::getInstance(false, true);
-				$db = $app->getDatabase()->getPdo();
-				$config = new ConfigFactory($db);
-
-				$settings = [
-					ConfigInterface::SMTP_ENABLED => 'false',
-				];
-
-				foreach ($settings as $key => $value) {
-					$config->setSetting($key, $value);
-					$app->updateEnvValue($key, $value, false);
-				}
-
 				// Heartbeat
 				TimedTask::markRun('update-env', true, 'UpdateEnv heartbeat');
 			});
