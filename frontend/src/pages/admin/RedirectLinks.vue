@@ -297,12 +297,31 @@
                             v-model="newRedirectLink.name"
                             placeholder="Redirect link name"
                             required
+                            @input="
+                                () => {
+                                    if (!manualSlugEdit) {
+                                        // Generate slug: lowercase, replace spaces with -, only a-z, 0-9, -
+                                        const slug = newRedirectLink.name
+                                            .toLowerCase()
+                                            .replace(/[^a-z0-9\s-]/g, '') // remove invalid chars
+                                            .replace(/\s+/g, '-') // spaces to -
+                                            .replace(/-+/g, '-') // collapse multiple -
+                                            .replace(/^-+|-+$/g, ''); // trim leading/trailing -
+                                        newRedirectLink.slug = slug;
+                                    }
+                                }
+                            "
                         />
                     </div>
 
                     <div class="space-y-2">
                         <Label for="create-slug">Short URL Slug (optional)</Label>
-                        <Input id="create-slug" v-model="newRedirectLink.slug" placeholder="my-redirect" />
+                        <Input
+                            id="create-slug"
+                            v-model="newRedirectLink.slug"
+                            placeholder="my-redirect"
+                            @input="manualSlugEdit = true"
+                        />
                         <p class="text-xs text-muted-foreground">
                             Leave empty to auto-generate from name. Short URL:
                             {{ getShortUrl(newRedirectLink.slug || 'example') }}
@@ -404,6 +423,9 @@ const newRedirectLink = ref({
     url: '',
 });
 
+// Slug edit state
+const manualSlugEdit = ref(false);
+
 // Table columns configuration
 const tableColumns: TableColumn[] = [
     { key: 'name', label: 'Name', searchable: true },
@@ -498,12 +520,14 @@ const closeEditDrawer = () => {
 
 const openCreateDrawer = () => {
     newRedirectLink.value = { name: '', slug: '', url: '' };
+    manualSlugEdit.value = false;
     createDrawerOpen.value = true;
 };
 
 const closeCreateDrawer = () => {
     createDrawerOpen.value = false;
     newRedirectLink.value = { name: '', slug: '', url: '' };
+    manualSlugEdit.value = false;
 };
 
 // CRUD operations

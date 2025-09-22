@@ -209,6 +209,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
+
 
 const sessionStore = useSessionStore();
 const router = useRouter();
@@ -286,6 +290,7 @@ const saveSettings = async () => {
         }
         // Show success message (you can add a toast notification here)
         console.log('Settings saved successfully');
+        toast.success('Settings saved successfully');
     }
 };
 

@@ -156,6 +156,8 @@ class MailSender implements TimeTask
 				$mailObj->Name = $config->getSetting(ConfigInterface::APP_NAME, "FeatherPanel");
 				$mailObj->Subject = $mail['subject'];
 				$mailObj->Body = $mail['body'];
+				$mailObj->Encoding = 'base64';
+				$mailObj->CharSet = 'UTF-8';
 				$mailObj->addAddress($userInfo['email']);
 				$mailObj->send();
 				$success = true;
