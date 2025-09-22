@@ -17,7 +17,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ApiResponse
 {
-	const prettyPrint = true;
+    public const prettyPrint = true;
+
     public static function success(?array $data = null, string $message = 'OK', int $status = 200): Response
     {
         return new Response(json_encode([

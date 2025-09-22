@@ -213,7 +213,6 @@ import { useToast } from 'vue-toastification';
 
 const toast = useToast();
 
-
 const sessionStore = useSessionStore();
 const router = useRouter();
 const adminSettingsStore = useAdminSettingsStore();

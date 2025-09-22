@@ -14,8 +14,7 @@ const app = createApp(App, {
     // Disable production tip
     productionTip: false,
     // Disable devtools
-    devtools: false
-	
+    devtools: false,
 });
 
 const pinia = createPinia();

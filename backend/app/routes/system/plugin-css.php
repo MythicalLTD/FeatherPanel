@@ -13,16 +13,16 @@
 
 use App\App;
 use Symfony\Component\HttpFoundation\Request;
-use App\Controllers\System\PluginCssController;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\System\PluginCssController;
 
 return function (RouteCollection $routes): void {
-	App::getInstance(true)->registerApiRoute(
-		$routes,
-		'plugin-css',
-		'/api/system/plugin-css',
-		function (Request $request) {
-			return (new PluginCssController())->index($request);
-		},
-	);
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'plugin-css',
+        '/api/system/plugin-css',
+        function (Request $request) {
+            return (new PluginCssController())->index($request);
+        },
+    );
 };

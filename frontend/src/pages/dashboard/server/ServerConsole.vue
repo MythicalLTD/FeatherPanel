@@ -1002,7 +1002,7 @@ function setupWebSocketHandlers(): void {
                 const output = data.args[0];
 
                 // Filter out command echoes - don't show output that matches recent commands
-                	// Since console is read-only, we don't need to filter command echoes
+                // Since console is read-only, we don't need to filter command echoes
                 const isCommandEcho = false;
 
                 if (!isCommandEcho) {

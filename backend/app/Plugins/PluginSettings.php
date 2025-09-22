@@ -31,7 +31,7 @@ class PluginSettings extends PluginDB
      * @param array $settings The settings to set
      *
      * @throws \PDOException If database operation fails
-     * @throws InvalidArgumentException If input validation fails
+     * @throws \InvalidArgumentException If input validation fails
      */
     public static function setSettings(string $identifier, string $key, array $settings): void
     {
@@ -100,7 +100,7 @@ class PluginSettings extends PluginDB
      * @param string $key The key of the setting
      *
      * @throws \PDOException If database operation fails
-     * @throws InvalidArgumentException If input validation fails
+     * @throws \InvalidArgumentException If input validation fails
      */
     public static function deleteSettings(string $identifier, string $key): void
     {
@@ -137,7 +137,7 @@ class PluginSettings extends PluginDB
      * @param string $key The key of the setting
      *
      * @throws \PDOException If database operation fails
-     * @throws InvalidArgumentException If input validation fails
+     * @throws \InvalidArgumentException If input validation fails
      *
      * @return string The value of the setting
      */
@@ -176,7 +176,7 @@ class PluginSettings extends PluginDB
      * @param string $identifier The identifier of the plugin
      *
      * @throws \PDOException If database operation fails
-     * @throws InvalidArgumentException If input validation fails
+     * @throws \InvalidArgumentException If input validation fails
      *
      * @return array All settings for the plugin
      */
@@ -210,7 +210,7 @@ class PluginSettings extends PluginDB
      * @param string $identifier The identifier to validate
      * @param string|null $key The key to validate (optional)
      *
-     * @throws InvalidArgumentException If validation fails
+     * @throws \InvalidArgumentException If validation fails
      */
     private static function validateInput(string $identifier, ?string $key = null): void
     {

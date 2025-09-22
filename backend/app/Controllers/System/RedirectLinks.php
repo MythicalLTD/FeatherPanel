@@ -57,6 +57,7 @@ class RedirectLinks
                 'url' => $redirectLink['url'],
                 'name' => $redirectLink['name'],
             ];
+
             return ApiResponse::success(['redirect_link' => $publicRedirect], 'Redirect link fetched successfully', 200);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to fetch redirect link', 'FETCH_ERROR', 500);
