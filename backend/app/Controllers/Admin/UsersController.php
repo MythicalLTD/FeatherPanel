@@ -382,7 +382,7 @@ class UsersController
                     'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
                     'uuid' => $user['uuid'],
                     'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
-                    'unsuspend_time' => date('Y-m-d H:i:s'),
+                    'unsuspension_time' => date('Y-m-d H:i:s'),
                 ]);
             }
         }

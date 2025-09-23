@@ -99,3 +99,7 @@ ADMIN_PLUGINS_VIEW=admin.plugins.view | Admin Plugins | View plugins
 ADMIN_PLUGINS_INSTALL=admin.plugins.install | Admin Plugins | Install plugins
 ADMIN_PLUGINS_UNINSTALL=admin.plugins.uninstall | Admin Plugins | Uninstall plugins
 ADMIN_PLUGINS_MANAGE=admin.plugins.manage | Admin Plugins | Manage plugins
+
+# Database Management
+ADMIN_DATABASES_VIEW=admin.databases.view | Admin Databases | View databases
+ADMIN_DATABASES_MANAGE=admin.databases.manage | Admin Databases | Manage database

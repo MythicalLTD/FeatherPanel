@@ -312,6 +312,16 @@ export function useNavigation() {
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_PLUGINS_VIEW,
             },
+            {
+                id: 'admin-database-management',
+                name: 'DB Management',
+                title: 'Database Management',
+                url: '/admin/databases/management',
+                icon: Database,
+                isActive: currentPath.value.startsWith('/admin/databases/management'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_DATABASES_VIEW,
+            },
         ];
 
         // Add plugin admin items (no permission checks for plugins)

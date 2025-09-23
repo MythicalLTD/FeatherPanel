@@ -13,6 +13,8 @@
 
 namespace App\Chat;
 
+use App\App;
+
 class RedirectLink
 {
     public static function getAll(int $page = 1, int $limit = 10): array
@@ -70,7 +72,6 @@ class RedirectLink
 
     public static function getBySlug(string $slug): ?array
     {
-        error_log('[REDIRECT DEBUG] RedirectLink::getBySlug() called with slug: ' . $slug);
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare('SELECT * FROM featherpanel_redirect_links WHERE slug = :slug');
         $stmt->bindValue(':slug', $slug, \PDO::PARAM_STR);
@@ -78,12 +79,12 @@ class RedirectLink
 
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         if ($result) {
-            error_log('[REDIRECT DEBUG] Found redirect in database: ' . $result['slug'] . ' -> ' . $result['url']);
-        } else {
-            error_log('[REDIRECT DEBUG] No redirect found in database for slug: ' . $slug);
+			App::getInstance(true)->getLogger()->info('Redirect link found in database for slug: ' . $slug);
+		} else {
+            App::getInstance(true)->getLogger()->info('No redirect found in database for slug: ' . $slug);
         }
 
-        return $result ?: null;
+        return $result ?: null;	
     }
 
     public static function create(array $data): ?int
