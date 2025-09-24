@@ -90,4 +90,27 @@ return function (RouteCollection $routes): void {
         },
         Permissions::ADMIN_ROOT,
     );
+
+    // ===== DEV TOOLS ROUTES =====
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-plugin-creation-options',
+        '/api/admin/plugin-tools/creation-options',
+        function (Request $request) {
+            return (new PluginManagerController())->getPluginCreationOptions($request);
+        },
+        Permissions::ADMIN_ROOT,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-plugin-create-file',
+        '/api/admin/plugin-tools/create-file',
+        function (Request $request) {
+            return (new PluginManagerController())->createPluginFile($request);
+        },
+        Permissions::ADMIN_ROOT,
+        ['POST']
+    );
 };

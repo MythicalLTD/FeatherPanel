@@ -1,16 +1,16 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import { useRouter } from 'vue-router';
-// import DebugPanel from './components/DebugPanel.vue';
+import DebugPanel from './components/DebugPanel.vue';
 
 export default defineComponent({
     name: 'App',
     components: {
-        // DebugPanel,
+        DebugPanel,
     },
     setup() {
         const router = useRouter();
-        // const debugPanel = ref<InstanceType<typeof DebugPanel> | null>(null);
+        const debugPanel = ref<InstanceType<typeof DebugPanel> | null>(null);
         const isPageTransitioning = ref(false);
 
         // Page transition setup
@@ -40,7 +40,7 @@ export default defineComponent({
         });
 
         return {
-            // debugPanel,
+            debugPanel,
             isPageTransitioning,
             transitionName,
         };
@@ -63,6 +63,9 @@ export default defineComponent({
                 </transition>
             </div>
         </router-view>
+
+        <!-- Debug Panel -->
+        <DebugPanel ref="debugPanel" />
     </div>
 </template>
 

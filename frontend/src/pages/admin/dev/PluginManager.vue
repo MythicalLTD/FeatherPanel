@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, reactive } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from 'vue-toastification';
+import { Database, Terminal, Clock, Plus, Upload } from 'lucide-vue-next';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 interface Plugin {
     name: string;
@@ -91,7 +108,7 @@ const createForm = ref<CreatePluginData>({
     name: '',
     description: '',
     version: '1.0.0',
-    target: 'v2',
+    target: 'v3',
     author: [''],
     flags: [],
     dependencies: [],
@@ -103,7 +120,7 @@ const editForm = ref<CreatePluginData>({
     name: '',
     description: '',
     version: '1.0.0',
-    target: 'v2',
+    target: 'v3',
     author: [''],
     flags: [],
     dependencies: [],
@@ -114,6 +131,33 @@ const showEditDialog = ref(false);
 const editingPlugin = ref<Plugin | null>(null);
 
 const settingsForm = ref<Record<string, string>>({});
+
+// ===== CREATE ACTION FUNCTIONALITY =====
+interface CreationOption {
+    id: string;
+    name: string;
+    description: string;
+    icon: typeof Database;
+    fields: Record<
+        string,
+        {
+            label: string;
+            type: string;
+            required: boolean;
+            placeholder: string;
+            default?: string;
+        }
+    >;
+}
+
+const isCreateActionDialogOpen = ref(false);
+const selectedCreateOption = ref<CreationOption | null>(null);
+const createActionFormData = reactive<Record<string, string>>({});
+const isCreatingAction = ref(false);
+
+// Available creation options (will be loaded from API)
+const creationOptions = ref<CreationOption[]>([]);
+const selectedPluginForAction = ref<Plugin | null>(null);
 
 // Available plugin flags
 const pluginFlags = [
@@ -139,7 +183,7 @@ const phpExtensions = ['pdo', 'curl', 'json', 'mbstring', 'gd', 'zip', 'xml', 'o
 const composerPackages = ['laravel/framework', 'symfony/console', 'monolog/monolog', 'guzzlehttp/guzzle'];
 
 // Available targets
-const availableTargets = ['v1', 'v2'];
+const availableTargets = ['v1', 'v2', 'v3'];
 
 // Available field types for config
 const fieldTypes = [
@@ -184,7 +228,7 @@ async function fetchPlugins() {
     }
 }
 
-// Auto-generate identifier from name
+// This doesn't work in realtime; identifier is only updated when updateIdentifier is called.
 function generateIdentifier(name: string): string {
     return name
         .toLowerCase()
@@ -193,7 +237,7 @@ function generateIdentifier(name: string): string {
         .substring(0, 32); // Allow up to 32 characters
 }
 
-// Watch for name changes to auto-generate identifier
+// Call this manually to update the identifier from the name.
 function updateIdentifier() {
     if (createForm.value.name) {
         createForm.value.identifier = generateIdentifier(createForm.value.name);
@@ -456,8 +500,155 @@ function getStatusColor(status: string): string {
     }
 }
 
+const openCreateActionDialog = (option: CreationOption, plugin: Plugin) => {
+    selectedCreateOption.value = option;
+    selectedPluginForAction.value = plugin;
+
+    // Reset form data
+    Object.keys(createActionFormData).forEach((key) => delete createActionFormData[key]);
+
+    // Initialize form with default values
+    Object.entries(option.fields).forEach(([key, field]) => {
+        if (field.default) {
+            createActionFormData[key] = field.default;
+        } else {
+            createActionFormData[key] = '';
+        }
+    });
+
+    isCreateActionDialogOpen.value = true;
+};
+
+const closeCreateActionDialog = () => {
+    isCreateActionDialogOpen.value = false;
+    selectedCreateOption.value = null;
+    selectedPluginForAction.value = null;
+    selectedFileToUpload.value = null;
+    Object.keys(createActionFormData).forEach((key) => delete createActionFormData[key]);
+};
+
+const validateCreateActionForm = (): boolean => {
+    if (!selectedCreateOption.value) return false;
+
+    for (const [key, field] of Object.entries(selectedCreateOption.value.fields)) {
+        if (field.required && (!createActionFormData[key] || createActionFormData[key].trim() === '')) {
+            toast.error(`${field.label} is required`);
+            return false;
+        }
+    }
+    return true;
+};
+
+const selectedFileToUpload = ref<File | null>(null);
+
+const handleFileUpload = (event: Event, key: string) => {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0];
+    if (file) {
+        selectedFileToUpload.value = file;
+        createActionFormData[key] = file.name;
+    }
+};
+
+const createActionItem = async () => {
+    if (!selectedCreateOption.value || !selectedPluginForAction.value || !validateCreateActionForm()) return;
+
+    isCreatingAction.value = true;
+
+    try {
+        let formData: FormData | URLSearchParams;
+
+        // Handle file upload differently
+        if (selectedCreateOption.value.id === 'public_file' && selectedFileToUpload.value) {
+            formData = new FormData();
+            formData.append('plugin_id', selectedPluginForAction.value.identifier);
+            formData.append('file_type', selectedCreateOption.value.id);
+            formData.append('file', selectedFileToUpload.value);
+        } else {
+            formData = new URLSearchParams({
+                plugin_id: selectedPluginForAction.value.identifier,
+                file_type: selectedCreateOption.value.id,
+                ...createActionFormData,
+            });
+        }
+
+        const headers: Record<string, string> = {};
+        if (!(formData instanceof FormData)) {
+            headers['Content-Type'] = 'application/x-www-form-urlencoded';
+        }
+
+        const response = await fetch('/api/admin/plugin-tools/create-file', {
+            method: 'POST',
+            headers,
+            body: formData,
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            toast.success(
+                `${selectedCreateOption.value.name} created successfully for ${selectedPluginForAction.value.name}!`,
+            );
+            closeCreateActionDialog();
+            // Refresh plugin data to show new files
+            await fetchPlugins();
+        } else {
+            toast.error(result.message || 'Failed to create item');
+        }
+    } catch (error) {
+        toast.error('An error occurred while creating the item');
+        console.error('Creation error:', error);
+    } finally {
+        isCreatingAction.value = false;
+    }
+};
+
+const loadCreationOptions = async () => {
+    try {
+        const response = await fetch('/api/admin/plugin-tools/creation-options');
+        const result = await response.json();
+
+        if (result.success) {
+            // Convert API response to CreationOption format
+            const options: CreationOption[] = Object.entries(result.data).map(([key, option]) => {
+                const opt = option as Record<string, unknown>;
+                return {
+                    id: key,
+                    name: opt.name as string,
+                    description: opt.description as string,
+                    icon: getIconComponent(opt.icon as string),
+                    fields: opt.fields as Record<
+                        string,
+                        { label: string; type: string; required: boolean; placeholder: string; default?: string }
+                    >,
+                };
+            });
+
+            creationOptions.value = options;
+        }
+    } catch (error) {
+        console.error('Failed to load creation options:', error);
+    }
+};
+
+const getIconComponent = (iconName: string) => {
+    switch (iconName) {
+        case 'database':
+            return Database;
+        case 'clock':
+            return Clock;
+        case 'terminal':
+            return Terminal;
+        case 'upload':
+            return Upload;
+        default:
+            return Database;
+    }
+};
+
 onMounted(() => {
     fetchPlugins();
+    loadCreationOptions();
 });
 </script>
 
@@ -479,6 +670,32 @@ onMounted(() => {
                     <div class="flex items-center gap-2">
                         <Button variant="outline" :disabled="isLoading" @click="fetchPlugins"> Refresh </Button>
                         <Button @click="showCreateDialog = true"> Create Plugin </Button>
+                    </div>
+                </div>
+
+                <div class="rounded-lg bg-blue-50 border border-blue-200 p-4 flex items-center gap-4 mb-6">
+                    <div class="flex-shrink-0">
+                        <span
+                            class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-blue-100 text-blue-600 text-2xl font-bold"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-7 w-7"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
+                                <path stroke="currentColor" stroke-width="2" d="M12 8v4m0 4h.01" />
+                            </svg>
+                        </span>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-blue-900 mb-1">SDK: v3 (Aurora) 24.09.2025</div>
+                        <div class="text-blue-800 text-sm">
+                            <strong>Latest change:</strong> You can now create plugin actions directly via the web UI!
+                            Several options and behaviors have also been improved and fixed for a smoother experience.
+                        </div>
                     </div>
                 </div>
 
@@ -530,9 +747,43 @@ onMounted(() => {
                             <Badge v-else variant="outline" class="text-yellow-600"> Needs Config </Badge>
                         </div>
 
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 flex-wrap">
                             <Button variant="outline" size="sm" @click="showPluginDetails(plugin)"> Details </Button>
                             <Button variant="outline" size="sm" @click="editPlugin(plugin)"> Edit </Button>
+
+                            <!-- Plugin-specific Create Action Dropdown -->
+                            <DropdownMenu>
+                                <DropdownMenuTrigger as-child>
+                                    <Button variant="outline" size="sm" class="gap-1">
+                                        <Plus :size="12" />
+                                        Add File
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" class="w-56">
+                                    <DropdownMenuGroup>
+                                        <template v-for="option in creationOptions" :key="option.id">
+                                            <DropdownMenuItem
+                                                class="cursor-pointer"
+                                                @click="openCreateActionDialog(option, plugin)"
+                                            >
+                                                <div class="flex items-start gap-2 w-full">
+                                                    <component
+                                                        :is="option.icon"
+                                                        :size="14"
+                                                        class="mt-0.5 flex-shrink-0"
+                                                    />
+                                                    <div class="flex-1 min-w-0">
+                                                        <div class="font-medium text-xs">{{ option.name }}</div>
+                                                        <div class="text-xs text-muted-foreground">
+                                                            {{ option.description }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </DropdownMenuItem>
+                                        </template>
+                                    </DropdownMenuGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </Card>
                 </div>
@@ -1347,6 +1598,84 @@ onMounted(() => {
                 </div>
             </Card>
         </div>
+
+        <!-- Create Action Dialog -->
+        <Dialog :open="isCreateActionDialogOpen" @update:open="isCreateActionDialogOpen = $event">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader v-if="selectedCreateOption && selectedPluginForAction">
+                    <DialogTitle class="flex items-center gap-2">
+                        <component :is="selectedCreateOption.icon" :size="20" />
+                        Create {{ selectedCreateOption.name }}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {{ selectedCreateOption.description }} for <strong>{{ selectedPluginForAction.name }}</strong>
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div v-if="selectedCreateOption" class="space-y-4 py-4">
+                    <template v-for="[key, field] in Object.entries(selectedCreateOption.fields)" :key="key">
+                        <div class="space-y-2">
+                            <Label :for="key">
+                                {{ field.label }}
+                                <span v-if="field.required" class="text-red-500">*</span>
+                            </Label>
+
+                            <div v-if="field.type === 'file'" class="mb-2">
+                                <div
+                                    class="p-2 mb-2 rounded bg-yellow-100 border border-yellow-300 text-yellow-800 text-xs flex items-center gap-2"
+                                >
+                                    <span class="font-bold">⚠️ Woah!</span>
+                                    <span>
+                                        Be careful not to upload files containing secrets or sensitive data. Uploaded
+                                        files may be accessible to others or stored in ways you do not expect.
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- File upload field -->
+                            <Input
+                                v-if="field.type === 'file'"
+                                :id="key"
+                                type="file"
+                                :required="field.required"
+                                accept=".txt,.html,.css,.js,.json,.xml,.md,.pdf,.png,.jpg,.jpeg,.gif,.svg"
+                                @change="handleFileUpload($event, key)"
+                            />
+
+                            <!-- Textarea field -->
+                            <Textarea
+                                v-else-if="field.type === 'textarea'"
+                                :id="key"
+                                v-model="createActionFormData[key]"
+                                :placeholder="field.placeholder"
+                                :required="field.required"
+                                class="min-h-[80px]"
+                            />
+
+                            <!-- Regular input field -->
+                            <Input
+                                v-else
+                                :id="key"
+                                v-model="createActionFormData[key]"
+                                :type="field.type"
+                                :placeholder="field.placeholder"
+                                :required="field.required"
+                            />
+                        </div>
+                    </template>
+                </div>
+
+                <DialogFooter>
+                    <Button variant="outline" :disabled="isCreatingAction" @click="closeCreateActionDialog">
+                        Cancel
+                    </Button>
+                    <Button :disabled="isCreatingAction" @click="createActionItem">
+                        <span v-if="isCreatingAction">Creating...</span>
+                        <span v-else>Create</span>
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </DashboardLayout>
 </template>
 

@@ -67,8 +67,15 @@ const saving = ref(false);
 const showCreateDialog = ref(false);
 const newFileName = ref('');
 const createAsDirectory = ref(false);
+const isEditorFullscreen = ref(false);
+const editorWindowPosition = ref({ x: 100, y: 100 });
+const editorWindowSize = ref({ width: 1200, height: 800 });
+const isDragging = ref(false);
+const dragOffset = ref({ x: 0, y: 0 });
 
 const toast = useToast();
+
+const showWarning = ref(true);
 
 // ACE Editor language mapping
 const getLanguageFromExtension = (extension: string): string => {
@@ -293,12 +300,60 @@ function goUp() {
     }
 }
 
+function toggleEditorFullscreen() {
+    isEditorFullscreen.value = !isEditorFullscreen.value;
+    if (isEditorFullscreen.value) {
+        // Center the window when opening
+        editorWindowPosition.value = {
+            x: Math.max(50, (window.innerWidth - editorWindowSize.value.width) / 2),
+            y: Math.max(50, (window.innerHeight - editorWindowSize.value.height) / 2),
+        };
+    }
+}
+
+function startDrag(event: MouseEvent) {
+    if (!isEditorFullscreen.value) return;
+
+    isDragging.value = true;
+    const rect = (event.target as HTMLElement).closest('.editor-window')?.getBoundingClientRect();
+    if (rect) {
+        dragOffset.value = {
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top,
+        };
+    }
+
+    document.addEventListener('mousemove', handleDrag);
+    document.addEventListener('mouseup', stopDrag);
+    event.preventDefault();
+}
+
+function handleDrag(event: MouseEvent) {
+    if (!isDragging.value) return;
+
+    editorWindowPosition.value = {
+        x: Math.max(0, Math.min(window.innerWidth - editorWindowSize.value.width, event.clientX - dragOffset.value.x)),
+        y: Math.max(
+            0,
+            Math.min(window.innerHeight - editorWindowSize.value.height, event.clientY - dragOffset.value.y),
+        ),
+    };
+}
+
+function stopDrag() {
+    isDragging.value = false;
+    document.removeEventListener('mousemove', handleDrag);
+    document.removeEventListener('mouseup', stopDrag);
+}
+
+// Cleanup event listeners
 onMounted(() => {
     browseDirectory();
 });
 
 onUnmounted(() => {
-    // ACE Editor doesn't need manual cleanup
+    document.removeEventListener('mousemove', handleDrag);
+    document.removeEventListener('mouseup', stopDrag);
 });
 </script>
 
@@ -326,18 +381,27 @@ onUnmounted(() => {
                 </div>
 
                 <div
-                    class="rounded-lg border-2 border-yellow-400 bg-yellow-100 p-6 mb-6 flex flex-col items-center justify-center shadow-lg"
+                    v-if="showWarning"
+                    class="relative rounded-lg border border-yellow-500 bg-black/60 text-yellow-100 p-6 mb-6 flex flex-col items-center justify-center shadow-lg backdrop-blur"
                 >
-                    <div class="text-4xl font-extrabold text-yellow-600 mb-2 text-center">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        class="absolute top-2 right-2 text-yellow-200 hover:text-white"
+                        @click="showWarning = false"
+                    >
+                        ✕
+                    </Button>
+                    <div class="text-4xl font-extrabold text-yellow-300 mb-2 text-center">
                         ⚠️ WOAHHHH BRRR SKRRRRRRRRRRR WAIT A BIT SKIDOOO ⚠️
                     </div>
-                    <div class="text-lg font-semibold text-yellow-700 text-center mb-1">
+                    <div class="text-lg font-semibold text-yellow-200 text-center mb-1">
                         Please do <span class="underline">NOT</span> modify files directly from here!
                     </div>
-                    <div class="text-base text-yellow-800 text-center">
+                    <div class="text-base text-yellow-100/90 text-center">
                         Every update here will <span class="font-bold">overwrite</span> those files.<br />
                         <span class="font-semibold">Only secure folders to write or read are:</span>
-                        <ul class="list-disc list-inside mt-2 text-yellow-900">
+                        <ul class="list-disc list-inside mt-2 text-yellow-100">
                             <li><code>storage/addons</code></li>
                             <li><code>public/attachements</code></li>
                             <li><code>public/</code></li>
@@ -360,7 +424,7 @@ onUnmounted(() => {
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- File Browser -->
-                    <Card class="p-0 overflow-hidden">
+                    <Card class="p-0 overflow-hidden" :class="{ 'opacity-50 pointer-events-none': isEditorFullscreen }">
                         <div class="p-4 border-b">
                             <div class="font-semibold">Files & Directories</div>
                         </div>
@@ -407,15 +471,26 @@ onUnmounted(() => {
                     </Card>
 
                     <!-- File Editor -->
-                    <Card class="p-0 overflow-hidden">
+                    <Card class="p-0 overflow-hidden" :class="{ hidden: isEditorFullscreen }">
                         <div class="p-4 border-b flex items-center justify-between">
                             <div class="font-semibold">
                                 {{ selectedFile ? selectedFile.name : 'No file selected' }}
                             </div>
-                            <div v-if="selectedFile && !isBinary" class="flex items-center gap-2">
-                                <Button size="sm" :disabled="saving" @click="saveFile">
-                                    {{ saving ? 'Saving...' : 'Save' }}
+                            <div class="flex items-center gap-2">
+                                <Button
+                                    v-if="selectedFile"
+                                    variant="ghost"
+                                    size="sm"
+                                    :title="'Open in Window'"
+                                    @click="toggleEditorFullscreen"
+                                >
+                                    🗖
                                 </Button>
+                                <div v-if="selectedFile && !isBinary" class="flex items-center gap-2">
+                                    <Button size="sm" :disabled="saving" @click="saveFile">
+                                        {{ saving ? 'Saving...' : 'Save' }}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                         <div class="h-[600px]">
@@ -456,6 +531,63 @@ onUnmounted(() => {
                     </Card>
                 </div>
 
+                <!-- Editor Window -->
+                <div
+                    v-if="isEditorFullscreen && selectedFile"
+                    class="editor-window"
+                    :style="{
+                        left: editorWindowPosition.x + 'px',
+                        top: editorWindowPosition.y + 'px',
+                        width: editorWindowSize.width + 'px',
+                        height: editorWindowSize.height + 'px',
+                    }"
+                >
+                    <!-- Window Header -->
+                    <div class="window-header" @mousedown="startDrag">
+                        <div class="flex items-center gap-2">
+                            <div class="window-controls">
+                                <div class="window-control close" @click="toggleEditorFullscreen"></div>
+                                <div class="window-control minimize"></div>
+                                <div class="window-control maximize"></div>
+                            </div>
+                            <div class="window-title">📄 {{ selectedFile.name }}</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <Button size="sm" :disabled="saving" variant="ghost" @click="saveFile">
+                                {{ saving ? 'Saving...' : 'Save' }}
+                            </Button>
+                        </div>
+                    </div>
+
+                    <!-- Window Content -->
+                    <div class="window-content">
+                        <div v-if="isBinary" class="flex items-center justify-center h-full text-muted-foreground">
+                            Binary file - cannot edit
+                        </div>
+                        <v-ace-editor
+                            v-else
+                            v-model:value="fileContent"
+                            :lang="getCurrentLanguage()"
+                            theme="monokai"
+                            style="height: 100%; width: 100%"
+                            :options="{
+                                fontSize: 14,
+                                showPrintMargin: false,
+                                wrap: true,
+                                enableBasicAutocompletion: true,
+                                enableLiveAutocompletion: true,
+                                enableSnippets: true,
+                                showLineNumbers: true,
+                                tabSize: 2,
+                                useSoftTabs: true,
+                                highlightActiveLine: true,
+                                showGutter: true,
+                                fixedWidthGutter: true,
+                            }"
+                        />
+                    </div>
+                </div>
+
                 <!-- Create File Dialog -->
                 <div v-if="showCreateDialog" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <Card class="w-96 p-6">
@@ -488,5 +620,129 @@ onUnmounted(() => {
 :deep(.ace_editor) {
     border-radius: 0;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+/* Editor Window Styles */
+.editor-window {
+    position: fixed;
+    z-index: 1000;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 8px;
+    box-shadow:
+        0 20px 25px -5px rgba(0, 0, 0, 0.1),
+        0 10px 10px -5px rgba(0, 0, 0, 0.04),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    display: flex;
+    flex-direction: column;
+    min-width: 400px;
+    min-height: 300px;
+    transform: translateZ(0); /* Hardware acceleration */
+}
+
+/* Window Header */
+.window-header {
+    background: hsl(var(--muted) / 0.5);
+    border-bottom: 1px solid hsl(var(--border));
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: move;
+    border-radius: 8px 8px 0 0;
+    user-select: none;
+}
+
+.window-header:hover {
+    background: hsl(var(--muted) / 0.7);
+}
+
+/* Window Controls */
+.window-controls {
+    display: flex;
+    gap: 8px;
+    margin-right: 12px;
+}
+
+.window-control {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.window-control.close {
+    background: #ff5f56;
+    border: 1px solid #e04a3f;
+}
+
+.window-control.minimize {
+    background: #ffbd2e;
+    border: 1px solid #dea123;
+}
+
+.window-control.maximize {
+    background: #27ca3f;
+    border: 1px solid #1dad2b;
+}
+
+.window-control:hover {
+    opacity: 0.8;
+    transform: scale(1.1);
+}
+
+.window-control.close:hover::after {
+    content: '✕';
+    color: #921419;
+    font-size: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* Window Title */
+.window-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: hsl(var(--foreground));
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* Window Content */
+.window-content {
+    flex: 1;
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+    background: hsl(var(--background));
+}
+
+/* Dragging state */
+.editor-window:has(.window-header:active) {
+    cursor: grabbing;
+    user-select: none;
+}
+
+/* Smooth transitions */
+.editor-window {
+    transition: transform 0.1s ease-out;
+}
+
+/* Backdrop when window is open */
+.editor-window::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+    z-index: -1;
+    pointer-events: none;
 }
 </style>

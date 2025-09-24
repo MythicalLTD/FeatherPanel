@@ -380,6 +380,173 @@ class PluginManagerController
         }
     }
 
+    // ===== DEV TOOLS FUNCTIONALITY =====
+
+    public function createPluginFile(Request $request): Response
+    {
+        try {
+            $config = App::getInstance(true)->getConfig();
+            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+                return ApiResponse::error('You are not allowed to create plugin files in non-developer mode', 403);
+            }
+
+            $pluginId = trim($request->request->get('plugin_id', ''));
+            $fileType = trim($request->request->get('file_type', ''));
+            $name = trim($request->request->get('name', ''));
+            $description = trim($request->request->get('description', ''));
+            $schedule = trim($request->request->get('schedule', '1H'));
+
+            if (empty($pluginId) || empty($fileType)) {
+                return ApiResponse::error('Plugin ID and file type are required', 400);
+            }
+
+            // For file uploads, name is not required as it comes from the uploaded file
+            if ($fileType !== 'public_file' && empty($name)) {
+                return ApiResponse::error('Name is required for this file type', 400);
+            }
+
+            // Verify plugin exists
+            $pluginPath = $this->pluginsDir . '/' . $pluginId;
+            if (!is_dir($pluginPath)) {
+                return ApiResponse::error('Plugin not found', 404);
+            }
+
+            $pluginConfig = PluginHelper::getPluginConfig($pluginId);
+            if (empty($pluginConfig)) {
+                return ApiResponse::error('Plugin configuration not found', 404);
+            }
+
+            $className = $this->toCamelCase($pluginConfig['plugin']['name']);
+
+            // Sanitize name
+            $sanitizedName = preg_replace('/[^a-zA-Z0-9_-]/', '-', $name);
+            $sanitizedName = strtolower($sanitizedName);
+
+            $result = [];
+
+            switch ($fileType) {
+                case 'migration':
+                    $result = $this->createPluginMigration($pluginPath, $pluginId, $sanitizedName, $description);
+                    break;
+                case 'cron':
+                    $result = $this->createPluginCron($pluginPath, $pluginId, $className, $name, $description, $schedule);
+                    break;
+                case 'command':
+                    $result = $this->createPluginCommand($pluginPath, $pluginId, $className, $name, $description);
+                    break;
+                case 'public_file':
+                    $result = $this->handlePluginPublicFileUpload($request, $pluginPath, $pluginId);
+                    break;
+                default:
+                    return ApiResponse::error('Unsupported file type', 400);
+            }
+
+            if ($result['success']) {
+                return ApiResponse::success($result, ucfirst($fileType) . ' created successfully');
+            }
+
+            return ApiResponse::error($result['message'], 500);
+
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to create plugin file: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function getPluginCreationOptions(Request $request): Response
+    {
+        try {
+            $config = App::getInstance(true)->getConfig();
+            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+                return ApiResponse::error('You are not allowed to access dev tools in non-developer mode', 403);
+            }
+
+            $options = [
+                'migration' => [
+                    'name' => 'Database Migration',
+                    'description' => 'Create a plugin-specific database migration',
+                    'icon' => 'database',
+                    'fields' => [
+                        'name' => [
+                            'label' => 'Migration Name',
+                            'type' => 'text',
+                            'required' => true,
+                            'placeholder' => 'e.g., user-data-table',
+                        ],
+                        'description' => [
+                            'label' => 'Description',
+                            'type' => 'textarea',
+                            'required' => false,
+                            'placeholder' => 'What does this migration do?',
+                        ],
+                    ],
+                ],
+                'cron' => [
+                    'name' => 'Cron Job',
+                    'description' => 'Create a scheduled task for this plugin',
+                    'icon' => 'clock',
+                    'fields' => [
+                        'name' => [
+                            'label' => 'Cron Name',
+                            'type' => 'text',
+                            'required' => true,
+                            'placeholder' => 'e.g., daily-cleanup',
+                        ],
+                        'description' => [
+                            'label' => 'Description',
+                            'type' => 'textarea',
+                            'required' => false,
+                            'placeholder' => 'What does this cron job do?',
+                        ],
+                        'schedule' => [
+                            'label' => 'Schedule',
+                            'type' => 'text',
+                            'required' => true,
+                            'placeholder' => '1H (1m=minute, 1H=hour, 1D=day)',
+                            'default' => '1H',
+                        ],
+                    ],
+                ],
+                'command' => [
+                    'name' => 'CLI Command',
+                    'description' => 'Create a CLI command for this plugin',
+                    'icon' => 'terminal',
+                    'fields' => [
+                        'name' => [
+                            'label' => 'Command Name',
+                            'type' => 'text',
+                            'required' => true,
+                            'placeholder' => 'e.g., process-data',
+                        ],
+                        'description' => [
+                            'label' => 'Description',
+                            'type' => 'textarea',
+                            'required' => false,
+                            'placeholder' => 'What does this command do?',
+                        ],
+                    ],
+                ],
+                'public_file' => [
+                    'name' => 'Upload Public File',
+                    'description' => 'Upload a file to the plugin\'s public directory',
+                    'icon' => 'upload',
+                    'fields' => [
+                        'file' => [
+                            'label' => 'File to Upload',
+                            'type' => 'file',
+                            'required' => true,
+                            'placeholder' => 'Select file to upload',
+                        ],
+                    ],
+                ],
+            ];
+
+            return ApiResponse::success($options, 'Plugin creation options retrieved successfully');
+
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to get creation options: ' . $e->getMessage(), 500);
+        }
+    }
+
     private function getPluginStatus(string $identifier): string
     {
         // This would check if the plugin is enabled/disabled in the database
@@ -692,7 +859,7 @@ use App\Cron\Cron;
 use App\Cron\TimeTask;
 use App\Chat\TimedTask;
 
-class {$className}Example implements TimeTask
+class {$className}CronExample implements TimeTask
 {
 	public function run()
 	{
@@ -1392,7 +1559,7 @@ class AppReadyEvent
         file_put_contents($pluginPath . '/Frontend/index.js', $frontendJsExample);
         file_put_contents($pluginPath . '/Frontend/sidebar.json', $frontendSideBarExample);
         file_put_contents($pluginPath . '/Migrations/' . $timestamp . '-create-' . $identifier . '-logs.sql', $migrationContent);
-        file_put_contents($pluginPath . '/Cron/ExampleCron.php', $cronContent);
+        file_put_contents($pluginPath . '/Cron/' . $className . 'CronExample.php', $cronContent);
         file_put_contents($pluginPath . '/Public/hello.txt', $publicFileTemplate);
         file_put_contents($pluginPath . '/Events/App/AppReadyEvent.php', $appReadyEvent);
     }
@@ -1531,5 +1698,176 @@ class AppReadyEvent
                 $full::pluginInstall();
             }
         }
+    }
+
+    private function createPluginMigration(string $pluginPath, string $pluginId, string $name, string $description): array
+    {
+        $timestamp = date('Y-m-d-H.i');
+        $filename = "{$timestamp}-{$name}.sql";
+        $filepath = $pluginPath . '/Migrations/' . $filename;
+
+        $template = "-- Plugin Migration: {$pluginId} - {$name}\n";
+        if (!empty($description)) {
+            $template .= "-- Description: {$description}\n";
+        }
+        $template .= '-- Created: ' . date('Y-m-d H:i:s') . "\n\n";
+        $template .= "-- Plugin-specific migration for {$pluginId}\n";
+        $template .= "CREATE TABLE IF NOT EXISTS `featherpanel_{$pluginId}_{$name}` (\n";
+        $template .= "    `id` INT NOT NULL AUTO_INCREMENT,\n";
+        $template .= "    `data` TEXT,\n";
+        $template .= "    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,\n";
+        $template .= "    PRIMARY KEY (`id`)\n";
+        $template .= ") ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;\n";
+
+        if (file_put_contents($filepath, $template) === false) {
+            return ['success' => false, 'message' => 'Failed to create migration file'];
+        }
+
+        return [
+            'success' => true,
+            'filename' => $filename,
+            'filepath' => $filepath,
+            'type' => 'migration',
+        ];
+    }
+
+    private function createPluginCron(string $pluginPath, string $pluginId, string $className, string $name, string $description, string $schedule): array
+    {
+        $cronClassName = ucfirst(preg_replace('/[^a-zA-Z0-9]/', '', ucwords($name))) . 'Cron';
+        $filename = "{$cronClassName}.php";
+        $filepath = $pluginPath . '/Cron/' . $filename;
+
+        $template = "<?php\n\n";
+        $template .= "namespace App\Addons\\{$pluginId}\Cron;\n\n";
+        $template .= "use App\Cron\Cron;\n";
+        $template .= "use App\Cron\TimeTask;\n";
+        $template .= "use App\Chat\TimedTask;\n\n";
+        $template .= "class {$cronClassName} implements TimeTask\n";
+        $template .= "{\n";
+        if (!empty($description)) {
+            $template .= "    /**\n";
+            $template .= "     * {$description}\n";
+            $template .= "     * Schedule: {$schedule}\n";
+            $template .= "     */\n";
+        }
+        $template .= "    public function run()\n";
+        $template .= "    {\n";
+        $template .= "        \$cron = new Cron('{$pluginId}-{$name}', '{$schedule}');\n";
+        $template .= "        try {\n";
+        $template .= "            \$cron->runIfDue(function () {\n";
+        $template .= "                // Add your cron job logic here\n";
+        $template .= "                TimedTask::markRun('{$pluginId}-{$name}', true, '{$className} cron executed');\n";
+        $template .= "            });\n";
+        $template .= "        } catch (\\Exception \$e) {\n";
+        $template .= "            \$app = \\App\\App::getInstance(false, true);\n";
+        $template .= "            \$app->getLogger()->error('Failed to run {$pluginId} {$name} cron: ' . \$e->getMessage());\n";
+        $template .= "            TimedTask::markRun('{$pluginId}-{$name}', false, \$e->getMessage());\n";
+        $template .= "        }\n";
+        $template .= "    }\n";
+        $template .= "}\n";
+
+        if (file_put_contents($filepath, $template) === false) {
+            return ['success' => false, 'message' => 'Failed to create cron file'];
+        }
+
+        return [
+            'success' => true,
+            'filename' => $filename,
+            'filepath' => $filepath,
+            'type' => 'cron',
+        ];
+    }
+
+    private function createPluginCommand(string $pluginPath, string $pluginId, string $className, string $name, string $description): array
+    {
+        $cmdClassName = ucfirst(preg_replace('/[^a-zA-Z0-9]/', '', ucwords($name))) . 'Command';
+        $filename = "{$cmdClassName}.php";
+        $filepath = $pluginPath . '/Commands/' . $filename;
+
+        $template = "<?php\n\n";
+        $template .= "namespace App\Addons\\{$pluginId}\Commands;\n\n";
+        $template .= "use App\Cli\App;\n";
+        $template .= "use App\Cli\CommandBuilder;\n\n";
+        $template .= "class {$cmdClassName} implements CommandBuilder\n";
+        $template .= "{\n";
+        if (!empty($description)) {
+            $template .= "    /**\n";
+            $template .= "     * {$description}\n";
+            $template .= "     */\n";
+        }
+        $template .= "    public static function execute(array \$args): void\n";
+        $template .= "    {\n";
+        $template .= "        \$app = App::getInstance();\n";
+        $template .= "        \$app->send(\"&a{$className} plugin: {$name} command executed successfully!\");\n";
+        $template .= "        // Add your command logic here\n";
+        $template .= "    }\n\n";
+        $template .= "    public static function getDescription(): string\n";
+        $template .= "    {\n";
+        $template .= "        return \"{$description}\";\n";
+        $template .= "    }\n\n";
+        $template .= "    public static function getSubCommands(): array\n";
+        $template .= "    {\n";
+        $template .= "        return [];\n";
+        $template .= "    }\n";
+        $template .= "}\n";
+
+        if (file_put_contents($filepath, $template) === false) {
+            return ['success' => false, 'message' => 'Failed to create command file'];
+        }
+
+        return [
+            'success' => true,
+            'filename' => $filename,
+            'filepath' => $filepath,
+            'type' => 'command',
+        ];
+    }
+
+    private function handlePluginPublicFileUpload(Request $request, string $pluginPath, string $pluginId): array
+    {
+        $uploadedFile = $request->files->get('file');
+
+        if (!$uploadedFile) {
+            return ['success' => false, 'message' => 'No file was uploaded'];
+        }
+
+        if (!$uploadedFile->isValid()) {
+            return ['success' => false, 'message' => 'Invalid file upload'];
+        }
+
+        // Security: Check file extension and size
+        $maxFileSize = 5 * 1024 * 1024; // 5MB
+
+        $originalName = $uploadedFile->getClientOriginalName();
+        $fileSize = $uploadedFile->getSize(); // Get size BEFORE moving the file
+
+        if ($fileSize > $maxFileSize) {
+            return ['success' => false, 'message' => 'File size too large. Maximum size: 5MB'];
+        }
+
+        // Sanitize filename
+        $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
+        $filepath = $pluginPath . '/Public/' . $filename;
+
+        // Ensure Public directory exists
+        $publicDir = $pluginPath . '/Public';
+        if (!is_dir($publicDir)) {
+            mkdir($publicDir, 0755, true);
+        }
+
+        try {
+            $uploadedFile->move($publicDir, $filename);
+        } catch (\Exception $e) {
+            return ['success' => false, 'message' => 'Failed to save uploaded file: ' . $e->getMessage()];
+        }
+
+        return [
+            'success' => true,
+            'filename' => $filename,
+            'filepath' => $filepath,
+            'original_name' => $originalName,
+            'size' => $fileSize, // Use the size we captured earlier
+            'type' => 'public_file',
+        ];
     }
 }
