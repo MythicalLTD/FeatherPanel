@@ -13,7 +13,9 @@
 
 namespace App\Controllers\Admin;
 
+use App\App;
 use App\Helpers\ApiResponse;
+use App\Config\ConfigInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -22,6 +24,10 @@ class LogViewerController
     public function getLogs(Request $request): Response
     {
         try {
+            $config = App::getInstance(true)->getConfig();
+            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+                return ApiResponse::error('You are not allowed to view logs in non-developer mode', 403);
+            }
             $logType = $request->query->get('type', 'web');
             $lines = (int) $request->query->get('lines', 100);
 
@@ -47,6 +53,10 @@ class LogViewerController
     public function clearLogs(Request $request): Response
     {
         try {
+            $config = App::getInstance(true)->getConfig();
+            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+                return ApiResponse::error('You are not allowed to clear logs in non-developer mode', 403);
+            }
             $logType = $request->request->get('type', 'web');
             $logFile = $this->getLogFilePath($logType);
 
@@ -65,6 +75,10 @@ class LogViewerController
     public function getLogFiles(Request $request): Response
     {
         try {
+            $config = App::getInstance(true)->getConfig();
+            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+                return ApiResponse::error('You are not allowed to view log files in non-developer mode', 403);
+            }
             $logDir = dirname(__DIR__, 3) . '/storage/logs/';
             $files = [];
 

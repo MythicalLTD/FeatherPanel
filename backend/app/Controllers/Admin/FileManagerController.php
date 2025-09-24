@@ -13,7 +13,9 @@
 
 namespace App\Controllers\Admin;
 
+use App\App;
 use App\Helpers\ApiResponse;
+use App\Config\ConfigInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -30,6 +32,10 @@ class FileManagerController
     public function browse(Request $request): Response
     {
         try {
+            $config = App::getInstance(true)->getConfig();
+            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+                return ApiResponse::error('You are not allowed to browse files in non-developer mode', 403);
+            }
             $path = $request->query->get('path', '');
             $fullPath = $this->resolvePath($path);
 
@@ -80,6 +86,10 @@ class FileManagerController
     public function readFile(Request $request): Response
     {
         try {
+            $config = App::getInstance(true)->getConfig();
+            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+                return ApiResponse::error('You are not allowed to read files in non-developer mode', 403);
+            }
             $path = $request->query->get('path', '');
             $fullPath = $this->resolvePath($path);
 
@@ -121,6 +131,10 @@ class FileManagerController
     public function saveFile(Request $request): Response
     {
         try {
+            $config = App::getInstance(true)->getConfig();
+            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+                return ApiResponse::error('You are not allowed to save files in non-developer mode', 403);
+            }
             $path = $request->request->get('path', '');
             $content = $request->request->get('content', '');
             $fullPath = $this->resolvePath($path);
@@ -162,6 +176,10 @@ class FileManagerController
     public function createFile(Request $request): Response
     {
         try {
+            $config = App::getInstance(true)->getConfig();
+            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+                return ApiResponse::error('You are not allowed to create files in non-developer mode', 403);
+            }
             $path = $request->request->get('path', '');
             $isDirectory = $request->request->getBoolean('isDirectory', false);
             $fullPath = $this->resolvePath($path);
@@ -200,6 +218,10 @@ class FileManagerController
     public function deleteFile(Request $request): Response
     {
         try {
+            $config = App::getInstance(true)->getConfig();
+            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+                return ApiResponse::error('You are not allowed to delete files in non-developer mode', 403);
+            }
             $path = $request->request->get('path', '');
             $fullPath = $this->resolvePath($path);
 

@@ -25,6 +25,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class PluginsController
 {
+    public const PASSWORD = 'featherpanel_development_kit_2025_addon_password';
+
     public function index(Request $request): Response
     {
         try {
@@ -360,7 +362,7 @@ class PluginsController
             // Extract
             $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true);
             @mkdir($tempDir, 0755, true);
-            $pwd = 'featherpanel_development_kit_2025_addon_password';
+            $pwd = self::PASSWORD;
             $unzipCommand = sprintf('unzip -P %s %s -d %s', escapeshellarg($pwd), escapeshellarg($tempFile), escapeshellarg($tempDir));
             exec($unzipCommand, $out, $code);
             @unlink($tempFile);
@@ -425,7 +427,7 @@ class PluginsController
             $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true);
             @mkdir($tempDir, 0755, true);
             $exportFile = $tempDir . '/' . $identifier . '.fpa';
-            $pwd = 'featherpanel_development_kit_2025_addon_password';
+            $pwd = self::PASSWORD;
             $zipCmd = sprintf(
                 'cd %s && zip -r -P %s %s *',
                 escapeshellarg($pluginDir),
@@ -490,7 +492,7 @@ class PluginsController
             // Extract
             $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true);
             @mkdir($tempDir, 0755, true);
-            $pwd = 'featherpanel_development_kit_2025_addon_password';
+            $pwd = self::PASSWORD;
             $unzipCommand = sprintf('unzip -P %s %s -d %s', escapeshellarg($pwd), escapeshellarg($tempFile), escapeshellarg($tempDir));
             exec($unzipCommand, $out, $code);
             @unlink($tempFile);
@@ -537,7 +539,7 @@ class PluginsController
 
             $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true);
             @mkdir($tempDir, 0755, true);
-            $pwd = 'featherpanel_development_kit_2025_addon_password';
+            $pwd = self::PASSWORD;
             $unzipCommand = sprintf('unzip -P %s %s -d %s', escapeshellarg($pwd), escapeshellarg($tempFile), escapeshellarg($tempDir));
             exec($unzipCommand, $out, $code);
             @unlink($tempFile);

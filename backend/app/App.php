@@ -177,6 +177,9 @@ class App
         $this->registerApiRoutes($this->routes);
         $eventManager->emit(
             AppEvent::onRouterReady(),
+            [
+                'router' => $this->routes,
+            ]
         );
         $this->dispatchSymfonyRouter();
     }

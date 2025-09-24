@@ -13,7 +13,9 @@
 
 namespace App\Controllers\Admin;
 
+use App\App;
 use App\Helpers\ApiResponse;
+use App\Config\ConfigInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -22,6 +24,10 @@ class ConsoleController
     public function executeCommand(Request $request): Response
     {
         try {
+            $config = App::getInstance(true)->getConfig();
+            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+                return ApiResponse::error('You are not allowed to execute commands in non-developer mode', 403);
+            }
             $command = trim($request->request->get('command', ''));
             $workingDirectory = $request->request->get('cwd', getcwd());
 
@@ -93,6 +99,10 @@ class ConsoleController
 
     public function getSystemInfo(Request $request): Response
     {
+        $config = App::getInstance(true)->getConfig();
+        if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+            return ApiResponse::error('You are not allowed to view system info in non-developer mode', 403);
+        }
         // Suppress PHP warnings to prevent them from interfering with JSON response
         $originalErrorReporting = error_reporting(E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR | E_RECOVERABLE_ERROR);
 
