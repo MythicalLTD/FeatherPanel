@@ -18,6 +18,7 @@ use App\Chat\Database;
 use App\Helpers\ApiResponse;
 use App\Plugins\PluginConfig;
 use App\Plugins\PluginSettings;
+use App\Plugins\PluginDependencies;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,14 +29,57 @@ class PluginsController
     {
         try {
             global $pluginManager;
-            $plugins = $pluginManager->getLoadedMemoryPlugins();
+            $loaded = $pluginManager->getLoadedMemoryPlugins();
+            $allInstalled = method_exists($pluginManager, 'getPluginsWithoutLoader')
+                ? $pluginManager->getPluginsWithoutLoader()
+                : $loaded;
+
             $pluginsList = [];
-            foreach ($plugins as $plugin) {
-                $info = PluginConfig::getConfig($plugin);
-                $pluginsList[$plugin] = $info;
+            foreach ($allInstalled as $identifier) {
+                // Read config even if not loaded
+                $info = PluginConfig::getConfig($identifier);
+                if (empty($info) || !isset($info['plugin'])) {
+                    // Skip completely invalid directory entries
+                    continue;
+                }
+
+                // Compute unmet dependencies
+                $unmet = [];
+                try {
+                    $unmet = PluginDependencies::getUnmetDependencies($info);
+                } catch (\Throwable $t) {
+                    $unmet = [];
+                }
+
+                // Compute missing required configs
+                $missingConfigs = [];
+                try {
+                    $required = $info['plugin']['requiredConfigs'] ?? [];
+                    if (is_array($required) && !empty($required)) {
+                        $settings = PluginSettings::getSettings($identifier);
+                        $configuredKeys = array_column($settings, 'key');
+                        foreach ($required as $reqKey) {
+                            if (!in_array($reqKey, $configuredKeys, true)) {
+                                $missingConfigs[] = $reqKey;
+                            }
+                        }
+                    }
+                } catch (\Throwable $t) {
+                    $missingConfigs = [];
+                }
+
+                // Get enhanced config schema if available
+                $configSchema = PluginConfig::getPluginRequiredAdminConfig($identifier);
+
+                // Augment plugin info for frontend consumption
+                $info['plugin']['loaded'] = in_array($identifier, $loaded, true);
+                $info['plugin']['unmetDependencies'] = $unmet;
+                $info['plugin']['missingConfigs'] = $missingConfigs;
+                $info['configSchema'] = $configSchema;
+                $pluginsList[$identifier] = $info;
             }
 
-            return ApiResponse::success(['plugins' => $pluginsList], 'Successfully fetched plugins statistics', 200);
+            return ApiResponse::success(['plugins' => $pluginsList], 'Successfully fetched plugins overview', 200);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to fetch plugins statistics: ' . $e->getMessage(), 500);
         }
@@ -44,27 +88,28 @@ class PluginsController
     public function getConfig(Request $request, string $identifier): Response
     {
         try {
-            global $pluginManager;
-            $plugins = $pluginManager->getLoadedMemoryPlugins();
-
-            if (!in_array($identifier, $plugins)) {
+            // Check if plugin exists by trying to load its config
+            $info = PluginConfig::getConfig($identifier);
+            if (empty($info) || !isset($info['plugin'])) {
                 return ApiResponse::error('Plugin not found', 'PLUGIN_NOT_FOUND', 404, [
                     'identifier' => $identifier,
-                    'plugins' => $plugins,
                 ]);
             }
 
-            $info = PluginConfig::getConfig($identifier);
             $settings = PluginSettings::getSettings($identifier);
             $settingsList = [];
             foreach ($settings as $setting) {
                 $settingsList[$setting['key']] = $setting['value'];
             }
 
+            // Get enhanced config schema if available
+            $configSchema = PluginConfig::getPluginRequiredAdminConfig($identifier);
+
             return ApiResponse::success([
                 'config' => $info,
                 'plugin' => $info,
                 'settings' => $settingsList,
+                'configSchema' => $configSchema,
             ], 'Plugin config fetched successfully', 200);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to fetch plugin config: ' . $e->getMessage(), 500);
@@ -74,10 +119,9 @@ class PluginsController
     public function setSettings(Request $request, string $identifier): Response
     {
         try {
-            global $pluginManager;
-            $plugins = $pluginManager->getLoadedMemoryPlugins();
-
-            if (!in_array($identifier, $plugins)) {
+            // Check if plugin exists by trying to load its config
+            $info = PluginConfig::getConfig($identifier);
+            if (empty($info) || !isset($info['plugin'])) {
                 return ApiResponse::error('Plugin not found', 'PLUGIN_NOT_FOUND', 404);
             }
 
@@ -130,10 +174,9 @@ class PluginsController
     public function removeSettings(Request $request, string $identifier): Response
     {
         try {
-            global $pluginManager;
-            $plugins = $pluginManager->getLoadedMemoryPlugins();
-
-            if (!in_array($identifier, $plugins)) {
+            // Check if plugin exists by trying to load its config
+            $info = PluginConfig::getConfig($identifier);
+            if (empty($info) || !isset($info['plugin'])) {
                 return ApiResponse::error('Plugin not found', 'PLUGIN_NOT_FOUND', 404);
             }
 

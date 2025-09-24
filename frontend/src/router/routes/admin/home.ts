@@ -111,6 +111,11 @@ const adminRoutes: RouteRecordRaw[] = [
         name: 'AdminConsole',
         component: () => import('@/pages/admin/dev/Console.vue'),
     },
+    {
+        path: '/admin/dev/plugins',
+        name: 'AdminPluginManager',
+        component: () => import('@/pages/admin/dev/PluginManager.vue'),
+    },
 ];
 
 export default adminRoutes;

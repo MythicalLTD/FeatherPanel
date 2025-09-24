@@ -29,6 +29,7 @@ class PluginConfig
             'author' => 'array',
             'icon' => 'string',
             'dependencies' => 'array',
+            'requiredConfigs' => 'array',
         ];
     }
 

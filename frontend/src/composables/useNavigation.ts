@@ -484,6 +484,15 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith('/admin/dev/console'),
                 category: 'debug' as const,
             },
+            {
+                id: 'debug-plugin-manager',
+                name: 'Plugin Manager',
+                title: 'Plugin Manager',
+                url: '/admin/dev/plugins',
+                icon: PlayCircle,
+                isActive: currentPath.value.startsWith('/admin/dev/plugin-manager'),
+                category: 'debug' as const,
+            },
         ];
     });
 

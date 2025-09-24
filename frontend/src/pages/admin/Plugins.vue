@@ -158,6 +158,45 @@
                                                 Website
                                             </a>
                                         </div>
+                                        <!-- Requirements state -->
+                                        <div
+                                            v-if="plugin.unmetDependencies && plugin.unmetDependencies.length > 0"
+                                            class="rounded border p-2 text-xs border-yellow-500/30 bg-yellow-500/10 text-yellow-800"
+                                        >
+                                            <div class="font-medium">Needs packages to run</div>
+                                            <div class="mt-1 flex flex-wrap gap-1">
+                                                <Badge
+                                                    v-for="dep in plugin.unmetDependencies"
+                                                    :key="dep"
+                                                    variant="outline"
+                                                    class="text-[10px]"
+                                                >
+                                                    {{ dep }}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                        <div
+                                            v-else-if="plugin.missingConfigs && plugin.missingConfigs.length > 0"
+                                            class="rounded border p-2 text-xs border-blue-500/30 bg-blue-500/10 text-blue-800"
+                                        >
+                                            <div class="font-medium">Needs configuration</div>
+                                            <div class="mt-1 flex flex-wrap gap-1">
+                                                <Badge
+                                                    v-for="cfg in plugin.missingConfigs"
+                                                    :key="String(cfg)"
+                                                    variant="outline"
+                                                    class="text-[10px]"
+                                                >
+                                                    {{ String(cfg) }}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                        <div
+                                            v-else-if="plugin.loaded === false"
+                                            class="rounded border p-2 text-xs text-muted-foreground"
+                                        >
+                                            Not loaded
+                                        </div>
                                     </div>
 
                                     <div class="flex gap-2">
@@ -381,77 +420,93 @@
                         <Card>
                             <div class="p-4">
                                 <div class="flex items-center justify-between mb-4">
-                                    <h3 class="font-semibold">Plugin Settings</h3>
-                                    <Button size="sm" variant="outline" @click="addNewSetting">
-                                        <Plus class="h-4 w-4 mr-2" />
-                                        Add Setting
+                                    <h3 class="font-semibold">Plugin Configuration</h3>
+                                    <Badge v-if="hasConfigSchema" variant="outline" class="text-xs">
+                                        {{ configFields.length }} fields
+                                    </Badge>
+                                </div>
+
+                                <!-- Enhanced Config Fields -->
+                                <div v-if="hasConfigSchema" class="space-y-4">
+                                    <div v-for="field in configFields" :key="field.name" class="space-y-2">
+                                        <div class="flex items-center justify-between">
+                                            <label class="text-sm font-medium">{{ field.display_name }}</label>
+                                            <Badge v-if="field.required" variant="secondary" class="text-xs"
+                                                >Required</Badge
+                                            >
+                                        </div>
+                                        <div class="relative">
+                                            <Input
+                                                v-if="
+                                                    field.type === 'text' ||
+                                                    field.type === 'url' ||
+                                                    field.type === 'email'
+                                                "
+                                                v-model="pluginConfig.settings[field.name]"
+                                                :type="field.type === 'email' ? 'email' : 'text'"
+                                                :placeholder="
+                                                    field.default || `Enter ${field.display_name.toLowerCase()}`
+                                                "
+                                                class="flex-1"
+                                            />
+                                            <Input
+                                                v-else-if="field.type === 'password'"
+                                                v-model="pluginConfig.settings[field.name]"
+                                                type="password"
+                                                :placeholder="
+                                                    field.default || `Enter ${field.display_name.toLowerCase()}`
+                                                "
+                                                class="flex-1"
+                                            />
+                                            <Input
+                                                v-else-if="field.type === 'number'"
+                                                v-model="pluginConfig.settings[field.name]"
+                                                type="number"
+                                                :min="field.validation.min"
+                                                :max="field.validation.max"
+                                                :placeholder="
+                                                    field.default || `Enter ${field.display_name.toLowerCase()}`
+                                                "
+                                                class="flex-1"
+                                            />
+                                            <div v-else-if="field.type === 'boolean'" class="flex items-center gap-2">
+                                                <input
+                                                    v-model="pluginConfig.settings[field.name]"
+                                                    type="checkbox"
+                                                    :value="pluginConfig.settings[field.name] === 'true'"
+                                                    @change="
+                                                        pluginConfig.settings[field.name] = (
+                                                            $event.target as HTMLInputElement
+                                                        ).checked
+                                                            ? 'true'
+                                                            : 'false'
+                                                    "
+                                                />
+                                                <span class="text-sm">{{ field.display_name }}</span>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-muted-foreground">{{ field.description }}</p>
+                                        <p v-if="field.validation.message" class="text-xs text-orange-600">
+                                            {{ field.validation.message }}
+                                        </p>
+                                    </div>
+                                    <Button class="w-full" :disabled="savingSetting" @click="saveAllSettings">
+                                        <Save v-if="!savingSetting" class="h-4 w-4 mr-2" />
+                                        <div
+                                            v-else
+                                            class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                                        ></div>
+                                        {{ savingSetting ? 'Saving...' : 'Save All Settings' }}
                                     </Button>
                                 </div>
 
-                                <!-- Add New Setting Form -->
-                                <div v-if="showAddSettingForm" class="mb-6 p-4 border rounded-lg bg-muted/50">
-                                    <h4 class="font-medium mb-3">
-                                        {{ editingSetting ? 'Edit Setting' : 'Add New Setting' }}
-                                    </h4>
-                                    <div class="space-y-3">
-                                        <div>
-                                            <Label for="setting-key">Setting Key</Label>
-                                            <Input
-                                                id="setting-key"
-                                                v-model="settingForm.key"
-                                                placeholder="Enter setting key"
-                                                :disabled="!!editingSetting"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label for="setting-value">Setting Value</Label>
-                                            <Textarea
-                                                id="setting-value"
-                                                v-model="settingForm.value"
-                                                placeholder="Enter setting value"
-                                                rows="3"
-                                            />
-                                        </div>
-                                        <div class="flex gap-2">
-                                            <Button :disabled="savingSetting" @click="saveSetting">
-                                                <Save v-if="!savingSetting" class="h-4 w-4 mr-2" />
-                                                <div
-                                                    v-else
-                                                    class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
-                                                ></div>
-                                                {{ savingSetting ? 'Saving...' : 'Save Setting' }}
-                                            </Button>
-                                            <Button variant="outline" @click="cancelSettingForm">Cancel</Button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Settings List -->
-                                <div v-if="Object.keys(pluginConfig.settings || {}).length > 0" class="space-y-3">
-                                    <div
-                                        v-for="(value, key) in pluginConfig.settings"
-                                        :key="key"
-                                        class="flex items-center gap-3 p-3 border rounded-lg"
-                                    >
-                                        <div class="flex-1">
-                                            <div class="font-medium text-sm">{{ key }}</div>
-                                            <div class="text-xs text-muted-foreground">{{ value }}</div>
-                                        </div>
-                                        <div class="flex gap-2">
-                                            <Button size="sm" variant="outline" @click="editSetting(key, value)">
-                                                <Pencil class="h-4 w-4" />
-                                            </Button>
-                                            <Button size="sm" variant="destructive" @click="removeSetting(key)">
-                                                <Trash2 class="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Empty Settings -->
-                                <div v-else-if="!showAddSettingForm" class="text-center py-8 text-muted-foreground">
+                                <!-- No Config Schema Available -->
+                                <div v-else class="text-center py-8 text-muted-foreground">
                                     <Settings class="h-8 w-8 mx-auto mb-2" />
-                                    <p>No settings configured for this plugin</p>
+                                    <p>This plugin doesn't have a configuration schema defined</p>
+                                    <p class="text-xs mt-1">
+                                        The plugin developer needs to add a config section to conf.yml
+                                    </p>
                                 </div>
                             </div>
                         </Card>
@@ -743,8 +798,6 @@ import {
     User,
     Globe,
     Puzzle,
-    Plus,
-    Pencil,
     Trash2,
     Upload,
     CloudDownload,
@@ -755,8 +808,6 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
     Drawer,
     DrawerContent,
@@ -790,12 +841,32 @@ interface Plugin {
     target?: string;
     requiredConfigs?: unknown[];
     dependencies?: string[];
+    loaded?: boolean;
+    unmetDependencies?: string[];
+    missingConfigs?: string[];
+    configSchema?: ConfigField[];
+}
+
+interface ConfigField {
+    name: string;
+    display_name: string;
+    type: 'text' | 'email' | 'url' | 'password' | 'number' | 'boolean';
+    description: string;
+    required: boolean;
+    validation: {
+        regex?: string;
+        message?: string;
+        min?: number;
+        max?: number;
+    };
+    default: string;
 }
 
 interface PluginConfig {
     config: Plugin;
     plugin: Plugin;
     settings: Record<string, string>;
+    configSchema?: ConfigField[];
 }
 interface OnlineAddon {
     id: number;
@@ -841,14 +912,8 @@ const configLoading = ref(false);
 const configError = ref<string | null>(null);
 const pluginConfig = ref<PluginConfig | null>(null);
 
-// Setting edit states
-const showAddSettingForm = ref(false);
-const editingSetting = ref<string | null>(null);
+// Setting states
 const savingSetting = ref(false);
-const settingForm = ref({
-    key: '',
-    value: '',
-});
 const installUrl = ref('');
 const installingFromUrl = ref(false);
 const installedIds = computed<Set<string>>(() => new Set(plugins.value.map((p) => p.identifier)));
@@ -862,6 +927,16 @@ const selectedPluginForUninstall = ref<Plugin | null>(null);
 const pendingUploadFile = ref<File | null>(null);
 
 // Computed
+const configFields = computed(() => {
+    if (!pluginConfig.value?.configSchema) return [];
+    return pluginConfig.value.configSchema;
+});
+
+const hasConfigSchema = computed(() => {
+    const schema = pluginConfig.value?.configSchema;
+    return schema && Array.isArray(schema) && schema.length > 0;
+});
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getPluginIcon = (_plugin: Plugin) => {
     // You can customize this based on plugin type or add icon mapping
@@ -899,6 +974,10 @@ const fetchPlugins = async () => {
                 target: plugin.target,
                 requiredConfigs: plugin.requiredConfigs,
                 dependencies: plugin.dependencies,
+                loaded: plugin.loaded ?? true,
+                unmetDependencies: Array.isArray(plugin.unmetDependencies) ? plugin.unmetDependencies : [],
+                missingConfigs: Array.isArray(plugin.missingConfigs) ? plugin.missingConfigs : [],
+                configSchema: pluginData.configSchema || [],
             };
         });
         plugins.value = pluginsArray;
@@ -955,6 +1034,7 @@ const loadPluginConfig = async (plugin: Plugin) => {
                 config: configPlugin,
                 plugin: pluginData,
                 settings: settings,
+                configSchema: apiData.configSchema || apiData.config || [],
             };
         } else {
             // If config endpoint fails, create a basic config with the plugin data we already have
@@ -962,6 +1042,7 @@ const loadPluginConfig = async (plugin: Plugin) => {
                 config: plugin,
                 plugin: plugin,
                 settings: {},
+                configSchema: [],
             };
         }
     } catch (error) {
@@ -971,6 +1052,7 @@ const loadPluginConfig = async (plugin: Plugin) => {
             config: plugin,
             plugin: plugin,
             settings: {},
+            configSchema: plugin.configSchema || [],
         };
     } finally {
         configLoading.value = false;
@@ -988,10 +1070,6 @@ const closeConfigDrawer = () => {
     selectedPlugin.value = null;
     pluginConfig.value = null;
     configError.value = null;
-    // Reset form state
-    showAddSettingForm.value = false;
-    editingSetting.value = null;
-    settingForm.value = { key: '', value: '' };
 };
 
 const viewPluginInfo = async (plugin: Plugin) => {
@@ -1007,87 +1085,47 @@ const closeInfoDrawer = () => {
     // Don't clear pluginConfig here as it might be used by config drawer
 };
 
-const addNewSetting = () => {
-    editingSetting.value = null;
-    settingForm.value = { key: '', value: '' };
-    showAddSettingForm.value = true;
-};
-
-const editSetting = (key: string, value: string) => {
-    editingSetting.value = key;
-    settingForm.value = { key, value };
-    showAddSettingForm.value = true;
-};
-
-const cancelSettingForm = () => {
-    showAddSettingForm.value = false;
-    editingSetting.value = null;
-    settingForm.value = { key: '', value: '' };
-};
-
-const saveSetting = async () => {
-    if (!selectedPlugin.value || !settingForm.value.key || !settingForm.value.value) {
+const saveAllSettings = async () => {
+    if (!selectedPlugin.value || !pluginConfig.value?.settings) {
         return;
     }
 
     savingSetting.value = true;
 
     try {
-        const response = await fetch(`/api/admin/plugins/${selectedPlugin.value.identifier}/settings/set`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-            body: JSON.stringify({
-                key: settingForm.value.key,
-                value: settingForm.value.value,
-            }),
+        // Save each setting individually
+        const savePromises = Object.entries(pluginConfig.value.settings).map(async ([key, value]) => {
+            const response = await fetch(`/api/admin/plugins/${selectedPlugin.value!.identifier}/settings/set`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ key, value }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to save setting ${key}: HTTP ${response.status}`);
+            }
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+        await Promise.all(savePromises);
 
         // Reload plugin config
         await loadPluginConfig(selectedPlugin.value);
-        cancelSettingForm();
+
+        message.value = {
+            type: 'success',
+            text: 'All settings saved successfully',
+        };
     } catch (error) {
-        console.error('Failed to save setting:', error);
+        console.error('Failed to save settings:', error);
         message.value = {
             type: 'error',
-            text: error instanceof Error ? error.message : 'Failed to save setting',
+            text: error instanceof Error ? error.message : 'Failed to save settings',
         };
     } finally {
         savingSetting.value = false;
-    }
-};
-
-const removeSetting = async (key: string) => {
-    if (!selectedPlugin.value) return;
-
-    try {
-        const response = await fetch(`/api/admin/plugins/${selectedPlugin.value.identifier}/settings/remove`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-            body: JSON.stringify({ key }),
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        // Reload plugin config
-        await loadPluginConfig(selectedPlugin.value);
-    } catch (error) {
-        console.error('Failed to remove setting:', error);
-        message.value = {
-            type: 'error',
-            text: error instanceof Error ? error.message : 'Failed to remove setting',
-        };
     }
 };
 

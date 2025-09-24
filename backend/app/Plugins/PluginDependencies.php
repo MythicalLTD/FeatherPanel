@@ -59,4 +59,57 @@ class PluginDependencies
 
         return true;
     }
+
+    /**
+     * Return a list of unmet dependency strings for a plugin config.
+     * The dependency strings are the same format as declared in conf.yml
+     * (e.g. composer=vendor/package:^1, php=8.2, php-ext=gd, plugin=some_plugin).
+     */
+    public static function getUnmetDependencies(array $dependencies): array
+    {
+        $unmet = [];
+        if (!isset($dependencies['plugin']['dependencies']) || !is_array($dependencies['plugin']['dependencies'])) {
+            return $unmet;
+        }
+
+        foreach ($dependencies['plugin']['dependencies'] as $dependency) {
+            // Composer package
+            if (strpos($dependency, 'composer=') === 0) {
+                $composerVersion = substr($dependency, strlen('composer='));
+                if (!ComposerDependencies::isInstalled($composerVersion)) {
+                    $unmet[] = $dependency;
+                    continue;
+                }
+            }
+
+            // PHP version
+            if (strpos($dependency, 'php=') === 0) {
+                $phpVersion = substr($dependency, strlen('php='));
+                if (!PhpVersionDependencies::isInstalled($phpVersion)) {
+                    $unmet[] = $dependency;
+                    continue;
+                }
+            }
+
+            // PHP extension
+            if (strpos($dependency, 'php-ext=') === 0) {
+                $ext = substr($dependency, strlen('php-ext='));
+                if (!PhpExtensionDependencies::isInstalled($ext)) {
+                    $unmet[] = $dependency;
+                    continue;
+                }
+            }
+
+            // Other plugin
+            if (strpos($dependency, 'plugin=') === 0) {
+                $plugin = substr($dependency, strlen('plugin='));
+                if (!AppDependencies::isInstalled($plugin)) {
+                    $unmet[] = $dependency;
+                    continue;
+                }
+            }
+        }
+
+        return $unmet;
+    }
 }
