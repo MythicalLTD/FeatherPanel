@@ -71,6 +71,7 @@ class SettingsController
             'settings' => [
                 ConfigInterface::LEGAL_TOS,
                 ConfigInterface::LEGAL_PRIVACY,
+                ConfigInterface::APP_DEVELOPER_MODE,
             ],
         ],
     ];
@@ -276,6 +277,17 @@ class SettingsController
                 'validation' => 'required|string|max:255',
                 'options' => ['true', 'false'],
                 'category' => 'security',
+            ],
+            ConfigInterface::APP_DEVELOPER_MODE => [
+                'name' => ConfigInterface::APP_DEVELOPER_MODE,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false'),
+                'description' => 'Is the application in developer mode?',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'app',
             ],
         ];
     }

@@ -5,3 +5,4 @@ dockerfiles/mariadb/data
 ./count-results/
 /frontend/.vite
 *.fpa
+*.backup.*

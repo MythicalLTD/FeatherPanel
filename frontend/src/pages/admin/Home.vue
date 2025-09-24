@@ -2,6 +2,42 @@
     <DashboardLayout :breadcrumbs="[{ text: 'Dashboard', isCurrent: true, href: '/admin' }]">
         <main class="p-6 space-y-8 bg-background min-h-screen">
             <!-- Header & Actions -->
+            <div v-if="settingsStore.appDeveloperMode" class="flex items-center justify-center mb-4">
+                <div
+                    class="w-full max-w-3xl flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-red-700 bg-[#1a1a1a] shadow-2xl border-opacity-80"
+                >
+                    <div class="flex items-center gap-3">
+                        <span class="text-4xl">🚨</span>
+                        <span class="text-2xl font-extrabold text-red-400 uppercase tracking-wide drop-shadow">
+                            Developer Mode Active
+                        </span>
+                    </div>
+                    <p class="text-lg text-red-300 font-semibold text-center">
+                        <strong class="text-red-400">Warning:</strong> This panel is currently running in
+                        <span class="underline text-red-400">Developer Mode</span>.
+                        <br />
+                        <span class="block mt-2">
+                            <b>This mode is <span class="text-red-400">intended for developers only</span>!</b>
+                        </span>
+                    </p>
+                    <ul class="text-base text-red-400 list-disc pl-6 text-left">
+                        <li>Experimental and unstable features may be visible.</li>
+                        <li>Additional debug logs and error details are enabled.</li>
+                        <li>Security restrictions may be relaxed for testing purposes.</li>
+                        <li>Performance and stability are <b>not guaranteed</b>.</li>
+                        <li>
+                            <b
+                                >Do <span class="underline text-red-300">NOT</span> use Developer Mode in production
+                                environments!</b
+                            >
+                        </li>
+                    </ul>
+                    <p class="text-base text-red-400 text-center mt-2">
+                        <strong>For developers and testers only.</strong> Disable Developer Mode before deploying to
+                        production for best security and user experience.
+                    </p>
+                </div>
+            </div>
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h1 class="text-3xl font-bold text-foreground mb-1">Welcome Back, {{ userName }}</h1>

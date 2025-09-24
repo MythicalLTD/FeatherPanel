@@ -31,11 +31,11 @@
                     class="gap-1 h-8 w-8 sm:h-9 sm:w-auto p-0 sm:px-3"
                     @click="toggleTheme"
                 >
-                    <Monitor v-if="editorTheme === 'vs'" class="h-3 w-3 sm:h-4 sm:w-4" />
-                    <Sun v-else-if="editorTheme === 'vs-light'" class="h-3 w-3 sm:h-4 sm:w-4" />
+                    <Monitor v-if="editorTheme === 'chrome'" class="h-3 w-3 sm:h-4 sm:w-4" />
+                    <Sun v-else-if="editorTheme === 'github'" class="h-3 w-3 sm:h-4 sm:w-4" />
                     <Moon v-else class="h-3 w-3 sm:h-4 sm:w-4" />
                     <span class="hidden sm:inline">{{
-                        editorTheme === 'vs-dark' ? 'Dark' : editorTheme === 'vs-light' ? 'Light' : 'Auto'
+                        editorTheme === 'monokai' ? 'Dark' : editorTheme === 'github' ? 'Light' : 'Chrome'
                     }}</span>
                 </Button>
 
@@ -75,16 +75,17 @@
             </div>
         </div>
 
-        <!-- Monaco Editor -->
+        <!-- ACE Editor -->
         <div class="flex-1 relative">
-            <MonacoEditor
-                ref="monacoEditor"
+            <v-ace-editor
+                ref="aceEditor"
                 v-model:value="editorContent"
-                :language="selectedLanguage"
+                :lang="selectedLanguage"
                 :theme="editorTheme"
                 :options="editorOptions"
                 class="h-full"
-                @mount="onEditorMount"
+                style="height: 100%; width: 100%"
+                @init="onEditorMount"
                 @change="onContentChange"
             />
         </div>
@@ -107,7 +108,7 @@
                 <span class="text-muted-foreground text-xs">{{ selectedLanguage.toUpperCase() }}</span>
                 <Separator orientation="vertical" class="h-3 sm:h-4" />
                 <span class="text-muted-foreground text-xs">{{
-                    editorTheme === 'vs-dark' ? 'Dark' : editorTheme === 'vs-light' ? 'Light' : 'Auto'
+                    editorTheme === 'monokai' ? 'Dark' : editorTheme === 'github' ? 'Light' : 'Chrome'
                 }}</span>
             </div>
         </div>
@@ -118,7 +119,37 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useToast, TYPE } from 'vue-toastification';
-import MonacoEditor from 'monaco-editor-vue3';
+import { VAceEditor } from 'vue3-ace-editor';
+
+// Import ACE Editor modes and themes
+import 'ace-builds/src-noconflict/mode-javascript';
+import 'ace-builds/src-noconflict/mode-typescript';
+import 'ace-builds/src-noconflict/mode-json';
+import 'ace-builds/src-noconflict/mode-html';
+import 'ace-builds/src-noconflict/mode-css';
+import 'ace-builds/src-noconflict/mode-scss';
+import 'ace-builds/src-noconflict/mode-php';
+import 'ace-builds/src-noconflict/mode-python';
+import 'ace-builds/src-noconflict/mode-java';
+import 'ace-builds/src-noconflict/mode-c_cpp';
+import 'ace-builds/src-noconflict/mode-golang';
+import 'ace-builds/src-noconflict/mode-rust';
+import 'ace-builds/src-noconflict/mode-ruby';
+import 'ace-builds/src-noconflict/mode-swift';
+import 'ace-builds/src-noconflict/mode-kotlin';
+import 'ace-builds/src-noconflict/mode-scala';
+import 'ace-builds/src-noconflict/mode-vue';
+import 'ace-builds/src-noconflict/mode-xml';
+import 'ace-builds/src-noconflict/mode-yaml';
+import 'ace-builds/src-noconflict/mode-markdown';
+import 'ace-builds/src-noconflict/mode-sql';
+import 'ace-builds/src-noconflict/mode-sh';
+import 'ace-builds/src-noconflict/mode-dockerfile';
+import 'ace-builds/src-noconflict/mode-ini';
+import 'ace-builds/src-noconflict/theme-monokai';
+import 'ace-builds/src-noconflict/theme-github';
+import 'ace-builds/src-noconflict/theme-chrome';
+import 'ace-builds/src-noconflict/ext-searchbox';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -162,19 +193,19 @@ const { t } = useI18n();
 const toast = useToast();
 
 // Editor state
-const monacoEditor = ref();
+const aceEditor = ref();
 const editorContent = ref(props.content);
 const originalContent = ref(props.content);
 const saving = ref(false);
-const selectedLanguage = ref('plaintext');
-const editorTheme = ref<'vs' | 'vs-light' | 'vs-dark'>('vs-dark');
+const selectedLanguage = ref('text');
+const editorTheme = ref<'monokai' | 'chrome' | 'github'>('monokai');
 
 // Editor position tracking
 const cursorPosition = ref({ line: 1, column: 1 });
 
-// Available languages for Monaco Editor
+// Available languages for ACE Editor
 const availableLanguages = [
-    { value: 'plaintext', label: 'Plain Text' },
+    { value: 'text', label: 'Plain Text' },
     { value: 'javascript', label: 'JavaScript' },
     { value: 'typescript', label: 'TypeScript' },
     { value: 'json', label: 'JSON' },
@@ -184,9 +215,8 @@ const availableLanguages = [
     { value: 'php', label: 'PHP' },
     { value: 'python', label: 'Python' },
     { value: 'java', label: 'Java' },
-    { value: 'cpp', label: 'C++' },
-    { value: 'c', label: 'C' },
-    { value: 'go', label: 'Go' },
+    { value: 'c_cpp', label: 'C/C++' },
+    { value: 'golang', label: 'Go' },
     { value: 'rust', label: 'Rust' },
     { value: 'ruby', label: 'Ruby' },
     { value: 'swift', label: 'Swift' },
@@ -197,63 +227,34 @@ const availableLanguages = [
     { value: 'yaml', label: 'YAML' },
     { value: 'markdown', label: 'Markdown' },
     { value: 'sql', label: 'SQL' },
-    { value: 'shell', label: 'Shell' },
+    { value: 'sh', label: 'Shell' },
     { value: 'dockerfile', label: 'Dockerfile' },
     { value: 'ini', label: 'INI/Config' },
 ];
 
-// Monaco Editor options
+// ACE Editor options
 const editorOptions = computed(() => {
     return {
-        automaticLayout: true,
         fontSize: isMobile.value ? 12 : 14,
         fontFamily: 'JetBrains Mono, Fira Code, Monaco, Consolas, monospace',
-        lineNumbers: 'on',
-        roundedSelection: false,
-        scrollBeyondLastLine: false,
+        showLineNumbers: true,
+        showGutter: true,
+        wrap: true,
+        showPrintMargin: false,
         readOnly: props.readonly,
-        minimap: { enabled: !isMobile.value }, // Disable minimap on mobile
-        wordWrap: 'on',
         tabSize: 4,
-        insertSpaces: true,
-        detectIndentation: true,
-        trimAutoWhitespace: true,
-        formatOnPaste: true,
-        formatOnType: true,
-        suggestOnTriggerCharacters: true,
-        snippetSuggestions: 'top',
-        quickSuggestions: !isMobile.value, // Disable quick suggestions on mobile for better performance
-        parameterHints: { enabled: !isMobile.value }, // Disable parameter hints on mobile
-        hover: { enabled: !isMobile.value }, // Disable hover on mobile
-        contextmenu: !isMobile.value, // Disable context menu on mobile
-        mouseWheelZoom: !isMobile.value, // Disable mouse wheel zoom on mobile
-        bracketPairColorization: { enabled: true },
-        guides: {
-            bracketPairs: !isMobile.value, // Disable bracket pair guides on mobile
-            indentation: true,
-        },
-        renderWhitespace: isMobile.value ? 'none' : 'selection', // Less visual clutter on mobile
-        renderControlCharacters: !isMobile.value, // Disable control characters on mobile
-        // Mobile-specific optimizations
-        scrollbar: {
-            vertical: isMobile.value ? 'auto' : 'auto',
-            horizontal: isMobile.value ? 'auto' : 'auto',
-            verticalScrollbarSize: isMobile.value ? 8 : 12,
-            horizontalScrollbarSize: isMobile.value ? 8 : 12,
-        },
-        // Touch-friendly settings
-        mouseWheelScrollSensitivity: isMobile.value ? 0.5 : 1,
-        fastScrollSensitivity: isMobile.value ? 0.5 : 1,
-        // Disable some features that don't work well on mobile
-        folding: !isMobile.value,
-        foldingStrategy: isMobile.value ? 'indentation' : 'auto',
-        showFoldingControls: isMobile.value ? 'never' : 'mouseover',
-        // Better mobile keyboard handling
-        acceptSuggestionOnCommitCharacter: !isMobile.value,
-        acceptSuggestionOnEnter: isMobile.value ? 'smart' : 'on',
-        // Optimize for touch
-        multiCursorModifier: isMobile.value ? 'ctrlCmd' : 'alt',
-        accessibilitySupport: 'off', // Disable for better mobile performance
+        useSoftTabs: true,
+        enableBasicAutocompletion: !isMobile.value,
+        enableLiveAutocompletion: !isMobile.value,
+        enableSnippets: !isMobile.value,
+        highlightActiveLine: true,
+        highlightSelectedWord: true,
+        fixedWidthGutter: true,
+        scrollPastEnd: false,
+        behavioursEnabled: true,
+        wrapBehavioursEnabled: true,
+        autoScrollEditorIntoView: true,
+        mergeUndoDeltas: true,
     };
 });
 
@@ -283,9 +284,9 @@ const detectLanguage = (fileName: string): string => {
         php: 'php',
         py: 'python',
         java: 'java',
-        cpp: 'cpp',
-        c: 'c',
-        go: 'go',
+        cpp: 'c_cpp',
+        c: 'c_cpp',
+        go: 'golang',
         rs: 'rust',
         rb: 'ruby',
         swift: 'swift',
@@ -297,9 +298,9 @@ const detectLanguage = (fileName: string): string => {
         yaml: 'yaml',
         md: 'markdown',
         sql: 'sql',
-        sh: 'shell',
-        bash: 'shell',
-        zsh: 'shell',
+        sh: 'sh',
+        bash: 'sh',
+        zsh: 'sh',
         dockerfile: 'dockerfile',
         ini: 'ini',
         conf: 'ini',
@@ -308,7 +309,7 @@ const detectLanguage = (fileName: string): string => {
         properties: 'ini',
         toml: 'ini',
     };
-    return languageMap[ext || ''] || 'plaintext';
+    return languageMap[ext || ''] || 'text';
 };
 
 // Get file icon based on extension/language
@@ -337,35 +338,45 @@ const formatFileSize = (bytes: number): string => {
 
 // Editor event handlers
 const onEditorMount = (editor: unknown) => {
-    const monacoEditor = editor as {
-        onDidChangeCursorPosition: (
-            callback: (e: { position: { lineNumber: number; column: number } }) => void,
-        ) => void;
-        addCommand: (keybinding: number, action: () => void) => void;
-        KeyMod: { CtrlCmd: number };
-        KeyCode: { KeyS: number; KeyW: number };
+    const aceEditorInstance = editor as {
+        on: (event: string, callback: () => void) => void;
+        getCursorPosition: () => { row: number; column: number };
+        commands: {
+            addCommand: (command: { name: string; bindKey: { win: string; mac: string }; exec: () => void }) => void;
+        };
         focus: () => void;
     };
 
+    aceEditor.value = aceEditorInstance;
+
     // Track cursor position
-    monacoEditor.onDidChangeCursorPosition((e: { position: { lineNumber: number; column: number } }) => {
+    aceEditorInstance.on('changeSelection', () => {
+        const position = aceEditorInstance.getCursorPosition();
         cursorPosition.value = {
-            line: e.position.lineNumber,
-            column: e.position.column,
+            line: position.row + 1,
+            column: position.column + 1,
         };
     });
 
     // Add keyboard shortcuts
-    monacoEditor.addCommand(monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyS, () => {
-        if (!props.readonly) saveFile();
+    aceEditorInstance.commands.addCommand({
+        name: 'saveFile',
+        bindKey: { win: 'Ctrl-S', mac: 'Cmd-S' },
+        exec: () => {
+            if (!props.readonly) saveFile();
+        },
     });
 
-    monacoEditor.addCommand(monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyW, () => {
-        closeEditor();
+    aceEditorInstance.commands.addCommand({
+        name: 'closeEditor',
+        bindKey: { win: 'Ctrl-W', mac: 'Cmd-W' },
+        exec: () => {
+            closeEditor();
+        },
     });
 
     // Focus the editor
-    monacoEditor.focus();
+    aceEditorInstance.focus();
 };
 
 const onContentChange = () => {
@@ -404,7 +415,7 @@ const changeLanguage = (newLanguage: unknown) => {
 };
 
 const toggleTheme = () => {
-    const themes: Array<'vs' | 'vs-light' | 'vs-dark'> = ['vs-light', 'vs', 'vs-dark'];
+    const themes: Array<'chrome' | 'github' | 'monokai'> = ['chrome', 'github', 'monokai'];
     const currentIndex = themes.indexOf(editorTheme.value);
     const nextTheme = themes[(currentIndex + 1) % themes.length];
     if (nextTheme) {
@@ -413,17 +424,27 @@ const toggleTheme = () => {
 };
 
 const formatDocument = () => {
-    if (monacoEditor.value?.getEditor) {
-        const editor = monacoEditor.value.getEditor();
-        editor.getAction('editor.action.formatDocument')?.run();
-        toast(t('fileEditor.formatSuccess'), { type: TYPE.SUCCESS });
+    if (aceEditor.value) {
+        // ACE Editor doesn't have built-in formatting, but we can beautify some languages
+        try {
+            const content = aceEditor.value.getValue();
+            // Basic JSON formatting
+            if (selectedLanguage.value === 'json') {
+                const formatted = JSON.stringify(JSON.parse(content), null, 2);
+                aceEditor.value.setValue(formatted);
+                toast(t('fileEditor.formatSuccess'), { type: TYPE.SUCCESS });
+            } else {
+                toast(t('fileEditor.formatNotSupported'), { type: TYPE.WARNING });
+            }
+        } catch {
+            toast(t('fileEditor.formatError'), { type: TYPE.ERROR });
+        }
     }
 };
 
 const findAndReplace = () => {
-    if (monacoEditor.value?.getEditor) {
-        const editor = monacoEditor.value.getEditor();
-        editor.getAction('editor.action.startFindReplaceAction')?.run();
+    if (aceEditor.value) {
+        aceEditor.value.execCommand('find');
     }
 };
 
@@ -446,9 +467,8 @@ const isMobile = ref(window.innerWidth < 640);
 const handleResize = () => {
     isMobile.value = window.innerWidth < 640;
     // Trigger editor layout update when switching between mobile/desktop
-    if (monacoEditor.value?.getEditor) {
-        const editor = monacoEditor.value.getEditor();
-        editor.layout();
+    if (aceEditor.value) {
+        aceEditor.value.resize();
     }
 };
 
@@ -480,18 +500,31 @@ watch(
 </script>
 
 <style scoped>
-/* Custom scrollbar for editor */
-:deep(.monaco-editor .monaco-scrollable-element > .scrollbar > .slider) {
+/* Custom scrollbar for ACE Editor */
+:deep(.ace_scrollbar) {
     background-color: hsl(var(--muted-foreground) / 0.3);
 }
 
-:deep(.monaco-editor .monaco-scrollable-element > .scrollbar > .slider:hover) {
+:deep(.ace_scrollbar:hover) {
     background-color: hsl(var(--muted-foreground) / 0.5);
 }
 
 /* Custom editor focus ring */
-:deep(.monaco-editor.focused) {
+:deep(.ace_editor.ace_focus) {
     outline: 2px solid hsl(var(--primary));
     outline-offset: 2px;
+}
+
+/* ACE Editor styling */
+:deep(.ace_editor) {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
+    border-radius: 0;
+}
+
+/* Mobile optimizations for ACE Editor */
+@media (max-width: 640px) {
+    :deep(.ace_editor) {
+        font-size: 12px;
+    }
 }
 </style>

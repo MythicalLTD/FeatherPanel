@@ -38,9 +38,9 @@ define('APP_VERSION', '3.2.1-nexus');
 define('APP_UPSTREAM', 'github.com/mythicalltd/App');
 
 if (APP_DEBUG) {
-	define('RATE_LIMIT', 500000);
+    define('RATE_LIMIT', 500000);
 } else {
-	define('RATE_LIMIT', 50);
+    define('RATE_LIMIT', 50);
 }
 
 /**
@@ -49,11 +49,11 @@ if (APP_DEBUG) {
 require_once APP_DIR . '/boot/kernel.php';
 
 /**
- * Start the APP.
+ * Start the APP. with kernel!
  */
 try {
-	new App(false);
+    new App(false);
 } catch (Exception $e) {
-	echo $e->getMessage();
-	exit;
+    echo $e->getMessage();
+    exit;
 }

@@ -51,6 +51,7 @@ const data = computed(() => ({
     navMain: sidebarNavigation.value.navMain,
     navAdmin: sidebarNavigation.value.navAdmin,
     navServer: sidebarNavigation.value.navServer,
+    navDebug: sidebarNavigation.value.navDebug,
 }));
 
 const user = computed(() => {
@@ -107,6 +108,11 @@ const isSidebarVisible = computed(() => {
                 v-if="router.currentRoute.value.path.startsWith('/admin') && user.hasAdminPanel"
                 :name="t('nav.adminPanel')"
                 :items="data.navAdmin"
+            />
+            <NavMain
+                v-if="user.hasAdminPanel && settingsStore.appDeveloperMode"
+                name="Developer Mode (Debug)"
+                :items="data.navDebug"
             />
         </SidebarContent>
         <SidebarFooter class="px-2 sm:px-0">

@@ -96,6 +96,21 @@ const adminRoutes: RouteRecordRaw[] = [
         name: 'AdminApiKeys',
         component: () => import('@/pages/admin/ApiKeys.vue'),
     },
+    {
+        path: '/admin/dev/logs',
+        name: 'AdminLogViewer',
+        component: () => import('@/pages/admin/dev/LogViewer.vue'),
+    },
+    {
+        path: '/admin/dev/files',
+        name: 'AdminFileManager',
+        component: () => import('@/pages/admin/dev/FileManager.vue'),
+    },
+    {
+        path: '/admin/dev/console',
+        name: 'AdminConsole',
+        component: () => import('@/pages/admin/dev/Console.vue'),
+    },
 ];
 
 export default adminRoutes;

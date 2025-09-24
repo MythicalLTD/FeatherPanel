@@ -1,0 +1,178 @@
+<?php
+
+/*
+ * This file is part of FeatherPanel.
+ * Please view the LICENSE file that was distributed with this source code.
+ *
+ * # MythicalSystems License v2.0
+ *
+ * ## Copyright (c) 2021–2025 MythicalSystems and Cassian Gherman
+ *
+ * Breaking any of the following rules will result in a permanent ban from the MythicalSystems community and all of its services.
+ */
+
+namespace App\Controllers\Admin;
+
+use App\Helpers\ApiResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class ConsoleController
+{
+    public function executeCommand(Request $request): Response
+    {
+        try {
+            $command = trim($request->request->get('command', ''));
+            $workingDirectory = $request->request->get('cwd', getcwd());
+
+            if (empty($command)) {
+                return ApiResponse::error('No command provided', 400);
+            }
+
+            // Validate working directory - use current working directory as fallback
+            $realCwd = realpath($workingDirectory);
+            if (!$realCwd) {
+                $workingDirectory = getcwd();
+                $realCwd = realpath($workingDirectory);
+            }
+
+            // Execute command
+            $output = [];
+            $returnCode = 0;
+            $executionTime = 0;
+
+            $startTime = microtime(true);
+            $descriptorspec = [
+                0 => ['pipe', 'r'], // stdin
+                1 => ['pipe', 'w'], // stdout
+                2 => ['pipe', 'w'], // stderr
+            ];
+
+            $process = proc_open(
+                'cd ' . escapeshellarg($workingDirectory) . ' && ' . $command,
+                $descriptorspec,
+                $pipes,
+                null,
+                [
+                    'PATH' => $_ENV['PATH'] ?? '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+                    'HOME' => $_ENV['HOME'] ?? getcwd(),
+                    'USER' => $_ENV['USER'] ?? 'www-data',
+                ]
+            );
+
+            if (is_resource($process)) {
+                fclose($pipes[0]); // Close stdin
+
+                $stdout = stream_get_contents($pipes[1]);
+                $stderr = stream_get_contents($pipes[2]);
+
+                fclose($pipes[1]);
+                fclose($pipes[2]);
+
+                $returnCode = proc_close($process);
+                $executionTime = round((microtime(true) - $startTime) * 1000, 2);
+
+                $output = [
+                    'stdout' => $stdout,
+                    'stderr' => $stderr,
+                    'return_code' => $returnCode,
+                    'execution_time' => $executionTime,
+                    'command' => $command,
+                    'working_directory' => $workingDirectory,
+                    'timestamp' => date('Y-m-d H:i:s'),
+                ];
+            } else {
+                return ApiResponse::error('Failed to execute command', 500);
+            }
+
+            return ApiResponse::success($output, 'Command executed successfully', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to execute command: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function getSystemInfo(Request $request): Response
+    {
+        // Suppress PHP warnings to prevent them from interfering with JSON response
+        $originalErrorReporting = error_reporting(E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR | E_RECOVERABLE_ERROR);
+
+        try {
+            $info = [
+                'os' => PHP_OS,
+                'php_version' => PHP_VERSION,
+                'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown',
+                'server_name' => $_SERVER['SERVER_NAME'] ?? 'Unknown',
+                'user' => $_ENV['USER'] ?? 'www-data',
+                'home' => $_ENV['HOME'] ?? getcwd(),
+                'working_directory' => getcwd(),
+                'disk_usage' => $this->getDiskUsage(),
+                'memory_usage' => $this->getMemoryUsage(),
+                'uptime' => $this->getUptime(),
+            ];
+
+            return ApiResponse::success($info, 'System info fetched successfully', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to fetch system info: ' . $e->getMessage(), 500);
+        } finally {
+            // Restore original error reporting
+            error_reporting($originalErrorReporting);
+        }
+    }
+
+    private function getDiskUsage(): array
+    {
+        $bytes = disk_free_space('.');
+        $total = disk_total_space('.');
+
+        if ($bytes === false || $total === false) {
+            return [
+                'free' => 0,
+                'total' => 0,
+                'used' => 0,
+                'percentage' => 0,
+            ];
+        }
+
+        $used = $total - $bytes;
+        $percentage = $total > 0 ? round(($used / $total) * 100, 2) : 0;
+
+        return [
+            'free' => (int) $bytes,
+            'total' => (int) $total,
+            'used' => (int) $used,
+            'percentage' => $percentage,
+        ];
+    }
+
+    private function getMemoryUsage(): array
+    {
+        $memInfo = [];
+
+        if (file_exists('/proc/meminfo')) {
+            $memInfoRaw = file_get_contents('/proc/meminfo');
+            preg_match_all('/(\w+):\s+(\d+)\s+kB/', $memInfoRaw, $matches);
+
+            foreach ($matches[1] as $index => $key) {
+                $memInfo[$key] = (int) ($matches[2][$index] * 1024); // Convert to bytes
+            }
+        }
+
+        return $memInfo;
+    }
+
+    private function getUptime(): string
+    {
+        if (file_exists('/proc/uptime')) {
+            $uptime = file_get_contents('/proc/uptime');
+            $seconds = (float) explode(' ', $uptime)[0];
+
+            $days = (int) ($seconds / 86400);
+            $hours = (int) (($seconds % 86400) / 3600);
+            $minutes = (int) (($seconds % 3600) / 60);
+
+            return sprintf('%d days, %d hours, %d minutes', $days, $hours, $minutes);
+        }
+
+        return 'Unknown';
+    }
+}

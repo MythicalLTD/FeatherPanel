@@ -27,6 +27,8 @@ import {
     FileSearch,
     Cog,
     type LucideIcon,
+    BookAlert,
+    TerminalIcon,
 } from 'lucide-vue-next';
 import Permissions from '@/lib/permissions';
 
@@ -37,7 +39,7 @@ export interface NavigationItem {
     url: string;
     icon: LucideIcon;
     isActive: boolean;
-    category: 'main' | 'admin' | 'server';
+    category: 'main' | 'admin' | 'server' | 'debug';
     permission?: string;
     isPlugin?: boolean;
     pluginJs?: string;
@@ -453,6 +455,42 @@ export function useNavigation() {
         return items;
     });
 
+    const debugItems = computed((): NavigationItem[] => {
+        return [
+            {
+                id: 'debug-logs',
+                name: 'Log Viewer',
+                title: 'Log Viewer',
+                url: '/admin/dev/logs',
+                icon: BookAlert,
+                isActive: currentPath.value.startsWith('/admin/dev/logs'),
+                category: 'debug' as const,
+            },
+            {
+                id: 'debug-file-manager',
+                name: 'File Manager',
+                title: 'File Manager',
+                url: '/admin/dev/files',
+                icon: FileText,
+                isActive: currentPath.value.startsWith('/admin/dev/files'),
+                category: 'debug' as const,
+            },
+            {
+                id: 'debug-console',
+                name: 'Console',
+                title: 'Console',
+                url: '/admin/dev/console',
+                icon: TerminalIcon,
+                isActive: currentPath.value.startsWith('/admin/dev/console'),
+                category: 'debug' as const,
+            },
+        ];
+    });
+
+    const filteredDebugItems = computed(() =>
+        debugItems.value.filter((item) => !item.permission || sessionStore.hasPermission(item.permission)),
+    );
+
     // Filter admin items based on permissions
     const filteredAdminItems = computed(() =>
         adminItems.value.filter((item) => !item.permission || sessionStore.hasPermission(item.permission)),
@@ -483,6 +521,7 @@ export function useNavigation() {
         navMain: mainItems.value,
         navAdmin: filteredAdminItems.value,
         navServer: serverItems.value,
+        navDebug: filteredDebugItems.value,
     }));
 
     // Get items for dock (flattened)

@@ -13,29 +13,29 @@
 
 use App\App;
 use App\Permissions;
+use App\Controllers\Admin\ConsoleController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
-use App\Controllers\Admin\DatabaseManagmentController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-databases-management-status',
-        '/api/admin/databases/management/status',
+        'admin-console-execute',
+        '/api/admin/console/execute',
         function (Request $request) {
-            return (new DatabaseManagmentController())->status($request);
+            return (new ConsoleController())->executeCommand($request);
         },
-        Permissions::ADMIN_DATABASES_VIEW,
+        Permissions::ADMIN_ROOT,
+        ['POST']
     );
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-databases-management-migrate',
-        '/api/admin/databases/management/migrate',
+        'admin-console-system-info',
+        '/api/admin/console/system-info',
         function (Request $request) {
-            return (new DatabaseManagmentController())->migrate($request);
+            return (new ConsoleController())->getSystemInfo($request);
         },
-        Permissions::ADMIN_DATABASES_MANAGE,
-        ['POST']
+        Permissions::ADMIN_ROOT,
     );
 };

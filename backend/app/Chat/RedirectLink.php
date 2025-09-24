@@ -79,12 +79,12 @@ class RedirectLink
 
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         if ($result) {
-			App::getInstance(true)->getLogger()->info('Redirect link found in database for slug: ' . $slug);
-		} else {
+            App::getInstance(true)->getLogger()->info('Redirect link found in database for slug: ' . $slug);
+        } else {
             App::getInstance(true)->getLogger()->info('No redirect found in database for slug: ' . $slug);
         }
 
-        return $result ?: null;	
+        return $result ?: null;
     }
 
     public static function create(array $data): ?int

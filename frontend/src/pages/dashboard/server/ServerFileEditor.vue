@@ -209,19 +209,19 @@ onMounted(async () => {
         height: 100dvh; /* Use dynamic viewport height for mobile */
     }
 
-    /* Ensure Monaco editor takes full available space on mobile */
-    :deep(.monaco-editor) {
+    /* Ensure ACE editor takes full available space on mobile */
+    :deep(.ace_editor) {
         min-height: calc(100vh - 200px);
         min-height: calc(100dvh - 200px);
     }
 
     /* Better touch targets for mobile */
-    :deep(.monaco-editor .monaco-editor-background) {
+    :deep(.ace_editor .ace_content) {
         touch-action: pan-x pan-y;
     }
 
     /* Optimize scrollbars for mobile */
-    :deep(.monaco-editor .monaco-scrollable-element) {
+    :deep(.ace_editor .ace_scrollbar) {
         -webkit-overflow-scrolling: touch;
     }
 }

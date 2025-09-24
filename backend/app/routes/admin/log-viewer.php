@@ -14,28 +14,38 @@
 use App\App;
 use App\Permissions;
 use Symfony\Component\HttpFoundation\Request;
+use App\Controllers\Admin\LogViewerController;
 use Symfony\Component\Routing\RouteCollection;
-use App\Controllers\Admin\DatabaseManagmentController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-databases-management-status',
-        '/api/admin/databases/management/status',
+        'admin-log-viewer-get',
+        '/api/admin/log-viewer/get',
         function (Request $request) {
-            return (new DatabaseManagmentController())->status($request);
+            return (new LogViewerController())->getLogs($request);
         },
-        Permissions::ADMIN_DATABASES_VIEW,
+        Permissions::ADMIN_ROOT,
     );
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-databases-management-migrate',
-        '/api/admin/databases/management/migrate',
+        'admin-log-viewer-clear',
+        '/api/admin/log-viewer/clear',
         function (Request $request) {
-            return (new DatabaseManagmentController())->migrate($request);
+            return (new LogViewerController())->clearLogs($request);
         },
-        Permissions::ADMIN_DATABASES_MANAGE,
+        Permissions::ADMIN_ROOT,
         ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-log-viewer-files',
+        '/api/admin/log-viewer/files',
+        function (Request $request) {
+            return (new LogViewerController())->getLogFiles($request);
+        },
+        Permissions::ADMIN_ROOT,
     );
 };
