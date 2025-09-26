@@ -18,21 +18,151 @@ use App\Chat\Server;
 use App\Chat\Subuser;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'Subuser',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Subuser ID'),
+        new OA\Property(property: 'user_id', type: 'integer', description: 'User ID'),
+        new OA\Property(property: 'server_id', type: 'integer', description: 'Server ID'),
+        new OA\Property(property: 'permissions', type: 'string', description: 'JSON string of permissions'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SubuserWithDetails',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Subuser ID'),
+        new OA\Property(property: 'user_id', type: 'integer', description: 'User ID'),
+        new OA\Property(property: 'server_id', type: 'integer', description: 'Server ID'),
+        new OA\Property(property: 'permissions', type: 'string', description: 'JSON string of permissions'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
+        new OA\Property(property: 'username', type: 'string', description: 'User username'),
+        new OA\Property(property: 'email', type: 'string', format: 'email', description: 'User email'),
+        new OA\Property(property: 'first_name', type: 'string', nullable: true, description: 'User first name'),
+        new OA\Property(property: 'last_name', type: 'string', nullable: true, description: 'User last name'),
+        new OA\Property(property: 'uuid', type: 'string', description: 'User UUID'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SubuserPagination',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'current_page', type: 'integer', description: 'Current page number'),
+        new OA\Property(property: 'per_page', type: 'integer', description: 'Records per page'),
+        new OA\Property(property: 'total', type: 'integer', description: 'Total number of records'),
+        new OA\Property(property: 'last_page', type: 'integer', description: 'Last page number'),
+        new OA\Property(property: 'from', type: 'integer', description: 'Starting record number'),
+        new OA\Property(property: 'to', type: 'integer', description: 'Ending record number'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SubuserCreateRequest',
+    type: 'object',
+    required: ['email'],
+    properties: [
+        new OA\Property(property: 'email', type: 'string', format: 'email', description: 'Email address of user to add as subuser'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SubuserUpdateRequest',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'permissions', type: 'string', nullable: true, description: 'JSON string of permissions'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'UserSearchResult',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'User ID'),
+        new OA\Property(property: 'username', type: 'string', description: 'Username'),
+        new OA\Property(property: 'email', type: 'string', format: 'email', description: 'Email address'),
+        new OA\Property(property: 'uuid', type: 'string', description: 'User UUID'),
+        new OA\Property(property: 'first_name', type: 'string', nullable: true, description: 'First name'),
+        new OA\Property(property: 'last_name', type: 'string', nullable: true, description: 'Last name'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'UserSearchResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'users', type: 'array', items: new OA\Items(ref: '#/components/schemas/UserSearchResult')),
+        new OA\Property(property: 'total', type: 'integer', description: 'Total number of users found'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'PermissionsResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'permissions', type: 'array', items: new OA\Items(type: 'string'), description: 'Array of available permissions'),
+        new OA\Property(property: 'total', type: 'integer', description: 'Total number of permissions'),
+    ]
+)]
 class SubuserController
 {
-    /**
-     * Get all subusers for a server.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/subusers',
+        summary: 'Get server subusers',
+        description: 'Retrieve all subusers for a specific server that the user owns or has subuser access to.',
+        tags: ['User - Server Subusers'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                description: 'Page number for pagination',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
+            ),
+            new OA\Parameter(
+                name: 'per_page',
+                in: 'query',
+                description: 'Number of records per page',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 20)
+            ),
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                description: 'Search term to filter subusers by username or email',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server subusers retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/SubuserWithDetails')),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/SubuserPagination'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve subusers'),
+        ]
+    )]
     public function getSubusers(Request $request, string $serverUuid): Response
     {
         // Get server info
@@ -79,15 +209,40 @@ class SubuserController
         ]);
     }
 
-    /**
-     * Get a specific subuser.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $subuserId The subuser ID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/subusers/{subuserId}',
+        summary: 'Get specific subuser',
+        description: 'Retrieve details of a specific subuser for a server that the user owns or has subuser access to.',
+        tags: ['User - Server Subusers'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'subuserId',
+                in: 'path',
+                description: 'Subuser ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Subuser details retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/Subuser')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or subuser not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve subuser'),
+        ]
+    )]
     public function getSubuser(Request $request, string $serverUuid, int $subuserId): Response
     {
         // Get server info
@@ -114,14 +269,37 @@ class SubuserController
         return ApiResponse::success($subuser);
     }
 
-    /**
-     * Create a new subuser.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/subusers',
+        summary: 'Create subuser',
+        description: 'Create a new subuser for a server by email address. The user must exist in the system and not already be a subuser for this server.',
+        tags: ['User - Server Subusers'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/SubuserCreateRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Subuser created successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/SubuserWithDetails')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing required fields, invalid email format, user not found, cannot add self, or subuser already exists'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or user not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to create subuser'),
+        ]
+    )]
     public function createSubuser(Request $request, string $serverUuid): Response
     {
         // Get server info
@@ -213,15 +391,44 @@ class SubuserController
         return ApiResponse::success($subuser, 'Subuser created successfully', 201);
     }
 
-    /**
-     * Update a subuser.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $subuserId The subuser ID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Put(
+        path: '/api/user/servers/{uuidShort}/subusers/{subuserId}',
+        summary: 'Update subuser',
+        description: 'Update an existing subuser\'s permissions and other details.',
+        tags: ['User - Server Subusers'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'subuserId',
+                in: 'path',
+                description: 'Subuser ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/SubuserUpdateRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Subuser updated successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/SubuserWithDetails')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid request data'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or subuser not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to update subuser'),
+        ]
+    )]
     public function updateSubuser(Request $request, string $serverUuid, int $subuserId): Response
     {
         // Get server info
@@ -287,15 +494,44 @@ class SubuserController
         return ApiResponse::success($updatedSubuser, 'Subuser updated successfully');
     }
 
-    /**
-     * Delete a subuser.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $subuserId The subuser ID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Delete(
+        path: '/api/user/servers/{uuidShort}/subusers/{subuserId}',
+        summary: 'Delete subuser',
+        description: 'Remove a subuser from a server.',
+        tags: ['User - Server Subusers'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'subuserId',
+                in: 'path',
+                description: 'Subuser ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Subuser deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or subuser not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to delete subuser'),
+        ]
+    )]
     public function deleteSubuser(Request $request, string $serverUuid, int $subuserId): Response
     {
         // Get server info
@@ -351,15 +587,40 @@ class SubuserController
         return ApiResponse::success(null, 'Subuser deleted successfully');
     }
 
-    /**
-     * Get subuser with details (user and server info).
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $subuserId The subuser ID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/subusers/{subuserId}/details',
+        summary: 'Get subuser with details',
+        description: 'Retrieve detailed information about a specific subuser including user and server information.',
+        tags: ['User - Server Subusers'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'subuserId',
+                in: 'path',
+                description: 'Subuser ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Subuser details retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/SubuserWithDetails')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or subuser not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve subuser details'),
+        ]
+    )]
     public function getSubuserWithDetails(Request $request, string $serverUuid, int $subuserId): Response
     {
         // Get server info
@@ -386,14 +647,37 @@ class SubuserController
         return ApiResponse::success($subuser);
     }
 
-    /**
-     * Get all subusers with details for a server.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/subusers/details',
+        summary: 'Get all subusers with details',
+        description: 'Retrieve all subusers for a server with detailed user information.',
+        tags: ['User - Server Subusers'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Subusers with details retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/SubuserWithDetails')),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve subusers'),
+        ]
+    )]
     public function getSubusersWithDetails(Request $request, string $serverUuid): Response
     {
         // Get server info
@@ -412,14 +696,40 @@ class SubuserController
         return ApiResponse::success($subusers);
     }
 
-    /**
-     * Search for users by email to add as subusers.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/subusers/search-users',
+        summary: 'Search users for subuser',
+        description: 'Search for users by email or username to add as subusers. Excludes users who are already subusers for this server.',
+        tags: ['User - Server Subusers'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                description: 'Search term for username or email',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Users found successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/UserSearchResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID short or search query'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to search users'),
+        ]
+    )]
     public function searchUsers(Request $request, string $serverUuid): Response
     {
         // Get server info
@@ -474,14 +784,33 @@ class SubuserController
         ]);
     }
 
-    /**
-     * Get valid permissions list.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/subusers/permissions',
+        summary: 'Get valid permissions',
+        description: 'Retrieve the list of valid permissions that can be assigned to subusers.',
+        tags: ['User - Server Subusers'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Valid permissions retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/PermissionsResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve permissions'),
+        ]
+    )]
     public function getValidPermissions(Request $request, string $serverUuid): Response
     {
         // Get server info

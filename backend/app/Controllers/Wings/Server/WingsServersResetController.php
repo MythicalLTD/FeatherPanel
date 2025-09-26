@@ -16,12 +16,37 @@ namespace App\Controllers\Wings\Server;
 use App\Chat\Node;
 use App\Chat\Server;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'ServersResetResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'success', type: 'boolean', description: 'Whether the reset was successful'),
+        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+    ]
+)]
 class WingsServersResetController
 {
+    #[OA\Post(
+        path: '/api/remote/servers/reset',
+        summary: 'Reset servers',
+        description: 'Reset all server statuses for the authenticated Wings node. Requires Wings node token authentication (token ID and secret).',
+        tags: ['Wings - Server'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Servers reset successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ServersResetResponse')
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized - Invalid Wings authentication'),
+            new OA\Response(response: 403, description: 'Forbidden - Invalid Wings authentication'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
     public function resetServers(Request $request): Response
     {
         // Get Wings authentication attributes from request

@@ -18,13 +18,13 @@ use App\Controllers\Admin\DashboardController;
 use Symfony\Component\Routing\RouteCollection;
 
 return function (RouteCollection $routes): void {
-	App::getInstance(true)->registerAdminRoute(
-		$routes,
-		'admin-dashboard',
-		'/api/admin/dashboard',
-		function (Request $request) {
-			return (new DashboardController())->index($request);
-		},
-		Permissions::ADMIN_DASHBOARD_VIEW,
-	);
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-dashboard',
+        '/api/admin/dashboard',
+        function (Request $request) {
+            return (new DashboardController())->index($request);
+        },
+        Permissions::ADMIN_DASHBOARD_VIEW,
+    );
 };

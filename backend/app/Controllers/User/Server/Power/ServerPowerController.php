@@ -17,13 +17,60 @@ use App\App;
 use App\Chat\Server;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
+use OpenApi\Attributes as OA;
 use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'PowerActionResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'response', type: 'object', description: 'Response from Wings daemon'),
+    ]
+)]
 class ServerPowerController
 {
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/power/{action}',
+        summary: 'Send power action to server',
+        description: 'Send a power action (start, stop, restart, kill) to a server through the Wings daemon.',
+        tags: ['User - Server Power'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'action',
+                in: 'path',
+                description: 'Power action to perform',
+                required: true,
+                schema: new OA\Schema(
+                    type: 'string',
+                    enum: ['start', 'stop', 'restart', 'kill'],
+                    description: 'Power action: start, stop, restart, or kill'
+                )
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Power action sent successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/PowerActionResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid server configuration or invalid power action'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated or Wings daemon unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server or Wings daemon'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 422, description: 'Unprocessable entity - Invalid server data'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to send power action'),
+        ]
+    )]
     public function sendPowerAction(Request $request, string $uuidShort, string $action): Response
     {
         // Get authenticated user

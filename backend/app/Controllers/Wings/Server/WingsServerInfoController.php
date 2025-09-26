@@ -20,12 +20,97 @@ use App\Chat\Server;
 use App\Chat\Allocation;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'WingsServerConfig',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'settings', type: 'object', properties: [
+            new OA\Property(property: 'uuid', type: 'string', description: 'Server UUID'),
+            new OA\Property(property: 'meta', type: 'object', properties: [
+                new OA\Property(property: 'name', type: 'string', description: 'Server name'),
+                new OA\Property(property: 'description', type: 'string', description: 'Server description'),
+            ]),
+            new OA\Property(property: 'suspended', type: 'boolean', description: 'Server suspension status'),
+            new OA\Property(property: 'invocation', type: 'string', description: 'Startup command'),
+            new OA\Property(property: 'skip_egg_scripts', type: 'boolean', description: 'Skip egg scripts flag'),
+            new OA\Property(property: 'environment', type: 'object', description: 'Environment variables'),
+            new OA\Property(property: 'allocations', type: 'object', properties: [
+                new OA\Property(property: 'force_outgoing_ip', type: 'boolean'),
+                new OA\Property(property: 'default', type: 'object', properties: [
+                    new OA\Property(property: 'ip', type: 'string'),
+                    new OA\Property(property: 'port', type: 'integer'),
+                ]),
+                new OA\Property(property: 'mappings', type: 'object'),
+            ]),
+            new OA\Property(property: 'build', type: 'object', properties: [
+                new OA\Property(property: 'memory_limit', type: 'integer'),
+                new OA\Property(property: 'swap', type: 'integer'),
+                new OA\Property(property: 'io_weight', type: 'integer'),
+                new OA\Property(property: 'cpu_limit', type: 'integer'),
+                new OA\Property(property: 'disk_space', type: 'integer'),
+                new OA\Property(property: 'threads', type: 'integer', nullable: true),
+                new OA\Property(property: 'oom_disabled', type: 'boolean'),
+            ]),
+            new OA\Property(property: 'mounts', type: 'array', items: new OA\Items(type: 'object')),
+            new OA\Property(property: 'egg', type: 'object', properties: [
+                new OA\Property(property: 'id', type: 'string'),
+                new OA\Property(property: 'file_denylist', type: 'array', items: new OA\Items(type: 'string')),
+                new OA\Property(property: 'features', type: 'object'),
+            ]),
+            new OA\Property(property: 'container', type: 'object', properties: [
+                new OA\Property(property: 'image', type: 'string'),
+                new OA\Property(property: 'oom_disabled', type: 'boolean'),
+                new OA\Property(property: 'requires_rebuild', type: 'boolean'),
+            ]),
+        ]),
+        new OA\Property(property: 'process_configuration', type: 'object', properties: [
+            new OA\Property(property: 'configs', type: 'array', items: new OA\Items(type: 'object')),
+            new OA\Property(property: 'startup', type: 'object', properties: [
+                new OA\Property(property: 'done', type: 'array', items: new OA\Items(type: 'string')),
+                new OA\Property(property: 'user_interaction', type: 'array', items: new OA\Items(type: 'string')),
+                new OA\Property(property: 'strip_ansi', type: 'boolean'),
+            ]),
+            new OA\Property(property: 'stop', type: 'object', properties: [
+                new OA\Property(property: 'type', type: 'string'),
+                new OA\Property(property: 'value', type: 'string'),
+            ]),
+        ]),
+    ]
+)]
 class WingsServerInfoController
 {
+    #[OA\Get(
+        path: '/api/remote/servers/{uuid}',
+        summary: 'Get server configuration',
+        description: 'Retrieve complete server configuration for Wings daemon including settings, environment variables, allocations, and process configuration. Requires Wings node token authentication (token ID and secret).',
+        tags: ['Wings - Server'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuid',
+                in: 'path',
+                description: 'Server UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server configuration retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/WingsServerConfig')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing server UUID'),
+            new OA\Response(response: 401, description: 'Unauthorized - Invalid Wings node token (token ID and secret)'),
+            new OA\Response(response: 403, description: 'Forbidden - Invalid Wings node token (token ID and secret)'),
+            new OA\Response(response: 404, description: 'Not found - Server, node, allocation, spell, or realm not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Configuration generation failed'),
+        ]
+    )]
     public function getServer(Request $request, string $uuid): Response
     {
         // Get server by UUID

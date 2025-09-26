@@ -16,13 +16,35 @@ namespace App\Controllers\User\Auth;
 use App\Chat\User;
 use App\Chat\Activity;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'LogoutResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'message', type: 'string', description: 'Logout success message'),
+    ]
+)]
 class AuthLogoutController
 {
+    #[OA\Get(
+        path: '/api/user/auth/logout',
+        summary: 'Logout user',
+        description: 'Logout the authenticated user by clearing remember token cookie and updating user session. Blocks 2FA if enabled.',
+        tags: ['User - Authentication'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'User logged out successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/LogoutResponse')
+            ),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to logout user'),
+        ]
+    )]
     public function get(Request $request): Response
     {
         global $eventManager;

@@ -17,17 +17,160 @@ use App\Chat\User;
 use App\Chat\Activity;
 use App\Chat\UserSshKey;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\UserEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'UserSshKey',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'SSH key ID'),
+        new OA\Property(property: 'user_id', type: 'integer', description: 'User ID'),
+        new OA\Property(property: 'name', type: 'string', description: 'SSH key name'),
+        new OA\Property(property: 'public_key', type: 'string', description: 'SSH public key'),
+        new OA\Property(property: 'fingerprint', type: 'string', description: 'SSH key fingerprint'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
+        new OA\Property(property: 'deleted_at', type: 'string', format: 'date-time', nullable: true, description: 'Deletion timestamp'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'UserSshKeyList',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'SSH key ID'),
+        new OA\Property(property: 'user_id', type: 'integer', description: 'User ID'),
+        new OA\Property(property: 'name', type: 'string', description: 'SSH key name'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
+        new OA\Property(property: 'deleted_at', type: 'string', format: 'date-time', nullable: true, description: 'Deletion timestamp'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SshKeyPagination',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'current_page', type: 'integer', description: 'Current page number'),
+        new OA\Property(property: 'per_page', type: 'integer', description: 'Records per page'),
+        new OA\Property(property: 'total_records', type: 'integer', description: 'Total number of records'),
+        new OA\Property(property: 'total_pages', type: 'integer', description: 'Total number of pages'),
+        new OA\Property(property: 'has_next', type: 'boolean', description: 'Whether there is a next page'),
+        new OA\Property(property: 'has_prev', type: 'boolean', description: 'Whether there is a previous page'),
+        new OA\Property(property: 'from', type: 'integer', description: 'Starting record number'),
+        new OA\Property(property: 'to', type: 'integer', description: 'Ending record number'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SshKeySearch',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'query', type: 'string', description: 'Search query'),
+        new OA\Property(property: 'has_results', type: 'boolean', description: 'Whether search returned results'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SshKeyCreateRequest',
+    type: 'object',
+    required: ['name', 'public_key'],
+    properties: [
+        new OA\Property(property: 'name', type: 'string', minLength: 1, maxLength: 191, description: 'SSH key name'),
+        new OA\Property(property: 'public_key', type: 'string', description: 'SSH public key'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SshKeyUpdateRequest',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'name', type: 'string', minLength: 1, maxLength: 191, description: 'SSH key name'),
+        new OA\Property(property: 'public_key', type: 'string', description: 'SSH public key'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SshKeyFingerprintRequest',
+    type: 'object',
+    required: ['public_key'],
+    properties: [
+        new OA\Property(property: 'public_key', type: 'string', description: 'SSH public key to generate fingerprint for'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SshKeyFingerprintResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'fingerprint', type: 'string', description: 'Generated fingerprint'),
+        new OA\Property(property: 'public_key', type: 'string', description: 'Original public key'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SshKeyActivity',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Activity ID'),
+        new OA\Property(property: 'user_uuid', type: 'string', description: 'User UUID'),
+        new OA\Property(property: 'name', type: 'string', description: 'Activity name'),
+        new OA\Property(property: 'context', type: 'string', description: 'Activity context'),
+        new OA\Property(property: 'ip_address', type: 'string', description: 'IP address'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
+    ]
+)]
 class UserSshKeyController
 {
-    /**
-     * Get all SSH keys for the authenticated user.
-     */
+    #[OA\Get(
+        path: '/api/user/ssh-keys',
+        summary: 'Get SSH keys',
+        description: 'Retrieve all SSH keys for the authenticated user with pagination and search functionality.',
+        tags: ['User - SSH Keys'],
+        parameters: [
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                description: 'Page number for pagination',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
+            ),
+            new OA\Parameter(
+                name: 'limit',
+                in: 'query',
+                description: 'Number of records per page',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 10)
+            ),
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                description: 'Search term to filter SSH keys by name',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'include_deleted',
+                in: 'query',
+                description: 'Include soft-deleted SSH keys',
+                required: false,
+                schema: new OA\Schema(type: 'boolean', default: false)
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'SSH keys retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'ssh_keys', type: 'array', items: new OA\Items(ref: '#/components/schemas/UserSshKeyList')),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/SshKeyPagination'),
+                        new OA\Property(property: 'search', ref: '#/components/schemas/SshKeySearch'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve SSH keys'),
+        ]
+    )]
     public function getUserSshKeys(Request $request): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);
@@ -89,9 +232,33 @@ class UserSshKeyController
         ], 'User SSH keys fetched successfully', 200);
     }
 
-    /**
-     * Get a specific SSH key by ID.
-     */
+    #[OA\Get(
+        path: '/api/user/ssh-keys/{id}',
+        summary: 'Get specific SSH key',
+        description: 'Retrieve details of a specific SSH key by ID for the authenticated user.',
+        tags: ['User - SSH Keys'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'SSH key ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'SSH key retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/UserSshKey')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token or SSH key ID'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to SSH key'),
+            new OA\Response(response: 404, description: 'Not found - SSH key not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve SSH key'),
+        ]
+    )]
     public function getUserSshKey(Request $request, int $id): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);
@@ -116,9 +283,26 @@ class UserSshKeyController
         return ApiResponse::success($sshKey, 'SSH key fetched successfully', 200);
     }
 
-    /**
-     * Create a new SSH key for the authenticated user.
-     */
+    #[OA\Post(
+        path: '/api/user/ssh-keys',
+        summary: 'Create SSH key',
+        description: 'Create a new SSH key for the authenticated user with automatic fingerprint generation.',
+        tags: ['User - SSH Keys'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/SshKeyCreateRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'SSH key created successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/UserSshKey')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token, missing required fields, or invalid name length'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to create SSH key'),
+        ]
+    )]
     public function createUserSshKey(Request $request): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);
@@ -176,9 +360,37 @@ class UserSshKeyController
         return ApiResponse::success($sshKey, 'SSH key created successfully', 201);
     }
 
-    /**
-     * Update an existing SSH key.
-     */
+    #[OA\Put(
+        path: '/api/user/ssh-keys/{id}',
+        summary: 'Update SSH key',
+        description: 'Update an existing SSH key for the authenticated user. Can update name and public key.',
+        tags: ['User - SSH Keys'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'SSH key ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/SshKeyUpdateRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'SSH key updated successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/UserSshKey')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token, SSH key ID, request data, or invalid name length'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to SSH key'),
+            new OA\Response(response: 404, description: 'Not found - SSH key not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to update SSH key'),
+        ]
+    )]
     public function updateUserSshKey(Request $request, int $id): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);
@@ -252,9 +464,37 @@ class UserSshKeyController
         return ApiResponse::success($updatedSshKey, 'SSH key updated successfully', 200);
     }
 
-    /**
-     * Delete an SSH key (soft delete).
-     */
+    #[OA\Delete(
+        path: '/api/user/ssh-keys/{id}',
+        summary: 'Delete SSH key',
+        description: 'Soft delete an SSH key for the authenticated user. The key can be restored later.',
+        tags: ['User - SSH Keys'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'SSH key ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'SSH key deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token or SSH key ID'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to SSH key'),
+            new OA\Response(response: 404, description: 'Not found - SSH key not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to delete SSH key'),
+        ]
+    )]
     public function deleteUserSshKey(Request $request, int $id): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);
@@ -299,9 +539,33 @@ class UserSshKeyController
         return ApiResponse::success(null, 'SSH key deleted successfully', 200);
     }
 
-    /**
-     * Restore a soft-deleted SSH key.
-     */
+    #[OA\Post(
+        path: '/api/user/ssh-keys/{id}/restore',
+        summary: 'Restore SSH key',
+        description: 'Restore a soft-deleted SSH key for the authenticated user.',
+        tags: ['User - SSH Keys'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'SSH key ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'SSH key restored successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/UserSshKey')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token or SSH key ID'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to SSH key'),
+            new OA\Response(response: 404, description: 'Not found - SSH key not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to restore SSH key'),
+        ]
+    )]
     public function restoreUserSshKey(Request $request, int $id): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);
@@ -366,9 +630,37 @@ class UserSshKeyController
         return ApiResponse::success($restoredSshKey, 'SSH key restored successfully', 200);
     }
 
-    /**
-     * Hard delete an SSH key (permanent removal).
-     */
+    #[OA\Delete(
+        path: '/api/user/ssh-keys/{id}/hard-delete',
+        summary: 'Hard delete SSH key',
+        description: 'Permanently delete an SSH key for the authenticated user. This action cannot be undone.',
+        tags: ['User - SSH Keys'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'SSH key ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'SSH key permanently deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token or SSH key ID'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to SSH key'),
+            new OA\Response(response: 404, description: 'Not found - SSH key not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to permanently delete SSH key'),
+        ]
+    )]
     public function hardDeleteUserSshKey(Request $request, int $id): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);
@@ -421,9 +713,43 @@ class UserSshKeyController
         return ApiResponse::success(null, 'SSH key permanently deleted successfully', 200);
     }
 
-    /**
-     * Get SSH key activities for the authenticated user.
-     */
+    #[OA\Get(
+        path: '/api/user/ssh-keys/activities',
+        summary: 'Get SSH key activities',
+        description: 'Retrieve SSH key related activities for the authenticated user with pagination.',
+        tags: ['User - SSH Keys'],
+        parameters: [
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                description: 'Page number for pagination',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
+            ),
+            new OA\Parameter(
+                name: 'limit',
+                in: 'query',
+                description: 'Number of records per page',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 10)
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'SSH key activities retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'activities', type: 'array', items: new OA\Items(ref: '#/components/schemas/SshKeyActivity')),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/SshKeyPagination'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve activities'),
+        ]
+    )]
     public function getUserSshKeyActivities(Request $request): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);
@@ -472,9 +798,26 @@ class UserSshKeyController
         ], 'SSH key activities fetched successfully', 200);
     }
 
-    /**
-     * Generate fingerprint from public key.
-     */
+    #[OA\Post(
+        path: '/api/user/ssh-keys/generate-fingerprint',
+        summary: 'Generate SSH key fingerprint',
+        description: 'Generate a fingerprint from an SSH public key for validation purposes.',
+        tags: ['User - SSH Keys'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/SshKeyFingerprintRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Fingerprint generated successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/SshKeyFingerprintResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token, missing public key, empty public key, or invalid SSH key format'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to generate fingerprint'),
+        ]
+    )]
     public function generateFingerprint(Request $request): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);

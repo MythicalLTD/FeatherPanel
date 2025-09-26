@@ -20,13 +20,77 @@ use App\Chat\Server;
 use App\Permissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Helpers\PermissionHelper;
 use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'WingsActivityLog',
+    type: 'object',
+    required: ['server', 'event'],
+    properties: [
+        new OA\Property(property: 'server', type: 'string', format: 'uuid', description: 'Server UUID'),
+        new OA\Property(property: 'event', type: 'string', description: 'Activity event name'),
+        new OA\Property(property: 'metadata', type: 'object', description: 'Additional activity metadata'),
+        new OA\Property(property: 'timestamp', type: 'string', format: 'date-time', description: 'Activity timestamp'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'WingsActivityRequest',
+    type: 'object',
+    required: ['data'],
+    properties: [
+        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/WingsActivityLog'), description: 'Array of activity logs'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'WingsActivityResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+        new OA\Property(property: 'processed_count', type: 'integer', description: 'Number of activities processed successfully'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'WingsActivityErrorResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'message', type: 'string', description: 'Error message'),
+        new OA\Property(property: 'processed_count', type: 'integer', description: 'Number of activities processed successfully'),
+        new OA\Property(property: 'error_count', type: 'integer', description: 'Number of activities that failed'),
+        new OA\Property(property: 'errors', type: 'array', items: new OA\Items(type: 'string'), description: 'Array of error messages'),
+    ]
+)]
 class WingsActivityController
 {
+    #[OA\Post(
+        path: '/api/remote/activity',
+        summary: 'Log server activities',
+        description: 'Log server activities from Wings daemon. Processes multiple activity logs in a single request with validation and error handling. Requires Wings node token authentication (token ID and secret).',
+        tags: ['Wings - Activity'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/WingsActivityRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'All activities logged successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/WingsActivityResponse')
+            ),
+            new OA\Response(
+                response: 207,
+                description: 'Multi-status - Some activities processed with errors',
+                content: new OA\JsonContent(ref: '#/components/schemas/WingsActivityErrorResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid JSON, missing activity data, invalid server UUID format, or invalid user UUID format'),
+            new OA\Response(response: 401, description: 'Unauthorized - Invalid Wings authentication'),
+            new OA\Response(response: 403, description: 'Forbidden - Invalid Wings authentication'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
     public function logActivity(Request $request): Response
     {
         // Get Wings authentication attributes from request

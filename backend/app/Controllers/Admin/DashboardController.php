@@ -19,103 +19,103 @@ use App\Chat\Spell;
 use App\Chat\Server;
 use App\Chat\TimedTask;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use OpenApi\Attributes as OA;
 
 class DashboardController
 {
-	#[OA\Get(
-		path: '/api/admin/dashboard',
-		summary: 'Get dashboard statistics',
-		description: 'Retrieve comprehensive dashboard statistics including user counts, node counts, spell counts, server counts, and recent cron task status.',
-		tags: ['Admin - Dashboard'],
-		responses: [
-			new OA\Response(
-				response: 200,
-				description: 'Dashboard statistics retrieved successfully',
-				content: new OA\JsonContent(
-					properties: [
-						new OA\Property(property: 'count', type: 'object', description: 'System resource counts', properties: [
-							new OA\Property(property: 'users', type: 'integer', description: 'Total number of users'),
-							new OA\Property(property: 'nodes', type: 'integer', description: 'Total number of nodes'),
-							new OA\Property(property: 'spells', type: 'integer', description: 'Total number of spells (eggs)'),
-							new OA\Property(property: 'servers', type: 'integer', description: 'Total number of servers')
-						]),
-						new OA\Property(property: 'cron', type: 'object', description: 'Cron task information', properties: [
-							new OA\Property(property: 'recent', type: 'array', description: 'Recent cron task executions (last 10)', items: new OA\Items(properties: [
-								new OA\Property(property: 'id', type: 'integer', description: 'Task ID'),
-								new OA\Property(property: 'task_name', type: 'string', description: 'Name of the cron task', example: 'server-schedule-processor'),
-								new OA\Property(property: 'last_run_at', type: 'string', format: 'date-time', nullable: true, description: 'Last execution timestamp'),
-								new OA\Property(property: 'last_run_success', type: 'boolean', description: 'Whether the last run was successful'),
-								new OA\Property(property: 'last_run_message', type: 'string', nullable: true, description: 'Last run message or error'),
-								new OA\Property(property: 'expected_interval_seconds', type: 'integer', description: 'Expected interval between runs in seconds'),
-								new OA\Property(property: 'late', type: 'boolean', description: 'Whether the task is running late')
-							])),
-							new OA\Property(property: 'summary', type: 'string', nullable: true, description: 'Summary message if no cron tasks have run')
-						]),
-						new OA\Property(property: 'changelog', type: 'array', description: 'System changelog entries (currently empty)', items: new OA\Items(type: 'string'))
-					]
-				)
-			),
-			new OA\Response(response: 401, description: 'Unauthorized'),
-			new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
-			new OA\Response(response: 500, description: 'Internal server error - Failed to fetch dashboard statistics')
-		]
-	)]
-	public function index(Request $request): Response
-	{
-		try {
-			// Get counts for dashboard statistics
-			$userCount = User::getCount();
-			$nodeCount = Node::getNodesCount();
-			$spellCount = Spell::getSpellsCount();
-			$serverCount = Server::getCount();
+    #[OA\Get(
+        path: '/api/admin/dashboard',
+        summary: 'Get dashboard statistics',
+        description: 'Retrieve comprehensive dashboard statistics including user counts, node counts, spell counts, server counts, and recent cron task status.',
+        tags: ['Admin - Dashboard'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Dashboard statistics retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'count', type: 'object', description: 'System resource counts', properties: [
+                            new OA\Property(property: 'users', type: 'integer', description: 'Total number of users'),
+                            new OA\Property(property: 'nodes', type: 'integer', description: 'Total number of nodes'),
+                            new OA\Property(property: 'spells', type: 'integer', description: 'Total number of spells (eggs)'),
+                            new OA\Property(property: 'servers', type: 'integer', description: 'Total number of servers'),
+                        ]),
+                        new OA\Property(property: 'cron', type: 'object', description: 'Cron task information', properties: [
+                            new OA\Property(property: 'recent', type: 'array', description: 'Recent cron task executions (last 10)', items: new OA\Items(properties: [
+                                new OA\Property(property: 'id', type: 'integer', description: 'Task ID'),
+                                new OA\Property(property: 'task_name', type: 'string', description: 'Name of the cron task', example: 'server-schedule-processor'),
+                                new OA\Property(property: 'last_run_at', type: 'string', format: 'date-time', nullable: true, description: 'Last execution timestamp'),
+                                new OA\Property(property: 'last_run_success', type: 'boolean', description: 'Whether the last run was successful'),
+                                new OA\Property(property: 'last_run_message', type: 'string', nullable: true, description: 'Last run message or error'),
+                                new OA\Property(property: 'expected_interval_seconds', type: 'integer', description: 'Expected interval between runs in seconds'),
+                                new OA\Property(property: 'late', type: 'boolean', description: 'Whether the task is running late'),
+                            ])),
+                            new OA\Property(property: 'summary', type: 'string', nullable: true, description: 'Summary message if no cron tasks have run'),
+                        ]),
+                        new OA\Property(property: 'changelog', type: 'array', description: 'System changelog entries (currently empty)', items: new OA\Items(type: 'string')),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to fetch dashboard statistics'),
+        ]
+    )]
+    public function index(Request $request): Response
+    {
+        try {
+            // Get counts for dashboard statistics
+            $userCount = User::getCount();
+            $nodeCount = Node::getNodesCount();
+            $spellCount = Spell::getSpellsCount();
+            $serverCount = Server::getCount();
 
-			// Recent cron/timed task heartbeats
-			$recentCronsRaw = TimedTask::getAll(null, 10, 0);
-			$now = time();
-			$expectedMap = [
-				'server-schedule-processor' => 60, // seconds
-				'mail-sender' => 60,
-				'update-env' => 3600,
-			];
-			$recentCrons = array_map(function ($row) use ($now, $expectedMap) {
-				$name = $row['task_name'] ?? '';
-				$lastRunAt = isset($row['last_run_at']) && $row['last_run_at'] !== null ? strtotime($row['last_run_at']) : null;
-				$expected = $expectedMap[$name] ?? 300; // default 5 minutes if unknown
-				$late = $lastRunAt ? (($now - $lastRunAt) > ($expected * 2)) : true; // late if never ran or >2x expected
+            // Recent cron/timed task heartbeats
+            $recentCronsRaw = TimedTask::getAll(null, 10, 0);
+            $now = time();
+            $expectedMap = [
+                'server-schedule-processor' => 60, // seconds
+                'mail-sender' => 60,
+                'update-env' => 3600,
+            ];
+            $recentCrons = array_map(function ($row) use ($now, $expectedMap) {
+                $name = $row['task_name'] ?? '';
+                $lastRunAt = isset($row['last_run_at']) && $row['last_run_at'] !== null ? strtotime($row['last_run_at']) : null;
+                $expected = $expectedMap[$name] ?? 300; // default 5 minutes if unknown
+                $late = $lastRunAt ? (($now - $lastRunAt) > ($expected * 2)) : true; // late if never ran or >2x expected
 
-				return [
-					'id' => (int) ($row['id'] ?? 0),
-					'task_name' => $name,
-					'last_run_at' => $row['last_run_at'] ?? null,
-					'last_run_success' => (int) ($row['last_run_success'] ?? 0) === 1,
-					'last_run_message' => $row['last_run_message'] ?? null,
-					'expected_interval_seconds' => $expected,
-					'late' => $late,
-				];
-			}, $recentCronsRaw);
+                return [
+                    'id' => (int) ($row['id'] ?? 0),
+                    'task_name' => $name,
+                    'last_run_at' => $row['last_run_at'] ?? null,
+                    'last_run_success' => (int) ($row['last_run_success'] ?? 0) === 1,
+                    'last_run_message' => $row['last_run_message'] ?? null,
+                    'expected_interval_seconds' => $expected,
+                    'late' => $late,
+                ];
+            }, $recentCronsRaw);
 
-			$dashboardData = [
-				'count' => [
-					'users' => $userCount,
-					'nodes' => $nodeCount,
-					'spells' => $spellCount,
-					'servers' => $serverCount,
-				],
-				'cron' => [
-					'recent' => $recentCrons,
-					'summary' => empty($recentCrons) ? 'Cron tasks have not run yet.' : null,
-				],
-				'changelog' => [
+            $dashboardData = [
+                'count' => [
+                    'users' => $userCount,
+                    'nodes' => $nodeCount,
+                    'spells' => $spellCount,
+                    'servers' => $serverCount,
+                ],
+                'cron' => [
+                    'recent' => $recentCrons,
+                    'summary' => empty($recentCrons) ? 'Cron tasks have not run yet.' : null,
+                ],
+                'changelog' => [
 
-				],
-			];
+                ],
+            ];
 
-			return ApiResponse::success($dashboardData, 'Successfully fetched dashboard statistics', 200);
-		} catch (\Exception $e) {
-			return ApiResponse::error('Failed to fetch dashboard statistics: ' . $e->getMessage(), 500);
-		}
-	}
+            return ApiResponse::success($dashboardData, 'Successfully fetched dashboard statistics', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to fetch dashboard statistics: ' . $e->getMessage(), 500);
+        }
+    }
 }

@@ -20,12 +20,75 @@ use App\Chat\Server;
 use App\Chat\Allocation;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'RemoteServersResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/WingsServerConfig'), description: 'Array of server configurations'),
+        new OA\Property(property: 'links', type: 'object', properties: [
+            new OA\Property(property: 'first', type: 'string', description: 'First page URL'),
+            new OA\Property(property: 'last', type: 'string', description: 'Last page URL'),
+            new OA\Property(property: 'prev', type: 'string', nullable: true, description: 'Previous page URL'),
+            new OA\Property(property: 'next', type: 'string', nullable: true, description: 'Next page URL'),
+        ]),
+        new OA\Property(property: 'meta', type: 'object', properties: [
+            new OA\Property(property: 'current_page', type: 'integer', description: 'Current page number'),
+            new OA\Property(property: 'from', type: 'integer', description: 'Starting record number'),
+            new OA\Property(property: 'last_page', type: 'integer', description: 'Last page number'),
+            new OA\Property(property: 'links', type: 'array', items: new OA\Items(type: 'object'), description: 'Pagination links'),
+            new OA\Property(property: 'path', type: 'string', description: 'Base path'),
+            new OA\Property(property: 'per_page', type: 'integer', description: 'Records per page'),
+            new OA\Property(property: 'to', type: 'integer', description: 'Ending record number'),
+            new OA\Property(property: 'total', type: 'integer', description: 'Total number of records'),
+        ]),
+    ]
+)]
 class WingsServerListController
 {
+    #[OA\Get(
+        path: '/api/remote/servers',
+        summary: 'Get remote servers',
+        description: 'Retrieve paginated list of all servers for the authenticated Wings node with complete configuration data. Requires Wings node token authentication (token ID and secret).',
+        tags: ['Wings - Server'],
+        parameters: [
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                description: 'Page number for pagination',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
+            ),
+            new OA\Parameter(
+                name: 'per_page',
+                in: 'query',
+                description: 'Number of records per page',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 50)
+            ),
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                description: 'Search term to filter servers',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Remote servers retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/RemoteServersResponse')
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized - Invalid Wings authentication'),
+            new OA\Response(response: 403, description: 'Forbidden - Invalid Wings authentication'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
     public function getRemoteServers(Request $request): Response
     {
         // Get pagination parameters

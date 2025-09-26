@@ -18,15 +18,89 @@ use App\Chat\Server;
 use App\Chat\Subuser;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Helpers\ServerGateway;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'ServerActivity',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Activity ID'),
+        new OA\Property(property: 'server_id', type: 'integer', description: 'Server ID'),
+        new OA\Property(property: 'user_id', type: 'integer', nullable: true, description: 'User ID (null for daemon events)'),
+        new OA\Property(property: 'event', type: 'string', description: 'Activity event name'),
+        new OA\Property(property: 'metadata', type: 'object', nullable: true, description: 'Activity metadata (parsed JSON)'),
+        new OA\Property(property: 'ip_address', type: 'string', nullable: true, description: 'IP address'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Activity timestamp'),
+        new OA\Property(property: 'server_name', type: 'string', nullable: true, description: 'Server name'),
+        new OA\Property(property: 'server_uuid', type: 'string', nullable: true, description: 'Server UUID'),
+        new OA\Property(property: 'server_uuid_short', type: 'string', nullable: true, description: 'Server short UUID'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ActivityPagination',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'current_page', type: 'integer', description: 'Current page number'),
+        new OA\Property(property: 'per_page', type: 'integer', description: 'Records per page'),
+        new OA\Property(property: 'total_records', type: 'integer', description: 'Total number of records'),
+        new OA\Property(property: 'total_pages', type: 'integer', description: 'Total number of pages'),
+        new OA\Property(property: 'has_next', type: 'boolean', description: 'Whether there is a next page'),
+        new OA\Property(property: 'has_prev', type: 'boolean', description: 'Whether there is a previous page'),
+        new OA\Property(property: 'from', type: 'integer', description: 'Starting record number'),
+        new OA\Property(property: 'to', type: 'integer', description: 'Ending record number'),
+    ]
+)]
 class ServerActivityController
 {
     /**
      * Get user's server activities with pagination.
      */
+    #[OA\Get(
+        path: '/api/user/server-activities',
+        summary: 'Get user server activities',
+        description: 'Retrieve paginated server activities for all servers the user owns or has subuser access to, including daemon events.',
+        tags: ['User - Server Activities'],
+        parameters: [
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                description: 'Page number for pagination',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
+            ),
+            new OA\Parameter(
+                name: 'per_page',
+                in: 'query',
+                description: 'Number of records per page',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 50)
+            ),
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                description: 'Search term to filter activities by event or metadata',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server activities retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'activities', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServerActivity')),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/ActivityPagination'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve activities'),
+        ]
+    )]
     public function getUserServerActivities(Request $request): Response
     {
         // Get authenticated user
@@ -95,6 +169,25 @@ class ServerActivityController
     /**
      * Get user's recent server activities (last 10).
      */
+    #[OA\Get(
+        path: '/api/user/server-activities/recent',
+        summary: 'Get recent server activities',
+        description: 'Retrieve the last 10 server activities for all servers the user owns or has subuser access to.',
+        tags: ['User - Server Activities'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Recent server activities retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'activities', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServerActivity')),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve recent activities'),
+        ]
+    )]
     public function getRecentServerActivities(Request $request): Response
     {
         // Get authenticated user
@@ -128,6 +221,59 @@ class ServerActivityController
     /**
      * Get activities for a specific server accessible by the user.
      */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/activities',
+        summary: 'Get server activities by UUID',
+        description: 'Retrieve paginated activities for a specific server that the user owns or has subuser access to.',
+        tags: ['User - Server Activities'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                description: 'Page number for pagination',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
+            ),
+            new OA\Parameter(
+                name: 'per_page',
+                in: 'query',
+                description: 'Number of records per page',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 50)
+            ),
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                description: 'Search term to filter activities by event or metadata',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server activities retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'activities', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServerActivity')),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/ActivityPagination'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve activities'),
+        ]
+    )]
     public function getServerActivities(Request $request, int $serverId): Response
     {
         // Get authenticated user

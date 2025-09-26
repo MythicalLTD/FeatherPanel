@@ -20,6 +20,7 @@ use App\Chat\SpellVariable;
 use App\Chat\ServerActivity;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Helpers\ServerGateway;
 use App\Config\ConfigInterface;
 use App\Services\Wings\Services\Wings;
@@ -28,8 +29,187 @@ use App\Services\Wings\Services\JwtService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'UserServer',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Server ID'),
+        new OA\Property(property: 'uuid', type: 'string', description: 'Server UUID'),
+        new OA\Property(property: 'uuidShort', type: 'string', description: 'Server short UUID'),
+        new OA\Property(property: 'name', type: 'string', description: 'Server name'),
+        new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Server description'),
+        new OA\Property(property: 'status', type: 'string', description: 'Server status'),
+        new OA\Property(property: 'memory', type: 'integer', description: 'Memory limit in MB'),
+        new OA\Property(property: 'disk', type: 'integer', description: 'Disk limit in MB'),
+        new OA\Property(property: 'cpu', type: 'integer', description: 'CPU limit percentage'),
+        new OA\Property(property: 'swap', type: 'integer', description: 'Swap limit in MB'),
+        new OA\Property(property: 'io', type: 'integer', description: 'IO limit'),
+        new OA\Property(property: 'is_subuser', type: 'boolean', description: 'Whether user is a subuser'),
+        new OA\Property(property: 'subuser_permissions', type: 'array', items: new OA\Items(type: 'string'), description: 'Subuser permissions'),
+        new OA\Property(property: 'subuser_id', type: 'integer', nullable: true, description: 'Subuser ID if applicable'),
+        new OA\Property(property: 'node', type: 'object', properties: [
+            new OA\Property(property: 'name', type: 'string', nullable: true),
+            new OA\Property(property: 'maintenance_mode', type: 'boolean', nullable: true),
+            new OA\Property(property: 'fqdn', type: 'string', nullable: true),
+            new OA\Property(property: 'behind_proxy', type: 'boolean', nullable: true),
+        ]),
+        new OA\Property(property: 'realm', type: 'object', properties: [
+            new OA\Property(property: 'name', type: 'string', nullable: true),
+            new OA\Property(property: 'description', type: 'string', nullable: true),
+            new OA\Property(property: 'logo', type: 'string', nullable: true),
+        ]),
+        new OA\Property(property: 'spell', type: 'object', properties: [
+            new OA\Property(property: 'name', type: 'string', nullable: true),
+            new OA\Property(property: 'description', type: 'string', nullable: true),
+            new OA\Property(property: 'banner', type: 'string', nullable: true),
+        ]),
+        new OA\Property(property: 'allocation', type: 'object', properties: [
+            new OA\Property(property: 'ip', type: 'string', nullable: true),
+            new OA\Property(property: 'port', type: 'integer', nullable: true),
+            new OA\Property(property: 'ip_alias', type: 'string', nullable: true),
+        ]),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ServerPagination',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'current_page', type: 'integer', description: 'Current page number'),
+        new OA\Property(property: 'per_page', type: 'integer', description: 'Records per page'),
+        new OA\Property(property: 'total_records', type: 'integer', description: 'Total number of records'),
+        new OA\Property(property: 'total_pages', type: 'integer', description: 'Total number of pages'),
+        new OA\Property(property: 'has_next', type: 'boolean', description: 'Whether there is a next page'),
+        new OA\Property(property: 'has_prev', type: 'boolean', description: 'Whether there is a previous page'),
+        new OA\Property(property: 'from', type: 'integer', description: 'Starting record number'),
+        new OA\Property(property: 'to', type: 'integer', description: 'Ending record number'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ServerSearch',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'query', type: 'string', description: 'Search query'),
+        new OA\Property(property: 'has_results', type: 'boolean', description: 'Whether search returned results'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ServerDetail',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Server ID'),
+        new OA\Property(property: 'uuid', type: 'string', description: 'Server UUID'),
+        new OA\Property(property: 'uuidShort', type: 'string', description: 'Server short UUID'),
+        new OA\Property(property: 'name', type: 'string', description: 'Server name'),
+        new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Server description'),
+        new OA\Property(property: 'status', type: 'string', description: 'Server status'),
+        new OA\Property(property: 'memory', type: 'integer', description: 'Memory limit in MB'),
+        new OA\Property(property: 'disk', type: 'integer', description: 'Disk limit in MB'),
+        new OA\Property(property: 'cpu', type: 'integer', description: 'CPU limit percentage'),
+        new OA\Property(property: 'swap', type: 'integer', description: 'Swap limit in MB'),
+        new OA\Property(property: 'io', type: 'integer', description: 'IO limit'),
+        new OA\Property(property: 'node', type: 'object', description: 'Node information'),
+        new OA\Property(property: 'realm', type: 'object', description: 'Realm information'),
+        new OA\Property(property: 'spell', type: 'object', description: 'Spell information'),
+        new OA\Property(property: 'allocation', type: 'object', description: 'Allocation information'),
+        new OA\Property(property: 'activity', type: 'array', items: new OA\Items(type: 'object'), description: 'Recent server activities'),
+        new OA\Property(property: 'sftp', type: 'object', properties: [
+            new OA\Property(property: 'host', type: 'string'),
+            new OA\Property(property: 'port', type: 'integer'),
+            new OA\Property(property: 'username', type: 'string'),
+            new OA\Property(property: 'password', type: 'string'),
+            new OA\Property(property: 'url', type: 'string'),
+        ]),
+        new OA\Property(property: 'variables', type: 'array', items: new OA\Items(type: 'object'), description: 'Server variables'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'JwtResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'token', type: 'string', description: 'JWT token'),
+        new OA\Property(property: 'expires_at', type: 'integer', description: 'Token expiration timestamp'),
+        new OA\Property(property: 'server_uuid', type: 'string', description: 'Server UUID'),
+        new OA\Property(property: 'user_uuid', type: 'string', description: 'User UUID'),
+        new OA\Property(property: 'permissions', type: 'array', items: new OA\Items(type: 'string'), description: 'User permissions'),
+        new OA\Property(property: 'connection_string', type: 'string', description: 'WebSocket connection string'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ServerUpdateRequest',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'name', type: 'string', nullable: true, description: 'Server name'),
+        new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Server description'),
+        new OA\Property(property: 'startup', type: 'string', nullable: true, description: 'Startup command'),
+        new OA\Property(property: 'image', type: 'string', nullable: true, description: 'Docker image'),
+        new OA\Property(property: 'variables', type: 'array', items: new OA\Items(type: 'object', properties: [
+            new OA\Property(property: 'variable_id', type: 'integer'),
+            new OA\Property(property: 'variable_value', type: 'string'),
+        ]), nullable: true, description: 'Server variables'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ServerUpdateResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'server', type: 'object', properties: [
+            new OA\Property(property: 'id', type: 'integer'),
+            new OA\Property(property: 'uuid', type: 'string'),
+            new OA\Property(property: 'uuidShort', type: 'string'),
+            new OA\Property(property: 'name', type: 'string'),
+            new OA\Property(property: 'description', type: 'string', nullable: true),
+            new OA\Property(property: 'startup', type: 'string', nullable: true),
+            new OA\Property(property: 'image', type: 'string', nullable: true),
+            new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', nullable: true),
+        ]),
+    ]
+)]
 class ServerUserController
 {
+    #[OA\Get(
+        path: '/api/user/servers',
+        summary: 'Get user servers',
+        description: 'Retrieve all servers owned by the user or where the user is a subuser, with pagination and search functionality.',
+        tags: ['User - Server Management'],
+        parameters: [
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                description: 'Page number for pagination',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
+            ),
+            new OA\Parameter(
+                name: 'limit',
+                in: 'query',
+                description: 'Number of records per page',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 10)
+            ),
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                description: 'Search term to filter servers by name or description',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'User servers retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'servers', type: 'array', items: new OA\Items(ref: '#/components/schemas/UserServer')),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/ServerPagination'),
+                        new OA\Property(property: 'search', ref: '#/components/schemas/ServerSearch'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve servers'),
+        ]
+    )]
     public function getUserServers(Request $request): Response
     {
         // Get authenticated user
@@ -177,6 +357,33 @@ class ServerUserController
         ], 'User servers fetched successfully', 200);
     }
 
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}',
+        summary: 'Get server details',
+        description: 'Retrieve detailed information about a specific server including node, realm, spell, allocation, activities, SFTP details, and variables.',
+        tags: ['User - Server Management'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server details retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ServerDetail')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve server'),
+        ]
+    )]
     public function getServer(Request $request, string $uuidShort): Response
     {
         // Get authenticated user
@@ -271,6 +478,33 @@ class ServerUserController
      *
      * @return Response The API response
      */
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/jwt',
+        summary: 'Generate server JWT token',
+        description: 'Generate a JWT token for Wings API access with user permissions and WebSocket connection details.',
+        tags: ['User - Server Management'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'JWT token generated successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/JwtResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to generate JWT token'),
+        ]
+    )]
     public function generateServerJwt(Request $request, string $uuidShort): Response
     {
         // Get authenticated user
@@ -346,6 +580,38 @@ class ServerUserController
      *
      * @return Response The update response
      */
+    #[OA\Put(
+        path: '/api/user/servers/{uuidShort}',
+        summary: 'Update server',
+        description: 'Update server information including name, description, startup command, Docker image, and variables. Syncs changes with Wings daemon.',
+        tags: ['User - Server Management'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/ServerUpdateRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server updated successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ServerUpdateResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID, invalid data, or validation errors'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server or variable not editable'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 422, description: 'Unprocessable entity - Invalid variable values or unknown variables'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to update server'),
+        ]
+    )]
     public function updateServer(Request $request, string $uuidShort): Response
     {
         // Get authenticated user
@@ -569,6 +835,44 @@ class ServerUserController
         ], 'Server updated successfully', 200);
     }
 
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/reinstall',
+        summary: 'Reinstall server',
+        description: 'Reinstall a server using Wings daemon. This will reset the server to its initial state.',
+        tags: ['User - Server Management'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server reinstalled successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'server', type: 'object', properties: [
+                            new OA\Property(property: 'id', type: 'integer'),
+                            new OA\Property(property: 'uuid', type: 'string'),
+                            new OA\Property(property: 'uuidShort', type: 'string'),
+                            new OA\Property(property: 'name', type: 'string'),
+                            new OA\Property(property: 'description', type: 'string', nullable: true),
+                            new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', nullable: true),
+                        ]),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to reinstall server'),
+        ]
+    )]
     public function reinstallServer(Request $request, string $uuidShort): Response
     {
         // Get authenticated user
@@ -651,6 +955,37 @@ class ServerUserController
         ], 'Server reinstalled successfully', 200);
     }
 
+    #[OA\Delete(
+        path: '/api/user/servers/{uuidShort}',
+        summary: 'Delete server',
+        description: 'Permanently delete a server using Wings daemon. This action cannot be undone.',
+        tags: ['User - Server Management'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to delete server'),
+        ]
+    )]
     public function deleteServer(Request $request, string $uuidShort): Response
     {
         // Get authenticated user

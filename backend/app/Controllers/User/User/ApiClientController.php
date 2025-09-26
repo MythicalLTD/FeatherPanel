@@ -17,17 +17,161 @@ use App\Chat\User;
 use App\Chat\Activity;
 use App\Chat\ApiClient;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\UserEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'ApiClient',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'API client ID'),
+        new OA\Property(property: 'user_uuid', type: 'string', description: 'User UUID'),
+        new OA\Property(property: 'name', type: 'string', description: 'API client name'),
+        new OA\Property(property: 'public_key', type: 'string', description: 'Public API key'),
+        new OA\Property(property: 'private_key', type: 'string', description: 'Private API key (only shown on creation)'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ApiClientList',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'API client ID'),
+        new OA\Property(property: 'user_uuid', type: 'string', description: 'User UUID'),
+        new OA\Property(property: 'name', type: 'string', description: 'API client name'),
+        new OA\Property(property: 'public_key', type: 'string', description: 'Public API key (truncated)'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ApiClientPagination',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'current_page', type: 'integer', description: 'Current page number'),
+        new OA\Property(property: 'per_page', type: 'integer', description: 'Records per page'),
+        new OA\Property(property: 'total_records', type: 'integer', description: 'Total number of records'),
+        new OA\Property(property: 'total_pages', type: 'integer', description: 'Total number of pages'),
+        new OA\Property(property: 'has_next', type: 'boolean', description: 'Whether there is a next page'),
+        new OA\Property(property: 'has_prev', type: 'boolean', description: 'Whether there is a previous page'),
+        new OA\Property(property: 'from', type: 'integer', description: 'Starting record number'),
+        new OA\Property(property: 'to', type: 'integer', description: 'Ending record number'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ApiClientSearch',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'query', type: 'string', description: 'Search query'),
+        new OA\Property(property: 'has_results', type: 'boolean', description: 'Whether search returned results'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ApiClientCreateRequest',
+    type: 'object',
+    required: ['name'],
+    properties: [
+        new OA\Property(property: 'name', type: 'string', minLength: 1, maxLength: 191, description: 'API client name'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ApiClientUpdateRequest',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'name', type: 'string', minLength: 1, maxLength: 191, description: 'API client name'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ApiClientValidationRequest',
+    type: 'object',
+    required: ['public_key'],
+    properties: [
+        new OA\Property(property: 'public_key', type: 'string', description: 'Public API key to validate'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ApiClientValidationResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'valid', type: 'boolean', description: 'Whether the API client is valid'),
+        new OA\Property(property: 'api_client', type: 'object', properties: [
+            new OA\Property(property: 'id', type: 'integer'),
+            new OA\Property(property: 'name', type: 'string'),
+            new OA\Property(property: 'user_uuid', type: 'string'),
+            new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+        ]),
+        new OA\Property(property: 'user', type: 'object', properties: [
+            new OA\Property(property: 'id', type: 'integer'),
+            new OA\Property(property: 'username', type: 'string'),
+            new OA\Property(property: 'email', type: 'string'),
+            new OA\Property(property: 'uuid', type: 'string'),
+        ]),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ApiClientActivity',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Activity ID'),
+        new OA\Property(property: 'user_uuid', type: 'string', description: 'User UUID'),
+        new OA\Property(property: 'name', type: 'string', description: 'Activity name'),
+        new OA\Property(property: 'context', type: 'string', description: 'Activity context'),
+        new OA\Property(property: 'ip_address', type: 'string', description: 'IP address'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
+    ]
+)]
 class ApiClientController
 {
-    /**
-     * Get all API clients for the authenticated user.
-     */
+    #[OA\Get(
+        path: '/api/user/api-clients',
+        summary: 'Get API clients',
+        description: 'Retrieve all API clients for the authenticated user with pagination and search functionality.',
+        tags: ['User - API Clients'],
+        parameters: [
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                description: 'Page number for pagination',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
+            ),
+            new OA\Parameter(
+                name: 'limit',
+                in: 'query',
+                description: 'Number of records per page',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 10)
+            ),
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                description: 'Search term to filter API clients by name',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'API clients retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'api_clients', type: 'array', items: new OA\Items(ref: '#/components/schemas/ApiClientList')),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/ApiClientPagination'),
+                        new OA\Property(property: 'search', ref: '#/components/schemas/ApiClientSearch'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve API clients'),
+        ]
+    )]
     public function getApiClients(Request $request): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);
@@ -87,9 +231,33 @@ class ApiClientController
         ], 'API clients fetched successfully', 200);
     }
 
-    /**
-     * Get a specific API client by ID.
-     */
+    #[OA\Get(
+        path: '/api/user/api-clients/{id}',
+        summary: 'Get specific API client',
+        description: 'Retrieve details of a specific API client by ID for the authenticated user.',
+        tags: ['User - API Clients'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'API client ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'API client retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiClient')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token or API client ID'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to API client'),
+            new OA\Response(response: 404, description: 'Not found - API client not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve API client'),
+        ]
+    )]
     public function getApiClient(Request $request, int $id): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);
@@ -117,9 +285,26 @@ class ApiClientController
         return ApiResponse::success($apiClient, 'API client fetched successfully', 200);
     }
 
-    /**
-     * Create a new API client for the authenticated user.
-     */
+    #[OA\Post(
+        path: '/api/user/api-clients',
+        summary: 'Create API client',
+        description: 'Create a new API client for the authenticated user with automatically generated public and private keys.',
+        tags: ['User - API Clients'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/ApiClientCreateRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'API client created successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiClient')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token, missing required fields, or invalid name length'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to create API client'),
+        ]
+    )]
     public function createApiClient(Request $request): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);
@@ -187,9 +372,37 @@ class ApiClientController
         return ApiResponse::success($apiClient, 'API client created successfully', 201);
     }
 
-    /**
-     * Update an existing API client.
-     */
+    #[OA\Put(
+        path: '/api/user/api-clients/{id}',
+        summary: 'Update API client',
+        description: 'Update an existing API client for the authenticated user. Only the name field can be updated.',
+        tags: ['User - API Clients'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'API client ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/ApiClientUpdateRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'API client updated successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiClient')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token, API client ID, request data, or invalid name length'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to API client'),
+            new OA\Response(response: 404, description: 'Not found - API client not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to update API client'),
+        ]
+    )]
     public function updateApiClient(Request $request, int $id): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);
@@ -268,9 +481,37 @@ class ApiClientController
         return ApiResponse::success($updatedApiClient, 'API client updated successfully', 200);
     }
 
-    /**
-     * Delete an API client (hard delete).
-     */
+    #[OA\Delete(
+        path: '/api/user/api-clients/{id}',
+        summary: 'Delete API client',
+        description: 'Delete an API client for the authenticated user. This is a hard delete operation.',
+        tags: ['User - API Clients'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'API client ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'API client deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token or API client ID'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to API client'),
+            new OA\Response(response: 404, description: 'Not found - API client not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to delete API client'),
+        ]
+    )]
     public function deleteApiClient(Request $request, int $id): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);
@@ -318,9 +559,33 @@ class ApiClientController
         return ApiResponse::success(null, 'API client deleted successfully', 200);
     }
 
-    /**
-     * Regenerate API keys for an existing API client.
-     */
+    #[OA\Post(
+        path: '/api/user/api-clients/{id}/regenerate',
+        summary: 'Regenerate API keys',
+        description: 'Regenerate both public and private API keys for an existing API client.',
+        tags: ['User - API Clients'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'API client ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'API keys regenerated successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiClient')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token or API client ID'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to API client'),
+            new OA\Response(response: 404, description: 'Not found - API client not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to regenerate API keys'),
+        ]
+    )]
     public function regenerateApiKeys(Request $request, int $id): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);
@@ -382,9 +647,43 @@ class ApiClientController
         return ApiResponse::success($updatedApiClient, 'API keys regenerated successfully', 200);
     }
 
-    /**
-     * Get API client activities for the authenticated user.
-     */
+    #[OA\Get(
+        path: '/api/user/api-clients/activities',
+        summary: 'Get API client activities',
+        description: 'Retrieve API client related activities for the authenticated user with pagination.',
+        tags: ['User - API Clients'],
+        parameters: [
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                description: 'Page number for pagination',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
+            ),
+            new OA\Parameter(
+                name: 'limit',
+                in: 'query',
+                description: 'Number of records per page',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 10)
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'API client activities retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'activities', type: 'array', items: new OA\Items(ref: '#/components/schemas/ApiClientActivity')),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/ApiClientPagination'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve activities'),
+        ]
+    )]
     public function getApiClientActivities(Request $request): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);
@@ -433,9 +732,26 @@ class ApiClientController
         ], 'API client activities fetched successfully', 200);
     }
 
-    /**
-     * Validate an API client by public key.
-     */
+    #[OA\Post(
+        path: '/api/user/api-clients/validate',
+        summary: 'Validate API client',
+        description: 'Validate an API client by public key and return associated user information. This endpoint does not require authentication.',
+        tags: ['User - API Clients'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/ApiClientValidationRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'API client validated successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiClientValidationResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or empty public key'),
+            new OA\Response(response: 404, description: 'Not found - Invalid API client or user not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to validate API client'),
+        ]
+    )]
     public function validateApiClient(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);

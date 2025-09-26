@@ -17,21 +17,145 @@ use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'ServerSchedule',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Schedule ID'),
+        new OA\Property(property: 'server_id', type: 'integer', description: 'Server ID'),
+        new OA\Property(property: 'name', type: 'string', description: 'Schedule name'),
+        new OA\Property(property: 'cron_day_of_week', type: 'string', description: 'Cron day of week expression'),
+        new OA\Property(property: 'cron_month', type: 'string', description: 'Cron month expression'),
+        new OA\Property(property: 'cron_day_of_month', type: 'string', description: 'Cron day of month expression'),
+        new OA\Property(property: 'cron_hour', type: 'string', description: 'Cron hour expression'),
+        new OA\Property(property: 'cron_minute', type: 'string', description: 'Cron minute expression'),
+        new OA\Property(property: 'is_active', type: 'boolean', description: 'Whether schedule is active'),
+        new OA\Property(property: 'is_processing', type: 'boolean', description: 'Whether schedule is currently processing'),
+        new OA\Property(property: 'only_when_online', type: 'boolean', description: 'Whether to run only when server is online'),
+        new OA\Property(property: 'next_run_at', type: 'string', format: 'date-time', description: 'Next scheduled run time'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SchedulePagination',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'current_page', type: 'integer', description: 'Current page number'),
+        new OA\Property(property: 'per_page', type: 'integer', description: 'Records per page'),
+        new OA\Property(property: 'total', type: 'integer', description: 'Total number of records'),
+        new OA\Property(property: 'last_page', type: 'integer', description: 'Last page number'),
+        new OA\Property(property: 'from', type: 'integer', description: 'Starting record number'),
+        new OA\Property(property: 'to', type: 'integer', description: 'Ending record number'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ScheduleCreateRequest',
+    type: 'object',
+    required: ['name', 'cron_day_of_week', 'cron_month', 'cron_day_of_month', 'cron_hour', 'cron_minute'],
+    properties: [
+        new OA\Property(property: 'name', type: 'string', description: 'Schedule name'),
+        new OA\Property(property: 'cron_day_of_week', type: 'string', description: 'Cron day of week expression'),
+        new OA\Property(property: 'cron_month', type: 'string', description: 'Cron month expression'),
+        new OA\Property(property: 'cron_day_of_month', type: 'string', description: 'Cron day of month expression'),
+        new OA\Property(property: 'cron_hour', type: 'string', description: 'Cron hour expression'),
+        new OA\Property(property: 'cron_minute', type: 'string', description: 'Cron minute expression'),
+        new OA\Property(property: 'is_active', type: 'boolean', nullable: true, description: 'Whether schedule is active', default: true),
+        new OA\Property(property: 'only_when_online', type: 'boolean', nullable: true, description: 'Whether to run only when server is online', default: false),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ScheduleCreateResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Created schedule ID'),
+        new OA\Property(property: 'name', type: 'string', description: 'Schedule name'),
+        new OA\Property(property: 'next_run_at', type: 'string', format: 'date-time', description: 'Next scheduled run time'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ScheduleUpdateRequest',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'name', type: 'string', nullable: true, description: 'Schedule name'),
+        new OA\Property(property: 'cron_day_of_week', type: 'string', nullable: true, description: 'Cron day of week expression'),
+        new OA\Property(property: 'cron_month', type: 'string', nullable: true, description: 'Cron month expression'),
+        new OA\Property(property: 'cron_day_of_month', type: 'string', nullable: true, description: 'Cron day of month expression'),
+        new OA\Property(property: 'cron_hour', type: 'string', nullable: true, description: 'Cron hour expression'),
+        new OA\Property(property: 'cron_minute', type: 'string', nullable: true, description: 'Cron minute expression'),
+        new OA\Property(property: 'is_active', type: 'boolean', nullable: true, description: 'Whether schedule is active'),
+        new OA\Property(property: 'only_when_online', type: 'boolean', nullable: true, description: 'Whether to run only when server is online'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ScheduleToggleResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'is_active', type: 'boolean', description: 'New active status'),
+        new OA\Property(property: 'status', type: 'string', enum: ['enabled', 'disabled'], description: 'Status description'),
+    ]
+)]
 class ServerScheduleController
 {
-    /**
-     * Get all schedules for a server.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/schedules',
+        summary: 'Get server schedules',
+        description: 'Retrieve all schedules for a specific server that the user owns or has subuser access to.',
+        tags: ['User - Server Schedules'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                description: 'Page number for pagination',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
+            ),
+            new OA\Parameter(
+                name: 'per_page',
+                in: 'query',
+                description: 'Number of records per page',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 20)
+            ),
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                description: 'Search term to filter schedules by name',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server schedules retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServerSchedule')),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/SchedulePagination'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve schedules'),
+        ]
+    )]
     public function getSchedules(Request $request, string $serverUuid): Response
     {
         // Get server info
@@ -74,15 +198,40 @@ class ServerScheduleController
         ]);
     }
 
-    /**
-     * Get a specific schedule.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $scheduleId The schedule ID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/schedules/{scheduleId}',
+        summary: 'Get specific schedule',
+        description: 'Retrieve details of a specific schedule for a server that the user owns or has subuser access to.',
+        tags: ['User - Server Schedules'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'scheduleId',
+                in: 'path',
+                description: 'Schedule ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Schedule details retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ServerSchedule')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or schedule not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve schedule'),
+        ]
+    )]
     public function getSchedule(Request $request, string $serverUuid, int $scheduleId): Response
     {
         // Get server info
@@ -109,14 +258,37 @@ class ServerScheduleController
         return ApiResponse::success($schedule);
     }
 
-    /**
-     * Create a new schedule.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/schedules',
+        summary: 'Create schedule',
+        description: 'Create a new schedule for a server with cron expression validation and next run time calculation.',
+        tags: ['User - Server Schedules'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/ScheduleCreateRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Schedule created successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ScheduleCreateResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing required fields, invalid cron expression, or invalid request body'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to create schedule'),
+        ]
+    )]
     public function createSchedule(Request $request, string $serverUuid): Response
     {
         // Get server info
@@ -211,15 +383,48 @@ class ServerScheduleController
         ], 'Schedule created successfully', 201);
     }
 
-    /**
-     * Update a schedule.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $scheduleId The schedule ID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Put(
+        path: '/api/user/servers/{uuidShort}/schedules/{scheduleId}',
+        summary: 'Update schedule',
+        description: 'Update an existing schedule with new cron expression validation and next run time recalculation.',
+        tags: ['User - Server Schedules'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'scheduleId',
+                in: 'path',
+                description: 'Schedule ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/ScheduleUpdateRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Schedule updated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid cron expression or invalid request body'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or schedule not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to update schedule'),
+        ]
+    )]
     public function updateSchedule(Request $request, string $serverUuid, int $scheduleId): Response
     {
         // Get server info
@@ -292,15 +497,40 @@ class ServerScheduleController
         return ApiResponse::success(null, 'Schedule updated successfully', 200);
     }
 
-    /**
-     * Toggle schedule active status.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $scheduleId The schedule ID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/schedules/{scheduleId}/toggle',
+        summary: 'Toggle schedule status',
+        description: 'Toggle the active status of a schedule (enable/disable).',
+        tags: ['User - Server Schedules'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'scheduleId',
+                in: 'path',
+                description: 'Schedule ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Schedule status toggled successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ScheduleToggleResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or schedule not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to toggle schedule status'),
+        ]
+    )]
     public function toggleScheduleStatus(Request $request, string $serverUuid, int $scheduleId): Response
     {
         // Get server info
@@ -358,15 +588,44 @@ class ServerScheduleController
         ], "Schedule {$newStatus} successfully", 200);
     }
 
-    /**
-     * Delete a schedule.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $scheduleId The schedule ID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Delete(
+        path: '/api/user/servers/{uuidShort}/schedules/{scheduleId}',
+        summary: 'Delete schedule',
+        description: 'Delete a schedule. Cannot delete schedules that are currently processing.',
+        tags: ['User - Server Schedules'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'scheduleId',
+                in: 'path',
+                description: 'Schedule ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Schedule deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing parameters or schedule is currently processing'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or schedule not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to delete schedule'),
+        ]
+    )]
     public function deleteSchedule(Request $request, string $serverUuid, int $scheduleId): Response
     {
         // Get server info
@@ -484,14 +743,37 @@ class ServerScheduleController
         return ApiResponse::success($schedules);
     }
 
-    /**
-     * Get active schedules for a server.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/schedules/active',
+        summary: 'Get active schedules',
+        description: 'Retrieve all active schedules for a specific server.',
+        tags: ['User - Server Schedules'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Active schedules retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServerSchedule')),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve active schedules'),
+        ]
+    )]
     public function getActiveSchedules(Request $request, string $serverUuid): Response
     {
         // Get server info
@@ -511,14 +793,37 @@ class ServerScheduleController
         return ApiResponse::success($schedules);
     }
 
-    /**
-     * Get schedules that are due to run.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/schedules/due',
+        summary: 'Get due schedules',
+        description: 'Retrieve schedules that are due to run for a specific server.',
+        tags: ['User - Server Schedules'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Due schedules retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServerSchedule')),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve due schedules'),
+        ]
+    )]
     public function getDueSchedules(Request $request, string $serverUuid): Response
     {
         // Get server info

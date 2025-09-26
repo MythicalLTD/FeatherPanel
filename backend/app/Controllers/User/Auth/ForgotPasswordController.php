@@ -17,6 +17,7 @@ use App\App;
 use App\Chat\User;
 use App\Chat\Activity;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\ForgotPassword;
@@ -25,11 +26,44 @@ use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'ForgotPasswordRequest',
+    type: 'object',
+    required: ['email'],
+    properties: [
+        new OA\Property(property: 'email', type: 'string', format: 'email', minLength: 3, maxLength: 255, description: 'User email address'),
+        new OA\Property(property: 'turnstile_token', type: 'string', description: 'CloudFlare Turnstile token (required if Turnstile is enabled)'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ForgotPasswordResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+    ]
+)]
 class ForgotPasswordController
 {
-    /**
-     * Login a user.
-     */
+    #[OA\Put(
+        path: '/api/user/auth/forgot-password',
+        summary: 'Request password reset',
+        description: 'Send a password reset email to the user. Includes CloudFlare Turnstile validation if enabled.',
+        tags: ['User - Authentication'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/ForgotPasswordRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Password reset email sent successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ForgotPasswordResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing required fields, invalid email format, Turnstile validation failed, or Turnstile keys not set'),
+            new OA\Response(response: 404, description: 'Not found - Email does not exist'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to send reset email or update user'),
+        ]
+    )]
     public function put(Request $request): Response
     {
         $app = App::getInstance(true);

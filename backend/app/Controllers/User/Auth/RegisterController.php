@@ -18,6 +18,7 @@ use App\Chat\User;
 use App\Chat\Activity;
 use App\Helpers\UUIDUtils;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Mail\templates\Welcome;
 use App\CloudFlare\CloudFlareRealIP;
@@ -26,11 +27,50 @@ use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'RegisterRequest',
+    type: 'object',
+    required: ['username', 'email', 'password', 'first_name', 'last_name'],
+    properties: [
+        new OA\Property(property: 'username', type: 'string', minLength: 3, maxLength: 64, description: 'Username (alphanumeric and underscores only)'),
+        new OA\Property(property: 'email', type: 'string', format: 'email', minLength: 3, maxLength: 255, description: 'User email address'),
+        new OA\Property(property: 'password', type: 'string', minLength: 8, maxLength: 255, description: 'User password'),
+        new OA\Property(property: 'first_name', type: 'string', minLength: 3, maxLength: 64, description: 'User first name'),
+        new OA\Property(property: 'last_name', type: 'string', minLength: 3, maxLength: 64, description: 'User last name'),
+        new OA\Property(property: 'turnstile_token', type: 'string', description: 'CloudFlare Turnstile token (required if Turnstile is enabled)'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'RegisterResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'user', type: 'object', description: 'User information'),
+        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+    ]
+)]
 class RegisterController
 {
-    /**
-     * Register a new user.
-     */
+    #[OA\Put(
+        path: '/api/user/auth/register',
+        summary: 'Register new user',
+        description: 'Create a new user account with email verification and welcome email. Includes CloudFlare Turnstile validation if enabled.',
+        tags: ['User - Authentication'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/RegisterRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'User registered successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/RegisterResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing required fields, invalid data format, Turnstile validation failed, or Turnstile keys not set'),
+            new OA\Response(response: 409, description: 'Conflict - Username or email already exists'),
+            new OA\Response(response: 403, description: 'Forbidden - Registration is not enabled'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to create user'),
+        ]
+    )]
     public function put(Request $request): Response
     {
         $app = App::getInstance(true);

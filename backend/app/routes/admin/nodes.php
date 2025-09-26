@@ -19,82 +19,82 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 
 return function (RouteCollection $routes): void {
-	App::getInstance(true)->registerAdminRoute(
-		$routes,
-		'admin-nodes',
-		'/api/admin/nodes',
-		function (Request $request) {
-			return (new NodesController())->index($request);
-		},
-		Permissions::ADMIN_NODES_VIEW,
-	);
-	App::getInstance(true)->registerAdminRoute(
-		$routes,
-		'admin-nodes-show',
-		'/api/admin/nodes/{id}',
-		function (Request $request, array $args) {
-			$id = $args['id'] ?? null;
-			if (!$id || !is_numeric($id)) {
-				return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
-			}
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-nodes',
+        '/api/admin/nodes',
+        function (Request $request) {
+            return (new NodesController())->index($request);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-nodes-show',
+        '/api/admin/nodes/{id}',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
 
-			return (new NodesController())->show($request, (int) $id);
-		},
-		Permissions::ADMIN_NODES_VIEW,
-	);
-	App::getInstance(true)->registerAdminRoute(
-		$routes,
-		'admin-nodes-update',
-		'/api/admin/nodes/{id}',
-		function (Request $request, array $args) {
-			$id = $args['id'] ?? null;
-			if (!$id || !is_numeric($id)) {
-				return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
-			}
+            return (new NodesController())->show($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-nodes-update',
+        '/api/admin/nodes/{id}',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
 
-			return (new NodesController())->update($request, (int) $id);
-		},
-		Permissions::ADMIN_NODES_EDIT,
-		['PATCH']
-	);
-	App::getInstance(true)->registerAdminRoute(
-		$routes,
-		'admin-nodes-delete',
-		'/api/admin/nodes/{id}',
-		function (Request $request, array $args) {
-			$id = $args['id'] ?? null;
-			if (!$id || !is_numeric($id)) {
-				return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
-			}
+            return (new NodesController())->update($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['PATCH']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-nodes-delete',
+        '/api/admin/nodes/{id}',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
 
-			return (new NodesController())->delete($request, (int) $id);
-		},
-		Permissions::ADMIN_NODES_DELETE,
-		['DELETE']
-	);
-	App::getInstance(true)->registerAdminRoute(
-		$routes,
-		'admin-nodes-create',
-		'/api/admin/nodes',
-		function (Request $request) {
-			return (new NodesController())->create($request);
-		},
-		Permissions::ADMIN_NODES_CREATE,
-		['PUT']
-	);
-	App::getInstance(true)->registerAdminRoute(
-		$routes,
-		'admin-nodes-reset-key',
-		'/api/admin/nodes/{id}/reset-key',
-		function (Request $request, array $args) {
-			$id = $args['id'] ?? null;
-			if (!$id || !is_numeric($id)) {
-				return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
-			}
+            return (new NodesController())->delete($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_DELETE,
+        ['DELETE']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-nodes-create',
+        '/api/admin/nodes',
+        function (Request $request) {
+            return (new NodesController())->create($request);
+        },
+        Permissions::ADMIN_NODES_CREATE,
+        ['PUT']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-nodes-reset-key',
+        '/api/admin/nodes/{id}/reset-key',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
 
-			return (new NodesController())->resetKey($request, (int) $id);
-		},
-		Permissions::ADMIN_NODES_EDIT,
-		['POST']
-	);
+            return (new NodesController())->resetKey($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['POST']
+    );
 };

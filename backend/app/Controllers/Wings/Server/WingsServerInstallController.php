@@ -17,12 +17,58 @@ use App\Chat\Node;
 use App\Chat\Spell;
 use App\Chat\Server;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'ServerInstallConfig',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'container_image', type: 'string', description: 'Docker container image'),
+        new OA\Property(property: 'entrypoint', type: 'string', description: 'Container entrypoint'),
+        new OA\Property(property: 'script', type: 'string', description: 'Installation script'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ServerInstallCompletion',
+    type: 'object',
+    required: ['successful'],
+    properties: [
+        new OA\Property(property: 'successful', type: 'boolean', description: 'Whether installation was successful'),
+        new OA\Property(property: 'reinstall', type: 'boolean', description: 'Whether this was a reinstall'),
+    ]
+)]
 class WingsServerInstallController
 {
+    #[OA\Get(
+        path: '/api/remote/servers/{uuid}/install',
+        summary: 'Get server installation configuration',
+        description: 'Retrieve server installation configuration including container image, entrypoint, and installation script. Requires Wings node token authentication (token ID and secret).',
+        tags: ['Wings - Server'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuid',
+                in: 'path',
+                description: 'Server UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server installation configuration retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ServerInstallConfig')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing server UUID'),
+            new OA\Response(response: 401, description: 'Unauthorized - Invalid Wings authentication'),
+            new OA\Response(response: 403, description: 'Forbidden - Invalid Wings authentication'),
+            new OA\Response(response: 404, description: 'Not found - Server, node, or spell not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
     public function getServerInstall(Request $request, string $uuid): Response
     {
         // Get server by UUID
@@ -115,6 +161,36 @@ class WingsServerInstallController
         return ApiResponse::sendManualResponse($installConfig, 200);
     }
 
+    #[OA\Post(
+        path: '/api/remote/servers/{uuid}/install',
+        summary: 'Report server installation completion',
+        description: 'Report server installation completion status to update server installation state. Requires Wings node token authentication (token ID and secret).',
+        tags: ['Wings - Server'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuid',
+                in: 'path',
+                description: 'Server UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/ServerInstallCompletion')
+        ),
+        responses: [
+            new OA\Response(
+                response: 204,
+                description: 'Installation completion reported successfully'
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing server UUID, invalid JSON, or missing required field'),
+            new OA\Response(response: 401, description: 'Unauthorized - Invalid Wings authentication'),
+            new OA\Response(response: 403, description: 'Forbidden - Invalid Wings authentication'),
+            new OA\Response(response: 404, description: 'Not found - Server, node, or spell not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to update installation status'),
+        ]
+    )]
     public function postServerInstall(Request $request, string $uuid): Response
     {
         // Get server by UUID

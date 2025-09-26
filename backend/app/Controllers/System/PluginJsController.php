@@ -13,59 +13,59 @@
 
 namespace App\Controllers\System;
 
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use OpenApi\Attributes as OA;
 
 class PluginJsController
 {
-	#[OA\Get(
-		path: '/api/system/plugin-js',
-		summary: 'Get plugin JavaScript',
-		description: 'Retrieve combined JavaScript from all installed plugins. This endpoint aggregates JS files from all plugins and returns them as a single script with proper scoping.',
-		tags: ['System'],
-		responses: [
-			new OA\Response(
-				response: 200,
-				description: 'Plugin JavaScript retrieved successfully',
-				content: new OA\MediaType(
-					mediaType: 'application/javascript',
-					schema: new OA\Schema(type: 'string', description: 'Combined JavaScript from all plugins with proper scoping')
-				),
-				headers: [
-					new OA\Header(
-						header: 'Cache-Control',
-						description: 'Cache control header',
-						schema: new OA\Schema(type: 'string', example: 'public, max-age=3600')
-					)
-				]
-			),
-			new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve plugin JavaScript')
-		]
-	)]
-	public function index(Request $request): Response
-	{
-		$jsContent = "// Plugin JavaScript\n";
+    #[OA\Get(
+        path: '/api/system/plugin-js',
+        summary: 'Get plugin JavaScript',
+        description: 'Retrieve combined JavaScript from all installed plugins. This endpoint aggregates JS files from all plugins and returns them as a single script with proper scoping.',
+        tags: ['System'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Plugin JavaScript retrieved successfully',
+                content: new OA\MediaType(
+                    mediaType: 'application/javascript',
+                    schema: new OA\Schema(type: 'string', description: 'Combined JavaScript from all plugins with proper scoping')
+                ),
+                headers: [
+                    new OA\Header(
+                        header: 'Cache-Control',
+                        description: 'Cache control header',
+                        schema: new OA\Schema(type: 'string', example: 'public, max-age=3600')
+                    ),
+                ]
+            ),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve plugin JavaScript'),
+        ]
+    )]
+    public function index(Request $request): Response
+    {
+        $jsContent = "// Plugin JavaScript\n";
 
-		// Append plugin JS
-		$pluginDir = __DIR__ . '/../../../storage/addons';
-		if (is_dir($pluginDir)) {
-			$plugins = array_diff(scandir($pluginDir), ['.', '..']);
-			foreach ($plugins as $plugin) {
-				$jsPath = $pluginDir . "/$plugin/Frontend/index.js";
-				if (file_exists($jsPath)) {
-					$jsContent .= "\n// Plugin: $plugin\n";
-					$jsContent .= "(function() {\n";
-					$jsContent .= "  // Plugin scope: $plugin\n";
-					$jsContent .= file_get_contents($jsPath) . "\n";
-					$jsContent .= "})();\n";
-				}
-			}
-		}
+        // Append plugin JS
+        $pluginDir = __DIR__ . '/../../../storage/addons';
+        if (is_dir($pluginDir)) {
+            $plugins = array_diff(scandir($pluginDir), ['.', '..']);
+            foreach ($plugins as $plugin) {
+                $jsPath = $pluginDir . "/$plugin/Frontend/index.js";
+                if (file_exists($jsPath)) {
+                    $jsContent .= "\n// Plugin: $plugin\n";
+                    $jsContent .= "(function() {\n";
+                    $jsContent .= "  // Plugin scope: $plugin\n";
+                    $jsContent .= file_get_contents($jsPath) . "\n";
+                    $jsContent .= "})();\n";
+                }
+            }
+        }
 
-		return new Response($jsContent, 200, [
-			'Content-Type' => 'application/javascript',
-			'Cache-Control' => 'public, max-age=3600', // Cache for 1 hour
-		]);
-	}
+        return new Response($jsContent, 200, [
+            'Content-Type' => 'application/javascript',
+            'Cache-Control' => 'public, max-age=3600', // Cache for 1 hour
+        ]);
+    }
 }

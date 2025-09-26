@@ -20,11 +20,75 @@ use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
+use OpenApi\Attributes as OA;
 use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'Backup',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Backup ID'),
+        new OA\Property(property: 'server_id', type: 'integer', description: 'Server ID'),
+        new OA\Property(property: 'uuid', type: 'string', description: 'Backup UUID'),
+        new OA\Property(property: 'name', type: 'string', description: 'Backup name'),
+        new OA\Property(property: 'ignored_files', type: 'string', description: 'JSON string of ignored files'),
+        new OA\Property(property: 'disk', type: 'string', description: 'Storage disk type'),
+        new OA\Property(property: 'is_successful', type: 'integer', description: 'Whether backup was successful (0 or 1)'),
+        new OA\Property(property: 'is_locked', type: 'integer', description: 'Whether backup is locked (0 or 1)'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Backup creation timestamp'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Backup update timestamp'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'BackupPagination',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'current_page', type: 'integer', description: 'Current page number'),
+        new OA\Property(property: 'per_page', type: 'integer', description: 'Records per page'),
+        new OA\Property(property: 'total', type: 'integer', description: 'Total number of records'),
+        new OA\Property(property: 'last_page', type: 'integer', description: 'Last page number'),
+        new OA\Property(property: 'from', type: 'integer', description: 'Starting record number'),
+        new OA\Property(property: 'to', type: 'integer', description: 'Ending record number'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'BackupCreateRequest',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'uuid', type: 'string', nullable: true, description: 'Custom backup UUID (optional)'),
+        new OA\Property(property: 'name', type: 'string', nullable: true, description: 'Backup name (optional)'),
+        new OA\Property(property: 'ignore', type: 'string', nullable: true, description: 'JSON string of files to ignore (optional)'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'BackupCreateResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Backup ID'),
+        new OA\Property(property: 'uuid', type: 'string', description: 'Backup UUID'),
+        new OA\Property(property: 'name', type: 'string', description: 'Backup name'),
+        new OA\Property(property: 'adapter', type: 'string', description: 'Backup adapter used'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'BackupRestoreRequest',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'truncate_directory', type: 'boolean', nullable: true, description: 'Whether to truncate directory before restore (optional)'),
+        new OA\Property(property: 'download_url', type: 'string', nullable: true, description: 'Download URL for restore (optional)'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'BackupDownloadResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'download_url', type: 'string', description: 'Backup download URL'),
+        new OA\Property(property: 'expires_in', type: 'integer', description: 'Token expiration time in seconds'),
+    ]
+)]
 class ServerBackupController
 {
     /**
@@ -35,6 +99,52 @@ class ServerBackupController
      *
      * @return Response The HTTP response
      */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/backups',
+        summary: 'Get server backups',
+        description: 'Retrieve all backups for a specific server that the user owns or has subuser access to.',
+        tags: ['User - Server Backups'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                description: 'Page number for pagination',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
+            ),
+            new OA\Parameter(
+                name: 'per_page',
+                in: 'query',
+                description: 'Number of records per page',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 20)
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server backups retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/Backup')),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/BackupPagination'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve backups'),
+        ]
+    )]
     public function getBackups(Request $request, string $serverUuid): Response
     {
         // Get server info
@@ -84,6 +194,40 @@ class ServerBackupController
      *
      * @return Response The HTTP response
      */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/backups/{backupUuid}',
+        summary: 'Get specific backup',
+        description: 'Retrieve details of a specific backup for a server that the user owns or has subuser access to.',
+        tags: ['User - Server Backups'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'backupUuid',
+                in: 'path',
+                description: 'Backup UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Backup details retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/Backup')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or backup not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve backup'),
+        ]
+    )]
     public function getBackup(Request $request, string $serverUuid, string $backupUuid): Response
     {
         // Get server info
@@ -118,6 +262,37 @@ class ServerBackupController
      *
      * @return Response The HTTP response
      */
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/backups',
+        summary: 'Create backup',
+        description: 'Create a new backup for a server. Checks backup limits and initiates backup creation on Wings daemon.',
+        tags: ['User - Server Backups'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/BackupCreateRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 202,
+                description: 'Backup creation initiated successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/BackupCreateResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID, backup limit reached, or invalid request body'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to create backup'),
+        ]
+    )]
     public function createBackup(Request $request, string $serverUuid): Response
     {
         // Get server info
@@ -257,6 +432,49 @@ class ServerBackupController
      *
      * @return Response The HTTP response
      */
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/backups/{backupUuid}/restore',
+        summary: 'Restore backup',
+        description: 'Restore a backup to the server. Cannot restore locked backups.',
+        tags: ['User - Server Backups'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'backupUuid',
+                in: 'path',
+                description: 'Backup UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/BackupRestoreRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 202,
+                description: 'Backup restoration initiated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing parameters or invalid request body'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server, backup, or node not found'),
+            new OA\Response(response: 423, description: 'Locked - Backup is currently locked'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to restore backup'),
+        ]
+    )]
     public function restoreBackup(Request $request, string $serverUuid, string $backupUuid): Response
     {
         // Get server info
@@ -368,6 +586,44 @@ class ServerBackupController
      *
      * @return Response The HTTP response
      */
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/backups/{backupUuid}/lock',
+        summary: 'Lock backup',
+        description: 'Lock a backup to prevent deletion and restoration.',
+        tags: ['User - Server Backups'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'backupUuid',
+                in: 'path',
+                description: 'Backup UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Backup locked successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or backup not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to lock backup'),
+        ]
+    )]
     public function lockBackup(Request $request, string $serverUuid, string $backupUuid): Response
     {
         // Get server info
@@ -426,6 +682,44 @@ class ServerBackupController
      *
      * @return Response The HTTP response
      */
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/backups/{backupUuid}/unlock',
+        summary: 'Unlock backup',
+        description: 'Unlock a backup to allow deletion and restoration.',
+        tags: ['User - Server Backups'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'backupUuid',
+                in: 'path',
+                description: 'Backup UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Backup unlocked successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or backup not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to unlock backup'),
+        ]
+    )]
     public function unlockBackup(Request $request, string $serverUuid, string $backupUuid): Response
     {
         // Get server info
@@ -484,6 +778,45 @@ class ServerBackupController
      *
      * @return Response The HTTP response
      */
+    #[OA\Delete(
+        path: '/api/user/servers/{uuidShort}/backups/{backupUuid}',
+        summary: 'Delete backup',
+        description: 'Delete a backup from the server. Cannot delete locked backups.',
+        tags: ['User - Server Backups'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'backupUuid',
+                in: 'path',
+                description: 'Backup UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Backup deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server, backup, or node not found'),
+            new OA\Response(response: 423, description: 'Locked - Backup is currently locked'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to delete backup'),
+        ]
+    )]
     public function deleteBackup(Request $request, string $serverUuid, string $backupUuid): Response
     {
         // Get server info
@@ -587,6 +920,40 @@ class ServerBackupController
      *
      * @return Response The HTTP response
      */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/backups/{backupUuid}/download',
+        summary: 'Get backup download URL',
+        description: 'Generate a secure download URL for a backup with JWT token authentication.',
+        tags: ['User - Server Backups'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'backupUuid',
+                in: 'path',
+                description: 'Backup UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Download URL generated successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/BackupDownloadResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server, backup, or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to generate download URL'),
+        ]
+    )]
     public function getBackupDownloadUrl(Request $request, string $serverUuid, string $backupUuid): Response
     {
         // Get server info

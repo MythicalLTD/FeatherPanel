@@ -18,13 +18,135 @@ use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
+use OpenApi\Attributes as OA;
 use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'FileItem',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'name', type: 'string', description: 'File or directory name'),
+        new OA\Property(property: 'type', type: 'string', enum: ['file', 'directory'], description: 'Item type'),
+        new OA\Property(property: 'size', type: 'integer', nullable: true, description: 'File size in bytes'),
+        new OA\Property(property: 'permissions', type: 'string', nullable: true, description: 'File permissions'),
+        new OA\Property(property: 'modified_at', type: 'string', format: 'date-time', nullable: true, description: 'Last modified timestamp'),
+        new OA\Property(property: 'path', type: 'string', description: 'Full file path'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'FileOperationRequest',
+    type: 'object',
+    required: ['files', 'root'],
+    properties: [
+        new OA\Property(property: 'files', type: 'array', items: new OA\Items(type: 'string'), description: 'Array of file paths'),
+        new OA\Property(property: 'root', type: 'string', description: 'Root directory path'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'RenameRequest',
+    type: 'object',
+    required: ['files', 'root'],
+    properties: [
+        new OA\Property(property: 'files', type: 'array', items: new OA\Items(type: 'object', properties: [
+            new OA\Property(property: 'from', type: 'string'),
+            new OA\Property(property: 'to', type: 'string'),
+        ]), description: 'Array of rename operations'),
+        new OA\Property(property: 'root', type: 'string', description: 'Root directory path'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'CopyRequest',
+    type: 'object',
+    required: ['files', 'location'],
+    properties: [
+        new OA\Property(property: 'files', type: 'array', items: new OA\Items(type: 'string'), description: 'Array of file paths to copy'),
+        new OA\Property(property: 'location', type: 'string', description: 'Destination location'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'CreateDirectoryRequest',
+    type: 'object',
+    required: ['name', 'path'],
+    properties: [
+        new OA\Property(property: 'name', type: 'string', description: 'Directory name'),
+        new OA\Property(property: 'path', type: 'string', description: 'Parent directory path'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'DecompressRequest',
+    type: 'object',
+    required: ['file', 'root'],
+    properties: [
+        new OA\Property(property: 'file', type: 'string', description: 'Archive file path'),
+        new OA\Property(property: 'root', type: 'string', description: 'Root directory path'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'PullFileRequest',
+    type: 'object',
+    required: ['url', 'root'],
+    properties: [
+        new OA\Property(property: 'url', type: 'string', format: 'uri', description: 'URL to download from'),
+        new OA\Property(property: 'root', type: 'string', description: 'Destination directory path'),
+        new OA\Property(property: 'fileName', type: 'string', nullable: true, description: 'Custom filename'),
+        new OA\Property(property: 'foreground', type: 'boolean', nullable: true, description: 'Run in foreground', default: false),
+        new OA\Property(property: 'useHeader', type: 'boolean', nullable: true, description: 'Use headers', default: true),
+    ]
+)]
+#[OA\Schema(
+    schema: 'DownloadProcess',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'string', description: 'Download process ID'),
+        new OA\Property(property: 'url', type: 'string', description: 'Download URL'),
+        new OA\Property(property: 'status', type: 'string', description: 'Download status'),
+        new OA\Property(property: 'progress', type: 'number', nullable: true, description: 'Download progress percentage'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Process creation time'),
+    ]
+)]
 class ServerFilesController
 {
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/files',
+        summary: 'Get server files',
+        description: 'Retrieve directory contents for a specific server path. Lists files and directories with their properties.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'path',
+                in: 'query',
+                description: 'Directory path to list',
+                required: false,
+                schema: new OA\Schema(type: 'string', default: '/')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Files retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'contents', type: 'array', items: new OA\Items(ref: '#/components/schemas/FileItem')),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to fetch files'),
+        ]
+    )]
     public function getFiles(Request $request, string $serverUuid): Response
     {
         try {
@@ -57,6 +179,50 @@ class ServerFilesController
         }
     }
 
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/file',
+        summary: 'Get file content',
+        description: 'Retrieve the raw content of a specific file with appropriate MIME type headers.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'path',
+                in: 'query',
+                description: 'File path to read',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'File content retrieved successfully',
+                content: new OA\MediaType(
+                    mediaType: 'application/octet-stream',
+                    schema: new OA\Schema(type: 'string', format: 'binary')
+                ),
+                headers: [
+                    new OA\Header(
+                        header: 'Content-Type',
+                        description: 'MIME type of the file',
+                        schema: new OA\Schema(type: 'string', example: 'text/plain')
+                    ),
+                ]
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server, node, or file not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to fetch file'),
+        ]
+    )]
     public function getFile(Request $request, string $serverUuid): Response
     {
         try {
@@ -107,6 +273,52 @@ class ServerFilesController
         }
     }
 
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/write-file',
+        summary: 'Write file content',
+        description: 'Write raw content to a file on the server. Content-Type must not be application/json.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'path',
+                in: 'query',
+                description: 'File path to write to',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'application/octet-stream',
+                schema: new OA\Schema(type: 'string', format: 'binary', description: 'Raw file content')
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'File written successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID, empty content, or invalid content type'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 415, description: 'Unsupported media type - JSON content type not allowed'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to write file'),
+        ]
+    )]
     public function writeFile(Request $request, string $serverUuid): Response
     {
         try {
@@ -159,6 +371,41 @@ class ServerFilesController
         }
     }
 
+    #[OA\Put(
+        path: '/api/user/servers/{uuidShort}/rename',
+        summary: 'Rename files or folders',
+        description: 'Rename multiple files or folders on the server.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/RenameRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Files renamed successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID or invalid request body'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to rename files'),
+        ]
+    )]
     public function renameFileOrFolder(Request $request, string $serverUuid): Response
     {
         try {
@@ -200,6 +447,41 @@ class ServerFilesController
         }
     }
 
+    #[OA\Delete(
+        path: '/api/user/servers/{uuidShort}/delete-files',
+        summary: 'Delete files',
+        description: 'Delete multiple files or folders from the server. This action cannot be undone.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/FileOperationRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Files deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID or invalid request body'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to delete files'),
+        ]
+    )]
     public function deleteFiles(Request $request, string $serverUuid): Response
     {
         try {
@@ -242,6 +524,41 @@ class ServerFilesController
         }
     }
 
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/copy-files',
+        summary: 'Copy files',
+        description: 'Copy multiple files or folders to a new location on the server.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/CopyRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Files copied successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID or invalid request body'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to copy files'),
+        ]
+    )]
     public function copyFiles(Request $request, string $serverUuid): Response
     {
         try {
@@ -284,6 +601,41 @@ class ServerFilesController
         }
     }
 
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/create-directory',
+        summary: 'Create directory',
+        description: 'Create a new directory on the server.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/CreateDirectoryRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Directory created successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID or invalid request body'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to create directory'),
+        ]
+    )]
     public function createDirectory(Request $request, string $serverUuid): Response
     {
         try {
@@ -326,6 +678,41 @@ class ServerFilesController
         }
     }
 
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/compress-files',
+        summary: 'Compress files',
+        description: 'Compress multiple files or folders into an archive.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/FileOperationRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Files compressed successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID or invalid request body'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to compress files'),
+        ]
+    )]
     public function compressFiles(Request $request, string $serverUuid): Response
     {
         try {
@@ -368,6 +755,41 @@ class ServerFilesController
         }
     }
 
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/decompress-archive',
+        summary: 'Decompress archive',
+        description: 'Decompress an archive file on the server.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/DecompressRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Archive decompressed successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID or invalid request body'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to decompress archive'),
+        ]
+    )]
     public function decompressArchive(Request $request, string $serverUuid): Response
     {
         try {
@@ -409,6 +831,41 @@ class ServerFilesController
         }
     }
 
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/change-permissions',
+        summary: 'Change file permissions',
+        description: 'Change permissions for multiple files or folders on the server.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/FileOperationRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'File permissions changed successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID or invalid request body'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to change permissions'),
+        ]
+    )]
     public function changeFilePermissions(Request $request, string $serverUuid): Response
     {
         try {
@@ -448,6 +905,41 @@ class ServerFilesController
         }
     }
 
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/pull-file',
+        summary: 'Pull file from URL',
+        description: 'Download a file from a URL to the server. Can run in foreground or background.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/PullFileRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'File pull initiated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID or invalid request body'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to pull file'),
+        ]
+    )]
     public function pullFile(Request $request, string $serverUuid): Response
     {
         try {
@@ -493,6 +985,36 @@ class ServerFilesController
         }
     }
 
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/downloads-list',
+        summary: 'Get downloads list',
+        description: 'Retrieve the list of active download processes for the server.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Downloads list retrieved successfully',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: '#/components/schemas/DownloadProcess')
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to get downloads list'),
+        ]
+    )]
     public function getDownloadsList(Request $request, string $serverUuid): Response
     {
         try {
@@ -520,6 +1042,44 @@ class ServerFilesController
         }
     }
 
+    #[OA\Delete(
+        path: '/api/user/servers/{uuidShort}/delete-pull-process/{pullId}',
+        summary: 'Delete pull process',
+        description: 'Cancel and delete an active download process.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'pullId',
+                in: 'path',
+                description: 'Pull process ID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Pull process deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server, node, or pull process not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to delete pull process'),
+        ]
+    )]
     public function deletePullProcess(Request $request, string $serverUuid, string $pullId): Response
     {
         try {
@@ -555,6 +1115,59 @@ class ServerFilesController
         }
     }
 
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/upload-file',
+        summary: 'Upload file',
+        description: 'Upload a file to the server. Content-Type must not be application/json.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'path',
+                in: 'query',
+                description: 'Destination directory path',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'filename',
+                in: 'query',
+                description: 'Filename for the uploaded file',
+                required: false,
+                schema: new OA\Schema(type: 'string', default: 'uploaded_file')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'application/octet-stream',
+                schema: new OA\Schema(type: 'string', format: 'binary', description: 'Raw file content')
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'File uploaded successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID, empty content, or invalid content type'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 415, description: 'Unsupported media type - JSON content type not allowed'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to upload file'),
+        ]
+    )]
     public function uploadFile(Request $request, string $serverUuid): Response
     {
         try {
@@ -614,6 +1227,65 @@ class ServerFilesController
         }
     }
 
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/download-file',
+        summary: 'Download file',
+        description: 'Download a file from the server with appropriate headers for file download.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'path',
+                in: 'query',
+                description: 'File path to download',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'File downloaded successfully',
+                content: new OA\MediaType(
+                    mediaType: 'application/octet-stream',
+                    schema: new OA\Schema(type: 'string', format: 'binary')
+                ),
+                headers: [
+                    new OA\Header(
+                        header: 'Content-Type',
+                        description: 'MIME type of the file',
+                        schema: new OA\Schema(type: 'string', example: 'text/plain')
+                    ),
+                    new OA\Header(
+                        header: 'Content-Disposition',
+                        description: 'Download attachment header',
+                        schema: new OA\Schema(type: 'string', example: 'attachment; filename="file.txt"')
+                    ),
+                    new OA\Header(
+                        header: 'Content-Length',
+                        description: 'File size in bytes',
+                        schema: new OA\Schema(type: 'string', example: '1024')
+                    ),
+                    new OA\Header(
+                        header: 'Cache-Control',
+                        description: 'Cache control header',
+                        schema: new OA\Schema(type: 'string', example: 'no-cache, no-store, must-revalidate')
+                    ),
+                ]
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID or file path'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server, node, or file not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to download file'),
+        ]
+    )]
     public function downloadFile(Request $request, string $serverUuid): Response
     {
         try {

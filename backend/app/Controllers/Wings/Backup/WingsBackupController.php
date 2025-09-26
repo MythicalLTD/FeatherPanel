@@ -17,21 +17,75 @@ use App\Chat\Node;
 use App\Chat\Backup;
 use App\Chat\Server;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'BackupUploadInfo',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'parts', type: 'array', items: new OA\Items(type: 'string'), description: 'Array of upload URLs for each part'),
+        new OA\Property(property: 'part_size', type: 'integer', description: 'Size of each part in bytes'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'BackupCompletion',
+    type: 'object',
+    required: ['checksum', 'checksum_type', 'size', 'successful'],
+    properties: [
+        new OA\Property(property: 'checksum', type: 'string', description: 'Backup file checksum'),
+        new OA\Property(property: 'checksum_type', type: 'string', description: 'Type of checksum algorithm'),
+        new OA\Property(property: 'size', type: 'integer', description: 'Backup file size in bytes'),
+        new OA\Property(property: 'successful', type: 'boolean', description: 'Whether backup was successful'),
+        new OA\Property(property: 'upload_id', type: 'string', description: 'Upload ID for multipart uploads'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'BackupRestoration',
+    type: 'object',
+    required: ['successful'],
+    properties: [
+        new OA\Property(property: 'successful', type: 'boolean', description: 'Whether restoration was successful'),
+    ]
+)]
 class WingsBackupController
 {
-    /**
-     * Get backup upload information for S3/remote backups.
-     * This endpoint is called by Wings to get presigned upload URLs.
-     *
-     * @param Request $request The HTTP request
-     * @param string $backupUuid The backup UUID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Get(
+        path: '/api/remote/backups/{backupUuid}',
+        summary: 'Get backup upload information',
+        description: 'Get presigned upload URLs for S3/remote backup storage. Returns multipart upload URLs for large backup files. Requires Wings node token authentication (token ID and secret).',
+        tags: ['Wings - Backup'],
+        parameters: [
+            new OA\Parameter(
+                name: 'backupUuid',
+                in: 'path',
+                description: 'Backup UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+            new OA\Parameter(
+                name: 'size',
+                in: 'query',
+                description: 'Backup file size in bytes',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Backup upload information retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/BackupUploadInfo')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing backup UUID or invalid size parameter'),
+            new OA\Response(response: 401, description: 'Unauthorized - Invalid Wings authentication'),
+            new OA\Response(response: 403, description: 'Forbidden - Invalid Wings authentication'),
+            new OA\Response(response: 404, description: 'Not found - Backup, server, or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
     public function getBackupUploadInfo(Request $request, string $backupUuid): Response
     {
         // Get Wings authentication attributes from request
@@ -103,15 +157,36 @@ class WingsBackupController
         ]);
     }
 
-    /**
-     * Report backup completion and metadata.
-     * This endpoint is called by Wings after a backup is completed.
-     *
-     * @param Request $request The HTTP request
-     * @param string $backupUuid The backup UUID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Post(
+        path: '/api/remote/backups/{backupUuid}',
+        summary: 'Report backup completion',
+        description: 'Report backup completion and metadata to update backup record with checksum, size, and success status. Requires Wings node token authentication (token ID and secret).',
+        tags: ['Wings - Backup'],
+        parameters: [
+            new OA\Parameter(
+                name: 'backupUuid',
+                in: 'path',
+                description: 'Backup UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/BackupCompletion')
+        ),
+        responses: [
+            new OA\Response(
+                response: 204,
+                description: 'Backup completion reported successfully'
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing backup UUID, invalid request body, or missing required fields'),
+            new OA\Response(response: 401, description: 'Unauthorized - Invalid Wings authentication'),
+            new OA\Response(response: 403, description: 'Forbidden - Invalid Wings authentication'),
+            new OA\Response(response: 404, description: 'Not found - Backup, server, or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to update backup'),
+        ]
+    )]
     public function reportBackupCompletion(Request $request, string $backupUuid): Response
     {
         // Get Wings authentication attributes from request
@@ -193,15 +268,36 @@ class WingsBackupController
         return ApiResponse::success(null, 'Backup completion reported successfully', 204);
     }
 
-    /**
-     * Report backup restoration completion.
-     * This endpoint is called by Wings after a backup restoration is completed.
-     *
-     * @param Request $request The HTTP request
-     * @param string $backupUuid The backup UUID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Post(
+        path: '/api/remote/backups/{backupUuid}/restore',
+        summary: 'Report backup restoration completion',
+        description: 'Report backup restoration completion status to log restoration activities. Requires Wings node token authentication (token ID and secret).',
+        tags: ['Wings - Backup'],
+        parameters: [
+            new OA\Parameter(
+                name: 'backupUuid',
+                in: 'path',
+                description: 'Backup UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/BackupRestoration')
+        ),
+        responses: [
+            new OA\Response(
+                response: 204,
+                description: 'Backup restoration completion reported successfully'
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing backup UUID, invalid request body, or missing required field'),
+            new OA\Response(response: 401, description: 'Unauthorized - Invalid Wings authentication'),
+            new OA\Response(response: 403, description: 'Forbidden - Invalid Wings authentication'),
+            new OA\Response(response: 404, description: 'Not found - Backup, server, or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
     public function reportBackupRestoration(Request $request, string $backupUuid): Response
     {
         // Get Wings authentication attributes from request

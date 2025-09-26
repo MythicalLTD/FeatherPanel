@@ -12,8 +12,8 @@
  */
 
 use App\App;
-use Symfony\Component\HttpFoundation\Request;
 use App\Controllers\System\ApiDocs;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 
 return function (RouteCollection $routes): void {

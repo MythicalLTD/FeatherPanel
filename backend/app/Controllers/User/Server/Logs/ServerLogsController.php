@@ -17,12 +17,55 @@ use App\App;
 use App\Chat\Server;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
+use OpenApi\Attributes as OA;
 use App\Helpers\ServerGateway;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'ServerLogsResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'response', type: 'array', items: new OA\Items(type: 'string'), description: 'Array of log lines from the server'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'InstallLogsResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'response', type: 'array', items: new OA\Items(type: 'string'), description: 'Array of installation log lines from the server'),
+    ]
+)]
 class ServerLogsController
 {
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/logs',
+        summary: 'Get server logs',
+        description: 'Retrieve the current server logs from the Wings daemon. These logs contain real-time server output and events.',
+        tags: ['User - Server Logs'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server logs retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ServerLogsResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid server configuration'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated or Wings daemon unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server or Wings daemon'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 422, description: 'Unprocessable entity - Invalid server data'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve logs'),
+        ]
+    )]
     public function getLogs(Request $request, string $uuidShort): Response
     {
         // Get authenticated user
@@ -87,6 +130,34 @@ class ServerLogsController
         return ApiResponse::success(['response' => $response->getData()], 'Response from Wings', 200);
     }
 
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/install-logs',
+        summary: 'Get server installation logs',
+        description: 'Retrieve the installation logs from the Wings daemon. These logs contain the server installation process output and any errors that occurred during setup.',
+        tags: ['User - Server Logs'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Installation logs retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/InstallLogsResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid server configuration'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated or Wings daemon unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server or Wings daemon'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 422, description: 'Unprocessable entity - Invalid server data'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve installation logs'),
+        ]
+    )]
     public function getInstallLogs(Request $request, string $uuidShort): Response
     {
         // Get authenticated user

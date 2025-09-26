@@ -18,12 +18,99 @@ use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Chat\ServerDatabase;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
 use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'ServerDatabase',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Database ID'),
+        new OA\Property(property: 'server_id', type: 'integer', description: 'Server ID'),
+        new OA\Property(property: 'database_host_id', type: 'integer', description: 'Database host ID'),
+        new OA\Property(property: 'database', type: 'string', description: 'Database name'),
+        new OA\Property(property: 'username', type: 'string', description: 'Database username'),
+        new OA\Property(property: 'password', type: 'string', description: 'Database password'),
+        new OA\Property(property: 'remote', type: 'string', description: 'Remote access pattern'),
+        new OA\Property(property: 'max_connections', type: 'integer', description: 'Maximum connections'),
+        new OA\Property(property: 'database_host_name', type: 'string', description: 'Database host name'),
+        new OA\Property(property: 'database_host', type: 'string', description: 'Database host address'),
+        new OA\Property(property: 'database_port', type: 'integer', description: 'Database host port'),
+        new OA\Property(property: 'database_type', type: 'string', description: 'Database type'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'DatabasePagination',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'current_page', type: 'integer', description: 'Current page number'),
+        new OA\Property(property: 'per_page', type: 'integer', description: 'Records per page'),
+        new OA\Property(property: 'total', type: 'integer', description: 'Total number of records'),
+        new OA\Property(property: 'last_page', type: 'integer', description: 'Last page number'),
+        new OA\Property(property: 'from', type: 'integer', description: 'Starting record number'),
+        new OA\Property(property: 'to', type: 'integer', description: 'Ending record number'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'DatabaseCreateRequest',
+    type: 'object',
+    required: ['database_host_id', 'database_name'],
+    properties: [
+        new OA\Property(property: 'database_host_id', type: 'integer', description: 'Database host ID'),
+        new OA\Property(property: 'database_name', type: 'string', description: 'Database name (without server prefix)'),
+        new OA\Property(property: 'remote', type: 'string', nullable: true, description: 'Remote access pattern', default: '%'),
+        new OA\Property(property: 'max_connections', type: 'integer', nullable: true, description: 'Maximum connections', default: 0),
+    ]
+)]
+#[OA\Schema(
+    schema: 'DatabaseCreateResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Created database ID'),
+        new OA\Property(property: 'database_name', type: 'string', description: 'Generated database name'),
+        new OA\Property(property: 'username', type: 'string', description: 'Generated username'),
+        new OA\Property(property: 'password', type: 'string', description: 'Generated password'),
+        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'DatabaseUpdateRequest',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'remote', type: 'string', nullable: true, description: 'Remote access pattern'),
+        new OA\Property(property: 'max_connections', type: 'integer', nullable: true, description: 'Maximum connections'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'DatabaseHost',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Database host ID'),
+        new OA\Property(property: 'name', type: 'string', description: 'Database host name'),
+        new OA\Property(property: 'database_host', type: 'string', description: 'Database host address'),
+        new OA\Property(property: 'database_port', type: 'integer', description: 'Database host port'),
+        new OA\Property(property: 'database_type', type: 'string', description: 'Database type'),
+        new OA\Property(property: 'database_username', type: 'string', description: 'Database host username'),
+        new OA\Property(property: 'node_name', type: 'string', nullable: true, description: 'Associated node name'),
+        new OA\Property(property: 'healthy', type: 'boolean', description: 'Health status'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ConnectionTestResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'database_host_id', type: 'integer', description: 'Database host ID'),
+        new OA\Property(property: 'healthy', type: 'boolean', description: 'Connection health status'),
+        new OA\Property(property: 'message', type: 'string', description: 'Connection test message'),
+        new OA\Property(property: 'response_time', type: 'number', nullable: true, description: 'Response time in milliseconds'),
+    ]
+)]
 class ServerDatabaseController
 {
     /**
@@ -34,6 +121,59 @@ class ServerDatabaseController
      *
      * @return Response The HTTP response
      */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/databases',
+        summary: 'Get server databases',
+        description: 'Retrieve all databases for a specific server that the user owns or has subuser access to, with pagination and search functionality.',
+        tags: ['User - Server Databases'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                description: 'Page number for pagination',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
+            ),
+            new OA\Parameter(
+                name: 'per_page',
+                in: 'query',
+                description: 'Number of records per page',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 20)
+            ),
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                description: 'Search term to filter databases by name, username, or host',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server databases retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServerDatabase')),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/DatabasePagination'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve databases'),
+        ]
+    )]
     public function getServerDatabases(Request $request, string $serverUuid): Response
     {
         // Get server info
@@ -90,6 +230,40 @@ class ServerDatabaseController
      *
      * @return Response The HTTP response
      */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/databases/{databaseId}',
+        summary: 'Get specific database',
+        description: 'Retrieve details of a specific database for a server that the user owns or has subuser access to.',
+        tags: ['User - Server Databases'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'databaseId',
+                in: 'path',
+                description: 'Database ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Database details retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ServerDatabase')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or database not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve database'),
+        ]
+    )]
     public function getServerDatabase(Request $request, string $serverUuid, int $databaseId): Response
     {
         // Get server info
@@ -124,6 +298,37 @@ class ServerDatabaseController
      *
      * @return Response The HTTP response
      */
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/databases',
+        summary: 'Create database',
+        description: 'Create a new database for a server. Checks database limits and creates database on the specified host.',
+        tags: ['User - Server Databases'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/DatabaseCreateRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Database created successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/DatabaseCreateResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID, database limit reached, or invalid request body'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or database host not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to create database'),
+        ]
+    )]
     public function createServerDatabase(Request $request, string $serverUuid): Response
     {
         // Get server info
@@ -243,6 +448,48 @@ class ServerDatabaseController
      *
      * @return Response The HTTP response
      */
+    #[OA\Patch(
+        path: '/api/user/servers/{uuidShort}/databases/{databaseId}',
+        summary: 'Update database',
+        description: 'Update database settings including remote access pattern and maximum connections.',
+        tags: ['User - Server Databases'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'databaseId',
+                in: 'path',
+                description: 'Database ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/DatabaseUpdateRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Database updated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing parameters or invalid request body'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or database not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to update database'),
+        ]
+    )]
     public function updateServerDatabase(Request $request, string $serverUuid, int $databaseId): Response
     {
         // Get server info
@@ -324,6 +571,44 @@ class ServerDatabaseController
      *
      * @return Response The HTTP response
      */
+    #[OA\Delete(
+        path: '/api/user/servers/{uuidShort}/databases/{databaseId}',
+        summary: 'Delete database',
+        description: 'Permanently delete a database from a server. This action cannot be undone.',
+        tags: ['User - Server Databases'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'databaseId',
+                in: 'path',
+                description: 'Database ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Database deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server, database, or database host not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to delete database'),
+        ]
+    )]
     public function deleteServerDatabase(Request $request, string $serverUuid, int $databaseId): Response
     {
         // Get server info
@@ -402,6 +687,36 @@ class ServerDatabaseController
      *
      * @return Response The HTTP response
      */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/databases/hosts',
+        summary: 'Get available database hosts',
+        description: 'Retrieve all available database hosts that can be used for creating databases.',
+        tags: ['User - Server Databases'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Database hosts retrieved successfully',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: '#/components/schemas/DatabaseHost')
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve database hosts'),
+        ]
+    )]
     public function getAvailableDatabaseHosts(Request $request, string $serverUuid): Response
     {
         // Get server info
@@ -429,6 +744,39 @@ class ServerDatabaseController
      *
      * @return Response The HTTP response
      */
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/databases/hosts/{databaseHostId}/test',
+        summary: 'Test database host connection',
+        description: 'Test the connection to a specific database host to verify connectivity and performance.',
+        tags: ['User - Server Databases'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'databaseHostId',
+                in: 'path',
+                description: 'Database host ID to test',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Connection test completed',
+                content: new OA\JsonContent(ref: '#/components/schemas/ConnectionTestResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 404, description: 'Not found - Server or database host not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to test connection'),
+        ]
+    )]
     public function testDatabaseHostConnection(Request $request, string $serverUuid, int $databaseHostId): Response
     {
         // Get server info

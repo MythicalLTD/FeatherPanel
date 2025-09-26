@@ -19,21 +19,86 @@ use App\Chat\Server;
 use App\Permissions;
 use App\Chat\Subuser;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Helpers\ServerGateway;
 use App\Helpers\PermissionHelper;
 use App\Plugins\Events\Events\WingsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'SftpAuthRequest',
+    type: 'object',
+    required: ['type', 'username', 'password', 'ip'],
+    properties: [
+        new OA\Property(property: 'type', type: 'string', enum: ['password', 'public_key'], description: 'Authentication type'),
+        new OA\Property(property: 'username', type: 'string', description: 'Username in format username.serverid'),
+        new OA\Property(property: 'password', type: 'string', description: 'Password or public key content'),
+        new OA\Property(property: 'ip', type: 'string', description: 'Client IP address'),
+        new OA\Property(property: 'session_id', type: 'string', description: 'Session ID'),
+        new OA\Property(property: 'client_version', type: 'string', description: 'SFTP client version'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SftpAuthSuccessResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'server', type: 'string', description: 'Server UUID'),
+        new OA\Property(property: 'user', type: 'string', description: 'User UUID'),
+        new OA\Property(property: 'permissions', type: 'array', items: new OA\Items(type: 'string'), description: 'File permissions'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SftpAuthErrorResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'error', type: 'string', description: 'Error message'),
+    ]
+)]
 class SftpAuthController
 {
-    /**
-     * Handle SFTP authentication requests from Wings.
-     *
-     * @param Request $request The HTTP request
-     *
-     * @return Response The authentication response
-     */
+    #[OA\Post(
+        path: '/api/remote/sftp/auth',
+        summary: 'SFTP authentication',
+        description: 'Handle SFTP authentication requests from Wings daemon. Supports both password and public key authentication. Requires Wings node token authentication.',
+        tags: ['Wings - SFTP'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/SftpAuthRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'SFTP authentication successful',
+                content: new OA\JsonContent(ref: '#/components/schemas/SftpAuthSuccessResponse')
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Bad request - Invalid request data or username format',
+                content: new OA\JsonContent(ref: '#/components/schemas/SftpAuthErrorResponse')
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthorized - Invalid Wings node token or credentials',
+                content: new OA\JsonContent(ref: '#/components/schemas/SftpAuthErrorResponse')
+            ),
+            new OA\Response(
+                response: 403,
+                description: 'Forbidden - Invalid Wings node token or access denied',
+                content: new OA\JsonContent(ref: '#/components/schemas/SftpAuthErrorResponse')
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Not found - Server not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/SftpAuthErrorResponse')
+            ),
+            new OA\Response(
+                response: 500,
+                description: 'Internal server error',
+                content: new OA\JsonContent(ref: '#/components/schemas/SftpAuthErrorResponse')
+            ),
+        ]
+    )]
     public function authenticate(Request $request): Response
     {
         try {

@@ -17,6 +17,7 @@ use App\App;
 use App\Chat\User;
 use App\Chat\Activity;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\CloudFlare\CloudFlareTurnstile;
@@ -24,11 +25,59 @@ use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'LoginRequest',
+    type: 'object',
+    required: ['email', 'password'],
+    properties: [
+        new OA\Property(property: 'email', type: 'string', format: 'email', minLength: 3, maxLength: 255, description: 'User email address'),
+        new OA\Property(property: 'password', type: 'string', minLength: 8, maxLength: 255, description: 'User password'),
+        new OA\Property(property: 'turnstile_token', type: 'string', description: 'CloudFlare Turnstile token (required if Turnstile is enabled)'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'LoginResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'user', type: 'object', description: 'User information'),
+        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'TwoFactorRequiredResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'email', type: 'string', description: 'User email address'),
+        new OA\Property(property: 'message', type: 'string', description: '2FA required message'),
+    ]
+)]
 class LoginController
 {
-    /**
-     * Login a user.
-     */
+    #[OA\Put(
+        path: '/api/user/auth/login',
+        summary: 'Login user',
+        description: 'Authenticate user with email and password. Includes CloudFlare Turnstile validation if enabled. Returns 2FA requirement if enabled.',
+        tags: ['User - Authentication'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/LoginRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'User logged in successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/LoginResponse')
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Two-factor authentication required',
+                content: new OA\JsonContent(ref: '#/components/schemas/TwoFactorRequiredResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing required fields, invalid email format, Turnstile validation failed, or Turnstile keys not set'),
+            new OA\Response(response: 401, description: 'Unauthorized - Email does not exist, user is banned, or invalid password'),
+            new OA\Response(response: 500, description: 'Internal server error - Remember token not set'),
+        ]
+    )]
     public function put(Request $request): Response
     {
         $app = App::getInstance(true);

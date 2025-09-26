@@ -18,22 +18,148 @@ use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'Task',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Task ID'),
+        new OA\Property(property: 'schedule_id', type: 'integer', description: 'Schedule ID'),
+        new OA\Property(property: 'sequence_id', type: 'integer', description: 'Task sequence order'),
+        new OA\Property(property: 'action', type: 'string', description: 'Task action type'),
+        new OA\Property(property: 'payload', type: 'string', description: 'Task payload data'),
+        new OA\Property(property: 'time_offset', type: 'integer', description: 'Time offset in seconds'),
+        new OA\Property(property: 'is_queued', type: 'boolean', description: 'Whether task is queued'),
+        new OA\Property(property: 'continue_on_failure', type: 'boolean', description: 'Whether to continue on failure'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'TaskPagination',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'current_page', type: 'integer', description: 'Current page number'),
+        new OA\Property(property: 'per_page', type: 'integer', description: 'Records per page'),
+        new OA\Property(property: 'total', type: 'integer', description: 'Total number of records'),
+        new OA\Property(property: 'last_page', type: 'integer', description: 'Last page number'),
+        new OA\Property(property: 'from', type: 'integer', description: 'Starting record number'),
+        new OA\Property(property: 'to', type: 'integer', description: 'Ending record number'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'TaskCreateRequest',
+    type: 'object',
+    required: ['action', 'payload'],
+    properties: [
+        new OA\Property(property: 'action', type: 'string', description: 'Task action type'),
+        new OA\Property(property: 'payload', type: 'string', description: 'Task payload data'),
+        new OA\Property(property: 'time_offset', type: 'integer', nullable: true, description: 'Time offset in seconds', default: 0),
+        new OA\Property(property: 'continue_on_failure', type: 'boolean', nullable: true, description: 'Whether to continue on failure', default: false),
+    ]
+)]
+#[OA\Schema(
+    schema: 'TaskCreateResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Created task ID'),
+        new OA\Property(property: 'action', type: 'string', description: 'Task action type'),
+        new OA\Property(property: 'sequence_id', type: 'integer', description: 'Task sequence order'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'TaskUpdateRequest',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'action', type: 'string', nullable: true, description: 'Task action type'),
+        new OA\Property(property: 'payload', type: 'string', nullable: true, description: 'Task payload data'),
+        new OA\Property(property: 'time_offset', type: 'integer', nullable: true, description: 'Time offset in seconds'),
+        new OA\Property(property: 'continue_on_failure', type: 'boolean', nullable: true, description: 'Whether to continue on failure'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'TaskSequenceUpdateRequest',
+    type: 'object',
+    required: ['sequence_id'],
+    properties: [
+        new OA\Property(property: 'sequence_id', type: 'integer', description: 'New sequence order for the task'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'TaskStatusToggleResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'is_queued', type: 'integer', enum: [0, 1], description: 'New queued status'),
+        new OA\Property(property: 'status', type: 'string', enum: ['queued', 'unqueued'], description: 'Status description'),
+    ]
+)]
 class TaskController
 {
-    /**
-     * Get all tasks for a schedule.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $scheduleId The schedule ID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/schedules/{scheduleId}/tasks',
+        summary: 'Get schedule tasks',
+        description: 'Retrieve all tasks for a specific schedule that the user owns or has subuser access to.',
+        tags: ['User - Server Tasks'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'scheduleId',
+                in: 'path',
+                description: 'Schedule ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                description: 'Page number for pagination',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
+            ),
+            new OA\Parameter(
+                name: 'per_page',
+                in: 'query',
+                description: 'Number of records per page',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 20)
+            ),
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                description: 'Search term to filter tasks by action or payload',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Schedule tasks retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/Task')),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/TaskPagination'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or schedule not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve tasks'),
+        ]
+    )]
     public function getTasks(Request $request, string $serverUuid, int $scheduleId): Response
     {
         // Get server info
@@ -86,16 +212,47 @@ class TaskController
         ]);
     }
 
-    /**
-     * Get a specific task.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $scheduleId The schedule ID
-     * @param int $taskId The task ID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/schedules/{scheduleId}/tasks/{taskId}',
+        summary: 'Get specific task',
+        description: 'Retrieve details of a specific task for a schedule that the user owns or has subuser access to.',
+        tags: ['User - Server Tasks'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'scheduleId',
+                in: 'path',
+                description: 'Schedule ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'taskId',
+                in: 'path',
+                description: 'Task ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Task details retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/Task')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server, schedule, or task not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve task'),
+        ]
+    )]
     public function getTask(Request $request, string $serverUuid, int $scheduleId, int $taskId): Response
     {
         // Get server info
@@ -132,15 +289,44 @@ class TaskController
         return ApiResponse::success($task);
     }
 
-    /**
-     * Create a new task.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $scheduleId The schedule ID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/schedules/{scheduleId}/tasks',
+        summary: 'Create task',
+        description: 'Create a new task for a schedule with action validation and automatic sequence ordering.',
+        tags: ['User - Server Tasks'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'scheduleId',
+                in: 'path',
+                description: 'Schedule ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/TaskCreateRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Task created successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/TaskCreateResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing required fields, invalid action, or invalid request body'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or schedule not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to create task'),
+        ]
+    )]
     public function createTask(Request $request, string $serverUuid, int $scheduleId): Response
     {
         // Get server info
@@ -229,16 +415,55 @@ class TaskController
         ], 'Task created successfully', 201);
     }
 
-    /**
-     * Update a task.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $scheduleId The schedule ID
-     * @param int $taskId The task ID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Put(
+        path: '/api/user/servers/{uuidShort}/schedules/{scheduleId}/tasks/{taskId}',
+        summary: 'Update task',
+        description: 'Update an existing task with new action validation and field updates.',
+        tags: ['User - Server Tasks'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'scheduleId',
+                in: 'path',
+                description: 'Schedule ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'taskId',
+                in: 'path',
+                description: 'Task ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/TaskUpdateRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Task updated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid action or invalid request body'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server, schedule, or task not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to update task'),
+        ]
+    )]
     public function updateTask(Request $request, string $serverUuid, int $scheduleId, int $taskId): Response
     {
         // Get server info
@@ -312,16 +537,55 @@ class TaskController
         return ApiResponse::success(null, 'Task updated successfully', 200);
     }
 
-    /**
-     * Update task sequence order.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $scheduleId The schedule ID
-     * @param int $taskId The task ID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Put(
+        path: '/api/user/servers/{uuidShort}/schedules/{scheduleId}/tasks/{taskId}/sequence',
+        summary: 'Update task sequence',
+        description: 'Update the sequence order of a task within a schedule.',
+        tags: ['User - Server Tasks'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'scheduleId',
+                in: 'path',
+                description: 'Schedule ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'taskId',
+                in: 'path',
+                description: 'Task ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/TaskSequenceUpdateRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Task sequence updated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing sequence_id or invalid sequence_id'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server, schedule, or task not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to update task sequence'),
+        ]
+    )]
     public function updateTaskSequence(Request $request, string $serverUuid, int $scheduleId, int $taskId): Response
     {
         // Get server info
@@ -396,16 +660,47 @@ class TaskController
         return ApiResponse::success(null, 'Task sequence updated successfully', 200);
     }
 
-    /**
-     * Toggle task queued status.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $scheduleId The schedule ID
-     * @param int $taskId The task ID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Put(
+        path: '/api/user/servers/{uuidShort}/schedules/{scheduleId}/tasks/{taskId}/queue',
+        summary: 'Toggle task queued status',
+        description: 'Toggle the queued status of a task (queue/unqueue).',
+        tags: ['User - Server Tasks'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'scheduleId',
+                in: 'path',
+                description: 'Schedule ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'taskId',
+                in: 'path',
+                description: 'Task ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Task queued status toggled successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/TaskStatusToggleResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server, schedule, or task not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to toggle task status'),
+        ]
+    )]
     public function toggleTaskQueuedStatus(Request $request, string $serverUuid, int $scheduleId, int $taskId): Response
     {
         // Get server info
@@ -474,16 +769,51 @@ class TaskController
         ], "Task {$statusText} successfully", 200);
     }
 
-    /**
-     * Delete a task.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $scheduleId The schedule ID
-     * @param int $taskId The task ID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Delete(
+        path: '/api/user/servers/{uuidShort}/schedules/{scheduleId}/tasks/{taskId}',
+        summary: 'Delete task',
+        description: 'Delete a task from a schedule. Cannot delete queued tasks.',
+        tags: ['User - Server Tasks'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'scheduleId',
+                in: 'path',
+                description: 'Schedule ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'taskId',
+                in: 'path',
+                description: 'Task ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Task deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing parameters or task is queued'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server, schedule, or task not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to delete task'),
+        ]
+    )]
     public function deleteTask(Request $request, string $serverUuid, int $scheduleId, int $taskId): Response
     {
         // Get server info
@@ -602,15 +932,44 @@ class TaskController
         return ApiResponse::success($task);
     }
 
-    /**
-     * Get all tasks for a schedule with schedule information.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     * @param int $scheduleId The schedule ID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/schedules/{scheduleId}/tasks/with-schedule',
+        summary: 'Get tasks with schedule',
+        description: 'Retrieve all tasks for a schedule with schedule information included.',
+        tags: ['User - Server Tasks'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'scheduleId',
+                in: 'path',
+                description: 'Schedule ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Tasks with schedule information retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/Task')),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server or schedule not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve tasks'),
+        ]
+    )]
     public function getTasksWithSchedule(Request $request, string $serverUuid, int $scheduleId): Response
     {
         // Get server info
@@ -640,14 +999,37 @@ class TaskController
         return ApiResponse::success($tasks);
     }
 
-    /**
-     * Get queued tasks for a server.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/tasks/queued',
+        summary: 'Get queued tasks',
+        description: 'Retrieve all queued tasks for a server across all schedules.',
+        tags: ['User - Server Tasks'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Queued tasks retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/Task')),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve queued tasks'),
+        ]
+    )]
     public function getQueuedTasks(Request $request, string $serverUuid): Response
     {
         // Get server info
@@ -678,14 +1060,37 @@ class TaskController
         return ApiResponse::success(array_values($serverQueuedTasks));
     }
 
-    /**
-     * Get ready tasks for a server.
-     *
-     * @param Request $request The HTTP request
-     * @param string $serverUuid The server UUID
-     *
-     * @return Response The HTTP response
-     */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/tasks/ready',
+        summary: 'Get ready tasks',
+        description: 'Retrieve all ready tasks for a server across all schedules.',
+        tags: ['User - Server Tasks'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Ready tasks retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/Task')),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve ready tasks'),
+        ]
+    )]
     public function getReadyTasks(Request $request, string $serverUuid): Response
     {
         // Get server info

@@ -17,6 +17,7 @@ use App\App;
 use App\Chat\User;
 use App\Chat\Activity;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use PragmaRX\Google2FA\Google2FA;
 use App\CloudFlare\CloudFlareRealIP;
@@ -25,11 +26,72 @@ use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'TwoFactorEnableRequest',
+    type: 'object',
+    required: ['code', 'secret'],
+    properties: [
+        new OA\Property(property: 'code', type: 'string', minLength: 6, maxLength: 6, description: '6-digit TOTP code'),
+        new OA\Property(property: 'secret', type: 'string', minLength: 16, maxLength: 16, description: '16-character secret key'),
+        new OA\Property(property: 'turnstile_token', type: 'string', description: 'CloudFlare Turnstile token (required if Turnstile is enabled)'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'TwoFactorEnableResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'user', type: 'object', description: 'User information'),
+        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'TwoFactorSetupResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'qr_code_url', type: 'string', description: 'QR code URL for authenticator app'),
+        new OA\Property(property: 'secret', type: 'string', description: 'Secret key for manual entry'),
+        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'TwoFactorVerifyRequest',
+    type: 'object',
+    required: ['email', 'code'],
+    properties: [
+        new OA\Property(property: 'email', type: 'string', format: 'email', description: 'User email address'),
+        new OA\Property(property: 'code', type: 'string', minLength: 6, maxLength: 6, description: '6-digit TOTP code'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'TwoFactorVerifyResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'user', type: 'object', description: 'User information'),
+        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+    ]
+)]
 class TwoFactorController
 {
-    /**
-     * Two Factor Authentication.
-     */
+    #[OA\Put(
+        path: '/api/user/auth/two-factor',
+        summary: 'Enable two-factor authentication',
+        description: 'Enable two-factor authentication for the authenticated user using TOTP code verification. Includes CloudFlare Turnstile validation if enabled.',
+        tags: ['User - Authentication'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/TwoFactorEnableRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Two-factor authentication enabled successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/TwoFactorEnableResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing required fields, invalid code length, Turnstile validation failed, or Turnstile keys not set'),
+            new OA\Response(response: 401, description: 'Unauthorized - Invalid TOTP code or user is banned'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to enable 2FA'),
+        ]
+    )]
     public function put(Request $request): Response
     {
         $app = App::getInstance(true);
@@ -114,6 +176,22 @@ class TwoFactorController
         return ApiResponse::success($userInfo, 'Two factor authentication enabled', 200);
     }
 
+    #[OA\Get(
+        path: '/api/user/auth/two-factor',
+        summary: 'Get two-factor setup',
+        description: 'Get QR code URL and secret key for setting up two-factor authentication with an authenticator app.',
+        tags: ['User - Authentication'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Two-factor setup information retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/TwoFactorSetupResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Two-factor authentication already enabled'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to generate setup information'),
+        ]
+    )]
     public function get(Request $request): Response
     {
         $app = App::getInstance(true);
@@ -148,6 +226,26 @@ class TwoFactorController
         ], 'Here is your two factor authentication secret', 200);
     }
 
+    #[OA\Post(
+        path: '/api/user/auth/two-factor',
+        summary: 'Verify two-factor code',
+        description: 'Verify two-factor authentication code during login process to complete authentication.',
+        tags: ['User - Authentication'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/TwoFactorVerifyRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Two-factor authentication verified successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/TwoFactorVerifyResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing email or code'),
+            new OA\Response(response: 401, description: 'Unauthorized - 2FA not enabled or invalid code'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to verify 2FA'),
+        ]
+    )]
     public function post(Request $request): Response
     {
         $app = App::getInstance(true);

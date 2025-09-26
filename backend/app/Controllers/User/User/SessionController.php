@@ -20,6 +20,7 @@ use App\Chat\MailList;
 use App\Chat\MailQueue;
 use App\Chat\Permission;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
@@ -28,8 +29,65 @@ use App\Plugins\Events\Events\UserEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'SessionUpdateRequest',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'username', type: 'string', minLength: 3, maxLength: 32, description: 'Username (alphanumeric and underscores only)'),
+        new OA\Property(property: 'email', type: 'string', format: 'email', minLength: 3, maxLength: 255, description: 'User email address'),
+        new OA\Property(property: 'first_name', type: 'string', minLength: 1, maxLength: 64, description: 'User first name'),
+        new OA\Property(property: 'last_name', type: 'string', minLength: 1, maxLength: 64, description: 'User last name'),
+        new OA\Property(property: 'password', type: 'string', minLength: 8, maxLength: 255, description: 'User password'),
+        new OA\Property(property: 'avatar', type: 'string', format: 'uri', description: 'Avatar URL (must start with https://)'),
+        new OA\Property(property: 'two_fa_enabled', type: 'boolean', description: 'Two-factor authentication enabled status'),
+        new OA\Property(property: 'turnstile_token', type: 'string', description: 'CloudFlare Turnstile token (required if Turnstile is enabled)'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SessionUpdateResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SessionResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'user_info', type: 'object', description: 'User information'),
+        new OA\Property(property: 'permissions', type: 'array', items: new OA\Items(type: 'string'), description: 'User permissions'),
+        new OA\Property(property: 'activity', type: 'object', properties: [
+            new OA\Property(property: 'count', type: 'integer', description: 'Number of activities'),
+            new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'), description: 'Activity data'),
+        ]),
+        new OA\Property(property: 'mails', type: 'object', properties: [
+            new OA\Property(property: 'count', type: 'integer', description: 'Number of mails'),
+            new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'), description: 'Mail data'),
+        ]),
+    ]
+)]
 class SessionController
 {
+    #[OA\Patch(
+        path: '/api/user/session',
+        summary: 'Update user session',
+        description: 'Update user profile information including username, email, password, avatar, and 2FA settings. Includes CloudFlare Turnstile validation if enabled.',
+        tags: ['User - Session'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/SessionUpdateRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Session updated successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/SessionUpdateResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token, request data, field validation, Turnstile validation failed, or Turnstile keys not set'),
+            new OA\Response(response: 409, description: 'Conflict - Username or email already exists'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to update session'),
+        ]
+    )]
     public function put(Request $request): Response
     {
         $app = App::getInstance(true);
@@ -145,6 +203,22 @@ class SessionController
         return ApiResponse::success($data, 'Session created', 200);
     }
 
+    #[OA\Get(
+        path: '/api/user/session',
+        summary: 'Get user session',
+        description: 'Retrieve current user session information including user details, permissions, activities, and mail data.',
+        tags: ['User - Session'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Session information retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/SessionResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve session'),
+        ]
+    )]
     public function get(Request $request): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);

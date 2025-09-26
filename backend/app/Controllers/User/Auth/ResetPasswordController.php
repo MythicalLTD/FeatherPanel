@@ -17,6 +17,7 @@ use App\App;
 use App\Chat\User;
 use App\Chat\Activity;
 use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\CloudFlare\CloudFlareTurnstile;
@@ -24,11 +25,53 @@ use App\Plugins\Events\Events\AuthEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Schema(
+    schema: 'ResetPasswordRequest',
+    type: 'object',
+    required: ['token', 'password'],
+    properties: [
+        new OA\Property(property: 'token', type: 'string', description: 'Password reset token from email'),
+        new OA\Property(property: 'password', type: 'string', minLength: 8, maxLength: 255, description: 'New password'),
+        new OA\Property(property: 'turnstile_token', type: 'string', description: 'CloudFlare Turnstile token (required if Turnstile is enabled)'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ResetPasswordResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'TokenValidationResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'message', type: 'string', description: 'Token validation message'),
+        new OA\Property(property: 'token', type: 'string', description: 'Validated token'),
+    ]
+)]
 class ResetPasswordController
 {
-    /**
-     * Login a user.
-     */
+    #[OA\Put(
+        path: '/api/user/auth/reset-password',
+        summary: 'Reset password',
+        description: 'Reset user password using token from forgot password email. Includes CloudFlare Turnstile validation if enabled.',
+        tags: ['User - Authentication'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/ResetPasswordRequest')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Password reset successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ResetPasswordResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing required fields, Turnstile validation failed, or Turnstile keys not set'),
+            new OA\Response(response: 404, description: 'Not found - Invalid token'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to reset password'),
+        ]
+    )]
     public function put(Request $request): Response
     {
         try {
@@ -103,6 +146,30 @@ class ResetPasswordController
         }
     }
 
+    #[OA\Get(
+        path: '/api/user/auth/reset-password',
+        summary: 'Validate reset token',
+        description: 'Validate a password reset token to check if it is valid before allowing password reset.',
+        tags: ['User - Authentication'],
+        parameters: [
+            new OA\Parameter(
+                name: 'token',
+                in: 'query',
+                description: 'Password reset token from email',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Token is valid',
+                content: new OA\JsonContent(ref: '#/components/schemas/TokenValidationResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing token or invalid token'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to validate token'),
+        ]
+    )]
     public function get(Request $request): Response
     {
         $app = App::getInstance(true);
