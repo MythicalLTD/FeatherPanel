@@ -18,24 +18,24 @@ use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\Admin\DatabaseManagmentController;
 
 return function (RouteCollection $routes): void {
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-databases-management-status',
-        '/api/admin/databases/management/status',
-        function (Request $request) {
-            return (new DatabaseManagmentController())->status($request);
-        },
-        Permissions::ADMIN_DATABASES_VIEW,
-    );
+	App::getInstance(true)->registerAdminRoute(
+		$routes,
+		'admin-databases-management-status',
+		'/api/admin/databases/management/status',
+		function (Request $request) {
+			return (new DatabaseManagmentController())->status($request);
+		},
+		Permissions::ADMIN_DATABASES_VIEW,
+	);
 
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-databases-management-migrate',
-        '/api/admin/databases/management/migrate',
-        function (Request $request) {
-            return (new DatabaseManagmentController())->migrate($request);
-        },
-        Permissions::ADMIN_DATABASES_MANAGE,
-        ['POST']
-    );
+	App::getInstance(true)->registerAdminRoute(
+		$routes,
+		'admin-databases-management-migrate',
+		'/api/admin/databases/management/migrate',
+		function (Request $request) {
+			return (new DatabaseManagmentController())->migrate($request);
+		},
+		Permissions::ADMIN_DATABASES_MANAGE,
+		['POST']
+	);
 };

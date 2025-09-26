@@ -17,12 +17,12 @@ use App\Controllers\System\PluginJsController;
 use Symfony\Component\Routing\RouteCollection;
 
 return function (RouteCollection $routes): void {
-    App::getInstance(true)->registerApiRoute(
-        $routes,
-        'plugin-js',
-        '/api/system/plugin-js',
-        function (Request $request) {
-            return (new PluginJsController())->index($request);
-        },
-    );
+	App::getInstance(true)->registerApiRoute(
+		$routes,
+		'plugin-js',
+		'/api/system/plugin-js',
+		function (Request $request) {
+			return (new PluginJsController())->index($request);
+		},
+	);
 };

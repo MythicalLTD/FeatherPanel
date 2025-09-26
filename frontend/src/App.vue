@@ -24,6 +24,8 @@ export default defineComponent({
                 transitionName.value = 'page-transition-slide';
             } else if (to.meta.transition === 'scale') {
                 transitionName.value = 'page-transition-scale';
+            } else if (to.meta.transition === 'none') {
+                transitionName.value = '';
             } else {
                 transitionName.value = 'page-transition-fade';
             }
@@ -54,6 +56,7 @@ export default defineComponent({
         <router-view v-slot="{ Component, route }">
             <div :key="route.fullPath" class="page-wrapper">
                 <transition
+                    v-if="transitionName"
                     :name="transitionName"
                     mode="out-in"
                     @enter="isPageTransitioning = false"
@@ -61,11 +64,12 @@ export default defineComponent({
                 >
                     <component :is="Component" class="page-component" />
                 </transition>
+                <component :is="Component" v-else class="page-component" />
             </div>
         </router-view>
 
         <!-- Debug Panel -->
-        <DebugPanel ref="debugPanel" />
+        <DebugPanel v-if="$route.meta.hideDebug !== true" ref="debugPanel" />
     </div>
 </template>
 

@@ -19,67 +19,67 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 
 return function (RouteCollection $routes): void {
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-roles',
-        '/api/admin/roles',
-        function (Request $request) {
-            return (new RolesController())->index($request);
-        },
-        Permissions::ADMIN_ROLES_VIEW,
-    );
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-roles-show',
-        '/api/admin/roles/{id}',
-        function (Request $request, array $args) {
-            $id = $args['id'] ?? null;
-            if (!$id || !is_numeric($id)) {
-                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
-            }
+	App::getInstance(true)->registerAdminRoute(
+		$routes,
+		'admin-roles',
+		'/api/admin/roles',
+		function (Request $request) {
+			return (new RolesController())->index($request);
+		},
+		Permissions::ADMIN_ROLES_VIEW,
+	);
+	App::getInstance(true)->registerAdminRoute(
+		$routes,
+		'admin-roles-show',
+		'/api/admin/roles/{id}',
+		function (Request $request, array $args) {
+			$id = $args['id'] ?? null;
+			if (!$id || !is_numeric($id)) {
+				return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+			}
 
-            return (new RolesController())->show($request, (int) $id);
-        },
-        Permissions::ADMIN_ROLES_VIEW,
-    );
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-roles-update',
-        '/api/admin/roles/{id}',
-        function (Request $request, array $args) {
-            $id = $args['id'] ?? null;
-            if (!$id || !is_numeric($id)) {
-                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
-            }
+			return (new RolesController())->show($request, (int) $id);
+		},
+		Permissions::ADMIN_ROLES_VIEW,
+	);
+	App::getInstance(true)->registerAdminRoute(
+		$routes,
+		'admin-roles-update',
+		'/api/admin/roles/{id}',
+		function (Request $request, array $args) {
+			$id = $args['id'] ?? null;
+			if (!$id || !is_numeric($id)) {
+				return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+			}
 
-            return (new RolesController())->update($request, (int) $id);
-        },
-        Permissions::ADMIN_ROLES_EDIT,
-        ['PATCH']
-    );
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-roles-delete',
-        '/api/admin/roles/{id}',
-        function (Request $request, array $args) {
-            $id = $args['id'] ?? null;
-            if (!$id || !is_numeric($id)) {
-                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
-            }
+			return (new RolesController())->update($request, (int) $id);
+		},
+		Permissions::ADMIN_ROLES_EDIT,
+		['PATCH']
+	);
+	App::getInstance(true)->registerAdminRoute(
+		$routes,
+		'admin-roles-delete',
+		'/api/admin/roles/{id}',
+		function (Request $request, array $args) {
+			$id = $args['id'] ?? null;
+			if (!$id || !is_numeric($id)) {
+				return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+			}
 
-            return (new RolesController())->delete($request, (int) $id);
-        },
-        Permissions::ADMIN_ROLES_DELETE,
-        ['DELETE']
-    );
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-roles-create',
-        '/api/admin/roles',
-        function (Request $request) {
-            return (new RolesController())->create($request);
-        },
-        Permissions::ADMIN_ROLES_CREATE,
-        ['PUT']
-    );
+			return (new RolesController())->delete($request, (int) $id);
+		},
+		Permissions::ADMIN_ROLES_DELETE,
+		['DELETE']
+	);
+	App::getInstance(true)->registerAdminRoute(
+		$routes,
+		'admin-roles-create',
+		'/api/admin/roles',
+		function (Request $request) {
+			return (new RolesController())->create($request);
+		},
+		Permissions::ADMIN_ROLES_CREATE,
+		['PUT']
+	);
 };

@@ -17,12 +17,12 @@ use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\System\PluginSidebarController;
 
 return function (RouteCollection $routes): void {
-    App::getInstance(true)->registerApiRoute(
-        $routes,
-        'plugin-sidebar',
-        '/api/system/plugin-sidebar',
-        function (Request $request) {
-            return (new PluginSidebarController())->index($request);
-        },
-    );
+	App::getInstance(true)->registerApiRoute(
+		$routes,
+		'plugin-sidebar',
+		'/api/system/plugin-sidebar',
+		function (Request $request) {
+			return (new PluginSidebarController())->index($request);
+		},
+	);
 };

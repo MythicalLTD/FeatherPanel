@@ -18,24 +18,24 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 
 return function (RouteCollection $routes): void {
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-console-execute',
-        '/api/admin/console/execute',
-        function (Request $request) {
-            return (new ConsoleController())->executeCommand($request);
-        },
-        Permissions::ADMIN_ROOT,
-        ['POST']
-    );
+	App::getInstance(true)->registerAdminRoute(
+		$routes,
+		'admin-console-execute',
+		'/api/admin/console/execute',
+		function (Request $request) {
+			return (new ConsoleController())->executeCommand($request);
+		},
+		Permissions::ADMIN_ROOT,
+		['POST']
+	);
 
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-console-system-info',
-        '/api/admin/console/system-info',
-        function (Request $request) {
-            return (new ConsoleController())->getSystemInfo($request);
-        },
-        Permissions::ADMIN_ROOT,
-    );
+	App::getInstance(true)->registerAdminRoute(
+		$routes,
+		'admin-console-system-info',
+		'/api/admin/console/system-info',
+		function (Request $request) {
+			return (new ConsoleController())->getSystemInfo($request);
+		},
+		Permissions::ADMIN_ROOT,
+	);
 };

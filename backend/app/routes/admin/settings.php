@@ -18,54 +18,54 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 
 return function (RouteCollection $routes): void {
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-settings',
-        '/api/admin/settings',
-        function (Request $request) {
-            return (new SettingsController())->index($request);
-        },
-        Permissions::ADMIN_SETTINGS_VIEW,
-        ['GET']
-    );
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-settings-categories',
-        '/api/admin/settings/categories',
-        function (Request $request) {
-            return (new SettingsController())->categories($request);
-        },
-        Permissions::ADMIN_SETTINGS_VIEW,
-        ['GET']
-    );
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-settings-category',
-        '/api/admin/settings/category/{category}',
-        function (Request $request, string $category) {
-            return (new SettingsController())->getSettingsByCategory($category);
-        },
-        Permissions::ADMIN_SETTINGS_VIEW,
-        ['GET']
-    );
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-settings-show',
-        '/api/admin/settings/{setting}',
-        function (Request $request, string $setting) {
-            return (new SettingsController())->show($request, $setting);
-        },
-        Permissions::ADMIN_SETTINGS_VIEW,
-        ['GET']
-    );
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-settings-update',
-        '/api/admin/settings',
-        function (Request $request) {
-            return (new SettingsController())->update($request);
-        },
-        Permissions::ADMIN_SETTINGS_EDIT,
-        ['PATCH']
-    );
+	App::getInstance(true)->registerAdminRoute(
+		$routes,
+		'admin-settings',
+		'/api/admin/settings',
+		function (Request $request) {
+			return (new SettingsController())->index($request);
+		},
+		Permissions::ADMIN_SETTINGS_VIEW,
+		['GET']
+	);
+	App::getInstance(true)->registerAdminRoute(
+		$routes,
+		'admin-settings-categories',
+		'/api/admin/settings/categories',
+		function (Request $request) {
+			return (new SettingsController())->categories($request);
+		},
+		Permissions::ADMIN_SETTINGS_VIEW,
+		['GET']
+	);
+	App::getInstance(true)->registerAdminRoute(
+		$routes,
+		'admin-settings-category',
+		'/api/admin/settings/category/{category}',
+		function (Request $request, string $category) {
+			return (new SettingsController())->getSettingsByCategory($category);
+		},
+		Permissions::ADMIN_SETTINGS_VIEW,
+		['GET']
+	);
+	App::getInstance(true)->registerAdminRoute(
+		$routes,
+		'admin-settings-show',
+		'/api/admin/settings/{setting}',
+		function (Request $request, string $setting) {
+			return (new SettingsController())->show($request, $setting);
+		},
+		Permissions::ADMIN_SETTINGS_VIEW,
+		['GET']
+	);
+	App::getInstance(true)->registerAdminRoute(
+		$routes,
+		'admin-settings-update',
+		'/api/admin/settings',
+		function (Request $request) {
+			return (new SettingsController())->update($request);
+		},
+		Permissions::ADMIN_SETTINGS_EDIT,
+		['PATCH']
+	);
 };
