@@ -75,6 +75,7 @@
 		"npm-run-all2": "^8.0.4",
 		"pinia": "^3.0.3",
 		"prettier": "^3.6.2",
+		"axios": "^1.12.2",
 		"qrcode": "^1.5.4",
 		"reka-ui": "^2.5.1",
 		"tailwind-merge": "^3.3.1",
