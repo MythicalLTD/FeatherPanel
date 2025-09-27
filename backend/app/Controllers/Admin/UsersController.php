@@ -787,4 +787,23 @@ class UsersController
 
         return ApiResponse::success(['servers' => $servers], 'Owned servers fetched', 200);
     }
+
+    #[OA\Get(
+        path: '/api/admin/users/serverRequest/{id}',
+        summary: 'Get user by id',
+        description: 'Retrieve a user by their ID',
+        tags: ['Admin - Users'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', description: 'User ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ]
+    )]
+    public function serverRequest(Request $request, int $id): Response
+    {
+        $user = \App\Chat\User::getUserById($id);
+        if (!$user) {
+            return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
+        }
+
+        return ApiResponse::success(['user' => $user], 'User fetched successfully', 200);
+    }
 }

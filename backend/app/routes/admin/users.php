@@ -97,4 +97,19 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_USERS_VIEW,
         ['GET']
     );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-users-server-request',
+        '/api/admin/users/serverRequest/{id}',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new UsersController())->serverRequest($request, $args['id']);
+        },
+        Permissions::ADMIN_USERS_VIEW,
+        ['GET']
+    );
 };

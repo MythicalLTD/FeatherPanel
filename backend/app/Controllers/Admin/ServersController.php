@@ -1069,7 +1069,7 @@ class ServersController
         }
 
         // Sync with Wings if node information is available
-        if (isset($data['node_id']) || isset($data['allocation_id']) || isset($data['spell_id']) || isset($data['variables'])) {
+        if (isset($data['node_id']) || isset($data['allocation_id']) || isset($data['spell_id']) || isset($data['variables']) || isset($data['image']) || isset($data['startup'])) {
             $nodeInfo = Node::getNodeById($data['node_id'] ?? $server['node_id']);
             if ($nodeInfo) {
                 $scheme = $nodeInfo['scheme'];

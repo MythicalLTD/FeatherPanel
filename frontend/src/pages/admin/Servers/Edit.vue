@@ -1133,7 +1133,14 @@ async function fetchSpellDetails(spellId: number) {
                 try {
                     const dockerImagesObj = JSON.parse(selectedSpell.value.docker_images);
                     availableDockerImages.value = Object.values(dockerImagesObj);
-                    selectedDockerImage.value = availableDockerImages.value[0] || '';
+
+                    // Set selectedDockerImage to current server image if it exists in available images
+                    // Otherwise use the first available image
+                    if (form.value.image && availableDockerImages.value.includes(form.value.image)) {
+                        selectedDockerImage.value = form.value.image;
+                    } else {
+                        selectedDockerImage.value = availableDockerImages.value[0] || '';
+                    }
                 } catch (e) {
                     console.error('Failed to parse docker images:', e);
                     availableDockerImages.value = [];
@@ -1259,9 +1266,9 @@ async function loadServerData() {
         // Fetch the current server owner for display
         if (form.value.owner_id) {
             try {
-                const ownerResponse = await axios.get(`/api/admin/users/${form.value.owner_id}`);
-                if (ownerResponse.data?.success) {
-                    const currentOwner = ownerResponse.data.data;
+                const ownerResponse = await axios.get(`/api/admin/users/serverRequest/${form.value.owner_id}`);
+                if (ownerResponse.data?.success && ownerResponse.data.data?.user) {
+                    const currentOwner = ownerResponse.data.data.user;
                     userSearchResults.value = [currentOwner]; // Add current owner to results for display
                 }
             } catch (error) {
