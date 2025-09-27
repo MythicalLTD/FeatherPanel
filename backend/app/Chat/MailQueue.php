@@ -137,4 +137,12 @@ class MailQueue
 
         return $stmt->execute(['id' => $id]);
     }
+
+    public static function deleteAllMailQueueByUserId(string $userUuid): bool
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE user_uuid = :user_uuid');
+
+        return $stmt->execute(['user_uuid' => $userUuid]);
+    }
 }

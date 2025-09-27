@@ -595,6 +595,14 @@ class Subuser
         ];
     }
 
+    public static function deleteAllSubusersByUserId(int $userId): bool
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE user_id = :user_id');
+
+        return $stmt->execute(['user_id' => $userId]);
+    }
+
     /**
      * Sanitize data for logging (remove sensitive fields).
      */

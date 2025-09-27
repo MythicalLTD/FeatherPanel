@@ -314,6 +314,14 @@ class ApiClient
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    public static function deleteAllApiClientsByUserId(string $userUuid): bool
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE user_uuid = :user_uuid');
+
+        return $stmt->execute(['user_uuid' => $userUuid]);
+    }
+
     /**
      * Sanitize data for logging by excluding sensitive fields.
      */

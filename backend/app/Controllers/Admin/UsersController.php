@@ -14,8 +14,10 @@
 namespace App\Controllers\Admin;
 
 use App\App;
+use App\Chat\Subuser;
 use App\Chat\Activity;
 use App\Chat\MailList;
+use App\Chat\ApiClient;
 use App\Chat\MailQueue;
 use App\Helpers\UUIDUtils;
 use App\Helpers\ApiResponse;
@@ -687,13 +689,6 @@ class UsersController
             return ApiResponse::error('Cannot delete user with active servers. Please transfer or delete all servers first.', 'USER_HAS_SERVERS', 409);
         }
 
-		
-
-        $deleted = \App\Chat\User::hardDeleteUser($user['id']);
-        if (!$deleted) {
-            return ApiResponse::error('Failed to delete user', 'FAILED_TO_DELETE_USER', 500);
-        }
-
         // Emit event
         global $eventManager;
         $eventManager->emit(
@@ -728,6 +723,16 @@ class UsersController
             App::getInstance(true)->getLogger()->error('Failed to send account deleted email: ' . $e->getMessage());
 
             return ApiResponse::error('Failed to send account deleted email: ' . $e->getMessage(), 'FAILED_TO_SEND_ACCOUNT_DELETED_EMAIL', 500);
+        }
+
+        Activity::deleteUserData($user['uuid']);
+        MailList::deleteAllMailListsByUserId($user['uuid']);
+        ApiClient::deleteAllApiClientsByUserId($user['uuid']);
+        Subuser::deleteAllSubusersByUserId((int) $user['id']);
+        MailQueue::deleteAllMailQueueByUserId($user['uuid']);
+        $deleted = \App\Chat\User::hardDeleteUser($user['id']);
+        if (!$deleted) {
+            return ApiResponse::error('Failed to delete user', 'FAILED_TO_DELETE_USER', 500);
         }
 
         return ApiResponse::success([], 'User deleted successfully', 200);

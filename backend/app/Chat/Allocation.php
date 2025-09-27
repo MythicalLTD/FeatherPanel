@@ -413,4 +413,20 @@ class Allocation
 
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
+
+    public static function deleteAllAllocationsByServerId(int $serverId): bool
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE server_id = :server_id');
+
+        return $stmt->execute(['server_id' => $serverId]);
+    }
+
+    public static function deleteAllAllocationsByNodeId(int $nodeId): bool
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE node_id = :node_id');
+
+        return $stmt->execute(['node_id' => $nodeId]);
+    }
 }

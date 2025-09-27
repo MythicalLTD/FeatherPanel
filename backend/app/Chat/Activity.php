@@ -13,6 +13,8 @@
 
 namespace App\Chat;
 
+use App\App;
+
 class Activity
 {
     private static string $table = 'featherpanel_activity';
@@ -75,5 +77,19 @@ class Activity
         $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
 
         return $stmt->execute(['id' => $id]);
+    }
+
+    public static function deleteUserData(string $user_uuid): bool
+    {
+        try {
+            $pdo = Database::getPdoConnection();
+            $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE user_uuid = :user_uuid');
+
+            return $stmt->execute(['user_uuid' => $user_uuid]);
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to delete user data: ' . $e->getMessage());
+
+            return false;
+        }
     }
 }
