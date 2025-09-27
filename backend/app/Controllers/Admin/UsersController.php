@@ -660,6 +660,7 @@ class UsersController
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
             new OA\Response(response: 404, description: 'User not found'),
+            new OA\Response(response: 409, description: 'Conflict - User has active servers and cannot be deleted'),
             new OA\Response(response: 500, description: 'Internal server error - Failed to delete user or send account deleted email'),
         ]
     )]
@@ -670,6 +671,24 @@ class UsersController
         if (!$user) {
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
         }
+
+        // Check if user has any servers
+        $servers = \App\Chat\Server::searchServers(
+            page: 1,
+            limit: 1,
+            search: '',
+            fields: ['id'],
+            sortBy: 'id',
+            sortOrder: 'ASC',
+            ownerId: (int) $user['id']
+        );
+
+        if (!empty($servers)) {
+            return ApiResponse::error('Cannot delete user with active servers. Please transfer or delete all servers first.', 'USER_HAS_SERVERS', 409);
+        }
+
+		
+
         $deleted = \App\Chat\User::hardDeleteUser($user['id']);
         if (!$deleted) {
             return ApiResponse::error('Failed to delete user', 'FAILED_TO_DELETE_USER', 500);
