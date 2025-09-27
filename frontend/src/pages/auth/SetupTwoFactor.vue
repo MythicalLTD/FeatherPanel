@@ -67,10 +67,6 @@ onMounted(async () => {
     }
 });
 
-function onDataUrlChange(dataUrl: string) {
-    console.log(dataUrl);
-}
-
 async function verify2FA(e: Event) {
     e.preventDefault();
     loading.value = true;
@@ -104,7 +100,6 @@ async function verify2FA(e: Event) {
                                 :value="`otpauth://totp/NaysKutzu?secret=${secret}&issuer=${settingsStore.settings?.app_name}`"
                                 type="image/png"
                                 :color="{ dark: '#000000', light: '#ffffff' }"
-                                @change="onDataUrlChange"
                             />
                         </div>
                         <div class="text-center text-sm">{{ t('api_errors.TWO_FACTOR_SCAN_QR') }}</div>

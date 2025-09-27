@@ -90,7 +90,6 @@
                     local-storage-key="featherpanel-mail-templates-table-columns"
                     @search="handleSearch"
                     @page-change="changePage"
-                    @column-toggle="handleColumnToggle"
                 >
                     <template #header-actions>
                         <div class="flex gap-2">
@@ -610,11 +609,6 @@ const handleSearch = (query: string) => {
 const changePage = (page: number) => {
     pagination.value.page = page;
     fetchTemplates();
-};
-
-const handleColumnToggle = (columns: string[]) => {
-    // Column preferences are automatically saved by the TableComponent
-    console.log('Columns changed:', columns);
 };
 
 // Drawer methods

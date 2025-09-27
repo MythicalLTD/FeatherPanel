@@ -371,7 +371,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useToast } from 'vue-toastification';
@@ -477,36 +477,17 @@ const hasChanges = computed(() => {
     return editForm.value.name !== server.value.name || editForm.value.description !== (server.value.description || '');
 });
 
-// Debug logging for SFTP details
-watch(
-    server,
-    (newServer) => {
-        if (newServer) {
-            console.log('Server updated, SFTP details:', newServer.sftp);
-        }
-    },
-    { immediate: true },
-);
-
 // Methods
 async function fetchServer(): Promise<void> {
     try {
         loading.value = true;
         error.value = null;
 
-        console.log('Fetching server from endpoint:', `/api/user/servers/${route.params.uuidShort}`);
         const response = await axios.get(`/api/user/servers/${route.params.uuidShort}`);
-        console.log('API Response:', response);
 
         if (response.data.success) {
             server.value = response.data.data;
             resetForm();
-            console.log('Server data fetched:', response.data.data);
-            console.log('SFTP data available:', response.data.data.sftp);
-            console.log('Server name:', response.data.data.name);
-            console.log('Server description:', response.data.data.description);
-            console.log('Current server.value:', server.value);
-            console.log('Current editForm.value:', editForm.value);
         } else {
             error.value = response.data.message || t('serverSettings.failedToFetchServer');
         }
@@ -543,14 +524,10 @@ async function saveServerInfo(): Promise<void> {
 
 function resetForm(): void {
     if (server.value) {
-        console.log('Resetting form with server data:', server.value);
         editForm.value = {
             name: server.value.name,
             description: server.value.description || '',
         };
-        console.log('Form reset to:', editForm.value);
-    } else {
-        console.log('No server data available for form reset');
     }
 }
 
@@ -602,9 +579,6 @@ async function confirmReinstall(): Promise<void> {
 
 // Lifecycle
 onMounted(async () => {
-    console.log('ServerSettings mounted, route params:', route.params);
-    console.log('UUID Short:', route.params.uuidShort);
-
     await sessionStore.checkSessionOrRedirect(router);
     await settingsStore.fetchSettings();
     await fetchServer();

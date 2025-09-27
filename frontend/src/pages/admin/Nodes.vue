@@ -50,7 +50,6 @@
                     local-storage-key="featherpanel-nodes-table-columns"
                     @search="handleSearch"
                     @page-change="changePage"
-                    @column-toggle="handleColumnToggle"
                 >
                     <template #header-actions>
                         <div class="flex gap-2 items-center">
@@ -1520,23 +1519,14 @@ const isCheckingHealth = ref(false);
 
 // Wings configuration computed property
 const wingsConfigYaml = computed(() => {
-    console.log('wingsConfigYaml computed - editingNodeId:', editingNodeId.value);
-    console.log('wingsConfigYaml computed - nodes:', nodes.value);
-
     if (!editingNodeId.value) return 'No node selected';
 
     const node = nodes.value.find((n) => n.id === editingNodeId.value);
-    console.log('wingsConfigYaml computed - found node:', node);
 
     if (!node) return 'Node not found';
 
     // Check if required fields exist
     if (!node.uuid || !node.daemon_token_id || !node.daemon_token) {
-        console.log('wingsConfigYaml computed - missing fields:', {
-            uuid: node.uuid,
-            daemon_token_id: node.daemon_token_id,
-            daemon_token: node.daemon_token,
-        });
         return 'Node data incomplete - missing UUID or tokens';
     }
 
@@ -1559,7 +1549,6 @@ system:
 allowed_mounts: []
 remote: 'https://${window.location.hostname}'`;
 
-    console.log('wingsConfigYaml computed - generated YAML:', yaml);
     return yaml;
 });
 
@@ -1961,12 +1950,6 @@ function changePage(page: number) {
     pagination.value.page = page;
     fetchNodes();
 }
-
-function handleColumnToggle(columns: string[]) {
-    // Column preferences are automatically saved by the TableComponent
-    console.log('Columns changed:', columns);
-}
-
 onMounted(async () => {
     await fetchLocations();
     await fetchCurrentLocation();

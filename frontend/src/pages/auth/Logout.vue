@@ -78,7 +78,6 @@ const cleanupStorage = async () => {
         // Import and use the storage utility
         const { clearAllStorage } = await import('@/lib/storage');
         await clearAllStorage();
-        console.log('Storage cleanup completed using utility functions');
     } catch (error) {
         console.error('Error during storage cleanup:', error);
         // Fallback to manual cleanup

@@ -424,9 +424,6 @@ function editPlugin(plugin: Plugin) {
         return { type: type as 'php' | 'php-ext' | 'composer' | 'plugin', value: value || '' };
     });
 
-    // Debug: Log the plugin config to see what we're working with
-    console.log('Plugin config for editing:', plugin.config);
-
     editForm.value = {
         identifier: plugin.identifier,
         name: plugin.name,

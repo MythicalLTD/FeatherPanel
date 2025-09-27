@@ -748,15 +748,6 @@ const wingsConnectionInfo = computed(() => {
     }
 });
 
-// Watch for customization changes to debug
-watch(
-    customization,
-    (newVal) => {
-        console.log('Customization changed:', newVal);
-    },
-    { deep: true },
-);
-
 // Customization functions
 async function saveCustomization(): Promise<void> {
     try {
@@ -768,9 +759,6 @@ async function saveCustomization(): Promise<void> {
 
         // Save to localStorage for immediate use
         localStorage.setItem('featherpanel-console-customization', JSON.stringify(customizationData));
-
-        console.log('Console customization saved:', customizationData);
-        console.log('Filters saved:', customization.value.terminal.filters);
     } catch (error) {
         console.error('Error saving console customization:', error);
     }
@@ -782,7 +770,6 @@ async function loadCustomization(): Promise<void> {
         const localSaved = localStorage.getItem('featherpanel-console-customization');
         if (localSaved) {
             const parsed = JSON.parse(localSaved);
-            console.log('Loading from localStorage (fallback):', parsed);
 
             // Type guard to ensure parsed data has the expected structure
             if (
@@ -810,8 +797,6 @@ async function loadCustomization(): Promise<void> {
             } else {
                 console.warn('Invalid customization data structure in localStorage, using defaults');
             }
-        } else {
-            console.log('No saved customization found, using defaults');
         }
     } catch (error) {
         console.error('Error loading console customization:', error);
@@ -920,18 +905,6 @@ onMounted(async () => {
                 if (wingsWebSocket.websocket.value) {
                     setupWebSocketHandlers();
                 }
-                console.log('WebSocket reconnected, checking Wings health...');
-            }
-        },
-    );
-
-    // Watch for connection status changes
-    watch(
-        () => wingsWebSocket.isReconnecting.value,
-        (isReconnecting) => {
-            if (isReconnecting) {
-                // Don't spam users with reconnection attempts - just log it
-                console.log(`Reconnecting to Wings daemon... (${wingsWebSocket.reconnectAttempts.value}/5)`);
             }
         },
     );
@@ -942,9 +915,6 @@ onMounted(async () => {
         (wingsStatus, previousStatus) => {
             if (wingsStatus === 'error' && previousStatus === 'healthy') {
                 toast.error('⚠️ Wings daemon stopped responding - switching to API fallback mode');
-            } else if (wingsStatus === 'healthy' && previousStatus === 'error') {
-                // Don't show success toast for recovery - users can see the banner status
-                console.log('Wings daemon recovered and is healthy again');
             }
         },
     );

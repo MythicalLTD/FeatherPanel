@@ -18,7 +18,6 @@
                 local-storage-key="featherpanel-server-activities-columns"
                 @search="handleSearch"
                 @page-change="changePage"
-                @column-toggle="handleColumnToggle"
             >
                 <template #header-actions>
                     <Button variant="outline" size="sm" :disabled="loading" @click="refresh">
@@ -308,10 +307,6 @@ function handleSearch(query: string) {
     searchQuery.value = query;
     pagination.value.current_page = 1;
     fetchActivities(1);
-}
-
-function handleColumnToggle(columns: string[]) {
-    console.log('Columns changed:', columns);
 }
 
 function formatDate(value?: string) {

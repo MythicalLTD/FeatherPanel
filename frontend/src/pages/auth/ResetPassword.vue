@@ -55,8 +55,6 @@ onMounted(async () => {
                 e.response?.data?.message ||
                 e.message ||
                 'An unknown error occurred. Please try again.';
-            console.log(error.value);
-            console.log('Provided token: ' + token);
         } else if (typeof err === 'string') {
             error.value = err;
         } else {

@@ -9,5 +9,5 @@ CREATE TABLE
 		`locked` ENUM ('false', 'true') NOT NULL DEFAULT 'false',
 		`created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		`updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-		FOREIGN KEY (`user_uuid`) REFERENCES `featherpanel_users` (`uuid`) ON DELETE CASCADE
+		FOREIGN KEY (`user_uuid`) REFERENCES `featherpanel_users` (`uuid`) ON DELETE RESTRICT
 	) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;

@@ -57,64 +57,17 @@
                             </div>
                             <div class="mt-6">
                                 <label for="owner" class="block mb-2 font-medium">Server Owner</label>
-                                <Popover v-model:open="ownerPopoverOpen">
-                                    <PopoverTrigger as-child>
-                                        <Button
-                                            variant="outline"
-                                            role="combobox"
-                                            :aria-expanded="ownerPopoverOpen"
-                                            :class="
-                                                cn(
-                                                    'w-full justify-between',
-                                                    validationErrors.owner_id ? 'border-red-500' : '',
-                                                )
-                                            "
-                                        >
-                                            {{ getSelectedOwnerName() || 'Select owner...' }}
-                                            <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent class="w-[400px] p-0">
-                                        <Command>
-                                            <CommandInput placeholder="Search users..." />
-                                            <CommandEmpty>No user found.</CommandEmpty>
-                                            <CommandGroup>
-                                                <CommandItem
-                                                    v-for="user in users"
-                                                    :key="user.id"
-                                                    :value="user.username"
-                                                    @select="selectOwner(user.id)"
-                                                >
-                                                    <Check
-                                                        :class="
-                                                            cn(
-                                                                'mr-2 h-4 w-4',
-                                                                form.owner_id === String(user.id)
-                                                                    ? 'opacity-100'
-                                                                    : 'opacity-0',
-                                                            )
-                                                        "
-                                                    />
-                                                    <div class="flex items-center gap-2">
-                                                        <Avatar class="h-6 w-6">
-                                                            <AvatarImage
-                                                                :src="user.avatar || ''"
-                                                                :alt="user.username"
-                                                            />
-                                                            <AvatarFallback>{{ user.username[0] }}</AvatarFallback>
-                                                        </Avatar>
-                                                        <div>
-                                                            <div class="font-medium">{{ user.username }}</div>
-                                                            <div class="text-xs text-muted-foreground">
-                                                                {{ user.email }}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </CommandItem>
-                                            </CommandGroup>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    :class="
+                                        cn('w-full justify-between', validationErrors.owner_id ? 'border-red-500' : '')
+                                    "
+                                    @click="userModal.openModal()"
+                                >
+                                    {{ getSelectedOwnerName() || 'Select owner...' }}
+                                    <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
                                 <p v-if="validationErrors.owner_id" class="text-xs text-red-500 mt-1">
                                     {{ validationErrors.owner_id }}
                                 </p>
@@ -123,15 +76,30 @@
                                 </p>
                             </div>
                             <div class="mt-6">
-                                <div class="flex items-center space-x-2">
-                                    <Checkbox id="startup" v-model:checked="form.skip_scripts" />
-                                    <label
-                                        for="startup"
-                                        class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                    >
-                                        Skip Scripts
-                                    </label>
-                                </div>
+                                <label for="skip-scripts" class="block mb-2 font-medium">Skip Scripts</label>
+                                <Select
+                                    :model-value="String(form.skip_scripts)"
+                                    @update:model-value="(value: any) => (form.skip_scripts = String(value) === 'true')"
+                                >
+                                    <SelectTrigger :class="{ 'border-red-500': validationErrors.skip_scripts }">
+                                        <SelectValue placeholder="Select script behavior..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem
+                                            v-for="option in SKIP_SCRIPTS_OPTIONS"
+                                            :key="String(option.value)"
+                                            :value="String(option.value)"
+                                        >
+                                            {{ option.label }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p v-if="validationErrors.skip_scripts" class="text-xs text-red-500 mt-1">
+                                    {{ validationErrors.skip_scripts }}
+                                </p>
+                                <p v-else class="text-xs text-muted-foreground mt-1">
+                                    Whether to skip startup scripts during server initialization.
+                                </p>
                             </div>
                         </div>
 
@@ -141,55 +109,20 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label for="location" class="block mb-2 font-medium">Location</label>
-                                    <Popover v-model:open="locationPopoverOpen">
-                                        <PopoverTrigger as-child>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                :aria-expanded="locationPopoverOpen"
-                                                :class="
-                                                    cn(
-                                                        'w-full justify-between',
-                                                        validationErrors.location_id ? 'border-red-500' : '',
-                                                    )
-                                                "
-                                            >
-                                                {{ getSelectedLocationName() || 'Select location...' }}
-                                                <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent class="w-[400px] p-0">
-                                            <Command>
-                                                <CommandInput placeholder="Search locations..." />
-                                                <CommandEmpty>No location found.</CommandEmpty>
-                                                <CommandGroup>
-                                                    <CommandItem
-                                                        v-for="location in locations"
-                                                        :key="location.id"
-                                                        :value="location.name"
-                                                        @select="selectLocation(location.id)"
-                                                    >
-                                                        <Check
-                                                            :class="
-                                                                cn(
-                                                                    'mr-2 h-4 w-4',
-                                                                    form.location_id === String(location.id)
-                                                                        ? 'opacity-100'
-                                                                        : 'opacity-0',
-                                                                )
-                                                            "
-                                                        />
-                                                        <div>
-                                                            <div class="font-medium">{{ location.name }}</div>
-                                                            <div class="text-xs text-muted-foreground">
-                                                                {{ location.description }}
-                                                            </div>
-                                                        </div>
-                                                    </CommandItem>
-                                                </CommandGroup>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        :class="
+                                            cn(
+                                                'w-full justify-between',
+                                                validationErrors.location_id ? 'border-red-500' : '',
+                                            )
+                                        "
+                                        @click="locationModal.openModal()"
+                                    >
+                                        {{ getSelectedLocationName() || 'Select location...' }}
+                                        <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
                                     <p v-if="validationErrors.location_id" class="text-xs text-red-500 mt-1">
                                         {{ validationErrors.location_id }}
                                     </p>
@@ -199,56 +132,21 @@
                                 </div>
                                 <div>
                                     <label for="node" class="block mb-2 font-medium">Node</label>
-                                    <Popover v-model:open="nodePopoverOpen">
-                                        <PopoverTrigger as-child>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                :aria-expanded="nodePopoverOpen"
-                                                :class="
-                                                    cn(
-                                                        'w-full justify-between',
-                                                        validationErrors.node_id ? 'border-red-500' : '',
-                                                    )
-                                                "
-                                                :disabled="!form.location_id"
-                                            >
-                                                {{ getSelectedNodeName() || 'Select node...' }}
-                                                <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent class="w-[400px] p-0">
-                                            <Command>
-                                                <CommandInput placeholder="Search nodes..." />
-                                                <CommandEmpty>No node found.</CommandEmpty>
-                                                <CommandGroup>
-                                                    <CommandItem
-                                                        v-for="node in filteredNodes"
-                                                        :key="node.id"
-                                                        :value="node.name"
-                                                        @select="selectNode(node.id)"
-                                                    >
-                                                        <Check
-                                                            :class="
-                                                                cn(
-                                                                    'mr-2 h-4 w-4',
-                                                                    form.node_id === String(node.id)
-                                                                        ? 'opacity-100'
-                                                                        : 'opacity-0',
-                                                                )
-                                                            "
-                                                        />
-                                                        <div>
-                                                            <div class="font-medium">{{ node.name }}</div>
-                                                            <div class="text-xs text-muted-foreground">
-                                                                {{ node.fqdn }}
-                                                            </div>
-                                                        </div>
-                                                    </CommandItem>
-                                                </CommandGroup>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        :disabled="!form.location_id"
+                                        :class="
+                                            cn(
+                                                'w-full justify-between',
+                                                validationErrors.node_id ? 'border-red-500' : '',
+                                            )
+                                        "
+                                        @click="nodeModal.openModal()"
+                                    >
+                                        {{ getSelectedNodeName() || 'Select node...' }}
+                                        <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
                                     <p v-if="validationErrors.node_id" class="text-xs text-red-500 mt-1">
                                         {{ validationErrors.node_id }}
                                     </p>
@@ -259,58 +157,21 @@
                             </div>
                             <div class="mt-6">
                                 <label for="allocation" class="block mb-2 font-medium">Default Allocation</label>
-                                <Popover v-model:open="allocationPopoverOpen">
-                                    <PopoverTrigger as-child>
-                                        <Button
-                                            variant="outline"
-                                            role="combobox"
-                                            :aria-expanded="allocationPopoverOpen"
-                                            :class="
-                                                cn(
-                                                    'w-full justify-between',
-                                                    validationErrors.allocation_id ? 'border-red-500' : '',
-                                                )
-                                            "
-                                            :disabled="!form.node_id"
-                                        >
-                                            {{ getSelectedAllocationName() || 'Select allocation...' }}
-                                            <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent class="w-[400px] p-0">
-                                        <Command>
-                                            <CommandInput placeholder="Search allocations..." />
-                                            <CommandEmpty>No allocation found.</CommandEmpty>
-                                            <CommandGroup>
-                                                <CommandItem
-                                                    v-for="allocation in filteredAllocations"
-                                                    :key="allocation.id"
-                                                    :value="`${allocation.ip}:${allocation.port}`"
-                                                    @select="selectAllocation(allocation.id)"
-                                                >
-                                                    <Check
-                                                        :class="
-                                                            cn(
-                                                                'mr-2 h-4 w-4',
-                                                                form.allocation_id === String(allocation.id)
-                                                                    ? 'opacity-100'
-                                                                    : 'opacity-0',
-                                                            )
-                                                        "
-                                                    />
-                                                    <div>
-                                                        <div class="font-medium">
-                                                            {{ allocation.ip }}:{{ allocation.port }}
-                                                        </div>
-                                                        <div class="text-xs text-muted-foreground">
-                                                            Node ID: {{ allocation.node_id }}
-                                                        </div>
-                                                    </div>
-                                                </CommandItem>
-                                            </CommandGroup>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    :disabled="!form.node_id"
+                                    :class="
+                                        cn(
+                                            'w-full justify-between',
+                                            validationErrors.allocation_id ? 'border-red-500' : '',
+                                        )
+                                    "
+                                    @click="allocationModal.openModal()"
+                                >
+                                    {{ getSelectedAllocationName() || 'Select allocation...' }}
+                                    <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
                                 <p v-if="validationErrors.allocation_id" class="text-xs text-red-500 mt-1">
                                     {{ validationErrors.allocation_id }}
                                 </p>
@@ -326,55 +187,20 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label for="realm" class="block mb-2 font-medium">Realm</label>
-                                    <Popover v-model:open="realmPopoverOpen">
-                                        <PopoverTrigger as-child>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                :aria-expanded="realmPopoverOpen"
-                                                :class="
-                                                    cn(
-                                                        'w-full justify-between',
-                                                        validationErrors.realms_id ? 'border-red-500' : '',
-                                                    )
-                                                "
-                                            >
-                                                {{ getSelectedRealmName() || 'Select a realm...' }}
-                                                <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent class="w-[400px] p-0">
-                                            <Command>
-                                                <CommandInput placeholder="Search realms..." />
-                                                <CommandEmpty>No realm found.</CommandEmpty>
-                                                <CommandGroup>
-                                                    <CommandItem
-                                                        v-for="realm in filteredRealms"
-                                                        :key="realm.id"
-                                                        :value="realm.name"
-                                                        @select="selectRealm(realm.id)"
-                                                    >
-                                                        <Check
-                                                            :class="
-                                                                cn(
-                                                                    'mr-2 h-4 w-4',
-                                                                    form.realms_id === String(realm.id)
-                                                                        ? 'opacity-100'
-                                                                        : 'opacity-0',
-                                                                )
-                                                            "
-                                                        />
-                                                        <div>
-                                                            <div class="font-medium">{{ realm.name }}</div>
-                                                            <div class="text-xs text-muted-foreground">
-                                                                {{ realm.description }}
-                                                            </div>
-                                                        </div>
-                                                    </CommandItem>
-                                                </CommandGroup>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        :class="
+                                            cn(
+                                                'w-full justify-between',
+                                                validationErrors.realms_id ? 'border-red-500' : '',
+                                            )
+                                        "
+                                        @click="realmModal.openModal()"
+                                    >
+                                        {{ getSelectedRealmName() || 'Select a realm...' }}
+                                        <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
                                     <p v-if="validationErrors.realms_id" class="text-xs text-red-500 mt-1">
                                         {{ validationErrors.realms_id }}
                                     </p>
@@ -384,56 +210,21 @@
                                 </div>
                                 <div>
                                     <label for="spell" class="block mb-2 font-medium">Spell</label>
-                                    <Popover v-model:open="spellPopoverOpen">
-                                        <PopoverTrigger as-child>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                :aria-expanded="spellPopoverOpen"
-                                                :class="
-                                                    cn(
-                                                        'w-full justify-between',
-                                                        validationErrors.spell_id ? 'border-red-500' : '',
-                                                    )
-                                                "
-                                                :disabled="!form.realms_id"
-                                            >
-                                                {{ getSelectedSpellName() || 'Select a spell...' }}
-                                                <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent class="w-[400px] p-0">
-                                            <Command>
-                                                <CommandInput placeholder="Search spells..." />
-                                                <CommandEmpty>No spell found.</CommandEmpty>
-                                                <CommandGroup>
-                                                    <CommandItem
-                                                        v-for="spell in filteredSpells"
-                                                        :key="spell.id"
-                                                        :value="spell.name"
-                                                        @select="selectSpell(spell.id)"
-                                                    >
-                                                        <Check
-                                                            :class="
-                                                                cn(
-                                                                    'mr-2 h-4 w-4',
-                                                                    form.spell_id === String(spell.id)
-                                                                        ? 'opacity-100'
-                                                                        : 'opacity-0',
-                                                                )
-                                                            "
-                                                        />
-                                                        <div>
-                                                            <div class="font-medium">{{ spell.name }}</div>
-                                                            <div class="text-xs text-muted-foreground">
-                                                                {{ spell.description }}
-                                                            </div>
-                                                        </div>
-                                                    </CommandItem>
-                                                </CommandGroup>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        :disabled="!form.realms_id"
+                                        :class="
+                                            cn(
+                                                'w-full justify-between',
+                                                validationErrors.spell_id ? 'border-red-500' : '',
+                                            )
+                                        "
+                                        @click="spellModal.openModal()"
+                                    >
+                                        {{ getSelectedSpellName() || 'Select a spell...' }}
+                                        <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
                                     <p v-if="validationErrors.spell_id" class="text-xs text-red-500 mt-1">
                                         {{ validationErrors.spell_id }}
                                     </p>
@@ -831,6 +622,217 @@
                 </div>
             </div>
         </div>
+
+        <!-- Selection Modals -->
+        <SelectionModal
+            :is-open="locationModal.state.value.isOpen"
+            title="Select Location"
+            description="Choose a location for this server"
+            item-type="location"
+            search-placeholder="Search locations by name or description..."
+            :items="locationModal.state.value.items"
+            :loading="locationModal.state.value.loading"
+            :current-page="locationModal.state.value.currentPage"
+            :total-pages="locationModal.state.value.totalPages"
+            :total-items="locationModal.state.value.totalItems"
+            :page-size="20"
+            :selected-item="locationModal.state.value.selectedItem"
+            :search-query="locationModal.state.value.searchQuery"
+            @update:open="locationModal.closeModal"
+            @search="locationModal.handleSearch"
+            @search-query-update="locationModal.handleSearchQueryUpdate"
+            @page-change="locationModal.handlePageChange"
+            @select="locationModal.selectItem"
+            @confirm="selectLocation(locationModal.confirmSelection())"
+        >
+            <template #default="{ item, isSelected }">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-medium truncate text-sm sm:text-base">{{ item.name }}</h4>
+                        <p class="text-xs sm:text-sm text-muted-foreground truncate">
+                            {{ item.description || 'No description available' }}
+                        </p>
+                    </div>
+                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
+                        <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    </div>
+                </div>
+            </template>
+        </SelectionModal>
+
+        <SelectionModal
+            :is-open="userModal.state.value.isOpen"
+            title="Select Server Owner"
+            description="Choose a user to own this server"
+            item-type="user"
+            search-placeholder="Search users by username or email..."
+            :items="userModal.state.value.items"
+            :loading="userModal.state.value.loading"
+            :current-page="userModal.state.value.currentPage"
+            :total-pages="userModal.state.value.totalPages"
+            :total-items="userModal.state.value.totalItems"
+            :page-size="20"
+            :selected-item="userModal.state.value.selectedItem"
+            :search-query="userModal.state.value.searchQuery"
+            @update:open="userModal.closeModal"
+            @search="userModal.handleSearch"
+            @search-query-update="userModal.handleSearchQueryUpdate"
+            @page-change="userModal.handlePageChange"
+            @select="userModal.selectItem"
+            @confirm="selectOwner(userModal.confirmSelection())"
+        >
+            <template #default="{ item, isSelected }">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-medium truncate text-sm sm:text-base">{{ item.username }}</h4>
+                        <p class="text-xs sm:text-sm text-muted-foreground truncate">{{ item.email }}</p>
+                    </div>
+                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
+                        <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    </div>
+                </div>
+            </template>
+        </SelectionModal>
+
+        <SelectionModal
+            :is-open="nodeModal.state.value.isOpen"
+            title="Select Node"
+            description="Choose a node for this server"
+            item-type="node"
+            search-placeholder="Search nodes by name or FQDN..."
+            :items="nodeModal.state.value.items"
+            :loading="nodeModal.state.value.loading"
+            :current-page="nodeModal.state.value.currentPage"
+            :total-pages="nodeModal.state.value.totalPages"
+            :total-items="nodeModal.state.value.totalItems"
+            :page-size="20"
+            :selected-item="nodeModal.state.value.selectedItem"
+            :search-query="nodeModal.state.value.searchQuery"
+            @update:open="nodeModal.closeModal"
+            @search="nodeModal.handleSearch"
+            @search-query-update="nodeModal.handleSearchQueryUpdate"
+            @page-change="nodeModal.handlePageChange"
+            @select="nodeModal.selectItem"
+            @confirm="selectNode(nodeModal.confirmSelection())"
+        >
+            <template #default="{ item, isSelected }">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-medium truncate text-sm sm:text-base">{{ item.name }}</h4>
+                        <p class="text-xs sm:text-sm text-muted-foreground truncate">{{ item.fqdn || 'No FQDN' }}</p>
+                    </div>
+                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
+                        <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    </div>
+                </div>
+            </template>
+        </SelectionModal>
+
+        <SelectionModal
+            :is-open="realmModal.state.value.isOpen"
+            title="Select Realm"
+            description="Choose a realm for this server"
+            item-type="realm"
+            search-placeholder="Search realms by name or description..."
+            :items="realmModal.state.value.items"
+            :loading="realmModal.state.value.loading"
+            :current-page="realmModal.state.value.currentPage"
+            :total-pages="realmModal.state.value.totalPages"
+            :total-items="realmModal.state.value.totalItems"
+            :page-size="20"
+            :selected-item="realmModal.state.value.selectedItem"
+            :search-query="realmModal.state.value.searchQuery"
+            @update:open="realmModal.closeModal"
+            @search="realmModal.handleSearch"
+            @search-query-update="realmModal.handleSearchQueryUpdate"
+            @page-change="realmModal.handlePageChange"
+            @select="realmModal.selectItem"
+            @confirm="selectRealm(realmModal.confirmSelection())"
+        >
+            <template #default="{ item, isSelected }">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-medium truncate text-sm sm:text-base">{{ item.name }}</h4>
+                        <p class="text-xs sm:text-sm text-muted-foreground truncate">
+                            {{ item.description || 'No description available' }}
+                        </p>
+                    </div>
+                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
+                        <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    </div>
+                </div>
+            </template>
+        </SelectionModal>
+
+        <SelectionModal
+            :is-open="spellModal.state.value.isOpen"
+            title="Select Spell"
+            description="Choose a spell for this server"
+            item-type="spell"
+            search-placeholder="Search spells by name or description..."
+            :items="spellModal.state.value.items"
+            :loading="spellModal.state.value.loading"
+            :current-page="spellModal.state.value.currentPage"
+            :total-pages="spellModal.state.value.totalPages"
+            :total-items="spellModal.state.value.totalItems"
+            :page-size="20"
+            :selected-item="spellModal.state.value.selectedItem"
+            :search-query="spellModal.state.value.searchQuery"
+            @update:open="spellModal.closeModal"
+            @search="spellModal.handleSearch"
+            @search-query-update="spellModal.handleSearchQueryUpdate"
+            @page-change="spellModal.handlePageChange"
+            @select="spellModal.selectItem"
+            @confirm="selectSpell(spellModal.confirmSelection())"
+        >
+            <template #default="{ item, isSelected }">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-medium truncate text-sm sm:text-base">{{ item.name }}</h4>
+                        <p class="text-xs sm:text-sm text-muted-foreground truncate">
+                            {{ item.description || 'No description available' }}
+                        </p>
+                    </div>
+                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
+                        <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    </div>
+                </div>
+            </template>
+        </SelectionModal>
+
+        <SelectionModal
+            :is-open="allocationModal.state.value.isOpen"
+            title="Select Allocation"
+            description="Choose an allocation for this server"
+            item-type="allocation"
+            search-placeholder="Search allocations by IP or port..."
+            :items="allocationModal.state.value.items"
+            :loading="allocationModal.state.value.loading"
+            :current-page="allocationModal.state.value.currentPage"
+            :total-pages="allocationModal.state.value.totalPages"
+            :total-items="allocationModal.state.value.totalItems"
+            :page-size="20"
+            :selected-item="allocationModal.state.value.selectedItem"
+            :search-query="allocationModal.state.value.searchQuery"
+            @update:open="allocationModal.closeModal"
+            @search="allocationModal.handleSearch"
+            @search-query-update="allocationModal.handleSearchQueryUpdate"
+            @page-change="allocationModal.handlePageChange"
+            @select="allocationModal.selectItem"
+            @confirm="selectAllocation(allocationModal.confirmSelection())"
+        >
+            <template #default="{ item, isSelected }">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-medium truncate text-sm sm:text-base">{{ item.ip }}:{{ item.port }}</h4>
+                        <p class="text-xs sm:text-sm text-muted-foreground truncate">Node ID: {{ item.node_id }}</p>
+                    </div>
+                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
+                        <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    </div>
+                </div>
+            </template>
+        </SelectionModal>
     </DashboardLayout>
 </template>
 
@@ -844,133 +846,34 @@ import { Input } from '@/components/ui/input';
 import { Check, ChevronsUpDown } from 'lucide-vue-next';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Checkbox } from '@/components/ui/checkbox';
+import { SelectionModal } from '@/components/ui/selection-modal';
+import { useSelectionModal } from '@/composables/useSelectionModal';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from 'vue-toastification';
 import { cn } from '@/lib/utils';
-
-// Types
-type ApiLocation = { id: number; name: string; description?: string };
-type ApiNode = { id: number; name: string; fqdn?: string; location_id: number };
-type ApiUser = { id: number; username: string; email: string; avatar?: string };
-type ApiRealm = { id: number; name: string; description?: string; location_id: number };
-type ApiSpell = {
-    id: number;
-    name: string;
-    description?: string;
-    realm_id: number;
-    startup?: string;
-    docker_images?: string;
-    features?: string;
-};
-
-type ApiServer = {
-    id: number;
-    node_id: number;
-    name: string;
-    description: string;
-    suspended?: number;
-    owner_id: number;
-    memory: number;
-    swap: number;
-    disk: number;
-    io: number;
-    cpu: number;
-    allocation_id: number;
-    realms_id: number;
-    spell_id: number;
-    startup: string;
-    image: string;
-    database_limit?: number;
-    allocation_limit?: number;
-    backup_limit?: number;
-    skip_scripts: number;
-    node?: { location_id: number };
-    variables?: Array<{
-        id: number;
-        server_id: number;
-        variable_id: number;
-        variable_value: string;
-        name: string;
-        description: string;
-        env_variable: string;
-        default_value: string;
-        user_viewable: number;
-        user_editable: number;
-        rules: string;
-        field_type: string;
-        created_at: string;
-        updated_at: string;
-    }>;
-};
-type ApiAllocation = { id: number; ip: string; port: number; node_id: number };
-type ApiSpellVariable = {
-    id: number;
-    spell_id: number;
-    name: string;
-    description: string;
-    env_variable: string;
-    default_value: string;
-    user_viewable: number;
-    user_editable: number;
-    rules: string;
-    field_type: string;
-};
-
-type EditForm = {
-    node_id: string;
-    name: string;
-    description: string;
-    suspended?: number;
-    owner_id: string;
-    memory: number;
-    swap: number;
-    disk: number;
-    io: number;
-    cpu: number;
-    allocation_id: string;
-    realms_id: string;
-    spell_id: string;
-    startup: string;
-    image: string;
-    database_limit: number;
-    allocation_limit: number;
-    backup_limit: number;
-    skip_scripts: boolean;
-    location_id: string; // For UI filtering only, not sent to API
-};
-
-type SubmitData = {
-    node_id: number;
-    name: string;
-    description: string;
-    owner_id: number;
-    memory: number;
-    swap: number;
-    disk: number;
-    io: number;
-    cpu: number;
-    allocation_id: number;
-    realms_id: number;
-    spell_id: number;
-    startup: string;
-    image: string;
-    database_limit: number;
-    allocation_limit: number;
-    backup_limit: number;
-    skip_scripts: boolean;
-    variables: Array<{ variable_id: number; variable_value: string }>;
-};
-
-type AxiosError = {
-    response?: {
-        data?: {
-            message?: string;
-        };
-    };
-};
+import type {
+    ApiLocation,
+    ApiNode,
+    ApiUser,
+    ApiRealm,
+    ApiSpell,
+    ApiAllocation,
+    ApiSpellVariable,
+    ApiServer,
+    EditForm,
+    SubmitData,
+    AxiosError,
+} from '@/types/admin/server';
 
 const router = useRouter();
 const route = useRoute();
+const toast = useToast();
+
+// Skip scripts options
+const SKIP_SCRIPTS_OPTIONS = [
+    { value: false, label: 'No - Run scripts normally' },
+    { value: true, label: 'Yes - Skip startup scripts' },
+];
 
 // Breadcrumbs
 const breadcrumbs = [
@@ -984,14 +887,16 @@ const loading = ref(false);
 const submitting = ref(false);
 const suspending = ref(false);
 
-// Popover open states
-const ownerPopoverOpen = ref(false);
-const locationPopoverOpen = ref(false);
-const nodePopoverOpen = ref(false);
-const allocationPopoverOpen = ref(false);
-const realmPopoverOpen = ref(false);
-const spellPopoverOpen = ref(false);
+// Popover open states (keeping docker image popover for now)
 const dockerImagePopoverOpen = ref(false);
+
+// Selection modals
+const locationModal = useSelectionModal('/api/admin/locations', 20, 'search', 'page');
+const userModal = useSelectionModal('/api/admin/users', 20, 'search', 'page');
+const nodeModal = useSelectionModal('/api/admin/nodes', 20, 'search', 'page');
+const allocationModal = useSelectionModal('/api/admin/allocations', 20, 'search', 'page');
+const realmModal = useSelectionModal('/api/admin/realms', 20, 'search', 'page');
+const spellModal = useSelectionModal('/api/admin/spells', 20, 'search', 'page');
 
 // Form data
 const form = ref<EditForm>({
@@ -1022,7 +927,6 @@ const form = ref<EditForm>({
 // Dropdown data
 const locations = ref<ApiLocation[]>([]);
 const nodes = ref<ApiNode[]>([]);
-const users = ref<ApiUser[]>([]);
 const realms = ref<ApiRealm[]>([]);
 const spells = ref<ApiSpell[]>([]);
 const allocations = ref<ApiAllocation[]>([]);
@@ -1057,71 +961,114 @@ const filteredAllocations = computed(() => {
 
 // Get selected names for display
 function getSelectedOwnerName() {
-    const selected = users.value.find((user) => String(user.id) === form.value.owner_id);
+    // First check if there's a selected item in the modal
+    if (userModal.state.value.selectedItem) {
+        const selected = userModal.state.value.selectedItem;
+        return `${selected.username} (${selected.email})`;
+    }
+    // Fallback to search results
+    const selected = userSearchResults.value.find((user) => String(user.id) === form.value.owner_id);
     return selected ? `${selected.username} (${selected.email})` : '';
 }
 
 function getSelectedLocationName() {
+    // First check if there's a selected item in the modal
+    if (locationModal.state.value.selectedItem) {
+        return locationModal.state.value.selectedItem.name;
+    }
+    // Fallback to locations list
     const selected = locations.value.find((location) => String(location.id) === form.value.location_id);
     return selected ? selected.name : '';
 }
 
 function getSelectedNodeName() {
+    // First check if there's a selected item in the modal
+    if (nodeModal.state.value.selectedItem) {
+        const selected = nodeModal.state.value.selectedItem;
+        return `${selected.name} (${selected.fqdn})`;
+    }
+    // Fallback to filtered nodes
     const selected = filteredNodes.value.find((node) => String(node.id) === form.value.node_id);
     return selected ? `${selected.name} (${selected.fqdn})` : '';
 }
 
 function getSelectedAllocationName() {
+    // First check if there's a selected item in the modal
+    if (allocationModal.state.value.selectedItem) {
+        const selected = allocationModal.state.value.selectedItem;
+        return `${selected.ip}:${selected.port}`;
+    }
+    // Fallback to filtered allocations
     const selected = filteredAllocations.value.find((allocation) => String(allocation.id) === form.value.allocation_id);
     return selected ? `${selected.ip}:${selected.port}` : '';
 }
 
 function getSelectedRealmName() {
+    // First check if there's a selected item in the modal
+    if (realmModal.state.value.selectedItem) {
+        return realmModal.state.value.selectedItem.name;
+    }
+    // Fallback to filtered realms
     const selected = filteredRealms.value.find((realm) => String(realm.id) === form.value.realms_id);
     return selected ? selected.name : '';
 }
 
 function getSelectedSpellName() {
+    // First check if there's a selected item in the modal
+    if (spellModal.state.value.selectedItem) {
+        return spellModal.state.value.selectedItem.name;
+    }
+    // Fallback to filtered spells
     const selected = filteredSpells.value.find((spell) => String(spell.id) === form.value.spell_id);
     return selected ? selected.name : '';
 }
 
 // Selection functions
-function selectLocation(locationId: number) {
-    form.value.location_id = String(locationId);
-    form.value.node_id = '';
-    form.value.allocation_id = '';
-    locationPopoverOpen.value = false;
-}
-
-function selectNode(nodeId: number) {
-    form.value.node_id = String(nodeId);
-    form.value.allocation_id = '';
-    nodePopoverOpen.value = false;
-}
-
-function selectOwner(ownerId: number) {
-    if (ownerId && ownerId > 0) {
-        form.value.owner_id = String(ownerId);
+function selectLocation(item: ApiLocation) {
+    if (item && item.id) {
+        form.value.location_id = String(item.id);
+        form.value.node_id = '';
+        form.value.allocation_id = '';
+        locationModal.closeModal();
     }
-    ownerPopoverOpen.value = false;
 }
 
-function selectRealm(realmId: number) {
-    form.value.realms_id = String(realmId);
-    form.value.spell_id = '';
-    realmPopoverOpen.value = false;
+function selectNode(item: ApiNode) {
+    if (item && item.id) {
+        form.value.node_id = String(item.id);
+        form.value.allocation_id = '';
+        nodeModal.closeModal();
+    }
 }
 
-function selectSpell(spellId: number) {
-    form.value.spell_id = String(spellId);
-    spellPopoverOpen.value = false;
-    fetchSpellDetails(spellId);
+function selectOwner(item: ApiUser) {
+    if (item && item.id && item.id > 0) {
+        form.value.owner_id = String(item.id);
+        userModal.closeModal();
+    }
 }
 
-function selectAllocation(allocationId: number) {
-    form.value.allocation_id = String(allocationId);
-    allocationPopoverOpen.value = false;
+function selectRealm(item: ApiRealm) {
+    if (item && item.id) {
+        form.value.realms_id = String(item.id);
+        form.value.spell_id = '';
+        realmModal.closeModal();
+    }
+}
+
+function selectSpell(item: ApiSpell) {
+    if (item && item.id) {
+        form.value.spell_id = String(item.id);
+        spellModal.closeModal();
+        fetchSpellDetails(item.id);
+    }
+}
+
+function selectAllocation(item: ApiAllocation) {
+    if (item && item.id) {
+        form.value.allocation_id = String(item.id);
+        allocationModal.closeModal();
+    }
 }
 
 function selectDockerImage(image: string) {
@@ -1139,9 +1086,13 @@ async function suspendServer() {
         const { data } = await axios.post(`/api/admin/servers/${serverId}/suspend`);
         if (data?.success) {
             form.value.suspended = 1;
+            toast.success('Server suspended successfully!');
+        } else {
+            toast.error(data?.message || 'Failed to suspend server.');
         }
     } catch (e) {
         console.error('Failed to suspend server', e);
+        toast.error('Failed to suspend server.');
     } finally {
         suspending.value = false;
     }
@@ -1155,9 +1106,13 @@ async function unsuspendServer() {
         const { data } = await axios.post(`/api/admin/servers/${serverId}/unsuspend`);
         if (data?.success) {
             form.value.suspended = 0;
+            toast.success('Server unsuspended successfully!');
+        } else {
+            toast.error(data?.message || 'Failed to unsuspend server.');
         }
     } catch (e) {
         console.error('Failed to unsuspend server', e);
+        toast.error('Failed to unsuspend server.');
     } finally {
         suspending.value = false;
     }
@@ -1198,20 +1153,15 @@ async function fetchSpellDetails(spellId: number) {
         if (variablesRes.data?.success) {
             // Don't override server variables - we're using the ones from the server response
             // Only use spell details for docker images, startup command, etc.
-            console.log('Spell variables loaded, but using server variables from API response');
         }
     } catch (error: unknown) {
         console.error('Failed to fetch spell details:', error);
-        const errorMessage = document.createElement('div');
-        errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg z-50';
-        errorMessage.textContent = (error as AxiosError)?.response?.data?.message || 'Failed to fetch spell details.';
-        document.body.appendChild(errorMessage);
-
-        setTimeout(() => {
-            document.body.removeChild(errorMessage);
-        }, 5000);
+        toast.error((error as AxiosError)?.response?.data?.message || 'Failed to fetch spell details.');
     }
 }
+
+// User search results for fallback display (keeping for current owner display)
+const userSearchResults = ref<ApiUser[]>([]);
 
 // Load server data for editing
 async function loadServerData() {
@@ -1223,11 +1173,10 @@ async function loadServerData() {
 
     loading.value = true;
     try {
-        const [serverRes, locationsRes, nodesRes, usersRes, realmsRes, spellsRes, allocationsRes] = await Promise.all([
+        const [serverRes, locationsRes, nodesRes, realmsRes, spellsRes, allocationsRes] = await Promise.all([
             axios.get(`/api/admin/servers/${serverId}`),
             axios.get('/api/admin/locations'),
             axios.get('/api/admin/nodes'),
-            axios.get('/api/admin/users'),
             axios.get('/api/admin/realms'),
             axios.get('/api/admin/spells'),
             axios.get('/api/admin/allocations'),
@@ -1303,20 +1252,25 @@ async function loadServerData() {
 
         locations.value = locationsRes.data?.data?.locations || [];
         nodes.value = nodesRes.data?.data?.nodes || [];
-        users.value = usersRes.data?.data?.users || [];
         realms.value = realmsRes.data?.data?.realms || [];
         spells.value = spellsRes.data?.data?.spells || [];
         allocations.value = allocationsRes.data?.data?.allocations || [];
+
+        // Fetch the current server owner for display
+        if (form.value.owner_id) {
+            try {
+                const ownerResponse = await axios.get(`/api/admin/users/${form.value.owner_id}`);
+                if (ownerResponse.data?.success) {
+                    const currentOwner = ownerResponse.data.data;
+                    userSearchResults.value = [currentOwner]; // Add current owner to results for display
+                }
+            } catch (error) {
+                console.error('Failed to fetch current owner:', error);
+            }
+        }
     } catch (error: unknown) {
         console.error('Failed to load server data:', error);
-        const errorMessage = document.createElement('div');
-        errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg z-50';
-        errorMessage.textContent = (error as AxiosError)?.response?.data?.message || 'Failed to load server data.';
-        document.body.appendChild(errorMessage);
-
-        setTimeout(() => {
-            document.body.removeChild(errorMessage);
-        }, 5000);
+        toast.error((error as AxiosError)?.response?.data?.message || 'Failed to load server data.');
     } finally {
         loading.value = false;
     }
@@ -1521,7 +1475,6 @@ async function submitUpdate() {
     validationErrors.value = {};
 
     if (!validateForm()) {
-        console.log('Validation errors:', validationErrors.value);
         return;
     }
 
@@ -1562,36 +1515,16 @@ async function submitUpdate() {
 
         const { data } = await axios.patch(`/api/admin/servers/${serverId}`, submitData);
         if (data && data.success) {
-            const successMessage = document.createElement('div');
-            successMessage.className =
-                'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg z-50';
-            successMessage.textContent = 'Server updated successfully!';
-            document.body.appendChild(successMessage);
-
+            toast.success('Server updated successfully!');
             setTimeout(() => {
-                document.body.removeChild(successMessage);
                 router.push('/admin/servers');
-            }, 2000);
+            }, 1500);
         } else {
-            const errorMessage = document.createElement('div');
-            errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg z-50';
-            errorMessage.textContent = data?.message || 'Failed to update server.';
-            document.body.appendChild(errorMessage);
-
-            setTimeout(() => {
-                document.body.removeChild(errorMessage);
-            }, 5000);
+            toast.error(data?.message || 'Failed to update server.');
         }
     } catch (error: unknown) {
         console.error('Failed to update server:', error);
-        const errorMessage = document.createElement('div');
-        errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg z-50';
-        errorMessage.textContent = (error as AxiosError)?.response?.data?.message || 'Failed to update server.';
-        document.body.appendChild(errorMessage);
-
-        setTimeout(() => {
-            document.body.removeChild(errorMessage);
-        }, 5000);
+        toast.error((error as AxiosError)?.response?.data?.message || 'Failed to update server.');
     } finally {
         submitting.value = false;
     }

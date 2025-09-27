@@ -1,0 +1,184 @@
+// Server-related API types
+export interface ApiLocation {
+    id: number;
+    name: string;
+    description?: string;
+}
+
+export interface ApiNode {
+    id: number;
+    name: string;
+    fqdn?: string;
+    location_id: number;
+}
+
+export interface ApiUser {
+    id: number;
+    username: string;
+    email: string;
+    avatar?: string;
+}
+
+export interface ApiRealm {
+    id: number;
+    name: string;
+    description?: string;
+    location_id: number;
+}
+
+export interface ApiSpell {
+    id: number;
+    name: string;
+    description?: string;
+    realm_id: number;
+    startup?: string;
+    docker_images?: string;
+    features?: string;
+}
+
+export interface ApiAllocation {
+    id: number;
+    ip: string;
+    port: number;
+    node_id: number;
+}
+
+export interface ApiSpellVariable {
+    id: number;
+    spell_id: number;
+    name: string;
+    description: string;
+    env_variable: string;
+    default_value: string;
+    user_viewable: number;
+    user_editable: number;
+    rules: string;
+    field_type: string;
+}
+
+export interface ApiServer {
+    id: number;
+    node_id: number;
+    name: string;
+    description: string;
+    suspended?: number;
+    owner_id: number;
+    memory: number;
+    swap: number;
+    disk: number;
+    io: number;
+    cpu: number;
+    allocation_id: number;
+    realms_id: number;
+    spell_id: number;
+    startup: string;
+    image: string;
+    database_limit?: number;
+    allocation_limit?: number;
+    backup_limit?: number;
+    skip_scripts: number;
+    node?: { location_id: number };
+    variables?: Array<{
+        id: number;
+        server_id: number;
+        variable_id: number;
+        variable_value: string;
+        name: string;
+        description: string;
+        env_variable: string;
+        default_value: string;
+        user_viewable: number;
+        user_editable: number;
+        rules: string;
+        field_type: string;
+        created_at: string;
+        updated_at: string;
+    }>;
+}
+
+// Form types
+export interface CreateForm {
+    node_id: string;
+    name: string;
+    description: string;
+    owner_id: string;
+    memory: number;
+    swap: number;
+    disk: number;
+    io: number;
+    cpu: number;
+    allocation_id: string;
+    realms_id: string;
+    spell_id: string;
+    startup: string;
+    image: string;
+    database_limit: number;
+    allocation_limit: number;
+    backup_limit: number;
+    skip_scripts: boolean;
+    location_id: string; // For UI filtering only, not sent to API
+}
+
+export interface EditForm {
+    node_id: string;
+    name: string;
+    description: string;
+    suspended?: number;
+    owner_id: string;
+    memory: number;
+    swap: number;
+    disk: number;
+    io: number;
+    cpu: number;
+    allocation_id: string;
+    realms_id: string;
+    spell_id: string;
+    startup: string;
+    image: string;
+    database_limit: number;
+    allocation_limit: number;
+    backup_limit: number;
+    skip_scripts: boolean;
+    location_id: string; // For UI filtering only, not sent to API
+}
+
+export interface SubmitData {
+    node_id: number;
+    name: string;
+    description: string;
+    owner_id: number;
+    memory: number;
+    swap: number;
+    disk: number;
+    io: number;
+    cpu: number;
+    allocation_id: number;
+    realms_id: number;
+    spell_id: number;
+    startup: string;
+    image: string;
+    database_limit: number;
+    allocation_limit: number;
+    backup_limit: number;
+    skip_scripts: boolean;
+    variables: Array<{ variable_id: number; variable_value: string }>;
+}
+
+export interface AxiosError {
+    response?: {
+        data?: {
+            message?: string;
+        };
+    };
+}
+
+// Skip scripts options
+export interface SkipScriptsOption {
+    value: boolean;
+    label: string;
+}
+
+export const SKIP_SCRIPTS_OPTIONS: SkipScriptsOption[] = [
+    { value: false, label: 'No - Run scripts normally' },
+    { value: true, label: 'Yes - Skip startup scripts' },
+];

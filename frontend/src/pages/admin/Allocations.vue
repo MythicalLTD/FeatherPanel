@@ -51,7 +51,6 @@
                     local-storage-key="featherpanel-allocations-table-columns"
                     @search="handleSearch"
                     @page-change="changePage"
-                    @column-toggle="handleColumnToggle"
                 >
                     <template #header-actions>
                         <div class="flex items-center gap-3">
@@ -560,11 +559,6 @@ function handleSearch(query: string) {
 function changePage(page: number) {
     currentPage.value = page;
     fetchAllocations();
-}
-
-function handleColumnToggle(columns: string[]) {
-    // Column preferences are automatically saved by the TableComponent
-    console.log('Columns changed:', columns);
 }
 
 async function onView(allocation: Allocation) {

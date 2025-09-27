@@ -44,14 +44,4 @@ const router = createRouter({
     routes,
 });
 
-// Add debug logging for route changes
-router.beforeEach((to, from, next) => {
-    console.log('[REDIRECT DEBUG] Router: Navigating from', from.path, 'to', to.path);
-    next();
-});
-
-router.afterEach((to) => {
-    console.log('[REDIRECT DEBUG] Router: Navigation completed to', to.path);
-});
-
 export default router;

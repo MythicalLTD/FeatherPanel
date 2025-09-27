@@ -339,7 +339,6 @@ const interceptXMLHttpRequest = () => {
                 return originalOpen.call(this, httpMethod, requestUrl, async ?? true, user, password);
             }
 
-            console.log('Debug Panel: Intercepting XMLHttpRequest:', method, url);
             return originalOpen.call(this, httpMethod, requestUrl, async ?? true, user, password);
         };
 
@@ -450,11 +449,6 @@ onMounted(() => {
     interceptFetch();
     interceptXMLHttpRequest();
     loadSettings();
-
-    console.log('🎉 Debug Panel loaded!');
-    console.log('📚 Intercepting ALL HTTP requests (fetch + XMLHttpRequest)');
-    console.log('  • Press Ctrl+I to toggle the debug panel');
-    console.log('  • All requests to /api/* will be automatically captured');
 });
 
 onUnmounted(() => {

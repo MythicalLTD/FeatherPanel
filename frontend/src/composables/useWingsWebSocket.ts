@@ -104,7 +104,6 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                             // Wings is connected successfully - set as healthy immediately
                             // We don't need to wait for stats/status since server might be offline
                             wingsStatus.value = 'healthy';
-                            console.log('Connected to Wings daemon successfully');
 
                             // Clear any pending health check timeout
                             if (healthCheckTimeout.value) {
@@ -132,7 +131,6 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                             // This is just confirmation for running servers
                             if (wingsStatus.value !== 'healthy') {
                                 wingsStatus.value = 'healthy';
-                                console.log('Wings daemon responding with stats/status');
                             }
                         }
                     } catch {

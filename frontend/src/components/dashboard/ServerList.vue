@@ -968,7 +968,6 @@ onMounted(async () => {
                     // Save changes if any servers were removed
                     if (hasChanges) {
                         saveFoldersToStorage();
-                        console.log('Periodic validation: Removed deleted servers from folders');
                     }
                 }
             } catch (error) {
@@ -1214,7 +1213,6 @@ async function validateAndCleanupServers() {
             // Save changes if any servers were removed
             if (removedCount > 0) {
                 saveFoldersToStorage();
-                console.log(`Validation complete: Removed ${removedCount} deleted servers from folders`);
                 // Show success message
                 toast.warning(t('servers.validationCompleteRemoved', { count: removedCount }));
             } else {
@@ -1234,8 +1232,6 @@ function saveFoldersToStorage() {
     try {
         localStorage.setItem('featherpanel-server_folders', JSON.stringify(serverFolders.value));
         localStorage.setItem('featherpanel-unassigned_servers', JSON.stringify(unassignedServers.value));
-        console.log('Saved folders to storage:', serverFolders.value);
-        console.log('Saved unassigned to storage:', unassignedServers.value);
     } catch (error) {
         console.error('Error saving to localStorage:', error);
     }
@@ -1248,12 +1244,10 @@ function loadFoldersFromStorage() {
 
         if (savedFolders) {
             serverFolders.value = JSON.parse(savedFolders);
-            console.log('Loaded folders from storage:', serverFolders.value);
         }
 
         if (savedUnassigned) {
             unassignedServers.value = JSON.parse(savedUnassigned);
-            console.log('Loaded unassigned from storage:', unassignedServers.value);
         }
     } catch (error) {
         console.error('Error loading from localStorage:', error);
@@ -1283,28 +1277,16 @@ async function organizeServersIntoFolders() {
         const validServerIds = new Set(servers.value.map((server) => server.id));
 
         // Filter out deleted/non-existent servers from folders
-        let removedFromFolders = 0;
         serverFolders.value.forEach((folder) => {
             folder.servers = folder.servers.filter((server) => {
                 const isValid = validServerIds.has(server.id);
-                if (!isValid) {
-                    console.log(
-                        `Removing deleted server "${server.name}" (ID: ${server.id}) from folder "${folder.name}"`,
-                    );
-                    removedFromFolders++;
-                }
                 return isValid;
             });
         });
 
         // Filter out deleted/non-existent servers from unassigned
-        let removedFromUnassigned = 0;
         unassignedServers.value = unassignedServers.value.filter((server) => {
             const isValid = validServerIds.has(server.id);
-            if (!isValid) {
-                console.log(`Removing deleted server "${server.name}" (ID: ${server.id}) from unassigned servers`);
-                removedFromUnassigned++;
-            }
             return isValid;
         });
 
@@ -1336,13 +1318,6 @@ async function organizeServersIntoFolders() {
 
         // Save to local storage
         saveFoldersToStorage();
-
-        // Log summary of cleanup
-        if (removedFromFolders > 0 || removedFromUnassigned > 0) {
-            console.log(
-                `Server organization complete: Removed ${removedFromFolders} deleted servers from folders, ${removedFromUnassigned} from unassigned`,
-            );
-        }
     } catch (error) {
         console.error('Error organizing servers into folders:', error);
         // Continue with existing organization if there's an error

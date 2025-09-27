@@ -85,39 +85,27 @@ const router = useRouter();
 async function checkRedirect() {
     try {
         const slug = route.params.slug as string;
-        console.log('[REDIRECT DEBUG] Redirect page: Checking redirect for slug:', slug);
-        console.log('[REDIRECT DEBUG] Redirect page: Making API call to /api/redirect-links/' + slug);
-
         const { data } = await axios.get(`/api/redirect-links/${slug}`);
-        console.log('[REDIRECT DEBUG] Redirect page: API response:', data);
 
         if (data && data.success && data.data.redirect_link) {
-            console.log('[REDIRECT DEBUG] Redirect page: Redirect found:', data.data.redirect_link);
             redirectLink.value = data.data.redirect_link;
 
-            // Start countdown and auto-redirect
-            console.log('[REDIRECT DEBUG] Redirect page: Starting countdown');
             startCountdown();
         } else {
-            console.log('[REDIRECT DEBUG] Redirect page: No redirect found in response');
             error.value = true;
         }
     } catch (err) {
         console.error('[REDIRECT DEBUG] Redirect page: Error checking redirect:', err);
         error.value = true;
     } finally {
-        console.log('[REDIRECT DEBUG] Redirect page: Finished checking, loading = false');
         loading.value = false;
     }
 }
 
 function startCountdown() {
-    console.log('[REDIRECT DEBUG] Redirect page: Starting 5-second countdown');
     const timer = setInterval(() => {
         countdown.value--;
-        console.log('[REDIRECT DEBUG] Redirect page: Countdown:', countdown.value);
         if (countdown.value <= 0) {
-            console.log('[REDIRECT DEBUG] Redirect page: Countdown finished, redirecting');
             clearInterval(timer);
             redirectNow();
         }
@@ -126,10 +114,7 @@ function startCountdown() {
 
 function redirectNow() {
     if (redirectLink.value) {
-        console.log('[REDIRECT DEBUG] Redirect page: Redirecting to:', redirectLink.value.url);
         window.location.href = redirectLink.value.url;
-    } else {
-        console.log('[REDIRECT DEBUG] Redirect page: No redirect link to redirect to');
     }
 }
 

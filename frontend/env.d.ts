@@ -6,10 +6,6 @@ declare module '*.vue' {
     export default component;
 }
 
-declare module '@vueuse/sound' {
-    export function useSound(url: string): { play: () => void };
-}
-
 declare module '*.yml' {
     const value: any;
     export default value;

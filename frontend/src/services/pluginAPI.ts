@@ -72,7 +72,6 @@ class PluginAPIService implements PluginAPI {
     initialize(app: App, router: Router) {
         this.app = app;
         this.router = router;
-        console.log('🔌 Plugin API initialized');
     }
 
     /**

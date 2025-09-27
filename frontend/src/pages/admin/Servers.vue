@@ -50,7 +50,6 @@
                     local-storage-key="featherpanel-servers-table-columns"
                     @search="handleSearch"
                     @page-change="changePage"
-                    @column-toggle="handleColumnToggle"
                 >
                     <template #header-actions>
                         <Button variant="outline" size="sm" @click="$router.push('/admin/servers/create')">
@@ -509,11 +508,6 @@ function handleSearch(query: string) {
 function changePage(page: number) {
     pagination.value.page = page;
     fetchServers();
-}
-
-function handleColumnToggle(columns: string[]) {
-    // Column preferences are automatically saved by the TableComponent
-    console.log('Columns changed:', columns);
 }
 
 async function onView(server: ApiServer) {

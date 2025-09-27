@@ -18,7 +18,6 @@
                 local-storage-key="featherpanel-server-schedules-columns"
                 @search="handleSearch"
                 @page-change="changePage"
-                @column-toggle="handleColumnToggle"
             >
                 <template #header-actions>
                     <Button @click="openCreateScheduleDrawer">
@@ -591,10 +590,6 @@ function handleSearch(query: string) {
     searchQuery.value = query;
     pagination.value.current_page = 1;
     fetchSchedules(1);
-}
-
-function handleColumnToggle(columns: string[]) {
-    console.log('Columns changed:', columns);
 }
 
 function formatDate(value?: string | null) {

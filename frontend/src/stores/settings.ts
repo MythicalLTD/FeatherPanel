@@ -34,12 +34,10 @@ export const useSettingsStore = defineStore('settings', {
                 const res = await axios.get('/api/system/settings');
                 const json = res.data;
                 // Log what settings you get from the server
-                console.log('[SettingsStore] Received settings from server:', json.data?.settings);
                 if (json.success && json.data?.settings) {
                     this.settings = json.data.settings;
                     this.loaded = true;
                     // Log what settings yall server (store in state)
-                    console.log('[SettingsStore] Settings stored in state:', this.settings);
                 } else {
                     console.warn('Settings API response invalid:', json);
                     this.settings = null;
@@ -56,8 +54,6 @@ export const useSettingsStore = defineStore('settings', {
         setSettings(settings: Record<string, unknown>) {
             this.settings = settings;
             this.loaded = true;
-            // Log what settings yall server (store in state)
-            console.log('[SettingsStore] Settings set in state:', this.settings);
         },
     },
     getters: {

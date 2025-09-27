@@ -1354,6 +1354,17 @@ class SpellsController
             $onlineSpells = array_map(static function (array $spell): array {
                 $latest = $spell['latest_version'] ?? [];
                 $downloadUrl = isset($latest['download_url']) ? ('https://api.featherpanel.com' . $latest['download_url']) : null;
+                if (isset($spell['icon_url'])) {
+                    $iconUrl = $spell['icon_url'];
+                    // If iconUrl is set and not empty, ensure it is https
+                    if (!empty($iconUrl) && is_string($iconUrl)) {
+                        if (strpos($iconUrl, 'http://') === 0) {
+                            $iconUrl = 'https://' . substr($iconUrl, 7);
+                        }
+                    }
+                } else {
+                    $iconUrl = null;
+                }
 
                 return [
                     // Basic identity
@@ -1361,7 +1372,7 @@ class SpellsController
                     'identifier' => $spell['name'] ?? '',
                     'name' => $spell['display_name'] ?? ($spell['name'] ?? ''),
                     'description' => $spell['description'] ?? null,
-                    'icon' => $spell['icon_url'] ?? null,
+                    'icon' => $iconUrl,
                     'website' => $spell['website'] ?? null,
                     // Authors/maintainers
                     'author' => $spell['author'] ?? null,

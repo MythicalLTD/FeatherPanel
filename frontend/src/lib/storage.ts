@@ -9,7 +9,6 @@
 export const clearLocalStorage = (): void => {
     try {
         localStorage.clear();
-        console.log('localStorage cleared successfully');
     } catch (error) {
         console.error('Error clearing localStorage:', error);
     }
@@ -21,7 +20,6 @@ export const clearLocalStorage = (): void => {
 export const clearSessionStorage = (): void => {
     try {
         sessionStorage.clear();
-        console.log('sessionStorage cleared successfully');
     } catch (error) {
         console.error('Error clearing sessionStorage:', error);
     }
@@ -43,7 +41,6 @@ export const clearCookies = (): void => {
                 document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
             }
         });
-        console.log('Cookies cleared successfully');
     } catch (error) {
         console.error('Error clearing cookies:', error);
     }
@@ -61,7 +58,6 @@ export const clearIndexedDB = async (): Promise<void> => {
                     await indexedDB.deleteDatabase(db.name);
                 }
             }
-            console.log('IndexedDB databases cleared successfully');
         }
     } catch (error) {
         console.error('Error clearing IndexedDB:', error);
@@ -78,7 +74,6 @@ export const clearServiceWorkers = async (): Promise<void> => {
             for (const registration of registrations) {
                 await registration.unregister();
             }
-            console.log('Service workers cleared successfully');
         }
     } catch (error) {
         console.error('Error clearing service workers:', error);
@@ -93,7 +88,6 @@ export const clearCacheStorage = async (): Promise<void> => {
         if ('caches' in window) {
             const cacheNames = await caches.keys();
             await Promise.all(cacheNames.map((name) => caches.delete(name)));
-            console.log('Cache storage cleared successfully');
         }
     } catch (error) {
         console.error('Error clearing cache storage:', error);
@@ -105,8 +99,6 @@ export const clearCacheStorage = async (): Promise<void> => {
  * This is the main function to call for complete cleanup
  */
 export const clearAllStorage = async (): Promise<void> => {
-    console.log('Starting comprehensive storage cleanup...');
-
     // Clear all storage types
     clearLocalStorage();
     clearSessionStorage();
@@ -134,8 +126,6 @@ export const clearAllStorage = async (): Promise<void> => {
             if (localStorage.getItem(key)) localStorage.removeItem(key);
             if (sessionStorage.getItem(key)) sessionStorage.removeItem(key);
         });
-
-        console.log('Comprehensive storage cleanup completed');
     } catch (error) {
         console.error('Error during final cleanup:', error);
     }
@@ -166,8 +156,6 @@ export const clearAuthStorage = (): void => {
 
         // Clear cookies
         clearCookies();
-
-        console.log('Authentication storage cleared successfully');
     } catch (error) {
         console.error('Error clearing auth storage:', error);
     }

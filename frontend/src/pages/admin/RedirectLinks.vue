@@ -50,7 +50,6 @@
                     local-storage-key="featherpanel-redirect-links-table-columns"
                     @search="handleSearch"
                     @page-change="changePage"
-                    @column-toggle="handleColumnToggle"
                 >
                     <template #header-actions>
                         <div class="flex gap-2">
@@ -441,12 +440,6 @@ const toast = useToast();
 // Methods
 async function fetchRedirectLinks() {
     loading.value = true;
-    console.log(
-        '[REDIRECT DEBUG] Admin: Fetching redirect links, page:',
-        pagination.value.page,
-        'search:',
-        searchQuery.value,
-    );
     try {
         const { data } = await axios.get('/api/admin/redirect-links', {
             params: {
@@ -455,9 +448,7 @@ async function fetchRedirectLinks() {
                 search: searchQuery.value || undefined,
             },
         });
-        console.log('[REDIRECT DEBUG] Admin: API response:', data);
         redirectLinks.value = data.data.redirect_links || [];
-        console.log('[REDIRECT DEBUG] Admin: Loaded', redirectLinks.value.length, 'redirect links');
 
         // Map the API response pagination to our expected format
         const apiPagination = data.data.pagination;
@@ -491,12 +482,6 @@ const changePage = (page: number) => {
     pagination.value.page = page;
     fetchRedirectLinks();
 };
-
-const handleColumnToggle = (columns: string[]) => {
-    // Column preferences are automatically saved by the TableComponent
-    console.log('Columns changed:', columns);
-};
-
 // Drawer methods
 const openViewDrawer = (redirectLink: RedirectLink) => {
     selectedRedirectLink.value = redirectLink;
@@ -537,19 +522,15 @@ async function createRedirectLink() {
         return;
     }
 
-    console.log('[REDIRECT DEBUG] Admin: Creating redirect link:', newRedirectLink.value);
     try {
         creating.value = true;
         const { data } = await axios.post('/api/admin/redirect-links', newRedirectLink.value);
-        console.log('[REDIRECT DEBUG] Admin: Create API response:', data);
 
         if (data && data.success) {
-            console.log('[REDIRECT DEBUG] Admin: Redirect link created successfully');
             toast.success('Redirect link created successfully');
             closeCreateDrawer();
             await fetchRedirectLinks();
         } else {
-            console.log('[REDIRECT DEBUG] Admin: Create failed:', data?.message);
             toast.error(data?.message || 'Failed to create redirect link');
         }
     } catch (error) {
@@ -626,12 +607,9 @@ const onEdit = (redirectLink: RedirectLink) => {
 const onCopyUrl = async (redirectLink: RedirectLink) => {
     try {
         const shortUrl = getShortUrl(redirectLink.slug);
-        console.log('[REDIRECT DEBUG] Admin: Copying URL to clipboard:', shortUrl);
         await navigator.clipboard.writeText(shortUrl);
-        console.log('[REDIRECT DEBUG] Admin: URL copied successfully');
         toast.success('Short URL copied to clipboard');
     } catch {
-        console.log('[REDIRECT DEBUG] Admin: Failed to copy URL to clipboard');
         toast.error('Failed to copy URL');
     }
 };
@@ -640,7 +618,6 @@ const onCopyUrl = async (redirectLink: RedirectLink) => {
 const getShortUrl = (slug: string) => {
     const baseUrl = window.location.origin;
     const shortUrl = `${baseUrl}/${slug}`;
-    console.log('[REDIRECT DEBUG] Admin: Generated short URL for slug', slug, ':', shortUrl);
     return shortUrl;
 };
 
@@ -656,10 +633,8 @@ const formatDate = (dateString: string) => {
 
 // Test function to check API endpoint
 async function testApiEndpoint() {
-    console.log('[REDIRECT DEBUG] Admin: Testing API endpoint...');
     try {
-        const { data } = await axios.get('/api/redirect-links');
-        console.log('[REDIRECT DEBUG] Admin: API test response:', data);
+        await axios.get('/api/redirect-links');
     } catch (error) {
         console.error('[REDIRECT DEBUG] Admin: API test error:', error);
     }
@@ -669,10 +644,8 @@ async function testApiEndpoint() {
 async function testRedirectApi() {
     const testSlug = prompt('Enter a slug to test (e.g., "discord"):');
     if (testSlug) {
-        console.log('[REDIRECT DEBUG] Admin: Testing redirect API for slug:', testSlug);
         try {
             const { data } = await axios.get(`/api/redirect-links/${testSlug}`);
-            console.log('[REDIRECT DEBUG] Admin: Redirect API test response:', data);
             alert('API Response: ' + JSON.stringify(data, null, 2));
         } catch (error) {
             console.error('[REDIRECT DEBUG] Admin: Redirect API test error:', error);

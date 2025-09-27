@@ -41,7 +41,6 @@
                 local-storage-key="featherpanel-server-backups-columns"
                 @search="handleSearch"
                 @page-change="changePage"
-                @column-toggle="handleColumnToggle"
             >
                 <template #header-actions>
                     <Button
@@ -659,10 +658,6 @@ function handleSearch(query: string) {
     searchQuery.value = query;
     pagination.value.current_page = 1;
     fetchBackups(1);
-}
-
-function handleColumnToggle(columns: string[]) {
-    console.log('Columns changed:', columns);
 }
 
 function formatDate(value?: string) {

@@ -50,7 +50,6 @@
                     local-storage-key="featherpanel-node-databases-table-columns"
                     @search="handleSearch"
                     @page-change="changePage"
-                    @column-toggle="handleColumnToggle"
                 >
                     <template #header-actions>
                         <Button variant="outline" size="sm" @click="openCreateDrawer">
@@ -449,11 +448,6 @@ function handleSearch(query: string) {
 function changePage(page: number) {
     pagination.value.page = page;
     fetchDatabases();
-}
-
-function handleColumnToggle(columns: string[]) {
-    // Column preferences are automatically saved by the TableComponent
-    console.log('Columns changed:', columns);
 }
 
 function openCreateDrawer() {

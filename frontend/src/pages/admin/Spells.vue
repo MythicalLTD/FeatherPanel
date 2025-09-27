@@ -79,7 +79,6 @@
                             local-storage-key="featherpanel-spells-table-columns"
                             @search="handleSearch"
                             @page-change="changePage"
-                            @column-toggle="handleColumnToggle"
                         >
                             <template #header-actions>
                                 <div class="flex gap-2">
@@ -112,8 +111,8 @@
                                 <span>
                                     {{
                                         (item as Spell).description && typeof (item as Spell).description === 'string'
-                                            ? (item as Spell).description!.length > 120
-                                                ? (item as Spell).description!.slice(0, 120) + '...'
+                                            ? (item as Spell).description!.length > 60
+                                                ? (item as Spell).description!.slice(0, 60) + '...'
                                                 : (item as Spell).description
                                             : '-'
                                     }}
@@ -514,13 +513,27 @@
                                     class="min-h-24"
                                 />
                             </div>
-                            <div class="flex items-center space-x-4 mt-4">
-                                <div class="flex items-center space-x-2">
-                                    <Checkbox id="edit-privileged" v-model:checked="editForm.script_is_privileged" />
-                                    <label for="edit-privileged" class="text-sm font-medium"
-                                        >Script is privileged</label
-                                    >
-                                </div>
+                            <div class="mt-4">
+                                <label for="edit-privileged" class="block mb-2 text-sm font-medium"
+                                    >Script Privilege</label
+                                >
+                                <Select
+                                    :model-value="editForm.script_is_privileged ? 'true' : 'false'"
+                                    @update:model-value="
+                                        (value: any) => (editForm.script_is_privileged = value === 'true')
+                                    "
+                                >
+                                    <SelectTrigger id="edit-privileged">
+                                        <SelectValue placeholder="Select privilege level" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="true">Privileged</SelectItem>
+                                        <SelectItem value="false">Non-privileged</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p class="text-xs text-muted-foreground mt-1">
+                                    Privileged scripts have elevated permissions
+                                </p>
                             </div>
                             <div>
                                 <label for="edit-startup" class="block mb-1 font-medium">Startup Command</label>
@@ -952,16 +965,27 @@
                                     class="min-h-24"
                                 />
                             </div>
-                            <div class="flex items-center space-x-4 mt-4">
-                                <div class="flex items-center space-x-2">
-                                    <Checkbox
-                                        id="create-privileged"
-                                        v-model:checked="createForm.script_is_privileged"
-                                    />
-                                    <label for="create-privileged" class="text-sm font-medium"
-                                        >Script is privileged</label
-                                    >
-                                </div>
+                            <div class="mt-4">
+                                <label for="create-privileged" class="block mb-2 text-sm font-medium"
+                                    >Script Privilege</label
+                                >
+                                <Select
+                                    :model-value="createForm.script_is_privileged ? 'true' : 'false'"
+                                    @update:model-value="
+                                        (value: any) => (createForm.script_is_privileged = value === 'true')
+                                    "
+                                >
+                                    <SelectTrigger id="create-privileged">
+                                        <SelectValue placeholder="Select privilege level" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="true">Privileged</SelectItem>
+                                        <SelectItem value="false">Non-privileged</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p class="text-xs text-muted-foreground mt-1">
+                                    Privileged scripts have elevated permissions
+                                </p>
                             </div>
                             <div>
                                 <label for="create-startup" class="block mb-1 font-medium">Startup Command</label>
@@ -1322,11 +1346,6 @@ function handleSearch(query: string) {
 function changePage(page: number) {
     pagination.value.page = page;
     fetchSpells();
-}
-
-function handleColumnToggle(columns: string[]) {
-    // Column preferences are automatically saved by the TableComponent
-    console.log('Columns changed:', columns);
 }
 
 async function onView(spell: Spell) {

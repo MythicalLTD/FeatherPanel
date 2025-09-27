@@ -41,7 +41,6 @@ class PluginLoaderService {
             return new Promise((resolve) => {
                 cssLink.onload = () => {
                     this.loadedResources.add(cssUrl);
-                    console.log('✅ Plugin CSS loaded successfully');
                     resolve({ success: true, type: 'css' });
                 };
 
@@ -92,7 +91,6 @@ class PluginLoaderService {
             return new Promise((resolve) => {
                 script.onload = () => {
                     this.loadedResources.add(jsUrl);
-                    console.log('✅ Plugin JavaScript loaded successfully');
 
                     // Emit a custom event for plugins to hook into
                     window.dispatchEvent(
@@ -132,8 +130,6 @@ class PluginLoaderService {
         const retries = options.retries ?? this.retryCount;
         const delay = options.delay ?? this.retryDelay;
 
-        console.log('🔌 Loading plugin resources...');
-
         const loadWithRetry = async (
             loadFn: () => Promise<PluginLoadResult>,
             attempts = 0,
@@ -171,8 +167,6 @@ class PluginLoaderService {
      * Reload plugin resources (useful for development)
      */
     async reloadPlugins(): Promise<PluginLoadResult[]> {
-        console.log('🔄 Reloading plugin resources...');
-
         // Clear loaded resources cache
         this.loadedResources.clear();
 

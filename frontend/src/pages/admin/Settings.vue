@@ -288,7 +288,6 @@ const saveSettings = async () => {
             Object.assign(originalSettings.value, settingsToUpdate);
         }
         // Show success message (you can add a toast notification here)
-        console.log('Settings saved successfully');
         toast.success('Settings saved successfully');
         setTimeout(() => {
             window.location.reload();
