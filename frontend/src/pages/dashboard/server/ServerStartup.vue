@@ -130,6 +130,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Save } from 'lucide-vue-next';
+import { useToast } from 'vue-toastification';
 
 type Variable = {
     id: number;
@@ -149,6 +150,7 @@ type Variable = {
 const route = useRoute();
 // no router needed here
 const { t } = useI18n();
+const toast = useToast();
 
 const loading = ref(false);
 const saving = ref(false);
@@ -221,6 +223,8 @@ async function fetchServer() {
     } catch (e: unknown) {
         const err = e as { message?: string };
         error.value = err?.message || 'Failed to fetch server';
+		toast.error(error.value);
+		console.error(e);
     } finally {
         loading.value = false;
     }
@@ -247,8 +251,11 @@ async function saveChanges() {
         const { data } = await axios.put(`/api/user/servers/${route.params.uuidShort}`, payload);
         if (!data.success) throw new Error(data.message || 'Failed to save');
         await fetchServer();
-    } catch {
-        // no-op; could add toast
+		toast.success(t('serverStartup.saveSuccess'));
+    } catch (e: unknown) {
+        const err = e as { message?: string };
+        toast.error(err.message || t('serverStartup.saveError'));
+        console.error(e);
     } finally {
         saving.value = false;
     }

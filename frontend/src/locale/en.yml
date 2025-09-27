@@ -517,6 +517,8 @@ serverStartup:
     variables: 'Variables'
     variablesHelp: 'Used by installation and runtime. Some changes may require reinstall.'
     rules: 'Rules'
+    saveSuccess: 'Startup command, Docker image, and variables saved successfully'
+    saveError: 'Failed to save startup command, Docker image, and variables'
     notFound: 'Server not found'
 
 # Server Logs
