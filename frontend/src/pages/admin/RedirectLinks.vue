@@ -32,7 +32,7 @@
             </div>
 
             <!-- Redirect Links Table -->
-            <div v-else class="p-6">
+            <div v-else class="p-4 sm:p-6">
                 <TableComponent
                     title="Redirect Links"
                     description="Manage redirect links for your system."
@@ -52,11 +52,14 @@
                     @page-change="changePage"
                 >
                     <template #header-actions>
-                        <div class="flex gap-2">
-                            <Button variant="outline" size="sm" @click="testRedirectApi"> Test API </Button>
-                            <Button variant="outline" size="sm" @click="openCreateDrawer">
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <Button variant="outline" size="sm" class="w-full sm:w-auto" @click="testRedirectApi">
+                                Test API
+                            </Button>
+                            <Button variant="outline" size="sm" class="w-full sm:w-auto" @click="openCreateDrawer">
                                 <Plus class="h-4 w-4 mr-2" />
-                                Create Redirect Link
+                                <span class="hidden sm:inline">Create Redirect Link</span>
+                                <span class="sm:hidden">Create Link</span>
                             </Button>
                         </div>
                     </template>
@@ -106,39 +109,68 @@
                     </template>
 
                     <template #cell-actions="{ item }">
-                        <div class="flex gap-2">
-                            <Button size="sm" variant="outline" @click="onView(item as unknown as RedirectLink)">
-                                <Eye :size="16" />
-                            </Button>
-                            <Button size="sm" variant="secondary" @click="onEdit(item as unknown as RedirectLink)">
-                                <Pencil :size="16" />
-                            </Button>
-                            <Button size="sm" variant="outline" @click="onCopyUrl(item as unknown as RedirectLink)">
-                                <Copy :size="16" />
-                            </Button>
-                            <template v-if="confirmDeleteRow === (item as unknown as RedirectLink).id">
+                        <div class="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                            <div class="flex gap-1 sm:gap-2">
                                 <Button
                                     size="sm"
-                                    variant="destructive"
-                                    :loading="deleting"
-                                    @click="confirmDelete(item as unknown as RedirectLink)"
+                                    variant="outline"
+                                    class="flex-1 sm:flex-none"
+                                    @click="onView(item as unknown as RedirectLink)"
                                 >
-                                    Confirm Delete
+                                    <Eye :size="16" />
                                 </Button>
-                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
-                                    Cancel
-                                </Button>
-                            </template>
-                            <template v-else>
                                 <Button
                                     size="sm"
-                                    variant="destructive"
-                                    :disabled="deleting"
-                                    @click="onDelete(item as unknown as RedirectLink)"
+                                    variant="secondary"
+                                    class="flex-1 sm:flex-none"
+                                    @click="onEdit(item as unknown as RedirectLink)"
                                 >
-                                    <Trash2 :size="16" />
+                                    <Pencil :size="16" />
                                 </Button>
-                            </template>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    class="flex-1 sm:flex-none"
+                                    @click="onCopyUrl(item as unknown as RedirectLink)"
+                                >
+                                    <Copy :size="16" />
+                                </Button>
+                            </div>
+                            <div class="flex gap-1 sm:gap-2">
+                                <template v-if="confirmDeleteRow === (item as unknown as RedirectLink).id">
+                                    <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        :loading="deleting"
+                                        class="flex-1 sm:flex-none"
+                                        @click="confirmDelete(item as unknown as RedirectLink)"
+                                    >
+                                        <span class="hidden sm:inline">Confirm Delete</span>
+                                        <span class="sm:hidden">Confirm</span>
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        :disabled="deleting"
+                                        class="flex-1 sm:flex-none"
+                                        @click="onCancelDelete"
+                                    >
+                                        Cancel
+                                    </Button>
+                                </template>
+                                <template v-else>
+                                    <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        :disabled="deleting"
+                                        class="w-full sm:w-auto"
+                                        @click="onDelete(item as unknown as RedirectLink)"
+                                    >
+                                        <Trash2 :size="16" />
+                                        <span class="hidden sm:inline ml-1">Delete</span>
+                                    </Button>
+                                </template>
+                            </div>
                         </div>
                     </template>
                 </TableComponent>
@@ -162,8 +194,8 @@
                     >
                 </DrawerHeader>
 
-                <div class="px-6 pb-6 space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="px-4 sm:px-6 pb-6 space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <Label class="text-sm font-medium">Name</Label>
                             <p class="text-sm text-muted-foreground mt-1">{{ selectedRedirectLink.name }}</p>
@@ -193,7 +225,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <Label class="text-sm font-medium">Created At</Label>
                             <p class="text-sm text-muted-foreground mt-1">
@@ -234,7 +266,7 @@
                     >
                 </DrawerHeader>
 
-                <form class="px-6 pb-6 space-y-6" @submit.prevent="updateRedirectLink">
+                <form class="px-4 sm:px-6 pb-6 space-y-6" @submit.prevent="updateRedirectLink">
                     <div class="space-y-2">
                         <Label for="edit-name">Name</Label>
                         <Input
@@ -263,11 +295,13 @@
                         />
                     </div>
 
-                    <div class="flex gap-2">
-                        <Button type="submit" :loading="updating">
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <Button type="submit" :loading="updating" class="w-full sm:w-auto">
                             {{ updating ? 'Updating...' : 'Update Redirect Link' }}
                         </Button>
-                        <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
+                        <Button type="button" variant="outline" class="w-full sm:w-auto" @click="closeEditDrawer"
+                            >Cancel</Button
+                        >
                     </div>
                 </form>
             </DrawerContent>
@@ -288,7 +322,7 @@
                     <DrawerDescription>Create a new redirect link for your system.</DrawerDescription>
                 </DrawerHeader>
 
-                <form class="px-6 pb-6 space-y-6" @submit.prevent="createRedirectLink">
+                <form class="px-4 sm:px-6 pb-6 space-y-6" @submit.prevent="createRedirectLink">
                     <div class="space-y-2">
                         <Label for="create-name">Name</Label>
                         <Input

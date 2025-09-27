@@ -62,16 +62,20 @@ fetchStatus();
 <template>
     <DashboardLayout :breadcrumbs="[{ text: 'Database', isCurrent: true, href: '/admin/databases/management' }]">
         <div class="min-h-screen bg-background">
-            <div class="p-6 space-y-6">
+            <div class="p-4 sm:p-6 space-y-6">
                 <!-- Header -->
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
-                        <h1 class="text-3xl font-bold text-foreground mb-1">Database Management</h1>
-                        <p class="text-muted-foreground">Inspect database health and run migrations</p>
+                        <h1 class="text-2xl sm:text-3xl font-bold text-foreground mb-1">Database Management</h1>
+                        <p class="text-sm sm:text-base text-muted-foreground">
+                            Inspect database health and run migrations
+                        </p>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <Button variant="outline" :disabled="loading" @click="fetchStatus">Refresh</Button>
-                        <Button :disabled="migRunning" @click="runMigrations">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <Button variant="outline" :disabled="loading" class="w-full sm:w-auto" @click="fetchStatus"
+                            >Refresh</Button
+                        >
+                        <Button :disabled="migRunning" class="w-full sm:w-auto" @click="runMigrations">
                             <span
                                 v-if="migRunning"
                                 class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
@@ -92,7 +96,7 @@ fetchStatus();
                 </div>
 
                 <!-- Status Cards -->
-                <div v-else-if="status" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div v-else-if="status" class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <Card class="p-4">
                         <div class="font-semibold mb-3">Overview</div>
                         <div class="text-sm text-muted-foreground space-y-1">
@@ -154,13 +158,16 @@ fetchStatus();
 
                 <!-- Migration Output -->
                 <Card class="p-0 overflow-hidden">
-                    <div class="p-4 flex items-center justify-between">
+                    <div class="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div class="font-semibold">Migrations Output</div>
-                        <Button variant="outline" size="sm" @click="migOutput = ''">Clear</Button>
+                        <Button variant="outline" size="sm" class="w-full sm:w-auto" @click="migOutput = ''"
+                            >Clear</Button
+                        >
                     </div>
-                    <pre class="text-xs whitespace-pre-wrap bg-black text-green-300 p-4 min-h-[150px]">{{
-                        migOutput
-                    }}</pre>
+                    <pre
+                        class="text-xs whitespace-pre-wrap bg-black text-green-300 p-4 min-h-[150px] overflow-x-auto"
+                        >{{ migOutput }}</pre
+                    >
                 </Card>
             </div>
         </div>

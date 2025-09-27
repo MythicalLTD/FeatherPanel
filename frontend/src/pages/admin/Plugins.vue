@@ -25,18 +25,20 @@
             </div>
 
             <!-- Plugins Tabs -->
-            <div v-else class="p-6">
+            <div v-else class="p-4 sm:p-6">
                 <!-- Header -->
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                     <div>
-                        <h1 class="text-3xl font-bold text-foreground mb-1">Plugins</h1>
-                        <p class="text-muted-foreground">Manage installed plugins and their configurations</p>
+                        <h1 class="text-2xl sm:text-3xl font-bold text-foreground mb-1">Plugins</h1>
+                        <p class="text-sm sm:text-base text-muted-foreground">
+                            Manage installed plugins and their configurations
+                        </p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <Tabs v-model="activeTab">
-                            <TabsList>
-                                <TabsTrigger value="installed">Installed</TabsTrigger>
-                                <TabsTrigger value="online">Online</TabsTrigger>
+                        <Tabs v-model="activeTab" class="w-full sm:w-auto">
+                            <TabsList class="grid w-full grid-cols-2 sm:inline-flex">
+                                <TabsTrigger value="installed" class="text-xs sm:text-sm">Installed</TabsTrigger>
+                                <TabsTrigger value="online" class="text-xs sm:text-sm">Online</TabsTrigger>
                             </TabsList>
                         </Tabs>
                     </div>
@@ -60,60 +62,79 @@
 
                 <Tabs v-model="activeTab">
                     <TabsContent value="installed">
-                        <div class="flex flex-wrap items-center gap-2 mb-4">
-                            <Button variant="outline" @click="fetchPlugins">
-                                <RefreshCw class="h-4 w-4 mr-2" />
-                                Refresh
-                            </Button>
-                            <label class="inline-block">
-                                <Button variant="outline" as="span">
-                                    <Upload class="h-4 w-4 mr-2" />
-                                    Upload Plugin (.fpa)
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-4">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <Button variant="outline" class="w-full sm:w-auto" @click="fetchPlugins">
+                                    <RefreshCw class="h-4 w-4 mr-2" />
+                                    Refresh
                                 </Button>
-                                <input type="file" accept=".fpa" class="hidden" @change="onUploadPlugin" />
-                            </label>
-                            <div class="flex items-center gap-2">
-                                <Input v-model="installUrl" placeholder="Install from URL (.fpa)" class="w-72" />
-                                <Button :disabled="installingFromUrl || !installUrl" @click="openUrlInstallDialog">
+                                <label class="inline-block w-full sm:w-auto">
+                                    <Button variant="outline" as="span" class="w-full sm:w-auto">
+                                        <Upload class="h-4 w-4 mr-2" />
+                                        <span class="hidden sm:inline">Upload Plugin (.fpa)</span>
+                                        <span class="sm:hidden">Upload (.fpa)</span>
+                                    </Button>
+                                    <input type="file" accept=".fpa" class="hidden" @change="onUploadPlugin" />
+                                </label>
+                            </div>
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                <Input
+                                    v-model="installUrl"
+                                    placeholder="Install from URL (.fpa)"
+                                    class="w-full sm:w-72"
+                                />
+                                <Button
+                                    :disabled="installingFromUrl || !installUrl"
+                                    class="w-full sm:w-auto"
+                                    @click="openUrlInstallDialog"
+                                >
                                     <CloudDownload class="h-4 w-4 mr-2" />
-                                    {{ installingFromUrl ? 'Installing...' : 'Install URL' }}
+                                    <span class="hidden sm:inline">{{
+                                        installingFromUrl ? 'Installing...' : 'Install URL'
+                                    }}</span>
+                                    <span class="sm:hidden">{{ installingFromUrl ? 'Installing...' : 'Install' }}</span>
                                 </Button>
                             </div>
                         </div>
 
-                        <div v-if="plugins.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div
+                            v-if="plugins.length > 0"
+                            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+                        >
                             <Card
                                 v-for="plugin in plugins"
                                 :key="plugin.identifier"
                                 class="group hover:shadow-lg transition-all duration-200 cursor-pointer"
                                 @click="openPluginConfig(plugin)"
                             >
-                                <div class="p-6">
+                                <div class="p-4 sm:p-6">
                                     <div class="flex items-start justify-between mb-4">
-                                        <div class="flex items-center gap-3">
+                                        <div class="flex items-center gap-3 min-w-0 flex-1">
                                             <div
-                                                class="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden"
+                                                class="h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0"
                                             >
                                                 <img
                                                     v-if="plugin.icon"
                                                     :src="plugin.icon"
                                                     :alt="plugin.name || plugin.identifier"
-                                                    class="h-8 w-8 object-contain"
+                                                    class="h-6 w-6 sm:h-8 sm:w-8 object-contain"
                                                 />
                                                 <component
                                                     :is="getPluginIcon(plugin)"
                                                     v-else
-                                                    class="h-6 w-6 text-primary"
+                                                    class="h-5 w-5 sm:h-6 sm:w-6 text-primary"
                                                 />
                                             </div>
-                                            <div>
-                                                <h3 class="font-semibold text-lg">
+                                            <div class="min-w-0 flex-1">
+                                                <h3 class="font-semibold text-base sm:text-lg truncate">
                                                     {{ plugin.name || plugin.identifier }}
                                                 </h3>
-                                                <p class="text-sm text-muted-foreground">{{ plugin.identifier }}</p>
+                                                <p class="text-xs sm:text-sm text-muted-foreground truncate">
+                                                    {{ plugin.identifier }}
+                                                </p>
                                             </div>
                                         </div>
-                                        <Badge variant="secondary" class="ml-2">
+                                        <Badge variant="secondary" class="ml-2 flex-shrink-0 text-xs">
                                             {{ plugin.version || 'Unknown' }}
                                         </Badge>
                                     </div>
@@ -199,7 +220,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="flex gap-2">
+                                    <div class="flex flex-col sm:flex-row gap-2">
                                         <Button
                                             size="sm"
                                             variant="outline"
@@ -209,15 +230,35 @@
                                             <Settings class="h-4 w-4 mr-2" />
                                             Configure
                                         </Button>
-                                        <Button size="sm" variant="secondary" @click.stop="viewPluginInfo(plugin)">
-                                            <Info class="h-4 w-4" />
-                                        </Button>
-                                        <Button size="sm" variant="destructive" @click.stop="requestUninstall(plugin)">
-                                            <Trash2 class="h-4 w-4" />
-                                        </Button>
-                                        <Button size="sm" variant="outline" @click.stop="onExport(plugin)">
-                                            <Download class="h-4 w-4" />
-                                        </Button>
+                                        <div class="flex gap-2">
+                                            <Button
+                                                size="sm"
+                                                variant="secondary"
+                                                class="flex-1 sm:flex-none"
+                                                @click.stop="viewPluginInfo(plugin)"
+                                            >
+                                                <Info class="h-4 w-4 sm:mr-0" />
+                                                <span class="sm:hidden ml-2">Info</span>
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="destructive"
+                                                class="flex-1 sm:flex-none"
+                                                @click.stop="requestUninstall(plugin)"
+                                            >
+                                                <Trash2 class="h-4 w-4 sm:mr-0" />
+                                                <span class="sm:hidden ml-2">Delete</span>
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                class="flex-1 sm:flex-none"
+                                                @click.stop="onExport(plugin)"
+                                            >
+                                                <Download class="h-4 w-4 sm:mr-0" />
+                                                <span class="sm:hidden ml-2">Export</span>
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             </Card>
@@ -237,13 +278,13 @@
                     </TabsContent>
 
                     <TabsContent value="online">
-                        <div class="flex flex-wrap items-center justify-between mb-3 gap-2">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
                             <div class="flex items-center gap-2">
-                                <div class="relative">
+                                <div class="relative flex-1 sm:flex-none">
                                     <Input
                                         v-model="onlineSearch"
                                         placeholder="Search online addons..."
-                                        class="pr-10 w-64"
+                                        class="pr-10 w-full sm:w-64"
                                         @keyup.enter="fetchOnlineAddons"
                                     />
                                     <button
@@ -254,7 +295,7 @@
                                     </button>
                                 </div>
                             </div>
-                            <div v-if="onlinePagination" class="text-xs text-muted-foreground">
+                            <div v-if="onlinePagination" class="text-xs text-muted-foreground text-center sm:text-left">
                                 Page {{ onlinePagination.current_page }} / {{ onlinePagination.total_pages }} •
                                 {{ onlinePagination.total_records }} results
                             </div>
@@ -275,25 +316,25 @@
                                 >Try Again</Button
                             >
                         </div>
-                        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <Card v-for="addon in onlineAddons" :key="addon.identifier">
                                 <div class="p-4">
                                     <div class="flex items-start justify-between gap-3">
-                                        <div class="flex items-center gap-3">
+                                        <div class="flex items-center gap-3 min-w-0 flex-1">
                                             <div
-                                                class="h-10 w-10 rounded bg-muted flex items-center justify-center overflow-hidden"
+                                                class="h-8 w-8 sm:h-10 sm:w-10 rounded bg-muted flex items-center justify-center overflow-hidden flex-shrink-0"
                                             >
                                                 <img
                                                     v-if="addon.icon"
                                                     :src="addon.icon"
                                                     :alt="addon.name"
-                                                    class="h-8 w-8 object-contain"
+                                                    class="h-6 w-6 sm:h-8 sm:w-8 object-contain"
                                                 />
-                                                <Puzzle v-else class="h-5 w-5 text-muted-foreground" />
+                                                <Puzzle v-else class="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                                             </div>
-                                            <div>
-                                                <div class="font-semibold">
-                                                    {{ addon.name }}
+                                            <div class="min-w-0 flex-1">
+                                                <div class="font-semibold text-sm sm:text-base">
+                                                    <div class="truncate">{{ addon.name }}</div>
                                                     <span class="text-xs text-muted-foreground"
                                                         >({{ addon.identifier }})</span
                                                     >
@@ -306,8 +347,10 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <Badge v-if="addon.verified" variant="secondary">Verified</Badge>
-                                        <Badge v-else variant="outline">Unverified</Badge>
+                                        <Badge v-if="addon.verified" variant="secondary" class="text-xs flex-shrink-0"
+                                            >Verified</Badge
+                                        >
+                                        <Badge v-else variant="outline" class="text-xs flex-shrink-0">Unverified</Badge>
                                     </div>
                                     <p class="text-sm text-muted-foreground mt-2 line-clamp-3">
                                         {{ addon.description }}
@@ -374,7 +417,7 @@
                     </DrawerDescription>
                 </DrawerHeader>
 
-                <div class="px-6 pt-6">
+                <div class="px-4 sm:px-6 pt-4 sm:pt-6">
                     <!-- Loading State -->
                     <div v-if="configLoading" class="flex items-center justify-center py-8">
                         <div class="flex items-center gap-3">
@@ -391,7 +434,7 @@
                         <Card>
                             <div class="p-4">
                                 <h3 class="font-semibold mb-3">Plugin Information</h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <span class="font-medium text-muted-foreground">Name:</span>
                                         <span class="ml-2">{{
@@ -546,7 +589,7 @@
                     </DrawerDescription>
                 </DrawerHeader>
 
-                <div class="px-6 pt-6 space-y-4">
+                <div class="px-4 sm:px-6 pt-4 sm:pt-6 space-y-4">
                     <!-- Loading State -->
                     <div v-if="configLoading" class="flex items-center justify-center py-8">
                         <div class="flex items-center gap-3">
@@ -558,7 +601,7 @@
                     </div>
 
                     <!-- Plugin Information -->
-                    <div v-else-if="pluginConfig" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div v-else-if="pluginConfig" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <span class="font-medium text-muted-foreground">Identifier:</span>
                             <p class="mt-1">{{ pluginConfig.plugin.identifier }}</p>
@@ -594,7 +637,7 @@
                                 </Badge>
                             </div>
                         </div>
-                        <div v-if="pluginConfig.plugin.website" class="md:col-span-2">
+                        <div v-if="pluginConfig.plugin.website" class="sm:col-span-2">
                             <span class="font-medium text-muted-foreground">Website:</span>
                             <p class="mt-1">
                                 <a
@@ -606,13 +649,13 @@
                                 </a>
                             </p>
                         </div>
-                        <div v-if="pluginConfig.plugin.description" class="md:col-span-2">
+                        <div v-if="pluginConfig.plugin.description" class="sm:col-span-2">
                             <span class="font-medium text-muted-foreground">Description:</span>
                             <p class="mt-1">{{ pluginConfig.plugin.description }}</p>
                         </div>
                         <div
                             v-if="pluginConfig.plugin.dependencies && pluginConfig.plugin.dependencies.length > 0"
-                            class="md:col-span-2"
+                            class="sm:col-span-2"
                         >
                             <span class="font-medium text-muted-foreground">Dependencies:</span>
                             <div class="mt-1">
@@ -625,7 +668,7 @@
                         </div>
                         <div
                             v-if="pluginConfig.plugin.requiredConfigs && pluginConfig.plugin.requiredConfigs.length > 0"
-                            class="md:col-span-2"
+                            class="sm:col-span-2"
                         >
                             <span class="font-medium text-muted-foreground">Required Configurations:</span>
                             <div class="mt-1">
@@ -652,7 +695,7 @@
                     </div>
 
                     <!-- Fallback to basic info if config loading fails -->
-                    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <span class="font-medium text-muted-foreground">Identifier:</span>
                             <p class="mt-1">{{ selectedPlugin.identifier }}</p>
@@ -669,7 +712,7 @@
                             <span class="font-medium text-muted-foreground">Author:</span>
                             <p class="mt-1">{{ selectedPlugin.author || 'Unknown' }}</p>
                         </div>
-                        <div v-if="selectedPlugin.description" class="md:col-span-2">
+                        <div v-if="selectedPlugin.description" class="sm:col-span-2">
                             <span class="font-medium text-muted-foreground">Description:</span>
                             <p class="mt-1">{{ selectedPlugin.description }}</p>
                         </div>

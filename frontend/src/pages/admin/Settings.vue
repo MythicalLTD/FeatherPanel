@@ -23,36 +23,66 @@
             </div>
 
             <!-- Settings Content -->
-            <div v-else class="p-6">
+            <div v-else class="p-4 sm:p-6">
                 <!-- Header -->
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                     <div>
-                        <h1 class="text-3xl font-bold text-foreground mb-1">Settings</h1>
-                        <p class="text-muted-foreground">Manage application settings and configuration</p>
+                        <h1 class="text-2xl sm:text-3xl font-bold text-foreground mb-1">Settings</h1>
+                        <p class="text-sm sm:text-base text-muted-foreground">
+                            Manage application settings and configuration
+                        </p>
                     </div>
                 </div>
 
                 <!-- Category Tabs -->
-                <div class="border-b mb-6">
-                    <nav class="-mb-px flex space-x-8">
+                <div class="mb-6">
+                    <!-- Mobile: Grid Layout -->
+                    <div class="grid grid-cols-2 sm:hidden gap-2 mb-4">
                         <button
                             v-for="category in categories"
                             :key="category.id"
                             :class="[
-                                'flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200',
+                                'flex flex-col items-center justify-center p-3 rounded-lg border-2 font-medium text-xs transition-all duration-200 min-h-[80px]',
                                 selectedCategory === category.id
-                                    ? 'border-primary text-primary'
-                                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground',
+                                    ? 'border-primary bg-primary/5 text-primary'
+                                    : 'border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-primary',
                             ]"
                             @click="switchCategory(category.id)"
                         >
-                            <component :is="getCategoryIcon(category.icon)" class="h-4 w-4" />
-                            <span>{{ category.name }}</span>
-                            <Badge v-if="category.settings_count > 0" variant="secondary" class="ml-2">
+                            <component :is="getCategoryIcon(category.icon)" class="h-5 w-5 mb-1" />
+                            <span class="text-center leading-tight">{{ category.name }}</span>
+                            <Badge
+                                v-if="category.settings_count > 0"
+                                variant="secondary"
+                                class="mt-1 text-xs px-1.5 py-0.5"
+                            >
                                 {{ category.settings_count }}
                             </Badge>
                         </button>
-                    </nav>
+                    </div>
+
+                    <!-- Desktop: Horizontal Tabs -->
+                    <div class="hidden sm:block border-b">
+                        <nav class="-mb-px flex space-x-8">
+                            <button
+                                v-for="category in categories"
+                                :key="category.id"
+                                :class="[
+                                    'flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200',
+                                    selectedCategory === category.id
+                                        ? 'border-primary text-primary'
+                                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground',
+                                ]"
+                                @click="switchCategory(category.id)"
+                            >
+                                <component :is="getCategoryIcon(category.icon)" class="h-4 w-4" />
+                                <span>{{ category.name }}</span>
+                                <Badge v-if="category.settings_count > 0" variant="secondary" class="ml-2">
+                                    {{ category.settings_count }}
+                                </Badge>
+                            </button>
+                        </nav>
+                    </div>
                 </div>
 
                 <!-- Category Loading State -->
@@ -68,19 +98,23 @@
                 <!-- Category Content -->
                 <div v-else-if="currentCategorySettings" class="space-y-6 animate-in fade-in-50 duration-300">
                     <div class="bg-card rounded-lg border shadow-sm">
-                        <div class="flex items-center space-x-3 p-6 border-b">
+                        <div class="flex items-center space-x-3 p-4 sm:p-6 border-b">
                             <component
                                 :is="getCategoryIcon(currentCategorySettings.category.icon)"
-                                class="h-6 w-6 text-primary"
+                                class="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0"
                             />
-                            <div>
-                                <h2 class="text-xl font-semibold">{{ currentCategorySettings.category.name }}</h2>
-                                <p class="text-muted-foreground">{{ currentCategorySettings.category.description }}</p>
+                            <div class="min-w-0 flex-1">
+                                <h2 class="text-lg sm:text-xl font-semibold truncate">
+                                    {{ currentCategorySettings.category.name }}
+                                </h2>
+                                <p class="text-sm text-muted-foreground">
+                                    {{ currentCategorySettings.category.description }}
+                                </p>
                             </div>
                         </div>
 
                         <!-- Settings Form -->
-                        <form class="p-6 space-y-6" @submit.prevent="saveSettings">
+                        <form class="p-4 sm:p-6 space-y-6" @submit.prevent="saveSettings">
                             <div
                                 v-for="(setting, key) in currentCategorySettings.settings"
                                 :key="String(key)"
@@ -89,7 +123,7 @@
                                     animationDelay: `${Object.keys(currentCategorySettings.settings).indexOf(String(key)) * 50}ms`,
                                 }"
                             >
-                                <div class="flex items-start justify-between">
+                                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                                     <div class="space-y-1 flex-1">
                                         <Label :for="String(key)" class="text-sm font-medium">
                                             {{
@@ -98,7 +132,7 @@
                                         </Label>
                                         <p class="text-xs text-muted-foreground">{{ setting.description }}</p>
                                     </div>
-                                    <Badge v-if="setting.required" variant="outline" class="text-xs ml-4">
+                                    <Badge v-if="setting.required" variant="outline" class="text-xs self-start sm:ml-4">
                                         Required
                                     </Badge>
                                 </div>
@@ -110,7 +144,7 @@
                                     v-model="setting.value"
                                     :placeholder="setting.placeholder"
                                     :required="setting.required"
-                                    class="max-w-md"
+                                    class="w-full max-w-md"
                                 />
 
                                 <!-- Number Input -->
@@ -121,12 +155,12 @@
                                     type="number"
                                     :placeholder="setting.placeholder"
                                     :required="setting.required"
-                                    class="max-w-md"
+                                    class="w-full max-w-md"
                                 />
 
                                 <!-- Select Input -->
                                 <Select v-else-if="setting.type === 'select'" v-model="setting.value">
-                                    <SelectTrigger class="max-w-md">
+                                    <SelectTrigger class="w-full max-w-md">
                                         <SelectValue :placeholder="setting.placeholder" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -148,7 +182,7 @@
                                     v-model="setting.value"
                                     :placeholder="setting.placeholder"
                                     :required="setting.required"
-                                    class="max-w-md"
+                                    class="w-full max-w-md"
                                     rows="3"
                                 />
 
@@ -166,9 +200,13 @@
                             </div>
 
                             <!-- Save Button -->
-                            <div class="flex items-center justify-end space-x-2 pt-6 border-t">
-                                <Button type="button" variant="outline" @click="resetSettings"> Reset </Button>
-                                <Button type="submit" :disabled="saving">
+                            <div
+                                class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2 pt-6 border-t"
+                            >
+                                <Button type="button" variant="outline" class="w-full sm:w-auto" @click="resetSettings">
+                                    Reset
+                                </Button>
+                                <Button type="submit" :disabled="saving" class="w-full sm:w-auto">
                                     <Save v-if="!saving" class="h-4 w-4 mr-2" />
                                     <div
                                         v-else
@@ -184,11 +222,13 @@
                 <!-- Empty Category -->
                 <div
                     v-else
-                    class="bg-card rounded-lg border p-12 text-center shadow-sm animate-in fade-in-50 duration-300"
+                    class="bg-card rounded-lg border p-8 sm:p-12 text-center shadow-sm animate-in fade-in-50 duration-300"
                 >
-                    <Settings class="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <Settings class="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 class="text-lg font-semibold mb-2">No Settings Available</h3>
-                    <p class="text-muted-foreground">This category doesn't have any configurable settings yet.</p>
+                    <p class="text-sm sm:text-base text-muted-foreground">
+                        This category doesn't have any configurable settings yet.
+                    </p>
                 </div>
             </div>
         </div>

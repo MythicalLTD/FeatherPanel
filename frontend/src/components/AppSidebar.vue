@@ -105,7 +105,10 @@ const isSidebarVisible = computed(() => {
                 :items="data.navServer"
             />
             <NavMain
-                v-if="router.currentRoute.value.path.startsWith('/admin') && user.hasAdminPanel"
+                v-if="
+                    router.currentRoute.value.path.startsWith('/admin') ||
+                    (router.currentRoute.value.path.startsWith('/dashboard') && user.hasAdminPanel)
+                "
                 :name="t('nav.adminPanel')"
                 :items="data.navAdmin"
             />
