@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, reactive } from 'vue';
+import { ref, onMounted, computed, reactive, watch } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -228,25 +228,34 @@ async function fetchPlugins() {
     }
 }
 
-// This doesn't work in realtime; identifier is only updated when updateIdentifier is called.
 function generateIdentifier(name: string): string {
     return name
         .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, '')
-        .replace(/\s+/g, '')
+        .replace(/[^a-z0-9]/g, '') // Remove all non-alphanumeric characters (including spaces)
         .substring(0, 32); // Allow up to 32 characters
 }
 
-// Call this manually to update the identifier from the name.
-function updateIdentifier() {
-    if (createForm.value.name) {
-        createForm.value.identifier = generateIdentifier(createForm.value.name);
-    }
+function handleNameInput(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const value = target.value;
+    // Remove spaces and other non-alphanumeric characters from name
+    const cleanedValue = value.replace(/[^a-zA-Z0-9]/g, '');
+    createForm.value.name = cleanedValue;
 }
 
 async function createPlugin() {
     if (!createForm.value.identifier || !createForm.value.name) {
         toast.error('Identifier and name are required');
+        return;
+    }
+
+    // Check if plugin has at least one author, flag, or dependency
+    const hasValidAuthors = createForm.value.author.some((author) => author.trim() !== '');
+    const hasValidFlags = createForm.value.flags.length > 0;
+    const hasValidDependencies = createForm.value.dependencies.length > 0;
+
+    if (!hasValidAuthors && !hasValidFlags && !hasValidDependencies) {
+        toast.error('Plugin must have at least one author, flag, or dependency');
         return;
     }
 
@@ -288,6 +297,16 @@ async function createPlugin() {
 
 async function updatePlugin() {
     if (!editingPlugin.value) return;
+
+    // Check if plugin has at least one author, flag, or dependency
+    const hasValidAuthors = editForm.value.author.some((author) => author.trim() !== '');
+    const hasValidFlags = editForm.value.flags.length > 0;
+    const hasValidDependencies = editForm.value.dependencies.length > 0;
+
+    if (!hasValidAuthors && !hasValidFlags && !hasValidDependencies) {
+        toast.error('Plugin must have at least one author, flag, or dependency');
+        return;
+    }
 
     // Convert dependencies to the format expected by the backend
     const formattedData = {
@@ -643,6 +662,17 @@ const getIconComponent = (iconName: string) => {
     }
 };
 
+// Watch for changes in the name field and update identifier live
+watch(
+    () => createForm.value.name,
+    (newName) => {
+        if (newName) {
+            createForm.value.identifier = generateIdentifier(newName);
+        }
+    },
+    { immediate: false },
+);
+
 onMounted(() => {
     fetchPlugins();
     loadCreationOptions();
@@ -812,21 +842,24 @@ onMounted(() => {
                                 <label class="text-sm font-medium mb-2 block">Name *</label>
                                 <Input
                                     v-model="createForm.name"
-                                    placeholder="My Awesome Plugin"
+                                    placeholder="MyAwesomePlugin"
                                     maxlength="32"
-                                    @input="updateIdentifier"
+                                    @input="handleNameInput"
                                 />
+                                <p class="text-xs text-muted-foreground mt-1">
+                                    Plugin name cannot contain spaces or special characters
+                                </p>
                             </div>
                             <div>
                                 <label class="text-sm font-medium mb-2 block">Identifier *</label>
                                 <Input
                                     v-model="createForm.identifier"
-                                    placeholder="my-awesome-plugin"
+                                    placeholder="myawesomeplugin"
                                     maxlength="32"
                                     class="lowercase"
                                 />
                                 <p class="text-xs text-muted-foreground mt-1">
-                                    Must be unique, lowercase, and contain only letters, numbers, and hyphens
+                                    Must be unique, lowercase, and contain only letters and numbers
                                 </p>
                             </div>
                         </div>
@@ -861,7 +894,12 @@ onMounted(() => {
                         </div>
 
                         <div>
-                            <label class="text-sm font-medium mb-2 block">Authors</label>
+                            <label class="text-sm font-medium mb-2 block">
+                                Authors
+                                <span class="text-xs text-muted-foreground ml-1"
+                                    >(at least one author, flag, or dependency required)</span
+                                >
+                            </label>
                             <div class="space-y-2">
                                 <div v-for="(author, index) in createForm.author" :key="index" class="flex gap-2">
                                     <Input
@@ -1159,7 +1197,12 @@ onMounted(() => {
                         </div>
 
                         <div>
-                            <label class="text-sm font-medium mb-2 block">Authors</label>
+                            <label class="text-sm font-medium mb-2 block">
+                                Authors
+                                <span class="text-xs text-muted-foreground ml-1"
+                                    >(at least one author, flag, or dependency required)</span
+                                >
+                            </label>
                             <div class="space-y-2">
                                 <div v-for="(author, index) in editForm.author" :key="index" class="flex gap-2">
                                     <Input v-model="editForm.author[index]" placeholder="Author name" class="flex-1" />
