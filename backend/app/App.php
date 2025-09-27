@@ -629,12 +629,14 @@ class App
             return str_replace('/', '', $code);
         } catch (RandomException) {
             $this->getLogger()->error('Failed to generate code: ' . $code);
+
             return '';
         }
     }
 
     /**
      * Generate a random pin.
+     *
      * @throws RandomException
      */
     public function generatePin(): int

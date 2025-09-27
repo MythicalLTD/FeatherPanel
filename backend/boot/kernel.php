@@ -11,8 +11,8 @@
  * Breaking any of the following rules will result in a permanent ban from the MythicalSystems community and all of its services.
  */
 
-use App\Plugins\Events\PluginEvent;
 use App\Plugins\PluginManager;
+use App\Plugins\Events\PluginEvent;
 
 /*
  * This file is part of App.
