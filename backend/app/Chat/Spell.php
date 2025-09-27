@@ -478,6 +478,15 @@ class Spell
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    public static function count(array $conditions): int
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . implode(' AND ', array_map(fn ($k) => "$k = :$k", array_keys($conditions))));
+        $stmt->execute($conditions);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     /**
      * Sanitize data for logging by excluding sensitive fields.
      */

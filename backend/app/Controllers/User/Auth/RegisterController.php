@@ -183,7 +183,7 @@ class RegisterController
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
             'uuid' => UUIDUtils::generateV4(),
-            'remember_token' => bin2hex(random_bytes(16)),
+            'remember_token' => User::generateAccountToken(),
             'first_ip' => CloudFlareRealIP::getRealIP(),
             'last_ip' => CloudFlareRealIP::getRealIP(),
         ];

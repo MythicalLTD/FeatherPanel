@@ -445,4 +445,13 @@ class DatabaseInstance
 
         return $row;
     }
+
+    public static function count(array $conditions = []): int
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . implode(' AND ', array_map(fn ($k) => "$k = :$k", array_keys($conditions))));
+        $stmt->execute($conditions);
+
+        return (int) $stmt->fetchColumn();
+    }
 }

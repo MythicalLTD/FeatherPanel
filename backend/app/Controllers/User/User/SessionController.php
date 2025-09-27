@@ -192,6 +192,7 @@ class SessionController
         // Hash password if provided
         if (isset($data['password'])) {
             $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
+            $data['remember_token'] = User::generateAccountToken();
         }
 
         $userQuery = User::updateUser($user['uuid'], $data);

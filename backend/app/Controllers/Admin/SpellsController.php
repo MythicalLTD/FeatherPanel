@@ -638,6 +638,12 @@ class SpellsController
             return ApiResponse::error('Spell not found', 'SPELL_NOT_FOUND', 404);
         }
 
+        // Check if the spell is assigned to any servers
+        $serversCount = \App\Chat\Server::count(['spell_id' => $id]);
+        if ($serversCount > 0) {
+            return ApiResponse::error('Cannot delete spell: it is assigned to servers', 'SPELL_ASSIGNED_TO_SERVERS', 400);
+        }
+
         // Check if spell is referenced by other spells
         $referencingSpells = Spell::getSpellsByConfigFrom($id);
         $referencingSpells = array_merge($referencingSpells, Spell::getSpellsByCopyScriptFrom($id));

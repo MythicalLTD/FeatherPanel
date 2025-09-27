@@ -121,7 +121,7 @@ class ResetPasswordController
                 return ApiResponse::error('Invalid token', 'INVALID_TOKEN');
             }
 
-            if (User::updateUser($userInfo['uuid'], ['password' => password_hash($data['password'], PASSWORD_BCRYPT)]) && User::updateUser($userInfo['uuid'], ['mail_verify' => null])) {
+            if (User::updateUser($userInfo['uuid'], ['password' => password_hash($data['password'], PASSWORD_BCRYPT), 'remember_token' => User::generateAccountToken()]) && User::updateUser($userInfo['uuid'], ['mail_verify' => null])) {
                 Activity::createActivity([
                     'user_uuid' => $userInfo['uuid'],
                     'name' => 'reset_password',

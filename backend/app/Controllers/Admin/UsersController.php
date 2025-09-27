@@ -14,6 +14,7 @@
 namespace App\Controllers\Admin;
 
 use App\App;
+use App\Chat\User;
 use App\Chat\Subuser;
 use App\Chat\Activity;
 use App\Chat\MailList;
@@ -207,7 +208,7 @@ class UsersController
         }
 
         $offset = ($page - 1) * $limit;
-        $users = \App\Chat\User::searchUsers(
+        $users = User::searchUsers(
             $page,
             $limit,
             $search,
@@ -249,7 +250,7 @@ class UsersController
             unset($user['role_id']);
         }
 
-        $total = \App\Chat\User::getCount($search);
+        $total = User::getCount($search);
         $totalPages = ceil($total / $limit);
         $from = ($page - 1) * $limit + 1;
         $to = min($from + $limit - 1, $total);
@@ -306,7 +307,7 @@ class UsersController
     )]
     public function show(Request $request, string $uuid): Response
     {
-        $user = \App\Chat\User::getUserByUuid($uuid);
+        $user = User::getUserByUuid($uuid);
         if (!$user) {
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
         }
@@ -417,17 +418,17 @@ class UsersController
             return ApiResponse::error('Invalid email address', 'INVALID_EMAIL_ADDRESS');
         }
         // Check for existing email/username
-        if (\App\Chat\User::getUserByEmail($data['email'])) {
+        if (User::getUserByEmail($data['email'])) {
             return ApiResponse::error('Email already exists', 'EMAIL_ALREADY_EXISTS', 409);
         }
-        if (\App\Chat\User::getUserByUsername($data['username'])) {
+        if (User::getUserByUsername($data['username'])) {
             return ApiResponse::error('Username already exists', 'USERNAME_ALREADY_EXISTS', 409);
         }
         // Hash password
         $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
         // Generate UUID
         $data['uuid'] = UUIDUtils::generateV4();
-        $data['remember_token'] = bin2hex(random_bytes(16));
+        $data['remember_token'] = User::generateAccountToken();
         // Set default avatar if not provided
         if (empty($data['avatar'])) {
             $data['avatar'] = 'https://cdn.mythical.systems/featherpanel/logo.png';
@@ -436,7 +437,7 @@ class UsersController
         if (empty($data['role_id'])) {
             $data['role_id'] = 1;
         }
-        $userId = \App\Chat\User::createUser($data);
+        $userId = User::createUser($data);
         if (!$userId) {
             return ApiResponse::error('Failed to create user', 'FAILED_TO_CREATE_USER', 500);
         }
@@ -520,7 +521,7 @@ class UsersController
     )]
     public function update(Request $request, string $uuid): Response
     {
-        $user = \App\Chat\User::getUserByUuid($uuid);
+        $user = User::getUserByUuid($uuid);
         $config = App::getInstance(true)->getConfig();
         if (!$user) {
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
@@ -564,14 +565,14 @@ class UsersController
             if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
                 return ApiResponse::error('Invalid email address', 'INVALID_EMAIL_ADDRESS');
             }
-            $existingUser = \App\Chat\User::getUserByEmail($data['email']);
+            $existingUser = User::getUserByEmail($data['email']);
             if ($existingUser && $existingUser['uuid'] !== $user['uuid']) {
                 return ApiResponse::error('Email already exists', 'EMAIL_ALREADY_EXISTS', 409);
             }
         }
         // Validate username uniqueness if updating username
         if (isset($data['username'])) {
-            $existingUser = \App\Chat\User::getUserByUsername($data['username']);
+            $existingUser = User::getUserByUsername($data['username']);
             if ($existingUser && $existingUser['uuid'] !== $user['uuid']) {
                 return ApiResponse::error('Username already exists', 'USERNAME_ALREADY_EXISTS', 409);
             }
@@ -579,8 +580,9 @@ class UsersController
         // Hash password if updating password
         if (isset($data['password'])) {
             $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+            $data['remember_token'] = User::generateAccountToken();
         }
-        $updated = \App\Chat\User::updateUser($user['uuid'], $data);
+        $updated = User::updateUser($user['uuid'], $data);
         if (!$updated) {
             return ApiResponse::error('Failed to update user', 'FAILED_TO_UPDATE_USER', 500, [
                 'error' => $updated,
@@ -669,7 +671,7 @@ class UsersController
     public function delete(Request $request, string $uuid): Response
     {
         $config = App::getInstance(true)->getConfig();
-        $user = \App\Chat\User::getUserByUuid($uuid);
+        $user = User::getUserByUuid($uuid);
         if (!$user) {
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
         }
@@ -730,7 +732,7 @@ class UsersController
         ApiClient::deleteAllApiClientsByUserId($user['uuid']);
         Subuser::deleteAllSubusersByUserId((int) $user['id']);
         MailQueue::deleteAllMailQueueByUserId($user['uuid']);
-        $deleted = \App\Chat\User::hardDeleteUser($user['id']);
+        $deleted = User::hardDeleteUser($user['id']);
         if (!$deleted) {
             return ApiResponse::error('Failed to delete user', 'FAILED_TO_DELETE_USER', 500);
         }
@@ -770,7 +772,7 @@ class UsersController
     )]
     public function ownedServers(Request $request, string $uuid): Response
     {
-        $user = \App\Chat\User::getUserByUuid($uuid);
+        $user = User::getUserByUuid($uuid);
         if (!$user) {
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
         }
@@ -799,7 +801,7 @@ class UsersController
     )]
     public function serverRequest(Request $request, int $id): Response
     {
-        $user = \App\Chat\User::getUserById($id);
+        $user = User::getUserById($id);
         if (!$user) {
             return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
         }

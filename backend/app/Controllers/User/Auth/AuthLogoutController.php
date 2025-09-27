@@ -61,7 +61,7 @@ class AuthLogoutController
             return ApiResponse::success([], 'Logged out no user found', 200);
         }
         if (isset($user['remember_token'])) {
-            $newRememberToken = bin2hex(random_bytes(32));
+            $newRememberToken = User::generateAccountToken();
             User::updateUser(
                 $user['uuid'],
                 [

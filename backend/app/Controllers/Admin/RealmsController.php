@@ -412,6 +412,7 @@ class RealmsController
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
             new OA\Response(response: 404, description: 'Realm not found'),
+            new OA\Response(response: 400, description: 'Bad request - Realm has spells assigned'),
             new OA\Response(response: 500, description: 'Internal server error - Failed to delete realm'),
         ]
     )]
@@ -421,10 +422,28 @@ class RealmsController
         if (!$realm) {
             return ApiResponse::error('Realm not found', 'REALM_NOT_FOUND', 404);
         }
+
+        // Check if the realm has any spells assigned before allowing deletion
+        $spellsCount = \App\Chat\Spell::count(['realm_id' => $id]);
+        if ($spellsCount > 0) {
+            return ApiResponse::error(
+                'Cannot delete realm: there are spells assigned to this realm. Please remove or reassign all spells before deleting the realm.',
+                'REALM_HAS_SPELLS',
+                400
+            );
+        }
+
+        // Check if the realm has any subusers assigned before allowing deletion
+        $serversCount = \App\Chat\Server::count(['realms_id' => $id]);
+        if ($serversCount > 0) {
+            return ApiResponse::error('Cannot delete realm: there are servers assigned to this realm. Please remove or reassign all servers before deleting the realm.', 'REALM_HAS_SERVERS', 400);
+        }
+
         $success = Realm::delete($id);
         if (!$success) {
             return ApiResponse::error('Failed to delete realm', 'REALM_DELETE_FAILED', 400);
         }
+
         // Log activity
         $admin = $request->get('user');
         Activity::createActivity([

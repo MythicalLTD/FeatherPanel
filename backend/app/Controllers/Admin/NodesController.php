@@ -393,6 +393,11 @@ class NodesController
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
+		// Check if the node has any servers assigned before allowing deletion
+		$serversCount = \App\Chat\Server::count(['node_id' => $id]);
+		if ($serversCount > 0) {
+			return ApiResponse::error('Cannot delete node: there are servers assigned to this node. Please remove or reassign all servers before deleting the node.', 'NODE_HAS_SERVERS', 400);
+		}
         $success = Node::hardDeleteNode($id);
         if (!$success) {
             return ApiResponse::error('Failed to delete node', 'NODE_DELETE_FAILED', 400);

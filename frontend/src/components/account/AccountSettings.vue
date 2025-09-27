@@ -45,19 +45,6 @@
                 </div>
             </div>
 
-            <!-- Account Deletion -->
-            <div class="space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div class="space-y-1 flex-1">
-                        <h4 class="text-sm font-medium text-destructive">{{ $t('account.deleteAccount') }}</h4>
-                        <p class="text-sm text-muted-foreground">{{ $t('account.deleteAccountWarning') }}</p>
-                    </div>
-                    <Button variant="destructive" size="sm" class="w-full sm:w-auto" @click="showDeleteConfirmation">
-                        {{ $t('account.deleteAccount') }}
-                    </Button>
-                </div>
-            </div>
-
             <!-- Session Management -->
             <div class="space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -109,11 +96,6 @@ const handle2FAChange = (checked: boolean) => {
     if (checked) {
         router.push('/auth/setup-two-factor');
     }
-};
-
-// Show delete account confirmation
-const showDeleteConfirmation = async () => {
-    // Implementation here
 };
 
 // Handle logout

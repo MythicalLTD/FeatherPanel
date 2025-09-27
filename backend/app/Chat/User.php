@@ -14,6 +14,7 @@
 namespace App\Chat;
 
 use App\App;
+use App\Config\ConfigInterface;
 
 /**
  * User service/model for CRUD operations on the featherpanel_users table.
@@ -355,5 +356,16 @@ class User
         }
 
         return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Generate a random account token.
+     */
+    public static function generateAccountToken(): string
+    {
+        $appName = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_NAME, 'featherpanel');
+        $tokenID = strtolower($appName) . '_authtoken_' . bin2hex(random_bytes(16));
+
+        return $tokenID;
     }
 }

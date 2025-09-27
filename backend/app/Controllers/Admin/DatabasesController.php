@@ -513,6 +513,9 @@ class DatabasesController
             return ApiResponse::error('Database not found', 'DATABASE_NOT_FOUND', 404);
         }
 
+		if (DatabaseInstance::count(['database_host_id' => $id]) > 0) {
+			return ApiResponse::error('Cannot delete database: there are servers assigned to this database. Please remove or reassign all servers before deleting the database.', 'DATABASE_HAS_SERVERS', 400);
+		}
         $deleted = DatabaseInstance::hardDeleteDatabase($id);
         if (!$deleted) {
             return ApiResponse::error('Failed to delete database', 'FAILED_TO_DELETE_DATABASE', 500);
