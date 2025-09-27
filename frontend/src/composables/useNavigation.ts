@@ -163,15 +163,6 @@ export function useNavigation() {
                 category: 'main' as const,
             },
             {
-                id: 'activities',
-                name: 'Activities',
-                title: t('nav.activities'),
-                url: '/dashboard/activities',
-                icon: Clock,
-                isActive: currentPath.value.startsWith('/dashboard/activities'),
-                category: 'main' as const,
-            },
-            {
                 id: 'account',
                 name: 'Account',
                 title: t('nav.account'),

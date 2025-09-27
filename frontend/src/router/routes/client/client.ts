@@ -37,11 +37,6 @@ const clientRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/dashboard/server/ServerStartup.vue'),
     },
     {
-        path: '/dashboard/activities',
-        name: 'AllServerActivities',
-        component: () => import('@/pages/dashboard/AllServerActivities.vue'),
-    },
-    {
         path: '/server/:uuidShort/activities',
         name: 'ServerActivities',
         component: () => import('@/pages/dashboard/server/ServerActivities.vue'),
