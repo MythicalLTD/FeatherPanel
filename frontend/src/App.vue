@@ -31,6 +31,7 @@ export default defineComponent({
             }
 
             window.scrollTo(0, 0);
+            console.info("[Router] Moving form '" + from.fullPath + "' to " + to.fullPath);
             next();
         });
 
@@ -69,7 +70,7 @@ export default defineComponent({
         </router-view>
 
         <!-- Debug Panel -->
-        <DebugPanel v-if="$route.meta.hideDebug !== true" ref="debugPanel" />
+        <DebugPanel ref="debugPanel" />
     </div>
 </template>
 

@@ -11,6 +11,7 @@
  * Breaking any of the following rules will result in a permanent ban from the MythicalSystems community and all of its services.
  */
 
+use App\Plugins\Events\PluginEvent;
 use App\Plugins\PluginManager;
 
 /*
@@ -66,8 +67,8 @@ if (file_exists(APP_DIR . 'storage/.env')) {
     $eventManager = $pluginManager->getEventManager();
 
     /**
-     * @global \App\Plugins\PluginManager $pluginManager
-     * @global \App\Plugins\Events\PluginEvent $eventManager
+     * @global PluginManager $pluginManager
+     * @global PluginEvent $eventManager
      */
     global $pluginManager, $eventManager;
 }

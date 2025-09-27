@@ -1,17 +1,17 @@
 <template>
     <div class="space-y-6">
         <!-- Header -->
-        <div class="flex items-center justify-between">
-            <div>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex-1">
                 <h3 class="text-lg font-semibold">{{ $t('account.sshKeys.title') }}</h3>
                 <p class="text-sm text-muted-foreground">{{ $t('account.sshKeys.description') }}</p>
             </div>
-            <div class="flex items-center gap-2">
-                <Button variant="outline" size="sm" :disabled="loading" @click="fetchSshKeys">
+            <div class="flex flex-col sm:flex-row gap-2">
+                <Button variant="outline" size="sm" class="w-full sm:w-auto" :disabled="loading" @click="fetchSshKeys">
                     <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': loading }" />
                     {{ $t('account.sshKeys.refresh') }}
                 </Button>
-                <Button @click="showCreateModal = true">
+                <Button class="w-full sm:w-auto" @click="showCreateModal = true">
                     <Plus class="h-4 w-4 mr-2" />
                     {{ $t('account.sshKeys.addKey') }}
                 </Button>
@@ -19,12 +19,12 @@
         </div>
 
         <!-- Search and Stats -->
-        <div class="flex items-center gap-4">
-            <div class="relative flex-1 max-w-sm">
+        <div class="space-y-3">
+            <div class="relative">
                 <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input v-model="searchQuery" :placeholder="$t('account.sshKeys.searchPlaceholder')" class="pl-10" />
             </div>
-            <div class="text-sm text-muted-foreground">
+            <div class="text-sm text-muted-foreground text-center">
                 {{ $t('account.sshKeys.totalKeys', { count: filteredSshKeys.length }) }}
             </div>
         </div>
@@ -55,48 +55,62 @@
                 :key="key.id"
                 class="bg-card border rounded-lg p-4 hover:shadow-md transition-shadow"
             >
-                <div class="flex items-start justify-between mb-3">
-                    <div class="flex-1">
-                        <h4 class="font-medium text-foreground mb-1">{{ key.name }}</h4>
-                        <div class="flex items-center gap-2 mb-2">
-                            <Button variant="outline" size="sm" class="h-6 px-2 text-xs" @click="viewKeyDetails(key)">
-                                <Eye class="h-3 w-3 mr-1" />
-                                {{ $t('account.sshKeys.viewDetails') }}
-                            </Button>
-                            <Button variant="outline" size="sm" class="h-6 px-2 text-xs" @click="editKey(key)">
-                                <Edit class="h-3 w-3 mr-1" />
-                                {{ $t('account.sshKeys.edit') }}
-                            </Button>
+                <div class="space-y-3">
+                    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                        <div class="flex-1">
+                            <h4 class="font-medium text-foreground mb-1">{{ key.name }}</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="h-8 px-3 text-xs"
+                                    @click="viewKeyDetails(key)"
+                                >
+                                    <Eye class="h-3 w-3 mr-1" />
+                                    {{ $t('account.sshKeys.viewDetails') }}
+                                </Button>
+                                <Button variant="outline" size="sm" class="h-8 px-3 text-xs" @click="editKey(key)">
+                                    <Edit class="h-3 w-3 mr-1" />
+                                    {{ $t('account.sshKeys.edit') }}
+                                </Button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="flex items-center gap-2 ml-4">
-                        <Badge :variant="getStatusVariant(key.deleted_at)" class="text-xs">
-                            {{
-                                key.deleted_at
-                                    ? $t('account.sshKeys.statuses.deleted')
-                                    : $t('account.sshKeys.statuses.active')
-                            }}
-                        </Badge>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <Badge :variant="getStatusVariant(key.deleted_at)" class="text-xs">
+                                {{
+                                    key.deleted_at
+                                        ? $t('account.sshKeys.statuses.deleted')
+                                        : $t('account.sshKeys.statuses.active')
+                                }}
+                            </Badge>
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between text-xs text-muted-foreground">
+                <div
+                    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-muted-foreground"
+                >
                     <div class="flex items-center gap-1">
                         <Clock class="h-3 w-3" />
                         <span>{{ formatDate(key.created_at) }}</span>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-col sm:flex-row gap-2">
                         <Button
                             v-if="key.deleted_at"
                             variant="outline"
                             size="sm"
-                            class="h-6 px-2 text-xs"
+                            class="h-8 px-3 text-xs w-full sm:w-auto"
                             @click="restoreKey(key)"
                         >
                             <RotateCcw class="h-3 w-3 mr-1" />
                             {{ $t('account.sshKeys.restore') }}
                         </Button>
-                        <Button variant="destructive" size="sm" class="h-6 px-2 text-xs" @click="deleteKey(key)">
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            class="h-8 px-3 text-xs w-full sm:w-auto"
+                            @click="deleteKey(key)"
+                        >
                             <Trash2 class="h-3 w-3 mr-1" />
                             {{
                                 key.deleted_at ? $t('account.sshKeys.permanentlyDelete') : $t('account.sshKeys.delete')

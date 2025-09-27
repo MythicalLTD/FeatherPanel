@@ -46,11 +46,11 @@
             </div>
 
             <!-- Activity Count -->
-            <div class="flex items-center justify-between">
-                <p class="text-sm text-muted-foreground">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <p class="text-sm text-muted-foreground text-center sm:text-left">
                     {{ $t('account.activity.totalActivities', { count: totalActivities }) }}
                 </p>
-                <Button variant="outline" size="sm" @click="fetchActivity">
+                <Button variant="outline" size="sm" class="w-full sm:w-auto" @click="fetchActivity">
                     <RefreshCw class="h-4 w-4 mr-2" />
                     {{ $t('account.activity.refresh') }}
                 </Button>
@@ -72,18 +72,20 @@
 
                         <!-- Activity content -->
                         <div class="flex-1 space-y-2 pb-4">
-                            <div class="flex items-start justify-between">
-                                <div class="space-y-1">
-                                    <h4 class="text-sm font-medium leading-none">
-                                        {{ activity.name }}
-                                    </h4>
-                                    <p v-if="activity.context" class="text-sm text-muted-foreground max-w-md">
-                                        {{ activity.context }}
-                                    </p>
-                                </div>
-                                <div class="flex items-center gap-2 text-xs text-muted-foreground">
-                                    <Clock class="h-3 w-3" />
-                                    {{ formatDate(activity.created_at) }}
+                            <div class="space-y-2">
+                                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                                    <div class="space-y-1 flex-1">
+                                        <h4 class="text-sm font-medium leading-none">
+                                            {{ activity.name }}
+                                        </h4>
+                                        <p v-if="activity.context" class="text-sm text-muted-foreground">
+                                            {{ activity.context }}
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0">
+                                        <Clock class="h-3 w-3" />
+                                        {{ formatDate(activity.created_at) }}
+                                    </div>
                                 </div>
                             </div>
 

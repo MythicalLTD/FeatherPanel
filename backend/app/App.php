@@ -16,6 +16,7 @@ namespace App;
 use RateLimit\Rate;
 use App\Chat\Database;
 use App\Helpers\XChaCha20;
+use Random\RandomException;
 use App\Helpers\ApiResponse;
 use App\Config\ConfigFactory;
 use App\Logger\LoggerFactory;
@@ -90,7 +91,7 @@ class App
          * Redis.
          */
         $redis = new FastChat\Redis();
-        if ($redis->testConnection() == false) {
+        if (!$redis->testConnection()) {
             define('REDIS_ENABLED', false);
         } else {
             define('REDIS_ENABLED', true);
@@ -620,16 +621,21 @@ class App
      */
     public function generateCode(): string
     {
-        $code = base64_encode(random_bytes(64));
-        $code = str_replace('=', '', $code);
-        $code = str_replace('+', '', $code);
-        $code = str_replace('/', '', $code);
+        try {
+            $code = base64_encode(random_bytes(64));
+            $code = str_replace('=', '', $code);
+            $code = str_replace('+', '', $code);
 
-        return $code;
+            return str_replace('/', '', $code);
+        } catch (RandomException) {
+            $this->getLogger()->error('Failed to generate code: ' . $code);
+            return '';
+        }
     }
 
     /**
      * Generate a random pin.
+     * @throws RandomException
      */
     public function generatePin(): int
     {

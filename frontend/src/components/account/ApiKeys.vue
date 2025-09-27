@@ -6,26 +6,18 @@
                 <h3 class="text-lg font-semibold">{{ $t('account.apiKeys.title') }}</h3>
                 <p class="text-sm text-muted-foreground">{{ $t('account.apiKeys.description') }}</p>
             </div>
-            <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
-                <div class="flex flex-wrap gap-2">
-                    <Button variant="outline" size="sm" class="flex-1 sm:flex-none" @click="openApiDocumentation">
+            <div class="flex flex-col gap-3">
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <Button variant="outline" size="sm" class="flex-1" @click="openApiDocumentation">
                         <ExternalLink class="h-4 w-4 mr-2" />
-                        <span class="hidden sm:inline">{{ $t('account.apiKeys.apiDocs') }}</span>
-                        <span class="sm:hidden">{{ $t('account.apiKeys.apiDocs') }}</span>
+                        {{ $t('account.apiKeys.apiDocs') }}
                     </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        class="flex-1 sm:flex-none"
-                        :disabled="loading"
-                        @click="fetchApiClients"
-                    >
+                    <Button variant="outline" size="sm" class="flex-1" :disabled="loading" @click="fetchApiClients">
                         <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': loading }" />
-                        <span class="hidden sm:inline">{{ $t('account.apiKeys.refresh') }}</span>
-                        <span class="sm:hidden">{{ $t('account.apiKeys.refresh') }}</span>
+                        {{ $t('account.apiKeys.refresh') }}
                     </Button>
                 </div>
-                <Button class="w-full sm:w-auto" @click="showCreateModal = true">
+                <Button class="w-full" @click="showCreateModal = true">
                     <Plus class="h-4 w-4 mr-2" />
                     {{ $t('account.apiKeys.addKey') }}
                 </Button>
@@ -50,12 +42,12 @@
         </div>
 
         <!-- Search and Stats -->
-        <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-            <div class="relative flex-1">
+        <div class="space-y-3">
+            <div class="relative">
                 <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input v-model="searchQuery" :placeholder="$t('account.apiKeys.searchPlaceholder')" class="pl-10" />
             </div>
-            <div class="text-sm text-muted-foreground text-center sm:text-left">
+            <div class="text-sm text-muted-foreground text-center">
                 {{ $t('account.apiKeys.totalKeys', { count: filteredApiClients.length }) }}
             </div>
         </div>
@@ -104,37 +96,19 @@
                         </div>
                     </div>
 
-                    <!-- Action buttons - responsive layout -->
-                    <div class="flex flex-wrap gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            class="h-7 px-2 text-xs flex-1 sm:flex-none"
-                            @click="viewClientDetails(client)"
-                        >
+                    <!-- Action buttons - mobile optimized -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <Button variant="outline" size="sm" class="h-8 px-3 text-xs" @click="viewClientDetails(client)">
                             <Eye class="h-3 w-3 mr-1" />
-                            <span class="hidden sm:inline">{{ $t('account.apiKeys.viewDetails') }}</span>
-                            <span class="sm:hidden">{{ $t('account.apiKeys.viewDetails') }}</span>
+                            {{ $t('account.apiKeys.viewDetails') }}
                         </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            class="h-7 px-2 text-xs flex-1 sm:flex-none"
-                            @click="editClient(client)"
-                        >
+                        <Button variant="outline" size="sm" class="h-8 px-3 text-xs" @click="editClient(client)">
                             <Edit class="h-3 w-3 mr-1" />
-                            <span class="hidden sm:inline">{{ $t('account.apiKeys.edit') }}</span>
-                            <span class="sm:hidden">{{ $t('account.apiKeys.edit') }}</span>
+                            {{ $t('account.apiKeys.edit') }}
                         </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            class="h-7 px-2 text-xs flex-1 sm:flex-none"
-                            @click="regenerateKeys(client)"
-                        >
+                        <Button variant="outline" size="sm" class="h-8 px-3 text-xs" @click="regenerateKeys(client)">
                             <RefreshCw class="h-3 w-3 mr-1" />
-                            <span class="hidden sm:inline">{{ $t('account.apiKeys.regenerateKeys') }}</span>
-                            <span class="sm:hidden">{{ $t('account.apiKeys.regenerateKeys') }}</span>
+                            {{ $t('account.apiKeys.regenerateKeys') }}
                         </Button>
                     </div>
 
@@ -668,7 +642,7 @@ function formatDate(dateString: string): string {
 }
 
 function openApiDocumentation() {
-    window.open('https://www.postman.com/mythicalsystems/featherpanel/overview', '_blank');
+    window.open('/docs.html', '_blank');
 }
 
 // Lifecycle

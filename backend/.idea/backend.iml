@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="WEB_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/app" isTestSource="false" packagePrefix="App\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/addons" isTestSource="false" packagePrefix="App\Addons\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/cron/php" isTestSource="false" packagePrefix="App\Cron\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/beberlei/assert/lib/Assert" isTestSource="false" packagePrefix="Assert\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/beberlei/assert/tests/Assert/Tests" isTestSource="true" packagePrefix="Assert\Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/clue/ndjson-react/src" isTestSource="false" packagePrefix="Clue\React\NDJson\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/clue/ndjson-react/tests" isTestSource="true" packagePrefix="Clue\Tests\React\NDJson\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/composer/pcre/src" isTestSource="false" packagePrefix="Composer\Pcre\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/composer/pcre/tests" isTestSource="true" packagePrefix="Composer\Pcre\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/composer/semver/src" isTestSource="false" packagePrefix="Composer\Semver\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/composer/semver/tests" isTestSource="true" packagePrefix="Composer\Semver\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/composer/xdebug-handler/src" isTestSource="false" packagePrefix="Composer\XdebugHandler\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/composer/xdebug-handler/tests" isTestSource="true" packagePrefix="Composer\XdebugHandler\Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/evenement/evenement/src" isTestSource="false" packagePrefix="Evenement\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/evenement/evenement/tests" isTestSource="true" packagePrefix="Evenement\Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/fidry/cpu-core-counter/src" isTestSource="false" packagePrefix="Fidry\CpuCoreCounter\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/fidry/cpu-core-counter/tests" isTestSource="true" packagePrefix="Fidry\CpuCoreCounter\Test\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/firebase/php-jwt/src" isTestSource="false" packagePrefix="Firebase\JWT\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/friendsofphp/php-cs-fixer/dev-tools/phpstan/src" isTestSource="true" packagePrefix="PhpCsFixer\PHPStan\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/friendsofphp/php-cs-fixer/src" isTestSource="false" packagePrefix="PhpCsFixer\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/friendsofphp/php-cs-fixer/tests" isTestSource="true" packagePrefix="PhpCsFixer\Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/graham-campbell/result-type/src" isTestSource="false" packagePrefix="GrahamCampbell\ResultType\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/graham-campbell/result-type/tests" isTestSource="true" packagePrefix="GrahamCampbell\Tests\ResultType\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/gravatarphp/gravatar/spec" isTestSource="true" packagePrefix="spec\Gravatar\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/gravatarphp/gravatar/src" isTestSource="false" packagePrefix="Gravatar\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/guzzlehttp/guzzle/src" isTestSource="false" packagePrefix="GuzzleHttp\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/guzzlehttp/guzzle/tests" isTestSource="true" packagePrefix="GuzzleHttp\Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/guzzlehttp/promises/src" isTestSource="false" packagePrefix="GuzzleHttp\Promise\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/guzzlehttp/promises/tests" isTestSource="true" packagePrefix="GuzzleHttp\Promise\Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/guzzlehttp/psr7/src" isTestSource="false" packagePrefix="GuzzleHttp\Psr7\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/guzzlehttp/psr7/tests" isTestSource="true" packagePrefix="GuzzleHttp\Tests\Psr7\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/jean85/pretty-package-versions/src" isTestSource="false" packagePrefix="Jean85\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/jean85/pretty-package-versions/tests" isTestSource="true" packagePrefix="Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/myclabs/deep-copy/fixtures" isTestSource="true" packagePrefix="DeepCopy\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/myclabs/deep-copy/src/DeepCopy" isTestSource="false" packagePrefix="DeepCopy\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/myclabs/deep-copy/tests/DeepCopyTest" isTestSource="true" packagePrefix="DeepCopyTest\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/nikic/php-parser/lib/PhpParser" isTestSource="false" packagePrefix="PhpParser\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/nikic/php-parser/test/PhpParser" isTestSource="true" packagePrefix="PhpParser\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/nikolaposa/rate-limit/src" isTestSource="false" packagePrefix="RateLimit\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/nikolaposa/rate-limit/tests" isTestSource="true" packagePrefix="RateLimit\Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/paragonie/constant_time_encoding/src" isTestSource="false" packagePrefix="ParagonIE\ConstantTime\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/paragonie/constant_time_encoding/tests" isTestSource="true" packagePrefix="ParagonIE\ConstantTime\Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/phpmailer/phpmailer/src" isTestSource="false" packagePrefix="PHPMailer\PHPMailer\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/phpmailer/phpmailer/test" isTestSource="true" packagePrefix="PHPMailer\Test\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/phpoption/phpoption/src/PhpOption" isTestSource="false" packagePrefix="PhpOption\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/phpoption/phpoption/tests/PhpOption/Tests" isTestSource="true" packagePrefix="PhpOption\Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/pragmarx/google2fa/src" isTestSource="false" packagePrefix="PragmaRX\Google2FA\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/pragmarx/google2fa/tests" isTestSource="true" packagePrefix="PragmaRX\Google2FA\Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/predis/predis/src" isTestSource="false" packagePrefix="Predis\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/psr/container/src" isTestSource="false" packagePrefix="Psr\Container\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/psr/event-dispatcher/src" isTestSource="false" packagePrefix="Psr\EventDispatcher\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/psr/http-client/src" isTestSource="false" packagePrefix="Psr\Http\Client\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/psr/http-factory/src" isTestSource="false" packagePrefix="Psr\Http\Message\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/psr/http-message/src" isTestSource="false" packagePrefix="Psr\Http\Message\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/psr/log/src" isTestSource="false" packagePrefix="Psr\Log\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/ralouphie/getallheaders/tests" isTestSource="true" packagePrefix="getallheaders\Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/react/cache/src" isTestSource="false" packagePrefix="React\Cache\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/react/cache/tests" isTestSource="true" packagePrefix="React\Tests\Cache\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/react/child-process/src" isTestSource="false" packagePrefix="React\ChildProcess\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/react/child-process/tests" isTestSource="true" packagePrefix="React\Tests\ChildProcess\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/react/dns/src" isTestSource="false" packagePrefix="React\Dns\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/react/dns/tests" isTestSource="true" packagePrefix="React\Tests\Dns\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/react/event-loop/src" isTestSource="false" packagePrefix="React\EventLoop\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/react/event-loop/tests" isTestSource="true" packagePrefix="React\Tests\EventLoop\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/react/promise/src" isTestSource="false" packagePrefix="React\Promise\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/react/promise/tests" isTestSource="true" packagePrefix="React\Promise\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/react/promise/tests/fixtures" isTestSource="true" packagePrefix="React\Promise\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/react/socket/src" isTestSource="false" packagePrefix="React\Socket\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/react/socket/tests" isTestSource="true" packagePrefix="React\Tests\Socket\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/react/stream/src" isTestSource="false" packagePrefix="React\Stream\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/react/stream/tests" isTestSource="true" packagePrefix="React\Tests\Stream\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/sentry/sentry/src" isTestSource="false" packagePrefix="Sentry\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/sentry/sentry/tests" isTestSource="true" packagePrefix="Sentry\Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/console/" isTestSource="false" packagePrefix="Symfony\Component\Console\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/event-dispatcher-contracts/" isTestSource="false" packagePrefix="Symfony\Contracts\EventDispatcher\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/event-dispatcher/" isTestSource="false" packagePrefix="Symfony\Component\EventDispatcher\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/filesystem/" isTestSource="false" packagePrefix="Symfony\Component\Filesystem\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/finder/" isTestSource="false" packagePrefix="Symfony\Component\Finder\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/http-foundation/" isTestSource="false" packagePrefix="Symfony\Component\HttpFoundation\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/mime/" isTestSource="false" packagePrefix="Symfony\Component\Mime\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/options-resolver/" isTestSource="false" packagePrefix="Symfony\Component\OptionsResolver\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-ctype/" isTestSource="false" packagePrefix="Symfony\Polyfill\Ctype\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-intl-grapheme/" isTestSource="false" packagePrefix="Symfony\Polyfill\Intl\Grapheme\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-intl-idn/" isTestSource="false" packagePrefix="Symfony\Polyfill\Intl\Idn\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-intl-normalizer/" isTestSource="false" packagePrefix="Symfony\Polyfill\Intl\Normalizer\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-mbstring/" isTestSource="false" packagePrefix="Symfony\Polyfill\Mbstring\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-php80/" isTestSource="false" packagePrefix="Symfony\Polyfill\Php80\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-php81/" isTestSource="false" packagePrefix="Symfony\Polyfill\Php81\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-php83/" isTestSource="false" packagePrefix="Symfony\Polyfill\Php83\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-php84/" isTestSource="false" packagePrefix="Symfony\Polyfill\Php84\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/process/" isTestSource="false" packagePrefix="Symfony\Component\Process\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/routing/" isTestSource="false" packagePrefix="Symfony\Component\Routing\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/service-contracts/" isTestSource="false" packagePrefix="Symfony\Contracts\Service\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/stopwatch/" isTestSource="false" packagePrefix="Symfony\Component\Stopwatch\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/string/" isTestSource="false" packagePrefix="Symfony\Component\String\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/symfony/yaml/" isTestSource="false" packagePrefix="Symfony\Component\Yaml\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/vlucas/phpdotenv/src" isTestSource="false" packagePrefix="Dotenv\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/vlucas/phpdotenv/tests/Dotenv" isTestSource="true" packagePrefix="Dotenv\Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/zircote/swagger-php/src" isTestSource="false" packagePrefix="OpenApi\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/zircote/swagger-php/tests" isTestSource="true" packagePrefix="OpenApi\Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/zircote/swagger-php/tests/Fixtures/AnotherNamespace" isTestSource="true" packagePrefix="AnotherNamespace\" />
+      <sourceFolder url="file://$MODULE_DIR$/storage/packages/zircote/swagger-php/tools/src" isTestSource="true" packagePrefix="OpenApi\Tools\" />
+      <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/beberlei/assert" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/clue/ndjson-react" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/composer" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/dg/mysql-dump" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/evenement/evenement" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/fidry/cpu-core-counter" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/firebase/php-jwt" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/friendsofphp/php-cs-fixer" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/graham-campbell/result-type" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/gravatarphp/gravatar" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/guzzlehttp/guzzle" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/guzzlehttp/promises" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/guzzlehttp/psr7" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/jean85/pretty-package-versions" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/myclabs/deep-copy" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/nikic/php-parser" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/nikolaposa/rate-limit" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/paragonie/constant_time_encoding" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/phar-io/manifest" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/phar-io/version" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/phpmailer/phpmailer" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/phpoption/phpoption" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/phpunit/php-code-coverage" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/phpunit/php-file-iterator" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/phpunit/php-invoker" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/phpunit/php-text-template" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/phpunit/php-timer" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/phpunit/phpunit" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/pragmarx/google2fa" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/predis/predis" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/psr/container" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/psr/event-dispatcher" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/psr/http-client" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/psr/http-factory" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/psr/http-message" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/psr/log" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/ralouphie/getallheaders" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/react/cache" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/react/child-process" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/react/dns" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/react/event-loop" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/react/promise" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/react/socket" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/react/stream" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/sebastian/cli-parser" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/sebastian/code-unit" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/sebastian/code-unit-reverse-lookup" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/sebastian/comparator" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/sebastian/complexity" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/sebastian/diff" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/sebastian/environment" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/sebastian/exporter" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/sebastian/global-state" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/sebastian/lines-of-code" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/sebastian/object-enumerator" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/sebastian/object-reflector" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/sebastian/recursion-context" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/sebastian/type" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/sebastian/version" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/sentry/sentry" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/staabm/side-effects-detector" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/console" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/deprecation-contracts" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/event-dispatcher" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/event-dispatcher-contracts" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/filesystem" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/finder" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/http-foundation" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/mime" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/options-resolver" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-ctype" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-intl-grapheme" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-intl-idn" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-intl-normalizer" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-mbstring" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-php80" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-php81" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-php83" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/polyfill-php84" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/process" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/routing" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/service-contracts" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/stopwatch" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/string" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/symfony/yaml" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/theseer/tokenizer" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/vlucas/phpdotenv" />
+      <excludeFolder url="file://$MODULE_DIR$/storage/packages/zircote/swagger-php" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>

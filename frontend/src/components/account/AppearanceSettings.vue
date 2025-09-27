@@ -10,12 +10,17 @@
             <h4 class="text-sm font-medium">{{ $t('account.theme') }}</h4>
 
             <!-- Theme Toggle -->
-            <div class="flex items-center justify-between">
-                <div class="space-y-1">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div class="space-y-1 flex-1">
                     <p class="text-sm font-medium">{{ $t('account.darkMode') }}</p>
                     <p class="text-xs text-muted-foreground">{{ $t('account.darkModeDescription') }}</p>
                 </div>
-                <Button variant="outline" size="sm" class="flex items-center gap-2" @click="toggleTheme">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="w-full sm:w-auto flex items-center justify-center gap-2"
+                    @click="toggleTheme"
+                >
                     <Sun v-if="isDark" class="h-4 w-4" />
                     <Moon v-else class="h-4 w-4" />
                     {{ isDark ? $t('account.lightMode') : $t('account.darkMode') }}
@@ -25,11 +30,11 @@
             <!-- Theme Color -->
             <div class="space-y-3">
                 <label class="text-sm font-medium">{{ $t('account.themeColor') }}</label>
-                <div class="flex gap-2">
+                <div class="grid grid-cols-4 gap-3 sm:flex sm:gap-2">
                     <button
                         v-for="color in themeColors"
                         :key="color.name"
-                        class="w-8 h-8 rounded-full border-2 transition-all duration-200 hover:scale-110"
+                        class="w-10 h-10 sm:w-8 sm:h-8 rounded-full border-2 transition-all duration-200 hover:scale-110 touch-manipulation"
                         :class="[currentThemeColor === color.value ? 'border-primary' : 'border-border', color.bgClass]"
                         :title="color.name"
                         @click="setThemeColor(color.value)"
@@ -45,11 +50,11 @@
             <!-- Preset Backgrounds -->
             <div class="space-y-3">
                 <label class="text-sm font-medium">{{ $t('background.presets') }}</label>
-                <div class="grid grid-cols-4 gap-2">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <button
                         v-for="preset in presetBackgrounds"
                         :key="preset.id"
-                        class="relative group aspect-video rounded-md overflow-hidden border-2 transition-all duration-200 hover:scale-105"
+                        class="relative group aspect-video rounded-md overflow-hidden border-2 transition-all duration-200 hover:scale-105 touch-manipulation"
                         :class="
                             currentBackground === preset.url
                                 ? 'border-primary'
@@ -125,11 +130,11 @@
             <div class="space-y-3">
                 <div class="space-y-2">
                     <label class="text-sm font-medium">{{ $t('account.selectLanguage') }}</label>
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <button
                             v-for="language in availableLanguages"
                             :key="language.code"
-                            class="flex items-center gap-3 p-3 rounded-lg border-2 transition-all duration-200 hover:scale-105"
+                            class="flex items-center gap-3 p-3 rounded-lg border-2 transition-all duration-200 hover:scale-105 touch-manipulation"
                             :class="[
                                 currentLanguage?.code === language.code
                                     ? 'border-primary bg-primary/5'
@@ -137,8 +142,8 @@
                             ]"
                             @click="changeLanguage(language)"
                         >
-                            <span class="text-2xl">{{ language.flag }}</span>
-                            <div class="text-left">
+                            <span class="text-2xl flex-shrink-0">{{ language.flag }}</span>
+                            <div class="text-left flex-1">
                                 <p class="text-sm font-medium">{{ language.name }}</p>
                                 <p class="text-xs text-muted-foreground">{{ language.code.toUpperCase() }}</p>
                             </div>
@@ -155,11 +160,11 @@
             <div class="space-y-3">
                 <div class="space-y-2">
                     <label class="text-sm font-medium">{{ $t('account.sidebarVisibility') }}</label>
-                    <div class="grid grid-cols-3 gap-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <button
                             v-for="option in sidebarOptions"
                             :key="option.value"
-                            class="flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all duration-200 hover:scale-105"
+                            class="flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all duration-200 hover:scale-105 touch-manipulation"
                             :class="[
                                 sidebarVisibility === option.value
                                     ? 'border-primary bg-primary/5'
@@ -169,8 +174,8 @@
                             :disabled="isReloading"
                             @click="updateSidebarVisibility(option.value)"
                         >
-                            <component :is="option.icon" class="h-5 w-5" />
-                            <span class="text-xs font-medium">{{ option.label }}</span>
+                            <component :is="option.icon" class="h-6 w-6" />
+                            <span class="text-sm font-medium text-center">{{ option.label }}</span>
                         </button>
                     </div>
                     <p class="text-xs text-muted-foreground">

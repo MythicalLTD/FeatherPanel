@@ -57,15 +57,14 @@
                 </FormItem>
 
                 <FormItem>
-                    <Label for="avatar">{{ $t('account.avatar') }}</Label>
-                    <Input
-                        id="avatar"
+                    <AvatarUpload
                         v-model="formData.avatar"
-                        type="url"
+                        :label="$t('account.avatar')"
                         :disabled="isSubmitting"
-                        :placeholder="$t('account.avatarPlaceholder')"
+                        :is-uploading="isUploadingAvatar"
+                        @file-selected="handleAvatarFileSelect"
+                        @clear="handleAvatarClear"
                     />
-                    <p class="text-xs text-muted-foreground mt-1">{{ $t('account.avatarHint') }}</p>
                 </FormItem>
 
                 <FormItem>
@@ -106,6 +105,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { FormItem } from '@/components/ui/form';
+import { AvatarUpload } from '@/components/ui/avatar-upload';
 import axios from 'axios';
 
 const { t: $t } = useI18n();
@@ -125,6 +125,8 @@ const formData = ref({
 // Form state
 const isSubmitting = ref(false);
 const loading = ref(true);
+const avatarFile = ref<File | null>(null);
+const isUploadingAvatar = ref(false);
 
 // Initialize form with current user data
 const initializeForm = () => {
@@ -143,6 +145,18 @@ const initializeForm = () => {
 // Reset form to current values
 const resetForm = () => {
     initializeForm();
+    avatarFile.value = null;
+};
+
+// Handle avatar file selection from the component
+const handleAvatarFileSelect = (file: File | null) => {
+    avatarFile.value = file;
+};
+
+// Handle avatar clear from the component
+const handleAvatarClear = () => {
+    avatarFile.value = null;
+    formData.value.avatar = '';
 };
 
 // Handle form submission
@@ -150,14 +164,67 @@ const handleSubmit = async () => {
     try {
         isSubmitting.value = true;
 
-        // Prepare data for API (remove empty password)
-        const submitData = { ...formData.value };
-        if (!submitData.password) {
-            // Filter out the password field
-            const filteredData = Object.fromEntries(
-                Object.entries(formData.value).filter(([key]) => key !== 'password'),
-            );
-            Object.assign(submitData, filteredData);
+        // Prepare data for API - only include fields that have been changed
+        const submitData: Record<string, string> = {};
+
+        // Only include username if it's different from the original
+        if (formData.value.username !== (sessionStore.user?.username || '')) {
+            submitData.username = formData.value.username;
+        }
+
+        // Only include first_name if it's different from the original
+        if (formData.value.first_name !== (sessionStore.user?.first_name || '')) {
+            submitData.first_name = formData.value.first_name;
+        }
+
+        // Only include last_name if it's different from the original
+        if (formData.value.last_name !== (sessionStore.user?.last_name || '')) {
+            submitData.last_name = formData.value.last_name;
+        }
+
+        // Only include email if it's different from the original
+        if (formData.value.email !== (sessionStore.user?.email || '')) {
+            submitData.email = formData.value.email;
+        }
+
+        // Only include avatar if it's different from the original or if there's a new file
+        if (formData.value.avatar !== (sessionStore.user?.avatar || '') || avatarFile.value) {
+            if (avatarFile.value) {
+                // Upload avatar file first
+                isUploadingAvatar.value = true;
+                try {
+                    const formDataUpload = new FormData();
+                    formDataUpload.append('avatar', avatarFile.value);
+
+                    const uploadResponse = await axios.post('/api/user/avatar', formDataUpload, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
+                    });
+
+                    if (uploadResponse.data.success) {
+                        submitData.avatar = uploadResponse.data.data.avatar_url;
+                    } else {
+                        toast.error(uploadResponse.data.message || $t('account.avatarUploadFailed'));
+                        return;
+                    }
+                } finally {
+                    isUploadingAvatar.value = false;
+                }
+            } else {
+                submitData.avatar = formData.value.avatar;
+            }
+        }
+
+        // Only include password if user actually wants to change it
+        if (formData.value.password && formData.value.password.trim() !== '') {
+            submitData.password = formData.value.password;
+        }
+
+        // Check if anything was actually changed
+        if (Object.keys(submitData).length === 0) {
+            toast.info($t('account.noChanges'));
+            return;
         }
 
         // Make PATCH request to update session

@@ -16,12 +16,12 @@
         <div v-else class="space-y-6">
             <!-- Two-Factor Authentication -->
             <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <div class="space-y-1">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div class="space-y-1 flex-1">
                         <h4 class="text-sm font-medium">{{ $t('account.twoFactorAuth') }}</h4>
                         <p class="text-sm text-muted-foreground">{{ $t('account.twoFactorHint') }}</p>
                     </div>
-                    <div class="flex items-center space-x-2">
+                    <div class="flex items-center space-x-2 flex-shrink-0">
                         <Checkbox
                             id="two_fa_enabled"
                             :checked="user?.two_fa_enabled === 'true'"
@@ -47,12 +47,12 @@
 
             <!-- Account Deletion -->
             <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <div class="space-y-1">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div class="space-y-1 flex-1">
                         <h4 class="text-sm font-medium text-destructive">{{ $t('account.deleteAccount') }}</h4>
                         <p class="text-sm text-muted-foreground">{{ $t('account.deleteAccountWarning') }}</p>
                     </div>
-                    <Button variant="destructive" size="sm" @click="showDeleteConfirmation">
+                    <Button variant="destructive" size="sm" class="w-full sm:w-auto" @click="showDeleteConfirmation">
                         {{ $t('account.deleteAccount') }}
                     </Button>
                 </div>
@@ -60,12 +60,18 @@
 
             <!-- Session Management -->
             <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <div class="space-y-1">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div class="space-y-1 flex-1">
                         <h4 class="text-sm font-medium">{{ $t('account.sessionManagement') }}</h4>
                         <p class="text-sm text-muted-foreground">{{ $t('account.sessionManagementDescription') }}</p>
                     </div>
-                    <Button variant="outline" size="sm" :disabled="isSubmitting" @click="handleLogout">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        class="w-full sm:w-auto"
+                        :disabled="isSubmitting"
+                        @click="handleLogout"
+                    >
                         {{ $t('account.logout') }}
                     </Button>
                 </div>
