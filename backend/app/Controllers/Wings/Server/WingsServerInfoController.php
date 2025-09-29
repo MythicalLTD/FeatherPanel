@@ -182,14 +182,13 @@ class WingsServerInfoController
         $environment['SERVER_PORT'] = $allocation['port'];
 
         // Parse spell startup configuration (from spell.startup field)
-        $startupCommand = $server['startup']; // Use server.startup as primary
-        if (!empty($spell['startup'])) {
-            $startupCommand = $spell['startup'];
-        }
-
-        // Ensure we have a proper startup command
-        if (empty($startupCommand)) {
-            $startupCommand = 'java -Xms128M -XX:MaxRAMPercentage=95.0 -Dterminal.jline=false -Dterminal.ansi=true -jar {{SERVER_JARFILE}}';
+        // Prefer server-specific startup command if set, otherwise fallback to spell startup
+        if (!empty($server['startup'])) {
+            $startupCommand = $server['startup'] . ' # Added by FeatherPanel (Server Startup)';
+        } elseif (!empty($spell['startup'])) {
+            $startupCommand = $spell['startup'] . ' # Added by FeatherPanel (Spell Startup)';
+        } else {
+            $startupCommand = '# Added by FeatherPanel (No Startup Command)';
         }
 
         // Parse spell features if available (from spell.features JSON field)
