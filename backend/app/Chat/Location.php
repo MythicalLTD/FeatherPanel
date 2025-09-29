@@ -51,6 +51,15 @@ class Location
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
+    public static function getByName(string $name): ?array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE name = :name LIMIT 1');
+        $stmt->execute(['name' => $name]);
+
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
     public static function getCount(?string $search = null): int
     {
         $pdo = Database::getPdoConnection();

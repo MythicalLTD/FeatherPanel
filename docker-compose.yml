@@ -45,9 +45,9 @@ services:
       - DATABASE_ENCRYPTION=plaintext
       - REDIS_HOST=redis
       - REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_redis}
+    # Mount the entire backend directory to the container's working directory for live development
     volumes:
-      - ./backend/storage:/var/www/html/storage
-      - ./backend/public:/var/www/html/public
+      - ./backend:/var/www/html
     depends_on:
       mysql:
         condition: service_healthy
@@ -64,6 +64,9 @@ services:
     restart: unless-stopped
     ports:
       - "4831:80"
+    # Mount the entire frontend directory to the container's working directory for live development
+    volumes:
+      - ./frontend:/usr/share/nginx/html
     depends_on:
       - backend
     networks:

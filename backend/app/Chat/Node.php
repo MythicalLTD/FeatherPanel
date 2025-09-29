@@ -205,6 +205,14 @@ class Node
     }
 
     /**
+     * Alias for createNode method.
+     */
+    public static function create(array $data): int|false
+    {
+        return self::createNode($data);
+    }
+
+    /**
      * Fetch a node by ID.
      */
     public static function getNodeById(int $id): ?array
@@ -235,6 +243,40 @@ class Node
         $pdo = Database::getPdoConnection();
         $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE uuid = :uuid LIMIT 1');
         $stmt->execute(['uuid' => $uuid]);
+
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        if ($row) {
+            $row = self::decryptSensitiveFields($row);
+        }
+
+        return $row;
+    }
+
+    /**
+     * Fetch a node by name.
+     */
+    public static function getNodeByName(string $name): ?array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE name = :name LIMIT 1');
+        $stmt->execute(['name' => $name]);
+
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        if ($row) {
+            $row = self::decryptSensitiveFields($row);
+        }
+
+        return $row;
+    }
+
+    /**
+     * Fetch a node by FQDN.
+     */
+    public static function getNodeByFqdn(string $fqdn): ?array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE fqdn = :fqdn LIMIT 1');
+        $stmt->execute(['fqdn' => $fqdn]);
 
         $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
         if ($row) {
@@ -638,6 +680,15 @@ class Node
         return false;
     }
 
+    public static function count(array $conditions = []): int
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . implode(' AND ', array_map(fn ($k) => "$k = :$k", array_keys($conditions))));
+        $stmt->execute($conditions);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     /**
      * Sanitize data for logging by excluding sensitive fields.
      */
@@ -675,14 +726,5 @@ class Node
         }
 
         return $row;
-    }
-
-    public static function count(array $conditions = []): int
-    {
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . implode(' AND ', array_map(fn ($k) => "$k = :$k", array_keys($conditions))));
-        $stmt->execute($conditions);
-
-        return (int) $stmt->fetchColumn();
     }
 }

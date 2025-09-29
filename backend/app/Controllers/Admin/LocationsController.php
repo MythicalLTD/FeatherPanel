@@ -13,9 +13,9 @@
 
 namespace App\Controllers\Admin;
 
+use App\Chat\Node;
 use App\Chat\Activity;
 use App\Chat\Location;
-use App\Chat\Node;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
@@ -426,9 +426,9 @@ class LocationsController
             return ApiResponse::error('Location not found', 'LOCATION_NOT_FOUND', 404);
         }
 
-		if (Node::count(['location_id' => $id]) > 0) {
-			return ApiResponse::error('Cannot delete location: there are nodes assigned to this location. Please remove or reassign all nodes before deleting the location.', 'LOCATION_HAS_NODES', 400);
-		}
+        if (Node::count(['location_id' => $id]) > 0) {
+            return ApiResponse::error('Cannot delete location: there are nodes assigned to this location. Please remove or reassign all nodes before deleting the location.', 'LOCATION_HAS_NODES', 400);
+        }
 
         $success = Location::delete($id);
         if (!$success) {

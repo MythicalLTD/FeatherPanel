@@ -36,7 +36,7 @@ class PluginCssController
                     new OA\Header(
                         header: 'Cache-Control',
                         description: 'Cache control header',
-                        schema: new OA\Schema(type: 'string', example: 'public, max-age=3600')
+                        schema: new OA\Schema(type: 'string', example: 'no-store, no-cache, must-revalidate, max-age=0')
                     ),
                 ]
             ),
@@ -62,7 +62,10 @@ class PluginCssController
 
         return new Response($cssContent, 200, [
             'Content-Type' => 'text/css',
-            'Cache-Control' => 'public, max-age=3600', // Cache for 1 hour
+            // No cache
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
         ]);
     }
 }

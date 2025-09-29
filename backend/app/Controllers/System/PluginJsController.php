@@ -36,7 +36,7 @@ class PluginJsController
                     new OA\Header(
                         header: 'Cache-Control',
                         description: 'Cache control header',
-                        schema: new OA\Schema(type: 'string', example: 'public, max-age=3600')
+                        schema: new OA\Schema(type: 'string', example: 'no-store, no-cache, must-revalidate, max-age=0')
                     ),
                 ]
             ),
@@ -65,7 +65,9 @@ class PluginJsController
 
         return new Response($jsContent, 200, [
             'Content-Type' => 'application/javascript',
-            'Cache-Control' => 'public, max-age=3600', // Cache for 1 hour
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
         ]);
     }
 }

@@ -22,6 +22,7 @@ use Symfony\Component\HttpFoundation\Response;
     title: 'FeatherPanel API',
     version: '1.0.0',
     description: 'The next generation of FeatherPanel API',
+    termsOfService: 'https://mythical.systems/terms',
     contact: new OA\Contact(
         name: 'MythicalSystems',
         url: 'https://mythical.systems',
@@ -73,19 +74,27 @@ class ApiDocs
     public function index(Request $request): Response
     {
         // Suppress PHP warnings and errors to ensure clean JSON output
-        $oldErrorReporting = error_reporting(0);
+        $oldErrorReporting = error_reporting(3);
         ob_start();
 
         try {
             // Scan all controller directories
             $controllersDir = realpath(__DIR__ . '/../');
-            $addonsDir = realpath(__DIR__ . '/../../storage/addons');
-
+            $addonsDir = getcwd() . '/../storage/addons';
             $scanPaths = [$controllersDir];
 
-            // Also scan addon controllers if they exist
+            // Recursively add all directories under /storage/addons/
             if ($addonsDir && is_dir($addonsDir)) {
-                $scanPaths[] = $addonsDir;
+                $iterator = new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($addonsDir, \RecursiveDirectoryIterator::SKIP_DOTS),
+                    \RecursiveIteratorIterator::SELF_FIRST
+                );
+
+                foreach ($iterator as $file) {
+                    if ($file->isDir()) {
+                        $scanPaths[] = $file->getPathname();
+                    }
+                }
             }
 
             $openapi = \OpenApi\Generator::scan($scanPaths);

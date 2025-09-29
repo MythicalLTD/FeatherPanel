@@ -318,6 +318,15 @@ class User
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
+    public static function getUserByExternalId(string $externalId): ?array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE external_id = :external_id LIMIT 1');
+        $stmt->execute(['external_id' => $externalId]);
+
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
     /**
      * Get a user by its remember token.
      */

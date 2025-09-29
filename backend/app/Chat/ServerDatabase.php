@@ -250,6 +250,19 @@ class ServerDatabase
         return $stmt->execute($data);
     }
 
+    public static function getDatabasesByServerId(int $serverId): array
+    {
+        if ($serverId <= 0) {
+            return [];
+        }
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE server_id = :server_id ORDER BY created_at DESC');
+        $stmt->execute(['server_id' => $serverId]);
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
     /**
      * Delete a server database.
      */

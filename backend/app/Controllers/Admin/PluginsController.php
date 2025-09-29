@@ -481,7 +481,7 @@ class PluginsController
             ),
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
-            new OA\Response(response: 502, description: 'Bad Gateway - Failed to fetch online addons or invalid response'),
+            new OA\Response(response: 500, description: 'Failed to fetch online addons or invalid response'),
             new OA\Response(response: 500, description: 'Internal server error - Failed to fetch online addons'),
         ]
     )]
@@ -512,12 +512,12 @@ class PluginsController
             ]);
             $response = @file_get_contents($url, false, $context);
             if ($response === false) {
-                return ApiResponse::error('Failed to fetch online addon list', 'ONLINE_LIST_FETCH_FAILED', 502);
+                return ApiResponse::error('Failed to fetch online addon list', 'ONLINE_LIST_FETCH_FAILED', 500);
             }
 
             $data = json_decode($response, true);
             if (!is_array($data) || !isset($data['data']['packages']) || !is_array($data['data']['packages'])) {
-                return ApiResponse::error('Invalid response from online addon list', 'ONLINE_LIST_INVALID', 502);
+                return ApiResponse::error('Invalid response from online addon list', 'ONLINE_LIST_INVALID', 500);
             }
 
             $packages = $data['data']['packages'];
@@ -598,7 +598,7 @@ class PluginsController
             new OA\Response(response: 409, description: 'Conflict - Addon already installed'),
             new OA\Response(response: 422, description: 'Unprocessable Entity - Failed to extract addon package or migrations failed'),
             new OA\Response(response: 500, description: 'Internal server error - Failed to install addon'),
-            new OA\Response(response: 502, description: 'Bad Gateway - Failed to download addon or packages API unavailable'),
+            new OA\Response(response: 500, description: 'Failed to download addon or packages API unavailable'),
         ]
     )]
     public function onlineInstall(Request $request): Response
@@ -629,7 +629,7 @@ class PluginsController
             ]);
             $metaResp = @file_get_contents($metaUrl, false, $context);
             if ($metaResp === false) {
-                return ApiResponse::error('Failed to query packages API', 'PACKAGES_API_FAILED', 502);
+                return ApiResponse::error('Failed to query packages API', 'PACKAGES_API_FAILED', 500);
             }
             $meta = json_decode($metaResp, true);
             $packages = is_array($meta) && isset($meta['data']['packages']) && is_array($meta['data']['packages']) ? $meta['data']['packages'] : [];
@@ -646,7 +646,7 @@ class PluginsController
             $downloadUrl = 'https://api.featherpanel.com' . $match['latest_version']['download_url'];
             $fileContent = @file_get_contents($downloadUrl, false, $context);
             if ($fileContent === false) {
-                return ApiResponse::error('Failed to download addon package', 'ADDON_DOWNLOAD_FAILED', 502);
+                return ApiResponse::error('Failed to download addon package', 'ADDON_DOWNLOAD_FAILED', 500);
             }
 
             $tempFile = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true) . '.fpa';
@@ -929,7 +929,7 @@ class PluginsController
             new OA\Response(response: 409, description: 'Conflict - Addon already installed'),
             new OA\Response(response: 422, description: 'Unprocessable Entity - Failed to extract addon package or migrations failed'),
             new OA\Response(response: 500, description: 'Internal server error - Failed to install addon'),
-            new OA\Response(response: 502, description: 'Bad Gateway - Failed to download file from URL'),
+            new OA\Response(response: 500, description: 'Failed to download file from URL'),
         ]
     )]
     public function uploadInstallFromUrl(Request $request): Response
@@ -956,7 +956,7 @@ class PluginsController
             ]);
             $fileContent = @file_get_contents($url, false, $context);
             if ($fileContent === false) {
-                return ApiResponse::error('Failed to download file from URL', 'DOWNLOAD_FAILED', 502);
+                return ApiResponse::error('Failed to download file from URL', 'DOWNLOAD_FAILED', 500);
             }
             $tempFile = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true) . '.fpa';
             file_put_contents($tempFile, $fileContent);

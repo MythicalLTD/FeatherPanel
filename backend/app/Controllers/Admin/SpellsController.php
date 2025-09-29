@@ -1318,7 +1318,7 @@ class SpellsController
             ),
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
-            new OA\Response(response: 502, description: 'Bad Gateway - Failed to fetch online spell list or invalid response'),
+            new OA\Response(response: 500, description: 'Failed to fetch online spell list or invalid response'),
         ]
     )]
     public function onlineList(Request $request): Response
@@ -1348,12 +1348,12 @@ class SpellsController
             ]);
             $response = @file_get_contents($url, false, $context);
             if ($response === false) {
-                return ApiResponse::error('Failed to fetch online spell list', 'ONLINE_LIST_FETCH_FAILED', 502);
+                return ApiResponse::error('Failed to fetch online spell list', 'ONLINE_LIST_FETCH_FAILED', 500);
             }
 
             $data = json_decode($response, true);
             if (!is_array($data) || !isset($data['data']['spells']) || !is_array($data['data']['spells'])) {
-                return ApiResponse::error('Invalid response from online spell list', 'ONLINE_LIST_INVALID', 502);
+                return ApiResponse::error('Invalid response from online spell list', 'ONLINE_LIST_INVALID', 500);
             }
 
             $spells = $data['data']['spells'];
@@ -1434,7 +1434,7 @@ class SpellsController
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
             new OA\Response(response: 404, description: 'Realm not found or spell not found in registry'),
-            new OA\Response(response: 502, description: 'Bad Gateway - Failed to download spell JSON'),
+            new OA\Response(response: 500, description: 'Failed to download spell JSON'),
         ]
     )]
     public function onlineInstall(Request $request): Response
@@ -1550,7 +1550,7 @@ class SpellsController
             $downloadUrl = 'https://api.featherpanel.com' . $match['latest_version']['download_url'];
             $fileContent = @file_get_contents($downloadUrl, false, $context);
             if ($fileContent === false) {
-                return ApiResponse::error('Failed to download spell JSON', 'SPELL_DOWNLOAD_FAILED', 502);
+                return ApiResponse::error('Failed to download spell JSON', 'SPELL_DOWNLOAD_FAILED', 500);
             }
 
             // Parse the downloaded JSON content

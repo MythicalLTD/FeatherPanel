@@ -76,6 +76,6 @@ class ApiResponse
 
     public static function sendManualResponse(array $data, int $status = 200): Response
     {
-        return new Response(json_encode($data), $status, ['Content-Type' => 'application/json']);
+        return new Response(json_encode($data, self::prettyPrint ? JSON_PRETTY_PRINT : 0), $status, ['Content-Type' => 'application/json']);
     }
 }
