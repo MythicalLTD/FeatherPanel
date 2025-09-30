@@ -150,6 +150,71 @@
                         </div>
                     </template>
                 </TableComponent>
+                <!-- Nodes info cards under the table -->
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Server class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-medium text-foreground mb-1">What are Nodes?</div>
+                                    <p>
+                                        Nodes are machines that run <b>Wings</b>, hosting and managing your containers
+                                        for deployments.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Network class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-medium text-foreground mb-1">What can Nodes do?</div>
+                                    <ul class="list-disc list-inside space-y-1">
+                                        <li>Deploy/manage containers via Wings</li>
+                                        <li>Report health for monitoring</li>
+                                        <li>Enforce memory/disk limits</li>
+                                        <li>Organize storage and networking</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <MapPin class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-medium text-foreground mb-1">Nodes and Locations</div>
+                                    <p>
+                                        Each node belongs to a <b>location</b> so you can separate infrastructure by
+                                        region or purpose and deploy predictably.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+                <!-- Wings information card under the table -->
+                <Card class="mt-6">
+                    <CardContent>
+                        <div class="p-4 text-sm text-muted-foreground">
+                            <div class="font-semibold text-foreground mb-1">About Wings (the daemon)</div>
+                            <p>
+                                Wings is the daemon FeatherPanel uses to communicate with your Docker host. It knows how
+                                to schedule, deploy, and manage containers securely and reliably, so your servers start,
+                                stop, and scale where and how you expect.
+                            </p>
+                            <p class="mt-2">
+                                By pairing locations and nodes with Wings, you get a clean separation of regions and
+                                infrastructure, plus predictable deployments with health checks, resource limits, and
+                                streamlined container management.
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
 
@@ -1324,7 +1389,19 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Eye, Pencil, Trash2, ArrowLeft, ArrowRight, RefreshCw, Database, Network, Plus } from 'lucide-vue-next';
+import {
+    Eye,
+    Pencil,
+    Trash2,
+    ArrowLeft,
+    ArrowRight,
+    RefreshCw,
+    Database,
+    Network,
+    Plus,
+    Server,
+    MapPin,
+} from 'lucide-vue-next';
 import axios from 'axios';
 import { Alert } from '@/components/ui/alert';
 import {

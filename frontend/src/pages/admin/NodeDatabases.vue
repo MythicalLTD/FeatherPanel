@@ -120,6 +120,19 @@
                         </div>
                     </template>
                 </TableComponent>
+                <!-- Databases info card under the table -->
+                <Card class="mt-6">
+                    <CardContent>
+                        <div class="p-4 text-sm text-muted-foreground">
+                            <div class="font-semibold text-foreground mb-1">About Databases</div>
+                            <p>
+                                These are databases that your users (clients) can create for their servers. Users can
+                                create multiple database types depending on the limits you set as the hosting owner.
+                                FeatherPanel supports a broad range of popular databases to fit many workloads.
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
 

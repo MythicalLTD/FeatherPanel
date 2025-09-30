@@ -108,6 +108,67 @@
                         </div>
                     </template>
                 </TableComponent>
+                <!-- Users page help cards -->
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <UsersIcon class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Managing Users</div>
+                                    <p>
+                                        View, create, and edit accounts. Use the search to quickly find users by
+                                        username, email, or role. Pagination and column visibility are customizable.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Shield class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Roles & Permissions</div>
+                                    <p>
+                                        Assign roles to control access and capabilities. Role badges reflect the
+                                        assigned role, and colors help you spot important roles at a glance.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <KeyRound class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Security Actions</div>
+                                    <ul class="list-disc list-inside space-y-1">
+                                        <li>Ban or unban accounts when needed</li>
+                                        <li>Remove 2FA for locked-out users</li>
+                                        <li>Audit activities, servers, and mails per user</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card class="md:col-span-2 lg:col-span-3">
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Search class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div class="flex-1">
+                                    <div class="font-semibold text-foreground mb-1">Tips</div>
+                                    <ul class="list-disc list-inside space-y-1">
+                                        <li>Use filters and search to quickly target accounts.</li>
+                                        <li>Keep roles minimal (least privilege) and review periodically.</li>
+                                        <li>Encourage users to enable 2FA; remove 2FA only for support scenarios.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
 
@@ -469,6 +530,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
+import { Card, CardContent } from '@/components/ui/card';
+import { Users as UsersIcon, Shield, KeyRound, Search } from 'lucide-vue-next';
 
 type UserRole = {
     name: string;

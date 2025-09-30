@@ -232,6 +232,69 @@
                 </div>
             </div>
         </div>
+        <!-- Settings help cards under the content -->
+        <div class="p-4 sm:p-6">
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Card>
+                    <CardContent>
+                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                            <Settings class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">What are Settings?</div>
+                                <p>
+                                    Global configuration that controls how your panel behaves (branding, mail, security,
+                                    integrations, and more). Changes apply system-wide.
+                                </p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent>
+                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                            <Globe class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">Categories & Scope</div>
+                                <p>
+                                    Settings are grouped by category (e.g., App, Mail, Security). Use the tabs to
+                                    navigate. Some changes may require a service reload to take effect.
+                                </p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card class="md:col-span-2 lg:col-span-1">
+                    <CardContent>
+                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                            <Lock class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">Tips & Safety</div>
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>Change one category at a time and test critical features.</li>
+                                    <li>Keep SMTP, domains, and security keys up to date.</li>
+                                    <li>Back up settings before major changes or upgrades.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card class="md:col-span-2 lg:col-span-3">
+                    <CardContent>
+                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                            <AlertCircle class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">Legal & Audit</div>
+                                <p>
+                                    Ensure your Terms and Privacy Policy reflect your configuration (e.g., email and
+                                    analytics). FeatherPanel and its developers are not liable for your configuration
+                                    choices. Keep an audit of who changed what and when.
+                                </p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
     </DashboardLayout>
 </template>
 
@@ -250,6 +313,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { useToast } from 'vue-toastification';
+import { Card, CardContent } from '@/components/ui/card';
 
 const toast = useToast();
 

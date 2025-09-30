@@ -138,6 +138,67 @@
                         </div>
                     </template>
                 </TableComponent>
+                <!-- Servers help cards under the table -->
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Server class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Managing Servers</div>
+                                    <p>
+                                        View, create, edit, and delete servers. Use search and pagination to quickly
+                                        navigate large fleets.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Layers class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Relationships</div>
+                                    <p>
+                                        Each server belongs to an Owner (user), runs on a Node (machine), and is grouped
+                                        by Realm & Spell (template/runtime). These links are visible in the details
+                                        drawer.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Gauge class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Resources & Limits</div>
+                                    <p>
+                                        Resource usage (RAM/CPU/Disk) and limits (allocations, databases, backups) are
+                                        summarized per server. Use these to right-size capacity.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card class="md:col-span-2 lg:col-span-3">
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <HelpCircle class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div class="flex-1">
+                                    <div class="font-semibold text-foreground mb-1">Tips</div>
+                                    <ul class="list-disc list-inside space-y-1">
+                                        <li>Keep descriptions meaningful to identify purpose at a glance.</li>
+                                        <li>Review suspended/unknown statuses regularly to clean up stale hosts.</li>
+                                        <li>Align Realm/Spell choices with the intended workload/runtime.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
 
@@ -359,6 +420,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
+import { Card, CardContent } from '@/components/ui/card';
+import { Layers, Gauge, HelpCircle } from 'lucide-vue-next';
 
 const router = useRouter();
 

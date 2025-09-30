@@ -85,6 +85,11 @@ const clientRoutes: RouteRecordRaw[] = [
         path: '/',
         redirect: '/dashboard',
     },
+    {
+        path: '/license',
+        name: 'License',
+        component: () => import('@/components/LicensingInfo.vue'),
+    },
 ];
 
 export default clientRoutes;

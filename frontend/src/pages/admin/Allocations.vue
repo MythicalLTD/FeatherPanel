@@ -158,6 +158,74 @@
                         </div>
                     </template>
                 </TableComponent>
+                <!-- Allocations help cards under the table -->
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Network class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-medium text-foreground mb-1">What are Allocations?</div>
+                                    <p>
+                                        Allocations are IP:Port pairs a node uses to host servers. Each server needs an
+                                        allocation to run and accept traffic.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <MapPin class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-medium text-foreground mb-1">What you’ll need</div>
+                                    <ul class="list-disc list-inside space-y-1">
+                                        <li>IP address (from your node)</li>
+                                        <li>Port or port range (e.g., 25565 or 25565-25600)</li>
+                                        <li>IP alias (optional) for friendly hostname</li>
+                                        <li>Notes (optional) for admin context</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Gamepad2 class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div class="flex-1">
+                                    <div class="font-medium text-foreground mb-1">Popular game ranges (examples)</div>
+                                    <ul class="list-disc list-inside space-y-1">
+                                        <li>Minecraft: 25565-25600</li>
+                                        <li>Rust: 28015-28115</li>
+                                        <li>CS:GO/Source: 27015-27050</li>
+                                        <li>ARK: 7777-7800, 27015-27030</li>
+                                    </ul>
+                                    <p class="mt-2">
+                                        Recommendation: pre-create generous ranges (e.g., 25565-25900) to avoid running
+                                        out during peak times.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card class="md:col-span-2 lg:col-span-3">
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Shield class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-medium text-foreground mb-1">Protocols & Firewall</div>
+                                    <p>
+                                        Allocations are TCP/UDP by default. If you’re using a firewall other than
+                                        iptables, ensure these ports are allowed on both protocols. For reverse proxies
+                                        or DDoS protection layers, open/forward the same ranges there too.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
     </DashboardLayout>
@@ -336,8 +404,9 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Plus, Eye, Edit, Trash2 } from 'lucide-vue-next';
+import { Plus, Eye, Edit, Trash2, Network, MapPin, Gamepad2, Shield } from 'lucide-vue-next';
 import axios from 'axios';
 import { Alert } from '@/components/ui/alert';
 import {

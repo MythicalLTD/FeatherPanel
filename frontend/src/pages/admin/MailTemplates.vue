@@ -135,15 +135,13 @@
 
                     <template #cell-actions="{ item }">
                         <div class="flex gap-2">
-                            <Button size="sm" variant="outline" @click="onView(item as unknown as MailTemplate)">
+                            <Button size="sm" variant="outline" @click="onPreview(item as unknown as MailTemplate)">
                                 <Eye :size="16" />
                             </Button>
                             <Button size="sm" variant="secondary" @click="onEdit(item as unknown as MailTemplate)">
                                 <Pencil :size="16" />
                             </Button>
-                            <Button size="sm" variant="outline" @click="onPreview(item as unknown as MailTemplate)">
-                                <Eye :size="16" />
-                            </Button>
+
                             <template v-if="confirmDeleteRow === (item as unknown as MailTemplate).id">
                                 <Button
                                     size="sm"
@@ -170,67 +168,53 @@
                         </div>
                     </template>
                 </TableComponent>
+                <!-- Mail templates help cards under the table -->
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <FileText class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">What are Mail Templates?</div>
+                                    <p>
+                                        Reusable HTML email layouts for notifications, onboarding, invoices, and more.
+                                        Edit subject and body, then preview before sending.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Send class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Mass Email</div>
+                                    <p>
+                                        Send an HTML email to all users with valid addresses. Use responsibly: verify
+                                        content, test with a small group, and ensure your SMTP is configured.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card class="md:col-span-2 lg:col-span-1">
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Scale class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Legal & Compliance</div>
+                                    <p>
+                                        Update your Privacy Policy and Terms to reflect any bulk messaging. FeatherPanel
+                                        and its developers are not liable for how you use email features.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
-
-        <!-- View Drawer -->
-        <Drawer
-            :open="viewDrawerOpen"
-            @update:open="
-                (val) => {
-                    if (!val) closeViewDrawer();
-                }
-            "
-        >
-            <DrawerContent v-if="selectedTemplate">
-                <DrawerHeader>
-                    <DrawerTitle>Template Details</DrawerTitle>
-                    <DrawerDescription>Viewing details for template: {{ selectedTemplate.name }}</DrawerDescription>
-                </DrawerHeader>
-
-                <div class="px-6 pb-6 space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <Label class="text-sm font-medium">Name</Label>
-                            <p class="text-sm text-muted-foreground mt-1">{{ selectedTemplate.name }}</p>
-                        </div>
-                        <div>
-                            <Label class="text-sm font-medium">Subject</Label>
-                            <p class="text-sm text-muted-foreground mt-1">{{ selectedTemplate.subject }}</p>
-                        </div>
-                    </div>
-
-                    <div>
-                        <Label class="text-sm font-medium">Body</Label>
-                        <div class="mt-2 p-4 bg-muted rounded-lg">
-                            <pre class="text-sm whitespace-pre-wrap">{{ selectedTemplate.body }}</pre>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <Label class="text-sm font-medium">Created At</Label>
-                            <p class="text-sm text-muted-foreground mt-1">
-                                {{ formatDate(selectedTemplate.created_at) }}
-                            </p>
-                        </div>
-                        <div>
-                            <Label class="text-sm font-medium">Updated At</Label>
-                            <p class="text-sm text-muted-foreground mt-1">
-                                {{ formatDate(selectedTemplate.updated_at) }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <DrawerFooter>
-                    <DrawerClose as-child>
-                        <Button variant="outline">Close</Button>
-                    </DrawerClose>
-                </DrawerFooter>
-            </DrawerContent>
-        </Drawer>
-
         <!-- Edit Drawer -->
         <Drawer
             :open="editDrawerOpen"
@@ -487,7 +471,8 @@ import {
     DrawerFooter,
     DrawerClose,
 } from '@/components/ui/drawer';
-import { Plus, Eye, Pencil, Trash2, Mail } from 'lucide-vue-next';
+import { Plus, Eye, Pencil, Trash2, Mail, FileText, Send, Scale } from 'lucide-vue-next';
+import { Card, CardContent } from '@/components/ui/card';
 
 // Types
 interface MailTemplate {
@@ -522,14 +507,12 @@ const searchQuery = ref('');
 const includeDeleted = ref(false);
 
 // Drawer states
-const viewDrawerOpen = ref(false);
 const editDrawerOpen = ref(false);
 const createDrawerOpen = ref(false);
 const previewDrawerOpen = ref(false);
 const massEmailDrawerOpen = ref(false);
 
 // Selected items
-const selectedTemplate = ref<MailTemplate | null>(null);
 const editingTemplate = ref<MailTemplate | null>(null);
 const previewTemplate = ref<MailTemplate | null>(null);
 
@@ -609,17 +592,6 @@ const handleSearch = (query: string) => {
 const changePage = (page: number) => {
     pagination.value.page = page;
     fetchTemplates();
-};
-
-// Drawer methods
-const openViewDrawer = (template: MailTemplate) => {
-    selectedTemplate.value = template;
-    viewDrawerOpen.value = true;
-};
-
-const closeViewDrawer = () => {
-    viewDrawerOpen.value = false;
-    selectedTemplate.value = null;
 };
 
 const openEditDrawer = (template: MailTemplate) => {
@@ -782,11 +754,6 @@ async function sendMassEmail() {
         sendingMassEmail.value = false;
     }
 }
-
-// Action handlers
-const onView = (template: MailTemplate) => {
-    openViewDrawer(template);
-};
 
 const onEdit = (template: MailTemplate) => {
     openEditDrawer(template);

@@ -278,6 +278,49 @@
                     </TabsContent>
 
                     <TabsContent value="online">
+                        <!-- Publish Banner (dismissible) -->
+                        <div v-if="showPluginsOnlineBanner" class="mb-4">
+                            <div
+                                class="rounded-xl p-5 bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600 text-white shadow relative"
+                            >
+                                <button
+                                    class="absolute top-3 right-3 text-white/80 hover:text-white text-xs underline"
+                                    @click="dismissPluginsOnlineBanner"
+                                >
+                                    Dismiss
+                                </button>
+                                <div class="flex flex-col gap-3">
+                                    <div class="text-lg font-semibold leading-snug">Built a plugin?</div>
+                                    <p class="text-white/90 text-sm">
+                                        Share it with the community on our cloud platform. Our team aims to review and
+                                        publish within 48 hours.
+                                    </p>
+                                    <div class="flex items-center gap-2">
+                                        <Button
+                                            as="a"
+                                            href="https://cloud.mythical.systems"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            size="sm"
+                                            class="bg-white text-indigo-700 hover:bg-white/90"
+                                        >
+                                            Publish Plugin
+                                        </Button>
+                                        <Button
+                                            as="a"
+                                            href="https://cloud.mythical.systems"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            size="sm"
+                                            variant="secondary"
+                                            class="bg-white/15 hover:bg-white/20 text-white"
+                                        >
+                                            Learn more
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
                             <div class="flex items-center gap-2">
                                 <div class="relative flex-1 sm:flex-none">
@@ -396,6 +439,60 @@
                         </div>
                     </TabsContent>
                 </Tabs>
+
+                <!-- Plugins help cards under the tabs -->
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <Card>
+                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                            <Globe class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">Online Repository</div>
+                                <p>
+                                    Like spells, there’s an online repo with community plugins and even paid options.
+                                    Browse and install directly from the Online tab.
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+                    <Card>
+                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                            <Upload class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">Install & Upload</div>
+                                <p>
+                                    Install from the repo or upload .fpa files via the GUI. You can also install via a
+                                    direct URL. Use the Installed tab actions to configure or export.
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+                    <Card class="md:col-span-2 lg:col-span-1">
+                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                            <AlertCircle class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">Security & Liability</div>
+                                <p>
+                                    Only trust plugins from our official online repo. Installing third‑party code can be
+                                    risky (panel corruption or system compromise). FeatherPanel and its team are not
+                                    liable for what you install or develop.
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+                    <Card class="md:col-span-2 lg:col-span-3">
+                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                            <Puzzle class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">A careful reminder</div>
+                                <p>
+                                    The world can be dangerous—always review documentation and source before installing,
+                                    even for plugins from our repo. Keep backups and test changes in a safe environment
+                                    first.
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
             </div>
         </div>
 
@@ -944,6 +1041,7 @@ const message = ref<{ type: 'error' | 'success'; text: string } | null>(null);
 const plugins = ref<Plugin[]>([]);
 const activeTab = ref<'installed' | 'online'>('installed');
 const banner = ref<{ type: 'success' | 'warning' | 'error' | 'info'; text: string } | null>(null);
+const showPluginsOnlineBanner = ref(true);
 
 // Drawer states
 const configDrawerOpen = ref(false);
@@ -1309,6 +1407,11 @@ const openUrlInstallDialog = () => {
     confirmUrlOpen.value = true;
 };
 
+const dismissPluginsOnlineBanner = () => {
+    showPluginsOnlineBanner.value = false;
+    localStorage.setItem('featherpanel_plugins_online_banner_dismissed', 'true');
+};
+
 watch(activeTab, (v) => {
     if (v === 'online' && !onlineLoading.value && onlineAddons.value.length === 0) {
         fetchOnlineAddons();
@@ -1369,6 +1472,9 @@ const onExport = async (plugin: Plugin) => {
 onMounted(async () => {
     const ok = await sessionStore.checkSessionOrRedirect(router);
     if (!ok) return;
+
+    const dismissed = localStorage.getItem('featherpanel_plugins_online_banner_dismissed');
+    showPluginsOnlineBanner.value = dismissed !== 'true';
 
     await Promise.all([fetchPlugins(), fetchOnlineAddons()]);
 });

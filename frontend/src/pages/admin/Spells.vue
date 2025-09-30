@@ -158,6 +158,79 @@
                     </TabsContent>
 
                     <TabsContent value="online">
+                        <!-- Publish Banner -->
+                        <div v-if="showOnlinePublishBanner" class="mb-4">
+                            <div
+                                class="rounded-xl p-5 bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600 text-white shadow relative"
+                            >
+                                <button
+                                    class="absolute top-3 right-3 text-white/80 hover:text-white text-xs underline"
+                                    @click="dismissSpellsOnlineBanner"
+                                >
+                                    Dismiss
+                                </button>
+                                <div class="flex flex-col gap-4">
+                                    <div class="flex items-start gap-3">
+                                        <div class="mt-0.5">
+                                            <Sparkles class="h-6 w-6" />
+                                        </div>
+                                        <div>
+                                            <div class="text-lg font-semibold leading-snug">
+                                                Have some spells to share?
+                                            </div>
+                                            <p class="text-white/90 text-sm mt-1">
+                                                Publish your creations to the community. Download your spell and head
+                                                over to our cloud platform. Our team aims to review and publish within
+                                                48 hours.
+                                            </p>
+                                            <div class="flex flex-wrap items-center gap-2 mt-3">
+                                                <span
+                                                    class="text-[11px] uppercase tracking-wide bg-white/15 text-white rounded px-2 py-1"
+                                                    >48h review</span
+                                                >
+                                                <span
+                                                    class="text-[11px] uppercase tracking-wide bg-white/15 text-white rounded px-2 py-1"
+                                                    >Community powered</span
+                                                >
+                                                <span
+                                                    class="text-[11px] uppercase tracking-wide bg-white/15 text-white rounded px-2 py-1"
+                                                    >Safety checks</span
+                                                >
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
+                                        <div class="text-xs text-white/80">
+                                            Tip: Include description, tags, and a banner for better visibility.
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <Button
+                                                as="a"
+                                                href="https://cloud.mythical.systems"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                size="sm"
+                                                class="bg-white text-indigo-700 hover:bg-white/90"
+                                            >
+                                                Publish New Spell
+                                                <ArrowRight class="h-4 w-4 ml-2" />
+                                            </Button>
+                                            <Button
+                                                as="a"
+                                                href="https://cloud.mythical.systems"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                size="sm"
+                                                variant="secondary"
+                                                class="bg-white/15 hover:bg-white/20 text-white"
+                                            >
+                                                Learn more
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="flex flex-wrap items-center justify-between mb-3 gap-2">
                             <div class="flex items-center gap-2">
                                 <div class="relative">
@@ -274,6 +347,75 @@
                         </div>
                     </TabsContent>
                 </Tabs>
+                <br />
+                <!-- Cross-compatibility note -->
+                <Card class="mb-4">
+                    <div class="p-4 text-sm text-muted-foreground flex items-start gap-3">
+                        <Sparkles class="h-5 w-5 text-muted-foreground mt-0.5" />
+                        <div>
+                            <div class="font-semibold text-foreground mb-1">Cross-compatible spells</div>
+                            <p>
+                                Realms and spells are fully cross-compatible. We maintain a spells repository that works
+                                with both FeatherPanel and Pterodactyl, so you can fetch and use the same spells in
+                                either panel. You can also bring your own spells – import them here or host them in your
+                                own repo.
+                            </p>
+                        </div>
+                    </div>
+                </Card>
+
+                <!-- Spells documentation cards -->
+                <div class="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Card>
+                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                            <BookOpen class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">What are Spells (eggs)?</div>
+                                <p>
+                                    Spells are server templates that define runtime, Docker image, startup, features,
+                                    configs, and scripts. They live inside realms (categories) and power server
+                                    creation.
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+                    <Card>
+                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                            <Boxes class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">How you use them</div>
+                                <p>
+                                    Install/import a spell, pick a realm, then create servers from it. Spells can
+                                    include update URLs, tags, banners, and author info for easy discovery and updates.
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+                    <Card>
+                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                            <Wrench class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">Under the hood</div>
+                                <p>
+                                    Configs (files/startup/logs/stop), file denylist, variables, Docker images, script
+                                    container/entry, and optional privileged install scripts define behavior.
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+                    <Card>
+                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                            <GitBranch class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">Sources & compatibility</div>
+                                <p>
+                                    Use our cross-compatible spells repo (FeatherPanel ↔ Pterodactyl) or bring your own
+                                    JSON-defined spells. Import locally or host them in your own repository.
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
             </div>
         </div>
 
@@ -1050,7 +1192,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
-import { Eye, Pencil, Trash2, Download, Plus, Upload, CloudDownload, Settings, AlertCircle } from 'lucide-vue-next';
+import {
+    Eye,
+    Pencil,
+    Trash2,
+    Download,
+    Plus,
+    Upload,
+    CloudDownload,
+    Settings,
+    AlertCircle,
+    Sparkles,
+    ArrowRight,
+    BookOpen,
+    Boxes,
+    Wrench,
+    GitBranch,
+} from 'lucide-vue-next';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import axios from 'axios';
@@ -1077,6 +1235,8 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
+
+const showOnlinePublishBanner = ref(true);
 
 type Spell = {
     id: number;
@@ -1329,6 +1489,8 @@ async function fetchCurrentRealm() {
 }
 
 onMounted(async () => {
+    const dismissed = localStorage.getItem('featherpanel_spells_online_banner_dismissed');
+    showOnlinePublishBanner.value = dismissed !== 'true';
     await fetchRealms();
     await fetchCurrentRealm();
     await fetchSpells();
@@ -1341,6 +1503,11 @@ function handleSearch(query: string) {
     searchQuery.value = query;
     pagination.value.page = 1; // Reset to first page when searching
     fetchSpells();
+}
+
+function dismissSpellsOnlineBanner() {
+    showOnlinePublishBanner.value = false;
+    localStorage.setItem('featherpanel_spells_online_banner_dismissed', 'true');
 }
 
 function changePage(page: number) {

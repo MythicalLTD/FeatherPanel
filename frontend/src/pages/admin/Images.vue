@@ -140,6 +140,37 @@
                         </div>
                     </template>
                 </TableComponent>
+                <!-- Images help cards under the table -->
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Upload class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Upload & Reuse</div>
+                                    <p>
+                                        Upload images to use across the dashboard – e.g., for spells/eggs, banners,
+                                        logos, or other UI assets you want to reference.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <ImageIcon class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Library & Audit</div>
+                                    <p>
+                                        This page is a central place to see what was uploaded to your host by users –
+                                        like banners and other media – and manage them when needed.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
 
@@ -313,6 +344,8 @@ import {
     DrawerClose,
 } from '@/components/ui/drawer';
 import { Plus, Eye, Pencil, Trash2, Copy, ImageIcon } from 'lucide-vue-next';
+import { Card, CardContent } from '@/components/ui/card';
+import { Upload } from 'lucide-vue-next';
 
 // Types
 interface Image {

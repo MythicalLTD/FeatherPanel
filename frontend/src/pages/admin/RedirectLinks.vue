@@ -174,6 +174,39 @@
                         </div>
                     </template>
                 </TableComponent>
+                <!-- Redirect links help cards under the table -->
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Link class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">What are Redirect Links?</div>
+                                    <p>
+                                        Create short slugs that map to full URLs. Use paths like
+                                        <code>https://yourpanel.tld/<b>discord</b></code> to send users to your Discord,
+                                        forum, status page, or any external resource.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Hash class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Nice redirect pages</div>
+                                    <p>
+                                        Visiting a slug displays a clean, animated redirect page before forwarding. It
+                                        keeps links memorable (e.g., <code>/discord</code>) and consistent across your
+                                        brand.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
 
@@ -402,7 +435,8 @@ import {
     DrawerFooter,
     DrawerClose,
 } from '@/components/ui/drawer';
-import { Plus, Eye, Pencil, Trash2, Copy, Link } from 'lucide-vue-next';
+import { Plus, Eye, Pencil, Trash2, Copy, Link, Hash } from 'lucide-vue-next';
+import { Card, CardContent } from '@/components/ui/card';
 
 // Types
 interface RedirectLink {

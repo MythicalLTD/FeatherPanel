@@ -101,6 +101,38 @@
                         </div>
                     </template>
                 </TableComponent>
+                <!-- Realms help cards under the table -->
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Sparkles class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">What are Realms?</div>
+                                    <p>
+                                        Realms are categories for your spells (known as "eggs" in Pterodactyl's terms).
+                                        Pterodactyl calls them nests; we call them realms because it's just better.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <FolderTree class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Organize your spells</div>
+                                    <p>
+                                        Use realms as lightweight categories, similar to how locations group nodes. For
+                                        example, a <b>Minecraft</b> realm contains Minecraft spells (eggs) like Paper,
+                                        Vanilla, BungeeCord, and more.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
 
@@ -251,6 +283,8 @@ import {
 import { useRouter } from 'vue-router';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
+import { Card, CardContent } from '@/components/ui/card';
+import { FolderTree } from 'lucide-vue-next';
 
 type Realm = {
     id: number;

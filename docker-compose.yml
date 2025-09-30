@@ -43,7 +43,7 @@ services:
       - DATABASE_DATABASE=${MARIADB_DATABASE:-featherpanel}
       - DATABASE_USER=${MARIADB_USER:-featherpanel}
       - DATABASE_PASSWORD=${MARIADB_PASSWORD:-featherpanel_password}
-      - DATABASE_ENCRYPTION=plaintext
+      - DATABASE_ENCRYPTION=xchacha20
       - REDIS_HOST=redis
       - REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_redis}
     depends_on:

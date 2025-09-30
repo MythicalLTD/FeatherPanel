@@ -109,6 +109,66 @@
                         </div>
                     </template>
                 </TableComponent>
+                <!-- Roles help cards under the table -->
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <UsersIcon class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Managing Roles</div>
+                                    <p>
+                                        Create, view, edit, and delete roles. Use search and pagination to quickly find
+                                        roles by name or display name.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <KeyRound class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Permissions</div>
+                                    <p>
+                                        Assign granular permissions to each role. Use the Manage Permissions action to
+                                        add or remove capabilities safely.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Palette class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Role Color & Badges</div>
+                                    <p>
+                                        Choose a color to visually distinguish roles across the UI (badges, labels, and
+                                        detail views).
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card class="md:col-span-2 lg:col-span-3">
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <HelpCircle class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Tips & Best Practices</div>
+                                    <ul class="list-disc list-inside space-y-1">
+                                        <li>Follow least-privilege: grant only what is necessary.</li>
+                                        <li>Use descriptive display names so staff understands intent.</li>
+                                        <li>Test role changes with a non-admin account before rollout.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
 
@@ -363,7 +423,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
-import { Eye, Pencil, Trash2, Shield, Plus } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Shield, Plus, Users as UsersIcon, KeyRound, Palette, HelpCircle } from 'lucide-vue-next';
 import axios from 'axios';
 import { Alert } from '@/components/ui/alert';
 import {

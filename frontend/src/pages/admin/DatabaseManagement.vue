@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Database as DatabaseIcon, Activity, Wrench, AlertTriangle } from 'lucide-vue-next';
 
 interface StatusResp {
     success: boolean;
@@ -169,6 +170,58 @@ fetchStatus();
                         >{{ migOutput }}</pre
                     >
                 </Card>
+
+                <!-- Database Management help cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <Card>
+                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                            <DatabaseIcon class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">What is this page?</div>
+                                <p>
+                                    View your database engine status and basic metrics. Useful for quick health checks
+                                    and verifying connectivity.
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+                    <Card>
+                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                            <Activity class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">Status & Metrics</div>
+                                <p>
+                                    Inspect engine/version, uptime, connections, QPS, and network I/O. Re‑check using
+                                    the Refresh button when diagnosing issues.
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+                    <Card>
+                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                            <Wrench class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">Migrations</div>
+                                <p>
+                                    Run database migrations when upgrading or installing plugins. Review output below
+                                    and back up before major changes.
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+                    <Card class="md:col-span-2 lg:col-span-3">
+                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                            <AlertTriangle class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">Safety & Backups</div>
+                                <p>
+                                    Always maintain recent backups before applying migrations or installing plugins that
+                                    alter schemas. FeatherPanel and its developers are not liable for changes you make.
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
             </div>
         </div>
     </DashboardLayout>
