@@ -1,0 +1,45 @@
+name: Docker Build & Publish
+
+on:
+  push:
+    tags:
+      - "v*" # runs only when you tag a version like v1.0.0
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Backend
+      - name: Build & Push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ghcr.io/mythicalltd/featherpanel-backend:latest
+            ghcr.io/mythicalltd/featherpanel-backend:${{ github.ref_name }}
+
+      # Frontend
+      - name: Build & Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ghcr.io/mythicalltd/featherpanel-frontend:latest
+            ghcr.io/mythicalltd/featherpanel-frontend:${{ github.ref_name }}
