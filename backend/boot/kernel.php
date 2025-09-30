@@ -59,7 +59,7 @@ if (!is_writable(__DIR__ . '/../storage')) {
 
 ]);
 
-if (file_exists(APP_DIR . 'storage/.env')) {
+if (file_exists(APP_DIR . 'storage/config/.env')) {
     /**
      * Initialize the plugin manager.
      */

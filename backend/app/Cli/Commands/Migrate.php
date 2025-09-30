@@ -29,7 +29,7 @@ class Migrate extends App implements CommandBuilder
         $cliApp->send('&6&l[FeatherPanel] &r&eDatabase Migration Tool');
         $cliApp->send('&7' . str_repeat('─', 50));
 
-        if (!file_exists(__DIR__ . '/../../../storage/.env')) {
+        if (!file_exists(__DIR__ . '/../../../storage/config/.env')) {
             MainApp::getInstance(true)->getLogger()->warning('Executed a command without a .env file');
             $cliApp->send('&c&l❌ Error: &rThe .env file does not exist. Please create one before running this command');
             exit;

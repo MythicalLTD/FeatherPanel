@@ -1,4 +1,3 @@
-
 services:
   mysql:
     image: mariadb:11.4
@@ -29,11 +28,13 @@ services:
       - redis_data:/data
     networks:
       - featherpanel_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 20s
+      retries: 10
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/mythicalltd/featherpanel-backend:latest
     container_name: featherpanel_backend
     restart: unless-stopped
     environment:
@@ -45,28 +46,25 @@ services:
       - DATABASE_ENCRYPTION=plaintext
       - REDIS_HOST=redis
       - REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_redis}
-    # Mount the entire backend directory to the container's working directory for live development
-    volumes:
-      - ./backend:/var/www/html
     depends_on:
       mysql:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
+    volumes:
+      - featherpanel_attachments:/var/www/html/storage/attachments
+      - featherpanel_addons:/var/www/html/storage/addons
+      - featherpanel_logs:/var/www/html/storage/logs
+      - featherpanel_config:/var/www/html/storage/config
     networks:
       - featherpanel_network
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: ghcr.io/mythicalltd/featherpanel-frontend:main
     container_name: featherpanel_frontend
     restart: unless-stopped
     ports:
       - "4831:80"
-    # Mount the entire frontend directory to the container's working directory for live development
-    volumes:
-      - ./frontend:/usr/share/nginx/html
     depends_on:
       - backend
     networks:
@@ -76,6 +74,14 @@ volumes:
   mariadb_data:
     driver: local
   redis_data:
+    driver: local
+  featherpanel_attachments:
+    driver: local
+  featherpanel_addons:
+    driver: local
+  featherpanel_logs:
+    driver: local
+  featherpanel_config:
     driver: local
 
 networks:

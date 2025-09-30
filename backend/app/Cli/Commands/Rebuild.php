@@ -22,7 +22,7 @@ class Rebuild extends App implements CommandBuilder
     public static function execute(array $args): void
     {
         $app = App::getInstance();
-        if (!file_exists(__DIR__ . '/../../../storage/.env')) {
+        if (!file_exists(__DIR__ . '/../../../storage/config/.env')) {
             \App\App::getInstance(true)->getLogger()->warning('Executed a command without a .env file');
             $app->send('The .env file does not exist. Please create one before running this command');
             exit;

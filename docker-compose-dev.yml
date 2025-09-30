@@ -1,3 +1,4 @@
+
 services:
   mysql:
     image: mariadb:11.4
@@ -30,7 +31,9 @@ services:
       - featherpanel_network
 
   backend:
-    image: ghcr.io/mythicalltd/featherpanel-backend:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: featherpanel_backend
     restart: unless-stopped
     environment:
@@ -42,6 +45,9 @@ services:
       - DATABASE_ENCRYPTION=plaintext
       - REDIS_HOST=redis
       - REDIS_PASSWORD=${REDIS_PASSWORD:-featherpanel_redis}
+    # Mount the entire backend directory to the container's working directory for live development
+    volumes:
+      - ./backend:/var/www/html
     depends_on:
       mysql:
         condition: service_healthy
@@ -51,11 +57,16 @@ services:
       - featherpanel_network
 
   frontend:
-    image: ghcr.io/mythicalltd/featherpanel-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: featherpanel_frontend
     restart: unless-stopped
     ports:
       - "4831:80"
+    # Mount the entire frontend directory to the container's working directory for live development
+    volumes:
+      - ./frontend:/usr/share/nginx/html
     depends_on:
       - backend
     networks:

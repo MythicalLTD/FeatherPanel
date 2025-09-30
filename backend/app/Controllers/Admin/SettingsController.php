@@ -149,11 +149,11 @@ class SettingsController
             ],
             ConfigInterface::APP_URL => [
                 'name' => ConfigInterface::APP_URL,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://panel.mythical.systems'),
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://mythicalpanel.mythical.systems'),
                 'description' => 'The URL of the application',
                 'type' => 'text',
                 'required' => true,
-                'placeholder' => 'https://panel.mythical.systems',
+                'placeholder' => 'https://mythicalpanel.mythical.systems',
                 'validation' => 'required|string|max:255',
                 'options' => [],
                 'category' => 'app',

@@ -215,7 +215,7 @@ class RegisterController
             'email' => $data['email'],
             'subject' => 'Welcome to ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
             'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-            'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'featherpanel.mythical.systems'),
+            'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
             'username' => $data['username'],

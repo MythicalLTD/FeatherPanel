@@ -160,7 +160,11 @@ class App
          * Initialize the plugin manager.
          */
         if (!defined('CRON_MODE')) {
-            $pluginManager->loadKernel();
+            if (isset($pluginManager) && $pluginManager !== null) {
+                $pluginManager->loadKernel();
+            } else {
+                self::getLogger()->warning('Plugin manager was not initialized. Skipping kernel load.');
+            }
             define('LOGGER', $this->getLogger());
         }
 
@@ -460,8 +464,8 @@ class App
     public function loadEnv(): void
     {
         try {
-            if (file_exists(__DIR__ . '/../storage/.env')) {
-                $dotenv = \Dotenv\Dotenv::createImmutable(__DIR__ . '/../storage/');
+            if (file_exists(__DIR__ . '/../storage/config/.env')) {
+                $dotenv = \Dotenv\Dotenv::createImmutable(__DIR__ . '/../storage/config');
                 $dotenv->load();
 
             } else {
@@ -485,7 +489,7 @@ class App
      */
     public function updateEnvValue(string $key, string $value, bool $encode): bool
     {
-        $envFile = __DIR__ . '/../storage/.env'; // Path to your .env file
+        $envFile = __DIR__ . '/../storage/config/.env'; // Path to your .env file
         if (!file_exists($envFile)) {
             return false; // Return false if .env file doesn't exist
         }
