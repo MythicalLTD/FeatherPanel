@@ -2,6 +2,57 @@
     <DashboardLayout :breadcrumbs="[{ text: 'Dashboard', isCurrent: true, href: '/admin' }]">
         <main class="p-6 space-y-8 bg-background min-h-screen">
             <!-- Header & Actions -->
+            <div
+                v-if="
+                    settingsStore.appUrl === 'https://mythicalpanel.mythical.systems' ||
+                    settingsStore.appUrl === 'http://mythicalpanel.mythical.systems'
+                "
+                class="flex items-center justify-center mb-4"
+            >
+                <div
+                    class="w-full max-w-3xl flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-yellow-600 bg-yellow-950 shadow-2xl border-opacity-80"
+                >
+                    <div class="flex items-center gap-3">
+                        <span class="text-4xl">⚠️</span>
+                        <span class="text-2xl font-extrabold text-yellow-300 uppercase tracking-wide drop-shadow">
+                            App URL Not Set
+                        </span>
+                    </div>
+                    <p class="text-lg text-yellow-200 font-semibold text-center">
+                        <strong class="text-yellow-300">Woah!</strong> It looks like your <b>App URL</b> is not
+                        correct.<br />
+                        Please correct it inside the <b>Settings</b> for mails, images, and other features to work
+                        properly.
+                    </p>
+                    <p class="text-base text-yellow-400 text-center mt-2">
+                        Go to <b>Settings &rarr; General</b> and set your App URL to your actual panel address.
+                    </p>
+                </div>
+            </div>
+            <div
+                v-if="typeof settingsStore.appUrl === 'string' && settingsStore.appUrl.startsWith('http://')"
+                class="flex items-center justify-center mb-4"
+            >
+                <div
+                    class="w-full max-w-3xl flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-red-600 bg-red-950 shadow-2xl border-opacity-80"
+                >
+                    <div class="flex items-center gap-3">
+                        <span class="text-4xl">🔒</span>
+                        <span class="text-2xl font-extrabold text-red-300 uppercase tracking-wide drop-shadow">
+                            Insecure Connection
+                        </span>
+                    </div>
+                    <p class="text-lg text-red-200 font-semibold text-center">
+                        <strong class="text-red-300">Warning!</strong> Your panel is running over <b>HTTP</b> instead of
+                        <b>HTTPS</b>.<br />
+                        This is <span class="text-red-400 font-bold">not secure</span> and may expose sensitive data.
+                    </p>
+                    <p class="text-base text-red-400 text-center mt-2">
+                        Please configure your panel to use <b>HTTPS</b> for secure communication and to protect your
+                        users' data.
+                    </p>
+                </div>
+            </div>
             <div v-if="settingsStore.appDeveloperMode" class="flex items-center justify-center mb-4">
                 <div
                     class="w-full max-w-3xl flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-red-700 bg-[#1a1a1a] shadow-2xl border-opacity-80"
