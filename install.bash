@@ -12,7 +12,7 @@ LOG_DIR=/var/www/featherpanel
 LOG_FILE=$LOG_DIR/install.log
 
 # Colors (use real ANSI escapes)
-NC=$'\033[0m'; RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; YELLOW=$'\033[0;33m'; BLUE=$'\033[0;34m'; CYAN=$'\033[0;36m'; BOLD=$'\033[1m'
+NC=$'\033[0m'; RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; YELLOW=$'\033[0;33m'; BLUE=$'\033[0;34m'; CYAN=$'\033[0;36m'; MAGENTA=$'\033[0;35m'; BOLD=$'\033[1m'
 
 log_init() {
     sudo mkdir -p "$LOG_DIR"
@@ -120,6 +120,7 @@ show_wings_menu() {
     echo -e "  ${GREEN}[0]${NC} ${BOLD}Install${NC} ${BLUE}(System Service)${NC}"
     echo -e "  ${RED}[1]${NC} ${BOLD}Uninstall${NC} ${BLUE}(System Service)${NC}"
     echo -e "  ${YELLOW}[2]${NC} ${BOLD}Update${NC} ${BLUE}(pull latest)${NC}"
+    echo -e "  ${CYAN}[3]${NC} ${BOLD}Create SSL Certificate${NC} ${BLUE}(Required before Wings install)${NC}"
     draw_hr
 }
 
@@ -353,40 +354,36 @@ setup_cloudflare_tunnel_client() {
 
 # Wings installation functions
 install_wings() {
-    log_step "Installing Wings daemon..."
+    log_step "Installing FeatherWings daemon..."
     
-    # Create wings user
-    if ! id "wings" >/dev/null 2>&1; then
-        log_info "Creating wings user..."
-        sudo useradd --system --no-create-home --shell /usr/sbin/nologin wings
-    fi
+    # Download and install featherwings binary
+    FEATHERWINGS_VERSION=$(curl -s https://api.github.com/repos/MythicalLTD/FeatherWings/releases/latest | jq -r '.tag_name')
+    log_info "Latest FeatherWings version: $FEATHERWINGS_VERSION"
     
-    # Download and install wings binary
-    WINGS_VERSION=$(curl -s https://api.github.com/repos/pterodactyl/wings/releases/latest | jq -r '.tag_name')
-    log_info "Latest Wings version: $WINGS_VERSION"
+    sudo curl -L -o /usr/local/bin/featherwings "https://github.com/MythicalLTD/FeatherWings/releases/download/${FEATHERWINGS_VERSION}/featherwings_linux_amd64"
+    sudo chmod +x /usr/local/bin/featherwings
     
-    sudo curl -L -o /usr/local/bin/wings "https://github.com/pterodactyl/wings/releases/download/${WINGS_VERSION}/wings_linux_amd64"
-    sudo chmod +x /usr/local/bin/wings
-    sudo chown wings:wings /usr/local/bin/wings
-    
-    # Create wings directory
-    sudo mkdir -p /etc/pterodactyl
-    sudo mkdir -p /srv/daemon-data
-    sudo mkdir -p /var/log/pterodactyl
+    # Create featherpanel directories
+    sudo mkdir -p /etc/featherpanel
+    sudo mkdir -p /var/lib/featherpanel/volumes
+    sudo mkdir -p /var/lib/featherpanel/archives
+    sudo mkdir -p /var/lib/featherpanel/backups
+    sudo mkdir -p /var/log/featherpanel
+    sudo mkdir -p /tmp/featherpanel
     
     # Create systemd service
-    cat <<EOF | sudo tee /etc/systemd/system/wings.service > /dev/null
+    cat <<EOF | sudo tee /etc/systemd/system/featherwings.service > /dev/null
 [Unit]
-Description=Pterodactyl Wings Daemon
+Description=FeatherWings Daemon
 After=docker.service
 Requires=docker.service
 PartOf=docker.service
 
 [Service]
-User=wings
-Group=wings
-WorkingDirectory=/etc/pterodactyl
-ExecStart=/usr/local/bin/wings
+User=root
+Group=root
+WorkingDirectory=/etc/featherpanel
+ExecStart=/usr/local/bin/featherwings
 Restart=always
 RestartSec=5
 StartLimitInterval=180
@@ -400,77 +397,74 @@ EOF
 
     # Enable but don't start yet (needs configuration)
     sudo systemctl daemon-reload
-    sudo systemctl enable wings
+    sudo systemctl enable featherwings
     
-    log_success "Wings daemon installed successfully."
-    log_info "Please configure Wings by editing /etc/pterodactyl/config.yml"
-    log_info "Then start Wings with: sudo systemctl start wings"
+    log_success "FeatherWings daemon installed successfully."
+    log_info "Please configure FeatherWings by editing /etc/featherpanel/config.yml"
+    log_info "Then start FeatherWings with: sudo systemctl start featherwings"
 }
 
 uninstall_wings() {
-    log_step "Uninstalling Wings daemon..."
+    log_step "Uninstalling FeatherWings daemon..."
     
     # Stop and disable service
-    sudo systemctl stop wings >/dev/null 2>&1 || true
-    sudo systemctl disable wings >/dev/null 2>&1 || true
+    sudo systemctl stop featherwings >/dev/null 2>&1 || true
+    sudo systemctl disable featherwings >/dev/null 2>&1 || true
     
     # Remove service file
-    sudo rm -f /etc/systemd/system/wings.service
+    sudo rm -f /etc/systemd/system/featherwings.service
     sudo systemctl daemon-reload
     
     # Remove binary
-    sudo rm -f /usr/local/bin/wings
+    sudo rm -f /usr/local/bin/featherwings
     
     # Remove configuration (ask first)
-    if [ -d /etc/pterodactyl ]; then
-        echo "Remove Wings configuration directory (/etc/pterodactyl)? (y/n): "
+    if [ -d /etc/featherpanel ]; then
+        echo "Remove FeatherWings configuration directory (/etc/featherpanel)? (y/n): "
         read -r remove_config
         if [[ "$remove_config" =~ ^[yY]$ ]]; then
-            sudo rm -rf /etc/pterodactyl
+            sudo rm -rf /etc/featherpanel
         fi
     fi
     
-    # Remove data directory (ask first)
-    if [ -d /srv/daemon-data ]; then
-        echo "Remove Wings data directory (/srv/daemon-data)? (y/n): "
+    # Remove data directories (ask first)
+    if [ -d /var/lib/featherpanel ]; then
+        echo "Remove FeatherWings data directory (/var/lib/featherpanel)? (y/n): "
         read -r remove_data
         if [[ "$remove_data" =~ ^[yY]$ ]]; then
-            sudo rm -rf /srv/daemon-data
+            sudo rm -rf /var/lib/featherpanel
         fi
     fi
     
     # Remove logs
-    sudo rm -rf /var/log/pterodactyl
+    sudo rm -rf /var/log/featherpanel
     
-    # Remove wings user
-    sudo userdel wings >/dev/null 2>&1 || true
     
-    log_success "Wings daemon uninstalled successfully."
+    log_success "FeatherWings daemon uninstalled successfully."
 }
 
 update_wings() {
-    log_step "Updating Wings daemon..."
+    log_step "Updating FeatherWings daemon..."
     
-    if [ ! -f /usr/local/bin/wings ]; then
-        log_error "Wings is not installed. Please install it first."
+    if [ ! -f /usr/local/bin/featherwings ]; then
+        log_error "FeatherWings is not installed. Please install it first."
         return 1
     fi
     
-    # Stop wings service
-    sudo systemctl stop wings
+    # Stop featherwings service
+    sudo systemctl stop featherwings
     
     # Get latest version and download
-    WINGS_VERSION=$(curl -s https://api.github.com/repos/pterodactyl/wings/releases/latest | jq -r '.tag_name')
-    log_info "Updating to Wings version: $WINGS_VERSION"
+    FEATHERWINGS_VERSION=$(curl -s https://api.github.com/repos/MythicalLTD/FeatherWings/releases/latest | jq -r '.tag_name')
+    log_info "Updating to FeatherWings version: $FEATHERWINGS_VERSION"
     
-    sudo curl -L -o /usr/local/bin/wings "https://github.com/pterodactyl/wings/releases/download/${WINGS_VERSION}/wings_linux_amd64"
-    sudo chmod +x /usr/local/bin/wings
-    sudo chown wings:wings /usr/local/bin/wings
+    sudo curl -L -o /usr/local/bin/featherwings "https://github.com/MythicalLTD/FeatherWings/releases/download/${FEATHERWINGS_VERSION}/featherwings_linux_amd64"
+    sudo chmod +x /usr/local/bin/featherwings
     
     # Restart service
-    sudo systemctl start wings
+    sudo systemctl start featherwings
     
-    log_success "Wings daemon updated successfully."
+    log_success "FeatherWings daemon updated successfully."
 }
 
 # SSL Certificate functions
@@ -555,6 +549,8 @@ create_ssl_certificate_http() {
         prompt "${BOLD}Enter domain name${NC} ${BLUE}(e.g., panel.example.com)${NC}: " domain
     done
     
+    log_info "This will be the main domain for your Panel (not a subdirectory like /panel)."
+    
     # Check if web server is running
     local webserver=""
     if systemctl is-active --quiet nginx; then
@@ -615,7 +611,23 @@ create_ssl_certificate_http() {
     
     log_success "SSL certificate created successfully for $domain"
     log_info "Certificate location: /etc/letsencrypt/live/$domain/"
-    log_info "You can now configure your web server to use these certificates."
+    
+    # Check if reverse proxy is already configured for this domain
+    if [ -f /etc/nginx/sites-enabled/featherpanel ] && grep -q "$domain" /etc/nginx/sites-enabled/featherpanel 2>/dev/null; then
+        log_info "Updating Nginx configuration to use SSL..."
+        curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/nginx.conf" | \
+            sed "s/your-domain.com/$domain/g" | \
+            sudo tee /etc/nginx/sites-available/featherpanel > /dev/null
+        sudo nginx -t && log_success "Nginx SSL configuration updated successfully"
+    elif [ -f /etc/apache2/sites-enabled/featherpanel.conf ] && grep -q "$domain" /etc/apache2/sites-enabled/featherpanel.conf 2>/dev/null; then
+        log_info "Updating Apache configuration to use SSL..."
+        curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/apache2.conf" | \
+            sed "s/your-domain.com/$domain/g" | \
+            sudo tee /etc/apache2/sites-available/featherpanel.conf > /dev/null
+        sudo apache2ctl configtest && log_success "Apache SSL configuration updated successfully"
+    else
+        log_info "You can now configure your web server to use these certificates."
+    fi
 }
 
 create_ssl_certificate_dns() {
@@ -632,6 +644,8 @@ create_ssl_certificate_dns() {
         prompt "${BOLD}Enter domain name${NC} ${BLUE}(e.g., panel.example.com)${NC}: " domain
     done
     
+    log_info "This will be the main domain for your Panel (not a subdirectory like /panel)."
+    
     log_info "Using DNS challenge method for certificate creation..."
     log_warn "This method requires you to manually create TXT DNS records."
     log_info "Certbot will pause and wait for you to create the DNS record."
@@ -647,6 +661,63 @@ create_ssl_certificate_dns() {
     
     log_success "SSL certificate created successfully for $domain"
     log_info "Certificate location: /etc/letsencrypt/live/$domain/"
+    
+    # Check if reverse proxy is already configured for this domain
+    if [ -f /etc/nginx/sites-enabled/featherpanel ] && grep -q "$domain" /etc/nginx/sites-enabled/featherpanel 2>/dev/null; then
+        log_info "Updating Nginx configuration to use SSL..."
+        curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/nginx.conf" | \
+            sed "s/your-domain.com/$domain/g" | \
+            sudo tee /etc/nginx/sites-available/featherpanel > /dev/null
+        sudo nginx -t && log_success "Nginx SSL configuration updated successfully"
+    elif [ -f /etc/apache2/sites-enabled/featherpanel.conf ] && grep -q "$domain" /etc/apache2/sites-enabled/featherpanel.conf 2>/dev/null; then
+        log_info "Updating Apache configuration to use SSL..."
+        curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/apache2.conf" | \
+            sed "s/your-domain.com/$domain/g" | \
+            sudo tee /etc/apache2/sites-available/featherpanel.conf > /dev/null
+        sudo apache2ctl configtest && log_success "Apache SSL configuration updated successfully"
+    else
+        log_info "You can now configure your web server to use these certificates."
+    fi
+}
+
+create_wings_ssl_certificate() {
+    log_step "Creating SSL Certificate for Wings (DNS challenge method)..."
+    
+    if ! command -v certbot >/dev/null 2>&1; then
+        log_error "Certbot is not installed. Please install it first."
+        return 1
+    fi
+    
+    # Get domain from user
+    local domain=""
+    while [ -z "$domain" ]; do
+        prompt "${BOLD}Enter Wings domain name${NC} ${BLUE}(e.g., node.example.com)${NC}: " domain
+    done
+    
+    log_info "Creating SSL certificate for Wings daemon..."
+    log_info "Wings requires SSL certificates for secure communication with the panel."
+    log_info "This will be the main domain for your Wings node (not a subdirectory)."
+    log_warn "This method uses DNS challenge since Wings doesn't need a web server."
+    
+    echo -e "${YELLOW}Press Enter to continue when you're ready to start the DNS challenge...${NC}"
+    read -r
+    
+    # Run certbot in interactive mode for DNS challenge
+    certbot -d "$domain" --manual --preferred-challenges dns certonly --agree-tos --email admin@"$domain" || {
+        log_error "Failed to create certificate with DNS challenge";
+        return 1;
+    }
+    
+    # Set proper permissions for FeatherWings (running as root)
+    sudo chown -R root:root /etc/letsencrypt/live/"$domain" 2>/dev/null || true
+    sudo chown -R root:root /etc/letsencrypt/archive/"$domain" 2>/dev/null || true
+    
+    log_success "SSL certificate created successfully for FeatherWings ($domain)"
+    log_info "Certificate location: /etc/letsencrypt/live/$domain/"
+    log_info "You can now configure FeatherWings to use these certificates in /etc/featherpanel/config.yml"
+    log_info "Certificate paths:"
+    log_info "  - Certificate: /etc/letsencrypt/live/$domain/fullchain.pem"
+    log_info "  - Private Key: /etc/letsencrypt/live/$domain/privkey.pem"
 }
 
 setup_ssl_auto_renewal() {
@@ -663,8 +734,8 @@ setup_ssl_auto_renewal() {
         restart_command="systemctl restart nginx"
     elif systemctl is-active --quiet apache2; then
         restart_command="systemctl restart apache2"
-    elif systemctl is-active --quiet wings; then
-        restart_command="systemctl restart wings"
+    elif systemctl is-active --quiet featherwings; then
+        restart_command="systemctl restart featherwings"
     else
         restart_command="systemctl reload-or-restart nginx"
     fi
@@ -695,6 +766,76 @@ setup_ssl_auto_renewal() {
     
     log_info "Certificates will be checked for renewal daily at 23:00 (11 PM)"
     log_info "If renewed, the following command will be executed: $restart_command"
+}
+
+
+setup_nginx_reverse_proxy() {
+    local domain="$1"
+    local has_ssl="$2"
+    
+    # Create config directory if it doesn't exist
+    sudo mkdir -p /etc/nginx/sites-available
+    sudo mkdir -p /etc/nginx/sites-enabled
+    
+    # Download and customize nginx config
+    if [ "$has_ssl" = "true" ]; then
+        log_info "Downloading SSL-enabled Nginx configuration..."
+        curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/nginx.conf" | \
+            sed "s/your-domain.com/$domain/g" | \
+            sudo tee /etc/nginx/sites-available/featherpanel > /dev/null
+    else
+        log_info "Downloading HTTP-only Nginx configuration..."
+        curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/plaintext/nginx.conf" | \
+            sed "s/your-domain.com/$domain/g" | \
+            sudo tee /etc/nginx/sites-available/featherpanel > /dev/null
+    fi
+    
+    # Enable the site
+    sudo ln -sf /etc/nginx/sites-available/featherpanel /etc/nginx/sites-enabled/
+    
+    # Test nginx configuration
+    if sudo nginx -t; then
+        log_success "Nginx configuration is valid"
+    else
+        log_error "Nginx configuration test failed"
+        return 1
+    fi
+}
+
+setup_apache_reverse_proxy() {
+    local domain="$1"
+    local has_ssl="$2"
+    
+    # Enable required Apache modules
+    log_info "Enabling required Apache modules..."
+    sudo a2enmod ssl proxy proxy_http proxy_wstunnel rewrite
+    
+    # Create config directory if it doesn't exist
+    sudo mkdir -p /etc/apache2/sites-available
+    
+    # Download and customize apache config
+    if [ "$has_ssl" = "true" ]; then
+        log_info "Downloading SSL-enabled Apache configuration..."
+        curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/ssl/apache2.conf" | \
+            sed "s/your-domain.com/$domain/g" | \
+            sudo tee /etc/apache2/sites-available/featherpanel.conf > /dev/null
+    else
+        log_info "Downloading HTTP-only Apache configuration..."
+        curl -s "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/.github/docker/plaintext/apache2.conf" | \
+            sed "s/your-domain.com/$domain/g" | \
+            sudo tee /etc/apache2/sites-available/featherpanel.conf > /dev/null
+    fi
+    
+    # Enable the site
+    sudo a2ensite featherpanel
+    
+    # Test apache configuration
+    if sudo apache2ctl configtest; then
+        log_success "Apache configuration is valid"
+    else
+        log_error "Apache configuration test failed"
+        return 1
+    fi
 }
 
 install_acme_sh() {
@@ -805,11 +946,11 @@ if [ -f /etc/os-release ]; then
             done
         elif [ "$COMPONENT_TYPE" = "1" ]; then
             # Wings operations
-            while [[ ! "$INST_TYPE" =~ ^[0-2]$ ]]; do
+            while [[ ! "$INST_TYPE" =~ ^[0-3]$ ]]; do
                 show_wings_menu
-                prompt "${BOLD}Enter Wings operation${NC} ${BLUE}(0/1/2)${NC}: " INST_TYPE
-                if [[ ! "$INST_TYPE" =~ ^[0-2]$ ]]; then
-                    echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}0${NC}, ${YELLOW}1${NC} or ${YELLOW}2${NC}."; sleep 1
+                prompt "${BOLD}Enter Wings operation${NC} ${BLUE}(0/1/2/3)${NC}: " INST_TYPE
+                if [[ ! "$INST_TYPE" =~ ^[0-3]$ ]]; then
+                    echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}0${NC}, ${YELLOW}1${NC}, ${YELLOW}2${NC} or ${YELLOW}3${NC}."; sleep 1
                 fi
             done
         else
@@ -893,7 +1034,33 @@ CF_HOSTNAME=""
                     done
                 fi
             else
-                echo -e "\033[0;33mYou have chosen not to use Cloudflare Tunnel. You will need to expose port 4831 or use your own reverse proxy to access FeatherPanel.\033[0m"
+                echo -e "\033[0;33mYou have chosen not to use Cloudflare Tunnel.\033[0m"
+                
+                # Ask about reverse proxy setup
+                echo "Would you like to set up a reverse proxy for FeatherPanel?"
+                echo "  [1] Nginx"
+                echo "  [2] Apache2"
+                echo "  [3] Skip reverse proxy (expose port 4831 directly)"
+                prompt "${BOLD}Enter choice${NC} ${BLUE}(1/2/3)${NC}: " REVERSE_PROXY_CHOICE
+                
+                case $REVERSE_PROXY_CHOICE in
+                    1)
+                        log_info "Nginx reverse proxy selected."
+                        REVERSE_PROXY_TYPE="nginx"
+                        ;;
+                    2)
+                        log_info "Apache2 reverse proxy selected."
+                        REVERSE_PROXY_TYPE="apache"
+                        ;;
+                    3)
+                        log_info "No reverse proxy selected. Port 4831 will be exposed directly."
+                        REVERSE_PROXY_TYPE="none"
+                        ;;
+                    *)
+                        log_warn "Invalid choice. Skipping reverse proxy setup."
+                        REVERSE_PROXY_TYPE="none"
+                        ;;
+                esac
             fi
 
                 install_packages curl unzip jq
@@ -932,6 +1099,28 @@ CF_HOSTNAME=""
                     setup_cloudflare_tunnel_client
                 fi
 
+            # Setup reverse proxy if selected and not using Cloudflare Tunnel
+            if [ -n "$REVERSE_PROXY_TYPE" ] && [ "$REVERSE_PROXY_TYPE" != "none" ]; then
+                log_step "Setting up reverse proxy..."
+                
+                # Get domain for reverse proxy
+                local panel_domain=""
+                while [ -z "$panel_domain" ]; do
+                    prompt "${BOLD}Enter Panel domain name${NC} ${BLUE}(e.g., panel.example.com)${NC}: " panel_domain
+                done
+                
+                log_info "This will be the main domain for your FeatherPanel (not a subdirectory like /panel)."
+                
+                if [ "$REVERSE_PROXY_TYPE" = "nginx" ]; then
+                    setup_nginx_reverse_proxy "$panel_domain" "false"
+                elif [ "$REVERSE_PROXY_TYPE" = "apache" ]; then
+                    setup_apache_reverse_proxy "$panel_domain" "false"
+                fi
+                
+                log_info "Reverse proxy configured. You can access FeatherPanel at http://$panel_domain"
+                log_info "To add SSL, use the SSL Certificate options after installation."
+            fi
+
             sudo touch /var/www/featherpanel/.installed
             log_success "Installation finished. See log at $LOG_FILE"
         elif [ "$COMPONENT_TYPE" = "0" ] && [ "$INST_TYPE" = "1" ]; then
@@ -968,24 +1157,45 @@ CF_HOSTNAME=""
                     exit 0
         elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "0" ]; then
             # Wings Install
-            if [ -f /usr/local/bin/wings ]; then
-                read -r -p "Wings appears to be already installed. Do you want to reinstall? (y/n): " reinstall
+            if [ -f /usr/local/bin/featherwings ]; then
+                read -r -p "FeatherWings appears to be already installed. Do you want to reinstall? (y/n): " reinstall
                 if [ "$reinstall" != "y" ]; then
                     echo "Exiting installation."
                     exit 0
                 fi
             fi
             
+            # Check if SSL certificate exists
+            echo "Wings requires SSL certificates for secure communication with the panel."
+            echo "Please create an SSL certificate first using Wings SSL Certificate option (3)."
+            echo ""
+            echo "Available certificates:"
+            if [ -d "/etc/letsencrypt/live" ]; then
+                ls -1 /etc/letsencrypt/live/ 2>/dev/null | while read -r domain; do
+                    echo "  - $domain"
+                done
+            else
+                echo "  No certificates found"
+            fi
+            echo ""
+            prompt "Do you want to continue with Wings installation? (y/n): " continue_without_cert
+            
+            if [[ ! "$continue_without_cert" =~ ^[yY]$ ]]; then
+                echo "Please create an SSL certificate first, then run Wings installation again."
+                exit 0
+            fi
+            
             install_packages curl jq
             install_wings
             log_success "Wings installation finished. See log at $LOG_FILE"
+            log_warn "Remember to configure FeatherWings with SSL certificates in /etc/featherpanel/config.yml"
         elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "1" ]; then
             # Wings Uninstall
-            if [ ! -f /usr/local/bin/wings ]; then
-                echo "Wings does not appear to be installed. Nothing to uninstall."
+            if [ ! -f /usr/local/bin/featherwings ]; then
+                echo "FeatherWings does not appear to be installed. Nothing to uninstall."
                 exit 0
             fi
-            prompt "Are you sure you want to uninstall Wings? (y/n): " confirm
+            prompt "Are you sure you want to uninstall FeatherWings? (y/n): " confirm
             if [ "$confirm" = "y" ]; then
                 uninstall_wings
             else
@@ -994,14 +1204,18 @@ CF_HOSTNAME=""
             fi
         elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "2" ]; then
             # Wings Update
-            if [ ! -f /usr/local/bin/wings ]; then
-                echo "Wings does not appear to be installed. Nothing to update."
+            if [ ! -f /usr/local/bin/featherwings ]; then
+                echo "FeatherWings does not appear to be installed. Nothing to update."
                 exit 0
             fi
             print_banner
             update_wings
             log_success "Wings updated successfully."
             exit 0
+        elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "3" ]; then
+            # Wings SSL Certificate
+            create_wings_ssl_certificate
+            log_success "Wings SSL certificate creation finished. See log at $LOG_FILE"
         elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "0" ]; then
             # SSL - Install Certbot
             install_certbot

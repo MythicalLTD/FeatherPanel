@@ -1,172 +1,0 @@
-========================================
-[START] 2025-10-05 14:24:46 CEST
-Script: FeatherPanel Installer
-========================================
-========================================
-[START] 2025-10-05 14:25:21 CEST
-Script: FeatherPanel Installer
-========================================
-========================================
-[START] 2025-10-05 14:50:51 CEST
-Script: FeatherPanel Installer
-========================================
-========================================
-[START] 2025-10-05 14:54:57 CEST
-Script: FeatherPanel Installer
-========================================
-[STEP] Installing Certbot...
-[INFO] certbot is already installed. Skipping...
-[INFO] python3-certbot-nginx is already installed. Skipping...
-[STEP] Installing dependencies: python3-certbot-apache
-Selecting previously unselected package libapr1:amd64.
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 93437 files and directories currently installed.)
-Preparing to unpack .../00-libapr1_1.7.2-3+deb12u1_amd64.deb ...
-Unpacking libapr1:amd64 (1.7.2-3+deb12u1) ...
-Selecting previously unselected package libaprutil1:amd64.
-Preparing to unpack .../01-libaprutil1_1.6.3-1_amd64.deb ...
-Unpacking libaprutil1:amd64 (1.6.3-1) ...
-Selecting previously unselected package libaprutil1-dbd-sqlite3:amd64.
-Preparing to unpack .../02-libaprutil1-dbd-sqlite3_1.6.3-1_amd64.deb ...
-Unpacking libaprutil1-dbd-sqlite3:amd64 (1.6.3-1) ...
-Selecting previously unselected package libaprutil1-ldap:amd64.
-Preparing to unpack .../03-libaprutil1-ldap_1.6.3-1_amd64.deb ...
-Unpacking libaprutil1-ldap:amd64 (1.6.3-1) ...
-Selecting previously unselected package liblua5.3-0:amd64.
-Preparing to unpack .../04-liblua5.3-0_5.3.6-2_amd64.deb ...
-Unpacking liblua5.3-0:amd64 (5.3.6-2) ...
-Selecting previously unselected package apache2-bin.
-Preparing to unpack .../05-apache2-bin_2.4.65-1~deb12u1_amd64.deb ...
-Unpacking apache2-bin (2.4.65-1~deb12u1) ...
-Selecting previously unselected package apache2-data.
-Preparing to unpack .../06-apache2-data_2.4.65-1~deb12u1_all.deb ...
-Unpacking apache2-data (2.4.65-1~deb12u1) ...
-Selecting previously unselected package apache2-utils.
-Preparing to unpack .../07-apache2-utils_2.4.65-1~deb12u1_amd64.deb ...
-Unpacking apache2-utils (2.4.65-1~deb12u1) ...
-Selecting previously unselected package apache2.
-Preparing to unpack .../08-apache2_2.4.65-1~deb12u1_amd64.deb ...
-Unpacking apache2 (2.4.65-1~deb12u1) ...
-Selecting previously unselected package augeas-lenses.
-Preparing to unpack .../09-augeas-lenses_1.14.0-1_all.deb ...
-Unpacking augeas-lenses (1.14.0-1) ...
-Selecting previously unselected package libaugeas0:amd64.
-Preparing to unpack .../10-libaugeas0_1.14.0-1_amd64.deb ...
-Unpacking libaugeas0:amd64 (1.14.0-1) ...
-Selecting previously unselected package python3-augeas.
-Preparing to unpack .../11-python3-augeas_0.5.0-1.1_all.deb ...
-Unpacking python3-augeas (0.5.0-1.1) ...
-Selecting previously unselected package python3-certbot-apache.
-Preparing to unpack .../12-python3-certbot-apache_2.1.0-2_all.deb ...
-Unpacking python3-certbot-apache (2.1.0-2) ...
-Setting up augeas-lenses (1.14.0-1) ...
-Setting up libapr1:amd64 (1.7.2-3+deb12u1) ...
-Setting up libaugeas0:amd64 (1.14.0-1) ...
-Setting up python3-augeas (0.5.0-1.1) ...
-Setting up liblua5.3-0:amd64 (5.3.6-2) ...
-Setting up apache2-data (2.4.65-1~deb12u1) ...
-Setting up libaprutil1:amd64 (1.6.3-1) ...
-Setting up libaprutil1-ldap:amd64 (1.6.3-1) ...
-Setting up libaprutil1-dbd-sqlite3:amd64 (1.6.3-1) ...
-Setting up apache2-utils (2.4.65-1~deb12u1) ...
-Setting up apache2-bin (2.4.65-1~deb12u1) ...
-Setting up apache2 (2.4.65-1~deb12u1) ...
-Enabling module mpm_event.
-Enabling module authz_core.
-Enabling module authz_host.
-Enabling module authn_core.
-Enabling module auth_basic.
-Enabling module access_compat.
-Enabling module authn_file.
-Enabling module authz_user.
-Enabling module alias.
-Enabling module dir.
-Enabling module autoindex.
-Enabling module env.
-Enabling module mime.
-Enabling module negotiation.
-Enabling module setenvif.
-Enabling module filter.
-Enabling module deflate.
-Enabling module status.
-Enabling module reqtimeout.
-Enabling conf charset.
-Enabling conf localized-error-pages.
-Enabling conf other-vhosts-access-log.
-Enabling conf security.
-Enabling conf serve-cgi-bin.
-Enabling site 000-default.
-Created symlink /etc/systemd/system/multi-user.target.wants/apache2.service → /lib/systemd/system/apache2.service.
-Could not execute systemctl:  at /usr/bin/deb-systemd-invoke line 145.
-Created symlink /etc/systemd/system/multi-user.target.wants/apache-htcacheclean.service → /lib/systemd/system/apache-htcacheclean.service.
-Setting up python3-certbot-apache (2.1.0-2) ...
-Processing triggers for man-db (2.11.2-2) ...
-Processing triggers for libc-bin (2.36-9+deb12u13) ...
-[OK] Dependencies installed.
-[OK] Certbot installed successfully.
-[INFO] Certbot with Nginx and Apache plugins is now available.
-[OK] SSL certificate tools installation finished. See log at /var/www/featherpanel/install.log
-========================================
-[START] 2025-10-05 14:58:28 CEST
-Script: FeatherPanel Installer
-========================================
-[STEP] Installing Certbot...
-[INFO] certbot is already installed. Skipping...
-[INFO] Nginx detected, installing Nginx plugin...
-[INFO] python3-certbot-nginx is already installed. Skipping...
-[OK] Certbot installed successfully with web server plugins.
-[INFO] Certbot is now available for SSL certificate management.
-[OK] SSL certificate tools installation finished. See log at /var/www/featherpanel/install.log
-========================================
-[START] 2025-10-05 14:58:41 CEST
-Script: FeatherPanel Installer
-========================================
-[STEP] Creating SSL Certificate (DNS challenge method)...
-[INFO] Using DNS challenge method for certificate creation...
-[WARN] You will need to create a TXT DNS record as instructed by Certbot.
-[ERROR] Failed to create certificate with DNS challenge
-[ERROR] An unexpected error occurred.
-[WARN] Attempting to upload logs to mclo.gs for diagnostics...
-[WARN] Failed to upload logs. Response: {"success":true,"id":"us2R3xd","url":"https:\/\/mclo.gs\/us2R3xd","raw":"https:\/\/api.mclo.gs\/1\/raw\/us2R3xd"}
-[OK] SSL certificate creation finished. See log at /var/www/featherpanel/install.log
-========================================
-[START] 2025-10-05 15:01:05 CEST
-Script: FeatherPanel Installer
-========================================
-[STEP] Creating SSL Certificate (DNS challenge method)...
-[INFO] Using DNS challenge method for certificate creation...
-[WARN] This method requires you to manually create TXT DNS records.
-[INFO] Certbot will pause and wait for you to create the DNS record.
-[ERROR] Failed to create certificate with DNS challenge
-[ERROR] An unexpected error occurred.
-[INFO] Uploading logs to mclo.gs for diagnostics...
-[OK] Logs uploaded successfully!
-[OK] SSL certificate creation finished. See log at /var/www/featherpanel/install.log
-========================================
-[START] 2025-10-05 15:02:22 CEST
-Script: FeatherPanel Installer
-========================================
-[STEP] Creating SSL Certificate (DNS challenge method)...
-[INFO] Using DNS challenge method for certificate creation...
-[WARN] This method requires you to manually create TXT DNS records.
-[INFO] Certbot will pause and wait for you to create the DNS record.
-[ERROR] Failed to create certificate with DNS challenge
-[ERROR] An unexpected error occurred.
-[INFO] Uploading logs to mclo.gs for diagnostics...
-[OK] Logs uploaded successfully!
-[OK] SSL certificate creation finished. See log at /var/www/featherpanel/install.log
-========================================
-[START] 2025-10-05 15:04:09 CEST
-Script: FeatherPanel Installer
-========================================
-========================================
-[START] 2025-10-05 15:04:49 CEST
-Script: FeatherPanel Installer
-========================================
-========================================
-[START] 2025-10-05 15:05:00 CEST
-Script: FeatherPanel Installer
-========================================
-========================================
-[START] 2025-10-05 15:05:15 CEST
-Script: FeatherPanel Installer
-========================================
