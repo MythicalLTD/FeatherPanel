@@ -238,12 +238,30 @@ setup_cloudflare_tunnel_full_auto() {
         echo "Error: No Cloudflare accounts found. Please check your email and API key."
         return 1
     elif [ "$ACCOUNT_COUNT" -gt "1" ]; then
-        echo "Multiple Cloudflare accounts found. Please choose one:"
-    echo "$ACCOUNTS_DATA" | jq -r '.result[] | "\(.id) \(.name)"' | nl
-    read -r -p "Enter the number of the account you want to use: " ACCOUNT_CHOICE
+        draw_hr
+        echo -e "${BOLD}Multiple Cloudflare accounts found. Please choose one:${NC}"
+        draw_hr
+        
+        # Display accounts with colored menu
+        local index=1
+        echo "$ACCOUNTS_DATA" | jq -r '.result[] | "\(.id)|\(.name)"' | while IFS='|' read -r id name; do
+            echo -e "  ${GREEN}[$index]${NC} ${BOLD}$name${NC} ${BLUE}($id)${NC}"
+            index=$((index + 1))
+        done
+        
+        draw_hr
+        prompt "${BOLD}Enter account number${NC} ${BLUE}(1-$ACCOUNT_COUNT)${NC}: " ACCOUNT_CHOICE
+        
+        # Validate choice
+        if [[ ! "$ACCOUNT_CHOICE" =~ ^[0-9]+$ ]] || [ "$ACCOUNT_CHOICE" -lt 1 ] || [ "$ACCOUNT_CHOICE" -gt "$ACCOUNT_COUNT" ]; then
+            echo -e "${RED}Invalid choice. Using first account.${NC}"
+            ACCOUNT_ID=$(echo "$ACCOUNTS_DATA" | jq -r '.result[0].id')
+        else
     ACCOUNT_ID=$(echo "$ACCOUNTS_DATA" | jq -r ".result[$((ACCOUNT_CHOICE-1))].id")
+        fi
     else
     ACCOUNT_ID=$(echo "$ACCOUNTS_DATA" | jq -r '.result[0].id')
+        log_info "Using Cloudflare account: $(echo "$ACCOUNTS_DATA" | jq -r '.result[0].name')"
     fi
 
     if [ "$ACCOUNT_ID" == "null" ] || [ -z "$ACCOUNT_ID" ]; then
@@ -271,7 +289,7 @@ setup_cloudflare_tunnel_full_auto() {
         fi
     fi
 
-    echo "Using Tunnel ID: $TUNNEL_ID"
+    log_info "Using Tunnel ID: $TUNNEL_ID"
 
     CF_TUNNEL_TOKEN=$(curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/cfd_tunnel/$TUNNEL_ID/token" \
          -H "X-Auth-Email: $CF_EMAIL" \
@@ -295,7 +313,7 @@ setup_cloudflare_tunnel_full_auto() {
         return 1
     fi
 
-    echo "Configuring DNS and ingress rules..."
+    log_info "Configuring DNS and ingress rules..."
     curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
         -H "X-Auth-Email: $CF_EMAIL" \
         -H "X-Auth-Key: $CF_API_KEY" \
@@ -308,7 +326,7 @@ setup_cloudflare_tunnel_full_auto() {
         -H "Content-Type: application/json" \
         --data "$(jq -n --arg hostname "$CF_HOSTNAME" '{config:{ingress:[{hostname:$hostname,service:"http://localhost:4831"},{service:"http_status:404"}]}}')" > /dev/null
 
-    echo "Full-automatic Cloudflare Tunnel setup complete."
+    log_info "Full-automatic Cloudflare Tunnel setup complete."
 
     # Persist Cloudflare credentials to .env for future uninstall/updates
     ENV_FILE=/var/www/featherpanel/.env
@@ -328,10 +346,10 @@ setup_cloudflare_tunnel_full_auto() {
 
 setup_cloudflare_tunnel_client() {
     if [ -n "$CF_TUNNEL_TOKEN" ]; then
-        echo "Setting up Cloudflare Tunnel..."
+        log_info "Setting up Cloudflare Tunnel..."
             if command -v docker &> /dev/null
             then
-                echo "Docker is already installed."
+                log_info "Docker is already installed."
             else
             log_step "Installing Docker engine (this may take a minute)..."
             curl -sSL https://get.docker.com/ | CHANNEL=stable bash >> "$LOG_FILE" 2>&1
@@ -340,7 +358,7 @@ setup_cloudflare_tunnel_client() {
             log_success "Docker installed. You may need to re-login for group changes to take effect."
             fi
         docker run -d --network host --restart always cloudflare/cloudflared:latest tunnel --no-autoupdate run --token "$CF_TUNNEL_TOKEN" >> "$LOG_FILE" 2>&1
-        echo "Cloudflare Tunnel setup complete."
+        log_info "Cloudflare Tunnel setup complete."
         if [ "$CF_TUNNEL_MODE" == "2" ]; then
             echo -e "\033[0;33mYou have chosen Semi-Automatic Cloudflare Tunnel setup.\033[0m"
             echo -e "\033[0;33mPlease manually create a DNS record for your hostname pointing to the tunnel in your Cloudflare dashboard.\033[0m"
@@ -348,7 +366,7 @@ setup_cloudflare_tunnel_client() {
             echo -e "\033[0;33mMore information: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/create-remote-tunnel-api/\033[0m"
         fi
     else
-        echo "Skipping Cloudflare Tunnel setup as no token was provided or generated."
+        log_info "Skipping Cloudflare Tunnel setup as no token was provided or generated."
     fi
 }
 
@@ -356,20 +374,34 @@ setup_cloudflare_tunnel_client() {
 install_wings() {
     log_step "Installing FeatherWings daemon..."
     
-    # Download and install featherwings binary
-    FEATHERWINGS_VERSION=$(curl -s https://api.github.com/repos/MythicalLTD/FeatherWings/releases/latest | jq -r '.tag_name')
-    log_info "Latest FeatherWings version: $FEATHERWINGS_VERSION"
+    # Check kernel version for swap support
+    KERNEL_VERSION=$(uname -r | cut -d. -f1-2)
+    KERNEL_MAJOR=$(echo "$KERNEL_VERSION" | cut -d. -f1)
+    KERNEL_MINOR=$(echo "$KERNEL_VERSION" | cut -d. -f2)
     
-    sudo curl -L -o /usr/local/bin/featherwings "https://github.com/MythicalLTD/FeatherWings/releases/download/${FEATHERWINGS_VERSION}/featherwings_linux_amd64"
-    sudo chmod +x /usr/local/bin/featherwings
+    if [ "$KERNEL_MAJOR" -lt 6 ] || ([ "$KERNEL_MAJOR" -eq 6 ] && [ "$KERNEL_MINOR" -lt 1 ]); then
+        log_warn "Kernel version $KERNEL_VERSION detected (older than 6.1)"
+        log_info "For Docker swap support, you may need to enable swap in GRUB:"
+        log_info "Add 'swapaccount=1' to GRUB_CMDLINE_LINUX_DEFAULT in /etc/default/grub"
+        log_info "Then run: sudo update-grub && sudo reboot"
+    else
+        log_info "Kernel version $KERNEL_VERSION detected (6.1+) - swap enabled by default"
+    fi
     
-    # Create featherpanel directories
+    # Create directory structure
+    log_info "Creating FeatherWings directory structure..."
     sudo mkdir -p /etc/featherpanel
     sudo mkdir -p /var/lib/featherpanel/volumes
     sudo mkdir -p /var/lib/featherpanel/archives
     sudo mkdir -p /var/lib/featherpanel/backups
     sudo mkdir -p /var/log/featherpanel
     sudo mkdir -p /tmp/featherpanel
+    sudo mkdir -p /var/run/featherwings
+    
+    # Download and install featherwings binary
+    log_info "Downloading FeatherWings binary..."
+    sudo curl -L -o /usr/local/bin/featherwings "https://github.com/MythicalLTD/FeatherWings/releases/latest/download/wings_linux_$([[ "$(uname -m)" == "x86_64" ]] && echo "amd64" || echo "arm64")"
+    sudo chmod +x /usr/local/bin/featherwings
     
     # Create systemd service
     cat <<EOF | sudo tee /etc/systemd/system/featherwings.service > /dev/null
@@ -381,7 +413,6 @@ PartOf=docker.service
 
 [Service]
 User=root
-Group=root
 WorkingDirectory=/etc/featherpanel
 ExecStart=/usr/local/bin/featherwings
 Restart=always
@@ -400,8 +431,12 @@ EOF
     sudo systemctl enable featherwings
     
     log_success "FeatherWings daemon installed successfully."
-    log_info "Please configure FeatherWings by editing /etc/featherpanel/config.yml"
-    log_info "Then start FeatherWings with: sudo systemctl start featherwings"
+    log_warn "This is a CANARY release of FeatherWings - not recommended for production use."
+    log_info "Next steps:"
+    log_info "1. Create a node in your FeatherPanel admin panel"
+    log_info "2. Copy the configuration from the node to /etc/featherpanel/config.yml"
+    log_info "3. Start FeatherWings with: sudo systemctl start featherwings"
+    log_info "4. Or run in debug mode first: sudo featherwings --debug"
 }
 
 uninstall_wings() {
@@ -420,7 +455,7 @@ uninstall_wings() {
     
     # Remove configuration (ask first)
     if [ -d /etc/featherpanel ]; then
-        echo "Remove FeatherWings configuration directory (/etc/featherpanel)? (y/n): "
+        log_info "Remove FeatherWings configuration directory (/etc/featherpanel)? (y/n): "
         read -r remove_config
         if [[ "$remove_config" =~ ^[yY]$ ]]; then
             sudo rm -rf /etc/featherpanel
@@ -429,7 +464,7 @@ uninstall_wings() {
     
     # Remove data directories (ask first)
     if [ -d /var/lib/featherpanel ]; then
-        echo "Remove FeatherWings data directory (/var/lib/featherpanel)? (y/n): "
+        log_info "Remove FeatherWings data directory (/var/lib/featherpanel)? (y/n): "
         read -r remove_data
         if [[ "$remove_data" =~ ^[yY]$ ]]; then
             sudo rm -rf /var/lib/featherpanel
@@ -454,11 +489,9 @@ update_wings() {
     # Stop featherwings service
     sudo systemctl stop featherwings
     
-    # Get latest version and download
-    FEATHERWINGS_VERSION=$(curl -s https://api.github.com/repos/MythicalLTD/FeatherWings/releases/latest | jq -r '.tag_name')
-    log_info "Updating to FeatherWings version: $FEATHERWINGS_VERSION"
-    
-    sudo curl -L -o /usr/local/bin/featherwings "https://github.com/MythicalLTD/FeatherWings/releases/download/${FEATHERWINGS_VERSION}/featherwings_linux_amd64"
+    # Download latest FeatherWings binary
+    log_info "Downloading latest FeatherWings binary..."
+    sudo curl -L -o /usr/local/bin/featherwings "https://github.com/MythicalLTD/FeatherWings/releases/latest/download/wings_linux_$([[ "$(uname -m)" == "x86_64" ]] && echo "amd64" || echo "arm64")"
     sudo chmod +x /usr/local/bin/featherwings
     
     # Restart service
@@ -495,11 +528,11 @@ install_certbot() {
     # If no web server detected, ask user what they want
     if [ ${#plugins_to_install[@]} -eq 0 ]; then
         log_info "No web server detected. You can install plugins for future use."
-        echo "Which web server plugin would you like to install? (optional)"
-        echo "  [1] Nginx plugin"
-        echo "  [2] Apache plugin" 
-        echo "  [3] Both plugins (Not recommended)"
-        echo "  [4] Skip plugins (standalone only)"
+        log_info "Which web server plugin would you like to install? (optional)"
+        log_info "  [1] Nginx plugin"
+        log_info "  [2] Apache plugin" 
+        log_info "  [3] Both plugins (Not recommended)"
+        log_info "  [4] Skip plugins (standalone only)"
         prompt "${BOLD}Enter choice${NC} ${BLUE}(1/2/3/4)${NC}: " plugin_choice
         
         case $plugin_choice in
@@ -548,6 +581,42 @@ create_ssl_certificate_http() {
     while [ -z "$domain" ]; do
         prompt "${BOLD}Enter domain name${NC} ${BLUE}(e.g., panel.example.com)${NC}: " domain
     done
+    
+    # Get public IP addresses for DNS guidance
+    log_info "Detecting your server's public IP addresses..."
+    PUBLIC_IPV4=$(curl -s --max-time 10 ifconfig.me 2>/dev/null || curl -s --max-time 10 ipinfo.io/ip 2>/dev/null || echo "")
+    PUBLIC_IPV6=$(curl -s --max-time 10 -6 ifconfig.co 2>/dev/null || echo "")
+    
+    draw_hr
+    echo -e "${BOLD}${YELLOW}DNS Setup Required${NC}"
+    draw_hr
+    echo -e "${BLUE}Before creating the SSL certificate, you must create DNS records:${NC}"
+    echo -e ""
+    echo -e "${GREEN}Create an A record:${NC}"
+    echo -e "  ${BOLD}Name:${NC} $domain"
+    if [ -n "$PUBLIC_IPV4" ]; then
+        echo -e "  ${BOLD}Value:${NC} $PUBLIC_IPV4"
+    else
+        echo -e "  ${BOLD}Value:${NC} ${YELLOW}YOUR_SERVER_IPV4${NC}"
+    fi
+    echo -e "  ${BOLD}TTL:${NC} 300 (or Auto)"
+    echo -e ""
+    
+    if [ -n "$PUBLIC_IPV6" ]; then
+        echo -e "${GREEN}Create an AAAA record (IPv6 support):${NC}"
+        echo -e "  ${BOLD}Name:${NC} $domain"
+        echo -e "  ${BOLD}Value:${NC} $PUBLIC_IPV6"
+        echo -e "  ${BOLD}TTL:${NC} 300 (or Auto)"
+        echo -e ""
+    else
+        echo -e "${YELLOW}IPv6 not detected or not available on this server.${NC}"
+        echo -e ""
+    fi
+    
+    echo -e "${YELLOW}Please create these DNS records in your domain's DNS management panel.${NC}"
+    echo -e "${YELLOW}DNS propagation can take 5-60 minutes depending on your DNS provider.${NC}"
+    echo -e ""
+    prompt "${BOLD}Press Enter when you have created the DNS records${NC} ${BLUE}(and waited for propagation)${NC}: " ready_to_continue
     
     log_info "This will be the main domain for your Panel (not a subdirectory like /panel)."
     
@@ -644,13 +713,49 @@ create_ssl_certificate_dns() {
         prompt "${BOLD}Enter domain name${NC} ${BLUE}(e.g., panel.example.com)${NC}: " domain
     done
     
+    # Get public IP addresses for DNS guidance
+    log_info "Detecting your server's public IP addresses..."
+    PUBLIC_IPV4=$(curl -s --max-time 10 ifconfig.me 2>/dev/null || curl -s --max-time 10 ipinfo.io/ip 2>/dev/null || echo "")
+    PUBLIC_IPV6=$(curl -s --max-time 10 -6 ifconfig.co 2>/dev/null || echo "")
+    
+    draw_hr
+    echo -e "${BOLD}${YELLOW}DNS Setup Required${NC}"
+    draw_hr
+    echo -e "${BLUE}Before creating the SSL certificate, you must create DNS records:${NC}"
+    echo -e ""
+    echo -e "${GREEN}Create an A record:${NC}"
+    echo -e "  ${BOLD}Name:${NC} $domain"
+    if [ -n "$PUBLIC_IPV4" ]; then
+        echo -e "  ${BOLD}Value:${NC} $PUBLIC_IPV4"
+    else
+        echo -e "  ${BOLD}Value:${NC} ${YELLOW}YOUR_SERVER_IPV4${NC}"
+    fi
+    echo -e "  ${BOLD}TTL:${NC} 300 (or Auto)"
+    echo -e ""
+    
+    if [ -n "$PUBLIC_IPV6" ]; then
+        echo -e "${GREEN}Create an AAAA record (IPv6 support):${NC}"
+        echo -e "  ${BOLD}Name:${NC} $domain"
+        echo -e "  ${BOLD}Value:${NC} $PUBLIC_IPV6"
+        echo -e "  ${BOLD}TTL:${NC} 300 (or Auto)"
+        echo -e ""
+    else
+        echo -e "${YELLOW}IPv6 not detected or not available on this server.${NC}"
+        echo -e ""
+    fi
+    
+    echo -e "${YELLOW}Please create these DNS records in your domain's DNS management panel.${NC}"
+    echo -e "${YELLOW}DNS propagation can take 5-60 minutes depending on your DNS provider.${NC}"
+    echo -e ""
+    prompt "${BOLD}Press Enter when you have created the DNS records${NC} ${BLUE}(and waited for propagation)${NC}: " ready_to_continue
+    
     log_info "This will be the main domain for your Panel (not a subdirectory like /panel)."
     
     log_info "Using DNS challenge method for certificate creation..."
     log_warn "This method requires you to manually create TXT DNS records."
     log_info "Certbot will pause and wait for you to create the DNS record."
     
-    echo -e "${YELLOW}Press Enter to continue when you're ready to start the DNS challenge...${NC}"
+    log_info "Press Enter to continue when you're ready to start the DNS challenge..."
     read -r
     
     # Run certbot in interactive mode for DNS challenge
@@ -684,8 +789,10 @@ create_wings_ssl_certificate() {
     log_step "Creating SSL Certificate for Wings (DNS challenge method)..."
     
     if ! command -v certbot >/dev/null 2>&1; then
-        log_error "Certbot is not installed. Please install it first."
-        return 1
+        log_info "Certbot is not installed. Installing Certbot (standalone mode) for Wings..."
+        sudo apt-get update
+        install_packages certbot
+        log_success "Certbot installed successfully for Wings SSL certificates."
     fi
     
     # Get domain from user
@@ -694,19 +801,79 @@ create_wings_ssl_certificate() {
         prompt "${BOLD}Enter Wings domain name${NC} ${BLUE}(e.g., node.example.com)${NC}: " domain
     done
     
+    # Get public IP addresses for DNS guidance
+    log_info "Detecting your server's public IP addresses..."
+    PUBLIC_IPV4=$(curl -s --max-time 10 ifconfig.me 2>/dev/null || curl -s --max-time 10 ipinfo.io/ip 2>/dev/null || echo "")
+    PUBLIC_IPV6=$(curl -s --max-time 10 -6 ifconfig.co 2>/dev/null || echo "")
+    
+    draw_hr
+    echo -e "${BOLD}${YELLOW}DNS Setup Required${NC}"
+    draw_hr
+    echo -e "${BLUE}Before creating the SSL certificate, you must create DNS records:${NC}"
+    echo -e ""
+    echo -e "${GREEN}Create an A record:${NC}"
+    echo -e "  ${BOLD}Name:${NC} $domain"
+    if [ -n "$PUBLIC_IPV4" ]; then
+        echo -e "  ${BOLD}Value:${NC} $PUBLIC_IPV4"
+    else
+        echo -e "  ${BOLD}Value:${NC} ${YELLOW}YOUR_SERVER_IPV4${NC}"
+    fi
+    echo -e "  ${BOLD}TTL:${NC} 300 (or Auto)"
+    echo -e ""
+    
+    if [ -n "$PUBLIC_IPV6" ]; then
+        echo -e "${GREEN}Create an AAAA record (IPv6 support):${NC}"
+        echo -e "  ${BOLD}Name:${NC} $domain"
+        echo -e "  ${BOLD}Value:${NC} $PUBLIC_IPV6"
+        echo -e "  ${BOLD}TTL:${NC} 300 (or Auto)"
+        echo -e ""
+    else
+        echo -e "${YELLOW}IPv6 not detected or not available on this server.${NC}"
+        echo -e ""
+    fi
+    
+    echo -e "${YELLOW}Please create these DNS records in your domain's DNS management panel.${NC}"
+    echo -e "${YELLOW}DNS propagation can take 5-60 minutes depending on your DNS provider.${NC}"
+    echo -e ""
+    prompt "${BOLD}Press Enter when you have created the DNS records${NC} ${BLUE}(and waited for propagation)${NC}: " ready_to_continue
+    
     log_info "Creating SSL certificate for Wings daemon..."
     log_info "Wings requires SSL certificates for secure communication with the panel."
     log_info "This will be the main domain for your Wings node (not a subdirectory)."
-    log_warn "This method uses DNS challenge since Wings doesn't need a web server."
     
-    echo -e "${YELLOW}Press Enter to continue when you're ready to start the DNS challenge...${NC}"
-    read -r
+    draw_hr
+    echo -e "${BOLD}Choose certificate challenge method:${NC}"
+    echo -e "  ${GREEN}[1]${NC} ${BOLD}HTTP Challenge${NC} ${BLUE}(Standalone - requires port 80)${NC}"
+    echo -e "  ${YELLOW}[2]${NC} ${BOLD}DNS Challenge${NC} ${BLUE}(Manual TXT record)${NC}"
+    draw_hr
+    prompt "${BOLD}Enter choice${NC} ${BLUE}(1/2)${NC}: " challenge_method
     
-    # Run certbot in interactive mode for DNS challenge
-    certbot -d "$domain" --manual --preferred-challenges dns certonly --agree-tos --email admin@"$domain" || {
-        log_error "Failed to create certificate with DNS challenge";
-        return 1;
-    }
+    case $challenge_method in
+        1)
+            log_info "Using HTTP challenge (standalone mode)..."
+            log_warn "Make sure port 80 is not in use by other services."
+            certbot certonly --standalone -d "$domain" --non-interactive --agree-tos --email admin@"$domain" || {
+                log_error "Failed to create certificate with HTTP challenge";
+                return 1;
+            }
+            ;;
+        2)
+            log_info "Using DNS challenge method..."
+            log_warn "This method requires you to manually create TXT DNS records."
+            log_info "Certbot will pause and wait for you to create the DNS record."
+            log_info "Press Enter to continue when you're ready to start the DNS challenge..."
+            read -r
+            
+            certbot -d "$domain" --manual --preferred-challenges dns certonly --agree-tos --email admin@"$domain" || {
+                log_error "Failed to create certificate with DNS challenge";
+                return 1;
+            }
+            ;;
+        *)
+            log_error "Invalid choice. Please select 1 or 2."
+            return 1
+            ;;
+    esac
     
     # Set proper permissions for FeatherWings (running as root)
     sudo chown -R root:root /etc/letsencrypt/live/"$domain" 2>/dev/null || true
@@ -940,10 +1107,10 @@ if [ -f /etc/os-release ]; then
             while [[ ! "$INST_TYPE" =~ ^[0-2]$ ]]; do
                 show_panel_menu
                 prompt "${BOLD}Enter Panel operation${NC} ${BLUE}(0/1/2)${NC}: " INST_TYPE
-                if [[ ! "$INST_TYPE" =~ ^[0-2]$ ]]; then
-                    echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}0${NC}, ${YELLOW}1${NC} or ${YELLOW}2${NC}."; sleep 1
-                fi
-            done
+            if [[ ! "$INST_TYPE" =~ ^[0-2]$ ]]; then
+                echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}0${NC}, ${YELLOW}1${NC} or ${YELLOW}2${NC}."; sleep 1
+            fi
+        done
         elif [ "$COMPONENT_TYPE" = "1" ]; then
             # Wings operations
             while [[ ! "$INST_TYPE" =~ ^[0-3]$ ]]; do
@@ -1119,10 +1286,53 @@ CF_HOSTNAME=""
                 
                 log_info "Reverse proxy configured. You can access FeatherPanel at http://$panel_domain"
                 log_info "To add SSL, use the SSL Certificate options after installation."
-            fi
+                fi
 
             sudo touch /var/www/featherpanel/.installed
-            log_success "Installation finished. See log at $LOG_FILE"
+            
+            # Get public IP for access information
+            PUBLIC_IP=$(curl -s ifconfig.me 2>/dev/null || curl -s ipinfo.io/ip 2>/dev/null || echo "Unable to detect")
+            
+            log_success "Panel installation completed successfully!"
+            log_warn "IMPORTANT: The Panel may take up to 5 minutes to fully initialize."
+            log_info "Please wait at least 5 minutes before trying to access the Panel."
+            
+            draw_hr
+            echo -e "${BOLD}${GREEN}Panel Access Information:${NC}"
+            draw_hr
+            
+            if [[ "$CF_TUNNEL_SETUP" =~ ^[yY]$ ]]; then
+                echo -e "${GREEN}✓ Cloudflare Tunnel:${NC} https://$CF_HOSTNAME"
+                echo -e "${BLUE}  • Secure HTTPS access via Cloudflare${NC}"
+                echo -e "${BLUE}  • No port forwarding required${NC}"
+            elif [ -n "$REVERSE_PROXY_TYPE" ] && [ "$REVERSE_PROXY_TYPE" != "none" ]; then
+                echo -e "${GREEN}✓ Reverse Proxy:${NC} http://$panel_domain"
+                echo -e "${BLUE}  • Add SSL certificate later via SSL menu${NC}"
+                echo -e "${BLUE}  • Configure DNS to point to your server${NC}"
+            else
+                echo -e "${GREEN}✓ Direct Access:${NC}"
+                echo -e "${BLUE}  • Local: http://localhost:4831${NC}"
+                if [ "$PUBLIC_IP" != "Unable to detect" ]; then
+                    echo -e "${BLUE}  • Public: http://$PUBLIC_IP:4831${NC}"
+                    echo -e "${YELLOW}  • Ensure port 4831 is open in firewall${NC}"
+                else
+                    echo -e "${BLUE}  • Public: http://YOUR_SERVER_IP:4831${NC}"
+                    echo -e "${YELLOW}  • Replace YOUR_SERVER_IP with your actual server IP${NC}"
+                    echo -e "${YELLOW}  • Ensure port 4831 is open in firewall${NC}"
+                fi
+            fi
+            
+            draw_hr
+            echo -e "${BOLD}${YELLOW}Next Steps:${NC}"
+            echo -e "1. ${BLUE}Wait 5 minutes${NC} for the Panel to fully initialize"
+            echo -e "2. ${BLUE}Open the Panel URL${NC} in your web browser"
+            echo -e "3. ${BLUE}Complete the initial setup${NC} in the Panel interface"
+            if [[ ! "$CF_TUNNEL_SETUP" =~ ^[yY]$ ]] && ([ -z "$REVERSE_PROXY_TYPE" ] || [ "$REVERSE_PROXY_TYPE" = "none" ]); then
+                echo -e "4. ${BLUE}Consider adding SSL certificate${NC} via SSL menu for security"
+            fi
+            draw_hr
+            
+            log_info "Installation log saved at: $LOG_FILE"
         elif [ "$COMPONENT_TYPE" = "0" ] && [ "$INST_TYPE" = "1" ]; then
             # Panel Uninstall
             if [ ! -f /var/www/featherpanel/.installed ]; then
@@ -1171,9 +1381,18 @@ CF_HOSTNAME=""
             echo ""
             echo "Available certificates:"
             if [ -d "/etc/letsencrypt/live" ]; then
-                ls -1 /etc/letsencrypt/live/ 2>/dev/null | while read -r domain; do
-                    echo "  - $domain"
+                # Only show directories that contain actual certificate files (not README or other files)
+                FOUND_CERTS=false
+                for domain_dir in /etc/letsencrypt/live/*; do
+                    if [ -d "$domain_dir" ] && [ -f "$domain_dir/fullchain.pem" ] && [ -f "$domain_dir/privkey.pem" ]; then
+                        domain=$(basename "$domain_dir")
+                        echo "  - $domain"
+                        FOUND_CERTS=true
+                    fi
                 done
+                if [ "$FOUND_CERTS" = false ]; then
+                    echo "  No valid certificates found"
+                fi
             else
                 echo "  No certificates found"
             fi
@@ -1214,24 +1433,47 @@ CF_HOSTNAME=""
             exit 0
         elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "3" ]; then
             # Wings SSL Certificate
-            create_wings_ssl_certificate
-            log_success "Wings SSL certificate creation finished. See log at $LOG_FILE"
+            if create_wings_ssl_certificate; then
+                log_success "Wings SSL certificate creation finished. See log at $LOG_FILE"
+            else
+                log_error "Wings SSL certificate creation failed. See log at $LOG_FILE"
+                draw_hr
+                echo -e "${YELLOW}SSL Certificate Creation Failed${NC}"
+                echo -e "${BLUE}To fix this issue:${NC}"
+                echo -e "1. Go back to main menu and select ${GREEN}SSL Certificates${NC}"
+                echo -e "2. Choose ${GREEN}Install Certbot${NC} first"
+                echo -e "3. Then return here to create the SSL certificate"
+                draw_hr
+                exit 1
+            fi
         elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "0" ]; then
             # SSL - Install Certbot
             install_certbot
             log_success "SSL certificate tools installation finished. See log at $LOG_FILE"
         elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "1" ]; then
             # SSL - Create Certificate (HTTP/Standalone)
-            create_ssl_certificate_http
-            log_success "SSL certificate creation finished. See log at $LOG_FILE"
+            if create_ssl_certificate_http; then
+                log_success "SSL certificate creation finished. See log at $LOG_FILE"
+            else
+                log_error "SSL certificate creation failed. See log at $LOG_FILE"
+                exit 1
+            fi
         elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "2" ]; then
             # SSL - Create Certificate (DNS)
-            create_ssl_certificate_dns
-            log_success "SSL certificate creation finished. See log at $LOG_FILE"
+            if create_ssl_certificate_dns; then
+                log_success "SSL certificate creation finished. See log at $LOG_FILE"
+            else
+                log_error "SSL certificate creation failed. See log at $LOG_FILE"
+                exit 1
+            fi
         elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "3" ]; then
             # SSL - Setup Auto-Renewal
-            setup_ssl_auto_renewal
-            log_success "SSL auto-renewal setup finished. See log at $LOG_FILE"
+            if setup_ssl_auto_renewal; then
+                log_success "SSL auto-renewal setup finished. See log at $LOG_FILE"
+            else
+                log_error "SSL auto-renewal setup failed. See log at $LOG_FILE"
+                exit 1
+            fi
         elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "4" ]; then
             # SSL - Install acme.sh
             install_acme_sh

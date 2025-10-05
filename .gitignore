@@ -6,3 +6,4 @@ dockerfiles/mariadb/data
 /frontend/.vite
 *.fpa
 *.backup.*
+installer.log
