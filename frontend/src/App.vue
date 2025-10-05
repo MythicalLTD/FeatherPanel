@@ -54,7 +54,6 @@ export default defineComponent({
     },
 });
 </script>
-
 <template>
     <div class="app-container">
         <!-- Router view with smooth transitions -->

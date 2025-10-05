@@ -51,6 +51,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "cli", "help"]
+      timeout: 20s
+      retries: 10
     volumes:
       - featherpanel_attachments:/var/www/html/storage/attachments
       - featherpanel_addons:/var/www/html/storage/addons
@@ -63,10 +67,19 @@ services:
     image: ghcr.io/mythicalltd/featherpanel-frontend:main
     container_name: featherpanel_frontend
     restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      timeout: 20s
+      retries: 10
     ports:
       - "4831:80"
-    depends_on:
-      - backend
     networks:
       - featherpanel_network
 

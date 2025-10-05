@@ -298,10 +298,7 @@
                 </AlertDialogHeader>
                 <AlertDialogFooter class="flex-col sm:flex-row gap-2">
                     <AlertDialogCancel class="w-full sm:w-auto">{{ $t('account.apiKeys.cancel') }}</AlertDialogCancel>
-                    <AlertDialogAction
-                        class="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto"
-                        @click="confirmDelete"
-                    >
+                    <AlertDialogAction variant="destructive" class="w-full sm:w-auto" @click="confirmDelete">
                         {{ $t('account.apiKeys.confirmDelete') }}
                     </AlertDialogAction>
                 </AlertDialogFooter>
