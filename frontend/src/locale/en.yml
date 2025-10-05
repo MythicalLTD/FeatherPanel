@@ -38,8 +38,8 @@ common:
     save: 'Save'
     optional: 'Optional'
 auth:
-    welcome: 'Welcome to FeatherPanel'
-    runningOn: 'Running on FeatherPanel v{version}'
+    welcome: 'Welcome to {appName},'
+    runningOn: 'Running on FeatherPanel v{version} - {appName}'
     mythicalSystems: 'mythical.systems'
     login: 'Login'
     register: 'Register'

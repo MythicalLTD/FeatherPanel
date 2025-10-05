@@ -2,6 +2,12 @@
 # FeatherPanel Docker Installation Script
 # Docker-only installer/uninstaller for Ubuntu/Debian
 
+if [ "$EUID" -ne 0 ]; then
+    echo -e "${RED}This installer must be run as root or with sudo.${NC}"
+    echo "Please run: sudo $0"
+    exit 1
+fi
+
 LOG_DIR=/var/www/featherpanel
 LOG_FILE=$LOG_DIR/install.log
 
@@ -32,15 +38,17 @@ support_hint() {
 
 upload_logs_on_fail() {
     if command -v curl >/dev/null 2>&1; then
-        log_warn "Attempting to upload logs to mclo.gs for diagnostics..."
+        log_info "Uploading logs to mclo.gs for diagnostics..."
         RESPONSE=$(curl -s -X POST --data-urlencode "content@${LOG_FILE}" "https://api.mclo.gs/1/log")
-        SUCCESS=$(echo "$RESPONSE" | jq -r '.success' 2>/dev/null || echo "false")
+        
+        # Parse JSON response
+        SUCCESS=$(echo "$RESPONSE" | grep -o '"success":[^,]*' | cut -d':' -f2 | tr -d '"' 2>/dev/null)
         if [ "$SUCCESS" = "true" ]; then
-            URL=$(echo "$RESPONSE" | jq -r '.url')
-            RAW=$(echo "$RESPONSE" | jq -r '.raw')
-            log_info "Logs uploaded: $URL"
-            echo -e "${BLUE}Logs URL:${NC} $URL"
-            echo -e "${BLUE}Raw:${NC} $RAW"
+            URL=$(echo "$RESPONSE" | grep -o '"url":"[^"]*"' | cut -d'"' -f4 | sed 's/\\\//\//g' 2>/dev/null)
+            RAW=$(echo "$RESPONSE" | grep -o '"raw":"[^"]*"' | cut -d'"' -f4 | sed 's/\\\//\//g' 2>/dev/null)
+            log_success "Logs uploaded successfully!"
+            echo -e "${GREEN}Logs URL:${NC} $URL"
+            echo -e "${GREEN}Raw URL:${NC} $RAW"
         else
             log_warn "Failed to upload logs. Response: $RESPONSE"
         fi
@@ -75,10 +83,10 @@ print_banner() {
 	echo -e "${CYAN}${BOLD}⠀⠀⠀⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${NC}"
 
 	echo -e "${CYAN}${BOLD}┌────────────────────────────────────────────────────────────┐${NC}"
-	echo -e "${CYAN}${BOLD}│${NC}  🌐 Website:  ${BLUE}https://www.mythical.systems${NC}           ${CYAN}${BOLD}│${NC}"
-	echo -e "${CYAN}${BOLD}│${NC}  💻 Github:   ${BLUE}github.com/mythicalltd/featherpanel${NC}    ${CYAN}${BOLD}│${NC}"
-	echo -e "${CYAN}${BOLD}│${NC}  💬 Discord:  ${BLUE}discord.mythical.systems${NC}                ${CYAN}${BOLD}│${NC}"
-	echo -e "${CYAN}${BOLD}│${NC}  📚 Docs:     ${BLUE}docs.mythical.systems${NC}                   ${CYAN}${BOLD}│${NC}"
+	echo -e "${CYAN}${BOLD}${NC}  🌐 Website:  ${BLUE}www.mythical.systems${NC}           ${CYAN}${BOLD}${NC}"
+	echo -e "${CYAN}${BOLD}${NC}  💻 Github:   ${BLUE}github.com/mythicalltd/featherpanel${NC}    ${CYAN}${BOLD}${NC}"
+	echo -e "${CYAN}${BOLD}${NC}  💬 Discord:  ${BLUE}discord.mythical.systems${NC}                ${CYAN}${BOLD}${NC}"
+	echo -e "${CYAN}${BOLD}${NC}  📚 Docs:     ${BLUE}docs.mythical.systems${NC}                   ${CYAN}${BOLD}${NC}"
 echo -e "${CYAN}${BOLD}└────────────────────────────────────────────────────────────┘${NC}"
 }
 
@@ -90,10 +98,39 @@ show_main_menu() {
     if [ -t 1 ]; then clear; fi
     print_banner
     draw_hr
-    echo -e "${BOLD}Choose an action:${NC}"
+    echo -e "${BOLD}Choose a component:${NC}"
+    echo -e "  ${GREEN}[0]${NC} ${BOLD}Panel${NC} ${BLUE}(Web Interface)${NC}"
+    echo -e "  ${BLUE}[1]${NC} ${BOLD}Wings${NC} ${BLUE}(Game Server Daemon)${NC}"
+    echo -e "  ${YELLOW}[2]${NC} ${BOLD}SSL Certificates${NC} ${BLUE}(Let's Encrypt)${NC}"
+    draw_hr
+}
+
+show_panel_menu() {
+    draw_hr
+    echo -e "${BOLD}Panel Operations:${NC}"
     echo -e "  ${GREEN}[0]${NC} ${BOLD}Install${NC} ${BLUE}(Docker)${NC}"
     echo -e "  ${RED}[1]${NC} ${BOLD}Uninstall${NC} ${BLUE}(Docker)${NC}"
     echo -e "  ${YELLOW}[2]${NC} ${BOLD}Update${NC} ${BLUE}(pull & restart)${NC}"
+    draw_hr
+}
+
+show_wings_menu() {
+    draw_hr
+    echo -e "${BOLD}Wings Operations:${NC}"
+    echo -e "  ${GREEN}[0]${NC} ${BOLD}Install${NC} ${BLUE}(System Service)${NC}"
+    echo -e "  ${RED}[1]${NC} ${BOLD}Uninstall${NC} ${BLUE}(System Service)${NC}"
+    echo -e "  ${YELLOW}[2]${NC} ${BOLD}Update${NC} ${BLUE}(pull latest)${NC}"
+    draw_hr
+}
+
+show_ssl_menu() {
+    draw_hr
+    echo -e "${BOLD}SSL Certificate Operations:${NC}"
+    echo -e "  ${GREEN}[0]${NC} ${BOLD}Install Certbot${NC} ${BLUE}(Let's Encrypt client)${NC}"
+    echo -e "  ${BLUE}[1]${NC} ${BOLD}Create Certificate${NC} ${BLUE}(HTTP/Standalone)${NC}"
+    echo -e "  ${YELLOW}[2]${NC} ${BOLD}Create Certificate (DNS)${NC} ${BLUE}(Cloudflare/Manual)${NC}"
+    echo -e "  ${CYAN}[3]${NC} ${BOLD}Setup Auto-Renewal${NC} ${BLUE}(Cron job)${NC}"
+    echo -e "  ${RED}[4]${NC} ${BOLD}Install acme.sh${NC} ${BLUE}(Advanced users)${NC}"
     draw_hr
 }
 
@@ -314,6 +351,370 @@ setup_cloudflare_tunnel_client() {
     fi
 }
 
+# Wings installation functions
+install_wings() {
+    log_step "Installing Wings daemon..."
+    
+    # Create wings user
+    if ! id "wings" >/dev/null 2>&1; then
+        log_info "Creating wings user..."
+        sudo useradd --system --no-create-home --shell /usr/sbin/nologin wings
+    fi
+    
+    # Download and install wings binary
+    WINGS_VERSION=$(curl -s https://api.github.com/repos/pterodactyl/wings/releases/latest | jq -r '.tag_name')
+    log_info "Latest Wings version: $WINGS_VERSION"
+    
+    sudo curl -L -o /usr/local/bin/wings "https://github.com/pterodactyl/wings/releases/download/${WINGS_VERSION}/wings_linux_amd64"
+    sudo chmod +x /usr/local/bin/wings
+    sudo chown wings:wings /usr/local/bin/wings
+    
+    # Create wings directory
+    sudo mkdir -p /etc/pterodactyl
+    sudo mkdir -p /srv/daemon-data
+    sudo mkdir -p /var/log/pterodactyl
+    
+    # Create systemd service
+    cat <<EOF | sudo tee /etc/systemd/system/wings.service > /dev/null
+[Unit]
+Description=Pterodactyl Wings Daemon
+After=docker.service
+Requires=docker.service
+PartOf=docker.service
+
+[Service]
+User=wings
+Group=wings
+WorkingDirectory=/etc/pterodactyl
+ExecStart=/usr/local/bin/wings
+Restart=always
+RestartSec=5
+StartLimitInterval=180
+StartLimitBurst=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    # Enable but don't start yet (needs configuration)
+    sudo systemctl daemon-reload
+    sudo systemctl enable wings
+    
+    log_success "Wings daemon installed successfully."
+    log_info "Please configure Wings by editing /etc/pterodactyl/config.yml"
+    log_info "Then start Wings with: sudo systemctl start wings"
+}
+
+uninstall_wings() {
+    log_step "Uninstalling Wings daemon..."
+    
+    # Stop and disable service
+    sudo systemctl stop wings >/dev/null 2>&1 || true
+    sudo systemctl disable wings >/dev/null 2>&1 || true
+    
+    # Remove service file
+    sudo rm -f /etc/systemd/system/wings.service
+    sudo systemctl daemon-reload
+    
+    # Remove binary
+    sudo rm -f /usr/local/bin/wings
+    
+    # Remove configuration (ask first)
+    if [ -d /etc/pterodactyl ]; then
+        echo "Remove Wings configuration directory (/etc/pterodactyl)? (y/n): "
+        read -r remove_config
+        if [[ "$remove_config" =~ ^[yY]$ ]]; then
+            sudo rm -rf /etc/pterodactyl
+        fi
+    fi
+    
+    # Remove data directory (ask first)
+    if [ -d /srv/daemon-data ]; then
+        echo "Remove Wings data directory (/srv/daemon-data)? (y/n): "
+        read -r remove_data
+        if [[ "$remove_data" =~ ^[yY]$ ]]; then
+            sudo rm -rf /srv/daemon-data
+        fi
+    fi
+    
+    # Remove logs
+    sudo rm -rf /var/log/pterodactyl
+    
+    # Remove wings user
+    sudo userdel wings >/dev/null 2>&1 || true
+    
+    log_success "Wings daemon uninstalled successfully."
+}
+
+update_wings() {
+    log_step "Updating Wings daemon..."
+    
+    if [ ! -f /usr/local/bin/wings ]; then
+        log_error "Wings is not installed. Please install it first."
+        return 1
+    fi
+    
+    # Stop wings service
+    sudo systemctl stop wings
+    
+    # Get latest version and download
+    WINGS_VERSION=$(curl -s https://api.github.com/repos/pterodactyl/wings/releases/latest | jq -r '.tag_name')
+    log_info "Updating to Wings version: $WINGS_VERSION"
+    
+    sudo curl -L -o /usr/local/bin/wings "https://github.com/pterodactyl/wings/releases/download/${WINGS_VERSION}/wings_linux_amd64"
+    sudo chmod +x /usr/local/bin/wings
+    sudo chown wings:wings /usr/local/bin/wings
+    
+    # Restart service
+    sudo systemctl start wings
+    
+    log_success "Wings daemon updated successfully."
+}
+
+# SSL Certificate functions
+install_certbot() {
+    log_step "Installing Certbot..."
+    
+    # Update package list
+    sudo apt-get update
+    
+    # Install base certbot
+    install_packages certbot
+    
+    # Detect which web server plugins to install
+    local plugins_to_install=()
+    
+    # Check for Nginx
+    if systemctl is-active --quiet nginx 2>/dev/null || systemctl is-enabled --quiet nginx 2>/dev/null || dpkg -l | grep -q "^ii.*nginx"; then
+        log_info "Nginx detected, installing Nginx plugin..."
+        plugins_to_install+=("python3-certbot-nginx")
+    fi
+    
+    # Check for Apache
+    if systemctl is-active --quiet apache2 2>/dev/null || systemctl is-enabled --quiet apache2 2>/dev/null || dpkg -l | grep -q "^ii.*apache2"; then
+        log_info "Apache detected, installing Apache plugin..."
+        plugins_to_install+=("python3-certbot-apache")
+    fi
+    
+    # If no web server detected, ask user what they want
+    if [ ${#plugins_to_install[@]} -eq 0 ]; then
+        log_info "No web server detected. You can install plugins for future use."
+        echo "Which web server plugin would you like to install? (optional)"
+        echo "  [1] Nginx plugin"
+        echo "  [2] Apache plugin" 
+        echo "  [3] Both plugins (Not recommended)"
+        echo "  [4] Skip plugins (standalone only)"
+        prompt "${BOLD}Enter choice${NC} ${BLUE}(1/2/3/4)${NC}: " plugin_choice
+        
+        case $plugin_choice in
+            1)
+                plugins_to_install+=("python3-certbot-nginx")
+                log_info "Installing Nginx plugin..."
+                ;;
+            2)
+                plugins_to_install+=("python3-certbot-apache")
+                log_info "Installing Apache plugin..."
+                ;;
+            3)
+                plugins_to_install+=("python3-certbot-nginx" "python3-certbot-apache")
+                log_info "Installing both Nginx and Apache plugins..."
+                ;;
+            4)
+                log_info "Skipping web server plugins. You can use standalone mode."
+                ;;
+            *)
+                log_warn "Invalid choice. Skipping web server plugins."
+                ;;
+        esac
+    fi
+    
+    # Install selected plugins
+    if [ ${#plugins_to_install[@]} -gt 0 ]; then
+        install_packages "${plugins_to_install[@]}"
+        log_success "Certbot installed successfully with web server plugins."
+    else
+        log_success "Certbot installed successfully (standalone mode available)."
+    fi
+    
+    log_info "Certbot is now available for SSL certificate management."
+}
+
+create_ssl_certificate_http() {
+    log_step "Creating SSL Certificate (HTTP/Standalone method)..."
+    
+    if ! command -v certbot >/dev/null 2>&1; then
+        log_error "Certbot is not installed. Please install it first."
+        return 1
+    fi
+    
+    # Get domain from user
+    local domain=""
+    while [ -z "$domain" ]; do
+        prompt "${BOLD}Enter domain name${NC} ${BLUE}(e.g., panel.example.com)${NC}: " domain
+    done
+    
+    # Check if web server is running
+    local webserver=""
+    if systemctl is-active --quiet nginx; then
+        webserver="nginx"
+    elif systemctl is-active --quiet apache2; then
+        webserver="apache"
+    else
+        webserver="standalone"
+    fi
+    
+    log_info "Detected web server: $webserver"
+    
+    # Create certificate based on detected web server
+    case $webserver in
+        nginx)
+            # Check if Nginx plugin is available
+            if dpkg -l | grep -q "^ii.*python3-certbot-nginx"; then
+                log_info "Using Nginx plugin for certificate creation..."
+                certbot certonly --nginx -d "$domain" --non-interactive --agree-tos --email admin@"$domain" || {
+                    log_error "Failed to create certificate with Nginx plugin";
+                    return 1;
+                }
+            else
+                log_warn "Nginx plugin not installed. Falling back to standalone method."
+                log_warn "Make sure port 80 is not in use by other services."
+                certbot certonly --standalone -d "$domain" --non-interactive --agree-tos --email admin@"$domain" || {
+                    log_error "Failed to create certificate with standalone method";
+                    return 1;
+                }
+            fi
+            ;;
+        apache)
+            # Check if Apache plugin is available
+            if dpkg -l | grep -q "^ii.*python3-certbot-apache"; then
+                log_info "Using Apache plugin for certificate creation..."
+                certbot certonly --apache -d "$domain" --non-interactive --agree-tos --email admin@"$domain" || {
+                    log_error "Failed to create certificate with Apache plugin";
+                    return 1;
+                }
+            else
+                log_warn "Apache plugin not installed. Falling back to standalone method."
+                log_warn "Make sure port 80 is not in use by other services."
+                certbot certonly --standalone -d "$domain" --non-interactive --agree-tos --email admin@"$domain" || {
+                    log_error "Failed to create certificate with standalone method";
+                    return 1;
+                }
+            fi
+            ;;
+        standalone)
+            log_info "Using standalone method for certificate creation..."
+            log_warn "Make sure port 80 is not in use by other services."
+            certbot certonly --standalone -d "$domain" --non-interactive --agree-tos --email admin@"$domain" || {
+                log_error "Failed to create certificate with standalone method";
+                return 1;
+            }
+            ;;
+    esac
+    
+    log_success "SSL certificate created successfully for $domain"
+    log_info "Certificate location: /etc/letsencrypt/live/$domain/"
+    log_info "You can now configure your web server to use these certificates."
+}
+
+create_ssl_certificate_dns() {
+    log_step "Creating SSL Certificate (DNS challenge method)..."
+    
+    if ! command -v certbot >/dev/null 2>&1; then
+        log_error "Certbot is not installed. Please install it first."
+        return 1
+    fi
+    
+    # Get domain from user
+    local domain=""
+    while [ -z "$domain" ]; do
+        prompt "${BOLD}Enter domain name${NC} ${BLUE}(e.g., panel.example.com)${NC}: " domain
+    done
+    
+    log_info "Using DNS challenge method for certificate creation..."
+    log_warn "This method requires you to manually create TXT DNS records."
+    log_info "Certbot will pause and wait for you to create the DNS record."
+    
+    echo -e "${YELLOW}Press Enter to continue when you're ready to start the DNS challenge...${NC}"
+    read -r
+    
+    # Run certbot in interactive mode for DNS challenge
+    certbot -d "$domain" --manual --preferred-challenges dns certonly --agree-tos --email admin@"$domain" || {
+        log_error "Failed to create certificate with DNS challenge";
+        return 1;
+    }
+    
+    log_success "SSL certificate created successfully for $domain"
+    log_info "Certificate location: /etc/letsencrypt/live/$domain/"
+}
+
+setup_ssl_auto_renewal() {
+    log_step "Setting up SSL certificate auto-renewal..."
+    
+    if ! command -v certbot >/dev/null 2>&1; then
+        log_error "Certbot is not installed. Please install it first."
+        return 1
+    fi
+    
+    # Get web server type for restart command
+    local restart_command=""
+    if systemctl is-active --quiet nginx; then
+        restart_command="systemctl restart nginx"
+    elif systemctl is-active --quiet apache2; then
+        restart_command="systemctl restart apache2"
+    elif systemctl is-active --quiet wings; then
+        restart_command="systemctl restart wings"
+    else
+        restart_command="systemctl reload-or-restart nginx"
+    fi
+    
+    log_info "Detected service for restart: $restart_command"
+    
+    # Add cron job for auto-renewal
+    local cron_job="0 23 * * * certbot renew --quiet --deploy-hook \"$restart_command\""
+    
+    # Check if cron job already exists
+    if crontab -l 2>/dev/null | grep -q "certbot renew"; then
+        log_warn "SSL auto-renewal cron job already exists."
+        echo "Current cron jobs:"
+        crontab -l 2>/dev/null | grep "certbot renew"
+        prompt "Do you want to update the existing cron job? (y/n): " update_cron
+        if [[ "$update_cron" =~ ^[yY]$ ]]; then
+            # Remove old certbot cron jobs
+            crontab -l 2>/dev/null | grep -v "certbot renew" | crontab -
+            # Add new one
+            (crontab -l 2>/dev/null; echo "$cron_job") | crontab -
+            log_success "SSL auto-renewal cron job updated."
+        fi
+    else
+        # Add new cron job
+        (crontab -l 2>/dev/null; echo "$cron_job") | crontab -
+        log_success "SSL auto-renewal cron job added."
+    fi
+    
+    log_info "Certificates will be checked for renewal daily at 23:00 (11 PM)"
+    log_info "If renewed, the following command will be executed: $restart_command"
+}
+
+install_acme_sh() {
+    log_step "Installing acme.sh (Advanced SSL certificate tool)..."
+    
+    # Install acme.sh
+    curl https://get.acme.sh | sh -s email=admin@example.com || {
+        log_error "Failed to install acme.sh";
+        return 1;
+    }
+    
+    # Source acme.sh for current session
+    source ~/.bashrc
+    
+    log_success "acme.sh installed successfully."
+    log_info "acme.sh is now available for advanced SSL certificate management."
+    log_info "For Cloudflare DNS challenge, use: acme.sh --issue --dns dns_cf -d yourdomain.com"
+    log_info "For more information, visit: https://github.com/acmesh-official/acme.sh"
+}
+
 # Docker-only flow
 uninstall_docker() {
     if [ ! -f /var/www/featherpanel/.installed ]; then
@@ -377,20 +778,58 @@ if [ -f /etc/os-release ]; then
         echo "Supported OS: $OS"
         
         # Environment overrides for non-interactive mode
+        case "${FP_COMPONENT:-}" in
+            panel) COMPONENT_TYPE="0";;
+            wings) COMPONENT_TYPE="1";;
+            ssl) COMPONENT_TYPE="2";;
+            *) COMPONENT_TYPE="";;
+        esac
+
+        while [[ ! "$COMPONENT_TYPE" =~ ^[0-2]$ ]]; do
+            show_main_menu
+            prompt "${BOLD}Enter component${NC} ${BLUE}(0/1/2)${NC}: " COMPONENT_TYPE
+            if [[ ! "$COMPONENT_TYPE" =~ ^[0-2]$ ]]; then
+                echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}0${NC}, ${YELLOW}1${NC} or ${YELLOW}2${NC}."; sleep 1
+            fi
+        done
+
+        # Show appropriate menu based on component selection
+        if [ "$COMPONENT_TYPE" = "0" ]; then
+            # Panel operations
+            while [[ ! "$INST_TYPE" =~ ^[0-2]$ ]]; do
+                show_panel_menu
+                prompt "${BOLD}Enter Panel operation${NC} ${BLUE}(0/1/2)${NC}: " INST_TYPE
+                if [[ ! "$INST_TYPE" =~ ^[0-2]$ ]]; then
+                    echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}0${NC}, ${YELLOW}1${NC} or ${YELLOW}2${NC}."; sleep 1
+                fi
+            done
+        elif [ "$COMPONENT_TYPE" = "1" ]; then
+            # Wings operations
+            while [[ ! "$INST_TYPE" =~ ^[0-2]$ ]]; do
+                show_wings_menu
+                prompt "${BOLD}Enter Wings operation${NC} ${BLUE}(0/1/2)${NC}: " INST_TYPE
+                if [[ ! "$INST_TYPE" =~ ^[0-2]$ ]]; then
+                    echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}0${NC}, ${YELLOW}1${NC} or ${YELLOW}2${NC}."; sleep 1
+                fi
+            done
+        else
+            # SSL operations
+            while [[ ! "$INST_TYPE" =~ ^[0-4]$ ]]; do
+                show_ssl_menu
+                prompt "${BOLD}Enter SSL operation${NC} ${BLUE}(0/1/2/3/4)${NC}: " INST_TYPE
+                if [[ ! "$INST_TYPE" =~ ^[0-4]$ ]]; then
+                    echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}0${NC}, ${YELLOW}1${NC}, ${YELLOW}2${NC}, ${YELLOW}3${NC} or ${YELLOW}4${NC}."; sleep 1
+                fi
+            done
+        fi
+
+        # Environment overrides for non-interactive mode
         case "${FP_ACTION:-}" in
             install) INST_TYPE="0";;
             uninstall) INST_TYPE="1";;
             update) INST_TYPE="2";;
-            *) INST_TYPE="";;
+            *) ;;
         esac
-
-        while [[ ! "$INST_TYPE" =~ ^[0-2]$ ]]; do
-            show_main_menu
-            prompt "${BOLD}Enter option${NC} ${BLUE}(0/1/2)${NC}: " INST_TYPE
-            if [[ ! "$INST_TYPE" =~ ^[0-2]$ ]]; then
-                echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}0${NC}, ${YELLOW}1${NC} or ${YELLOW}2${NC}."; sleep 1
-            fi
-        done
 
         reinstall="n"
 CF_TUNNEL_SETUP=""
@@ -401,7 +840,9 @@ CF_EMAIL=""
 CF_HOSTNAME=""
         confirm="n"
 
-        if [ "$INST_TYPE" = "0" ]; then
+        # Handle operations based on component and action
+        if [ "$COMPONENT_TYPE" = "0" ] && [ "$INST_TYPE" = "0" ]; then
+            # Panel Install
             if [ -f /var/www/featherpanel/.installed ]; then
                 read -r -p "FeatherPanel appears to be already installed. Do you want to reinstall? (y/n): " reinstall
                 if [ "$reinstall" != "y" ]; then
@@ -493,7 +934,8 @@ CF_HOSTNAME=""
 
             sudo touch /var/www/featherpanel/.installed
             log_success "Installation finished. See log at $LOG_FILE"
-        elif [ "$INST_TYPE" = "1" ]; then
+        elif [ "$COMPONENT_TYPE" = "0" ] && [ "$INST_TYPE" = "1" ]; then
+            # Panel Uninstall
             if [ ! -f /var/www/featherpanel/.installed ]; then
                 echo "FeatherPanel does not appear to be installed. Nothing to uninstall."
                 exit 0
@@ -505,8 +947,8 @@ CF_HOSTNAME=""
                     echo "Uninstallation cancelled."
                     exit 0
                 fi
-        else
-            # Update flow
+        elif [ "$COMPONENT_TYPE" = "0" ] && [ "$INST_TYPE" = "2" ]; then
+            # Panel Update
             if [ ! -f /var/www/featherpanel/.installed ]; then
                 echo "FeatherPanel does not appear to be installed. Nothing to update."
                 exit 0
@@ -524,8 +966,66 @@ CF_HOSTNAME=""
             (cd /var/www/featherpanel && sudo docker compose up -d) >> "$LOG_FILE" 2>&1 || { log_error "Failed applying updated stack"; upload_logs_on_fail; exit 1; }
             log_success "FeatherPanel updated successfully."
                     exit 0
+        elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "0" ]; then
+            # Wings Install
+            if [ -f /usr/local/bin/wings ]; then
+                read -r -p "Wings appears to be already installed. Do you want to reinstall? (y/n): " reinstall
+                if [ "$reinstall" != "y" ]; then
+                    echo "Exiting installation."
+                    exit 0
                 fi
-
+            fi
+            
+            install_packages curl jq
+            install_wings
+            log_success "Wings installation finished. See log at $LOG_FILE"
+        elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "1" ]; then
+            # Wings Uninstall
+            if [ ! -f /usr/local/bin/wings ]; then
+                echo "Wings does not appear to be installed. Nothing to uninstall."
+                exit 0
+            fi
+            prompt "Are you sure you want to uninstall Wings? (y/n): " confirm
+            if [ "$confirm" = "y" ]; then
+                uninstall_wings
+            else
+                echo "Uninstallation cancelled."
+                exit 0
+            fi
+        elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "2" ]; then
+            # Wings Update
+            if [ ! -f /usr/local/bin/wings ]; then
+                echo "Wings does not appear to be installed. Nothing to update."
+                exit 0
+            fi
+            print_banner
+            update_wings
+            log_success "Wings updated successfully."
+            exit 0
+        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "0" ]; then
+            # SSL - Install Certbot
+            install_certbot
+            log_success "SSL certificate tools installation finished. See log at $LOG_FILE"
+        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "1" ]; then
+            # SSL - Create Certificate (HTTP/Standalone)
+            create_ssl_certificate_http
+            log_success "SSL certificate creation finished. See log at $LOG_FILE"
+        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "2" ]; then
+            # SSL - Create Certificate (DNS)
+            create_ssl_certificate_dns
+            log_success "SSL certificate creation finished. See log at $LOG_FILE"
+        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "3" ]; then
+            # SSL - Setup Auto-Renewal
+            setup_ssl_auto_renewal
+            log_success "SSL auto-renewal setup finished. See log at $LOG_FILE"
+        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "4" ]; then
+            # SSL - Install acme.sh
+            install_acme_sh
+            log_success "acme.sh installation finished. See log at $LOG_FILE"
+        else
+            log_error "Invalid component or operation selected."
+            exit 1
+        fi
         
     else
         echo "Unsupported OS: $OS"

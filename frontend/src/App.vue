@@ -2,15 +2,18 @@
 import { defineComponent, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import DebugPanel from './components/DebugPanel.vue';
+import KernXWebExecutor from './components/KernXWebExecutor.vue';
 
 export default defineComponent({
     name: 'App',
     components: {
         DebugPanel,
+        KernXWebExecutor,
     },
     setup() {
         const router = useRouter();
         const debugPanel = ref<InstanceType<typeof DebugPanel> | null>(null);
+        const kernXExecutor = ref<InstanceType<typeof KernXWebExecutor> | null>(null);
         const isPageTransitioning = ref(false);
 
         // Page transition setup
@@ -44,6 +47,7 @@ export default defineComponent({
 
         return {
             debugPanel,
+            kernXExecutor,
             isPageTransitioning,
             transitionName,
         };
@@ -71,6 +75,9 @@ export default defineComponent({
 
         <!-- Debug Panel -->
         <DebugPanel ref="debugPanel" />
+
+        <!-- KernX WebExecutor -->
+        <KernXWebExecutor ref="kernXExecutor" />
     </div>
 </template>
 
