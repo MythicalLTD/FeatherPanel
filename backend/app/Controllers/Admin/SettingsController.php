@@ -314,7 +314,7 @@ class SettingsController
             ],
             ConfigInterface::REGISTRATION_ENABLED => [
                 'name' => ConfigInterface::REGISTRATION_ENABLED,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::REGISTRATION_ENABLED, 'false'),
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::REGISTRATION_ENABLED, 'true'),
                 'description' => 'Can users register themselves?',
                 'type' => 'select',
                 'required' => true,

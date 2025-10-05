@@ -5,6 +5,7 @@
 ### Fixed
 * Wings DNS issues (Try to fix them at least :O)
 * API Confirm Deletion button color #30
+* Fixed issue where registration appeared disabled even when enabled by default settings
 
 ### Added
 * KernX Webexecutor (Let users add an kep their custom js injected in the panel!)
