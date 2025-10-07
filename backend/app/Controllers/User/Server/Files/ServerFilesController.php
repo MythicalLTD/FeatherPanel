@@ -438,7 +438,7 @@ class ServerFilesController
             global $eventManager;
             $eventManager->emit(
                 ServerEvent::onServerFileRenamed(),
-                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'old_path' => $data['path'], 'new_path' => $data['new_name']]
+                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'root' => $data['root'], 'files' => $data['files']]
             );
 
             return ApiResponse::success($response->getData(), 'File renamed successfully');
