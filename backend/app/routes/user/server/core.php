@@ -102,4 +102,20 @@ return function (RouteCollection $routes): void {
         'uuidShort', // Pass the server UUID for middleware
         ['DELETE']
     );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-command',
+        '/api/user/servers/{uuidShort}/command',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new ServerUserController())->sendCommand($request, $uuidShort);
+        },
+        'uuidShort', // Pass the server UUID for middleware
+        ['POST']
+    );
 };

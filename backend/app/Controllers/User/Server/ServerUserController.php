@@ -1051,6 +1051,147 @@ class ServerUserController
     }
 
     /**
+     * Send a console command to the server via Wings WebSocket.
+     *
+     * @param Request $request The HTTP request
+     * @param string $uuidShort The server's short UUID
+     *
+     * @return Response The API response
+     */
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/command',
+        summary: 'Send console command',
+        description: 'Send a console command to the server via Wings daemon WebSocket connection.',
+        tags: ['User - Server Management'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'command', type: 'string', description: 'Console command to execute'),
+                ],
+                required: ['command']
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Command sent successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                        new OA\Property(property: 'command', type: 'string', description: 'Command that was sent'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing command or server offline'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied or insufficient permissions'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to send command'),
+        ]
+    )]
+    public function sendCommand(Request $request, string $uuidShort): Response
+    {
+        // Get authenticated user
+        $user = $request->get('user');
+        if (!$user) {
+            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+        }
+
+        // Get server details
+        $server = Server::getServerByUuidShort($uuidShort);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
+        }
+
+        if (!$this->userCanAccessServer($request, $server)) {
+            return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
+        }
+
+        // Check if user has console permission
+        $permissions = $this->getUserServerPermissions((int) $user['id'], (int) $server['id']);
+        if (!in_array('control.console', $permissions, true)) {
+            return ApiResponse::error('You do not have permission to send console commands', 'INSUFFICIENT_PERMISSIONS', 403);
+        }
+
+        // Get request data
+        $data = json_decode($request->getContent(), true);
+        if (!$data || !is_array($data)) {
+            return ApiResponse::error('Invalid request data', 'INVALID_REQUEST', 400);
+        }
+
+        // Validate command
+        if (!isset($data['command']) || !is_string($data['command'])) {
+            return ApiResponse::error('Command is required', 'COMMAND_REQUIRED', 400);
+        }
+
+        $command = trim($data['command']);
+        if ($command === '') {
+            return ApiResponse::error('Command cannot be empty', 'COMMAND_EMPTY', 400);
+        }
+
+        // Get node information
+        $node = \App\Chat\Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $scheme = $node['scheme'];
+            $host = $node['fqdn'];
+            $port = $node['daemonListen'];
+            $token = $node['daemon_token'];
+
+            $timeout = (int) 30;
+            $wings = new \App\Services\Wings\Wings(
+                $host,
+                $port,
+                $scheme,
+                $token,
+                $timeout
+            );
+
+            // Send command to Wings daemon
+            $response = $wings->getServer()->sendCommands($server['uuid'], [$command]);
+
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+                if ($response->getStatusCode() === 400) {
+                    return ApiResponse::error('Invalid command or server offline: ' . $error, 'INVALID_COMMAND', 400);
+                } elseif ($response->getStatusCode() === 401) {
+                    return ApiResponse::error('Unauthorized access to Wings daemon', 'WINGS_UNAUTHORIZED', 401);
+                } elseif ($response->getStatusCode() === 403) {
+                    return ApiResponse::error('Forbidden access to Wings daemon', 'WINGS_FORBIDDEN', 403);
+                }
+
+                return ApiResponse::error('Failed to send command to Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            // Log the command execution
+            App::getInstance(true)->getLogger()->info('Console command sent to server ' . $server['uuidShort'] . ' by user ' . $user['username']);
+
+            return ApiResponse::success([
+                'message' => 'Command sent successfully',
+                'command' => $command,
+            ], 'Command sent successfully', 200);
+
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to send command to Wings: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to send command: ' . $e->getMessage(), 'COMMAND_SEND_FAILED', 500);
+        }
+    }
+
+    /**
      * Centralized check using ServerGateway with current request user.
      */
     private function userCanAccessServer(Request $request, array $server): bool

@@ -14,6 +14,7 @@
 - File editor has received a complete design overhaul for a more modern and user-friendly experience.
 - File manager has received a full redesign for improved usability and modern appearance.
 - Major design overhaul and improved user experience for the following server management pages: **Backups**, **Databases**, **Schedules**, **Tasks**, and **Subusers**. Each page now features a modernized interface, enhanced empty states, and more intuitive workflows.
+- Recreated the entire server console UI using a new console library, resulting in a significantly improved design and much better performance for the server console.
 
 ### Fixed
 

@@ -166,6 +166,14 @@ class ServerService
     }
 
     /**
+     * Send a single command to server console.
+     */
+    public function sendCommand(string $serverUuid, string $command): WingsResponse
+    {
+        return $this->sendCommands($serverUuid, [$command]);
+    }
+
+    /**
      * Send commands to server console.
      */
     public function sendCommands(string $serverUuid, array $commands): WingsResponse
