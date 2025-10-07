@@ -209,4 +209,4 @@ To add a new permission node:
 
 ---
 
-*This documentation was auto-generated on 2025-09-30 12:52:31*
+*This documentation was auto-generated on 2025-10-07 15:45:22*

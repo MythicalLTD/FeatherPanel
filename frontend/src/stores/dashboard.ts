@@ -23,10 +23,36 @@ export interface CronData {
     summary: string | null;
 }
 
+export interface VersionInfo {
+    id: number;
+    version: string;
+    type: string;
+    release_name: string;
+    description: string;
+    min_supported_php: string;
+    max_supported_php: string;
+    is_security_release: boolean;
+    changelog_fixed?: string[];
+    changelog_added?: string[];
+    changelog_removed?: string[];
+    changelog_improved?: string[];
+    changelog_updated?: string[];
+    created_at: string;
+    updated_at: string;
+}
+
+export interface VersionData {
+    current: VersionInfo | null;
+    latest: VersionInfo | null;
+    update_available: boolean;
+    last_checked: string;
+}
+
 export const useDashboardStore = defineStore('dashboard', {
     state: () => ({
         stats: null as DashboardStats | null,
         cron: null as CronData | null,
+        versionInfo: null as VersionData | null,
         loaded: false,
         loading: false,
         error: null as string | null,
@@ -38,10 +64,8 @@ export const useDashboardStore = defineStore('dashboard', {
                 return;
             }
 
-            // Return cached stats if already loaded
-            if (this.loaded && this.stats) {
-                return;
-            }
+            // Always fetch fresh data for now to ensure version info is loaded
+            // TODO: Implement proper cache invalidation for version info
 
             this.loading = true;
             this.error = null;
@@ -53,11 +77,13 @@ export const useDashboardStore = defineStore('dashboard', {
                 if (json.success && json.data?.count) {
                     this.stats = json.data.count as DashboardStats;
                     this.cron = (json.data.cron ?? null) as CronData | null;
+                    this.versionInfo = (json.data.version ?? null) as VersionData | null;
                     this.loaded = true;
                 } else {
                     console.warn('Dashboard API response invalid:', json);
                     this.stats = null;
                     this.cron = null;
+                    this.versionInfo = null;
                     this.loaded = false;
                     this.error = 'Invalid response from server';
                 }
@@ -65,6 +91,7 @@ export const useDashboardStore = defineStore('dashboard', {
                 console.error('Failed to fetch dashboard stats:', e);
                 this.stats = null;
                 this.cron = null;
+                this.versionInfo = null;
                 this.loaded = false;
                 this.error = 'Failed to fetch dashboard statistics';
             } finally {
@@ -74,6 +101,7 @@ export const useDashboardStore = defineStore('dashboard', {
         clearStats() {
             this.stats = null;
             this.cron = null;
+            this.versionInfo = null;
             this.loaded = false;
             this.error = null;
         },
@@ -84,5 +112,6 @@ export const useDashboardStore = defineStore('dashboard', {
         hasError: (state) => state.error !== null,
         cronRecent: (state): CronItem[] | null => state.cron?.recent ?? null,
         cronSummary: (state): string | null => state.cron?.summary ?? null,
+        getVersionInfo: (state): VersionData | null => state.versionInfo,
     },
 });

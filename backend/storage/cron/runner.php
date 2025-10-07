@@ -16,8 +16,8 @@ define('APP_DEBUG', true);
 define('SYSTEM_OS_NAME', gethostname() . '/' . PHP_OS_FAMILY);
 define('SYSTEM_KERNEL_NAME', php_uname('s'));
 define('TELEMETRY', true);
-define('APP_VERSION', '3.2.1-nexus');
-define('APP_UPSTREAM', 'github.com/mythicalltd/App');
+define('APP_VERSION', 'v0.0.2');
+define('APP_UPSTREAM', 'canary');
 
 require(__DIR__ . '/../packages/autoload.php');
 
@@ -25,7 +25,7 @@ use App\Cli\App;
 use App\App as NormalApp;
 
 $pluginManager = new PluginManager();
-$app = new NormalApp(false,true);
+$app = new NormalApp(false, true);
 
 App::sendOutputWithNewLine('&7Starting App cron runner.');
 
@@ -38,7 +38,7 @@ foreach (glob(__DIR__ . '/php/*.php') as $file) {
 	try {
 		if (class_exists($className)) {
 			$worker = new $className();
-			App::sendOutputWithNewLine('&7Running &d' . $className. '&7.');
+			App::sendOutputWithNewLine('&7Running &d' . $className . '&7.');
 			$worker->run();
 			App::sendOutputWithNewLine('&7Finished running &d' . $className . '&7.');
 		} else {
@@ -67,7 +67,7 @@ if (is_dir($addonsDir)) {
 			try {
 				if (class_exists($className)) {
 					$worker = new $className();
-					App::sendOutputWithNewLine('&7Running &d' . $className. '&7.');
+					App::sendOutputWithNewLine('&7Running &d' . $className . '&7.');
 					$worker->run();
 					App::sendOutputWithNewLine('&7Finished running &d' . $className . '&7.');
 				} else {

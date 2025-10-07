@@ -54,7 +54,20 @@ class SettingsController
                 $settings[$key] = $defaultValue;
             }
         }
+        $core = [
+            'version' => APP_VERSION,
+            'upstream' => APP_UPSTREAM,
+            'os' => PHP_OS,
+            'php_version' => PHP_VERSION,
+            'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown',
+            'server_name' => $_SERVER['SERVER_NAME'] ?? 'Unknown',
+            'kernel' => SYSTEM_KERNEL_NAME,
+            'os_name' => SYSTEM_OS_NAME,
+            'hostname' => gethostname(),
+            'telemetry' => TELEMETRY,
+            'startup' => defined('APP_START') ? number_format((microtime(true) - APP_START) * 1000, 2) . ' ms' : 'N/A',
+        ];
 
-        return ApiResponse::success(['settings' => $settings], 'Providing settings', 200);
+        return ApiResponse::success(['settings' => $settings, 'core' => $core], 'Providing settings', 200);
     }
 }

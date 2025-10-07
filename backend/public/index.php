@@ -34,8 +34,8 @@ define('APP_DEBUG', true);
 define('SYSTEM_OS_NAME', gethostname() . '/' . PHP_OS_FAMILY);
 define('SYSTEM_KERNEL_NAME', php_uname('s'));
 define('TELEMETRY', true);
-define('APP_VERSION', '3.2.1-nexus');
-define('APP_UPSTREAM', 'github.com/mythicalltd/App');
+define('APP_VERSION', 'v0.0.2');
+define('APP_UPSTREAM', 'canary');
 
 if (APP_DEBUG) {
     define('RATE_LIMIT', 500000);
