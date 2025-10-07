@@ -1,6 +1,32 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
-        <div class="min-h-screen flex flex-col">
+        <div class="min-h-screen flex flex-col space-y-6">
+            <!-- File Editor Header -->
+            <div v-if="!loading && fileContent !== null && server" class="space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+                            <div class="p-2 rounded-lg bg-primary/10">
+                                <FileEdit class="h-6 w-6 text-primary" />
+                            </div>
+                            {{ t('serverFiles.edit') }}
+                        </h1>
+                        <p class="text-sm sm:text-base text-muted-foreground mt-2">
+                            {{ fileName }}
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span
+                            v-if="readonly"
+                            class="text-sm font-semibold px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-500/20 to-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20"
+                        >
+                            {{ t('common.readonly') }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monaco Editor -->
             <MonacoFileEditor
                 v-if="!loading && fileContent !== null && server"
                 :file-name="fileName || 'unknown.txt'"
@@ -10,21 +36,73 @@
                 @save="handleSave"
                 @close="handleClose"
             />
-            <div v-else-if="loading" class="flex items-center justify-center py-8 px-4">
-                <div
-                    class="animate-spin h-6 w-6 sm:h-8 sm:w-8 border-2 border-primary border-t-transparent rounded-full"
-                ></div>
-                <span class="ml-2 text-sm sm:text-base">{{ t('serverFiles.loading') }}</span>
+
+            <!-- Loading State with Skeleton -->
+            <div v-else-if="loading" class="space-y-6">
+                <!-- Header Skeleton -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 rounded-lg bg-muted-foreground/20 animate-pulse">
+                            <div class="h-6 w-6"></div>
+                        </div>
+                        <div class="space-y-2 flex-1">
+                            <div class="h-8 w-48 bg-muted-foreground/20 rounded animate-pulse"></div>
+                            <div class="h-4 w-64 bg-muted-foreground/20 rounded animate-pulse"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Editor Skeleton -->
+                <div class="border-2 rounded-lg overflow-hidden shadow-sm">
+                    <!-- Toolbar -->
+                    <div class="border-b bg-muted/50 px-4 py-3 flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="h-4 w-24 bg-muted-foreground/20 rounded animate-pulse"></div>
+                            <div class="h-4 w-32 bg-muted-foreground/20 rounded animate-pulse"></div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="h-8 w-20 bg-muted-foreground/20 rounded animate-pulse"></div>
+                            <div class="h-8 w-16 bg-muted-foreground/20 rounded animate-pulse"></div>
+                        </div>
+                    </div>
+                    <!-- Editor Content -->
+                    <div class="bg-muted/30 p-4 space-y-3">
+                        <div
+                            v-for="i in 12"
+                            :key="i"
+                            class="h-4 bg-muted-foreground/20 rounded animate-pulse"
+                            :style="{ width: `${Math.random() * 30 + 50}%` }"
+                        ></div>
+                    </div>
+                    <div class="flex items-center justify-center py-8">
+                        <div class="text-center">
+                            <div
+                                class="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"
+                            ></div>
+                            <p class="text-sm font-medium text-muted-foreground">{{ t('serverFiles.loading') }}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div v-else class="flex items-center justify-center py-8 px-4">
-                <div class="text-center max-w-md">
-                    <h3 class="text-base sm:text-lg font-semibold text-muted-foreground">
-                        {{ t('fileEditor.loadError') }}
-                    </h3>
-                    <p class="text-xs sm:text-sm text-muted-foreground mt-2">
-                        {{ t('serverFiles.failedToFetchServer') }}
-                    </p>
-                    <Button class="mt-4 w-full sm:w-auto" @click="handleClose">
+
+            <!-- Error State -->
+            <div v-else class="flex items-center justify-center py-16 px-4">
+                <div class="text-center max-w-md space-y-6">
+                    <div class="flex justify-center">
+                        <div class="p-6 rounded-full bg-destructive/10">
+                            <AlertCircle class="h-16 w-16 text-destructive" />
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="text-xl sm:text-2xl font-bold text-foreground">
+                            {{ t('fileEditor.loadError') }}
+                        </h3>
+                        <p class="text-sm sm:text-base text-muted-foreground">
+                            {{ t('serverFiles.failedToFetchServer') }}
+                        </p>
+                    </div>
+                    <Button class="w-full sm:w-auto gap-2" @click="handleClose">
+                        <ArrowLeft class="h-4 w-4" />
                         {{ t('common.back') }}
                     </Button>
                 </div>
@@ -42,6 +120,7 @@ import axios from 'axios';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import MonacoFileEditor from '@/components/server/MonacoFileEditor.vue';
 import { Button } from '@/components/ui/button';
+import { FileEdit, AlertCircle, ArrowLeft } from 'lucide-vue-next';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
 import type { Server } from '@/types/server';
@@ -65,6 +144,107 @@ const readonly = ref<boolean>((route.query.readonly as string) === 'true');
 // Editor state
 const fileContent = ref<string | null>(null);
 const loading = ref(true);
+
+// File size limit - 5MB
+const FILE_SIZE_LIMIT = 5 * 1024 * 1024;
+
+// Check if a file is editable based on extension
+const isFileEditable = (filename: string): boolean => {
+    const ext = filename.split('.').pop()?.toLowerCase() || '';
+
+    // Binary file extensions that should NOT be editable
+    const binaryExtensions = [
+        // Archives
+        'zip',
+        'tar',
+        'gz',
+        'tgz',
+        '7z',
+        'rar',
+        'bz2',
+        'xz',
+        'lzma',
+        'cab',
+        'iso',
+        'dmg',
+        'jar',
+        'war',
+        'ear',
+        // Images
+        'jpg',
+        'jpeg',
+        'png',
+        'gif',
+        'bmp',
+        'svg',
+        'ico',
+        'webp',
+        'tiff',
+        'tif',
+        'psd',
+        // Videos
+        'mp4',
+        'avi',
+        'mov',
+        'wmv',
+        'flv',
+        'mkv',
+        'webm',
+        'm4v',
+        'mpg',
+        'mpeg',
+        // Audio
+        'mp3',
+        'wav',
+        'flac',
+        'aac',
+        'ogg',
+        'wma',
+        'm4a',
+        'opus',
+        // Executables
+        'exe',
+        'dll',
+        'so',
+        'dylib',
+        'bin',
+        'app',
+        'deb',
+        'rpm',
+        'msi',
+        // Documents (binary formats)
+        'pdf',
+        'doc',
+        'docx',
+        'xls',
+        'xlsx',
+        'ppt',
+        'pptx',
+        'odt',
+        'ods',
+        'odp',
+        // Fonts
+        'ttf',
+        'otf',
+        'woff',
+        'woff2',
+        'eot',
+        // Database files
+        'db',
+        'sqlite',
+        'sqlite3',
+        'mdb',
+        // Other binary
+        'class',
+        'pyc',
+        'pyo',
+        'o',
+        'a',
+        'lib',
+    ];
+
+    return !binaryExtensions.includes(ext);
+};
 
 // Computed breadcrumbs (following ServerFiles pattern with defensive checks)
 const breadcrumbs = computed(() => {
@@ -104,6 +284,18 @@ const loadFileContent = async () => {
         return;
     }
 
+    // Check if file is editable
+    if (!isFileEditable(fileName.value)) {
+        toast(
+            t('fileEditor.cannotEditBinaryFile', {
+                defaultValue: 'Cannot edit binary files. Please download the file instead.',
+            }),
+            { type: TYPE.ERROR },
+        );
+        router.push(`/server/${serverUuid}/files`);
+        return;
+    }
+
     try {
         const response = await axios.get(`/api/user/servers/${serverUuid}/file`, {
             params: {
@@ -124,6 +316,21 @@ const loadFileContent = async () => {
             }
         } else {
             fileContent.value = String(response.data || '');
+        }
+
+        // Check file size after loading
+        // fileContent.value can be string or null, but BlobPart does not accept null
+        const contentString = fileContent.value ?? '';
+        const contentSize = new Blob([contentString]).size;
+        if (contentSize > FILE_SIZE_LIMIT) {
+            toast(
+                t('fileEditor.fileTooLarge', {
+                    defaultValue: 'File is too large to edit (max 5MB). Please download it instead.',
+                }),
+                { type: TYPE.ERROR },
+            );
+            router.push(`/server/${serverUuid}/files`);
+            return;
         }
     } catch (error) {
         console.error('Error loading file:', error);

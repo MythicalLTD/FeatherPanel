@@ -1,7 +1,40 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6">
+            <!-- Empty State -->
+            <div
+                v-if="!loading && schedules.length === 0 && !searchQuery"
+                class="flex flex-col items-center justify-center py-16 px-4"
+            >
+                <div class="text-center max-w-md space-y-6">
+                    <div class="flex justify-center">
+                        <div class="relative">
+                            <div class="absolute inset-0 animate-ping opacity-20">
+                                <div class="w-32 h-32 rounded-full bg-primary/20"></div>
+                            </div>
+                            <div class="relative p-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5">
+                                <Calendar class="h-16 w-16 text-primary" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <h3 class="text-2xl sm:text-3xl font-bold text-foreground">
+                            {{ t('serverSchedules.noSchedules') }}
+                        </h3>
+                        <p class="text-sm sm:text-base text-muted-foreground">
+                            {{ t('serverSchedules.noSchedulesDescription') }}
+                        </p>
+                    </div>
+                    <Button size="lg" class="gap-2 shadow-lg" @click="openCreateScheduleDrawer">
+                        <Plus class="h-5 w-5" />
+                        {{ t('serverSchedules.createSchedule') }}
+                    </Button>
+                </div>
+            </div>
+
+            <!-- Table Component -->
             <TableComponent
+                v-else
                 :title="t('serverSchedules.title')"
                 :description="t('serverSchedules.description')"
                 :columns="tableColumns"
@@ -438,7 +471,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Pencil, Power, Trash2, Loader2, ExternalLink, ListTodo } from 'lucide-vue-next';
+import { Plus, Pencil, Power, Trash2, Loader2, ExternalLink, ListTodo, Calendar } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import TableComponent from '@/kit/TableComponent.vue';

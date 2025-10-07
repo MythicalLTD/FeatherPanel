@@ -29,11 +29,30 @@
                     <Loader2 class="h-8 w-8 animate-spin" />
                 </div>
 
-                <div v-else-if="tasks.length === 0" class="text-center py-8">
-                    <div class="text-muted-foreground">
-                        <ListCheck class="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-4 opacity-50" />
-                        <p class="text-base sm:text-lg font-medium">{{ t('serverTasks.noTasks') }}</p>
-                        <p class="text-xs sm:text-sm">{{ t('serverTasks.noTasksDescription') }}</p>
+                <div v-else-if="tasks.length === 0" class="flex flex-col items-center justify-center py-12">
+                    <div class="text-center max-w-md space-y-6">
+                        <div class="flex justify-center">
+                            <div class="relative">
+                                <div class="absolute inset-0 animate-ping opacity-20">
+                                    <div class="w-32 h-32 rounded-full bg-primary/20"></div>
+                                </div>
+                                <div class="relative p-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5">
+                                    <ListCheck class="h-16 w-16 text-primary" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <h3 class="text-2xl sm:text-3xl font-bold text-foreground">
+                                {{ t('serverTasks.noTasks') }}
+                            </h3>
+                            <p class="text-sm sm:text-base text-muted-foreground">
+                                {{ t('serverTasks.noTasksDescription') }}
+                            </p>
+                        </div>
+                        <Button size="lg" class="gap-2 shadow-lg" @click="openCreateTaskDrawer">
+                            <Plus class="h-5 w-5" />
+                            {{ t('serverTasks.createTask') }}
+                        </Button>
                     </div>
                 </div>
 

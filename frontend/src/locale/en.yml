@@ -16,6 +16,7 @@ common:
     loading: 'Loading...'
     dashboard: 'Dashboard'
     servers: 'Servers'
+    readonly: 'Read Only'
     server: 'Server'
     view: 'View'
     settings: 'Settings'
@@ -751,7 +752,9 @@ serverBackups:
     downloadSuccess: 'Download URL generated successfully'
     deleteFailed: 'Failed to delete backup'
     deleteSuccess: 'Backup deleted successfully'
-    noBackups: 'No backups found'
+    noBackups: 'Oh... It looks like there are no backups here'
+    noBackupsDescription: 'Create your first backup to protect your server data'
+    noBackupsNoLimit: 'This server does not have backup access enabled'
     viewAllBackups: 'View all {count} backups'
     # Lock/Unlock functionality
     lockConfirm: 'Are you sure you want to lock this backup? Locked backups cannot be deleted or restored.'
@@ -811,7 +814,8 @@ serverSchedules:
     confirmDeleteTitle: 'Delete Schedule'
     confirmDeleteDescription: 'Are you sure you want to delete the schedule "{scheduleName}"? This action cannot be undone.'
     confirmDelete: 'Delete Schedule'
-    noSchedules: 'No schedules found'
+    noSchedules: 'Oh... It looks like there are no schedules here'
+    noSchedulesDescription: 'Create your first schedule to automate server tasks and maintenance'
     viewAllSchedules: 'View all {count} schedules'
 
 # Server Tasks
@@ -822,8 +826,8 @@ serverTasks:
     createTaskDescription: 'Create a new task to be executed by this schedule'
     editTask: 'Edit Task'
     editTaskDescription: 'Modify the task configuration'
-    noTasks: 'No tasks found'
-    noTasksDescription: "This schedule doesn't have any tasks yet. Create your first task to get started."
+    noTasks: 'Oh... It looks like there are no tasks here'
+    noTasksDescription: 'Create your first task to automate actions in this schedule'
     action: 'Action'
     payload: 'Payload'
     timeOffset: 'Time Offset ({offset} minutes)'
@@ -908,8 +912,8 @@ serverSubusers:
     showing: 'Showing'
     of: 'of'
     fullAccess: 'Full Access'
-    noSubusers: 'No subusers found'
-    noSubusersDescription: "This server doesn't have any subusers yet. Add your first subuser to get started."
+    noSubusers: 'Oh... It looks like there are no subusers here'
+    noSubusersDescription: 'Add your first subuser to share access to this server'
     user: 'User'
     added: 'Added'
     search: 'Search'
@@ -991,6 +995,8 @@ serverFiles:
     saveError: 'Failed to save file'
     errorLoadingFile: 'Failed to load file'
     errorLoadingFiles: 'Failed to load files'
+    cannotEditFile: 'Cannot edit this file type. Binary files like archives, images, and executables cannot be edited as text.'
+    fileTooLarge: 'File is too large to edit (max 500MB). Please download it instead.'
     # Rename
     renameFile: 'Rename File'
     renameFileDescription: 'Enter a new name for this file or folder'
@@ -1027,6 +1033,11 @@ serverFiles:
     pull: 'Pull'
     pullStarted: 'File download started'
     pullError: 'Failed to start file download'
+    # Drag and Drop
+    dropItHot: "Drop It Like It's Hot!"
+    dropToUpload: 'Release to upload your files instantly'
+    uploadingFiles: 'Uploading {count} file(s)...'
+    dragDropEscHint: 'Press ESC to cancel'
 
 # Monaco File Editor
 fileEditor:
@@ -1045,6 +1056,8 @@ fileEditor:
     formatSuccess: 'Document formatted successfully'
     findReplace: 'Find & Replace'
     loadError: 'Failed to load file'
+    cannotEditBinaryFile: 'Cannot edit binary files. Please download the file instead.'
+    fileTooLarge: 'File is too large to edit (max 100MB). Please download it instead.'
 
 # Server Databases
 serverDatabases:
@@ -1108,11 +1121,12 @@ serverDatabases:
     updateSuccess: 'Database updated successfully'
     deleteFailed: 'Failed to delete database'
     deleteSuccess: 'Database deleted successfully'
+    noDatabases: 'Oh... It looks like there are no databases here'
+    noDatabasesDescription: 'Create your first database to start storing and managing your data'
+    noDatabasesNoLimit: 'This server does not have database access enabled'
     confirmDeleteTitle: 'Delete Database'
     confirmDeleteDescription: 'Are you sure you want to delete the database "{database}"? This action cannot be undone and will remove all data.'
     confirmDelete: 'Delete Database'
-    noDatabases: 'No databases found'
-    noDatabasesDescription: "This server doesn't have any databases yet. Create your first database to get started."
     databaseNameRequired: 'Database name is required'
     database: 'Database'
 

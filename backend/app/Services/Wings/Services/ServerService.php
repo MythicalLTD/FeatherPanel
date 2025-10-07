@@ -367,15 +367,53 @@ class ServerService
     }
 
     /**
-     * Compress files.
+     * Compress files into a single archive.
+     *
+     * According to Wings API documentation:
+     * - POST /api/servers/:uuid/files/compress
+     * - Compresses one or more files into a SINGLE archive
+     * - Body: { "root": "string", "files": ["file1", "file2", ...] }
+     * - Returns: 200 with the new archive file object
+     *
+     * NOTE: Known Wings Issues (as of v1.11.x):
+     * - Wings may create multiple archives instead of one (Wings bug)
+     * - Wings may return 500 errors even when archives are created
+     * - Hidden files (starting with .) may cause issues
+     *
+     * @param string $serverUuid The server UUID
+     * @param string $root The root directory path
+     * @param array $files Array of file names (relative to root)
      */
     public function compressFiles(string $serverUuid, string $root, array $files): WingsResponse
     {
         try {
+            // Ensure files is an array and not empty
+            if (empty($files) || !is_array($files)) {
+                return new WingsResponse(['error' => 'Files array cannot be empty'], 422);
+            }
+
+            // Ensure all files are strings (file names only, not paths)
+            $files = array_values(array_filter($files, 'is_string'));
+
+            if (empty($files)) {
+                return new WingsResponse(['error' => 'No valid file names provided'], 422);
+            }
+
+            // Filter out empty strings and whitespace-only entries
+            $files = array_filter($files, fn ($file) => !empty(trim($file)));
+
+            if (empty($files)) {
+                return new WingsResponse(['error' => 'No valid file names after filtering'], 422);
+            }
+
+            // Reset array keys after filtering
+            $files = array_values($files);
+
             $data = [
                 'root' => $root,
                 'files' => $files,
             ];
+
             $response = $this->connection->post("/api/servers/{$serverUuid}/files/compress", $data);
 
             return new WingsResponse($response, 200);

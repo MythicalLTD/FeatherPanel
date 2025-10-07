@@ -45,13 +45,30 @@
                         <Loader2 class="h-8 w-8 animate-spin" />
                     </div>
 
-                    <div v-else-if="subusers.length === 0" class="text-center py-10">
-                        <Users class="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 class="text-lg font-medium mb-2">{{ t('serverSubusers.noSubusersFound') }}</h3>
-                        <p class="text-muted-foreground mb-4">{{ t('serverSubusers.noSubusersDescription') }}</p>
-                        <div class="flex gap-2 justify-center">
-                            <Button :disabled="loading" @click="openAddDialog">
-                                <Plus class="h-4 w-4 mr-2" />
+                    <div v-else-if="subusers.length === 0" class="flex flex-col items-center justify-center py-12">
+                        <div class="text-center max-w-md space-y-6">
+                            <div class="flex justify-center">
+                                <div class="relative">
+                                    <div class="absolute inset-0 animate-ping opacity-20">
+                                        <div class="w-32 h-32 rounded-full bg-primary/20"></div>
+                                    </div>
+                                    <div
+                                        class="relative p-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5"
+                                    >
+                                        <Users class="h-16 w-16 text-primary" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-3">
+                                <h3 class="text-2xl sm:text-3xl font-bold text-foreground">
+                                    {{ t('serverSubusers.noSubusers') }}
+                                </h3>
+                                <p class="text-sm sm:text-base text-muted-foreground">
+                                    {{ t('serverSubusers.noSubusersDescription') }}
+                                </p>
+                            </div>
+                            <Button size="lg" class="gap-2 shadow-lg" :disabled="loading" @click="openAddDialog">
+                                <Plus class="h-5 w-5" />
                                 {{ t('serverSubusers.addSubuser') }}
                             </Button>
                         </div>

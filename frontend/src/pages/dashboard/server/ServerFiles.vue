@@ -1,260 +1,403 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6">
-            <!-- Header -->
-            <div class="space-y-4">
-                <div>
-                    <h1 class="text-xl sm:text-2xl font-bold flex items-center gap-2">
-                        {{ t('serverFiles.title') }}
-                        <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                            {{ filteredFiles.length }} / {{ files.length }}
-                        </span>
-                    </h1>
-                    <p class="text-sm sm:text-base text-muted-foreground">{{ t('serverFiles.description') }}</p>
+        <!-- Drag and Drop Overlay -->
+        <Transition
+            enter-active-class="transition-all duration-300 ease-out"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="transition-all duration-200 ease-in"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="opacity-0 scale-95"
+        >
+            <div
+                v-if="isDraggingOver"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-md"
+                @drop.prevent="handleDrop"
+                @dragover.prevent
+            >
+                <div class="text-center space-y-8 px-4">
+                    <div class="relative inline-block">
+                        <!-- Pulsing rings -->
+                        <div class="absolute inset-0 -m-8">
+                            <div class="absolute inset-0 animate-ping opacity-20">
+                                <div class="w-full h-full rounded-full bg-primary"></div>
+                            </div>
+                            <div class="absolute inset-0 animate-pulse">
+                                <div class="w-full h-full rounded-full bg-primary/10"></div>
+                            </div>
+                        </div>
+                        <!-- Icon container -->
+                        <div
+                            class="relative p-12 rounded-full bg-gradient-to-br from-primary/30 via-primary/20 to-primary/10 border-4 border-dashed border-primary shadow-2xl shadow-primary/20"
+                        >
+                            <Upload
+                                class="h-20 w-20 text-primary drop-shadow-lg"
+                                style="animation: bounce 1s infinite"
+                            />
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <h2
+                            class="text-5xl font-black bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent drop-shadow-sm"
+                            style="line-height: 1.2"
+                        >
+                            🔥 {{ t('serverFiles.dropItHot') }} 🔥
+                        </h2>
+                        <p class="text-xl font-medium text-muted-foreground">{{ t('serverFiles.dropToUpload') }}</p>
+                        <p class="text-sm text-muted-foreground/70 mt-2">{{ t('serverFiles.dragDropEscHint') }}</p>
+                    </div>
                 </div>
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <div class="flex flex-wrap gap-2">
-                        <Button variant="outline" :disabled="loading" class="flex-1 sm:flex-none" @click="refreshFiles">
-                            <RefreshCw class="h-4 w-4 sm:mr-2" />
-                            <span class="hidden sm:inline">{{ t('common.refresh') }}</span>
+            </div>
+        </Transition>
+
+        <div class="space-y-6" @dragenter.prevent="handleDragEnter" @dragover.prevent @drop.prevent="handleDrop">
+            <!-- Header with improved design -->
+            <div class="space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+                            <div class="p-2 rounded-lg bg-primary/10">
+                                <FolderOpen class="h-6 w-6 text-primary" />
+                            </div>
+                            {{ t('serverFiles.title') }}
+                        </h1>
+                        <p class="text-sm sm:text-base text-muted-foreground mt-2">
+                            {{ t('serverFiles.description') }}
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span
+                            v-if="uploading"
+                            class="text-sm font-semibold px-3 py-1.5 rounded-full bg-gradient-to-r from-yellow-500/20 to-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/30 animate-pulse flex items-center gap-2"
+                        >
+                            <Upload class="h-3.5 w-3.5 animate-bounce" />
+                            Uploading...
+                        </span>
+                        <span
+                            class="text-sm font-semibold px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/20 to-primary/10 text-primary border border-primary/20"
+                        >
+                            {{ filteredFiles.length }} / {{ files.length }} items
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Action buttons with better grouping -->
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="flex flex-wrap gap-2 flex-1">
+                        <Button
+                            variant="outline"
+                            :disabled="loading"
+                            class="gap-2 hover:bg-primary/5 hover:text-primary hover:border-primary/50 transition-all"
+                            @click="refreshFiles"
+                        >
+                            <RefreshCw :class="['h-4 w-4', loading && 'animate-spin']" />
+                            <span>{{ t('common.refresh') }}</span>
                         </Button>
                         <Button
                             variant="outline"
                             :disabled="loading"
-                            class="flex-1 sm:flex-none"
+                            class="gap-2 hover:bg-primary/5 hover:text-primary hover:border-primary/50 transition-all"
                             @click="showCreateFileDialog = true"
                         >
-                            <FileText class="h-4 w-4 sm:mr-2" />
-                            <span class="hidden sm:inline">{{ t('serverFiles.newFile') }}</span>
+                            <FileText class="h-4 w-4" />
+                            <span>{{ t('serverFiles.newFile') }}</span>
                         </Button>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
                         <Button
                             variant="outline"
                             :disabled="loading"
-                            class="flex-1 sm:flex-none"
+                            class="gap-2 hover:bg-primary/5 hover:text-primary hover:border-primary/50 transition-all"
                             @click="showUploadDialog = true"
                         >
-                            <Upload class="h-4 w-4 sm:mr-2" />
-                            <span class="hidden sm:inline">{{ t('serverFiles.uploadFile') }}</span>
+                            <Upload class="h-4 w-4" />
+                            <span>{{ t('serverFiles.uploadFile') }}</span>
                         </Button>
-                        <Button :disabled="loading" class="flex-1 sm:flex-none" @click="showCreateFolderDialog = true">
-                            <FolderPlus class="h-4 w-4 sm:mr-2" />
-                            <span class="hidden sm:inline">{{ t('serverFiles.createFolder') }}</span>
+                        <Button
+                            :disabled="loading"
+                            class="gap-2 bg-primary hover:bg-primary/90 transition-all shadow-sm"
+                            @click="showCreateFolderDialog = true"
+                        >
+                            <FolderPlus class="h-4 w-4" />
+                            <span>{{ t('serverFiles.createFolder') }}</span>
                         </Button>
                     </div>
                 </div>
             </div>
 
-            <!-- Breadcrumb Navigation + Search -->
-            <Card>
-                <CardContent class="p-3 sm:p-4">
-                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div class="flex items-center gap-2 min-w-0">
+            <!-- Enhanced Search Bar with Breadcrumbs -->
+            <Card class="border-2 shadow-sm hover:shadow-md transition-all">
+                <CardContent class="p-4">
+                    <div class="space-y-4">
+                        <!-- Breadcrumb Navigation -->
+                        <div class="flex items-center gap-2 min-w-0 overflow-x-auto pb-2 border-b">
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 :disabled="loading"
-                                class="flex-shrink-0"
+                                class="flex-shrink-0 hover:bg-primary/10 hover:text-primary transition-all"
                                 @click="navigateToPath('/')"
                             >
                                 <Home class="h-4 w-4" />
                             </Button>
-                            <Separator orientation="vertical" class="h-4 hidden sm:block" />
-                            <div class="flex items-center gap-1 min-w-0 overflow-x-auto">
-                                <template v-for="(segment, index) in pathSegments" :key="index">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        class="text-muted-foreground hover:text-foreground whitespace-nowrap flex-shrink-0"
-                                        :disabled="loading"
-                                        @click="navigateToPath(getPathUpTo(index))"
-                                    >
-                                        {{ segment }}
-                                    </Button>
-                                    <ChevronRight
-                                        v-if="index < pathSegments.length - 1"
-                                        class="h-4 w-4 text-muted-foreground flex-shrink-0"
-                                    />
-                                </template>
-                            </div>
+                            <template v-for="(segment, index) in pathSegments" :key="index">
+                                <ChevronRight class="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    class="text-muted-foreground hover:text-foreground hover:bg-primary/10 whitespace-nowrap flex-shrink-0 transition-all"
+                                    :disabled="loading"
+                                    @click="navigateToPath(getPathUpTo(index))"
+                                >
+                                    {{ segment }}
+                                </Button>
+                            </template>
                         </div>
-                        <div class="flex items-center gap-2 w-full sm:w-80">
+
+                        <!-- Enhanced Search Input -->
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <Search class="h-5 w-5 text-muted-foreground" />
+                            </div>
                             <Input
                                 ref="searchInput"
                                 v-model="searchQuery"
                                 :placeholder="t('serverFiles.searchPlaceholder')"
                                 :disabled="loading || files.length === 0"
-                                class="flex-1"
+                                class="pl-10 pr-10 h-11 border-2 focus:border-primary transition-all"
                                 @keydown.escape="clearSearch"
                             />
                             <Button
+                                v-if="searchQuery"
                                 variant="ghost"
                                 size="sm"
-                                :disabled="!searchQuery"
-                                class="flex-shrink-0"
+                                class="absolute inset-y-0 right-0 h-full px-3 hover:bg-transparent"
                                 @click="clearSearch"
-                                >X</Button
                             >
+                                <X class="h-4 w-4" />
+                            </Button>
                         </div>
                     </div>
                 </CardContent>
             </Card>
 
-            <!-- File Actions Toolbar -->
-            <Card v-if="selectedFiles.length > 0">
-                <CardContent class="p-3 sm:p-4">
+            <!-- Enhanced File Actions Toolbar -->
+            <Card
+                v-if="selectedFiles.length > 0"
+                class="border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10 shadow-sm"
+            >
+                <CardContent class="p-4">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <span class="text-sm text-muted-foreground text-center sm:text-left">
-                            {{ t('serverFiles.selectedFiles', { count: selectedFiles.length }) }}
-                        </span>
-                        <div class="flex flex-wrap gap-2 justify-center sm:justify-end">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground"
+                            >
+                                <span class="text-sm font-bold">{{ selectedFiles.length }}</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold">
+                                    {{ t('serverFiles.selectedFiles', { count: selectedFiles.length }) }}
+                                </p>
+                                <p class="text-xs text-muted-foreground">Choose an action below</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
                             <Button
                                 variant="outline"
                                 size="sm"
                                 :disabled="loading"
-                                class="flex-1 sm:flex-none"
+                                class="gap-2 hover:bg-primary/10 hover:text-primary transition-all"
                                 @click="downloadSelected"
                             >
-                                <Download class="h-4 w-4 sm:mr-2" />
-                                <span class="hidden sm:inline">{{ t('serverFiles.download') }}</span>
+                                <Download class="h-4 w-4" />
+                                <span>{{ t('serverFiles.download') }}</span>
                             </Button>
                             <Button
                                 variant="outline"
                                 size="sm"
                                 :disabled="loading"
-                                class="flex-1 sm:flex-none"
+                                class="gap-2 hover:bg-primary/10 hover:text-primary transition-all"
                                 @click="compressSelected"
                             >
-                                <Archive class="h-4 w-4 sm:mr-2" />
-                                <span class="hidden sm:inline">{{ t('serverFiles.compress') }}</span>
+                                <Archive class="h-4 w-4" />
+                                <span>{{ t('serverFiles.compress') }}</span>
                             </Button>
                             <Button
                                 variant="destructive"
                                 size="sm"
                                 :disabled="loading"
-                                class="flex-1 sm:flex-none"
+                                class="gap-2 shadow-sm"
                                 @click="deleteSelected"
                             >
-                                <Trash2 class="h-4 w-4 sm:mr-2" />
-                                <span class="hidden sm:inline">{{ t('serverFiles.delete') }}</span>
+                                <Trash2 class="h-4 w-4" />
+                                <span>{{ t('serverFiles.delete') }}</span>
                             </Button>
-                            <Button variant="ghost" size="sm" class="flex-1 sm:flex-none" @click="clearSelection">
-                                <X class="h-4 w-4 sm:mr-2" />
-                                <span class="hidden sm:inline">Clear</span>
+                            <Button variant="ghost" size="sm" class="gap-2 hover:bg-background" @click="clearSelection">
+                                <X class="h-4 w-4" />
+                                <span>Clear</span>
                             </Button>
                         </div>
                     </div>
                 </CardContent>
             </Card>
 
-            <!-- Files List -->
-            <Card>
-                <CardHeader>
-                    <CardTitle class="flex items-center gap-2">
-                        <FolderOpen class="h-5 w-5" />
-                        {{ t('serverFiles.fileManager') }}
-                    </CardTitle>
-                    <CardDescription>{{ t('serverFiles.currentPath') }}: {{ currentPath }}</CardDescription>
+            <!-- Enhanced Files List -->
+            <Card class="border-2 shadow-sm">
+                <CardHeader class="border-b">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <CardTitle class="flex items-center gap-2 text-xl">
+                                <div class="p-1.5 rounded-md bg-primary/10">
+                                    <FolderOpen class="h-5 w-5 text-primary" />
+                                </div>
+                                {{ t('serverFiles.fileManager') }}
+                            </CardTitle>
+                            <CardDescription class="mt-1.5">
+                                {{ t('serverFiles.currentPath') }}:
+                                <code class="text-xs bg-muted px-2 py-0.5 rounded">{{ currentPath }}</code>
+                            </CardDescription>
+                        </div>
+                    </div>
                 </CardHeader>
-                <CardContent>
-                    <div v-if="loading" class="flex items-center justify-center py-8">
-                        <div
-                            class="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"
-                        ></div>
-                        <span class="ml-2">{{ t('serverFiles.loading') }}</span>
-                    </div>
-
-                    <div v-else-if="files.length === 0" class="text-center py-8 text-muted-foreground">
-                        {{ t('serverFiles.emptyFolder') }}
-                    </div>
-
-                    <div v-else>
-                        <!-- File List Header -->
-                        <div class="border-b pb-3 sm:pb-4 mb-3 sm:mb-4">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2 sm:gap-4">
-                                    <div class="flex items-center gap-2">
-                                        <!-- Custom Select All Checkbox -->
-                                        <div
-                                            class="relative flex items-center justify-center w-4 h-4 border-2 rounded-sm cursor-pointer transition-all duration-200"
-                                            :class="{
-                                                'border-primary bg-primary': allFilesSelected || someFilesSelected,
-                                                'border-muted-foreground hover:border-primary':
-                                                    !allFilesSelected && !someFilesSelected && files.length > 0,
-                                                'border-muted bg-muted cursor-not-allowed': files.length === 0,
-                                            }"
-                                            @click="files.length > 0 && toggleSelectAll(!allFilesSelected)"
-                                        >
-                                            <!-- Full selection checkmark -->
-                                            <svg
-                                                v-if="allFilesSelected"
-                                                class="w-3 h-3 text-primary-foreground"
-                                                fill="currentColor"
-                                                viewBox="0 0 20 20"
-                                            >
-                                                <path
-                                                    fill-rule="evenodd"
-                                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                                    clip-rule="evenodd"
-                                                />
-                                            </svg>
-                                            <!-- Partial selection dash -->
-                                            <div
-                                                v-else-if="someFilesSelected"
-                                                class="w-2 h-0.5 bg-primary-foreground rounded"
-                                            ></div>
-                                        </div>
-                                        <span class="text-xs sm:text-sm font-medium">{{ t('serverFiles.name') }}</span>
+                <CardContent class="p-0">
+                    <div v-if="loading">
+                        <!-- Skeleton Loader -->
+                        <div class="divide-y">
+                            <!-- Header -->
+                            <div class="bg-muted/50 px-4 py-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-5 h-5 bg-muted-foreground/20 rounded-md animate-pulse"></div>
+                                        <div class="h-4 w-16 bg-muted-foreground/20 rounded animate-pulse"></div>
+                                    </div>
+                                    <div class="hidden sm:flex items-center gap-6">
+                                        <div class="h-4 w-16 bg-muted-foreground/20 rounded animate-pulse"></div>
+                                        <div class="h-4 w-20 bg-muted-foreground/20 rounded animate-pulse"></div>
+                                        <div class="h-4 w-16 bg-muted-foreground/20 rounded animate-pulse"></div>
                                     </div>
                                 </div>
-                                <div class="hidden sm:flex items-center gap-4">
-                                    <span class="text-sm font-medium w-20">{{ t('serverFiles.size') }}</span>
-                                    <span class="text-sm font-medium w-24">{{ t('serverFiles.modified') }}</span>
-                                    <span class="text-sm font-medium w-20">{{ t('serverFiles.actions') }}</span>
+                            </div>
+                            <!-- Skeleton Files -->
+                            <div v-for="i in 8" :key="i" class="px-4 py-3 animate-pulse">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-5 h-5 bg-muted-foreground/20 rounded-md"></div>
+                                    <div class="p-1.5 rounded-md bg-muted-foreground/10">
+                                        <div class="h-5 w-5 bg-muted-foreground/20 rounded"></div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div
+                                            class="h-4 bg-muted-foreground/20 rounded"
+                                            :style="{ width: `${Math.random() * 40 + 30}%` }"
+                                        ></div>
+                                    </div>
+                                    <div class="hidden sm:flex items-center gap-6">
+                                        <div class="h-3 w-16 bg-muted-foreground/20 rounded"></div>
+                                        <div class="h-3 w-24 bg-muted-foreground/20 rounded"></div>
+                                        <div class="h-8 w-8 bg-muted-foreground/20 rounded-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-else-if="files.length === 0" class="flex flex-col items-center justify-center py-16">
+                        <div class="p-4 rounded-full bg-muted/50 mb-4">
+                            <FolderOpen class="h-12 w-12 text-muted-foreground" />
+                        </div>
+                        <p class="text-base font-medium text-muted-foreground">{{ t('serverFiles.emptyFolder') }}</p>
+                        <p class="text-sm text-muted-foreground mt-1">Create files or folders to get started</p>
+                    </div>
+
+                    <div v-else class="divide-y">
+                        <!-- File List Header -->
+                        <div class="bg-muted/50 px-4 py-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <!-- Custom Select All Checkbox -->
+                                    <div
+                                        class="relative flex items-center justify-center w-5 h-5 border-2 rounded-md cursor-pointer transition-all duration-200 shadow-sm"
+                                        :class="{
+                                            'border-primary bg-primary': allFilesSelected || someFilesSelected,
+                                            'border-input bg-background hover:border-primary hover:bg-primary/5':
+                                                !allFilesSelected && !someFilesSelected && files.length > 0,
+                                            'border-muted bg-muted cursor-not-allowed': files.length === 0,
+                                        }"
+                                        @click="files.length > 0 && toggleSelectAll(!allFilesSelected)"
+                                    >
+                                        <!-- Full selection checkmark -->
+                                        <svg
+                                            v-if="allFilesSelected"
+                                            class="w-3.5 h-3.5 text-primary-foreground"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                        >
+                                            <path
+                                                fill-rule="evenodd"
+                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                clip-rule="evenodd"
+                                            />
+                                        </svg>
+                                        <!-- Partial selection dash -->
+                                        <div
+                                            v-else-if="someFilesSelected"
+                                            class="w-2.5 h-0.5 bg-primary-foreground rounded-full"
+                                        ></div>
+                                    </div>
+                                    <span class="text-sm font-semibold">{{ t('serverFiles.name') }}</span>
+                                </div>
+                                <div class="hidden sm:flex items-center gap-6">
+                                    <span class="text-sm font-semibold w-24 text-right">{{
+                                        t('serverFiles.size')
+                                    }}</span>
+                                    <span class="text-sm font-semibold w-32 text-right">{{
+                                        t('serverFiles.modified')
+                                    }}</span>
+                                    <span class="text-sm font-semibold w-20 text-center">{{
+                                        t('serverFiles.actions')
+                                    }}</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Go Up Directory -->
-                        <div v-if="currentPath !== '/'" class="border-b hover:bg-muted/50 transition-colors">
-                            <div class="flex items-center gap-2 sm:gap-4 p-3 sm:p-4 cursor-pointer" @click="navigateUp">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-4"></div>
-                                    <FolderUp class="h-4 w-4 text-muted-foreground" />
-                                    <span class="text-xs sm:text-sm">{{ t('serverFiles.parentDirectory') }}</span>
+                        <div v-if="currentPath !== '/'" class="hover:bg-muted/30 transition-all cursor-pointer group">
+                            <div class="flex items-center gap-3 px-4 py-3" @click="navigateUp">
+                                <div class="w-5"></div>
+                                <div class="p-1.5 rounded-md bg-muted group-hover:bg-primary/10 transition-all">
+                                    <FolderUp class="h-4 w-4 text-muted-foreground group-hover:text-primary" />
                                 </div>
-                                <div class="flex-1"></div>
-                                <div class="hidden sm:block w-20"></div>
-                                <div class="hidden sm:block w-24"></div>
-                                <div class="hidden sm:block w-20"></div>
+                                <span class="text-sm font-medium group-hover:text-primary transition-all">
+                                    {{ t('serverFiles.parentDirectory') }}
+                                </span>
                             </div>
                         </div>
 
                         <!-- File Rows -->
-                        <div class="space-y-1">
+                        <div>
                             <div
                                 v-for="file in filteredFiles"
                                 :key="file.name"
-                                class="border-b last:border-b-0 hover:bg-muted/50 transition-colors"
+                                class="hover:bg-muted/30 transition-all duration-150 group"
                             >
                                 <!-- Mobile Layout -->
-                                <div class="sm:hidden p-3">
+                                <div
+                                    class="sm:hidden px-4 py-3 cursor-pointer"
+                                    @click="handleRowClick($event, file.name)"
+                                    @contextmenu.prevent="handleRightClick($event, file)"
+                                >
                                     <div class="flex items-start gap-3">
-                                        <div class="flex items-center gap-2 flex-1 min-w-0">
+                                        <div class="flex items-center gap-3 flex-1 min-w-0">
                                             <!-- Custom File Checkbox -->
                                             <div
-                                                class="relative flex items-center justify-center w-4 h-4 border-2 rounded-sm cursor-pointer transition-all duration-200 flex-shrink-0"
+                                                class="relative flex items-center justify-center w-5 h-5 border-2 rounded-md cursor-pointer transition-all duration-200 flex-shrink-0 shadow-sm"
                                                 :class="{
                                                     'border-primary bg-primary': selectedFiles.includes(file.name),
-                                                    'border-muted-foreground hover:border-primary':
+                                                    'border-input bg-background hover:border-primary hover:bg-primary/5':
                                                         !selectedFiles.includes(file.name),
                                                 }"
-                                                @click="toggleFileSelection(file.name)"
+                                                @click.stop="toggleFileSelection(file.name)"
                                             >
                                                 <svg
                                                     v-if="selectedFiles.includes(file.name)"
-                                                    class="w-3 h-3 text-primary-foreground"
+                                                    class="w-3.5 h-3.5 text-primary-foreground"
                                                     fill="currentColor"
                                                     viewBox="0 0 20 20"
                                                 >
@@ -265,39 +408,62 @@
                                                     />
                                                 </svg>
                                             </div>
-                                            <component
-                                                :is="getFileIcon(file)"
-                                                class="h-4 w-4 text-muted-foreground flex-shrink-0"
-                                            />
+                                            <div
+                                                class="p-1.5 rounded-md transition-all"
+                                                :class="file.file ? 'bg-blue-500/10' : 'bg-yellow-500/10'"
+                                            >
+                                                <component
+                                                    :is="getFileIcon(file)"
+                                                    class="h-5 w-5 flex-shrink-0"
+                                                    :class="
+                                                        file.file
+                                                            ? 'text-blue-600 dark:text-blue-400'
+                                                            : 'text-yellow-600 dark:text-yellow-400'
+                                                    "
+                                                />
+                                            </div>
                                             <div class="min-w-0 flex-1">
                                                 <div
-                                                    class="text-sm truncate cursor-pointer hover:text-primary"
-                                                    @click="handleFileClick(file)"
+                                                    class="text-sm font-medium truncate cursor-pointer hover:text-primary transition-colors"
+                                                    @click.stop="handleFileClick(file)"
                                                 >
                                                     <template
                                                         v-for="(seg, i) in getHighlightSegments(file.name)"
                                                         :key="i"
                                                     >
-                                                        <mark v-if="seg.match">{{ seg.text }}</mark>
+                                                        <mark
+                                                            v-if="seg.match"
+                                                            class="bg-yellow-200 dark:bg-yellow-900/50 px-0.5 rounded"
+                                                            >{{ seg.text }}</mark
+                                                        >
                                                         <span v-else>{{ seg.text }}</span>
                                                     </template>
                                                 </div>
-                                                <div class="text-xs text-muted-foreground mt-1">
-                                                    {{
+                                                <div class="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                                    <span>{{
                                                         file.file ? formatFileSize(file.size) : t('serverFiles.folder')
-                                                    }}
-                                                    • {{ formatDate(file.modified) }}
+                                                    }}</span>
+                                                    <span>•</span>
+                                                    <span>{{ formatDate(file.modified) }}</span>
                                                 </div>
                                             </div>
                                         </div>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger as-child>
-                                                <Button variant="ghost" size="sm" class="h-8 w-8 p-0 flex-shrink-0">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    class="h-9 w-9 p-0 flex-shrink-0 hover:bg-primary/10 hover:text-primary"
+                                                    @click.stop
+                                                >
                                                     <MoreVertical class="h-4 w-4" />
                                                 </Button>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem v-if="file.file" @click="openMonacoEditor(file)">
+                                            <DropdownMenuContent align="end" class="w-48">
+                                                <DropdownMenuItem
+                                                    v-if="file.file && isFileEditable(file) && isFileSizeValid(file)"
+                                                    @click="openMonacoEditor(file)"
+                                                >
                                                     <Code class="h-4 w-4 mr-2" />
                                                     {{ t('serverFiles.edit') }}
                                                 </DropdownMenuItem>
@@ -338,22 +504,25 @@
                                 </div>
 
                                 <!-- Desktop Layout -->
-                                <div class="hidden sm:flex items-center gap-4 p-4">
-                                    <div class="flex items-center gap-2 flex-1">
+                                <div
+                                    class="hidden sm:flex items-center px-4 py-3 cursor-pointer gap-6"
+                                    @click="handleRowClick($event, file.name)"
+                                    @contextmenu.prevent="handleRightClick($event, file)"
+                                >
+                                    <div class="flex items-center gap-3 flex-1 min-w-0">
                                         <!-- Custom File Checkbox -->
                                         <div
-                                            class="relative flex items-center justify-center w-4 h-4 border-2 rounded-sm cursor-pointer transition-all duration-200"
+                                            class="relative flex items-center justify-center w-5 h-5 border-2 rounded-md cursor-pointer transition-all duration-200 shadow-sm"
                                             :class="{
                                                 'border-primary bg-primary': selectedFiles.includes(file.name),
-                                                'border-muted-foreground hover:border-primary': !selectedFiles.includes(
-                                                    file.name,
-                                                ),
+                                                'border-input bg-background hover:border-primary hover:bg-primary/5':
+                                                    !selectedFiles.includes(file.name),
                                             }"
-                                            @click="toggleFileSelection(file.name)"
+                                            @click.stop="toggleFileSelection(file.name)"
                                         >
                                             <svg
                                                 v-if="selectedFiles.includes(file.name)"
-                                                class="w-3 h-3 text-primary-foreground"
+                                                class="w-3.5 h-3.5 text-primary-foreground"
                                                 fill="currentColor"
                                                 viewBox="0 0 20 20"
                                             >
@@ -364,35 +533,60 @@
                                                 />
                                             </svg>
                                         </div>
-                                        <component
-                                            :is="getFileIcon(file)"
-                                            class="h-4 w-4 text-muted-foreground flex-shrink-0"
-                                        />
+                                        <div
+                                            class="p-1.5 rounded-md transition-all"
+                                            :class="
+                                                file.file
+                                                    ? 'bg-blue-500/10 group-hover:bg-blue-500/20'
+                                                    : 'bg-yellow-500/10 group-hover:bg-yellow-500/20'
+                                            "
+                                        >
+                                            <component
+                                                :is="getFileIcon(file)"
+                                                class="h-5 w-5 flex-shrink-0"
+                                                :class="
+                                                    file.file
+                                                        ? 'text-blue-600 dark:text-blue-400'
+                                                        : 'text-yellow-600 dark:text-yellow-400'
+                                                "
+                                            />
+                                        </div>
                                         <span
-                                            class="text-sm truncate cursor-pointer hover:text-primary"
-                                            @click="handleFileClick(file)"
+                                            class="text-sm font-medium truncate cursor-pointer hover:text-primary transition-colors"
+                                            @click.stop="handleFileClick(file)"
                                         >
                                             <template v-for="(seg, i) in getHighlightSegments(file.name)" :key="i">
-                                                <mark v-if="seg.match">{{ seg.text }}</mark>
+                                                <mark
+                                                    v-if="seg.match"
+                                                    class="bg-yellow-200 dark:bg-yellow-900/50 px-0.5 rounded"
+                                                    >{{ seg.text }}</mark
+                                                >
                                                 <span v-else>{{ seg.text }}</span>
                                             </template>
                                         </span>
                                     </div>
-                                    <div class="w-20 text-sm text-muted-foreground">
+                                    <div class="w-24 text-sm text-muted-foreground text-right">
                                         {{ file.file ? formatFileSize(file.size) : '-' }}
                                     </div>
-                                    <div class="w-24 text-sm text-muted-foreground">
+                                    <div class="w-32 text-sm text-muted-foreground text-right">
                                         {{ formatDate(file.modified) }}
                                     </div>
-                                    <div class="w-20">
+                                    <div class="w-20 flex justify-center" @click.stop>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger as-child>
-                                                <Button variant="ghost" size="sm" class="h-8 w-8 p-0">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    class="h-9 w-9 p-0 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:text-primary transition-all"
+                                                >
                                                     <MoreVertical class="h-4 w-4" />
                                                 </Button>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem v-if="file.file" @click="openMonacoEditor(file)">
+                                            <DropdownMenuContent align="end" class="w-48">
+                                                <DropdownMenuItem
+                                                    v-if="file.file && isFileEditable(file) && isFileSizeValid(file)"
+                                                    @click="openMonacoEditor(file)"
+                                                >
                                                     <Code class="h-4 w-4 mr-2" />
                                                     {{ t('serverFiles.edit') }}
                                                 </DropdownMenuItem>
@@ -674,11 +868,96 @@
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        <!-- Context Menu -->
+        <Teleport to="body">
+            <div
+                v-if="showContextMenu && contextMenuFile"
+                class="fixed z-50 min-w-[200px] rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+                :style="{ top: `${contextMenuPosition.y}px`, left: `${contextMenuPosition.x}px` }"
+                @click.stop
+            >
+                <div
+                    v-if="contextMenuFile.file && isFileEditable(contextMenuFile) && isFileSizeValid(contextMenuFile)"
+                    class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                    @click="
+                        openMonacoEditor(contextMenuFile);
+                        closeContextMenu();
+                    "
+                >
+                    <Code class="h-4 w-4 mr-2" />
+                    {{ t('serverFiles.edit') }}
+                </div>
+                <div
+                    class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                    @click="
+                        renameFile(contextMenuFile);
+                        closeContextMenu();
+                    "
+                >
+                    <FileEdit class="h-4 w-4 mr-2" />
+                    {{ t('serverFiles.rename') }}
+                </div>
+                <div
+                    v-if="contextMenuFile.file"
+                    class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                    @click="
+                        downloadFile(contextMenuFile);
+                        closeContextMenu();
+                    "
+                >
+                    <Download class="h-4 w-4 mr-2" />
+                    {{ t('serverFiles.download') }}
+                </div>
+                <div
+                    class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                    @click="
+                        copySingle(contextMenuFile.name);
+                        closeContextMenu();
+                    "
+                >
+                    <Copy class="h-4 w-4 mr-2" />
+                    {{ t('serverFiles.copy') }}
+                </div>
+                <div
+                    v-if="contextMenuFile.file && isArchive(contextMenuFile)"
+                    class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                    @click="
+                        extractFile(contextMenuFile);
+                        closeContextMenu();
+                    "
+                >
+                    <Archive class="h-4 w-4 mr-2" />
+                    {{ t('serverFiles.extract') }}
+                </div>
+                <div
+                    class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                    @click="
+                        changePermissions(contextMenuFile);
+                        closeContextMenu();
+                    "
+                >
+                    <Settings class="h-4 w-4 mr-2" />
+                    {{ t('serverFiles.permissions') }}
+                </div>
+                <div class="my-1 h-px bg-border"></div>
+                <div
+                    class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    @click="
+                        deleteFile(contextMenuFile);
+                        closeContextMenu();
+                    "
+                >
+                    <Trash2 class="h-4 w-4 mr-2" />
+                    {{ t('serverFiles.delete') }}
+                </div>
+            </div>
+        </Teleport>
     </DashboardLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
@@ -688,7 +967,6 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 // Removed shadcn-vue Checkbox import - using custom implementation
-import { Separator } from '@/components/ui/separator';
 import {
     Dialog,
     DialogContent,
@@ -727,6 +1005,7 @@ import {
     MoreVertical,
     FileEdit,
     Folder,
+    Search,
 } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
@@ -764,6 +1043,14 @@ const showCreateFolderDialog = ref(false);
 const showRenameDialog = ref(false);
 const showPermissionsDialog = ref(false);
 const showPullDialog = ref(false);
+
+// Drag and drop state
+const isDraggingOver = ref(false);
+
+// Context menu state
+const contextMenuFile = ref<FileItem | null>(null);
+const contextMenuPosition = ref({ x: 0, y: 0 });
+const showContextMenu = ref(false);
 
 // Form data
 const selectedFile = ref<File | null>(null);
@@ -820,12 +1107,77 @@ const someFilesSelected = computed(() => {
     return selectedFiles.value.length > 0 && selectedFiles.value.length < filteredFiles.value.length;
 });
 
+// Row click handler (Ctrl+Click to toggle selection)
+const handleRowClick = (event: MouseEvent, fileName: string) => {
+    if (event.ctrlKey || event.metaKey) {
+        // Ctrl/Cmd+Click: toggle selection
+        toggleFileSelection(fileName);
+    }
+    // Otherwise, do nothing (let the file name click handler do its job)
+};
+
+// Right-click handler (context menu)
+const handleRightClick = (event: MouseEvent, file: FileItem) => {
+    contextMenuFile.value = file;
+    contextMenuPosition.value = { x: event.clientX, y: event.clientY };
+    showContextMenu.value = true;
+};
+
+// Close context menu
+const closeContextMenu = () => {
+    showContextMenu.value = false;
+    contextMenuFile.value = null;
+};
+
+// Event handlers for drag and drop
+const handleKeyboard = (e: KeyboardEvent) => {
+    // ESC key to close drag overlay or context menu
+    if (e.key === 'Escape') {
+        if (isDraggingOver.value) {
+            closeDragOverlay();
+        }
+        if (showContextMenu.value) {
+            closeContextMenu();
+        }
+    }
+
+    // Forward slash (/) to focus search
+    if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        searchInput.value?.focus();
+    }
+};
+
+// Prevent drag overlay from closing unless user presses ESC or drops files
+const handleGlobalDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    // Keep the overlay visible while dragging
+    if (e.dataTransfer?.types && e.dataTransfer.types.includes('Files')) {
+        isDraggingOver.value = true;
+    }
+};
+
 // Lifecycle
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect(router);
     await settingsStore.fetchSettings();
     await fetchServer();
     await refreshFiles();
+
+    // Add keyboard shortcuts (ESC to close drag overlay/context menu, / to focus search)
+    window.addEventListener('keydown', handleKeyboard);
+
+    // Add global drag over handler to keep overlay visible while dragging
+    window.addEventListener('dragover', handleGlobalDragOver);
+
+    // Close context menu on any click
+    window.addEventListener('click', closeContextMenu);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeyboard);
+    window.removeEventListener('dragover', handleGlobalDragOver);
+    window.removeEventListener('click', closeContextMenu);
 });
 
 // Server fetching (following ServerLogs pattern)
@@ -983,19 +1335,160 @@ const createFile = async () => {
     }
 };
 
-// Keyboard shortcut to focus search
-onMounted(() => {
-    const handler = (e: KeyboardEvent) => {
-        if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-            e.preventDefault();
-            searchInput.value?.focus();
-        }
-    };
-    window.addEventListener('keydown', handler);
-});
+// Keyboard shortcuts are handled in the main onMounted hook above
+
+// Check if a file is editable (text-based)
+const isFileEditable = (file: FileItem): boolean => {
+    if (!file.file) return false;
+
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const mime = file.mime?.toLowerCase() || '';
+
+    // Binary file extensions that should NOT be editable
+    const binaryExtensions = [
+        // Archives
+        'zip',
+        'tar',
+        'gz',
+        'tgz',
+        '7z',
+        'rar',
+        'bz2',
+        'xz',
+        'lzma',
+        'cab',
+        'iso',
+        'dmg',
+        'jar',
+        'war',
+        'ear',
+        // Images
+        'jpg',
+        'jpeg',
+        'png',
+        'gif',
+        'bmp',
+        'svg',
+        'ico',
+        'webp',
+        'tiff',
+        'tif',
+        'psd',
+        // Videos
+        'mp4',
+        'avi',
+        'mov',
+        'wmv',
+        'flv',
+        'mkv',
+        'webm',
+        'm4v',
+        'mpg',
+        'mpeg',
+        // Audio
+        'mp3',
+        'wav',
+        'flac',
+        'aac',
+        'ogg',
+        'wma',
+        'm4a',
+        'opus',
+        // Executables
+        'exe',
+        'dll',
+        'so',
+        'dylib',
+        'bin',
+        'app',
+        'deb',
+        'rpm',
+        'msi',
+        // Documents (binary formats)
+        'pdf',
+        'doc',
+        'docx',
+        'xls',
+        'xlsx',
+        'ppt',
+        'pptx',
+        'odt',
+        'ods',
+        'odp',
+        // Fonts
+        'ttf',
+        'otf',
+        'woff',
+        'woff2',
+        'eot',
+        // Database files
+        'db',
+        'sqlite',
+        'sqlite3',
+        'mdb',
+        // Other binary
+        'class',
+        'pyc',
+        'pyo',
+        'o',
+        'a',
+        'lib',
+    ];
+
+    // Check if file extension is binary
+    if (binaryExtensions.includes(ext)) {
+        return false;
+    }
+
+    // Check MIME type for binary content
+    if (
+        mime.startsWith('image/') ||
+        mime.startsWith('video/') ||
+        mime.startsWith('audio/') ||
+        mime.includes('application/octet-stream') ||
+        mime.includes('application/pdf') ||
+        mime.includes('application/zip') ||
+        mime.includes('application/x-tar') ||
+        mime.includes('application/gzip') ||
+        mime.includes('application/x-executable') ||
+        mime.includes('application/java-archive')
+    ) {
+        return false;
+    }
+
+    return true;
+};
+
+// Check file size (in bytes) - limit to 5MB for text editor
+const FILE_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB
+
+const isFileSizeValid = (file: FileItem): boolean => {
+    return file.size <= FILE_SIZE_LIMIT;
+};
 
 const handleFileClick = (file: FileItem) => {
     if (file.file) {
+        // Check if file is editable before opening
+        if (!isFileEditable(file)) {
+            toast.warning(
+                t('serverFiles.cannotEditFile', {
+                    defaultValue:
+                        'Cannot edit this file type. Binary files like archives, images, and executables cannot be edited as text.',
+                }),
+            );
+            return;
+        }
+
+        // Check file size
+        if (!isFileSizeValid(file)) {
+            toast.warning(
+                t('serverFiles.fileTooLarge', {
+                    defaultValue: 'File is too large to edit (max 5MB). Please download it instead.',
+                }),
+            );
+            return;
+        }
+
         openMonacoEditor(file);
     } else {
         const newPath = currentPath.value.endsWith('/')
@@ -1154,6 +1647,81 @@ const uploadFile = async () => {
         if (fileInput.value) {
             fileInput.value.value = '';
         }
+    }
+};
+
+// Drag and drop handlers
+const handleDragEnter = (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Only show overlay if dragging files
+    if (e.dataTransfer?.types && e.dataTransfer.types.includes('Files')) {
+        isDraggingOver.value = true;
+    }
+};
+
+const closeDragOverlay = () => {
+    isDraggingOver.value = false;
+};
+
+const handleDrop = async (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    closeDragOverlay();
+
+    if (!e.dataTransfer?.files || e.dataTransfer.files.length === 0) {
+        return;
+    }
+
+    const droppedFiles = Array.from(e.dataTransfer.files);
+
+    if (droppedFiles.length === 0) {
+        return;
+    }
+
+    // Show a toast indicating upload is starting
+    if (droppedFiles.length === 1 && droppedFiles[0]) {
+        toast.info(t('serverFiles.uploadingFiles', { count: 1 }) + ` - ${droppedFiles[0].name}`);
+    } else {
+        toast.info(t('serverFiles.uploadingFiles', { count: droppedFiles.length }));
+    }
+
+    // Upload each file
+    for (const file of droppedFiles) {
+        await uploadDroppedFile(file);
+    }
+
+    // Refresh file list after all uploads
+    await refreshFiles();
+};
+
+const uploadDroppedFile = async (file: File) => {
+    uploading.value = true;
+
+    try {
+        const response = await axios.post(
+            `/api/user/servers/${route.params.uuidShort}/upload-file?path=${encodeURIComponent(currentPath.value)}&filename=${encodeURIComponent(file.name)}`,
+            file,
+            {
+                headers: {
+                    'Content-Type': 'application/octet-stream',
+                },
+            },
+        );
+
+        if (response.data.success) {
+            toast.success(t('serverFiles.uploadSuccess') + `: ${file.name}`);
+        } else {
+            toast.error(`${file.name}: ${response.data.message || t('serverFiles.uploadError')}`);
+        }
+    } catch (error) {
+        console.error('Error uploading file:', error);
+        const err = error as { response?: { data?: { message?: string } } };
+        toast.error(`${file.name}: ${err.response?.data?.message || t('serverFiles.uploadError')}`);
+    } finally {
+        uploading.value = false;
     }
 };
 

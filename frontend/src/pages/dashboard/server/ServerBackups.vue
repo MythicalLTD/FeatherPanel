@@ -21,7 +21,49 @@
                 </div>
             </div>
 
+            <!-- Empty State -->
+            <div
+                v-if="!loading && backups.length === 0 && !searchQuery"
+                class="flex flex-col items-center justify-center py-16 px-4"
+            >
+                <div class="text-center max-w-md space-y-6">
+                    <div class="flex justify-center">
+                        <div class="relative">
+                            <div class="absolute inset-0 animate-ping opacity-20">
+                                <div class="w-32 h-32 rounded-full bg-primary/20"></div>
+                            </div>
+                            <div class="relative p-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5">
+                                <Archive class="h-16 w-16 text-primary" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <h3 class="text-2xl sm:text-3xl font-bold text-foreground">
+                            {{ t('serverBackups.noBackups') }}
+                        </h3>
+                        <p class="text-sm sm:text-base text-muted-foreground">
+                            {{
+                                serverInfo && serverInfo.backup_limit === 0
+                                    ? t('serverBackups.noBackupsNoLimit')
+                                    : t('serverBackups.noBackupsDescription')
+                            }}
+                        </p>
+                    </div>
+                    <Button
+                        v-if="serverInfo && serverInfo.backup_limit > 0"
+                        size="lg"
+                        class="gap-2 shadow-lg"
+                        @click="showCreateBackupDrawer = true"
+                    >
+                        <Plus class="h-5 w-5" />
+                        {{ t('serverBackups.createBackup') }}
+                    </Button>
+                </div>
+            </div>
+
+            <!-- Table Component -->
             <TableComponent
+                v-else
                 :title="t('serverBackups.title')"
                 :description="
                     t('serverBackups.description') +
@@ -308,7 +350,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 
-import { Plus, RotateCcw, Download, Trash2, Loader2, Lock, Unlock } from 'lucide-vue-next';
+import { Plus, RotateCcw, Download, Trash2, Loader2, Lock, Unlock, Archive } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import TableComponent from '@/kit/TableComponent.vue';

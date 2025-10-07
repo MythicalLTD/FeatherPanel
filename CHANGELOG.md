@@ -11,6 +11,9 @@
 ### Improved
 
 - Improved file upload inside Docker containers: increased maximum upload size, enhanced reliability, and optimized the file upload service for better performance.
+- File editor has received a complete design overhaul for a more modern and user-friendly experience.
+- File manager has received a full redesign for improved usability and modern appearance.
+- Major design overhaul and improved user experience for the following server management pages: **Backups**, **Databases**, **Schedules**, **Tasks**, and **Subusers**. Each page now features a modernized interface, enhanced empty states, and more intuitive workflows.
 
 ### Fixed
 
@@ -20,6 +23,7 @@
 - Legacy Docker interface placeholder {{config.docker.interface}} is now converted to {{config.docker.network.interface}} and passed through for Wings to handle, matching Pterodactyl's behavior.
 - Replaced remaining instances of "Pterodactyl Wings" branding in the panel with FeatherPanel terminology
 - Fixed an issue where renaming files or folders could trigger PHP warnings about undefined array keys "path" and "new_name" in ServerFilesController.php.
+- Fixed an issue where creating an archive could result in thousands of unnecessary archives being created instead of a single one.
 
 ## v0.0.2-Canary
 

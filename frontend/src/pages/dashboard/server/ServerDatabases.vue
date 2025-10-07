@@ -25,7 +25,49 @@
                 </div>
             </div>
 
+            <!-- Empty State -->
+            <div
+                v-if="!loading && databases.length === 0 && !searchQuery"
+                class="flex flex-col items-center justify-center py-16 px-4"
+            >
+                <div class="text-center max-w-md space-y-6">
+                    <div class="flex justify-center">
+                        <div class="relative">
+                            <div class="absolute inset-0 animate-ping opacity-20">
+                                <div class="w-32 h-32 rounded-full bg-primary/20"></div>
+                            </div>
+                            <div class="relative p-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5">
+                                <Database class="h-16 w-16 text-primary" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <h3 class="text-2xl sm:text-3xl font-bold text-foreground">
+                            {{ t('serverDatabases.noDatabases') }}
+                        </h3>
+                        <p class="text-sm sm:text-base text-muted-foreground">
+                            {{
+                                serverInfo && serverInfo.database_limit === 0
+                                    ? t('serverDatabases.noDatabasesNoLimit')
+                                    : t('serverDatabases.noDatabasesDescription')
+                            }}
+                        </p>
+                    </div>
+                    <Button
+                        v-if="serverInfo && serverInfo.database_limit > 0"
+                        size="lg"
+                        class="gap-2 shadow-lg"
+                        @click="openCreateDatabaseDrawer"
+                    >
+                        <Plus class="h-5 w-5" />
+                        {{ t('serverDatabases.createDatabase') }}
+                    </Button>
+                </div>
+            </div>
+
+            <!-- Table Component -->
             <TableComponent
+                v-else
                 :title="t('serverDatabases.title')"
                 :description="
                     t('serverDatabases.description') +
@@ -620,7 +662,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Trash2, Loader2, Eye, EyeOff, Copy, AlertTriangle } from 'lucide-vue-next';
+import { Plus, Trash2, Loader2, Eye, EyeOff, Copy, AlertTriangle, Database } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import type { TableColumn } from '@/kit/types';
