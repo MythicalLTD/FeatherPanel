@@ -10,8 +10,11 @@
 
 ### Fixed
 
-- Some places still reference pterodactyl wings!
-
+- Added a new private replacePlaceholders() method to both controllers to centralize and standardize placeholder replacement logic.
+- Modern placeholders (e.g., {{server.build.default.port}}, {{server.build.default.ip}}, {{server.build.memory}}) are now automatically replaced with actual server values.
+- Legacy placeholders (e.g., {{server.build.env.SERVER_PORT}}, {{env.SERVER_PORT}}, {{server.build.env.SERVER_IP}}, {{env.SERVER_IP}}, {{server.build.env.SERVER_MEMORY}}, {{env.SERVER_MEMORY}}) are also replaced with the correct values for compatibility.
+- Legacy Docker interface placeholder {{config.docker.interface}} is now converted to {{config.docker.network.interface}} and passed through for Wings to handle, matching Pterodactyl's behavior.
+- Replaced remaining instances of "Pterodactyl Wings" branding in the panel with FeatherPanel terminology
 
 ## v0.0.2-Canary
 
