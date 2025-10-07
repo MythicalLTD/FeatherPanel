@@ -6,6 +6,7 @@
 
 - Complete redesign of the admin dashboard with a modular widget system
 - Versioning system for featherpanel!
+- Added a dark logo option for support for fully white mode and dark mode!
 
 ### Fixed
 

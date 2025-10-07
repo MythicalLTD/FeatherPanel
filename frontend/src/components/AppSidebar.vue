@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useSessionStore } from '@/stores/session';
 import { useRouter } from 'vue-router';
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useSettingsStore } from '@/stores/settings';
 import { useNavigation } from '@/composables/useNavigation';
 import { useSidebarState } from '@/composables/useSidebarState';
@@ -64,6 +64,21 @@ const user = computed(() => {
     };
 });
 
+// Get current theme
+
+const currentTheme = ref<string | null>(window.localStorage.getItem('theme'));
+
+function updateTheme() {
+    currentTheme.value = window.localStorage.getItem('theme');
+}
+
+onMounted(() => {
+    updateTheme();
+    window.addEventListener('storage', updateTheme);
+    // Also watch for theme changes via custom events (if your app uses them)
+    window.addEventListener('theme-changed', updateTheme as EventListener);
+});
+
 // Determine if sidebar should be visible
 const isSidebarVisible = computed(() => {
     return sidebarVisibility.value !== 'hidden';
@@ -76,8 +91,14 @@ const isSidebarVisible = computed(() => {
             <div class="flex items-center justify-center px-3 py-3 sm:px-4">
                 <div class="flex items-center gap-2 min-w-0 cursor-pointer flex-shrink-0" @click="router.push('/')">
                     <img
-                        v-if="settingsStore.appLogo"
+                        v-if="settingsStore.appLogo && currentTheme === 'dark'"
                         :src="String(settingsStore.appLogo || '')"
+                        :alt="String(settingsStore.appName || '')"
+                        class="h-6 w-6 sm:h-8 sm:w-8 object-contain flex-shrink-0"
+                    />
+                    <img
+                        v-else-if="settingsStore.appLogoWhite && currentTheme === 'light'"
+                        :src="String(settingsStore.appLogoWhite || '')"
                         :alt="String(settingsStore.appName || '')"
                         class="h-6 w-6 sm:h-8 sm:w-8 object-contain flex-shrink-0"
                     />

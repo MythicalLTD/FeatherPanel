@@ -59,6 +59,7 @@ export const useSettingsStore = defineStore('settings', {
     getters: {
         appName: (state) => state.settings?.app_name || 'App',
         appLogo: (state) => state.settings?.app_logo || '',
+        appLogoWhite: (state) => state.settings?.app_logo_white || '',
         appDeveloperMode: (state) => getBooleanSetting(state, 'app_developer_mode'),
         appLang: (state) => state.settings?.app_lang || 'en_US',
         appUrl: (state) => state.settings?.app_url || '',

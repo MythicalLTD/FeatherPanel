@@ -20,10 +20,23 @@
                     class="flex flex-col items-center gap-2 font-medium transition-all duration-300 hover:scale-105"
                 >
                     <img
+                        v-if="settingsStore.appLogo && isDarkTheme"
                         :src="String(settingsStore.appLogo)"
-                        alt="FeatherPanel Logo"
+                        :alt="String(settingsStore.appName)"
                         class="size-10 transition-all duration-300"
                     />
+                    <img
+                        v-else-if="settingsStore.appLogoWhite && !isDarkTheme"
+                        :src="String(settingsStore.appLogoWhite)"
+                        :alt="String(settingsStore.appName)"
+                        class="size-10 transition-all duration-300"
+                    />
+                    <div
+                        v-else
+                        class="size-10 bg-primary rounded flex items-center justify-center text-white font-bold text-lg transition-all duration-300"
+                    >
+                        {{ String(settingsStore.appName).charAt(0) || 'F' }}
+                    </div>
                     <span class="sr-only">{{ settingsStore.appName }}</span>
                 </router-link>
                 <h1 class="text-xl font-bold transition-all duration-300">
