@@ -666,7 +666,7 @@
                                     ></textarea>
                                     <div class="text-xs text-muted-foreground mt-2">
                                         This configuration file should be saved as
-                                        <code>/etc/pterodactyl/config.yml</code> on your Wings daemon.
+                                        <code>/etc/featherpanel/config.yml</code> on your Wings daemon.
                                     </div>
                                 </div>
                                 <div class="flex gap-2">
@@ -1620,7 +1620,7 @@ api:
     key: /etc/letsencrypt/live/${node.fqdn}/privkey.pem
   upload_limit: ${node.upload_size || 512}
 system:
-  data: ${node.daemonBase || '/var/lib/pterodactyl/volumes'}
+  data: ${node.daemonBase || '/var/lib/featherpanel/volumes'}
   sftp:
     bind_port: ${node.daemonSFTP || 2022}
 allowed_mounts: []
@@ -1733,7 +1733,7 @@ const form = ref<FormData>({
     upload_size: 512,
     daemonListen: 8080,
     daemonSFTP: 2022,
-    daemonBase: '/var/lib/pterodactyl/volumes',
+    daemonBase: '/var/lib/featherpanel/volumes',
 });
 const formErrors = ref<Record<string, string>>({});
 const formLoading = ref(false);
@@ -1816,7 +1816,7 @@ function openCreateDrawer() {
         upload_size: 512,
         daemonListen: 8080,
         daemonSFTP: 2022,
-        daemonBase: '/var/lib/pterodactyl/volumes',
+        daemonBase: '/var/lib/featherpanel/volumes',
     };
     resetWizard();
     showDrawer.value = true;
@@ -1845,7 +1845,7 @@ function onEdit(node: Node) {
         upload_size: node.upload_size || 512,
         daemonListen: node.daemonListen || 8080,
         daemonSFTP: node.daemonSFTP || 2022,
-        daemonBase: node.daemonBase || '/var/lib/pterodactyl/volumes',
+        daemonBase: node.daemonBase || '/var/lib/featherpanel/volumes',
     };
     resetWizard(); // Reset wizard for edit mode
     showDrawer.value = true;

@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.0.3-Canary
+### Fixed
+* Some places still reference pterodactyl wings!
+
+
 ## v0.0.2-Canary
 
 ### Fixed
