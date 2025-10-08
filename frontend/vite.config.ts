@@ -46,6 +46,12 @@ export default defineConfig({
                 secure: false,
                 rewrite: (path) => path,
             },
+            '/components': {
+                target: 'http://localhost:8721',
+                changeOrigin: true,
+                secure: false,
+                rewrite: (path) => path,
+            },
         },
     },
     build: {

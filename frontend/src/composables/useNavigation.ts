@@ -43,6 +43,7 @@ export interface NavigationItem {
     permission?: string;
     isPlugin?: boolean;
     pluginJs?: string;
+    pluginRedirect?: string;
     pluginName?: string;
     pluginTag?: string;
     description?: string;
@@ -51,7 +52,8 @@ export interface NavigationItem {
 interface PluginSidebarItem {
     name: string;
     icon: string;
-    js: string;
+    js?: string;
+    redirect?: string;
     description: string;
     category: string;
     plugin: string;
@@ -109,12 +111,18 @@ export function useNavigation() {
     };
 
     // Handle plugin navigation click
-    const handlePluginClick = (pluginJs: string) => {
-        try {
-            // Execute the plugin JavaScript
-            eval(pluginJs);
-        } catch (error) {
-            console.error('Failed to execute plugin JavaScript:', error);
+    const handlePluginClick = (pluginJs?: string, pluginRedirect?: string) => {
+        // JS takes priority
+        if (pluginJs) {
+            try {
+                // Execute the plugin JavaScript
+                eval(pluginJs);
+            } catch (error) {
+                console.error('Failed to execute plugin JavaScript:', error);
+            }
+        } else if (pluginRedirect) {
+            // Use Vue router for redirect
+            router.push(pluginRedirect);
         }
     };
 
@@ -124,24 +132,38 @@ export function useNavigation() {
         category: 'main' | 'admin' | 'server',
         uuidShort?: string,
     ): NavigationItem[] => {
-        return Object.entries(pluginItems).map(([url, item]) => {
-            const fullUrl = category === 'server' && uuidShort ? `/server/${uuidShort}${url}` : url;
+        return Object.entries(pluginItems)
+            .filter(([, item]) => item.js || item.redirect) // Only include items with js or redirect
+            .map(([url, item]) => {
+                const fullUrl = category === 'server' && uuidShort ? `/server/${uuidShort}${url}` : url;
 
-            return {
-                id: `plugin-${item.plugin}-${url.replace(/\//g, '-')}`,
-                name: item.name,
-                title: item.name,
-                url: fullUrl,
-                icon: getPluginIcon(item.icon),
-                isActive: currentPath.value.startsWith(fullUrl),
-                category,
-                isPlugin: true,
-                pluginJs: item.js,
-                pluginName: item.pluginName,
-                pluginTag: item.pluginName,
-                description: item.description,
-            };
-        });
+                let fullRedirect = item.redirect;
+                if (fullRedirect) {
+                    if (category === 'server' && uuidShort) {
+                        fullRedirect = `/server/${uuidShort}${item.redirect}`;
+                    } else if (category === 'admin') {
+                        fullRedirect = `/admin${item.redirect}`;
+                    } else if (category === 'main') {
+                        fullRedirect = `/dashboard${item.redirect}`;
+                    }
+                }
+
+                return {
+                    id: `plugin-${item.plugin}-${url.replace(/\//g, '-')}`,
+                    name: item.name,
+                    title: item.name,
+                    url: fullUrl,
+                    icon: getPluginIcon(item.icon),
+                    isActive: currentPath.value.startsWith(fullUrl),
+                    category,
+                    isPlugin: true,
+                    pluginJs: item.js,
+                    pluginRedirect: fullRedirect,
+                    pluginName: item.pluginName,
+                    pluginTag: item.pluginName,
+                    description: item.description,
+                };
+            });
     };
 
     // Initialize plugin routes on mount

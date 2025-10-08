@@ -17,11 +17,11 @@ defineProps<{
 }>();
 
 const handleItemClick = (item: NavigationItem, event: Event) => {
-    if (item.isPlugin && item.pluginJs) {
+    if (item.isPlugin && (item.pluginJs || item.pluginRedirect)) {
         // Prevent navigation for plugin items
         event.preventDefault();
-        // Execute plugin JavaScript
-        handlePluginClick(item.pluginJs);
+        // Execute plugin JavaScript or redirect
+        handlePluginClick(item.pluginJs, item.pluginRedirect);
     }
     // For non-plugin items, let the normal navigation happen
 };

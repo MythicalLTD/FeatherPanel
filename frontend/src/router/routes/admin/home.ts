@@ -116,6 +116,11 @@ const adminRoutes: RouteRecordRaw[] = [
         name: 'AdminPluginManager',
         component: () => import('@/pages/admin/dev/PluginManager.vue'),
     },
+    {
+        path: '/admin/:pathMatch(.*)*',
+        name: 'AdminPluginRenderedPage',
+        component: () => import('@/pages/dashboard/PluginRenderedPage.vue'),
+    },
 ];
 
 export default adminRoutes;

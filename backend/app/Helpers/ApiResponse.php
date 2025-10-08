@@ -28,7 +28,13 @@ class ApiResponse
             'error' => false,
             'error_message' => null,
             'error_code' => null,
-        ], self::prettyPrint ? JSON_PRETTY_PRINT : 0), $status, ['Content-Type' => 'application/json']);
+        ], self::prettyPrint ? JSON_PRETTY_PRINT : 0), $status, [
+            'Content-Type' => 'application/json',
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Allow-Credentials' => 'true',
+        ]);
     }
 
     public static function error(string $error_message = 'Error', ?string $error_code = null, int $status = 400, ?array $data = null): Response
@@ -47,7 +53,13 @@ class ApiResponse
                     'status' => $status,
                 ],
             ],
-        ], self::prettyPrint ? JSON_PRETTY_PRINT : 0), $status, ['Content-Type' => 'application/json']);
+        ], self::prettyPrint ? JSON_PRETTY_PRINT : 0), $status, [
+            'Content-Type' => 'application/json',
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Allow-Credentials' => 'true',
+        ]);
     }
 
     public static function exception(string $message = 'Error', ?string $error = null, array $trace = []): Response
@@ -71,11 +83,23 @@ class ApiResponse
                 ],
             ],
             'trace' => $trace,
-        ], self::prettyPrint ? JSON_PRETTY_PRINT : 0), 500, ['Content-Type' => 'application/json']);
+        ], self::prettyPrint ? JSON_PRETTY_PRINT : 0), 500, [
+            'Content-Type' => 'application/json',
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Allow-Credentials' => 'true',
+        ]);
     }
 
     public static function sendManualResponse(array $data, int $status = 200): Response
     {
-        return new Response(json_encode($data, self::prettyPrint ? JSON_PRETTY_PRINT : 0), $status, ['Content-Type' => 'application/json']);
+        return new Response(json_encode($data, self::prettyPrint ? JSON_PRETTY_PRINT : 0), $status, [
+            'Content-Type' => 'application/json',
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Allow-Credentials' => 'true',
+        ]);
     }
 }

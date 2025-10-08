@@ -731,6 +731,11 @@ class PluginsController
             $linkPath = $publicAddonsBase . '/' . $identifier;
             @exec('rm -rf ' . escapeshellarg($linkPath));
 
+            // Remove exposed public components link/dir at public/components/{identifier}
+            $publicComponentsBase = dirname(__DIR__, 3) . '/public/components';
+            $linkPath = $publicComponentsBase . '/' . $identifier;
+            @exec('rm -rf ' . escapeshellarg($linkPath));
+
             return ApiResponse::success([], 'Addon uninstalled successfully', 200);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to uninstall addon: ' . $e->getMessage(), 500);
@@ -1133,6 +1138,30 @@ class PluginsController
                     @mkdir($linkPath, 0755, true);
                     $copyPubCmd = sprintf('cp -r %s/* %s', escapeshellarg($pluginPublic), escapeshellarg($linkPath));
                     exec($copyPubCmd);
+                }
+            }
+
+            // Expose Frontend/Components at public/components/{identifier} using ln -s (fallback to copy)
+            $pluginComponents = $pluginDir . '/Frontend/Components';
+            if (is_dir($pluginComponents)) {
+                $publicComponentsBase = dirname(__DIR__, 3) . '/public/components';
+
+                // Create /public/components directory if it doesn't exist
+                if (!is_dir($publicComponentsBase)) {
+                    @mkdir($publicComponentsBase, 0755, true);
+                }
+
+                // Create symlink at /public/components/{identifier}
+                $linkPath = $publicComponentsBase . '/' . $identifier;
+                @exec('rm -rf ' . escapeshellarg($linkPath));
+                $lnCmd = 'ln -s ' . escapeshellarg($pluginComponents) . ' ' . escapeshellarg($linkPath);
+                exec($lnCmd, $lnOut, $lnCode);
+
+                // Fallback to copy if symlink fails
+                if ($lnCode !== 0) {
+                    @mkdir($linkPath, 0755, true);
+                    $copyCmd = sprintf('cp -r %s/* %s', escapeshellarg($pluginComponents), escapeshellarg($linkPath));
+                    exec($copyCmd);
                 }
             }
 

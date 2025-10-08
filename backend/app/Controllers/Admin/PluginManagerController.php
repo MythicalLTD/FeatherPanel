@@ -334,12 +334,19 @@ class PluginManagerController
                     }
                 }
             }
+            // Also create Frontend/Components directory for frontend components
+            $frontendComponentsPath = $pluginPath . '/Frontend/Components';
+            if (!is_dir($frontendComponentsPath)) {
+                mkdir($frontendComponentsPath, 0755, true);
+                file_put_contents($frontendComponentsPath . '/.gitkeep', '');
+            }
 
             // Create example files
             $this->createExampleFiles($pluginPath, $identifier, $className);
 
             // Create public assets symlink (like PluginsController does)
             $this->createPublicAssetsSymlink($pluginPath, $identifier);
+            $this->createComponentsSymlink($pluginPath, $identifier);
 
             // Run migrations (like PluginsController does)
             $migrationResult = $this->runAddonMigrations($identifier, $pluginPath);
@@ -1264,13 +1271,6 @@ class {$className}CronExample implements TimeTask
                     'description' => "View a summary of your plugin's data",
                     'category' => 'general',
                 ],
-                '/analytics' => [
-                    'name' => "Analytics {$className}",
-                    'icon' => '📈',
-                    'js' => "if (window.{$className}Plugin) { window.{$className}Plugin.showAnalytics(); } else { console.log('{$className} plugin not loaded'); }",
-                    'description' => 'View plugin analytics and statistics',
-                    'category' => 'general',
-                ],
             ],
             'admin' => [
                 '/settings' => [
@@ -1281,28 +1281,14 @@ class {$className}CronExample implements TimeTask
                     'category' => 'admin',
                     'permission' => 'admin.plugin.settings',
                 ],
-                '/users' => [
-                    'name' => "User Management {$className}",
-                    'icon' => '👥',
-                    'js' => "if (window.{$className}Plugin) { window.{$className}Plugin.showUserManagement(); } else { console.log('{$className} plugin not loaded'); }",
-                    'description' => 'Manage users for this plugin',
-                    'category' => 'admin',
-                    'permission' => 'admin.plugin.users',
-                ],
             ],
             'server' => [
-                '/logs' => [
+                '/logsui' => [
                     'name' => "Server Logs {$className}",
                     'icon' => '📝',
-                    'js' => "if (window.{$className}Plugin) { window.{$className}Plugin.showServerLogs(); } else { console.log('{$className} plugin not loaded'); }",
+                    'redirect' => '/logsui',
+                    'component' => 'serverui.html',
                     'description' => 'View server logs related to the plugin',
-                    'category' => 'server',
-                ],
-                '/tasks' => [
-                    'name' => "Scheduled Tasks {$className}",
-                    'icon' => '⏰',
-                    'js' => "if (window.{$className}Plugin) { window.{$className}Plugin.showScheduledTasks(); } else { console.log('{$className} plugin not loaded'); }",
-                    'description' => 'Manage scheduled tasks for the plugin',
                     'category' => 'server',
                 ],
             ],
@@ -1930,14 +1916,63 @@ class AppReadyEvent
     }
 }";
 
+        $serverUiHtml = <<<'HTML'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hello World yk?</title>
+    <style>
+        body {
+            background: #18181b;
+            color: #fafafa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+        }
+        .hello-box {
+            background: #27272a;
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.25);
+            padding: 3rem 4rem;
+            text-align: center;
+            border: 1px solid #3f3f46;
+        }
+        .hello-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            color: #fbbf24;
+            letter-spacing: 1px;
+        }
+        .hello-desc {
+            font-size: 1.25rem;
+            color: #a1a1aa;
+        }
+    </style>
+</head>
+<body>
+    <div class="hello-box">
+        <div class="hello-title">hello world yk?</div>
+        <div class="hello-desc">It's a server ui component!</div>
+    </div>
+</body>
+</html>
+HTML;
+
         file_put_contents($pluginPath . '/README.md', $readmeContent);
         file_put_contents($pluginPath . '/Commands/' . $className . 'Command.php', $cliCommandExample);
         file_put_contents($pluginPath . '/Frontend/index.css', $frontendCssExample);
         file_put_contents($pluginPath . '/Frontend/index.js', $frontendJsExample);
         file_put_contents($pluginPath . '/Frontend/sidebar.json', $frontendSideBarExample);
+        file_put_contents($pluginPath . '/Frontend/Components/serverui.html', $serverUiHtml);
         file_put_contents($pluginPath . '/Migrations/' . $timestamp . '-create-' . $identifier . '-logs.sql', $migrationContent);
         file_put_contents($pluginPath . '/Cron/' . $className . 'CronExample.php', $cronContent);
         file_put_contents($pluginPath . '/Public/hello.txt', $publicFileTemplate);
+
         file_put_contents($pluginPath . '/Events/App/AppReadyEvent.php', $appReadyEvent);
     }
 
@@ -1957,6 +1992,32 @@ class AppReadyEvent
         $mainClassFile = $pluginPath . '/' . $className . '.php';
 
         return file_exists($mainClassFile) && file_exists($pluginPath . '/conf.yml');
+    }
+
+    private function createComponentsSymlink(string $pluginPath, string $identifier): void
+    {
+        $pluginComponents = $pluginPath . '/Frontend/Components';
+        $publicComponentsBase = dirname(__DIR__, 3) . '/public/components';
+
+        if (is_dir($pluginComponents)) {
+            // Create /public/components directory if it doesn't exist
+            if (!is_dir($publicComponentsBase)) {
+                @mkdir($publicComponentsBase, 0755, true);
+            }
+
+            // Create symlink at /public/components/{identifier}
+            $linkPath = $publicComponentsBase . '/' . $identifier;
+            @exec('rm -rf ' . escapeshellarg($linkPath));
+            $lnCmd = 'ln -s ' . escapeshellarg($pluginComponents) . ' ' . escapeshellarg($linkPath);
+            exec($lnCmd, $lnOut, $lnCode);
+
+            // Fallback to copy if symlink fails
+            if ($lnCode !== 0) {
+                @mkdir($linkPath, 0755, true);
+                $copyCmd = sprintf('cp -r %s/* %s', escapeshellarg($pluginComponents), escapeshellarg($linkPath));
+                exec($copyCmd);
+            }
+        }
     }
 
     /**
