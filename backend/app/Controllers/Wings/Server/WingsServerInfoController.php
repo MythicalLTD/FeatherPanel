@@ -152,6 +152,9 @@ class WingsServerInfoController
             return ApiResponse::error('Allocation not found', 'ALLOCATION_NOT_FOUND', 404);
         }
 
+        // Get all allocations for this server
+        $allAllocations = Allocation::getByServerId($server['id']);
+
         // Get spell information
         $spell = Spell::getSpellById($server['spell_id']);
         if (!$spell) {
@@ -441,11 +444,7 @@ class WingsServerInfoController
                         'ip' => $allocation['ip'],
                         'port' => $allocation['port'],
                     ],
-                    'mappings' => [
-                        $allocation['ip'] => [
-                            $allocation['port'],
-                        ],
-                    ],
+                    'mappings' => $this->buildAllocationMappings($allAllocations),
                 ],
                 'build' => [
                     'memory_limit' => $server['memory'],
@@ -566,5 +565,30 @@ class WingsServerInfoController
         }
 
         return $value;
+    }
+
+    /**
+     * Build allocation mappings grouped by IP address.
+     *
+     * @param array<int, array<string, mixed>> $allocations Array of allocations
+     *
+     * @return array<string, array<int, int>> Allocations grouped by IP with array of ports
+     */
+    private function buildAllocationMappings(array $allocations): array
+    {
+        $mappings = [];
+
+        foreach ($allocations as $alloc) {
+            $ip = $alloc['ip'];
+            $port = (int) $alloc['port'];
+
+            if (!isset($mappings[$ip])) {
+                $mappings[$ip] = [];
+            }
+
+            $mappings[$ip][] = $port;
+        }
+
+        return $mappings;
     }
 }

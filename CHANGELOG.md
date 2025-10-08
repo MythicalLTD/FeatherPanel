@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.0.4-Canary
+
+### Added
+
+- Introducing a powerful new plugin UI rendering engine, enabling plugins to seamlessly register custom pages for the dashboard, admin panel, and server views.
+
+## Fixed
+
+- Fixed an issue where ports/allocations where not shared with wings!
+
+### Improved
+
+- Enhanced CORS origin protection for improved security
+- Server management pages have been renamed throughout the codebase for consistency. All references now use "Server" instead of "Instance" or other variations, ensuring a unified naming convention across the UI and API.
+
 ## v0.0.3-Canary
 
 ### Added

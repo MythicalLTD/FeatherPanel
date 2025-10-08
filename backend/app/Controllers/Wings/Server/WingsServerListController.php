@@ -129,6 +129,9 @@ class WingsServerListController
                 continue; // Skip servers with missing related data
             }
 
+            // Get all allocations for this server
+            $allAllocations = Allocation::getByServerId($server['id']);
+
             // Get server variables
             $serverVariables = ServerVariable::getServerVariablesWithDetails($server['id']);
             $environment = [];
@@ -338,11 +341,7 @@ class WingsServerListController
                             'ip' => $allocation['ip'],
                             'port' => $allocation['port'],
                         ],
-                        'mappings' => [
-                            $allocation['ip'] => [
-                                $allocation['port'],
-                            ],
-                        ],
+                        'mappings' => $this->buildAllocationMappings($allAllocations),
                     ],
                     'build' => [
                         'memory_limit' => $server['memory'],
@@ -481,5 +480,30 @@ class WingsServerListController
         }
 
         return $value;
+    }
+
+    /**
+     * Build allocation mappings grouped by IP address.
+     *
+     * @param array<int, array<string, mixed>> $allocations Array of allocations
+     *
+     * @return array<string, array<int, int>> Allocations grouped by IP with array of ports
+     */
+    private function buildAllocationMappings(array $allocations): array
+    {
+        $mappings = [];
+
+        foreach ($allocations as $alloc) {
+            $ip = $alloc['ip'];
+            $port = (int) $alloc['port'];
+
+            if (!isset($mappings[$ip])) {
+                $mappings[$ip] = [];
+            }
+
+            $mappings[$ip][] = $port;
+        }
+
+        return $mappings;
     }
 }

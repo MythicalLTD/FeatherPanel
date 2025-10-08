@@ -13,6 +13,8 @@
 
 namespace App\Controllers\User\Server;
 
+use App\App;
+use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\Allocation;
 use App\Helpers\ApiResponse;
@@ -244,6 +246,49 @@ class ServerAllocationController
             ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'allocation_id' => $allocationId]
         );
 
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        // Get updated server data
+        $scheme = $node['scheme'];
+        $host = $node['fqdn'];
+        $port = $node['daemonListen'];
+        $token = $node['daemon_token'];
+
+        $timeout = (int) 30;
+        try {
+            $wings = new \App\Services\Wings\Wings(
+                $host,
+                $port,
+                $scheme,
+                $token,
+                $timeout
+            );
+
+            $response = $wings->getServer()->syncServer($server['uuid']);
+
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+                if ($response->getStatusCode() === 400) {
+                    return ApiResponse::error('Invalid server configuration: ' . $error, 'INVALID_SERVER_CONFIG', 400);
+                } elseif ($response->getStatusCode() === 401) {
+                    return ApiResponse::error('Unauthorized access to Wings daemon', 'WINGS_UNAUTHORIZED', 401);
+                } elseif ($response->getStatusCode() === 403) {
+                    return ApiResponse::error('Forbidden access to Wings daemon', 'WINGS_FORBIDDEN', 403);
+                } elseif ($response->getStatusCode() === 422) {
+                    return ApiResponse::error('Invalid server data: ' . $error, 'INVALID_SERVER_DATA', 422);
+                }
+
+                return ApiResponse::error('Failed to send power action to Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to send power action to Wings: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to send power action to Wings: ' . $e->getMessage(), 'FAILED_TO_SEND_POWER_ACTION_TO_WINGS', 500);
+        }
+
         return ApiResponse::success([
             'message' => 'Allocation deleted successfully',
             'deleted_allocation_id' => $allocationId,
@@ -329,6 +374,49 @@ class ServerAllocationController
             ServerEvent::onServerAllocationUpdated(),
             ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'allocation_id' => $allocationId]
         );
+
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        // Get updated server data
+        $scheme = $node['scheme'];
+        $host = $node['fqdn'];
+        $port = $node['daemonListen'];
+        $token = $node['daemon_token'];
+
+        $timeout = (int) 30;
+        try {
+            $wings = new \App\Services\Wings\Wings(
+                $host,
+                $port,
+                $scheme,
+                $token,
+                $timeout
+            );
+
+            $response = $wings->getServer()->syncServer($server['uuid']);
+
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+                if ($response->getStatusCode() === 400) {
+                    return ApiResponse::error('Invalid server configuration: ' . $error, 'INVALID_SERVER_CONFIG', 400);
+                } elseif ($response->getStatusCode() === 401) {
+                    return ApiResponse::error('Unauthorized access to Wings daemon', 'WINGS_UNAUTHORIZED', 401);
+                } elseif ($response->getStatusCode() === 403) {
+                    return ApiResponse::error('Forbidden access to Wings daemon', 'WINGS_FORBIDDEN', 403);
+                } elseif ($response->getStatusCode() === 422) {
+                    return ApiResponse::error('Invalid server data: ' . $error, 'INVALID_SERVER_DATA', 422);
+                }
+
+                return ApiResponse::error('Failed to send power action to Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to send power action to Wings: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to send power action to Wings: ' . $e->getMessage(), 'FAILED_TO_SEND_POWER_ACTION_TO_WINGS', 500);
+        }
 
         return ApiResponse::success([
             'message' => 'Primary allocation updated successfully',
@@ -420,6 +508,49 @@ class ServerAllocationController
         }
 
         $message = "Successfully assigned allocation {$updatedAllocation['ip']}:{$updatedAllocation['port']} to your server";
+
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        // Get updated server data
+        $scheme = $node['scheme'];
+        $host = $node['fqdn'];
+        $port = $node['daemonListen'];
+        $token = $node['daemon_token'];
+
+        $timeout = (int) 30;
+        try {
+            $wings = new \App\Services\Wings\Wings(
+                $host,
+                $port,
+                $scheme,
+                $token,
+                $timeout
+            );
+
+            $response = $wings->getServer()->syncServer($server['uuid']);
+
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+                if ($response->getStatusCode() === 400) {
+                    return ApiResponse::error('Invalid server configuration: ' . $error, 'INVALID_SERVER_CONFIG', 400);
+                } elseif ($response->getStatusCode() === 401) {
+                    return ApiResponse::error('Unauthorized access to Wings daemon', 'WINGS_UNAUTHORIZED', 401);
+                } elseif ($response->getStatusCode() === 403) {
+                    return ApiResponse::error('Forbidden access to Wings daemon', 'WINGS_FORBIDDEN', 403);
+                } elseif ($response->getStatusCode() === 422) {
+                    return ApiResponse::error('Invalid server data: ' . $error, 'INVALID_SERVER_DATA', 422);
+                }
+
+                return ApiResponse::error('Failed to send power action to Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to send power action to Wings: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to send power action to Wings: ' . $e->getMessage(), 'FAILED_TO_SEND_POWER_ACTION_TO_WINGS', 500);
+        }
 
         // Emit event
         global $eventManager;
