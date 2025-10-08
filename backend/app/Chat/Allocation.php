@@ -28,6 +28,7 @@ class Allocation
         ?int $serverId = null,
         int $limit = 10,
         int $offset = 0,
+        bool $notUsed = false,
     ): array {
         $pdo = Database::getPdoConnection();
         $sql = 'SELECT * FROM ' . self::$table;
@@ -47,6 +48,10 @@ class Allocation
         if ($serverId !== null) {
             $conditions[] = 'server_id = :server_id';
             $params['server_id'] = $serverId;
+        }
+
+        if ($notUsed) {
+            $conditions[] = 'server_id IS NULL';
         }
 
         if (!empty($conditions)) {
@@ -135,6 +140,7 @@ class Allocation
         ?string $search = null,
         ?int $nodeId = null,
         ?int $serverId = null,
+        bool $notUsed = false,
     ): int {
         $pdo = Database::getPdoConnection();
         $sql = 'SELECT COUNT(*) FROM ' . self::$table;
@@ -154,6 +160,10 @@ class Allocation
         if ($serverId !== null) {
             $conditions[] = 'server_id = :server_id';
             $params['server_id'] = $serverId;
+        }
+
+        if ($notUsed) {
+            $conditions[] = 'server_id IS NULL';
         }
 
         if (!empty($conditions)) {

@@ -121,6 +121,7 @@ class AllocationsController
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 20);
         $search = $request->query->get('search', '');
+		$notUsed = $request->query->get('not_used', false);
         $nodeId = $request->query->get('node_id');
         $serverId = $request->query->get('server_id');
 
@@ -140,9 +141,10 @@ class AllocationsController
         // Convert to integers if provided
         $nodeId = $nodeId ? (int) $nodeId : null;
         $serverId = $serverId ? (int) $serverId : null;
+        $notUsed = $notUsed ? true : false;
 
-        $allocations = Allocation::getAll($search, $nodeId, $serverId, $limit, $offset);
-        $total = Allocation::getCount($search, $nodeId, $serverId);
+        $allocations = Allocation::getAll($search, $nodeId, $serverId, $limit, $offset, $notUsed);
+        $total = Allocation::getCount($search, $nodeId, $serverId, $notUsed);
         $totalPages = ceil($total / $limit);
 
         $from = ($page - 1) * $limit + 1;

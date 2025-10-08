@@ -25,6 +25,7 @@
 - Replaced remaining instances of "Pterodactyl Wings" branding in the panel with FeatherPanel terminology
 - Fixed an issue where renaming files or folders could trigger PHP warnings about undefined array keys "path" and "new_name" in ServerFilesController.php.
 - Fixed an issue where creating an archive could result in thousands of unnecessary archives being created instead of a single one.
+- Fixed a bug where, during server creation and editing, it was possible to select allocations that were already in use. The system now prevents selection of used allocations up front, instead of only showing an error after submission.
 
 ## v0.0.2-Canary
 

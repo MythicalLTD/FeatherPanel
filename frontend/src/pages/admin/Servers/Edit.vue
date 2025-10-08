@@ -894,7 +894,7 @@ const dockerImagePopoverOpen = ref(false);
 const locationModal = useSelectionModal('/api/admin/locations', 20, 'search', 'page');
 const userModal = useSelectionModal('/api/admin/users', 20, 'search', 'page');
 const nodeModal = useSelectionModal('/api/admin/nodes', 20, 'search', 'page');
-const allocationModal = useSelectionModal('/api/admin/allocations', 20, 'search', 'page');
+const allocationModal = useSelectionModal('/api/admin/allocations?not_used=true', 20, 'search', 'page');
 const realmModal = useSelectionModal('/api/admin/realms', 20, 'search', 'page');
 const spellModal = useSelectionModal('/api/admin/spells', 20, 'search', 'page');
 
@@ -1186,7 +1186,7 @@ async function loadServerData() {
             axios.get('/api/admin/nodes'),
             axios.get('/api/admin/realms'),
             axios.get('/api/admin/spells'),
-            axios.get('/api/admin/allocations'),
+            axios.get('/api/admin/allocations?not_used=true'),
         ]);
 
         if (serverRes.data?.success) {
