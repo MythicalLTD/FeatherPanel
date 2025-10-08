@@ -10,6 +10,7 @@
 
 - Fixed an issue where ports/allocations where not shared with wings!
 - Fixed an issue where uploading logs to mclo.gs would not work if developer mode was not enabled.
+- Fixed a bug where updating or creating a Realm with a logo URL would incorrectly display the Realm name as the logo, or fail to update the logo preview. Now, the correct logo is shown after creation or update, and the value is properly applied. (#41)
 
 ### Improved
 

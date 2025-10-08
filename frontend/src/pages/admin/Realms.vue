@@ -208,7 +208,14 @@
                         placeholder="Description"
                     />
                     <label for="edit-logo" class="block mb-1 font-medium">Logo URL</label>
-                    <Input id="edit-logo" v-model="editForm.logo" label="Logo" placeholder="Logo URL" />
+                    <Input
+                        id="edit-logo"
+                        v-model="editForm.logo"
+                        label="Logo"
+                        placeholder="https://example.com/logo.png"
+                        type="url"
+                    />
+                    <p class="text-xs text-muted-foreground mt-1">Logo must be a valid URL starting with https://</p>
                     <label for="edit-author" class="block mb-1 font-medium">Author</label>
                     <Input id="edit-author" v-model="editForm.author" label="Author" placeholder="Author" />
                     <div class="flex justify-end gap-2 mt-4">
@@ -251,7 +258,14 @@
                         placeholder="Description"
                     />
                     <label for="create-logo" class="block mb-1 font-medium">Logo URL</label>
-                    <Input id="create-logo" v-model="createForm.logo" label="Logo" placeholder="Logo URL" />
+                    <Input
+                        id="create-logo"
+                        v-model="createForm.logo"
+                        label="Logo"
+                        placeholder="https://example.com/logo.png"
+                        type="url"
+                    />
+                    <p class="text-xs text-muted-foreground mt-1">Logo must be a valid URL starting with https://</p>
                     <label for="create-author" class="block mb-1 font-medium">Author</label>
                     <Input id="create-author" v-model="createForm.author" label="Author" placeholder="Author" />
                     <div class="flex justify-end gap-2 mt-4">
@@ -284,7 +298,10 @@ import { useRouter } from 'vue-router';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
 import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from 'vue-toastification';
 import { FolderTree } from 'lucide-vue-next';
+
+const toast = useToast();
 
 type Realm = {
     id: number;
@@ -478,6 +495,21 @@ function closeEditDrawer() {
 
 async function submitEdit() {
     if (!editingRealm.value) return;
+
+    // Validate logo URL if provided
+    if (editForm.value.logo && editForm.value.logo.trim() !== '') {
+        if (!editForm.value.logo.startsWith('https://')) {
+            toast.error('Logo URL must start with https://');
+            return;
+        }
+        try {
+            new URL(editForm.value.logo);
+        } catch {
+            drawerMessage.value = { type: 'error', text: 'Please enter a valid URL' };
+            return;
+        }
+    }
+
     try {
         const patchData = { ...editForm.value };
         const { data } = await axios.patch(`/api/admin/realms/${editingRealm.value.id}`, patchData);
@@ -512,6 +544,20 @@ function closeCreateDrawer() {
 }
 
 async function submitCreate() {
+    // Validate logo URL if provided
+    if (createForm.value.logo && createForm.value.logo.trim() !== '') {
+        if (!createForm.value.logo.startsWith('https://')) {
+            toast.error('Logo URL must start with https://');
+            return;
+        }
+        try {
+            new URL(createForm.value.logo);
+        } catch {
+            drawerMessage.value = { type: 'error', text: 'Please enter a valid URL' };
+            return;
+        }
+    }
+
     try {
         const { data } = await axios.put('/api/admin/realms', createForm.value);
         if (data && data.success) {
