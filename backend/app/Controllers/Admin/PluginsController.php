@@ -715,12 +715,17 @@ class PluginsController
 
             $phpFiles = glob($pluginDir . '/*.php') ?: [];
             if (!empty($phpFiles)) {
-                require_once $phpFiles[0];
-                $className = basename($phpFiles[0], '.php');
-                $namespace = 'App\\Addons\\' . $identifier;
-                $full = $namespace . '\\' . $className;
-                if (class_exists($full) && method_exists($full, 'pluginUninstall')) {
-                    $full::pluginUninstall();
+                try {
+                    require_once $phpFiles[0];
+                    $className = basename($phpFiles[0], '.php');
+                    $namespace = 'App\\Addons\\' . $identifier;
+                    $full = $namespace . '\\' . $className;
+                    if (class_exists($full) && method_exists($full, 'pluginUninstall')) {
+                        $full::pluginUninstall();
+                    }
+                } catch (\Throwable $e) {
+                    // Log the error but continue with uninstallation
+                    error_log('Plugin uninstall hook failed for ' . $identifier . ': ' . $e->getMessage());
                 }
             }
 
