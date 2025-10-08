@@ -32,7 +32,7 @@
                         variant="secondary"
                         size="sm"
                         class="flex items-center gap-2"
-                        @click="navigateTo('/admin/users/create')"
+                        @click="navigateTo('/admin/users')"
                     >
                         <UserPlus :size="16" />
                         Add User

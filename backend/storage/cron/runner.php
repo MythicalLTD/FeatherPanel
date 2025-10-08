@@ -16,7 +16,7 @@ define('APP_DEBUG', false);
 define('SYSTEM_OS_NAME', gethostname() . '/' . PHP_OS_FAMILY);
 define('SYSTEM_KERNEL_NAME', php_uname('s'));
 define('TELEMETRY', true);
-define('APP_VERSION', 'v0.0.3');
+define('APP_VERSION', 'v0.0.4');
 define('APP_UPSTREAM', 'canary');
 
 require(__DIR__ . '/../packages/autoload.php');

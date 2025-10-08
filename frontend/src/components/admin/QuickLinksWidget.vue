@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { Server, Users, Network, Settings, Database, FileText, Shield, Sparkles, Zap } from 'lucide-vue-next';
+import { Server, Users, Network, Settings, Database, FileText, Sparkles, Zap } from 'lucide-vue-next';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'vue-router';
 import type { Component } from 'vue';
@@ -48,7 +48,6 @@ const quickLinks: QuickLink[] = [
     { name: 'Settings', path: '/admin/settings', icon: Settings, color: 'gray' },
     { name: 'Database', path: '/admin/database', icon: Database, color: 'indigo' },
     { name: 'Logs', path: '/admin/logs', icon: FileText, color: 'amber' },
-    { name: 'Security', path: '/admin/security', icon: Shield, color: 'red' },
     { name: 'Spells', path: '/admin/spells', icon: Sparkles, color: 'pink' },
 ];
 
