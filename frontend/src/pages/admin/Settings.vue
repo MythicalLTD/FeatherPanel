@@ -34,6 +34,148 @@
                     </div>
                 </div>
 
+                <!-- Upload Logs to Support -->
+                <Card
+                    class="mb-6 border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950"
+                >
+                    <CardContent class="p-6">
+                        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <div class="p-2 bg-blue-500/10 rounded-lg">
+                                        <Upload class="h-5 w-5 text-blue-500" />
+                                    </div>
+                                    <h3 class="text-lg font-semibold">Upload Logs to Support</h3>
+                                </div>
+                                <p class="text-sm text-muted-foreground mb-4">
+                                    Upload your web and application logs to mclo.gs for easy sharing with support. This
+                                    will generate shareable links for both log files.
+                                </p>
+
+                                <!-- Upload Results -->
+                                <div v-if="logUploadResults" class="space-y-3 mt-4">
+                                    <!-- Web Logs -->
+                                    <div v-if="logUploadResults.web" class="bg-background rounded-lg border p-4">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="font-medium flex items-center gap-2">
+                                                <Badge variant="outline">Web Logs</Badge>
+                                            </span>
+                                            <CheckCircle2
+                                                v-if="logUploadResults.web.success"
+                                                class="h-4 w-4 text-green-500"
+                                            />
+                                            <AlertCircle v-else class="h-4 w-4 text-red-500" />
+                                        </div>
+
+                                        <div
+                                            v-if="logUploadResults.web.success && logUploadResults.web.url"
+                                            class="space-y-2"
+                                        >
+                                            <div class="flex items-center gap-2">
+                                                <a
+                                                    :href="logUploadResults.web.url"
+                                                    target="_blank"
+                                                    class="text-sm text-blue-500 hover:underline flex items-center gap-1"
+                                                >
+                                                    {{ logUploadResults.web.url }}
+                                                    <ExternalLink class="h-3 w-3" />
+                                                </a>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    class="h-6 px-2"
+                                                    @click="copyToClipboard(logUploadResults.web.url!)"
+                                                >
+                                                    <Copy
+                                                        v-if="copiedUrl !== logUploadResults.web.url"
+                                                        class="h-3 w-3"
+                                                    />
+                                                    <CheckCircle2 v-else class="h-3 w-3 text-green-500" />
+                                                </Button>
+                                            </div>
+                                            <a
+                                                v-if="logUploadResults.web.raw"
+                                                :href="logUploadResults.web.raw"
+                                                target="_blank"
+                                                class="text-xs text-muted-foreground hover:underline flex items-center gap-1"
+                                            >
+                                                Raw: {{ logUploadResults.web.raw }}
+                                                <ExternalLink class="h-3 w-3" />
+                                            </a>
+                                        </div>
+                                        <p v-else-if="logUploadResults.web.error" class="text-sm text-red-500">
+                                            {{ logUploadResults.web.error }}
+                                        </p>
+                                    </div>
+
+                                    <!-- App Logs -->
+                                    <div v-if="logUploadResults.app" class="bg-background rounded-lg border p-4">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="font-medium flex items-center gap-2">
+                                                <Badge variant="outline">App Logs</Badge>
+                                            </span>
+                                            <CheckCircle2
+                                                v-if="logUploadResults.app.success"
+                                                class="h-4 w-4 text-green-500"
+                                            />
+                                            <AlertCircle v-else class="h-4 w-4 text-red-500" />
+                                        </div>
+
+                                        <div
+                                            v-if="logUploadResults.app.success && logUploadResults.app.url"
+                                            class="space-y-2"
+                                        >
+                                            <div class="flex items-center gap-2">
+                                                <a
+                                                    :href="logUploadResults.app.url"
+                                                    target="_blank"
+                                                    class="text-sm text-blue-500 hover:underline flex items-center gap-1"
+                                                >
+                                                    {{ logUploadResults.app.url }}
+                                                    <ExternalLink class="h-3 w-3" />
+                                                </a>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    class="h-6 px-2"
+                                                    @click="copyToClipboard(logUploadResults.app.url!)"
+                                                >
+                                                    <Copy
+                                                        v-if="copiedUrl !== logUploadResults.app.url"
+                                                        class="h-3 w-3"
+                                                    />
+                                                    <CheckCircle2 v-else class="h-3 w-3 text-green-500" />
+                                                </Button>
+                                            </div>
+                                            <a
+                                                v-if="logUploadResults.app.raw"
+                                                :href="logUploadResults.app.raw"
+                                                target="_blank"
+                                                class="text-xs text-muted-foreground hover:underline flex items-center gap-1"
+                                            >
+                                                Raw: {{ logUploadResults.app.raw }}
+                                                <ExternalLink class="h-3 w-3" />
+                                            </a>
+                                        </div>
+                                        <p v-else-if="logUploadResults.app.error" class="text-sm text-red-500">
+                                            {{ logUploadResults.app.error }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <Button :disabled="uploadingLogs" class="w-full md:w-auto" @click="uploadLogsToSupport">
+                                <Upload v-if="!uploadingLogs" class="h-4 w-4 mr-2" />
+                                <div
+                                    v-else
+                                    class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                                ></div>
+                                {{ uploadingLogs ? 'Uploading...' : 'Upload Logs' }}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 <!-- Category Tabs -->
                 <div class="mb-6">
                     <!-- Mobile: Grid Layout -->
@@ -303,7 +445,22 @@ import { ref, computed, onMounted } from 'vue';
 import { useSessionStore } from '@/stores/session';
 import { useRouter } from 'vue-router';
 import { useAdminSettingsStore, type Setting } from '@/stores/adminSettings';
-import { Settings, Save, AlertCircle, Shield, Mail, Database, Globe, Lock, Bell, Palette } from 'lucide-vue-next';
+import {
+    Settings,
+    Save,
+    AlertCircle,
+    Shield,
+    Mail,
+    Database,
+    Globe,
+    Lock,
+    Bell,
+    Palette,
+    Upload,
+    ExternalLink,
+    Copy,
+    CheckCircle2,
+} from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -314,6 +471,7 @@ import { Switch } from '@/components/ui/switch';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { useToast } from 'vue-toastification';
 import { Card, CardContent } from '@/components/ui/card';
+import axios from 'axios';
 
 const toast = useToast();
 
@@ -325,6 +483,14 @@ const adminSettingsStore = useAdminSettingsStore();
 const selectedCategory = ref('app');
 const originalSettings = ref<Record<string, Setting> | null>(null);
 const categoryLoading = ref(false);
+
+// Log upload state
+const uploadingLogs = ref(false);
+const logUploadResults = ref<{
+    web?: { success: boolean; url?: string; raw?: string; error?: string };
+    app?: { success: boolean; url?: string; raw?: string; error?: string };
+} | null>(null);
+const copiedUrl = ref<string | null>(null);
 
 // Computed
 const loading = computed(() => adminSettingsStore.loading);
@@ -408,6 +574,42 @@ const resetSettings = () => {
             setting.value = originalSetting.value;
         }
     });
+};
+
+// Log upload functions
+const uploadLogsToSupport = async () => {
+    uploadingLogs.value = true;
+    logUploadResults.value = null;
+
+    try {
+        const response = await axios.post('/api/admin/log-viewer/upload');
+
+        if (response.data.success) {
+            logUploadResults.value = response.data.data;
+            toast.success('Logs uploaded successfully to mclo.gs!');
+        } else {
+            toast.error(response.data.message || 'Failed to upload logs');
+        }
+    } catch (error) {
+        console.error('Error uploading logs:', error);
+        toast.error('Failed to upload logs. Please try again.');
+    } finally {
+        uploadingLogs.value = false;
+    }
+};
+
+const copyToClipboard = async (url: string) => {
+    try {
+        await navigator.clipboard.writeText(url);
+        copiedUrl.value = url;
+        toast.success('URL copied to clipboard!');
+
+        setTimeout(() => {
+            copiedUrl.value = null;
+        }, 2000);
+    } catch {
+        toast.error('Failed to copy URL');
+    }
 };
 
 // Lifecycle

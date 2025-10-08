@@ -48,4 +48,15 @@ return function (RouteCollection $routes): void {
         },
         Permissions::ADMIN_ROOT,
     );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-log-viewer-upload',
+        '/api/admin/log-viewer/upload',
+        function (Request $request) {
+            return (new LogViewerController())->uploadLogs($request);
+        },
+        Permissions::ADMIN_ROOT,
+        ['POST']
+    );
 };

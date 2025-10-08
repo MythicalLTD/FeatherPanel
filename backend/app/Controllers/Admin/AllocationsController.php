@@ -121,7 +121,7 @@ class AllocationsController
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 20);
         $search = $request->query->get('search', '');
-		$notUsed = $request->query->get('not_used', false);
+        $notUsed = $request->query->get('not_used', false);
         $nodeId = $request->query->get('node_id');
         $serverId = $request->query->get('server_id');
 

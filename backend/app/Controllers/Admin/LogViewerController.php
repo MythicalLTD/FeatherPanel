@@ -217,6 +217,90 @@ class LogViewerController
         }
     }
 
+    #[OA\Post(
+        path: '/api/admin/log-viewer/upload',
+        summary: 'Upload logs to mclo.gs',
+        description: 'Upload web and app logs to mclo.gs paste service and get shareable URLs. Only available in developer mode and requires ADMIN_ROOT permissions.',
+        tags: ['Admin - Log Viewer'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Logs uploaded successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'web',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(property: 'success', type: 'boolean'),
+                                new OA\Property(property: 'url', type: 'string'),
+                                new OA\Property(property: 'raw', type: 'string'),
+                                new OA\Property(property: 'id', type: 'string'),
+                            ]
+                        ),
+                        new OA\Property(
+                            property: 'app',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(property: 'success', type: 'boolean'),
+                                new OA\Property(property: 'url', type: 'string'),
+                                new OA\Property(property: 'raw', type: 'string'),
+                                new OA\Property(property: 'id', type: 'string'),
+                            ]
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Developer mode not enabled or insufficient permissions'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to upload logs'),
+        ]
+    )]
+    public function uploadLogs(Request $request): Response
+    {
+        try {
+            $config = App::getInstance(true)->getConfig();
+            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+                return ApiResponse::error('You are not allowed to upload logs in non-developer mode', 403);
+            }
+
+            $results = [];
+
+            // Limit to last 10,000 lines to prevent memory issues
+            $lineLimit = 10000;
+
+            // Upload web logs
+            $webLogFile = $this->getLogFilePath('web');
+            if (file_exists($webLogFile)) {
+                $webContent = $this->readLastLines($webLogFile, $lineLimit);
+                $webResult = $this->uploadToMcloGs($webContent);
+                $results['web'] = $webResult;
+            } else {
+                $results['web'] = [
+                    'success' => false,
+                    'error' => 'Web log file not found',
+                ];
+            }
+
+            // Upload app logs
+            $appLogFile = $this->getLogFilePath('app');
+            if (file_exists($appLogFile)) {
+                $appContent = $this->readLastLines($appLogFile, $lineLimit);
+                $appResult = $this->uploadToMcloGs($appContent);
+                $results['app'] = $appResult;
+            } else {
+                $results['app'] = [
+                    'success' => false,
+                    'error' => 'App log file not found',
+                ];
+            }
+
+            return ApiResponse::success($results, 'Logs uploaded successfully', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to upload logs: ' . $e->getMessage(), 500);
+        }
+    }
+
     private function getLogFilePath(string $type): string
     {
         $logDir = dirname(__DIR__, 3) . '/storage/logs/';
@@ -241,6 +325,51 @@ class LogViewerController
         }
 
         return 'unknown';
+    }
+
+    private function uploadToMcloGs(string $content): array
+    {
+        try {
+            $ch = curl_init('https://api.mclo.gs/1/log');
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(['content' => $content]));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/x-www-form-urlencoded',
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode !== 200) {
+                return [
+                    'success' => false,
+                    'error' => 'Failed to upload to mclo.gs (HTTP ' . $httpCode . ')',
+                ];
+            }
+
+            $result = json_decode($response, true);
+
+            if (!$result || !isset($result['success']) || !$result['success']) {
+                return [
+                    'success' => false,
+                    'error' => $result['error'] ?? 'Unknown error from mclo.gs',
+                ];
+            }
+
+            return [
+                'success' => true,
+                'id' => $result['id'],
+                'url' => $result['url'],
+                'raw' => $result['raw'],
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => 'Exception: ' . $e->getMessage(),
+            ];
+        }
     }
 
     private function readLastLines(string $filePath, int $lines): string
