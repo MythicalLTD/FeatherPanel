@@ -64,9 +64,11 @@ services:
       - featherpanel_network
 
   frontend:
-    image: ghcr.io/mythicalltd/featherpanel-frontend:main
+    image: ghcr.io/mythicalltd/featherpanel-frontend:latest
     container_name: featherpanel_frontend
     restart: unless-stopped
+    volumes: []
+    pull_policy: always
     depends_on:
       mysql:
         condition: service_healthy

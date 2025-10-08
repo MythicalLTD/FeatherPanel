@@ -1362,6 +1362,7 @@ CF_HOSTNAME=""
                 curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml" >> "$LOG_FILE" 2>&1 || log_warn "Could not refresh compose file; keeping existing."
             fi
             (cd /var/www/featherpanel && sudo docker compose pull) >> "$LOG_FILE" 2>&1 || { log_error "Failed pulling images"; upload_logs_on_fail; exit 1; }
+            (cd /var/www/featherpanel && sudo docker compose down) >> "$LOG_FILE" 2>&1 || { log_error "Failed applying updated stack"; upload_logs_on_fail; exit 1; }
             (cd /var/www/featherpanel && sudo docker compose up -d) >> "$LOG_FILE" 2>&1 || { log_error "Failed applying updated stack"; upload_logs_on_fail; exit 1; }
             log_success "FeatherPanel updated successfully."
                     exit 0
