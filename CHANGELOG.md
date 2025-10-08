@@ -9,6 +9,7 @@
 ## Fixed
 
 - Fixed an issue where ports/allocations where not shared with wings!
+- Fixed an issue where uploading logs to mclo.gs would not work if developer mode was not enabled.
 
 ### Improved
 
