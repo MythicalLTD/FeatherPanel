@@ -28,5 +28,5 @@ coverage
 *.sw?
 
 *.tsbuildinfo
-
+.run/
 stats.html

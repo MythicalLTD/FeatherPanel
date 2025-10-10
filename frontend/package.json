@@ -57,7 +57,7 @@
         "@tailwindcss/vite": "^4.1.14",
         "@tanstack/vue-table": "^8.21.3",
         "@tsconfig/node22": "^22.0.2",
-        "@types/node": "^24.7.0",
+        "@types/node": "^24.7.1",
         "@vitejs/plugin-vue": "^6.0.1",
         "@vue/tsconfig": "^0.8.1",
         "@vueuse/core": "^13.9.0",
@@ -100,6 +100,7 @@
         "vuedraggable": "^4.1.0"
     },
     "devDependencies": {
+        "eslint-plugin-license-header": "^0.8.0",
         "eslint-plugin-vue": "^10.5.0",
         "globals": "^16.4.0",
         "vue-eslint-parser": "^10.2.0"

@@ -234,7 +234,10 @@
     // Scrollbar/Shadow accents
     "scrollbar.shadow": "#00000066",
     // Welcome/walkthrough
-    "walkThrough.embeddedEditorBackground": "#0f0a1a"
+    "walkThrough.embeddedEditorBackground": "#0f0a1a",
+    "activityBar.background": "#100a1a",
+    "activityBar.foreground": "#f8fafc",
+    "activityBar.border": "#2d1854"
   },
   "todo-tree.general.tags": [
     "BUG",
@@ -245,10 +248,6 @@
     "[x]",
     "REFACTOR"
   ],
-  "i18n-ally.localesPaths": [
-    "frontend/src/locale",
-    "backend/storage/packages/phpmailer/phpmailer/language"
-  ],
   "php.version": "8.3.23",
   "php.stubs": ["*", "opcache"],
   "editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -256,9 +255,6 @@
   "editor.formatOnType": false, // required
   "editor.formatOnSave": true, // optional
   "editor.formatOnSaveMode": "file",
-  "[php]": {
-    "editor.defaultFormatter": "DEVSENSE.phptools-vscode"
-  },
   "[shellscript]": {
     "editor.defaultFormatter": "mads-hartmann.bash-ide-vscode"
   } // required to format on save

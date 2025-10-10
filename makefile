@@ -99,7 +99,8 @@ release:
 	@echo -e "${GREEN}${CHECK} Frontend checks complete${NC}\n"
 	
 	@echo -e "${PURPLE}${INFO} Updating dependencies...${NC}"
-	@cd $(FRONTEND_DIR) && $(PNPM) upgrade
+	@cd $(FRONTEND_DIR) && npx --yes npm-check-updates -u
+	@cd $(FRONTEND_DIR) && $(PNPM) install
 	@cd $(BACKEND_DIR) && $(COMPOSER) update
 	@echo -e "${GREEN}${CHECK} Dependencies updated${NC}\n"
 	
