@@ -112,6 +112,15 @@
                             <span>{{ t('serverFiles.uploadFile') }}</span>
                         </Button>
                         <Button
+                            variant="outline"
+                            :disabled="loading"
+                            class="gap-2 hover:bg-primary/5 hover:text-primary hover:border-primary/50 transition-all"
+                            @click="showPullDialog = true"
+                        >
+                            <Download class="h-4 w-4" />
+                            <span>{{ t('serverFiles.pullFile') }}</span>
+                        </Button>
+                        <Button
                             :disabled="loading"
                             class="gap-2 bg-primary hover:bg-primary/90 transition-all shadow-sm"
                             @click="showCreateFolderDialog = true"
@@ -174,6 +183,69 @@
                             >
                                 <X class="h-4 w-4" />
                             </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <!-- Active Downloads Card -->
+            <Card
+                v-if="activeDownloads.length > 0"
+                class="border-2 border-blue-500/30 bg-gradient-to-r from-blue-500/5 to-blue-500/10 shadow-sm"
+            >
+                <CardContent class="p-4">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="p-2 rounded-full bg-blue-500/20">
+                                    <Download class="h-4 w-4 text-blue-600 dark:text-blue-400 animate-bounce" />
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-semibold">Active Downloads</h3>
+                                    <p class="text-xs text-muted-foreground">
+                                        {{ activeDownloads.length }} download(s) in progress
+                                    </p>
+                                </div>
+                            </div>
+                            <Button variant="ghost" size="sm" @click="refreshDownloads">
+                                <RefreshCw :class="['h-4 w-4', loadingDownloads && 'animate-spin']" />
+                            </Button>
+                        </div>
+                        <div class="space-y-2">
+                            <div
+                                v-for="download in activeDownloads"
+                                :key="download.Identifier"
+                                class="flex items-center justify-between p-3 rounded-lg bg-background border"
+                            >
+                                <div class="flex items-center gap-3 flex-1 min-w-0">
+                                    <Download class="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm font-medium">File Download</p>
+                                        <p class="text-xs text-muted-foreground truncate font-mono">
+                                            {{ download.Identifier }}
+                                        </p>
+                                        <div class="mt-1.5 flex items-center gap-2">
+                                            <div class="flex-1 bg-secondary rounded-full h-1.5 max-w-[200px]">
+                                                <div
+                                                    class="bg-blue-500 h-1.5 rounded-full transition-all"
+                                                    :style="{ width: `${(download.Progress * 100).toFixed(1)}%` }"
+                                                ></div>
+                                            </div>
+                                            <span class="text-xs text-muted-foreground font-mono">
+                                                {{ (download.Progress * 100).toFixed(1) }}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    class="text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                                    @click="cancelDownload(download.Identifier)"
+                                >
+                                    <X class="h-4 w-4" />
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </CardContent>
@@ -838,32 +910,61 @@
 
         <!-- Pull File Dialog -->
         <Dialog v-model:open="showPullDialog">
-            <DialogContent class="mx-4 sm:mx-0 sm:max-w-md">
+            <DialogContent class="mx-4 sm:mx-0 sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{{ t('serverFiles.pullFile') }}</DialogTitle>
+                    <DialogTitle class="flex items-center gap-2">
+                        <Download class="h-5 w-5 text-primary" />
+                        {{ t('serverFiles.pullFile') }}
+                    </DialogTitle>
                     <DialogDescription>{{ t('serverFiles.pullFileDescription') }}</DialogDescription>
                 </DialogHeader>
                 <div class="space-y-4">
-                    <div class="space-y-2">
-                        <Label for="pullUrl">{{ t('serverFiles.fileUrl') }}</Label>
-                        <Input id="pullUrl" v-model="pullUrl" placeholder="https://example.com/file.zip" type="url" />
+                    <div class="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                        <p class="text-sm text-blue-600 dark:text-blue-400">
+                            💡 Download a file directly from a URL to your server. The file will be saved to the current
+                            directory.
+                        </p>
                     </div>
                     <div class="space-y-2">
-                        <Label for="pullFileName">{{ t('serverFiles.fileName') }} ({{ t('common.optional') }})</Label>
+                        <Label for="pullUrl">{{ t('serverFiles.fileUrl') }} *</Label>
+                        <Input
+                            id="pullUrl"
+                            v-model="pullUrl"
+                            placeholder="https://example.com/file.zip"
+                            type="url"
+                            @keyup.enter="pullUrl && pullFile()"
+                        />
+                        <p class="text-xs text-muted-foreground">Enter the direct download URL of the file</p>
+                    </div>
+                    <div class="space-y-2">
+                        <Label for="pullFileName">
+                            {{ t('serverFiles.fileName') }}
+                            <span class="text-muted-foreground">({{ t('common.optional') }})</span>
+                        </Label>
                         <Input
                             id="pullFileName"
                             v-model="pullFileName"
                             :placeholder="t('serverFiles.fileNamePlaceholder')"
+                            @keyup.enter="pullUrl && pullFile()"
                         />
+                        <p class="text-xs text-muted-foreground">
+                            Leave empty to use the original filename from the URL
+                        </p>
+                    </div>
+                    <div class="space-y-2">
+                        <Label class="text-sm font-medium">Current Directory</Label>
+                        <div class="p-2 rounded-md bg-muted text-sm font-mono">
+                            {{ currentPath }}
+                        </div>
                     </div>
                 </div>
                 <DialogFooter class="flex flex-col sm:flex-row gap-3">
                     <Button variant="outline" class="w-full sm:w-auto" @click="showPullDialog = false">
                         {{ t('common.cancel') }}
                     </Button>
-                    <Button :disabled="!pullUrl" class="w-full sm:w-auto" @click="pullFile">
-                        <Download class="h-4 w-4 mr-2" />
-                        {{ t('serverFiles.pull') }}
+                    <Button :disabled="!pullUrl || pulling" class="w-full sm:w-auto" @click="pullFile">
+                        <Download :class="['h-4 w-4 mr-2', pulling && 'animate-bounce']" />
+                        {{ pulling ? t('serverFiles.pulling') : t('serverFiles.pull') }}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -1048,11 +1149,14 @@ const server = ref<Server | null>(null);
 const loading = ref(false);
 
 const uploading = ref(false);
+const pulling = ref(false);
+const loadingDownloads = ref(false);
 
 // File data
 const files = ref<FileItem[]>([]);
 const currentPath = ref('/');
 const selectedFiles = ref<string[]>([]);
+const activeDownloads = ref<DownloadProcess[]>([]);
 const searchQuery = ref('');
 const searchInput = ref<HTMLInputElement>();
 const showCreateFileDialog = ref(false);
@@ -1103,6 +1207,11 @@ interface FileItem {
     modified: string;
     mode: string;
     mode_bits: string;
+}
+
+interface DownloadProcess {
+    Identifier: string;
+    Progress: number;
 }
 
 // Computed properties
@@ -1181,12 +1290,74 @@ const handleGlobalDragOver = (e: DragEvent) => {
     }
 };
 
+// Download management functions
+const refreshDownloads = async () => {
+    if (!server.value) return;
+
+    loadingDownloads.value = true;
+    try {
+        const response = await axios.get(`/api/user/servers/${route.params.uuidShort}/downloads-list`);
+        if (response.data && response.data.success) {
+            // Wings returns downloads array directly
+            activeDownloads.value = response.data.data?.downloads || [];
+        }
+    } catch (error) {
+        console.error('Error fetching downloads:', error);
+        // Silently fail - don't show error toast for polling
+    } finally {
+        loadingDownloads.value = false;
+    }
+};
+
+const cancelDownload = async (downloadId: string) => {
+    try {
+        const response = await axios.delete(
+            `/api/user/servers/${route.params.uuidShort}/delete-pull-process/${downloadId}`,
+        );
+
+        if (response.data && response.data.success) {
+            toast.success('Download cancelled successfully');
+            await refreshDownloads();
+            await refreshFiles();
+        } else {
+            toast.error(response.data?.message || 'Failed to cancel download');
+        }
+    } catch (error) {
+        console.error('Error cancelling download:', error);
+        const err = error as { response?: { data?: { message?: string } } };
+        toast.error(err.response?.data?.message || 'Failed to cancel download');
+    }
+};
+
+// Auto-refresh downloads every 60 seconds
+let downloadsInterval: ReturnType<typeof setInterval> | null = null;
+
+const startDownloadsPolling = () => {
+    // Initial fetch
+    refreshDownloads();
+
+    // Poll every 60 seconds (1 minute)
+    downloadsInterval = setInterval(() => {
+        refreshDownloads();
+    }, 60000);
+};
+
+const stopDownloadsPolling = () => {
+    if (downloadsInterval) {
+        clearInterval(downloadsInterval);
+        downloadsInterval = null;
+    }
+};
+
 // Lifecycle
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect(router);
     await settingsStore.fetchSettings();
     await fetchServer();
     await refreshFiles();
+
+    // Start polling for downloads
+    startDownloadsPolling();
 
     // Add keyboard shortcuts (ESC to close drag overlay/context menu, / to focus search)
     window.addEventListener('keydown', handleKeyboard);
@@ -1202,6 +1373,9 @@ onUnmounted(() => {
     window.removeEventListener('keydown', handleKeyboard);
     window.removeEventListener('dragover', handleGlobalDragOver);
     window.removeEventListener('click', closeContextMenu);
+
+    // Stop downloads polling
+    stopDownloadsPolling();
 });
 
 // Server fetching (following ServerLogs pattern)
@@ -1980,28 +2154,51 @@ const confirmPermissions = async () => {
 };
 
 const pullFile = async () => {
-    if (!pullUrl.value) return;
+    if (!pullUrl.value) {
+        toast.warning('Please enter a valid URL');
+        return;
+    }
+
+    pulling.value = true;
 
     try {
         const response = await axios.post(`/api/user/servers/${route.params.uuidShort}/pull-file`, {
             url: pullUrl.value,
             root: currentPath.value,
             fileName: pullFileName.value || undefined,
+            foreground: false, // Run in background
+            useHeader: true, // Use headers for download
         });
 
-        if (response.data.success) {
-            toast.success(t('serverFiles.pullStarted'));
+        if (response.data && response.data.success) {
+            toast.success(
+                t('serverFiles.pullStarted', { defaultValue: 'File download started! Check Active Downloads below.' }),
+            );
+
             showPullDialog.value = false;
             pullUrl.value = '';
             pullFileName.value = '';
-            refreshFiles();
+
+            // Refresh downloads list immediately to show the new download
+            await refreshDownloads();
+
+            // Refresh files after a short delay to allow the download to complete
+            setTimeout(() => {
+                refreshFiles();
+            }, 3000);
         } else {
-            toast.error(response.data.message || t('serverFiles.pullError'));
+            toast.error(
+                response.data?.message || t('serverFiles.pullError', { defaultValue: 'Failed to start download' }),
+            );
         }
     } catch (error) {
         console.error('Error pulling file:', error);
         const err = error as { response?: { data?: { message?: string } } };
-        toast.error(err.response?.data?.message || t('serverFiles.pullError'));
+        toast.error(
+            err.response?.data?.message || t('serverFiles.pullError', { defaultValue: 'Failed to start download' }),
+        );
+    } finally {
+        pulling.value = false;
     }
 };
 
