@@ -1,0 +1,158 @@
+---
+description: FeatherPanel Backend - Permission System and Access Control
+globs: backend/app/Permissions.php, backend/app/Controllers/**/*.php, backend/app/routes/**/*.php
+alwaysApply: false
+---
+
+# Permission System
+
+## Permission Constants
+
+Located in `App\Permissions` class:
+
+```php
+<?php
+
+namespace App;
+
+class Permissions
+{
+    // Admin - Users
+    public const ADMIN_USERS_VIEW = 'admin.users.view';
+    public const ADMIN_USERS_CREATE = 'admin.users.create';
+    public const ADMIN_USERS_EDIT = 'admin.users.edit';
+    public const ADMIN_USERS_DELETE = 'admin.users.delete';
+
+    // Admin - Servers
+    public const ADMIN_SERVERS_VIEW = 'admin.servers.view';
+    public const ADMIN_SERVERS_CREATE = 'admin.servers.create';
+    public const ADMIN_SERVERS_EDIT = 'admin.servers.edit';
+    public const ADMIN_SERVERS_DELETE = 'admin.servers.delete';
+
+    // Admin - Realms
+    public const ADMIN_REALMS_VIEW = 'admin.realms.view';
+    public const ADMIN_REALMS_CREATE = 'admin.realms.create';
+    public const ADMIN_REALMS_EDIT = 'admin.realms.edit';
+    public const ADMIN_REALMS_DELETE = 'admin.realms.delete';
+
+    // Admin - Spells
+    public const ADMIN_SPELLS_VIEW = 'admin.spells.view';
+    public const ADMIN_SPELLS_CREATE = 'admin.spells.create';
+    public const ADMIN_SPELLS_EDIT = 'admin.spells.edit';
+    public const ADMIN_SPELLS_DELETE = 'admin.spells.delete';
+
+    // Admin - Nodes
+    public const ADMIN_NODES_VIEW = 'admin.nodes.view';
+    public const ADMIN_NODES_CREATE = 'admin.nodes.create';
+    public const ADMIN_NODES_EDIT = 'admin.nodes.edit';
+    public const ADMIN_NODES_DELETE = 'admin.nodes.delete';
+
+    // Admin - Settings
+    public const ADMIN_SETTINGS_VIEW = 'admin.settings.view';
+    public const ADMIN_SETTINGS_EDIT = 'admin.settings.edit';
+
+    // Root permission (grants all)
+    public const ADMIN_ROOT = 'admin.root';
+}
+```
+
+## Naming Convention
+
+`{ACCESS_LEVEL}.{RESOURCE}.{ACTION}`
+
+- **Access Level:** `admin`, `user`, `server`
+- **Resource:** `users`, `servers`, `realms`, `spells`, `nodes`, `settings`
+- **Action:** `view`, `create`, `edit`, `delete`, `manage`
+
+## Using Permissions in Routes
+
+```php
+use App\App;
+use App\Permissions;
+
+// Admin route with permission check
+App::getInstance(true)->registerAdminRoute(
+    $routes,
+    'admin-users',
+    '/api/admin/users',
+    function (Request $request) {
+        return (new UsersController())->index($request);
+    },
+    Permissions::ADMIN_USERS_VIEW  // Required permission
+);
+
+// Multiple permissions (route registration handles this)
+App::getInstance(true)->registerAdminRoute(
+    $routes,
+    'admin-users-create',
+    '/api/admin/users',
+    function (Request $request) {
+        return (new UsersController())->create($request);
+    },
+    Permissions::ADMIN_USERS_CREATE,
+    ['PUT']
+);
+```
+
+## Checking Permissions in Controllers
+
+```php
+use App\Helpers\PermissionHelper;
+
+public function myAction(Request $request): Response
+{
+    $user = $request->get('user');
+    $userRoleId = $user['role_id'];
+
+    // Check single permission
+    if (!PermissionHelper::hasPermission($userRoleId, Permissions::ADMIN_USERS_EDIT)) {
+        return ApiResponse::error('Insufficient permissions', 'FORBIDDEN', 403);
+    }
+
+    // Check if admin (has root permission)
+    if (PermissionHelper::hasPermission($userRoleId, Permissions::ADMIN_ROOT)) {
+        // Grant full access
+    }
+
+    // Proceed with action
+}
+```
+
+## Permission Storage
+
+Permissions are stored in the database:
+
+```sql
+CREATE TABLE `featherpanel_permissions` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `role_id` INT NOT NULL,
+    `permission` VARCHAR(255) NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `permissions_role_id_foreign` (`role_id`),
+    CONSTRAINT `permissions_role_id_foreign`
+        FOREIGN KEY (`role_id`)
+        REFERENCES `featherpanel_roles` (`id`)
+        ON DELETE CASCADE
+);
+```
+
+## Root Permission
+
+The `admin.root` permission grants **ALL** permissions:
+
+```php
+// User with admin.root can bypass all permission checks
+if ($permissions->includes('admin.root')) {
+    // Grant access to everything
+}
+```
+
+## Best Practices
+
+- Always use permission constants (never hardcode strings)
+- Check permissions in routes via `registerAdminRoute()`
+- Add additional checks in controllers for complex logic
+- Grant `admin.root` only to trusted administrators
+- Use descriptive permission names
+- Follow naming convention consistently
+- Log permission-denied events

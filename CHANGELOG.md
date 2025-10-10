@@ -13,6 +13,7 @@
 - Added a new `settings` CLI command to allow toggling settings directly from the command line for easy configuration management.
 - Added a new `users` CLI command for managing users from the CLI, including creating, updating, and deleting user accounts.
 - Added comprehensive unit tests for more core admin controllers.
+- Added initial `.cursor/rules/*` files, enabling extensive and fine-grained codebase navigation and enforcing coding standards across CLI commands, controllers, chat models, and routes for improved consistency and contributor onboarding.
 
 ## Fixed
 

@@ -1,0 +1,170 @@
+---
+description: FeatherPanel Backend - Middleware Patterns and Authentication
+globs: backend/app/Middleware/*.php
+alwaysApply: false
+---
+
+# Middleware Patterns
+
+## Middleware Interface
+
+All middleware MUST implement `MiddlewareInterface`:
+
+```php
+<?php
+
+namespace App\Middleware;
+
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+interface MiddlewareInterface
+{
+    public function handle(Request $request, callable $next): Response;
+}
+```
+
+## Creating Middleware
+
+```php
+<?php
+
+namespace App\Middleware;
+
+use App\Helpers\ApiResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class MyMiddleware implements MiddlewareInterface
+{
+    public function handle(Request $request, callable $next): Response
+    {
+        // Before request processing
+        if (!$this->validateRequest($request)) {
+            return ApiResponse::error('Validation failed', 'VALIDATION_ERROR', 400);
+        }
+
+        // Process request
+        $response = $next($request);
+
+        // After request processing (modify response if needed)
+        $response->headers->set('X-Custom-Header', 'value');
+
+        return $response;
+    }
+
+    private function validateRequest(Request $request): bool
+    {
+        // Validation logic
+        return true;
+    }
+}
+```
+
+## AuthMiddleware
+
+Handles authentication via:
+
+1. Cookie-based session (remember_token)
+2. Bearer token (API keys)
+
+### Using AuthMiddleware
+
+```php
+// In route definition
+$routes->add('protected-route', new Route('/api/user/profile', [
+    '_controller' => function (Request $request) {
+        // Access authenticated user
+        $user = $request->get('user');
+        return ApiResponse::success(['user' => $user]);
+    },
+    '_middleware' => [AuthMiddleware::class],
+]));
+```
+
+### Getting Authenticated User
+
+```php
+use App\Middleware\AuthMiddleware;
+
+// In controller
+public function myMethod(Request $request): Response
+{
+    // Get authenticated user
+    $user = $request->get('user');
+    $userUuid = $user['uuid'];
+
+    // Get auth type
+    $authType = AuthMiddleware::getAuthType($request); // 'session' or 'api_key'
+
+    // Check auth method
+    if (AuthMiddleware::isApiKeyAuth($request)) {
+        // Authenticated via API key
+        $apiClient = AuthMiddleware::getCurrentApiClient($request);
+    }
+
+    if (AuthMiddleware::isSessionAuth($request)) {
+        // Authenticated via session
+    }
+}
+```
+
+## AdminMiddleware
+
+Checks admin permissions:
+
+```php
+use App\Middleware\AdminMiddleware;
+
+// Automatically checks if user has admin.root permission
+// or specific permission passed to route
+
+// In App.php registration
+$this->registerAdminRoute(
+    $routes,
+    'admin-users',
+    '/api/admin/users',
+    function (Request $request) {
+        return (new UsersController())->index($request);
+    },
+    Permissions::ADMIN_USERS_VIEW  // Required permission
+);
+```
+
+## ServerMiddleware
+
+Validates server access:
+
+```php
+// Checks if user owns or has subuser access to server
+// Attaches server info to request
+$server = $request->get('server');
+```
+
+## WingsMiddleware
+
+Validates Wings daemon requests:
+
+```php
+// Validates requests from Wings daemon
+// Checks daemon authentication token
+```
+
+## Middleware Execution Order
+
+1. Rate limiting (in App.php)
+2. AuthMiddleware (if specified)
+3. AdminMiddleware (if admin route)
+4. ServerMiddleware (if server route)
+5. Custom middleware
+6. Controller
+
+## Middleware Best Practices
+
+- Keep middleware focused on one concern
+- Return early for failures
+- Attach validated data to request attributes
+- Use `$request->attributes->set()` to pass data
+- Don't modify request body in middleware
+- Log authentication failures
+- Return proper ApiResponse errors

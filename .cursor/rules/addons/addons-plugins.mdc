@@ -1,0 +1,1048 @@
+---
+globs: backend/storage/addons/*
+alwaysApply: false
+---
+
+# FeatherPanel Addons/Plugins - Development Guide
+
+## Project Context
+
+This is the FeatherPanel Plugin System - a powerful extensibility framework that allows developers to extend FeatherPanel's functionality through addons/plugins. The system supports events, custom routes, controllers, Chat models, cron jobs, CLI commands, migrations, and frontend injection.
+
+## Core Concepts
+
+### 1. Plugin Architecture Overview
+
+#### Plugin Location
+
+All plugins are stored in: `backend/storage/addons/{plugin-identifier}/`
+
+#### Plugin Loading Process
+
+1. **Discovery** - PluginManager scans `backend/storage/addons/` directory
+2. **Config Validation** - Reads and validates `conf.yml`
+3. **Dependency Check** - Verifies PHP version, extensions, and composer packages
+4. **Mixin Loading** - Loads any mixins defined by the plugin
+5. **Plugin Loading** - Loads the main plugin class and registers events
+6. **Event Registration** - Plugin can listen to system events
+7. **Auto-Discovery** - System automatically discovers routes, commands, cron jobs, etc.
+
+#### Plugin Lifecycle Hooks
+
+- `processEvents()` - Register event listeners
+- `pluginInstall()` - Run when plugin is installed
+- `pluginUninstall()` - Run when plugin is uninstalled
+
+### 2. Plugin Directory Structure
+
+#### Standard Plugin Layout
+
+```
+backend/storage/addons/{plugin-identifier}/
+├── conf.yml                          # Plugin configuration (REQUIRED)
+├── {PluginName}.php                  # Main plugin class (REQUIRED)
+├── Commands/                         # CLI commands (optional)
+│   └── CustomCommand.php
+├── Controllers/                      # HTTP controllers (optional)
+│   ├── Admin/
+│   └── User/
+├── Cron/                            # Cron jobs (optional)
+│   └── CustomCronJob.php
+├── chat/                            # Database models (optional)
+│   └── CustomModel.php
+├── Events/                          # Event handlers (optional)
+│   ├── App/
+│   └── User/
+├── Frontend/                        # Frontend assets (optional)
+│   ├── css/
+│   ├── js/
+│   └── components/
+├── middleware/                      # Custom middleware (optional)
+│   └── CustomMiddleware.php
+├── Migrations/                      # Database migrations (optional)
+│   └── 20250101_create_table.php
+├── Public/                          # Public assets (optional)
+│   ├── css/
+│   ├── js/
+│   └── images/
+├── routes/                          # Route definitions (optional)
+│   ├── Admin/
+│   ├── User/
+│   └── HomeRouter.php
+├── utils/                           # Helper utilities (optional)
+│   └── Helper.php
+└── README.md                        # Documentation (recommended)
+```
+
+### 3. Plugin Configuration (conf.yml)
+
+#### Required Configuration File
+
+Every plugin MUST have a `conf.yml` file in its root directory:
+
+```yaml
+plugin:
+  name: MyPlugin # Display name
+  identifier: myplugin # Unique identifier (lowercase, alphanumeric, no spaces)
+  description: "Plugin description"
+  flags: # Optional flags
+    - hasEvents # Plugin uses events
+    - hasInstallScript # Plugin has install logic
+    - hasRemovalScript # Plugin has uninstall logic
+    - hasMixins # Plugin uses mixins
+  version: 1.0.0 # Semantic versioning
+  target: v2 # Target FeatherPanel version
+  author:
+    - AuthorName # Can be string or array
+  icon: "https://example.com/icon.png"
+  requiredConfigs: {} # Required configuration keys
+  dependencies:
+    - php=8.1 # PHP version requirement
+    - php-ext=pdo # PHP extension requirement
+    - php-ext=json
+    - composer=vendor/package # Composer package requirement
+config: {} # Plugin-specific configuration
+mixins: [] # Mixin definitions (optional)
+```
+
+#### Configuration Rules
+
+- `identifier` MUST be unique across all plugins
+- `identifier` MUST be lowercase, alphanumeric, no spaces or special characters
+- `version` MUST follow semantic versioning (major.minor.patch)
+- `target` specifies compatible FeatherPanel version
+- `flags` array indicates plugin capabilities
+- `dependencies` array specifies requirements
+
+#### Dependency Formats
+
+```yaml
+dependencies:
+  - php=8.1 # Exact PHP version
+  - php>=8.1 # Minimum PHP version
+  - php-ext=pdo # Required PHP extension
+  - php-ext=json
+  - composer=vendor/package:^1.0 # Composer package with version
+```
+
+### 4. Main Plugin Class
+
+#### Creating the Main Plugin Class
+
+**File naming:** Must match plugin name in PascalCase (e.g., `MyPlugin.php`)
+**Namespace:** `App\Addons\{identifier}`
+
+```php
+<?php
+
+namespace App\Addons\myplugin;
+
+use App\Plugins\AppPlugin;
+use App\Plugins\PluginEvents;
+
+class MyPlugin implements AppPlugin
+{
+    /**
+     * Register event listeners for the plugin.
+     *
+     * @param PluginEvents $event The event manager instance
+     */
+    public static function processEvents(PluginEvents $event): void
+    {
+        // Register event listeners here
+    }
+
+    /**
+     * Run when the plugin is installed.
+     * Use this for database migrations, initial setup, etc.
+     */
+    public static function pluginInstall(): void
+    {
+        // Installation logic here
+    }
+
+    /**
+     * Run when the plugin is uninstalled.
+     * Use this for cleanup, removing database tables, etc.
+     */
+    public static function pluginUninstall(): void
+    {
+        // Uninstallation logic here
+    }
+}
+```
+
+#### Interface Requirements
+
+All plugins MUST implement the `AppPlugin` interface with three methods:
+
+- `processEvents(PluginEvents $event): void`
+- `pluginInstall(): void`
+- `pluginUninstall(): void`
+
+### 5. Event System
+
+#### Listening to Events
+
+Plugins can listen to various system events:
+
+```php
+public static function processEvents(PluginEvents $event): void
+{
+    // Listen to application ready event
+    $event->on(AppEvent::onAppReady(), function ($eventData) {
+        // Handle event
+    });
+
+    // Listen to route ready event
+    $event->on(AppEvent::onRouterReady(), function ($eventData) {
+        // Register custom routes
+        new \App\Addons\myplugin\Events\App\RouteReadyEvent($eventData);
+    });
+
+    // Listen to user events
+    $event->on(UserEvent::onUserCreated(), function ($eventData) {
+        // Handle user creation
+    });
+
+    $event->on(UserEvent::onUserUpdated(), function ($eventData) {
+        // Handle user update
+    });
+
+    $event->on(UserEvent::onUserDeleted(), function ($eventData) {
+        // Handle user deletion
+    });
+
+    // Listen to server events
+    $event->on(ServerEvent::onServerCreated(), function ($eventData) {
+        // Handle server creation
+    });
+
+    // Listen to authentication events
+    $event->on(AuthEvent::onUserLogin(), function ($eventData) {
+        // Handle user login
+    });
+}
+```
+
+#### Available Event Types
+
+**Application Events:**
+
+- `AppEvent::onAppReady()` - Application initialized
+- `AppEvent::onRouterReady()` - Router ready to register routes
+- `AppEvent::onAppShutdown()` - Application shutting down
+
+**User Events:**
+
+- `UserEvent::onUserCreated()` - New user created
+- `UserEvent::onUserUpdated()` - User data updated
+- `UserEvent::onUserDeleted()` - User deleted
+
+**Server Events:**
+
+- `ServerEvent::onServerCreated()` - New server created
+- `ServerEvent::onServerUpdated()` - Server updated
+- `ServerEvent::onServerDeleted()` - Server deleted
+
+**Authentication Events:**
+
+- `AuthEvent::onUserLogin()` - User logged in
+- `AuthEvent::onUserLogout()` - User logged out
+- `AuthEvent::onUserRegister()` - User registered
+
+**And many more in:** `App\Plugins\Events\Events\*`
+
+#### Creating Custom Event Handlers
+
+```php
+namespace App\Addons\myplugin\Events\App;
+
+class AppReadyEvent
+{
+    public function __construct($eventData)
+    {
+        // Access event data
+        $app = $eventData['app'];
+        $logger = $eventData['logger'];
+
+        // Perform initialization
+        $logger->info('MyPlugin: App ready event triggered');
+
+        // Do custom logic
+        $this->performSetup();
+    }
+
+    private function performSetup()
+    {
+        // Custom setup logic
+    }
+}
+```
+
+### 6. Custom Routes
+
+#### Creating Plugin Routes
+
+Routes are automatically discovered from the `routes/` directory:
+
+**Structure:**
+
+```
+routes/
+├── Admin/
+│   └── custom-routes.php
+├── User/
+│   └── custom-routes.php
+└── HomeRouter.php               # Root level routes
+```
+
+**Route File Example:**
+
+```php
+<?php
+
+namespace App\Addons\myplugin\routes;
+
+use App\App;
+use App\Permissions;
+use App\Helpers\ApiResponse;
+use App\Addons\myplugin\Controllers\MyController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\RouteCollection;
+
+class HomeRouter
+{
+    public static function register(RouteCollection $routes): void
+    {
+        // Public route
+        App::getInstance(true)->registerRoute(
+            $routes,
+            'plugin-myplugin-home',
+            '/api/plugin/myplugin',
+            function (Request $request) {
+                return (new MyController())->index($request);
+            }
+        );
+
+        // Admin route
+        App::getInstance(true)->registerAdminRoute(
+            $routes,
+            'plugin-myplugin-admin',
+            '/api/plugin/myplugin/admin',
+            function (Request $request) {
+                return (new MyController())->adminIndex($request);
+            },
+            Permissions::ADMIN_USERS_VIEW
+        );
+    }
+}
+```
+
+#### Route Registration from Event
+
+```php
+public static function processEvents(PluginEvents $event): void
+{
+    $event->on(AppEvent::onRouterReady(), function ($eventData) {
+        $routes = $eventData['routes'];
+
+        // Register routes
+        \App\Addons\myplugin\routes\HomeRouter::register($routes);
+    });
+}
+```
+
+### 7. Controllers
+
+#### Creating Plugin Controllers
+
+```php
+<?php
+
+namespace App\Addons\myplugin\Controllers;
+
+use App\Helpers\ApiResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class MyController
+{
+    public function index(Request $request): Response
+    {
+        return ApiResponse::success([
+            'plugin' => 'myplugin',
+            'message' => 'Hello from plugin!',
+        ], 'Plugin response', 200);
+    }
+
+    public function adminIndex(Request $request): Response
+    {
+        // Access authenticated user
+        $user = $request->get('user');
+
+        return ApiResponse::success([
+            'user' => $user['username'],
+            'message' => 'Admin section',
+        ], 'Admin response', 200);
+    }
+}
+```
+
+### 8. Chat Models (Database Access)
+
+#### Creating Plugin Database Models
+
+```php
+<?php
+
+namespace App\Addons\myplugin\chat;
+
+use App\Chat\Database;
+
+class MyModel
+{
+    private static string $table = 'featherpanel_myplugin_mymodel';
+
+    public static function getAll(): array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table);
+        $stmt->execute();
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public static function getById(int $id): ?array
+    {
+        if ($id <= 0) {
+            return null;
+        }
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
+    public static function create(array $data): int|false
+    {
+        $pdo = Database::getPdoConnection();
+        $fields = array_keys($data);
+        $placeholders = array_map(fn($f) => ':' . $f, $fields);
+        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+        $stmt = $pdo->prepare($sql);
+        if ($stmt->execute($data)) {
+            return (int) $pdo->lastInsertId();
+        }
+        return false;
+    }
+
+    public static function update(int $id, array $data): bool
+    {
+        if ($id <= 0) {
+            return false;
+        }
+        $pdo = Database::getPdoConnection();
+        $fields = array_keys($data);
+        $set = array_map(fn($f) => "$f = :$f", $fields);
+        $sql = 'UPDATE ' . self::$table . ' SET ' . implode(',', $set) . ' WHERE id = :id';
+        $params = $data;
+        $params['id'] = $id;
+        $stmt = $pdo->prepare($sql);
+        return $stmt->execute($params);
+    }
+
+    public static function delete(int $id): bool
+    {
+        if ($id <= 0) {
+            return false;
+        }
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
+        return $stmt->execute(['id' => $id]);
+    }
+}
+```
+
+#### Table Naming Convention
+
+**ALWAYS** prefix plugin tables with `featherpanel_{pluginidentifier}_`:
+
+- ✅ `featherpanel_myplugin_users`
+- ✅ `featherpanel_myplugin_settings`
+- ❌ `myplugin_users` (missing prefix)
+- ❌ `my_plugin_users` (wrong format)
+
+### 9. Database Migrations
+
+#### Creating Migrations
+
+**Location:** `Migrations/` directory in plugin root
+
+**Naming:** `YYYYMMDD_description.php`
+
+```php
+<?php
+
+namespace App\Addons\myplugin\Migrations;
+
+use App\Chat\Database;
+
+class CreateMyPluginTable
+{
+    public static function up(): void
+    {
+        $pdo = Database::getPdoConnection();
+        $sql = "CREATE TABLE IF NOT EXISTS `featherpanel_myplugin_data` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `name` VARCHAR(255) NOT NULL,
+            `value` TEXT,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_name (name)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+        $pdo->exec($sql);
+    }
+
+    public static function down(): void
+    {
+        $pdo = Database::getPdoConnection();
+        $pdo->exec("DROP TABLE IF EXISTS `featherpanel_myplugin_data`");
+    }
+}
+```
+
+#### Running Migrations in Install/Uninstall
+
+```php
+public static function pluginInstall(): void
+{
+    $appCli = \App\Cli\App::getInstance();
+    $app = \App\App::getInstance(true, true);
+
+    // Check for .env file
+    if (!file_exists(__DIR__ . '/../../../storage/config/.env')) {
+        $app->getLogger()->warning('Executed install without .env file');
+        $appCli->send('&cThe .env file does not exist.');
+        exit;
+    }
+
+    $appCli->send('&aInstalling MyPlugin...');
+
+    // Run migrations
+    try {
+        \App\Addons\myplugin\Migrations\CreateMyPluginTable::up();
+        $appCli->send('&aDatabase tables created successfully');
+    } catch (\Exception $e) {
+        $appCli->send('&cFailed to create tables: ' . $e->getMessage());
+        exit;
+    }
+
+    $appCli->send('&aMyPlugin installed successfully!');
+}
+
+public static function pluginUninstall(): void
+{
+    $appCli = \App\Cli\App::getInstance();
+    $appCli->send('&aUninstalling MyPlugin...');
+
+    // Run down migrations
+    try {
+        \App\Addons\myplugin\Migrations\CreateMyPluginTable::down();
+        $appCli->send('&aDatabase tables removed successfully');
+    } catch (\Exception $e) {
+        $appCli->send('&cFailed to remove tables: ' . $e->getMessage());
+    }
+
+    $appCli->send('&aMyPlugin uninstalled successfully!');
+}
+```
+
+### 10. CLI Commands
+
+#### Creating Plugin Commands
+
+**Location:** `Commands/` directory
+
+```php
+<?php
+
+namespace App\Addons\myplugin\Commands;
+
+use App\Cli\App;
+use App\Cli\CommandBuilder;
+
+class MyCommand extends App implements CommandBuilder
+{
+    public static function execute(array $args): void
+    {
+        $app = App::getInstance();
+
+        if (isset($args[1])) {
+            $subCommand = $args[1];
+            switch ($subCommand) {
+                case 'test':
+                    self::test($app);
+                    break;
+                default:
+                    $app->send('&cInvalid subcommand');
+                    break;
+            }
+        } else {
+            $app->send('&cPlease specify a subcommand');
+        }
+
+        exit;
+    }
+
+    public static function getDescription(): string
+    {
+        return 'MyPlugin custom command';
+    }
+
+    public static function getSubCommands(): array
+    {
+        return [
+            'test' => 'Test the plugin (usage: mycommand test)',
+        ];
+    }
+
+    private static function test(App $app): void
+    {
+        $app->send('&aMyPlugin test command executed!');
+    }
+}
+```
+
+**Usage:** `php fuse mycommand test`
+
+### 11. Cron Jobs
+
+#### Creating Plugin Cron Jobs
+
+**Location:** `Cron/` directory
+
+```php
+<?php
+
+namespace App\Addons\myplugin\Cron;
+
+use App\Cli\Utils\MinecraftColorCodeSupport;
+use App\Cron\Cron;
+use App\Cron\TimeTask;
+use App\Chat\TimedTask;
+
+class MyPluginTask implements TimeTask
+{
+    public function run()
+    {
+        $cron = new Cron('myplugin-task', '5M');
+        try {
+            $cron->runIfDue(function () {
+                $this->performTask();
+                TimedTask::markRun('myplugin-task', true, 'Plugin task completed');
+            });
+        } catch (\Exception $e) {
+            $app = \App\App::getInstance(false, true);
+            $app->getLogger()->error('Plugin cron failed: ' . $e->getMessage());
+            TimedTask::markRun('myplugin-task', false, $e->getMessage());
+        }
+    }
+
+    private function performTask()
+    {
+        MinecraftColorCodeSupport::sendOutputWithNewLine('&aExecuting MyPlugin task...');
+        // Task logic here
+        MinecraftColorCodeSupport::sendOutputWithNewLine('&aMyPlugin task completed');
+    }
+}
+```
+
+**Auto-Discovery:** Cron jobs are automatically discovered and run by the cron runner.
+
+### 12. Frontend Integration
+
+#### Frontend Assets Structure
+
+```
+Frontend/
+├── css/
+│   └── plugin-styles.css
+├── js/
+│   └── plugin-script.js
+└── components/
+    └── PluginComponent.vue
+```
+
+#### Injecting Frontend Assets
+
+Create a controller to serve assets:
+
+```php
+namespace App\Addons\myplugin\Controllers;
+
+use Symfony\Component\HttpFoundation\Response;
+
+class AssetController
+{
+    public function getCss(): Response
+    {
+        $css = file_get_contents(__DIR__ . '/../Frontend/css/plugin-styles.css');
+        return new Response($css, 200, ['Content-Type' => 'text/css']);
+    }
+
+    public function getJs(): Response
+    {
+        $js = file_get_contents(__DIR__ . '/../Frontend/js/plugin-script.js');
+        return new Response($js, 200, ['Content-Type' => 'application/javascript']);
+    }
+}
+```
+
+Register routes for assets:
+
+```php
+App::getInstance(true)->registerRoute(
+    $routes,
+    'plugin-myplugin-css',
+    '/api/plugin/myplugin/assets/css',
+    function (Request $request) {
+        return (new AssetController())->getCss();
+    }
+);
+```
+
+### 13. Middleware
+
+#### Creating Custom Middleware
+
+```php
+<?php
+
+namespace App\Addons\myplugin\middleware;
+
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class CustomMiddleware
+{
+    public function handle(Request $request, callable $next): Response
+    {
+        // Before request
+        $this->beforeRequest($request);
+
+        // Process request
+        $response = $next($request);
+
+        // After request
+        $this->afterRequest($response);
+
+        return $response;
+    }
+
+    private function beforeRequest(Request $request): void
+    {
+        // Pre-processing logic
+    }
+
+    private function afterRequest(Response $response): void
+    {
+        // Post-processing logic
+    }
+}
+```
+
+### 14. Mixins (Advanced)
+
+#### What are Mixins?
+
+Mixins allow plugins to inject functionality into core FeatherPanel classes without modifying core code.
+
+#### Defining Mixins in conf.yml
+
+```yaml
+mixins:
+  - id: my-app-mixin
+    target: App\App
+    methods:
+      - myCustomMethod
+    properties:
+      - myCustomProperty
+```
+
+#### Creating a Mixin Class
+
+```php
+<?php
+
+namespace App\Addons\myplugin\Mixins;
+
+use App\Plugins\Mixins\AbstractMixin;
+
+class MyAppMixin extends AbstractMixin
+{
+    protected static string $targetClass = 'App\App';
+
+    public function myCustomMethod(): string
+    {
+        return 'Hello from mixin!';
+    }
+
+    public function getMyCustomProperty(): mixed
+    {
+        return 'custom value';
+    }
+}
+```
+
+#### Using Mixins
+
+```php
+$app = \App\App::getInstance();
+// Call injected method
+$result = $app->myCustomMethod();
+```
+
+### 15. Configuration Storage
+
+#### Using PluginSettings
+
+Store plugin-specific configuration:
+
+```php
+use App\Plugins\PluginSettings;
+
+// Set a setting
+PluginSettings::setSetting('myplugin', 'api_key', 'your-api-key');
+
+// Get a setting
+$apiKey = PluginSettings::getSetting('myplugin', 'api_key', 'default-value');
+
+// Delete a setting
+PluginSettings::deleteSetting('myplugin', 'api_key');
+
+// Get all plugin settings
+$allSettings = PluginSettings::getAllSettings('myplugin');
+```
+
+### 16. Best Practices
+
+#### Plugin Development Guidelines
+
+**DO:**
+
+- ✅ Use meaningful plugin identifiers (lowercase, no spaces)
+- ✅ Follow semantic versioning
+- ✅ Prefix all database tables with `featherpanel_{identifier}_`
+- ✅ Implement all AppPlugin interface methods
+- ✅ Clean up resources in `pluginUninstall()`
+- ✅ Use proper error handling and logging
+- ✅ Document your plugin with README.md
+- ✅ Test install and uninstall processes
+- ✅ Use Chat models for database operations
+- ✅ Follow FeatherPanel coding standards
+- ✅ Use events instead of modifying core code
+
+**DON'T:**
+
+- ❌ Modify core FeatherPanel files
+- ❌ Use generic table names without plugin prefix
+- ❌ Leave database tables after uninstall
+- ❌ Forget to check dependencies
+- ❌ Hardcode configuration values
+- ❌ Ignore error handling
+- ❌ Create circular dependencies
+- ❌ Use deprecated terms (eggs, nests)
+- ❌ Expose sensitive information
+- ❌ Block the main application thread
+
+#### Security Considerations
+
+- Validate all user input
+- Use prepared statements for database queries
+- Sanitize output
+- Check permissions before operations
+- Use CSRF protection
+- Don't expose sensitive configuration
+- Log security-relevant events
+- Follow principle of least privilege
+
+#### Performance
+
+- Use database indexes appropriately
+- Cache expensive operations
+- Avoid N+1 queries
+- Limit result sets
+- Use async operations when possible
+- Profile your plugin
+- Optimize database queries
+- Minimize external API calls
+
+### 17. Testing Plugins
+
+#### Manual Testing Checklist
+
+- [ ] Plugin loads without errors
+- [ ] `conf.yml` is valid
+- [ ] Dependencies are met
+- [ ] Install process works
+- [ ] Uninstall process cleans up completely
+- [ ] Routes are accessible
+- [ ] Controllers return proper responses
+- [ ] Events are triggered correctly
+- [ ] Cron jobs execute
+- [ ] CLI commands work
+- [ ] Database tables are created properly
+- [ ] No conflicts with other plugins
+- [ ] Frontend assets load correctly
+- [ ] Logs are written appropriately
+
+#### Testing Commands
+
+```bash
+# List loaded plugins
+php fuse plugins list
+
+# Install plugin
+php fuse plugins install myplugin
+
+# Uninstall plugin
+php fuse plugins uninstall myplugin
+
+# Run plugin command
+php fuse mycommand test
+```
+
+### 18. Common Pitfalls
+
+❌ **DON'T:**
+
+- Forget to implement all interface methods
+- Use wrong namespace format
+- Create tables without plugin prefix
+- Forget to clean up in uninstall
+- Modify core files
+- Use blocking operations in events
+- Forget error handling in install/uninstall
+- Use reserved identifiers
+- Create circular event listeners
+
+✅ **DO:**
+
+- Always implement complete AppPlugin interface
+- Use correct namespace: `App\Addons\{identifier}`
+- Always prefix tables: `featherpanel_{identifier}_`
+- Clean up everything in uninstall
+- Use events and mixins to extend
+- Make operations non-blocking
+- Wrap everything in try-catch
+- Check identifier uniqueness
+- Avoid recursive event triggers
+
+## Complete Plugin Example
+
+### Minimal Plugin Structure
+
+```
+backend/storage/addons/myplugin/
+├── conf.yml
+└── MyPlugin.php
+```
+
+**conf.yml:**
+
+```yaml
+plugin:
+  name: MyPlugin
+  identifier: myplugin
+  description: "A simple example plugin"
+  flags:
+    - hasEvents
+  version: 1.0.0
+  target: v2
+  author:
+    - YourName
+  icon: "https://example.com/icon.png"
+  requiredConfigs: {}
+  dependencies:
+    - php=8.1
+    - php-ext=pdo
+config: {}
+```
+
+**MyPlugin.php:**
+
+```php
+<?php
+
+namespace App\Addons\myplugin;
+
+use App\Plugins\AppPlugin;
+use App\Plugins\PluginEvents;
+use App\Plugins\Events\Events\AppEvent;
+
+class MyPlugin implements AppPlugin
+{
+    public static function processEvents(PluginEvents $event): void
+    {
+        $event->on(AppEvent::onAppReady(), function ($eventData) {
+            $eventData['logger']->info('MyPlugin loaded!');
+        });
+    }
+
+    public static function pluginInstall(): void
+    {
+        $appCli = \App\Cli\App::getInstance();
+        $appCli->send('&aMyPlugin installed successfully!');
+    }
+
+    public static function pluginUninstall(): void
+    {
+        $appCli = \App\Cli\App::getInstance();
+        $appCli->send('&aMyPlugin uninstalled successfully!');
+    }
+}
+```
+
+## Quick Reference
+
+### Plugin Checklist
+
+- [ ] Create plugin directory in `backend/storage/addons/`
+- [ ] Create `conf.yml` with required fields
+- [ ] Create main plugin class implementing `AppPlugin`
+- [ ] Implement `processEvents()` method
+- [ ] Implement `pluginInstall()` method
+- [ ] Implement `pluginUninstall()` method
+- [ ] Add routes if needed (auto-discovered)
+- [ ] Add controllers if needed
+- [ ] Add Chat models if needed
+- [ ] Add migrations if needed
+- [ ] Add CLI commands if needed (auto-discovered)
+- [ ] Add cron jobs if needed (auto-discovered)
+- [ ] Test install and uninstall
+- [ ] Write README.md documentation
+
+### File Locations
+
+- **Config:** `{plugin}/conf.yml`
+- **Main Class:** `{plugin}/{PluginName}.php`
+- **Routes:** `{plugin}/routes/`
+- **Controllers:** `{plugin}/Controllers/`
+- **Models:** `{plugin}/chat/`
+- **Events:** `{plugin}/Events/`
+- **Commands:** `{plugin}/Commands/`
+- **Cron:** `{plugin}/Cron/`
+- **Migrations:** `{plugin}/Migrations/`
+- **Frontend:** `{plugin}/Frontend/`
+- **Middleware:** `{plugin}/middleware/`
+
+### Namespace Convention
+
+All plugin code uses namespace: `App\Addons\{identifier}\{Type}\{ClassName}`
+
+Examples:
+
+- `App\Addons\myplugin\MyPlugin`
+- `App\Addons\myplugin\Controllers\MyController`
+- `App\Addons\myplugin\chat\MyModel`
+- `App\Addons\myplugin\Commands\MyCommand`

@@ -1,0 +1,274 @@
+---
+description: FeatherPanel Frontend - Page Components and TableComponent Usage
+globs: frontend/src/pages/**/*.vue, frontend/src/kit/**/*.vue
+alwaysApply: false
+---
+
+# Page Components and TableComponent
+
+## Standard Admin Page Pattern
+
+```vue
+<template>
+  <DashboardLayout
+    :breadcrumbs="[{ text: 'Users', isCurrent: true, href: '/admin/users' }]"
+  >
+    <div class="min-h-screen bg-background">
+      <!-- Loading State -->
+      <div v-if="loading" class="flex items-center justify-center py-12">
+        <div class="flex items-center gap-3">
+          <div
+            class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"
+          ></div>
+          <span class="text-muted-foreground">Loading users...</span>
+        </div>
+      </div>
+
+      <!-- Error State -->
+      <div v-else-if="message?.type === 'error'" class="text-center py-12">
+        <p class="text-red-500">{{ message.text }}</p>
+        <Button class="mt-4" @click="fetchUsers">Try Again</Button>
+      </div>
+
+      <!-- Content -->
+      <div v-else class="p-6">
+        <TableComponent
+          title="Users"
+          description="Manage all users in your system."
+          :columns="tableColumns"
+          :data="users"
+          :search-placeholder="'Search by username, email...'"
+          :server-side-pagination="true"
+          :total-records="pagination.total"
+          :total-pages="Math.ceil(pagination.total / pagination.pageSize)"
+          :current-page="pagination.page"
+          :has-next="pagination.hasNext"
+          :has-prev="pagination.hasPrev"
+          :from="pagination.from"
+          :to="pagination.to"
+          local-storage-key="featherpanel-users-table-columns"
+          @search="handleSearch"
+          @page-change="changePage"
+        >
+          <!-- Header actions slot -->
+          <template #header-actions>
+            <Button variant="outline" size="sm" @click="openCreateDrawer">
+              <Plus class="h-4 w-4 mr-2" />
+              Create User
+            </Button>
+          </template>
+
+          <!-- Custom cell templates -->
+          <template #cell-avatar="{ item }">
+            <Avatar>
+              <AvatarImage :src="item.avatar" :alt="item.username" />
+              <AvatarFallback>{{ item.username[0] }}</AvatarFallback>
+            </Avatar>
+          </template>
+
+          <template #cell-actions="{ item }">
+            <div class="flex gap-2">
+              <Button size="sm" variant="outline" @click="onView(item)">
+                <Eye :size="16" />
+              </Button>
+              <Button size="sm" variant="secondary" @click="onEdit(item)">
+                <Pencil :size="16" />
+              </Button>
+              <Button size="sm" variant="destructive" @click="onDelete(item)">
+                <Trash2 :size="16" />
+              </Button>
+            </div>
+          </template>
+        </TableComponent>
+      </div>
+    </div>
+  </DashboardLayout>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from "vue";
+import DashboardLayout from "@/layouts/DashboardLayout.vue";
+import TableComponent from "@/kit/TableComponent.vue";
+import { Button } from "@/components/ui/button";
+import axios from "axios";
+
+// State
+const users = ref<User[]>([]);
+const loading = ref(false);
+const message = ref<{ type: string; text: string } | null>(null);
+const pagination = ref({
+  total: 0,
+  page: 1,
+  pageSize: 10,
+  hasNext: false,
+  hasPrev: false,
+  from: 0,
+  to: 0,
+});
+
+// Table columns
+const tableColumns = [
+  { key: "id", label: "ID", sortable: true },
+  { key: "avatar", label: "Avatar" },
+  { key: "username", label: "Username", sortable: true },
+  { key: "email", label: "Email", sortable: true },
+  { key: "role", label: "Role" },
+  { key: "actions", label: "Actions" },
+];
+
+// Fetch data
+const fetchUsers = async () => {
+  loading.value = true;
+  try {
+    const response = await axios.get("/api/admin/users", {
+      params: { page: pagination.value.page, limit: pagination.value.pageSize },
+    });
+    if (response.data && response.data.success) {
+      users.value = response.data.data.users;
+      const pag = response.data.data.pagination;
+      pagination.value = {
+        total: pag.total_records,
+        page: pag.current_page,
+        pageSize: pag.per_page,
+        hasNext: pag.has_next,
+        hasPrev: pag.has_prev,
+        from: pag.from,
+        to: pag.to,
+      };
+    }
+  } catch (error) {
+    message.value = { type: "error", text: "Failed to load users" };
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Search handler
+const handleSearch = (query: string) => {
+  searchQuery.value = query;
+  pagination.value.page = 1;
+  fetchUsers();
+};
+
+// Page change handler
+const changePage = (page: number) => {
+  pagination.value.page = page;
+  fetchUsers();
+};
+
+onMounted(() => {
+  fetchUsers();
+});
+</script>
+```
+
+## TableComponent Props
+
+```typescript
+interface TableColumn {
+  key: string; // Data key
+  label: string; // Column header label
+  sortable?: boolean; // Enable sorting
+  searchable?: boolean; // Include in search
+  headerClass?: string; // Custom header classes
+  cellClass?: string; // Custom cell classes
+}
+
+// TableComponent props
+{
+  title: string; // Table title
+  description?: string; // Table description
+  columns: TableColumn[]; // Column definitions
+  data: T[]; // Data array
+  searchPlaceholder?: string; // Search input placeholder
+  serverSidePagination?: boolean; // Use server-side pagination
+  totalRecords?: number; // Total records (server-side)
+  totalPages?: number; // Total pages (server-side)
+  currentPage?: number; // Current page (server-side)
+  hasNext?: boolean; // Has next page
+  hasPrev?: boolean; // Has previous page
+  from?: number; // Starting record number
+  to?: number; // Ending record number
+  localStorageKey?: string; // Key for saving column preferences
+}
+```
+
+## TableComponent Slots
+
+```vue
+<TableComponent :columns="columns" :data="items">
+  <!-- Header actions (buttons, filters) -->
+  <template #header-actions>
+    <Button @click="create">Create</Button>
+  </template>
+
+  <!-- Custom cell rendering -->
+  <template #cell-avatar="{ item }">
+    <Avatar>
+      <AvatarImage :src="item.avatar" />
+    </Avatar>
+  </template>
+
+  <template #cell-actions="{ item }">
+    <Button @click="edit(item)">Edit</Button>
+  </template>
+</TableComponent>
+```
+
+## TableComponent Events
+
+```typescript
+// Search event
+@search="handleSearch"
+const handleSearch = (query: string) => {
+  searchQuery.value = query;
+  fetchData();
+};
+
+// Page change event
+@page-change="changePage"
+const changePage = (page: number) => {
+  currentPage.value = page;
+  fetchData();
+};
+```
+
+## Client-Side Pagination
+
+```typescript
+// Don't set server-side-pagination prop
+<TableComponent
+  :columns="columns"
+  :data="allData"
+  :show-pagination="true"
+  :page-size="10"
+/>
+
+// TableComponent handles pagination internally
+```
+
+## Server-Side Pagination
+
+```typescript
+// Set server-side-pagination and provide pagination props
+<TableComponent
+  :columns="columns"
+  :data="currentPageData"
+  :server-side-pagination="true"
+  :total-records="pagination.total"
+  :total-pages="Math.ceil(pagination.total / pagination.pageSize)"
+  :current-page="pagination.page"
+  :has-next="pagination.hasNext"
+  :has-prev="pagination.hasPrev"
+  :from="pagination.from"
+  :to="pagination.to"
+  @page-change="changePage"
+/>
+```
+
+## Page Organization
+
+- Place in `src/pages/{section}/`
+- Use PascalCase filenames
+- One page per route
+- Keep pages focused - extract complex logic to composables

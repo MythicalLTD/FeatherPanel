@@ -1,0 +1,140 @@
+---
+description: FeatherPanel Backend - Configuration Management and Settings
+globs: backend/app/Config/*.php
+alwaysApply: false
+---
+
+# Configuration Management
+
+## ConfigInterface
+
+Standard configuration keys are defined in `ConfigInterface`:
+
+```php
+<?php
+
+namespace App\Config;
+
+interface ConfigInterface
+{
+    // App settings
+    public const APP_NAME = 'app_name';
+    public const APP_URL = 'app_url';
+    public const APP_TIMEZONE = 'app_timezone';
+    public const APP_LOGO = 'app_logo';
+    public const APP_LOGO_WHITE = 'app_logo_white';
+    public const APP_SUPPORT_URL = 'app_support_url';
+
+    // SMTP settings
+    public const SMTP_ENABLED = 'smtp_enabled';
+    public const SMTP_HOST = 'smtp_host';
+    public const SMTP_PORT = 'smtp_port';
+    public const SMTP_USER = 'smtp_user';
+    public const SMTP_PASS = 'smtp_pass';
+    public const SMTP_ENCRYPTION = 'smtp_encryption';
+    public const SMTP_FROM = 'smtp_from';
+
+    // Feature flags
+    public const REGISTRATION_ENABLED = 'registration_enabled';
+    public const TWO_FA_ENABLED = 'two_fa_enabled';
+    public const TURNSTILE_ENABLED = 'turnstile_enabled';
+    public const TURNSTILE_KEY_PUB = 'turnstile_key_pub';
+    public const TURNSTILE_KEY_SECRET = 'turnstile_key_secret';
+}
+```
+
+## Using ConfigFactory
+
+```php
+use App\Config\ConfigFactory;
+use App\Config\ConfigInterface;
+
+// Create config instance
+$app = App::getInstance(true);
+$config = new ConfigFactory($app->getDatabase()->getPdo());
+
+// Get setting
+$appName = $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel');
+$smtpHost = $config->getSetting(ConfigInterface::SMTP_HOST, null);
+
+// Set setting
+$config->setSetting(ConfigInterface::APP_NAME, 'My Panel');
+
+// Delete setting
+$config->deleteSetting(ConfigInterface::APP_NAME);
+
+// Get all settings
+$allSettings = $config->getAllSettings();
+```
+
+## Using Config via App Instance
+
+```php
+$app = App::getInstance(true);
+$config = $app->getConfig();
+
+// Get settings
+$appUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://panel.example.com');
+$timezone = $config->getSetting(ConfigInterface::APP_TIMEZONE, 'UTC');
+$mailEnabled = $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false');
+```
+
+## Common Configuration Patterns
+
+### Feature Flags
+
+```php
+// Check if feature is enabled
+$registrationEnabled = $config->getSetting(ConfigInterface::REGISTRATION_ENABLED, 'false');
+if ($registrationEnabled === 'true') {
+    // Allow registration
+} else {
+    return ApiResponse::error('Registration is disabled', 'REGISTRATION_DISABLED', 403);
+}
+```
+
+### SMTP Configuration
+
+```php
+$mailEnabled = $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false');
+if ($mailEnabled === 'false') {
+    return; // Skip mail sending
+}
+
+$mailHost = $config->getSetting(ConfigInterface::SMTP_HOST, null);
+if ($mailHost === null) {
+    App::getInstance(true)->getLogger()->error('SMTP host not configured');
+    return;
+}
+```
+
+### App Branding
+
+```php
+$appName = $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel');
+$appLogo = $config->getSetting(ConfigInterface::APP_LOGO, null);
+$supportUrl = $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems');
+```
+
+## Configuration Storage
+
+Settings are stored in the database:
+
+```sql
+CREATE TABLE `featherpanel_settings` (
+    `key` VARCHAR(255) PRIMARY KEY,
+    `value` TEXT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+```
+
+## Best Practices
+
+- Always use ConfigInterface constants (never hardcode keys)
+- Always provide default values
+- Validate configuration values before use
+- Cache configuration when possible
+- Log configuration errors
+- Don't store sensitive data in database (use .env instead)
+- Use 'true'/'false' strings for booleans (database compatibility)

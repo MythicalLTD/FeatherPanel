@@ -1,0 +1,147 @@
+---
+description: FeatherPanel Frontend - Pinia Store Patterns and State Management
+globs: frontend/src/stores/**/*.ts
+alwaysApply: false
+---
+
+# Pinia Store Patterns
+
+## Store Structure
+
+```typescript
+import { defineStore } from "pinia";
+import axios from "axios";
+
+export interface StoreState {
+  items: Item[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+export const useMyStore = defineStore("myStore", {
+  state: (): StoreState => ({
+    items: [],
+    isLoading: false,
+    error: null,
+  }),
+
+  getters: {
+    itemCount: (state): number => state.items.length,
+    hasItems: (state): boolean => state.items.length > 0,
+    activeItems: (state): Item[] => state.items.filter((i) => i.active),
+  },
+
+  actions: {
+    async fetchItems() {
+      this.isLoading = true;
+      this.error = null;
+
+      try {
+        const response = await axios.get("/api/items");
+        if (response.data && response.data.success) {
+          this.items = response.data.data;
+        }
+      } catch (error) {
+        this.error = "Failed to fetch items";
+        console.error("Error fetching items:", error);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    clearItems() {
+      this.items = [];
+    },
+  },
+});
+```
+
+## Using Stores in Components
+
+```typescript
+import { useSessionStore } from "@/stores/session";
+import { useSettingsStore } from "@/stores/settings";
+import { computed } from "vue";
+
+const sessionStore = useSessionStore();
+const settingsStore = useSettingsStore();
+
+// Access state reactively
+const user = computed(() => sessionStore.user);
+const theme = computed(() => settingsStore.theme);
+
+// Call actions
+await sessionStore.checkSessionOrRedirect(router);
+settingsStore.fetchSettings();
+
+// Use getters
+const hasPermission = sessionStore.hasPermission("admin.users.view");
+```
+
+## Session Store Pattern
+
+```typescript
+export const useSessionStore = defineStore("session", {
+  state: () => ({
+    user: null as UserInfo | null,
+    isSessionChecked: false,
+    permissions: [] as Permissions,
+  }),
+
+  actions: {
+    async checkSessionOrRedirect(router?: Router) {
+      try {
+        const res = await axios.get("/api/user/session");
+        if (res.data && res.data.success) {
+          this.user = res.data.data.user_info;
+          this.permissions = res.data.data.permissions;
+          this.isSessionChecked = true;
+          return true;
+        }
+        if (router) {
+          router.replace({
+            name: "Login",
+            query: { redirect: router.currentRoute.value.path },
+          });
+        }
+        return false;
+      } catch {
+        if (router) {
+          router.replace({ name: "Login" });
+        }
+        return false;
+      }
+    },
+
+    clearSession() {
+      this.user = null;
+      this.isSessionChecked = false;
+      this.permissions = [];
+    },
+
+    async logout() {
+      try {
+        await axios.post("/api/user/auth/logout");
+      } finally {
+        this.clearSession();
+      }
+    },
+  },
+
+  getters: {
+    hasPermission:
+      (state) =>
+      (permission: string): boolean => {
+        if (!state.permissions) return false;
+        if (state.permissions.includes("admin.root")) return true;
+        return state.permissions.includes(permission);
+      },
+  },
+});
+```
+
+## Store Naming
+
+- Use `use` prefix: `useSessionStore`, `useSettingsStore`
+- Be descriptive: `useDashboardStore`, `useWidgetsStore`
+- Store ID should match: `defineStore("session", ...)` for `useSessionStore`

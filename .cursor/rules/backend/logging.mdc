@@ -1,0 +1,144 @@
+---
+description: FeatherPanel Backend - Logging Standards and Best Practices
+globs: backend/app/**/*.php
+alwaysApply: false
+---
+
+# Logging Standards
+
+## Getting Logger Instance
+
+```php
+use App\App;
+
+// Get logger
+$logger = App::getInstance(true)->getLogger();
+```
+
+## Log Levels
+
+```php
+// Error - Critical issues that need immediate attention
+$logger->error('Failed to connect to database: ' . $e->getMessage());
+
+// Warning - Issues that should be addressed but not critical
+$logger->warning('Redis connection failed, falling back to database');
+
+// Info - Important events and milestones
+$logger->info('User logged in: ' . $user['username']);
+
+// Debug - Detailed information for debugging
+$logger->debug('Processing request with params: ' . json_encode($params));
+```
+
+## Logging Best Practices
+
+### Error Logging
+
+```php
+try {
+    $result = DatabaseOperation::perform($data);
+} catch (\PDOException $e) {
+    // Log error with context
+    App::getInstance(true)->getLogger()->error('Database operation failed: ' . $e->getMessage());
+    return ApiResponse::error('Operation failed', 'DATABASE_ERROR', 500);
+}
+```
+
+### Sensitive Data Sanitization
+
+```php
+// Sanitize before logging
+private static function sanitizeDataForLogging(array $data): array
+{
+    $sensitiveFields = [
+        'password',
+        'remember_token',
+        'two_fa_key',
+        'api_key',
+        'secret',
+        'daemon_token',
+    ];
+
+    $sanitized = $data;
+    foreach ($sensitiveFields as $field) {
+        if (isset($sanitized[$field])) {
+            $sanitized[$field] = '[REDACTED]';
+        }
+    }
+
+    return $sanitized;
+}
+
+// Usage
+$sanitized = self::sanitizeDataForLogging($userData);
+$logger->error('Failed to create user: ' . json_encode($sanitized));
+```
+
+### Security Events
+
+```php
+// Log authentication attempts
+$logger->info('Login attempt for user: ' . $email . ' from IP: ' . $ipAddress);
+
+// Log failed authentication
+$logger->warning('Failed login attempt for: ' . $email . ' from IP: ' . $ipAddress);
+
+// Log permission denials
+$logger->warning('Permission denied for user ' . $user['uuid'] . ' on ' . $permission);
+
+// Log suspicious activity
+$logger->error('Suspicious activity detected from IP: ' . $ipAddress);
+```
+
+### Contextual Logging
+
+```php
+// Include context in log messages
+$logger->error('Failed to delete user ' . $uuid . ': still has ' . $serverCount . ' servers');
+$logger->info('Cron job "mail-sender" completed, sent ' . $mailCount . ' emails');
+$logger->warning('Schedule skipped for server ' . $serverId . ': server offline');
+```
+
+## Log File Locations
+
+Logs are stored in `backend/storage/logs/`:
+
+- `backend/storage/logs/app.log` - Main application log
+- `backend/storage/logs/error.log` - Error log
+- `backend/storage/logs/cron.log` - Cron job log
+
+## What to Log
+
+✅ **DO Log:**
+
+- Authentication attempts (success and failure)
+- Permission denials
+- Database errors
+- External service errors (Wings, SMTP, etc.)
+- Cron job execution
+- Important state changes
+- Security events
+- Configuration errors
+
+❌ **DON'T Log:**
+
+- Passwords or secrets (always sanitize)
+- API keys or tokens
+- Personal information (unless necessary and sanitized)
+- Every single request (performance impact)
+- Successful routine operations (too noisy)
+
+## Log Format
+
+Use descriptive messages with context:
+
+```php
+// ✅ GOOD
+$logger->error('Failed to create user: email already exists (' . $email . ')');
+$logger->info('User ' . $user['username'] . ' (UUID: ' . $user['uuid'] . ') logged in from ' . $ipAddress);
+
+// ❌ BAD
+$logger->error('Error');
+$logger->info('User logged in');
+```

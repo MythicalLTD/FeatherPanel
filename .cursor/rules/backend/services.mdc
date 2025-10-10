@@ -1,0 +1,148 @@
+---
+description: FeatherPanel Backend - Service Classes and External Integrations
+globs: backend/app/Services/**/*.php
+alwaysApply: false
+---
+
+# Service Classes
+
+## Wings Service
+
+Wings is the daemon that runs on nodes and manages servers.
+
+### Creating Wings Connection
+
+```php
+use App\Services\Wings\Wings;
+use App\Chat\Node;
+
+// Get node information
+$node = Node::getNodeById($nodeId);
+
+// Create Wings connection
+$wings = new Wings(
+    $node['fqdn'],           // Host
+    $node['daemonListen'],   // Port
+    $node['scheme'],         // http or https
+    $node['daemon_token'],   // Authentication token
+    30                       // Timeout in seconds
+);
+```
+
+### Server Service
+
+```php
+// Get server service
+$serverService = $wings->getServer();
+
+// Power actions
+$response = $serverService->startServer($serverUuid);
+$response = $serverService->stopServer($serverUuid);
+$response = $serverService->restartServer($serverUuid);
+$response = $serverService->killServer($serverUuid);
+
+// Server management
+$response = $serverService->installServer($serverUuid);
+$response = $serverService->reinstallServer($serverUuid);
+
+// Send console commands
+$response = $serverService->sendCommands($serverUuid, ['say Hello World', 'stop']);
+
+// Backup management
+$response = $serverService->createBackup($serverUuid, $adapter, $backupUuid, $ignoredFiles);
+$response = $serverService->getBackups($serverUuid);
+$response = $serverService->deleteBackup($serverUuid, $backupUuid);
+$response = $serverService->restoreBackup($serverUuid, $backupUuid);
+
+// File operations
+$response = $serverService->getFiles($serverUuid, $directory);
+$response = $serverService->getFileContents($serverUuid, $filePath);
+$response = $serverService->writeFile($serverUuid, $filePath, $content);
+$response = $serverService->deleteFile($serverUuid, $filePath);
+$response = $serverService->createDirectory($serverUuid, $directoryPath);
+
+// Server information
+$response = $serverService->getServerDetails($serverUuid);
+$response = $serverService->getServerResources($serverUuid);
+```
+
+### System Service
+
+```php
+// Get system service
+$systemService = $wings->getSystem();
+
+// System information
+$response = $systemService->getSystemInfo();
+$response = $systemService->getIPAddresses();
+```
+
+### Docker Service
+
+```php
+// Get docker service
+$dockerService = $wings->getDocker();
+
+// Docker operations
+$response = $dockerService->getImages();
+$response = $dockerService->pullImage($imageName);
+```
+
+### Handling Wings Responses
+
+```php
+$response = $wings->getServer()->startServer($serverUuid);
+
+// Check if successful
+if (!$response->isSuccessful()) {
+    $error = $response->getError();
+    App::getInstance(true)->getLogger()->error('Wings error: ' . $error);
+    return ApiResponse::error('Failed to start server', 'WINGS_ERROR', 500);
+}
+
+// Get response data
+$data = $response->getData();
+
+// Get status code
+$statusCode = $response->getStatusCode();
+```
+
+### Wings Exception Handling
+
+```php
+use App\Services\Wings\Exceptions\WingsConnectionException;
+use App\Services\Wings\Exceptions\WingsAuthenticationException;
+use App\Services\Wings\Exceptions\WingsRequestException;
+
+try {
+    $wings = new Wings($host, $port, $scheme, $token, $timeout);
+    $response = $wings->getServer()->startServer($serverUuid);
+
+    if (!$response->isSuccessful()) {
+        throw new WingsRequestException('Start server failed: ' . $response->getError());
+    }
+} catch (WingsConnectionException $e) {
+    // Connection to Wings failed
+    App::getInstance(true)->getLogger()->error('Wings connection error: ' . $e->getMessage());
+    return ApiResponse::error('Cannot connect to node', 'NODE_UNREACHABLE', 503);
+} catch (WingsAuthenticationException $e) {
+    // Authentication with Wings failed
+    App::getInstance(true)->getLogger()->error('Wings auth error: ' . $e->getMessage());
+    return ApiResponse::error('Node authentication failed', 'NODE_AUTH_FAILED', 401);
+} catch (WingsRequestException $e) {
+    // Wings request failed
+    App::getInstance(true)->getLogger()->error('Wings request error: ' . $e->getMessage());
+    return ApiResponse::error('Node request failed', 'WINGS_ERROR', 500);
+}
+```
+
+## Service Best Practices
+
+- Use service classes for external integrations
+- Handle connection timeouts gracefully
+- Log all service errors
+- Use try-catch for service calls
+- Validate responses before using data
+- Set appropriate timeouts
+- Cache service responses when appropriate
+- Use dependency injection when possible

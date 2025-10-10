@@ -1,0 +1,886 @@
+---
+globs: backend/app/Chat/*,backend/storage/migrations/*
+alwaysApply: false
+---
+
+# FeatherPanel Chat Models - Coding Standards & Patterns
+
+## Project Context
+
+This is the FeatherPanel Chat models layer - a PHP-based database service layer that provides CRUD operations and business logic for the FeatherPanel application. These models act as a data access layer using PDO for database interactions.
+
+## Core Principles
+
+### 1. File Structure & Headers
+
+Every PHP file MUST include:
+
+- MIT License header with FeatherPanel copyright
+- Proper namespace: `App\Chat`
+- PHPDoc comments for classes and public methods
+- Type declarations for all parameters and return values
+
+**Standard file header template:**
+
+```php
+<?php
+
+/*
+ * This file is part of FeatherPanel.
+ *
+ * MIT License
+ *
+ * Copyright (c) 2025 MythicalSystems
+ * Copyright (c) 2025 Cassian Gherman (NaysKutzu)
+ * Copyright (c) 2018 - 2021 Dane Everitt <dane@daneeveritt.com> and Contributors
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+namespace App\Chat;
+```
+
+### 2. Class Architecture
+
+#### Static Service Classes
+
+All Chat models are static service classes (not instantiated objects):
+
+```php
+class ModelName
+{
+    private static string $table = 'featherpanel_{entity}';
+
+    // All methods are static
+    public static function methodName(): returnType
+    {
+        // Implementation
+    }
+}
+```
+
+#### Table Naming Convention
+
+- Always use `featherpanel_` prefix
+- Use plural form for table names
+- Store as private static property: `private static string $table = 'featherpanel_entities';`
+
+### 3. Database Interactions
+
+#### PDO Connection
+
+Always get database connection via:
+
+```php
+$pdo = Database::getPdoConnection();
+```
+
+#### Prepared Statements (ALWAYS)
+
+NEVER use string concatenation for SQL values. ALWAYS use prepared statements:
+
+```php
+// ✅ CORRECT
+$stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id');
+$stmt->execute(['id' => $id]);
+
+// ❌ WRONG - SQL Injection vulnerability
+$stmt = $pdo->query("SELECT * FROM {self::$table} WHERE id = {$id}");
+```
+
+#### Parameter Binding
+
+For dynamic queries with LIMIT/OFFSET, use explicit binding:
+
+```php
+$stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
+```
+
+#### Fetch Modes
+
+- Single row: `$stmt->fetch(\PDO::FETCH_ASSOC)`
+- Multiple rows: `$stmt->fetchAll(\PDO::FETCH_ASSOC)`
+- Count queries: `(int) $stmt->fetchColumn()`
+- Return `null` for not found (single), `[]` for not found (multiple)
+
+### 4. Standard CRUD Methods
+
+#### Create Methods
+
+```php
+/**
+ * Create a new entity.
+ *
+ * @param array $data Associative array of entity fields
+ *
+ * @return int|false The new entity's ID or false on failure
+ */
+public static function create{Entity}(array $data): int|false
+{
+    // 1. Define required fields
+    $required = ['field1', 'field2', 'field3'];
+
+    // 2. Validate all required fields are present
+    foreach ($required as $field) {
+        if (!isset($data[$field])) {
+            App::getInstance(true)->getLogger()->error("Missing required field: $field");
+            return false;
+        }
+    }
+
+    // 3. Validate field formats (UUIDs, emails, etc.)
+
+    // 4. Validate foreign keys exist
+
+    // 5. Insert into database
+    $pdo = Database::getPdoConnection();
+    $fields = array_keys($data);
+    $placeholders = array_map(fn($f) => ':' . $f, $fields);
+    $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+    $stmt = $pdo->prepare($sql);
+
+    if ($stmt->execute($data)) {
+        return (int) $pdo->lastInsertId();
+    }
+
+    return false;
+}
+```
+
+#### Read Methods
+
+Implement these standard read methods:
+
+- `get{Entity}ById(int $id): ?array` - Fetch by primary key
+- `get{Entity}ByUuid(string $uuid): ?array` - Fetch by UUID
+- `getAll{Entities}(): array` - Get all records
+- `search{Entities}(...)` - Search with pagination and filters
+- `get{Entities}Count(...)` - Count records with filters
+
+#### Update Methods
+
+```php
+/**
+ * Update an entity by UUID.
+ *
+ * @param string $uuid The entity UUID
+ * @param array $data Fields to update
+ *
+ * @return bool True on success, false on failure
+ */
+public static function update{Entity}(string $uuid, array $data): bool
+{
+    try {
+        if (empty($data)) {
+            App::getInstance(true)->getLogger()->error('No data to update');
+            return false;
+        }
+
+        // Prevent updating primary keys
+        unset($data['id'], $data['uuid']);
+
+        // Validate fields exist in table
+        $columns = self::getColumns();
+        $columns = array_map(fn($c) => $c['Field'], $columns);
+        $missing = array_diff(array_keys($data), $columns);
+        if (!empty($missing)) {
+            App::getInstance(true)->getLogger()->error('Invalid fields: ' . implode(', ', $missing));
+            return false;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $fields = array_keys($data);
+        $set = implode(', ', array_map(fn($f) => "$f = :$f", $fields));
+        $sql = 'UPDATE ' . self::$table . ' SET ' . $set . ' WHERE uuid = :uuid';
+
+        $params = $data;
+        $params['uuid'] = $uuid;
+        $stmt = $pdo->prepare($sql);
+
+        return $stmt->execute($params);
+    } catch (\PDOException $e) {
+        App::getInstance(true)->getLogger()->error('Failed to update entity: ' . $e->getMessage());
+        return false;
+    }
+}
+```
+
+Also provide: `update{Entity}ById(int $id, array $data): bool`
+
+#### Delete Methods
+
+Provide both soft and hard delete when applicable:
+
+```php
+/**
+ * Soft-delete an entity (mark as deleted).
+ */
+public static function softDelete{Entity}(int $id): bool
+{
+    if ($id <= 0) {
+        return false;
+    }
+    $pdo = Database::getPdoConnection();
+    $stmt = $pdo->prepare('UPDATE ' . self::$table . " SET deleted = 'true' WHERE id = :id");
+    return $stmt->execute(['id' => $id]);
+}
+
+/**
+ * Hard-delete an entity (permanent removal).
+ */
+public static function hardDelete{Entity}(int $id): bool
+{
+    if ($id <= 0) {
+        return false;
+    }
+    $pdo = Database::getPdoConnection();
+    $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
+    return $stmt->execute(['id' => $id]);
+}
+```
+
+### 5. Search & Pagination Pattern
+
+Standard search method signature:
+
+```php
+public static function search{Entities}(
+    int $page = 1,
+    int $limit = 10,
+    string $search = '',
+    array $fields = [],
+    string $sortBy = 'id',
+    string $sortOrder = 'ASC',
+    ?int $foreignKeyId = null,
+): array
+```
+
+Implementation pattern:
+
+```php
+$pdo = Database::getPdoConnection();
+$offset = ($page - 1) * $limit;
+$params = [];
+
+// Build SELECT clause
+$selectFields = empty($fields) ? '*' : implode(', ', $fields);
+$sql = "SELECT $selectFields FROM " . self::$table;
+
+// Build WHERE clause
+$where = [];
+if (!empty($search)) {
+    $where[] = '(field1 LIKE :search OR field2 LIKE :search)';
+    $params['search'] = '%' . $search . '%';
+}
+
+if ($foreignKeyId !== null) {
+    $where[] = 'foreign_key_id = :foreign_key_id';
+    $params['foreign_key_id'] = $foreignKeyId;
+}
+
+if (!empty($where)) {
+    $sql .= ' WHERE ' . implode(' AND ', $where);
+}
+
+// Add sorting and pagination
+$sql .= " ORDER BY $sortBy $sortOrder";
+$sql .= ' LIMIT :limit OFFSET :offset';
+
+$stmt = $pdo->prepare($sql);
+foreach ($params as $key => $value) {
+    $stmt->bindValue($key, $value);
+}
+$stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
+$stmt->bindValue('offset', $offset, \PDO::PARAM_INT);
+$stmt->execute();
+
+return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+```
+
+### 6. Validation Patterns
+
+#### Input Validation
+
+Always validate at the start of methods:
+
+```php
+// Numeric IDs
+if ($id <= 0) {
+    return null; // or false
+}
+
+// UUIDs (version 4 format)
+if (!preg_match('/^[a-f0-9\-]{36}$/i', $uuid)) {
+    return null; // or false
+}
+
+// UUID Short (8 characters)
+if (!preg_match('/^[a-f0-9]{8}$/i', $uuidShort)) {
+    return null; // or false
+}
+
+// Email addresses
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    return null; // or false
+}
+
+// Empty strings
+if (!is_string($data[$field]) || trim($data[$field]) === '') {
+    return false;
+}
+
+// Required numeric fields
+if (!is_numeric($data[$field]) || (int)$data[$field] <= 0) {
+    return false;
+}
+```
+
+#### Foreign Key Validation
+
+Before creating/updating, validate foreign keys exist:
+
+```php
+// Validate realm_id exists
+if (!Realm::getById($data['realm_id'])) {
+    $sanitizedData = self::sanitizeDataForLogging($data);
+    App::getInstance(true)->getLogger()->error('Invalid realm_id: ' . $data['realm_id']);
+    return false;
+}
+```
+
+#### JSON Field Validation
+
+For JSON fields, validate structure:
+
+```php
+private static function isValidJson(string $string): bool
+{
+    json_decode($string);
+    return json_last_error() === JSON_ERROR_NONE;
+}
+
+private static function validateJsonFields(array $data, ?string $entityName = null): bool
+{
+    $jsonFields = ['features', 'docker_images', 'file_denylist'];
+    foreach ($jsonFields as $field) {
+        if (isset($data[$field]) && !empty($data[$field])) {
+            if (!self::isValidJson($data[$field])) {
+                if ($entityName) {
+                    App::getInstance(true)->getLogger()->error("Invalid JSON field: $field for $entityName");
+                }
+                return false;
+            }
+        }
+    }
+    return true;
+}
+```
+
+### 7. Logging & Error Handling
+
+#### Logger Usage
+
+```php
+// Error logging with context
+App::getInstance(true)->getLogger()->error('Error message with context: ' . $details);
+
+// Sanitize sensitive data before logging
+$sanitizedData = self::sanitizeDataForLogging($data);
+App::getInstance(true)->getLogger()->error('Operation failed with data: ' . json_encode($sanitizedData));
+```
+
+#### Data Sanitization for Logging
+
+```php
+/**
+ * Sanitize data for logging by excluding sensitive fields.
+ */
+private static function sanitizeDataForLogging(array $data): array
+{
+    $sensitiveFields = [
+        'password',
+        'remember_token',
+        'two_fa_key',
+        'script_install',
+        'config_files',
+        'api_key',
+        'secret',
+    ];
+
+    $sanitized = $data;
+    foreach ($sensitiveFields as $field) {
+        if (isset($sanitized[$field])) {
+            $sanitized[$field] = '[REDACTED]';
+        }
+    }
+
+    return $sanitized;
+}
+```
+
+#### Exception Handling
+
+```php
+try {
+    // Database operation
+} catch (\PDOException $e) {
+    error_log($e->getMessage());
+    App::getInstance(true)->getLogger()->error('Failed to perform operation: ' . $e->getMessage());
+    return false;
+}
+```
+
+### 8. Utility Methods
+
+#### Required Utility Methods
+
+Every model should include:
+
+```php
+/**
+ * Get table columns information.
+ */
+public static function getColumns(): array
+{
+    $pdo = Database::getPdoConnection();
+    $stmt = $pdo->prepare('DESCRIBE ' . self::$table);
+    $stmt->execute();
+    return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+}
+
+/**
+ * Get count of entities based on conditions.
+ */
+public static function count(array $conditions): int
+{
+    $pdo = Database::getPdoConnection();
+    $where = implode(' AND ', array_map(fn($k) => "$k = :$k", array_keys($conditions)));
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . $where);
+    $stmt->execute($conditions);
+    return (int) $stmt->fetchColumn();
+}
+```
+
+#### UUID Generation
+
+```php
+/**
+ * Generate a cryptographically secure version 4 UUID.
+ */
+public static function generateUuid(): string
+{
+    $bytes = random_bytes(16);
+    $bytes[6] = chr(ord($bytes[6]) & 0x0F | 0x40); // Version 4
+    $bytes[8] = chr(ord($bytes[8]) & 0x3F | 0x80); // Variant bits
+    $hex = bin2hex($bytes);
+
+    return sprintf(
+        '%s-%s-%s-%s-%s',
+        substr($hex, 0, 8),
+        substr($hex, 8, 4),
+        substr($hex, 12, 4),
+        substr($hex, 16, 4),
+        substr($hex, 20, 12)
+    );
+}
+```
+
+### 9. Type Declarations
+
+#### Modern PHP Type Hints
+
+Use PHP 8+ union types and nullable types:
+
+```php
+// Return type union
+public static function create(array $data): int|false
+
+// Nullable return types
+public static function getById(int $id): ?array
+
+// Nullable parameters
+public static function search(string $search = '', ?int $realmId = null): array
+
+// Array type hints
+public static function getAll(): array
+public static function validateData(array $data): bool
+```
+
+#### Return Type Standards
+
+- Success with ID: `int|false`
+- Success/failure boolean: `bool`
+- Single record: `?array` (null if not found)
+- Multiple records: `array` (empty array if none found)
+- Count queries: `int`
+
+### 10. Relationship Queries (JOINs)
+
+When fetching related data, provide dedicated methods:
+
+```php
+/**
+ * Get entity with related data.
+ */
+public static function get{Entity}WithRelations(int $id): ?array
+{
+    if ($id <= 0) {
+        return null;
+    }
+
+    $pdo = Database::getPdoConnection();
+    $stmt = $pdo->prepare('
+        SELECT e.*,
+               r.name as related_name,
+               r.description as related_description
+        FROM ' . self::$table . ' e
+        LEFT JOIN featherpanel_related r ON e.related_id = r.id
+        WHERE e.id = :id
+        LIMIT 1
+    ');
+    $stmt->execute(['id' => $id]);
+
+    return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+}
+
+/**
+ * Get all entities with related data.
+ */
+public static function getAll{Entities}WithRelations(): array
+{
+    $pdo = Database::getPdoConnection();
+    $stmt = $pdo->prepare('
+        SELECT e.*,
+               r.name as related_name,
+               r.description as related_description
+        FROM ' . self::$table . ' e
+        LEFT JOIN featherpanel_related r ON e.related_id = r.id
+        ORDER BY e.name ASC
+    ');
+    $stmt->execute();
+
+    return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+}
+```
+
+### 11. Code Style & Formatting
+
+#### Array Functions
+
+Use modern PHP arrow functions and array methods:
+
+```php
+// ✅ Preferred
+$fields = array_map(fn($f) => ':' . $f, $fields);
+$columns = array_map(fn($c) => $c['Field'], $columns);
+
+// Array keys and values
+$keys = array_keys($data);
+$values = array_values($data);
+
+// Array filtering
+$filtered = array_filter($data, fn($v) => $v !== null);
+```
+
+#### String Operations
+
+```php
+// Concatenation in SQL building
+$sql = 'SELECT * FROM ' . self::$table . ' WHERE id = :id';
+
+// Imploding arrays
+$set = implode(', ', array_map(fn($f) => "$f = :$f", $fields));
+$where = implode(' AND ', $conditions);
+
+// String checks
+if (empty($string)) { }
+if (trim($string) === '') { }
+if (str_starts_with($string, 'prefix')) { }
+```
+
+#### Conditional Logic
+
+```php
+// Ternary for simple cases
+$result = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+
+// Null coalescing
+$value = $data['field'] ?? null;
+$value = $data['field'] ?? 'default';
+
+// Early returns for validation
+if ($id <= 0) {
+    return null;
+}
+```
+
+### 12. Documentation Standards
+
+#### PHPDoc Block Format
+
+```php
+/**
+ * Brief description of what the method does.
+ *
+ * Longer description if needed, explaining behavior,
+ * edge cases, or important implementation details.
+ *
+ * @param type $paramName Parameter description
+ * @param type $param2 Another parameter description
+ *
+ * @return returnType Description of return value
+ */
+public static function methodName(type $paramName, type $param2): returnType
+{
+    // Implementation
+}
+```
+
+#### Class Documentation
+
+```php
+/**
+ * EntityName service/model for CRUD operations on the featherpanel_entities table.
+ *
+ * This class provides static methods for database operations including
+ * create, read, update, and delete functionality with proper validation.
+ */
+class EntityName
+{
+    /**
+     * @var string The entities table name
+     */
+    private static string $table = 'featherpanel_entities';
+}
+```
+
+### 13. Terminology Standards
+
+#### FeatherPanel-Specific Terms
+
+**ALWAYS use the correct terminology:**
+
+- ✅ `realms` (NOT "nests", NOT "eggs")
+- ✅ `spells` (NOT "eggs", NOT "nests")
+- ✅ `realm_id` in foreign keys
+- ✅ `spell_id` in foreign keys
+- ✅ Table names: `featherpanel_realms`, `featherpanel_spells`
+
+**Never use deprecated terms:**
+
+- ❌ `eggs` → Use `spells`
+- ❌ `nests` → Use `realms`
+- ❌ `egg_id` → Use `spell_id`
+- ❌ `nest_id` → Use `realm_id`
+
+### 14. Security Best Practices
+
+#### SQL Injection Prevention
+
+```php
+// ✅ ALWAYS use prepared statements
+$stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id');
+$stmt->execute(['id' => $id]);
+
+// ❌ NEVER concatenate user input
+// BAD: "SELECT * FROM table WHERE id = {$id}"
+```
+
+#### Data Validation
+
+```php
+// Validate before database operations
+if (!is_numeric($id) || $id <= 0) {
+    return null;
+}
+
+// Sanitize output for logging
+$sanitized = self::sanitizeDataForLogging($data);
+```
+
+#### Password Handling
+
+```php
+// Never log raw passwords
+// Check if password is already hashed before updating
+if (isset($data['password']) && str_starts_with($data['password'], '$2y$')) {
+    unset($data['password']);
+}
+```
+
+### 15. Performance Considerations
+
+#### Query Optimization
+
+```php
+// Use LIMIT when expecting single result
+$stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
+
+// Select only needed fields when possible
+$fields = ['id', 'name', 'status']; // Instead of SELECT *
+$selectFields = implode(', ', $fields);
+$sql = "SELECT $selectFields FROM " . self::$table;
+
+// Use appropriate indexes (ensure in migrations)
+// Add LIMIT and OFFSET for pagination
+$sql .= ' LIMIT :limit OFFSET :offset';
+```
+
+#### Connection Management
+
+```php
+// Get PDO connection once per method
+$pdo = Database::getPdoConnection();
+
+// Reuse prepared statements when possible in loops
+$stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE id = :id');
+foreach ($ids as $id) {
+    $stmt->execute(['id' => $id]);
+    $results[] = $stmt->fetch(\PDO::FETCH_ASSOC);
+}
+```
+
+### 16. Testing Considerations
+
+When creating new models or methods:
+
+1. Validate all input parameters
+2. Test with invalid data (negative IDs, malformed UUIDs, etc.)
+3. Test foreign key constraints
+4. Test with empty/null values
+5. Log errors appropriately
+6. Return consistent types (don't mix null/false)
+
+### 17. Method Naming Conventions
+
+**Standard patterns:**
+
+- `create{Entity}` - Insert new record
+- `get{Entity}ById` - Fetch single by ID
+- `get{Entity}ByUuid` - Fetch single by UUID
+- `get{Entities}By{ForeignKey}` - Fetch multiple by relationship
+- `getAll{Entities}` - Fetch all records
+- `search{Entities}` - Search with filters
+- `update{Entity}` - Update by UUID
+- `update{Entity}ById` - Update by ID
+- `softDelete{Entity}` - Soft delete (mark deleted)
+- `hardDelete{Entity}` - Hard delete (remove permanently)
+- `restore{Entity}` - Restore soft-deleted
+- `get{Entities}Count` - Count records
+- `get{Entity}WithRelations` - Fetch with JOINs
+- `generate{Field}` - Generate values (UUID, tokens, etc.)
+
+### 18. Common Pitfalls to Avoid
+
+❌ **DON'T:**
+
+- Mix return types (null vs false)
+- Forget to validate foreign keys
+- Log sensitive data without sanitization
+- Use string interpolation in SQL
+- Forget parameter type hints
+- Ignore validation errors silently
+- Use `SELECT *` when specific fields are needed
+- Forget LIMIT on single-record queries
+
+✅ **DO:**
+
+- Use consistent return types per method
+- Validate all foreign key references
+- Sanitize data before logging
+- Use prepared statements always
+- Add complete type declarations
+- Log validation failures
+- Select only needed columns
+- Add LIMIT 1 for single records
+
+## Quick Reference Checklist
+
+When creating a new Chat model:
+
+- [ ] Add proper file header with MIT license
+- [ ] Use namespace `App\Chat`
+- [ ] Define `private static string $table = 'featherpanel_{entity}';`
+- [ ] Add class PHPDoc comment
+- [ ] Implement `create{Entity}` with validation
+- [ ] Implement `get{Entity}ById` and `get{Entity}ByUuid`
+- [ ] Implement `getAll{Entities}`
+- [ ] Implement `search{Entities}` with pagination
+- [ ] Implement `update{Entity}` and `update{Entity}ById`
+- [ ] Implement `hardDelete{Entity}` (and `softDelete{Entity}` if applicable)
+- [ ] Implement `get{Entities}Count`
+- [ ] Implement `getColumns` utility
+- [ ] Add `sanitizeDataForLogging` if sensitive data exists
+- [ ] Use proper type hints for all methods
+- [ ] Validate all inputs (IDs, UUIDs, emails, etc.)
+- [ ] Validate foreign key relationships
+- [ ] Use prepared statements for all queries
+- [ ] Add appropriate error logging
+- [ ] Use correct terminology (realms, spells)
+- [ ] Add relationship methods if needed
+- [ ] Test edge cases and error conditions
+
+## Example Complete Model Structure
+
+```php
+<?php
+
+namespace App\Chat;
+
+use App\App;
+
+/**
+ * Entity service/model for CRUD operations on the featherpanel_entities table.
+ */
+class Entity
+{
+    private static string $table = 'featherpanel_entities';
+
+    // CREATE
+    public static function createEntity(array $data): int|false { }
+
+    // READ
+    public static function getEntityById(int $id): ?array { }
+    public static function getEntityByUuid(string $uuid): ?array { }
+    public static function getAllEntities(): array { }
+    public static function getEntitiesByForeignKey(int $foreignId): array { }
+    public static function searchEntities(...): array { }
+    public static function getEntitiesCount(...): int { }
+    public static function getEntityWithRelations(int $id): ?array { }
+
+    // UPDATE
+    public static function updateEntity(string $uuid, array $data): bool { }
+    public static function updateEntityById(int $id, array $data): bool { }
+
+    // DELETE
+    public static function softDeleteEntity(int $id): bool { }
+    public static function hardDeleteEntity(int $id): bool { }
+    public static function restoreEntity(int $id): bool { }
+
+    // UTILITIES
+    public static function getColumns(): array { }
+    public static function count(array $conditions): int { }
+    public static function generateUuid(): string { }
+
+    // PRIVATE HELPERS
+    private static function validateEntityData(array $data): bool { }
+    private static function sanitizeDataForLogging(array $data): array { }
+}
+```

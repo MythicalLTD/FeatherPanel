@@ -1,0 +1,179 @@
+---
+description: FeatherPanel Frontend - TypeScript Standards and Type Definitions
+globs: frontend/src/**/*.ts, frontend/src/**/*.vue
+alwaysApply: false
+---
+
+# TypeScript Standards
+
+## Type Safety
+
+### NO `any` Type
+
+Always use explicit types - avoid `any`:
+
+```typescript
+// ✅ CORRECT
+const user = ref<UserInfo | null>(null);
+const items = ref<Item[]>([]);
+const count = ref<number>(0);
+const isLoading = ref<boolean>(false);
+
+// ❌ WRONG
+const data = ref<any>(null);
+const items: any[] = [];
+```
+
+## Interface Definitions
+
+### Defining Interfaces
+
+```typescript
+// Entity interfaces
+export interface UserInfo {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: number;
+  uuid: string;
+  avatar: string;
+  banned: string;
+  two_fa_enabled: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Realm {
+  id: number;
+  name: string;
+  description: string;
+  logo: string;
+  author: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Spell {
+  id: number;
+  uuid: string;
+  name: string;
+  description: string;
+  realm_id: number;
+  author: string;
+  created_at: string;
+}
+```
+
+### API Response Types
+
+```typescript
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  message?: string;
+  data?: T;
+  error?: boolean;
+  error_message?: string;
+  error_code?: string;
+}
+
+export interface PaginationInfo {
+  current_page: number;
+  per_page: number;
+  total_records: number;
+  total_pages: number;
+  has_next: boolean;
+  has_prev: boolean;
+  from: number;
+  to: number;
+}
+```
+
+### Function Type Annotations
+
+```typescript
+// Async functions
+const fetchUsers = async (): Promise<UserInfo[]> => {
+  const response = await axios.get<ApiResponse<UserInfo[]>>("/api/admin/users");
+  return response.data.data;
+};
+
+// Event handlers
+const handleSubmit = (data: FormData): void => {
+  console.log(data);
+};
+
+// Computed values
+const calculateTotal = (items: Item[]): number => {
+  return items.reduce((sum, item) => sum + item.price, 0);
+};
+
+// Type guards
+const isUser = (obj: unknown): obj is UserInfo => {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "username" in obj &&
+    "email" in obj
+  );
+};
+```
+
+## Utility Types
+
+```typescript
+// Deep partial
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
+
+// Optional fields
+export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
+// Required fields
+export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
+
+// Usage
+type PartialUser = DeepPartial<UserInfo>;
+type UserWithoutId = Optional<UserInfo, "id">;
+```
+
+## Type Locations
+
+- **Global types:** `src/types/*.ts`
+- **Domain types:** `src/types/admin/*.ts`, `src/types/server/*.ts`
+- **Component types:** Define in same file or co-located `.types.ts` file
+- **Store types:** Define in store file or `*.types.ts` alongside
+
+## Type Export Pattern
+
+```typescript
+// src/types/user.ts
+export interface UserInfo {
+  // ...
+}
+
+export interface UserCreate {
+  // ...
+}
+
+export interface UserUpdate {
+  // ...
+}
+
+export type UserStatus = "active" | "banned" | "deleted";
+export type Permissions = string[];
+```
+
+## Type Imports
+
+```typescript
+// Import types
+import type { UserInfo, Permissions } from "@/types/user";
+import type { RouteRecordRaw } from "vue-router";
+import type { Ref } from "vue";
+
+// Type-only imports (recommended)
+import type { ApiResponse } from "@/types/api";
+```

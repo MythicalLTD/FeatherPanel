@@ -1,0 +1,994 @@
+---
+globs: backend/app/Controllers/*,backend/app/routes/*,backend/app/Chat/*,backend/storage/migrations/*
+alwaysApply: false
+---
+
+# FeatherPanel Controllers - Coding Standards & Patterns
+
+## Project Context
+
+This is the FeatherPanel Controllers layer - a PHP-based API controller layer using Symfony components for handling HTTP requests and responses. Controllers provide RESTful API endpoints with OpenAPI documentation.
+
+## Core Principles
+
+### 1. File Structure & Headers
+
+Every controller file MUST include:
+
+- MIT License header with FeatherPanel copyright
+- Proper namespace based on directory structure
+- OpenAPI attributes for API documentation
+- Type declarations for all parameters and return values
+
+**Standard file header template:**
+
+```php
+<?php
+
+/*
+ * This file is part of FeatherPanel.
+ *
+ * MIT License
+ *
+ * Copyright (c) 2025 MythicalSystems
+ * Copyright (c) 2025 Cassian Gherman (NaysKutzu)
+ * Copyright (c) 2018 - 2021 Dane Everitt <dane@daneeveritt.com> and Contributors
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+namespace App\Controllers\Admin;
+
+use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+```
+
+### 2. Controller Architecture
+
+#### Namespace Structure
+
+- Root controllers: `namespace App\Controllers;`
+- Admin controllers: `namespace App\Controllers\Admin;`
+- User controllers: `namespace App\Controllers\User;`
+- System controllers: `namespace App\Controllers\System;`
+- Wings controllers: `namespace App\Controllers\Wings;`
+
+#### Controller Class Structure
+
+```php
+class EntityController
+{
+    // List/Index - GET /api/admin/entities
+    public function index(Request $request): Response { }
+
+    // Show single - GET /api/admin/entities/{id}
+    public function show(Request $request, string|int $id): Response { }
+
+    // Create - PUT /api/admin/entities
+    public function create(Request $request): Response { }
+
+    // Update - PATCH /api/admin/entities/{id}
+    public function update(Request $request, string|int $id): Response { }
+
+    // Delete - DELETE /api/admin/entities/{id}
+    public function delete(Request $request, string|int $id): Response { }
+
+    // Additional custom methods
+    public function customAction(Request $request, mixed $param): Response { }
+}
+```
+
+### 3. HTTP Method Conventions
+
+#### RESTful Mapping
+
+- `GET` → List/Index or Show operations
+- `PUT` → Create operations
+- `PATCH` → Update operations
+- `DELETE` → Delete operations
+- `POST` → Custom operations (use sparingly)
+
+#### Method Return Types
+
+All controller methods MUST return `Response`:
+
+```php
+public function methodName(Request $request): Response
+{
+    // Implementation
+    return ApiResponse::success($data, $message, $statusCode);
+}
+```
+
+### 4. Request Handling
+
+#### Extracting Request Data
+
+```php
+// Query parameters (GET)
+$page = (int) $request->query->get('page', 1);
+$limit = (int) $request->query->get('limit', 10);
+$search = $request->query->get('search', '');
+
+// JSON body (POST/PUT/PATCH)
+$data = json_decode($request->getContent(), true);
+
+// Route parameters (from URL path)
+public function show(Request $request, string $uuid): Response
+{
+    // $uuid is extracted from route
+}
+
+// Authenticated user (set by middleware)
+$currentUser = $request->get('user');
+$userUuid = $currentUser['uuid'];
+```
+
+#### Input Validation
+
+Always validate input before processing:
+
+```php
+// Check for required fields
+$requiredFields = ['username', 'email', 'password'];
+$missingFields = [];
+foreach ($requiredFields as $field) {
+    if (!isset($data[$field]) || trim($data[$field]) === '') {
+        $missingFields[] = $field;
+    }
+}
+if (!empty($missingFields)) {
+    return ApiResponse::error(
+        'Missing required fields: ' . implode(', ', $missingFields),
+        'MISSING_REQUIRED_FIELDS',
+        400
+    );
+}
+
+// Validate data types
+foreach ($requiredFields as $field) {
+    if (!is_string($data[$field])) {
+        return ApiResponse::error(
+            ucfirst(str_replace('_', ' ', $field)) . ' must be a string',
+            'INVALID_DATA_TYPE',
+            400
+        );
+    }
+    $data[$field] = trim($data[$field]);
+}
+
+// Validate length constraints
+$lengthRules = [
+    'username' => [3, 32],
+    'email' => [3, 255],
+    'password' => [8, 255],
+];
+foreach ($lengthRules as $field => [$min, $max]) {
+    $len = strlen($data[$field]);
+    if ($len < $min) {
+        return ApiResponse::error(
+            ucfirst(str_replace('_', ' ', $field)) . " must be at least $min characters long",
+            'INVALID_DATA_LENGTH',
+            400
+        );
+    }
+    if ($len > $max) {
+        return ApiResponse::error(
+            ucfirst(str_replace('_', ' ', $field)) . " must be less than $max characters long",
+            'INVALID_DATA_LENGTH',
+            400
+        );
+    }
+}
+
+// Validate specific formats
+if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+    return ApiResponse::error('Invalid email address', 'INVALID_EMAIL_ADDRESS', 400);
+}
+```
+
+### 5. Response Handling
+
+#### Using ApiResponse Helper
+
+Always use the `ApiResponse` helper for consistent responses:
+
+```php
+// Success response
+return ApiResponse::success($data, $message, $statusCode);
+
+// Error response
+return ApiResponse::error($message, $errorCode, $statusCode);
+
+// With additional data
+return ApiResponse::error($message, $errorCode, $statusCode, $additionalData);
+```
+
+#### Standard Response Patterns
+
+```php
+// List/Index with pagination
+return ApiResponse::success([
+    'entities' => $entities,
+    'pagination' => [
+        'current_page' => $page,
+        'per_page' => $limit,
+        'total_records' => $total,
+        'total_pages' => $totalPages,
+        'has_next' => $page < $totalPages,
+        'has_prev' => $page > 1,
+        'from' => $from,
+        'to' => $to,
+    ],
+    'search' => [
+        'query' => $search,
+        'has_results' => count($entities) > 0,
+    ],
+], 'Entities fetched successfully', 200);
+
+// Single entity
+return ApiResponse::success([
+    'entity' => $entity
+], 'Entity fetched successfully', 200);
+
+// Create operation
+return ApiResponse::success([
+    'entity_id' => $entityId
+], 'Entity created successfully', 201);
+
+// Update operation
+return ApiResponse::success([], 'Entity updated successfully', 200);
+
+// Delete operation
+return ApiResponse::success([], 'Entity deleted successfully', 200);
+
+// Not found
+return ApiResponse::error('Entity not found', 'ENTITY_NOT_FOUND', 404);
+
+// Validation error
+return ApiResponse::error('Validation failed', 'VALIDATION_ERROR', 400);
+
+// Conflict (duplicate)
+return ApiResponse::error('Entity already exists', 'ENTITY_EXISTS', 409);
+
+// Server error
+return ApiResponse::error('Failed to process request', 'INTERNAL_ERROR', 500);
+```
+
+#### Status Codes
+
+- `200` - OK (successful GET, PATCH, DELETE)
+- `201` - Created (successful PUT/create)
+- `400` - Bad Request (validation errors, missing fields)
+- `401` - Unauthorized (not authenticated)
+- `403` - Forbidden (authenticated but no permission)
+- `404` - Not Found (entity doesn't exist)
+- `409` - Conflict (duplicate, constraint violation)
+- `500` - Internal Server Error (unexpected errors)
+
+### 6. OpenAPI Documentation
+
+#### Schema Definitions
+
+Define schemas at the top of the controller using OpenAPI attributes:
+
+```php
+#[OA\Schema(
+    schema: 'EntityName',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Entity ID'),
+        new OA\Property(property: 'uuid', type: 'string', format: 'uuid', description: 'Entity UUID'),
+        new OA\Property(property: 'name', type: 'string', description: 'Entity name'),
+        new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Entity description'),
+        new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive'], description: 'Entity status'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'EntityCreate',
+    type: 'object',
+    required: ['name', 'description'],
+    properties: [
+        new OA\Property(property: 'name', type: 'string', description: 'Entity name', minLength: 3, maxLength: 64),
+        new OA\Property(property: 'description', type: 'string', description: 'Entity description', minLength: 1, maxLength: 255),
+        new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive'], nullable: true, description: 'Entity status'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'EntityUpdate',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'name', type: 'string', description: 'Entity name', minLength: 3, maxLength: 64),
+        new OA\Property(property: 'description', type: 'string', description: 'Entity description', minLength: 1, maxLength: 255),
+        new OA\Property(property: 'status', type: 'string', enum: ['active', 'inactive'], description: 'Entity status'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'EntityPagination',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'current_page', type: 'integer', description: 'Current page number'),
+        new OA\Property(property: 'per_page', type: 'integer', description: 'Records per page'),
+        new OA\Property(property: 'total_records', type: 'integer', description: 'Total number of records'),
+        new OA\Property(property: 'total_pages', type: 'integer', description: 'Total number of pages'),
+        new OA\Property(property: 'has_next', type: 'boolean', description: 'Whether there is a next page'),
+        new OA\Property(property: 'has_prev', type: 'boolean', description: 'Whether there is a previous page'),
+        new OA\Property(property: 'from', type: 'integer', description: 'Starting record number'),
+        new OA\Property(property: 'to', type: 'integer', description: 'Ending record number'),
+    ]
+)]
+class EntityController
+{
+    // Methods...
+}
+```
+
+#### Endpoint Documentation
+
+Document every public method with OpenAPI attributes:
+
+```php
+#[OA\Get(
+    path: '/api/admin/entities',
+    summary: 'Get all entities',
+    description: 'Retrieve a paginated list of all entities with search functionality.',
+    tags: ['Admin - Entities'],
+    parameters: [
+        new OA\Parameter(
+            name: 'page',
+            in: 'query',
+            description: 'Page number for pagination',
+            required: false,
+            schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
+        ),
+        new OA\Parameter(
+            name: 'limit',
+            in: 'query',
+            description: 'Number of records per page',
+            required: false,
+            schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 10)
+        ),
+        new OA\Parameter(
+            name: 'search',
+            in: 'query',
+            description: 'Search term to filter entities',
+            required: false,
+            schema: new OA\Schema(type: 'string')
+        ),
+    ],
+    responses: [
+        new OA\Response(
+            response: 200,
+            description: 'Entities retrieved successfully',
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'entities', type: 'array', items: new OA\Items(ref: '#/components/schemas/EntityName')),
+                    new OA\Property(property: 'pagination', ref: '#/components/schemas/EntityPagination'),
+                    new OA\Property(property: 'search', type: 'object', properties: [
+                        new OA\Property(property: 'query', type: 'string'),
+                        new OA\Property(property: 'has_results', type: 'boolean'),
+                    ]),
+                ]
+            )
+        ),
+        new OA\Response(response: 401, description: 'Unauthorized'),
+        new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+    ]
+)]
+public function index(Request $request): Response
+{
+    // Implementation
+}
+
+#[OA\Get(
+    path: '/api/admin/entities/{id}',
+    summary: 'Get entity by ID',
+    description: 'Retrieve a specific entity by its ID with comprehensive information.',
+    tags: ['Admin - Entities'],
+    parameters: [
+        new OA\Parameter(
+            name: 'id',
+            in: 'path',
+            description: 'Entity ID',
+            required: true,
+            schema: new OA\Schema(type: 'integer')
+        ),
+    ],
+    responses: [
+        new OA\Response(
+            response: 200,
+            description: 'Entity retrieved successfully',
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'entity', ref: '#/components/schemas/EntityName'),
+                ]
+            )
+        ),
+        new OA\Response(response: 400, description: 'Bad request - Invalid ID'),
+        new OA\Response(response: 401, description: 'Unauthorized'),
+        new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+        new OA\Response(response: 404, description: 'Entity not found'),
+    ]
+)]
+public function show(Request $request, int $id): Response
+{
+    // Implementation
+}
+
+#[OA\Put(
+    path: '/api/admin/entities',
+    summary: 'Create new entity',
+    description: 'Create a new entity with comprehensive validation.',
+    tags: ['Admin - Entities'],
+    requestBody: new OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(ref: '#/components/schemas/EntityCreate')
+    ),
+    responses: [
+        new OA\Response(
+            response: 201,
+            description: 'Entity created successfully',
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'entity_id', type: 'integer', description: 'Created entity ID'),
+                ]
+            )
+        ),
+        new OA\Response(response: 400, description: 'Bad request - Validation errors'),
+        new OA\Response(response: 401, description: 'Unauthorized'),
+        new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+        new OA\Response(response: 409, description: 'Conflict - Entity already exists'),
+        new OA\Response(response: 500, description: 'Internal server error'),
+    ]
+)]
+public function create(Request $request): Response
+{
+    // Implementation
+}
+
+#[OA\Patch(
+    path: '/api/admin/entities/{id}',
+    summary: 'Update entity',
+    description: 'Update an existing entity with comprehensive validation.',
+    tags: ['Admin - Entities'],
+    parameters: [
+        new OA\Parameter(
+            name: 'id',
+            in: 'path',
+            description: 'Entity ID',
+            required: true,
+            schema: new OA\Schema(type: 'integer')
+        ),
+    ],
+    requestBody: new OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(ref: '#/components/schemas/EntityUpdate')
+    ),
+    responses: [
+        new OA\Response(
+            response: 200,
+            description: 'Entity updated successfully',
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                ]
+            )
+        ),
+        new OA\Response(response: 400, description: 'Bad request - Validation errors'),
+        new OA\Response(response: 401, description: 'Unauthorized'),
+        new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+        new OA\Response(response: 404, description: 'Entity not found'),
+        new OA\Response(response: 409, description: 'Conflict'),
+        new OA\Response(response: 500, description: 'Internal server error'),
+    ]
+)]
+public function update(Request $request, int $id): Response
+{
+    // Implementation
+}
+
+#[OA\Delete(
+    path: '/api/admin/entities/{id}',
+    summary: 'Delete entity',
+    description: 'Permanently delete an entity.',
+    tags: ['Admin - Entities'],
+    parameters: [
+        new OA\Parameter(
+            name: 'id',
+            in: 'path',
+            description: 'Entity ID',
+            required: true,
+            schema: new OA\Schema(type: 'integer')
+        ),
+    ],
+    responses: [
+        new OA\Response(
+            response: 200,
+            description: 'Entity deleted successfully',
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                ]
+            )
+        ),
+        new OA\Response(response: 400, description: 'Bad request - Invalid ID'),
+        new OA\Response(response: 401, description: 'Unauthorized'),
+        new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+        new OA\Response(response: 404, description: 'Entity not found'),
+        new OA\Response(response: 409, description: 'Conflict - Cannot delete (dependencies exist)'),
+        new OA\Response(response: 500, description: 'Internal server error'),
+    ]
+)]
+public function delete(Request $request, int $id): Response
+{
+    // Implementation
+}
+```
+
+### 7. Using Chat Models
+
+Controllers should use Chat models for database operations:
+
+```php
+use App\Chat\Entity;
+use App\Chat\User;
+use App\Chat\Role;
+
+// Fetching data
+$entity = Entity::getEntityById($id);
+$entities = Entity::searchEntities($page, $limit, $search);
+$total = Entity::getCount($search);
+
+// Creating
+$entityId = Entity::createEntity($data);
+if (!$entityId) {
+    return ApiResponse::error('Failed to create entity', 'CREATE_FAILED', 500);
+}
+
+// Updating
+$updated = Entity::updateEntity($uuid, $data);
+if (!$updated) {
+    return ApiResponse::error('Failed to update entity', 'UPDATE_FAILED', 500);
+}
+
+// Deleting
+$deleted = Entity::hardDeleteEntity($id);
+if (!$deleted) {
+    return ApiResponse::error('Failed to delete entity', 'DELETE_FAILED', 500);
+}
+```
+
+### 8. Pagination Pattern
+
+Standard pagination implementation:
+
+```php
+public function index(Request $request): Response
+{
+    // Extract pagination parameters
+    $page = (int) $request->query->get('page', 1);
+    $limit = (int) $request->query->get('limit', 10);
+    $search = $request->query->get('search', '');
+
+    // Validate pagination
+    if ($page < 1) {
+        $page = 1;
+    }
+    if ($limit < 1) {
+        $limit = 10;
+    }
+    if ($limit > 100) {
+        $limit = 100;
+    }
+
+    // Fetch data
+    $entities = Entity::searchEntities($page, $limit, $search);
+    $total = Entity::getCount($search);
+
+    // Calculate pagination metadata
+    $totalPages = ceil($total / $limit);
+    $from = ($page - 1) * $limit + 1;
+    $to = min($from + $limit - 1, $total);
+
+    return ApiResponse::success([
+        'entities' => $entities,
+        'pagination' => [
+            'current_page' => $page,
+            'per_page' => $limit,
+            'total_records' => $total,
+            'total_pages' => $totalPages,
+            'has_next' => $page < $totalPages,
+            'has_prev' => $page > 1,
+            'from' => $from,
+            'to' => $to,
+        ],
+        'search' => [
+            'query' => $search,
+            'has_results' => count($entities) > 0,
+        ],
+    ], 'Entities fetched successfully', 200);
+}
+```
+
+### 9. Event System Integration
+
+Use the event system for important actions:
+
+```php
+use App\Plugins\Events\Events\EntityEvent;
+
+// Emit event after creation
+global $eventManager;
+if (isset($eventManager) && $eventManager !== null) {
+    $eventManager->emit(
+        EntityEvent::onEntityCreated(),
+        [
+            'entity' => $entity,
+            'entity_id' => $entityId,
+            'created_by' => $request->get('user'),
+        ]
+    );
+}
+
+// Emit event after update
+if (isset($eventManager) && $eventManager !== null) {
+    $eventManager->emit(
+        EntityEvent::onEntityUpdated(),
+        [
+            'entity' => $entity,
+            'updated_data' => $data,
+            'updated_by' => $request->get('user'),
+        ]
+    );
+}
+
+// Emit event before deletion
+if (isset($eventManager) && $eventManager !== null) {
+    $eventManager->emit(
+        EntityEvent::onEntityDeleted(),
+        [
+            'entity' => $entity,
+            'deleted_by' => $request->get('user'),
+        ]
+    );
+}
+```
+
+### 10. Activity Logging
+
+Log important user actions:
+
+```php
+use App\Chat\Activity;
+use App\CloudFlare\CloudFlareRealIP;
+
+// Log creation
+Activity::createActivity([
+    'user_uuid' => $request->get('user')['uuid'],
+    'name' => 'create_entity',
+    'context' => 'Created entity: ' . $data['name'],
+    'ip_address' => CloudFlareRealIP::getRealIP(),
+]);
+
+// Log update
+Activity::createActivity([
+    'user_uuid' => $request->get('user')['uuid'],
+    'name' => 'update_entity',
+    'context' => 'Updated entity: ' . $entity['name'],
+    'ip_address' => CloudFlareRealIP::getRealIP(),
+]);
+
+// Log deletion
+Activity::createActivity([
+    'user_uuid' => $request->get('user')['uuid'],
+    'name' => 'delete_entity',
+    'context' => 'Deleted entity: ' . $entity['name'],
+    'ip_address' => CloudFlareRealIP::getRealIP(),
+]);
+```
+
+### 11. Error Handling
+
+Always handle errors gracefully:
+
+```php
+try {
+    // Database operation
+    $result = Entity::createEntity($data);
+
+    if (!$result) {
+        return ApiResponse::error('Failed to create entity', 'CREATE_FAILED', 500);
+    }
+
+    return ApiResponse::success(['entity_id' => $result], 'Entity created successfully', 201);
+} catch (\PDOException $e) {
+    App::getInstance(true)->getLogger()->error('Database error: ' . $e->getMessage());
+    return ApiResponse::error('Database error occurred', 'DATABASE_ERROR', 500);
+} catch (\Exception $e) {
+    App::getInstance(true)->getLogger()->error('Unexpected error: ' . $e->getMessage());
+    return ApiResponse::error('An unexpected error occurred', 'UNEXPECTED_ERROR', 500);
+}
+```
+
+### 12. Data Transformation
+
+Transform data before sending in response:
+
+```php
+// Remove sensitive fields
+unset($user['password'], $user['remember_token'], $user['two_fa_key']);
+
+// Map relationships
+$roles = Role::getAllRoles();
+$rolesMap = [];
+foreach ($roles as $role) {
+    $rolesMap[$role['id']] = [
+        'name' => $role['name'],
+        'display_name' => $role['display_name'],
+        'color' => $role['color'],
+    ];
+}
+
+foreach ($users as &$user) {
+    $roleId = $user['role_id'];
+    if (isset($rolesMap[$roleId])) {
+        $user['role'] = $rolesMap[$roleId];
+    } else {
+        $user['role'] = [
+            'name' => 'unknown',
+            'display_name' => 'Unknown',
+            'color' => '#666666',
+        ];
+    }
+    unset($user['role_id']);
+}
+
+// Filter arrays
+$activities = array_map(function ($activity) {
+    unset($activity['user_uuid'], $activity['id'], $activity['updated_at']);
+    return $activity;
+}, Activity::getActivitiesByUser($user['uuid']));
+```
+
+### 13. Terminology Standards
+
+**ALWAYS use the correct FeatherPanel terminology:**
+
+- ✅ `realms` (NOT "nests")
+- ✅ `spells` (NOT "eggs")
+- ✅ `realm_id` in foreign keys
+- ✅ `spell_id` in foreign keys
+
+**Never use deprecated terms in controllers:**
+
+- ❌ `eggs`, `nests`, `egg_id`, `nest_id`
+
+### 14. Best Practices
+
+#### Controller Design
+
+- Keep controllers thin - delegate business logic to models
+- One controller per resource/entity
+- Use descriptive method names
+- Return consistent response structures
+- Always validate input
+- Always document with OpenAPI attributes
+
+#### Security
+
+- Never expose sensitive data (passwords, tokens, keys)
+- Validate all input parameters
+- Use type hints for all parameters
+- Check for null/invalid values before using
+- Log security-relevant events
+
+#### Performance
+
+- Limit pagination max to 100
+- Select only needed fields from database
+- Use eager loading for relationships when appropriate
+- Cache expensive operations when possible
+
+#### Code Organization
+
+- Group related imports together
+- Put OpenAPI schemas at the top of the class
+- Order methods logically: index, show, create, update, delete, then custom
+- Keep methods focused and concise
+
+## Quick Reference Checklist
+
+When creating a new controller:
+
+- [ ] Add proper file header with MIT license
+- [ ] Use correct namespace based on directory
+- [ ] Import required classes (Request, Response, ApiResponse, etc.)
+- [ ] Define OpenAPI schemas for data structures
+- [ ] Implement standard CRUD methods
+- [ ] Add OpenAPI attributes to all public methods
+- [ ] Validate all input parameters
+- [ ] Use Chat models for database operations
+- [ ] Return consistent ApiResponse structures
+- [ ] Add activity logging for important actions
+- [ ] Emit events for important actions
+- [ ] Handle errors gracefully
+- [ ] Use proper HTTP status codes
+- [ ] Remove sensitive data from responses
+- [ ] Use correct terminology (realms, spells)
+- [ ] Test all endpoints
+
+## Complete Controller Template
+
+```php
+<?php
+
+namespace App\Controllers\Admin;
+
+use App\App;
+use App\Chat\Entity;
+use App\Chat\Activity;
+use App\Helpers\UUIDUtils;
+use App\Helpers\ApiResponse;
+use OpenApi\Attributes as OA;
+use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\EntityEvent;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+#[OA\Schema(
+    schema: 'Entity',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', description: 'Entity ID'),
+        new OA\Property(property: 'uuid', type: 'string', description: 'Entity UUID'),
+        new OA\Property(property: 'name', type: 'string', description: 'Entity name'),
+        new OA\Property(property: 'description', type: 'string', description: 'Entity description'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'EntityPagination',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'current_page', type: 'integer', description: 'Current page number'),
+        new OA\Property(property: 'per_page', type: 'integer', description: 'Records per page'),
+        new OA\Property(property: 'total_records', type: 'integer', description: 'Total number of records'),
+        new OA\Property(property: 'total_pages', type: 'integer', description: 'Total number of pages'),
+        new OA\Property(property: 'has_next', type: 'boolean', description: 'Whether there is a next page'),
+        new OA\Property(property: 'has_prev', type: 'boolean', description: 'Whether there is a previous page'),
+        new OA\Property(property: 'from', type: 'integer', description: 'Starting record number'),
+        new OA\Property(property: 'to', type: 'integer', description: 'Ending record number'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'EntityCreate',
+    type: 'object',
+    required: ['name', 'description'],
+    properties: [
+        new OA\Property(property: 'name', type: 'string', description: 'Entity name', minLength: 3, maxLength: 64),
+        new OA\Property(property: 'description', type: 'string', description: 'Entity description', minLength: 1, maxLength: 255),
+    ]
+)]
+#[OA\Schema(
+    schema: 'EntityUpdate',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'name', type: 'string', description: 'Entity name', minLength: 3, maxLength: 64),
+        new OA\Property(property: 'description', type: 'string', description: 'Entity description', minLength: 1, maxLength: 255),
+    ]
+)]
+class EntityController
+{
+    #[OA\Get(
+        path: '/api/admin/entities',
+        summary: 'Get all entities',
+        description: 'Retrieve a paginated list of all entities.',
+        tags: ['Admin - Entities'],
+        parameters: [
+            new OA\Parameter(name: 'page', in: 'query', description: 'Page number', required: false, schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)),
+            new OA\Parameter(name: 'limit', in: 'query', description: 'Records per page', required: false, schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 10)),
+            new OA\Parameter(name: 'search', in: 'query', description: 'Search term', required: false, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Entities retrieved successfully'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
+    public function index(Request $request): Response
+    {
+        // Implementation
+    }
+
+    #[OA\Get(
+        path: '/api/admin/entities/{id}',
+        summary: 'Get entity by ID',
+        description: 'Retrieve a specific entity by ID.',
+        tags: ['Admin - Entities'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', description: 'Entity ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Entity retrieved successfully'),
+            new OA\Response(response: 404, description: 'Entity not found'),
+        ]
+    )]
+    public function show(Request $request, int $id): Response
+    {
+        // Implementation
+    }
+
+    #[OA\Put(
+        path: '/api/admin/entities',
+        summary: 'Create new entity',
+        description: 'Create a new entity.',
+        tags: ['Admin - Entities'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/EntityCreate')),
+        responses: [
+            new OA\Response(response: 201, description: 'Entity created successfully'),
+            new OA\Response(response: 400, description: 'Bad request'),
+        ]
+    )]
+    public function create(Request $request): Response
+    {
+        // Implementation
+    }
+
+    #[OA\Patch(
+        path: '/api/admin/entities/{id}',
+        summary: 'Update entity',
+        description: 'Update an existing entity.',
+        tags: ['Admin - Entities'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', description: 'Entity ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/EntityUpdate')),
+        responses: [
+            new OA\Response(response: 200, description: 'Entity updated successfully'),
+            new OA\Response(response: 404, description: 'Entity not found'),
+        ]
+    )]
+    public function update(Request $request, int $id): Response
+    {
+        // Implementation
+    }
+
+    #[OA\Delete(
+        path: '/api/admin/entities/{id}',
+        summary: 'Delete entity',
+        description: 'Delete an entity.',
+        tags: ['Admin - Entities'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', description: 'Entity ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Entity deleted successfully'),
+            new OA\Response(response: 404, description: 'Entity not found'),
+        ]
+    )]
+    public function delete(Request $request, int $id): Response
+    {
+        // Implementation
+    }
+}
+```
