@@ -19,8 +19,8 @@ define("TELEMETRY", true);
 define('IS_CLI', true);
 
 require_once APP_DIR . "/boot/kernel.php";
-try {
 
+try {
 	$args = array_slice($argv, 1); // Exclude the command name and the first argument
 	new App(isset($argv[1]) ? $argv[1] : '', $args);
 } catch (Exception $e) {

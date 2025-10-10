@@ -1,5 +1,5 @@
 #!/bin/bash
-# FeatherPanel Docker Installation Script
+# FeatherPanel/FeatherWings Docker Installation Script
 # Docker-only installer/uninstaller for Ubuntu/Debian
 
 if [ "$EUID" -ne 0 ]; then

@@ -7,3 +7,4 @@ dockerfiles/mariadb/data
 *.fpa
 *.backup.*
 installer.log
+devlogs.log
