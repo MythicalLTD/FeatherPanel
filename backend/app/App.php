@@ -213,6 +213,7 @@ class App
      */
     public function registerApiRoutes(RouteCollection $routes): void
     {
+        // Load core application routes
         $routesDir = __DIR__ . '/routes';
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($routesDir, \FilesystemIterator::SKIP_DOTS),
@@ -224,6 +225,37 @@ class App
                 $register = require $file->getPathname();
                 if (is_callable($register)) {
                     $register($routes);
+                }
+            }
+        }
+
+        // Load plugin routes from backend/storage/addons/*/routes/
+        $addonsDir = __DIR__ . '/../storage/addons';
+        if (is_dir($addonsDir)) {
+            $pluginDirs = new \DirectoryIterator($addonsDir);
+            foreach ($pluginDirs as $pluginDir) {
+                if ($pluginDir->isDir() && !$pluginDir->isDot()) {
+                    $pluginRoutesDir = $pluginDir->getPathname() . '/Routes';
+                    if (is_dir($pluginRoutesDir)) {
+                        $pluginIterator = new \RecursiveIteratorIterator(
+                            new \RecursiveDirectoryIterator($pluginRoutesDir, \FilesystemIterator::SKIP_DOTS),
+                            \RecursiveIteratorIterator::SELF_FIRST
+                        );
+
+                        foreach ($pluginIterator as $file) {
+                            if ($file->isFile() && $file->getExtension() === 'php') {
+                                try {
+                                    $register = require $file->getPathname();
+                                    if (is_callable($register)) {
+                                        $register($routes);
+                                        self::getLogger()->debug('Loaded plugin routes from: ' . $file->getPathname());
+                                    }
+                                } catch (\Exception $e) {
+                                    self::getLogger()->error('Failed to load plugin routes from ' . $file->getPathname() . ': ' . $e->getMessage());
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
