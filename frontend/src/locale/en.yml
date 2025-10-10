@@ -1031,6 +1031,7 @@ serverFiles:
     fileName: 'File Name'
     fileNamePlaceholder: 'Leave empty to use original name'
     pull: 'Pull'
+    pulling: 'Pulling...'
     pullStarted: 'File download started'
     pullError: 'Failed to start file download'
     # Drag and Drop

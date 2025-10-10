@@ -14,6 +14,7 @@
 - Added a new `users` CLI command for managing users from the CLI, including creating, updating, and deleting user accounts.
 - Added comprehensive unit tests for more core admin controllers.
 - Added initial `.cursor/rules/*` files, enabling extensive and fine-grained codebase navigation and enforcing coding standards across CLI commands, controllers, chat models, and routes for improved consistency and contributor onboarding.
+- Added "Pull file" support to the file manager, enabling users to pull/download files directly from remote URLs into the server. Manage and monitor remote downloads in real time from the Active Downloads panel.
 
 ## Fixed
 
