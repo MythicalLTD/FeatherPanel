@@ -31,6 +31,7 @@
 namespace App\Controllers\Admin;
 
 use App\App;
+use App\Helpers\LogHelper;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
@@ -111,13 +112,13 @@ class LogViewerController
             $logType = $request->query->get('type', 'web');
             $lines = (int) $request->query->get('lines', 100);
 
-            $logFile = $this->getLogFilePath($logType);
+            $logFile = LogHelper::getLogFilePath($logType);
 
             if (!file_exists($logFile)) {
                 return ApiResponse::error('Log file not found', 404);
             }
 
-            $content = $this->readLastLines($logFile, $lines);
+            $content = LogHelper::readLastLines($logFile, $lines);
 
             return ApiResponse::success([
                 'logs' => $content,
@@ -163,7 +164,7 @@ class LogViewerController
                 return ApiResponse::error('You are not allowed to clear logs in non-developer mode', 403);
             }
             $logType = $request->request->get('type', 'web');
-            $logFile = $this->getLogFilePath($logType);
+            $logFile = LogHelper::getLogFilePath($logType);
 
             if (!file_exists($logFile)) {
                 return ApiResponse::error('Log file not found', 404);
@@ -229,7 +230,7 @@ class LogViewerController
                             'name' => $file,
                             'size' => filesize($filePath),
                             'modified' => filemtime($filePath),
-                            'type' => $this->getLogTypeFromFileName($file),
+                            'type' => LogHelper::getLogTypeFromFileName($file),
                         ];
                     }
                 }
@@ -296,10 +297,10 @@ class LogViewerController
             $lineLimit = 10000;
 
             // Upload web logs
-            $webLogFile = $this->getLogFilePath('web');
+            $webLogFile = LogHelper::getLogFilePath('web');
             if (file_exists($webLogFile)) {
-                $webContent = $this->readLastLines($webLogFile, $lineLimit);
-                $webResult = $this->uploadToMcloGs($webContent);
+                $webContent = LogHelper::readLastLines($webLogFile, $lineLimit);
+                $webResult = LogHelper::uploadToMcloGs($webContent);
                 $results['web'] = $webResult;
             } else {
                 $results['web'] = [
@@ -309,10 +310,10 @@ class LogViewerController
             }
 
             // Upload app logs
-            $appLogFile = $this->getLogFilePath('app');
+            $appLogFile = LogHelper::getLogFilePath('app');
             if (file_exists($appLogFile)) {
-                $appContent = $this->readLastLines($appLogFile, $lineLimit);
-                $appResult = $this->uploadToMcloGs($appContent);
+                $appContent = LogHelper::readLastLines($appLogFile, $lineLimit);
+                $appResult = LogHelper::uploadToMcloGs($appContent);
                 $results['app'] = $appResult;
             } else {
                 $results['app'] = [
@@ -337,104 +338,5 @@ class LogViewerController
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to upload logs: ' . $e->getMessage(), 500);
         }
-    }
-
-    private function getLogFilePath(string $type): string
-    {
-        $logDir = dirname(__DIR__, 3) . '/storage/logs/';
-
-        switch ($type) {
-            case 'web':
-                return $logDir . 'featherpanel-web.fplog';
-            case 'app':
-                return $logDir . 'App.fplog';
-            default:
-                return $logDir . 'featherpanel-web.fplog';
-        }
-    }
-
-    private function getLogTypeFromFileName(string $filename): string
-    {
-        if (strpos($filename, 'web') !== false) {
-            return 'web';
-        }
-        if (strpos($filename, 'App') !== false) {
-            return 'app';
-        }
-
-        return 'unknown';
-    }
-
-    private function uploadToMcloGs(string $content): array
-    {
-        try {
-            $ch = curl_init('https://api.mclo.gs/1/log');
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(['content' => $content]));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Content-Type: application/x-www-form-urlencoded',
-            ]);
-
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-
-            if ($httpCode !== 200) {
-                return [
-                    'success' => false,
-                    'error' => 'Failed to upload to mclo.gs (HTTP ' . $httpCode . ')',
-                ];
-            }
-
-            $result = json_decode($response, true);
-
-            if (!$result || !isset($result['success']) || !$result['success']) {
-                return [
-                    'success' => false,
-                    'error' => $result['error'] ?? 'Unknown error from mclo.gs',
-                ];
-            }
-
-            return [
-                'success' => true,
-                'id' => $result['id'],
-                'url' => $result['url'],
-                'raw' => $result['raw'],
-            ];
-        } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'error' => 'Exception: ' . $e->getMessage(),
-            ];
-        }
-    }
-
-    private function readLastLines(string $filePath, int $lines): string
-    {
-        $handle = fopen($filePath, 'r');
-        if (!$handle) {
-            return '';
-        }
-
-        $content = '';
-        $lineCount = 0;
-        $buffer = [];
-
-        // Read the file line by line and keep only the last $lines
-        while (($line = fgets($handle)) !== false) {
-            $buffer[] = $line;
-            ++$lineCount;
-
-            // Keep only the last $lines in memory
-            if ($lineCount > $lines) {
-                array_shift($buffer);
-                --$lineCount;
-            }
-        }
-
-        fclose($handle);
-
-        return implode('', $buffer);
     }
 }

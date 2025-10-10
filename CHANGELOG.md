@@ -25,13 +25,17 @@
 - Fixed broken event manager handling in some user controllers by adding proper null checks before emitting events.
 - Fixed broken redirect link API endpoints where links could not be deleted, edited, or updated due to incorrect ID handling. All update and delete operations for redirect links now function as expected.
 - Resolved issues with API documentation schemas, ensuring the generated API docs are now fully accurate and up-to-date.
+- **CRITICAL:** Fixed SQL injection vulnerability in PostgreSQL database creation and deletion operations. Database identifiers are now properly escaped to prevent SQL injection attacks through malicious database names.
+- **CRITICAL:** Fixed SQL injection vulnerability in MySQL/MariaDB database creation and deletion operations. Database identifiers are now properly escaped using backtick escaping to prevent SQL injection attacks.
 
 ### Improved
 
 - Removed redundant double server permission check in server-related API endpoints. All authentication and permission checks are now solely handled by the server middleware, eliminating unnecessary duplicate verification and improving efficiency.
 - Migrated all legacy error_log instances to the centralized application logger, resulting in more consistent and effective error handling across the codebase.
+- Updated log upload functionality: The CLI and settings log upload commands now use a centralized helper for interacting with mclo.gs, instead of making direct API requests each time. This streamlines the code, reduces duplication, and provides better reliability and error handling for log uploads.
 
 ### Removed
+
 - Removed support for old MongoDB and Redis database types from the database manager, as these cannot be easily managed with user creation via host.
 
 ## v0.0.4-Canary

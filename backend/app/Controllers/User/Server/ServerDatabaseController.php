@@ -858,34 +858,38 @@ class ServerDatabaseController
             switch ($databaseHost['database_type']) {
                 case 'mysql':
                 case 'mariadb':
+                    $safeDbName = $this->quoteIdentifierMySQL($databaseName);
+                    $safeUser = $this->quoteIdentifierMySQL($username);
                     $dsn = "mysql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
                     $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
 
                     // Create the database
-                    $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$databaseName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                    $pdo->exec("CREATE DATABASE IF NOT EXISTS {$safeDbName} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
                     // Create the user
-                    $pdo->exec("CREATE USER IF NOT EXISTS '{$username}'@'%' IDENTIFIED BY '{$password}'");
+                    $pdo->exec("CREATE USER IF NOT EXISTS {$safeUser}@'%' IDENTIFIED BY '{$password}'");
 
                     // Grant privileges to the user on the specific database
-                    $pdo->exec("GRANT ALL PRIVILEGES ON `{$databaseName}`.* TO '{$username}'@'%'");
+                    $pdo->exec("GRANT ALL PRIVILEGES ON {$safeDbName}.* TO {$safeUser}@'%'");
 
                     // Flush privileges
                     $pdo->exec('FLUSH PRIVILEGES');
                     break;
 
                 case 'postgresql':
+                    $safeDbName = $this->quoteIdentifier($databaseName);
+                    $safeUser = $this->quoteIdentifier($username);
                     $dsn = "pgsql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
                     $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
 
                     // Create the database
-                    $pdo->exec("CREATE DATABASE \"{$databaseName}\" WITH ENCODING 'UTF8' LC_COLLATE='en_US.UTF-8' LC_CTYPE='en_US.UTF-8'");
+                    $pdo->exec("CREATE DATABASE {$safeDbName} WITH ENCODING 'UTF8' LC_COLLATE='en_US.UTF-8' LC_CTYPE='en_US.UTF-8'");
 
                     // Create the user
-                    $pdo->exec("CREATE USER \"{$username}\" WITH PASSWORD '{$password}'");
+                    $pdo->exec("CREATE USER {$safeUser} WITH PASSWORD '{$password}'");
 
                     // Grant privileges to the user on the specific database
-                    $pdo->exec("GRANT ALL PRIVILEGES ON DATABASE \"{$databaseName}\" TO \"{$username}\"");
+                    $pdo->exec("GRANT ALL PRIVILEGES ON DATABASE {$safeDbName} TO {$safeUser}");
                     break;
 
                 default:
@@ -919,34 +923,38 @@ class ServerDatabaseController
             switch ($databaseHost['database_type']) {
                 case 'mysql':
                 case 'mariadb':
+                    $safeDbName = $this->quoteIdentifierMySQL($databaseName);
+                    $safeUser = $this->quoteIdentifierMySQL($username);
                     $dsn = "mysql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
                     $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
 
                     // Revoke privileges from the user
-                    $pdo->exec("REVOKE ALL PRIVILEGES ON `{$databaseName}`.* FROM '{$username}'@'%'");
+                    $pdo->exec("REVOKE ALL PRIVILEGES ON {$safeDbName}.* FROM {$safeUser}@'%'");
 
                     // Drop the user
-                    $pdo->exec("DROP USER IF EXISTS '{$username}'@'%'");
+                    $pdo->exec("DROP USER IF EXISTS {$safeUser}@'%'");
 
                     // Drop the database
-                    $pdo->exec("DROP DATABASE IF EXISTS `{$databaseName}`");
+                    $pdo->exec("DROP DATABASE IF EXISTS {$safeDbName}");
 
                     // Flush privileges
                     $pdo->exec('FLUSH PRIVILEGES');
                     break;
 
                 case 'postgresql':
+                    $safeDbName = $this->quoteIdentifier($databaseName);
+                    $safeUser = $this->quoteIdentifier($username);
                     $dsn = "pgsql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
                     $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
 
                     // Revoke privileges from the user
-                    $pdo->exec("REVOKE ALL PRIVILEGES ON DATABASE \"{$databaseName}\" FROM \"{$username}\"");
+                    $pdo->exec("REVOKE ALL PRIVILEGES ON DATABASE {$safeDbName} FROM {$safeUser}");
 
                     // Drop the user
-                    $pdo->exec("DROP USER IF EXISTS \"{$username}\"");
+                    $pdo->exec("DROP USER IF EXISTS {$safeUser}");
 
                     // Drop the database
-                    $pdo->exec("DROP DATABASE IF EXISTS \"{$databaseName}\"");
+                    $pdo->exec("DROP DATABASE IF EXISTS {$safeDbName}");
                     break;
 
                 default:
@@ -1056,5 +1064,29 @@ class ServerDatabaseController
         }
 
         return $randomString;
+    }
+
+    /**
+     * Safely quote a PostgreSQL identifier by escaping double quotes.
+     *
+     * @param string $identifier The identifier to quote
+     *
+     * @return string The safely quoted identifier
+     */
+    private function quoteIdentifier(string $identifier): string
+    {
+        return '"' . str_replace('"', '""', $identifier) . '"';
+    }
+
+    /**
+     * Safely quote a MySQL/MariaDB identifier by escaping backticks.
+     *
+     * @param string $identifier The identifier to quote
+     *
+     * @return string The safely quoted identifier
+     */
+    private function quoteIdentifierMySQL(string $identifier): string
+    {
+        return '`' . str_replace('`', '``', $identifier) . '`';
     }
 }
