@@ -14,9 +14,8 @@
 namespace App\Cli\Commands;
 
 use App\Cli\App;
-use App\Chat\Database;
-use App\Cli\CommandBuilder;
 use App\Helpers\XChaCha20;
+use App\Cli\CommandBuilder;
 
 class Setup extends App implements CommandBuilder
 {
@@ -36,7 +35,8 @@ class Setup extends App implements CommandBuilder
     {
         return [];
     }
-	 public static function createDBConnection(App $cliApp): void
+
+    public static function createDBConnection(App $cliApp): void
     {
         $defultEncryption = 'xchacha20';
         $defultDBName = 'featherpanel';
@@ -78,7 +78,7 @@ class Setup extends App implements CommandBuilder
             exit;
         }
 
-		$envTemplate = 'DATABASE_HOST=' . $defultDBHost . '
+        $envTemplate = 'DATABASE_HOST=' . $defultDBHost . '
 DATABASE_PORT=' . $defultDBPort . '
 DATABASE_USER=' . $defultDBUser . '
 DATABASE_PASSWORD=' . $defultDBPassword . '

@@ -20,6 +20,7 @@ use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\RedirectLinksEvent;
 
 #[OA\Schema(
     schema: 'RedirectLink',
@@ -304,6 +305,19 @@ class RedirectLinksController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                RedirectLinksEvent::onRedirectLinkCreated(),
+                [
+                    'redirect_link_id' => $redirectLinkId,
+                    'redirect_link_data' => $data,
+                    'created_by' => $request->get('user'),
+                ]
+            );
+        }
+
         return ApiResponse::success(['redirect_link_id' => $redirectLinkId], 'Redirect link created successfully', 201);
     }
 
@@ -433,6 +447,19 @@ class RedirectLinksController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                RedirectLinksEvent::onRedirectLinkUpdated(),
+                [
+                    'redirect_link' => $redirectLink,
+                    'updated_data' => $data,
+                    'updated_by' => $request->get('user'),
+                ]
+            );
+        }
+
         return ApiResponse::success([], 'Redirect link updated successfully', 200);
     }
 
@@ -486,6 +513,18 @@ class RedirectLinksController
             'context' => 'Deleted redirect link: ' . $redirectLink['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                RedirectLinksEvent::onRedirectLinkDeleted(),
+                [
+                    'redirect_link' => $redirectLink,
+                    'deleted_by' => $request->get('user'),
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Redirect link deleted successfully', 200);
     }

@@ -23,6 +23,7 @@ use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\MailTemplatesEvent;
 
 #[OA\Schema(
     schema: 'MailTemplate',
@@ -331,6 +332,19 @@ class MailTemplatesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                MailTemplatesEvent::onMailTemplateCreated(),
+                [
+                    'template_id' => $templateId,
+                    'template_data' => $data,
+                    'created_by' => $request->get('user'),
+                ]
+            );
+        }
+
         return ApiResponse::success(['template_id' => $templateId], 'Mail template created successfully', 201);
     }
 
@@ -434,6 +448,19 @@ class MailTemplatesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                MailTemplatesEvent::onMailTemplateUpdated(),
+                [
+                    'template' => $template,
+                    'updated_data' => $data,
+                    'updated_by' => $request->get('user'),
+                ]
+            );
+        }
+
         return ApiResponse::success([], 'Mail template updated successfully', 200);
     }
 
@@ -491,6 +518,18 @@ class MailTemplatesController
             'context' => 'Deleted mail template: ' . $template['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                MailTemplatesEvent::onMailTemplateDeleted(),
+                [
+                    'template' => $template,
+                    'deleted_by' => $request->get('user'),
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Mail template deleted successfully', 200);
     }

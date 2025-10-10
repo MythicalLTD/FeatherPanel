@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.0.5-Alpha
+
+### Added
+
+- Added a new `setup` CLI command to quickly initialize your database and environment settings. This command streamlines configuration for new developers and eases onboarding.
+- Added a bunch of new plugin events for almost all remaining admin area functions that didn't previously emit events. This greatly expands plugin extensibility and allows plugins to hook into more actions across Locations, Nodes, Realms, Spells, and others in the admin panel.
+
+## Fixed
+- Fixed broken event manager handling in some admin controllers by adding proper null checks before emitting events.
+- Fixed an issue where unit tests were failing because the kernel was not booted or called in the test setup. Tests now correctly initialize the application kernel where needed.
+
+
 ## v0.0.4-Canary
 
 ### Added
@@ -28,7 +40,6 @@
 - Versioning system for featherpanel!
 - Added a dark logo option for support for fully white mode and dark mode!
 - Added a method so you can upload logs from the settings page. This allows admins to easily upload web and app logs to mclo.gs directly from the Settings UI for support and troubleshooting.
-
 
 ### Improved
 

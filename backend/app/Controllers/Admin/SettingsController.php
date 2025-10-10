@@ -391,14 +391,16 @@ class SettingsController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            SettingsEvent::onSettingsRetrieved(),
-            [
-                'settings' => $this->settings,
-                'categories' => $this->settingsCategories,
-                'organized_settings' => $organizedSettings,
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                SettingsEvent::onSettingsRetrieved(),
+                [
+                    'settings' => $this->settings,
+                    'categories' => $this->settingsCategories,
+                    'organized_settings' => $organizedSettings,
+                ]
+            );
+        }
 
         return ApiResponse::success([
             'settings' => $this->settings,
@@ -442,12 +444,14 @@ class SettingsController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            SettingsEvent::onSettingsByCategoryRetrieved(),
-            [
-                'categories' => $categories,
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                SettingsEvent::onSettingsByCategoryRetrieved(),
+                [
+                    'categories' => $categories,
+                ]
+            );
+        }
 
         return ApiResponse::success(['categories' => $categories], 'Categories fetched successfully', 200);
     }
@@ -499,14 +503,16 @@ class SettingsController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            SettingsEvent::onSettingsByCategoryRetrieved(),
-            [
-                'category' => $category,
-                'category_config' => $categoryConfig,
-                'settings' => $categorySettings,
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                SettingsEvent::onSettingsByCategoryRetrieved(),
+                [
+                    'category' => $category,
+                    'category_config' => $categoryConfig,
+                    'settings' => $categorySettings,
+                ]
+            );
+        }
 
         return ApiResponse::success([
             'category' => $categoryConfig,
@@ -551,13 +557,15 @@ class SettingsController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            SettingsEvent::onSettingRetrieved(),
-            [
-                'setting_name' => $setting,
-                'setting_data' => $this->settings[$setting],
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                SettingsEvent::onSettingRetrieved(),
+                [
+                    'setting_name' => $setting,
+                    'setting_data' => $this->settings[$setting],
+                ]
+            );
+        }
 
         return ApiResponse::success(['setting' => $this->settings[$setting]], 'Setting fetched successfully', 200);
     }
@@ -631,14 +639,16 @@ class SettingsController
 
             // Emit event
             global $eventManager;
-            $eventManager->emit(
-                SettingsEvent::onSettingsUpdated(),
-                [
-                    'updated_settings' => $updatedSettings,
-                    'settings_data' => $data,
-                    'user' => $request->get('user'),
-                ]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    SettingsEvent::onSettingsUpdated(),
+                    [
+                        'updated_settings' => $updatedSettings,
+                        'settings_data' => $data,
+                        'user' => $request->get('user'),
+                    ]
+                );
+            }
         }
 
         return ApiResponse::success([

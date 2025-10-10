@@ -276,13 +276,15 @@ class PermissionsController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            PermissionsEvent::onPermissionCreated(),
-            [
-                'permission' => $permission,
-                'created_by' => $admin,
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                PermissionsEvent::onPermissionCreated(),
+                [
+                    'permission' => $permission,
+                    'created_by' => $admin,
+                ]
+            );
+        }
 
         return ApiResponse::success(['permission' => $permission], 'Permission created successfully', 201);
     }
@@ -365,14 +367,16 @@ class PermissionsController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            PermissionsEvent::onPermissionUpdated(),
-            [
-                'permission' => $permission,
-                'updated_data' => $data,
-                'updated_by' => $admin,
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                PermissionsEvent::onPermissionUpdated(),
+                [
+                    'permission' => $permission,
+                    'updated_data' => $data,
+                    'updated_by' => $admin,
+                ]
+            );
+        }
 
         return ApiResponse::success(['permission' => $permission], 'Permission updated successfully', 200);
     }
@@ -429,13 +433,15 @@ class PermissionsController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            PermissionsEvent::onPermissionDeleted(),
-            [
-                'permission' => $permission,
-                'deleted_by' => $admin,
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                PermissionsEvent::onPermissionDeleted(),
+                [
+                    'permission' => $permission,
+                    'deleted_by' => $admin,
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Permission deleted successfully', 200);
     }

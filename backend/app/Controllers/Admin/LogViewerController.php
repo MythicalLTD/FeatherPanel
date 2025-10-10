@@ -17,6 +17,7 @@ use App\App;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Plugins\Events\Events\LogViewerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -153,6 +154,19 @@ class LogViewerController
 
             file_put_contents($logFile, '');
 
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    LogViewerEvent::onLogCleared(),
+                    [
+                        'log_type' => $logType,
+                        'log_file' => basename($logFile),
+                        'cleared_by' => $request->get('user'),
+                    ]
+                );
+            }
+
             return ApiResponse::success([], 'Logs cleared successfully', 200);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to clear logs: ' . $e->getMessage(), 500);
@@ -288,6 +302,18 @@ class LogViewerController
                     'success' => false,
                     'error' => 'App log file not found',
                 ];
+            }
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    LogViewerEvent::onLogsUploaded(),
+                    [
+                        'results' => $results,
+                        'uploaded_by' => $request->get('user'),
+                    ]
+                );
             }
 
             return ApiResponse::success($results, 'Logs uploaded successfully', 200);

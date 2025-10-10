@@ -20,6 +20,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\ImagesEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -313,6 +314,19 @@ class ImagesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ImagesEvent::onImageCreated(),
+                [
+                    'image_id' => $imageId,
+                    'image_data' => $data,
+                    'created_by' => $request->get('user'),
+                ]
+            );
+        }
+
         return ApiResponse::success(['image_id' => $imageId], 'Image created successfully', 201);
     }
 
@@ -558,6 +572,19 @@ class ImagesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ImagesEvent::onImageUpdated(),
+                [
+                    'image' => $image,
+                    'updated_data' => $data,
+                    'updated_by' => $request->get('user'),
+                ]
+            );
+        }
+
         return ApiResponse::success([], 'Image updated successfully', 200);
     }
 
@@ -611,6 +638,18 @@ class ImagesController
             'context' => 'Deleted image: ' . $image['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ImagesEvent::onImageDeleted(),
+                [
+                    'image' => $image,
+                    'deleted_by' => $request->get('user'),
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Image deleted successfully', 200);
     }

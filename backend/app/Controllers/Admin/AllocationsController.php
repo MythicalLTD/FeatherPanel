@@ -23,6 +23,7 @@ use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\AllocationsEvent;
 
 #[OA\Schema(
     schema: 'Allocation',
@@ -416,6 +417,19 @@ class AllocationsController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                AllocationsEvent::onAllocationCreated(),
+                [
+                    'allocations' => $createdAllocations,
+                    'created_count' => count($createdAllocations),
+                    'created_by' => $admin,
+                ]
+            );
+        }
+
         return ApiResponse::success([
             'allocations' => $createdAllocations,
             'created_count' => $createdCount,
@@ -563,6 +577,19 @@ class AllocationsController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                AllocationsEvent::onAllocationUpdated(),
+                [
+                    'allocation' => $allocation,
+                    'updated_data' => $data,
+                    'updated_by' => $admin,
+                ]
+            );
+        }
+
         return ApiResponse::success(['allocation' => $allocation], 'Allocation updated successfully', 200);
     }
 
@@ -618,6 +645,18 @@ class AllocationsController
             'context' => "Deleted allocation ID {$id} ({$allocation['ip']}:{$allocation['port']})",
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                AllocationsEvent::onAllocationDeleted(),
+                [
+                    'allocation' => $allocation,
+                    'deleted_by' => $admin,
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Allocation deleted successfully', 200);
     }

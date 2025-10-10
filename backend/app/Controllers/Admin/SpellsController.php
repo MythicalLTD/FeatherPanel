@@ -20,6 +20,7 @@ use App\Chat\SpellVariable;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\SpellsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -472,6 +473,18 @@ class SpellsController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                SpellsEvent::onSpellCreated(),
+                [
+                    'spell' => $spell,
+                    'created_by' => $admin,
+                ]
+            );
+        }
+
         return ApiResponse::success(['spell' => $spell], 'Spell created successfully', 201);
     }
 
@@ -598,6 +611,19 @@ class SpellsController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                SpellsEvent::onSpellUpdated(),
+                [
+                    'spell' => $spell,
+                    'updated_data' => $data,
+                    'updated_by' => $admin,
+                ]
+            );
+        }
+
         return ApiResponse::success(['spell' => $spell], 'Spell updated successfully', 200);
     }
 
@@ -665,6 +691,18 @@ class SpellsController
             'context' => 'Deleted spell: ' . $spell['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                SpellsEvent::onSpellDeleted(),
+                [
+                    'spell' => $spell,
+                    'deleted_by' => $admin,
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Spell deleted successfully', 200);
     }
@@ -1176,6 +1214,18 @@ class SpellsController
         }
         $var = SpellVariable::getVariableById($varId);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                SpellsEvent::onSpellVariableCreated(),
+                [
+                    'spell_id' => $spellId,
+                    'variable' => $var,
+                ]
+            );
+        }
+
         return ApiResponse::success(['variable' => $var], 'Variable created', 201);
     }
 
@@ -1230,6 +1280,18 @@ class SpellsController
         }
         $var = SpellVariable::getVariableById($id);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                SpellsEvent::onSpellVariableUpdated(),
+                [
+                    'variable' => $var,
+                    'updated_data' => $data,
+                ]
+            );
+        }
+
         return ApiResponse::success(['variable' => $var], 'Variable updated', 200);
     }
 
@@ -1272,6 +1334,17 @@ class SpellsController
         $success = SpellVariable::deleteVariable($id);
         if (!$success) {
             return ApiResponse::error('Failed to delete variable', 'VARIABLE_DELETE_FAILED', 400);
+        }
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                SpellsEvent::onSpellVariableDeleted(),
+                [
+                    'variable' => $var,
+                ]
+            );
         }
 
         return ApiResponse::success([], 'Variable deleted', 200);

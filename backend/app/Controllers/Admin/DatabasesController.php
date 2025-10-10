@@ -19,6 +19,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\DatabasesEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -357,6 +358,19 @@ class DatabasesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                DatabasesEvent::onDatabaseCreated(),
+                [
+                    'database_id' => $databaseId,
+                    'database_data' => $data,
+                    'created_by' => $request->get('user'),
+                ]
+            );
+        }
+
         return ApiResponse::success(['database_id' => $databaseId], 'Database created successfully', 201);
     }
 
@@ -473,6 +487,19 @@ class DatabasesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                DatabasesEvent::onDatabaseUpdated(),
+                [
+                    'database' => $database,
+                    'updated_data' => $data,
+                    'updated_by' => $request->get('user'),
+                ]
+            );
+        }
+
         return ApiResponse::success([], 'Database updated successfully', 200);
     }
 
@@ -527,6 +554,18 @@ class DatabasesController
             'context' => 'Deleted database ' . $database['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                DatabasesEvent::onDatabaseDeleted(),
+                [
+                    'database' => $database,
+                    'deleted_by' => $request->get('user'),
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Database deleted successfully', 200);
     }

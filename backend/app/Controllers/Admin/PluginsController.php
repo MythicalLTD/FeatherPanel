@@ -338,7 +338,7 @@ class PluginsController
             ]);
 
             // Emit event if event manager is available
-            if (isset($GLOBALS['eventManager'])) {
+            if (isset($GLOBALS['eventManager']) && $GLOBALS['eventManager'] !== null) {
                 $GLOBALS['eventManager']->emit('PluginsSettingsEvent::onPluginSettingUpdate', [
                     'identifier' => $identifier,
                     'key' => $key,
@@ -422,7 +422,7 @@ class PluginsController
             ]);
 
             // Emit event if event manager is available
-            if (isset($GLOBALS['eventManager'])) {
+            if (isset($GLOBALS['eventManager']) && $GLOBALS['eventManager'] !== null) {
                 $GLOBALS['eventManager']->emit('PluginsSettingsEvent::onPluginSettingDelete', [
                     'identifier' => $identifier,
                     'key' => $key,

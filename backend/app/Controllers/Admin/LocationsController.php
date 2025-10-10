@@ -276,13 +276,15 @@ class LocationsController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            LocationsEvent::onLocationCreated(),
-            [
-                'location' => $location,
-                'created_by' => $admin,
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                LocationsEvent::onLocationCreated(),
+                [
+                    'location' => $location,
+                    'created_by' => $admin,
+                ]
+            );
+        }
 
         return ApiResponse::success(['location' => $location], 'Location created successfully', 201);
     }
@@ -376,14 +378,16 @@ class LocationsController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            LocationsEvent::onLocationUpdated(),
-            [
-                'location' => $location,
-                'updated_data' => $data,
-                'updated_by' => $admin,
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                LocationsEvent::onLocationUpdated(),
+                [
+                    'location' => $location,
+                    'updated_data' => $data,
+                    'updated_by' => $admin,
+                ]
+            );
+        }
 
         return ApiResponse::success(['location' => $location], 'Location updated successfully', 200);
     }
@@ -446,13 +450,15 @@ class LocationsController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            LocationsEvent::onLocationDeleted(),
-            [
-                'location' => $location,
-                'deleted_by' => $admin,
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                LocationsEvent::onLocationDeleted(),
+                [
+                    'location' => $location,
+                    'deleted_by' => $admin,
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Location deleted successfully', 200);
     }

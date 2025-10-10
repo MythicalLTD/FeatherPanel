@@ -18,6 +18,7 @@ use App\Chat\Activity;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\RolesEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -266,6 +267,18 @@ class RolesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                RolesEvent::onRoleCreated(),
+                [
+                    'role' => $role,
+                    'created_by' => $admin,
+                ]
+            );
+        }
+
         return ApiResponse::success(['role' => $role], 'Role created successfully', 201);
     }
 
@@ -358,6 +371,19 @@ class RolesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                RolesEvent::onRoleUpdated(),
+                [
+                    'role' => $role,
+                    'updated_data' => $data,
+                    'updated_by' => $admin,
+                ]
+            );
+        }
+
         return ApiResponse::success(['role' => $role], 'Role updated successfully', 200);
     }
 
@@ -415,6 +441,18 @@ class RolesController
             'context' => 'Deleted role: ' . $role['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                RolesEvent::onRoleDeleted(),
+                [
+                    'role' => $role,
+                    'deleted_by' => $admin,
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Role deleted successfully', 200);
     }

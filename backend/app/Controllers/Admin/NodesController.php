@@ -20,6 +20,7 @@ use App\Chat\Location;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\NodesEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -271,6 +272,18 @@ class NodesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                NodesEvent::onNodeCreated(),
+                [
+                    'node' => $node,
+                    'created_by' => $admin,
+                ]
+            );
+        }
+
         return ApiResponse::success(['node' => $node], 'Node created successfully', 201);
     }
 
@@ -352,6 +365,19 @@ class NodesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                NodesEvent::onNodeUpdated(),
+                [
+                    'node' => $node,
+                    'updated_data' => $data,
+                    'updated_by' => $admin,
+                ]
+            );
+        }
+
         return ApiResponse::success(['node' => $node], 'Node updated successfully', 200);
     }
 
@@ -408,6 +434,18 @@ class NodesController
             'context' => 'Deleted node: ' . $node['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                NodesEvent::onNodeDeleted(),
+                [
+                    'node' => $node,
+                    'deleted_by' => $admin,
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Node deleted successfully', 200);
     }

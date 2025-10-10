@@ -17,6 +17,7 @@ use App\App;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
+use App\Plugins\Events\Events\ConsoleEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -145,6 +146,21 @@ class ConsoleController
                 ];
             } else {
                 return ApiResponse::error('Failed to execute command', 500);
+            }
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ConsoleEvent::onCommandExecuted(),
+                    [
+                        'command' => $command,
+                        'working_directory' => $workingDirectory,
+                        'return_code' => $returnCode,
+                        'execution_time' => $executionTime,
+                        'executed_by' => $request->get('user'),
+                    ]
+                );
             }
 
             return ApiResponse::success($output, 'Command executed successfully', 200);

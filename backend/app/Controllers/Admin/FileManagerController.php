@@ -19,6 +19,7 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\FileManagerEvent;
 
 #[OA\Schema(
     schema: 'FileItem',
@@ -301,6 +302,19 @@ class FileManagerController
                 return ApiResponse::error('Failed to save file', 500);
             }
 
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    FileManagerEvent::onFileSaved(),
+                    [
+                        'path' => $path,
+                        'size' => $result,
+                        'saved_by' => $request->get('user'),
+                    ]
+                );
+            }
+
             return ApiResponse::success([
                 'path' => $path,
                 'size' => $result,
@@ -368,6 +382,19 @@ class FileManagerController
                 mkdir($fullPath, 0755);
             } else {
                 file_put_contents($fullPath, '');
+            }
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    FileManagerEvent::onFileCreated(),
+                    [
+                        'path' => $path,
+                        'is_directory' => $isDirectory,
+                        'created_by' => $request->get('user'),
+                    ]
+                );
             }
 
             return ApiResponse::success([
@@ -438,10 +465,25 @@ class FileManagerController
                 }
             }
 
-            if (is_dir($fullPath)) {
+            $isDirectory = is_dir($fullPath);
+
+            if ($isDirectory) {
                 $this->deleteDirectory($fullPath);
             } else {
                 unlink($fullPath);
+            }
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    FileManagerEvent::onFileDeleted(),
+                    [
+                        'path' => $path,
+                        'was_directory' => $isDirectory,
+                        'deleted_by' => $request->get('user'),
+                    ]
+                );
             }
 
             return ApiResponse::success([], 'File or directory deleted successfully', 200);

@@ -18,6 +18,7 @@ use App\Chat\Activity;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\RealmsEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -283,6 +284,18 @@ class RealmsController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                RealmsEvent::onRealmCreated(),
+                [
+                    'realm' => $realm,
+                    'created_by' => $admin,
+                ]
+            );
+        }
+
         return ApiResponse::success(['realm' => $realm], 'Realm created successfully', 201);
     }
 
@@ -381,6 +394,19 @@ class RealmsController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                RealmsEvent::onRealmUpdated(),
+                [
+                    'realm' => $realm,
+                    'updated_data' => $data,
+                    'updated_by' => $admin,
+                ]
+            );
+        }
+
         return ApiResponse::success(['realm' => $realm], 'Realm updated successfully', 200);
     }
 
@@ -452,6 +478,18 @@ class RealmsController
             'context' => 'Deleted realm: ' . $realm['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                RealmsEvent::onRealmDeleted(),
+                [
+                    'realm' => $realm,
+                    'deleted_by' => $admin,
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Realm deleted successfully', 200);
     }

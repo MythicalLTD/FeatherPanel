@@ -746,14 +746,16 @@ class ServersController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerCreated(),
-            [
-                'server_id' => $serverId,
-                'server_data' => $data,
-                'created_by' => $request->get('user'),
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerCreated(),
+                [
+                    'server_id' => $serverId,
+                    'server_data' => $data,
+                    'created_by' => $request->get('user'),
+                ]
+            );
+        }
 
         try {
             $allocation = Allocation::getAllocationById($data['allocation_id']);
@@ -1110,14 +1112,16 @@ class ServersController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerUpdated(),
-            [
-                'server' => $updatedServer,
-                'updated_data' => $data,
-                'updated_by' => $request->get('user'),
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerUpdated(),
+                [
+                    'server' => $updatedServer,
+                    'updated_data' => $data,
+                    'updated_by' => $request->get('user'),
+                ]
+            );
+        }
 
         return ApiResponse::success([
             'server' => [
@@ -1235,13 +1239,15 @@ class ServersController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerDeleted(),
-            [
-                'server' => $server,
-                'deleted_by' => $request->get('user'),
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerDeleted(),
+                [
+                    'server' => $server,
+                    'deleted_by' => $request->get('user'),
+                ]
+            );
+        }
 
         try {
             ServerDeleted::send([
@@ -1609,13 +1615,15 @@ class ServersController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerSuspended(),
-            [
-                'server' => $server,
-                'suspended_by' => $request->get('user'),
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerSuspended(),
+                [
+                    'server' => $server,
+                    'suspended_by' => $request->get('user'),
+                ]
+            );
+        }
 
         try {
             ServerBanned::send([
@@ -1693,13 +1701,15 @@ class ServersController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerUnsuspended(),
-            [
-                'server' => $server,
-                'unsuspended_by' => $request->get('user'),
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerUnsuspended(),
+                [
+                    'server' => $server,
+                    'unsuspended_by' => $request->get('user'),
+                ]
+            );
+        }
 
         try {
             ServerUnbanned::send([

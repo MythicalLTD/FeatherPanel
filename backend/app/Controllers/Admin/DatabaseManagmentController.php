@@ -18,6 +18,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\DatabaseManagementEvent;
 
 class DatabaseManagmentController
 {
@@ -197,6 +198,21 @@ class DatabaseManagmentController
             $lines[] = '   ⏭️  Skipped: ' . $skipped . ' migrations';
             $lines[] = '   ❌ Failed: ' . $failed . ' migrations';
             $lines[] = '   ⏱️  Total Time: ' . $totalTime . ' ms';
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    DatabaseManagementEvent::onMigrationsExecuted(),
+                    [
+                        'executed' => $executed,
+                        'skipped' => $skipped,
+                        'failed' => $failed,
+                        'total_time' => $totalTime,
+                        'executed_by' => $request->get('user'),
+                    ]
+                );
+            }
 
             return ApiResponse::success([
                 'exit_code' => $failed > 0 ? 1 : 0,

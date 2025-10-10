@@ -26,6 +26,7 @@ use App\Plugins\PluginDependencies;
 use App\Plugins\PluginRequiredConfigs;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\PluginManagerEvent;
 
 #[OA\Schema(
     schema: 'Plugin',
@@ -354,6 +355,19 @@ class PluginManagerController
             // Call plugin install hook if present (like PluginsController does)
             $this->callPluginInstallHook($pluginPath, $identifier, $className);
 
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    PluginManagerEvent::onPluginCreated(),
+                    [
+                        'identifier' => $identifier,
+                        'plugin_data' => $data,
+                        'created_by' => $request->get('user'),
+                    ]
+                );
+            }
+
             return ApiResponse::success([
                 'identifier' => $identifier,
                 'path' => $pluginPath,
@@ -478,6 +492,19 @@ class PluginManagerController
             // Save updated config
             $yamlContent = Yaml::dump($newConfig, 4, 2);
             file_put_contents($configPath, $yamlContent);
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    PluginManagerEvent::onPluginUpdated(),
+                    [
+                        'identifier' => $identifier,
+                        'updated_data' => $data,
+                        'updated_by' => $request->get('user'),
+                    ]
+                );
+            }
 
             return ApiResponse::success([
                 'identifier' => $identifier,
@@ -609,6 +636,19 @@ class PluginManagerController
             // Update each setting
             foreach ($data['settings'] as $key => $value) {
                 PluginSettings::setSetting($identifier, $key, $value);
+            }
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    PluginManagerEvent::onPluginSettingsUpdated(),
+                    [
+                        'identifier' => $identifier,
+                        'settings' => $data['settings'],
+                        'updated_by' => $request->get('user'),
+                    ]
+                );
             }
 
             return ApiResponse::success([
@@ -810,6 +850,20 @@ class PluginManagerController
             }
 
             if ($result['success']) {
+                // Emit event
+                global $eventManager;
+                if (isset($eventManager) && $eventManager !== null) {
+                    $eventManager->emit(
+                        PluginManagerEvent::onPluginFileCreated(),
+                        [
+                            'identifier' => $pluginId,
+                            'file_type' => $fileType,
+                            'file_data' => $result,
+                            'created_by' => $request->get('user'),
+                        ]
+                    );
+                }
+
                 return ApiResponse::success($result, ucfirst($fileType) . ' created successfully');
             }
 

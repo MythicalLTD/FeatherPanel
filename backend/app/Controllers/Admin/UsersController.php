@@ -471,14 +471,16 @@ class UsersController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            UserEvent::onUserCreated(),
-            [
-                'user' => $data,
-                'user_id' => $userId,
-                'created_by' => $request->get('user'),
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                UserEvent::onUserCreated(),
+                [
+                    'user' => $data,
+                    'user_id' => $userId,
+                    'created_by' => $request->get('user'),
+                ]
+            );
+        }
 
         return ApiResponse::success(['user_id' => $userId], 'User created successfully', 201);
     }
@@ -592,14 +594,16 @@ class UsersController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            UserEvent::onUserUpdated(),
-            [
-                'user' => $user,
-                'updated_data' => $data,
-                'updated_by' => $request->get('user'),
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                UserEvent::onUserUpdated(),
+                [
+                    'user' => $user,
+                    'updated_data' => $data,
+                    'updated_by' => $request->get('user'),
+                ]
+            );
+        }
 
         if (isset($data['banned'])) {
             if ($data['banned'] == 'true') {
@@ -693,13 +697,15 @@ class UsersController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            UserEvent::onUserDeleted(),
-            [
-                'user' => $user,
-                'deleted_by' => $request->get('user'),
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                UserEvent::onUserDeleted(),
+                [
+                    'user' => $user,
+                    'deleted_by' => $request->get('user'),
+                ]
+            );
+        }
 
         Activity::createActivity([
             'user_uuid' => $user['uuid'],
