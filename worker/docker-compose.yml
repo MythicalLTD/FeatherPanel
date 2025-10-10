@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  mail-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: featherpanel_mail_worker
+    restart: unless-stopped
+    environment:
+      - DATABASE_HOST=mysql
+      - DATABASE_PORT=3306
+      - DATABASE_NAME=${MARIADB_DATABASE:-featherpanel}
+      - DATABASE_USER=${MARIADB_USER:-featherpanel}
+      - DATABASE_PASSWORD=${MARIADB_PASSWORD:-featherpanel_password}
+      - WORKER_INTERVAL=60
+      - WORKER_MAX_RETRIES=3
+      - WORKER_RETRY_DELAY=2
+      - RUST_LOG=info
+    depends_on:
+      - mysql
+    networks:
+      - featherpanel_network
+
+networks:
+  featherpanel_network:
+    external: true

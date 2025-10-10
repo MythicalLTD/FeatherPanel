@@ -1,0 +1,33 @@
+[Unit]
+Description=FeatherPanel Mail Worker
+After=network.target mysql.service mariadb.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/featherpanel/worker
+Environment=RUST_LOG=info
+Environment=DATABASE_HOST=mysql
+Environment=DATABASE_PORT=3306
+Environment=DATABASE_NAME=featherpanel
+Environment=DATABASE_USER=featherpanel
+Environment=DATABASE_PASSWORD=featherpanel_password
+ExecStart=/var/www/featherpanel/worker/target/release/featherpanel-mail-worker
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=featherpanel-mail-worker
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/featherpanel/worker
+
+[Install]
+WantedBy=multi-user.target
+
