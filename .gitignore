@@ -8,3 +8,4 @@ dockerfiles/mariadb/data
 *.backup.*
 installer.log
 devlogs.log
+mysql/
