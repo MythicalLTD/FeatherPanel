@@ -30,6 +30,8 @@
 
 namespace App\Services\Wings\Utils;
 
+use App\App;
+
 /**
  * DNS Resolver utility class for handling DNS resolution with caching and fallback.
  */
@@ -90,7 +92,7 @@ class DnsResolver
                 }
             }
         } catch (\Exception $e) {
-            error_log("DNS resolution failed for {$hostname}: " . $e->getMessage());
+            App::getInstance(true)->getLogger()->error('DNS resolution failed for ' . $hostname . ': ' . $e->getMessage());
             $ip = null;
         }
 
@@ -133,7 +135,7 @@ class DnsResolver
                 }
             }
         } catch (\Exception $e) {
-            error_log("DNS resolution failed for {$hostname}: " . $e->getMessage());
+            App::getInstance(true)->getLogger()->error('DNS resolution failed for ' . $hostname . ': ' . $e->getMessage());
         }
 
         return array_unique($ips);

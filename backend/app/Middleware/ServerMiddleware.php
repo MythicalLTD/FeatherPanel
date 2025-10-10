@@ -135,7 +135,7 @@ class ServerMiddleware implements MiddlewareInterface
             return ServerGateway::canUserAccessServer($user['uuid'], $server['uuid']);
         } catch (\Exception $e) {
             // Log the error but deny access for security
-            error_log('Error checking server access: ' . $e->getMessage());
+            App::getInstance(true)->getLogger()->error('Error checking server access: ' . $e->getMessage());
 
             return false;
         }

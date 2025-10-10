@@ -514,21 +514,13 @@
                                     <code
                                         class="flex-1 p-3 bg-white dark:bg-gray-800 rounded-lg text-sm font-mono break-all border border-blue-200 dark:border-blue-700"
                                     >
-                                        mysql://{{ viewingDatabase.username }}:{{
-                                            showPassword ? viewingDatabase.password : '[password]'
-                                        }}@{{ viewingDatabase.database_host }}:{{ viewingDatabase.database_port }}/{{
-                                            viewingDatabase.database
-                                        }}
+                                        {{ getConnectionString(showPassword) }}
                                     </code>
                                     <Button
                                         variant="ghost"
                                         size="sm"
                                         class="h-10 w-10 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
-                                        @click="
-                                            copyToClipboard(
-                                                `mysql://${viewingDatabase.username}:${viewingDatabase.password}@${viewingDatabase.database_host}:${viewingDatabase.database_port}/${viewingDatabase.database}`,
-                                            )
-                                        "
+                                        @click="copyToClipboard(getConnectionString(true))"
                                     >
                                         <Copy class="h-4 w-4" />
                                     </Button>
@@ -974,6 +966,24 @@ function copyToClipboard(text: string): void {
         .catch(() => {
             toast.error(t('common.failedToCopy'));
         });
+}
+
+function getConnectionString(includePassword: boolean): string {
+    if (!viewingDatabase.value) return '';
+
+    const db = viewingDatabase.value;
+    const password = includePassword ? db.password : '[password]';
+    const dbType = (db.database_type || 'mysql').toLowerCase();
+
+    switch (dbType) {
+        case 'mysql':
+        case 'mariadb':
+            return `mysql://${db.username}:${password}@${db.database_host}:${db.database_port}/${db.database}`;
+        case 'postgresql':
+            return `postgresql://${db.username}:${password}@${db.database_host}:${db.database_port}/${db.database}`;
+        default:
+            return `${dbType}://${db.username}:${password}@${db.database_host}:${db.database_port}/${db.database}`;
+    }
 }
 
 // Delete database

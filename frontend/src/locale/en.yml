@@ -536,7 +536,7 @@ serverLogs:
     logsDownloaded: 'Logs downloaded successfully'
     noLogsToDownload: 'No logs available to download'
     failedToFetchServer: 'Failed to fetch server details'
-    failedToFetchLogs: 'Failed to fetch server logs'
+    failedToFetchLogs: 'Logs are empty... Start the server to see logs.'
     failedToDownload: 'Failed to download logs'
 
 # Server Install Logs

@@ -30,6 +30,7 @@
 
 namespace App\Controllers\Admin;
 
+use App\App;
 use App\Chat\Realm;
 use App\Chat\Spell;
 use App\Chat\Activity;
@@ -1626,13 +1627,13 @@ class SpellsController
 
             if (!$match || !isset($match['latest_version']['download_url'])) {
                 // Log debug information for troubleshooting
-                error_log("Spell installation failed for identifier: $identifier");
+                App::getInstance(true)->getLogger()->error('Spell installation failed for identifier: ' . $identifier);
                 if (!$match) {
-                    error_log('No spell match found in registry');
+                    App::getInstance(true)->getLogger()->error('No spell match found in registry');
 
                     return ApiResponse::error("Spell '$identifier' not found in registry. Please check the spelling and try again.", 'SPELL_NOT_FOUND', 404);
                 }
-                error_log('Spell found but missing download URL: ' . json_encode($match));
+                App::getInstance(true)->getLogger()->error('Spell found but missing download URL: ' . json_encode($match));
 
                 return ApiResponse::error("Spell '$identifier' found but download URL is missing", 'SPELL_DOWNLOAD_URL_MISSING', 404);
 

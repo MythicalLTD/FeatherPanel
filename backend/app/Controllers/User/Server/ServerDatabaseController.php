@@ -374,6 +374,15 @@ class ServerDatabaseController
             return ApiResponse::error('Database host not found', 'DATABASE_HOST_NOT_FOUND', 404);
         }
 
+        // Check if database type is supported
+        if (!in_array($databaseHost['database_type'], ['mysql', 'mariadb', 'postgresql'])) {
+            return ApiResponse::error(
+                'Database type ' . $databaseHost['database_type'] . ' is not supported for user database creation.',
+                'UNSUPPORTED_DATABASE_TYPE',
+                400
+            );
+        }
+
         // Generate database name: s{server_id}_{database_name}
         $databaseName = 's' . $server['id'] . '_' . $body['database_name'];
 
@@ -846,40 +855,41 @@ class ServerDatabaseController
             ];
 
             // Handle different database types
-            $dsn = match ($databaseHost['database_type']) {
-                'mysql', 'mariadb' => "mysql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}",
-                'postgresql' => "pgsql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}",
-                'mongodb' => throw new \Exception('MongoDB database creation not implemented yet'),
-                'redis' => throw new \Exception('Redis database creation not implemented yet'),
-                default => throw new \Exception("Unsupported database type: {$databaseHost['database_type']}"),
-            };
+            switch ($databaseHost['database_type']) {
+                case 'mysql':
+                case 'mariadb':
+                    $dsn = "mysql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
+                    $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
 
-            $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
+                    // Create the database
+                    $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$databaseName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
-            // For MySQL/MariaDB
-            if (in_array($databaseHost['database_type'], ['mysql', 'mariadb'])) {
-                // Create the database
-                $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$databaseName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                    // Create the user
+                    $pdo->exec("CREATE USER IF NOT EXISTS '{$username}'@'%' IDENTIFIED BY '{$password}'");
 
-                // Create the user
-                $pdo->exec("CREATE USER IF NOT EXISTS '{$username}'@'%' IDENTIFIED BY '{$password}'");
+                    // Grant privileges to the user on the specific database
+                    $pdo->exec("GRANT ALL PRIVILEGES ON `{$databaseName}`.* TO '{$username}'@'%'");
 
-                // Grant privileges to the user on the specific database
-                $pdo->exec("GRANT ALL PRIVILEGES ON `{$databaseName}`.* TO '{$username}'@'%'");
+                    // Flush privileges
+                    $pdo->exec('FLUSH PRIVILEGES');
+                    break;
 
-                // Flush privileges
-                $pdo->exec('FLUSH PRIVILEGES');
-            }
-            // For PostgreSQL (if implemented in the future)
-            elseif ($databaseHost['database_type'] === 'postgresql') {
-                // Create the database
-                $pdo->exec("CREATE DATABASE \"{$databaseName}\" WITH ENCODING 'UTF8' LC_COLLATE='en_US.UTF-8' LC_CTYPE='en_US.UTF-8'");
+                case 'postgresql':
+                    $dsn = "pgsql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
+                    $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
 
-                // Create the user
-                $pdo->exec("CREATE USER \"{$username}\" WITH PASSWORD '{$password}'");
+                    // Create the database
+                    $pdo->exec("CREATE DATABASE \"{$databaseName}\" WITH ENCODING 'UTF8' LC_COLLATE='en_US.UTF-8' LC_CTYPE='en_US.UTF-8'");
 
-                // Grant privileges to the user on the specific database
-                $pdo->exec("GRANT ALL PRIVILEGES ON DATABASE \"{$databaseName}\" TO \"{$username}\"");
+                    // Create the user
+                    $pdo->exec("CREATE USER \"{$username}\" WITH PASSWORD '{$password}'");
+
+                    // Grant privileges to the user on the specific database
+                    $pdo->exec("GRANT ALL PRIVILEGES ON DATABASE \"{$databaseName}\" TO \"{$username}\"");
+                    break;
+
+                default:
+                    throw new \Exception("Unsupported database type: {$databaseHost['database_type']}");
             }
 
         } catch (\PDOException $e) {
@@ -906,40 +916,41 @@ class ServerDatabaseController
             ];
 
             // Handle different database types
-            $dsn = match ($databaseHost['database_type']) {
-                'mysql', 'mariadb' => "mysql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}",
-                'postgresql' => "pgsql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}",
-                'mongodb' => throw new \Exception('MongoDB database deletion not implemented yet'),
-                'redis' => throw new \Exception('Redis database deletion not implemented yet'),
-                default => throw new \Exception("Unsupported database type: {$databaseHost['database_type']}"),
-            };
+            switch ($databaseHost['database_type']) {
+                case 'mysql':
+                case 'mariadb':
+                    $dsn = "mysql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
+                    $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
 
-            $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
+                    // Revoke privileges from the user
+                    $pdo->exec("REVOKE ALL PRIVILEGES ON `{$databaseName}`.* FROM '{$username}'@'%'");
 
-            // For MySQL/MariaDB
-            if (in_array($databaseHost['database_type'], ['mysql', 'mariadb'])) {
-                // Revoke privileges from the user
-                $pdo->exec("REVOKE ALL PRIVILEGES ON `{$databaseName}`.* FROM '{$username}'@'%'");
+                    // Drop the user
+                    $pdo->exec("DROP USER IF EXISTS '{$username}'@'%'");
 
-                // Drop the user
-                $pdo->exec("DROP USER IF EXISTS '{$username}'@'%'");
+                    // Drop the database
+                    $pdo->exec("DROP DATABASE IF EXISTS `{$databaseName}`");
 
-                // Drop the database
-                $pdo->exec("DROP DATABASE IF EXISTS `{$databaseName}`");
+                    // Flush privileges
+                    $pdo->exec('FLUSH PRIVILEGES');
+                    break;
 
-                // Flush privileges
-                $pdo->exec('FLUSH PRIVILEGES');
-            }
-            // For PostgreSQL (if implemented in the future)
-            elseif ($databaseHost['database_type'] === 'postgresql') {
-                // Revoke privileges from the user
-                $pdo->exec("REVOKE ALL PRIVILEGES ON DATABASE \"{$databaseName}\" FROM \"{$username}\"");
+                case 'postgresql':
+                    $dsn = "pgsql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
+                    $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
 
-                // Drop the user
-                $pdo->exec("DROP USER IF EXISTS \"{$username}\"");
+                    // Revoke privileges from the user
+                    $pdo->exec("REVOKE ALL PRIVILEGES ON DATABASE \"{$databaseName}\" FROM \"{$username}\"");
 
-                // Drop the database
-                $pdo->exec("DROP DATABASE IF EXISTS \"{$databaseName}\"");
+                    // Drop the user
+                    $pdo->exec("DROP USER IF EXISTS \"{$username}\"");
+
+                    // Drop the database
+                    $pdo->exec("DROP DATABASE IF EXISTS \"{$databaseName}\"");
+                    break;
+
+                default:
+                    throw new \Exception("Unsupported database type: {$databaseHost['database_type']}");
             }
 
         } catch (\PDOException $e) {
@@ -959,28 +970,56 @@ class ServerDatabaseController
         $startTime = microtime(true);
 
         try {
-            // Connect directly to the external database host (not the panel's database)
+            switch ($databaseHost['database_type']) {
+                case 'mysql':
+                case 'mariadb':
+                    return $this->testPDOConnection(
+                        "mysql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}",
+                        $databaseHost['database_username'],
+                        $databaseHost['database_password'],
+                        $startTime
+                    );
+
+                case 'postgresql':
+                    return $this->testPDOConnection(
+                        "pgsql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}",
+                        $databaseHost['database_username'],
+                        $databaseHost['database_password'],
+                        $startTime
+                    );
+
+                default:
+                    return [
+                        'success' => false,
+                        'message' => "Unsupported database type: {$databaseHost['database_type']}",
+                    ];
+            }
+
+        } catch (\Exception $e) {
+            $endTime = microtime(true);
+            $responseTime = round(($endTime - $startTime) * 1000, 2);
+
+            return [
+                'success' => false,
+                'message' => 'Unexpected error: ' . $e->getMessage(),
+                'response_time' => $responseTime,
+            ];
+        }
+    }
+
+    private function testPDOConnection(string $dsn, string $username, string $password, float $startTime): array
+    {
+        try {
             $options = [
                 \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-                \PDO::ATTR_TIMEOUT => 10, // 10 second timeout
+                \PDO::ATTR_TIMEOUT => 10,
             ];
 
-            // Handle different database types
-            $dsn = match ($databaseHost['database_type']) {
-                'mysql', 'mariadb' => "mysql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}",
-                'postgresql' => "pgsql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}",
-                'mongodb' => throw new \Exception('MongoDB connection testing not implemented yet'),
-                'redis' => throw new \Exception('Redis connection testing not implemented yet'),
-                default => throw new \Exception("Unsupported database type: {$databaseHost['database_type']}"),
-            };
-
-            $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
-
-            // Test the connection with a simple query
+            $pdo = new \PDO($dsn, $username, $password, $options);
             $pdo->query('SELECT 1');
 
             $endTime = microtime(true);
-            $responseTime = round(($endTime - $startTime) * 1000, 2); // Convert to milliseconds
+            $responseTime = round(($endTime - $startTime) * 1000, 2);
 
             return [
                 'success' => true,
@@ -995,15 +1034,6 @@ class ServerDatabaseController
             return [
                 'success' => false,
                 'message' => 'Connection failed: ' . $e->getMessage(),
-                'response_time' => $responseTime,
-            ];
-        } catch (\Exception $e) {
-            $endTime = microtime(true);
-            $responseTime = round(($endTime - $startTime) * 1000, 2);
-
-            return [
-                'success' => false,
-                'message' => 'Unexpected error: ' . $e->getMessage(),
                 'response_time' => $responseTime,
             ];
         }

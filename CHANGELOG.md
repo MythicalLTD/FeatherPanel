@@ -16,7 +16,7 @@
 - Added initial `.cursor/rules/*` files, enabling extensive and fine-grained codebase navigation and enforcing coding standards across CLI commands, controllers, chat models, and routes for improved consistency and contributor onboarding.
 - Added "Pull file" support to the file manager, enabling users to pull/download files directly from remote URLs into the server. Manage and monitor remote downloads in real time from the Active Downloads panel.
 - Added automatic route indexing for plugins: Rather than requiring each plugin to register its own API routes during the app ready event, the route indexer now automatically discovers and loads routes from a `Routes` folder within each plugin. This simplifies plugin development—just place your route files in a `Routes` directory in your plugin, and they’ll be auto-registered without manual setup!
-
+- Added full support for PostgreSQL databases, enabling seamless integration and management alongside MySQL and MariaDB.
 
 ## Fixed
 
@@ -29,6 +29,10 @@
 ### Improved
 
 - Removed redundant double server permission check in server-related API endpoints. All authentication and permission checks are now solely handled by the server middleware, eliminating unnecessary duplicate verification and improving efficiency.
+- Migrated all legacy error_log instances to the centralized application logger, resulting in more consistent and effective error handling across the codebase.
+
+### Removed
+- Removed support for old MongoDB and Redis database types from the database manager, as these cannot be easily managed with user creation via host.
 
 ## v0.0.4-Canary
 
