@@ -9,6 +9,9 @@
 - Added a wide range of new plugin events for user and server operations, allowing plugins to hook into user actions and server management processes across the user areas.
 - License headers are now injected automatically in nearly every file as part of the build and linting process.
 - Switched license to MIT
+- Added a new `logs` CLI command that allows uploading logs from the command line for diagnostics and support.
+- Added a new `settings` CLI command to allow toggling settings directly from the command line for easy configuration management.
+- Added a new `users` CLI command for managing users from the CLI, including creating, updating, and deleting user accounts.
 
 ## Fixed
 
