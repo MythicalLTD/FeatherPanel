@@ -451,11 +451,10 @@ class RealmsController
                     ]
                 )
             ),
-            new OA\Response(response: 400, description: 'Bad request - Invalid realm ID'),
+            new OA\Response(response: 400, description: 'Bad request - Invalid realm ID or realm has spells assigned'),
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
             new OA\Response(response: 404, description: 'Realm not found'),
-            new OA\Response(response: 400, description: 'Bad request - Realm has spells assigned'),
             new OA\Response(response: 500, description: 'Internal server error - Failed to delete realm'),
         ]
     )]

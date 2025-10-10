@@ -30,6 +30,7 @@
 
 use App\App;
 use App\Permissions;
+use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use App\Controllers\Admin\RedirectLinksController;
 
@@ -51,8 +52,16 @@ return function ($routes) {
         $routes,
         'admin-redirect-links-show',
         '/api/admin/redirect-links/{id}',
-        function (Request $request, int $id) {
-            return (new RedirectLinksController())->show($request, $id);
+        function (Request $request, $id) {
+            if (is_array($id)) {
+                // take the first value if possible
+                $id = $id['id'] ?? array_values($id)[0];
+            }
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new RedirectLinksController())->show($request, (int) $id);
         },
         Permissions::ADMIN_REDIRECT_LINKS_VIEW,
         ['GET']
@@ -75,8 +84,15 @@ return function ($routes) {
         $routes,
         'admin-redirect-links-update',
         '/api/admin/redirect-links/{id}',
-        function (Request $request, int $id) {
-            return (new RedirectLinksController())->update($request, $id);
+        function (Request $request, $id) {
+            if (is_array($id)) {
+                $id = $id['id'] ?? array_values($id)[0];
+            }
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new RedirectLinksController())->update($request, (int) $id);
         },
         Permissions::ADMIN_REDIRECT_LINKS_EDIT,
         ['PATCH']
@@ -87,8 +103,15 @@ return function ($routes) {
         $routes,
         'admin-redirect-links-delete',
         '/api/admin/redirect-links/{id}',
-        function (Request $request, int $id) {
-            return (new RedirectLinksController())->delete($request, $id);
+        function (Request $request, $id) {
+            if (is_array($id)) {
+                $id = $id['id'] ?? array_values($id)[0];
+            }
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new RedirectLinksController())->delete($request, (int) $id);
         },
         Permissions::ADMIN_REDIRECT_LINKS_DELETE,
         ['DELETE']

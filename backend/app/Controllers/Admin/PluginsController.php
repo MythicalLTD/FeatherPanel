@@ -54,13 +54,13 @@ use Symfony\Component\HttpFoundation\Response;
             new OA\Property(property: 'author', type: 'array', items: new OA\Items(type: 'string'), description: 'Plugin authors'),
             new OA\Property(property: 'icon', type: 'string', description: 'Plugin icon URL'),
             new OA\Property(property: 'flags', type: 'array', items: new OA\Items(type: 'string'), description: 'Plugin flags'),
-            new OA\Property(property: 'dependencies', type: 'array', description: 'Plugin dependencies'),
+            new OA\Property(property: 'dependencies', type: 'array', items: new OA\Items(type: 'string'), description: 'Plugin dependencies'),
             new OA\Property(property: 'requiredConfigs', type: 'array', items: new OA\Items(type: 'string'), description: 'Required configuration keys'),
             new OA\Property(property: 'loaded', type: 'boolean', description: 'Whether plugin is loaded in memory'),
             new OA\Property(property: 'unmetDependencies', type: 'array', items: new OA\Items(type: 'string'), description: 'List of unmet dependencies'),
             new OA\Property(property: 'missingConfigs', type: 'array', items: new OA\Items(type: 'string'), description: 'List of missing required configurations'),
         ]),
-        new OA\Property(property: 'configSchema', type: 'array', description: 'Plugin configuration schema'),
+        new OA\Property(property: 'configSchema', type: 'array', items: new OA\Items(type: 'object'), description: 'Plugin configuration schema'),
     ]
 )]
 #[OA\Schema(
@@ -239,7 +239,7 @@ class PluginsController
                         new OA\Property(property: 'config', ref: '#/components/schemas/PluginInfo'),
                         new OA\Property(property: 'plugin', ref: '#/components/schemas/PluginInfo'),
                         new OA\Property(property: 'settings', type: 'object', additionalProperties: new OA\AdditionalProperties(type: 'string'), description: 'Plugin settings key-value pairs'),
-                        new OA\Property(property: 'configSchema', type: 'array', description: 'Plugin configuration schema'),
+                        new OA\Property(property: 'configSchema', type: 'array', items: new OA\Items(type: 'object'), description: 'Plugin configuration schema'),
                     ]
                 )
             ),
@@ -498,8 +498,7 @@ class PluginsController
             ),
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
-            new OA\Response(response: 500, description: 'Failed to fetch online addons or invalid response'),
-            new OA\Response(response: 500, description: 'Internal server error - Failed to fetch online addons'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to fetch online addons or invalid response'),
         ]
     )]
     public function onlineList(Request $request): Response
@@ -614,8 +613,7 @@ class PluginsController
             new OA\Response(response: 404, description: 'Package not found in registry'),
             new OA\Response(response: 409, description: 'Conflict - Addon already installed'),
             new OA\Response(response: 422, description: 'Unprocessable Entity - Failed to extract addon package or migrations failed'),
-            new OA\Response(response: 500, description: 'Internal server error - Failed to install addon'),
-            new OA\Response(response: 500, description: 'Failed to download addon or packages API unavailable'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to install addon or download failed'),
         ]
     )]
     public function onlineInstall(Request $request): Response
@@ -955,8 +953,7 @@ class PluginsController
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
             new OA\Response(response: 409, description: 'Conflict - Addon already installed'),
             new OA\Response(response: 422, description: 'Unprocessable Entity - Failed to extract addon package or migrations failed'),
-            new OA\Response(response: 500, description: 'Internal server error - Failed to install addon'),
-            new OA\Response(response: 500, description: 'Failed to download file from URL'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to install addon or download file from URL'),
         ]
     )]
     public function uploadInstallFromUrl(Request $request): Response

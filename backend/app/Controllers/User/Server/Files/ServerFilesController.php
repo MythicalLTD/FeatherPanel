@@ -42,7 +42,7 @@ use Symfony\Component\HttpFoundation\Response;
 use App\Plugins\Events\Events\ServerFilesEvent;
 
 #[OA\Schema(
-    schema: 'FileItem',
+    schema: 'ServerFileItem',
     type: 'object',
     properties: [
         new OA\Property(property: 'name', type: 'string', description: 'File or directory name'),
@@ -153,7 +153,7 @@ class ServerFilesController
                 description: 'Files retrieved successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'contents', type: 'array', items: new OA\Items(ref: '#/components/schemas/FileItem')),
+                        new OA\Property(property: 'contents', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServerFileItem')),
                     ]
                 )
             ),

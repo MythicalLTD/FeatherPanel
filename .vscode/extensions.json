@@ -26,6 +26,7 @@
     "antfu.vite",
     "vue.volar",
     "redhat.vscode-yaml",
-    "gruntfuggly.todo-tree"
+    "gruntfuggly.todo-tree",
+    "recca0120.vscode-phpunit"
   ]
 }

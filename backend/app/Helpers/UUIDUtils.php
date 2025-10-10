@@ -53,18 +53,21 @@ class UUIDUtils
     public static function generateV1(): string
     {
         $time = microtime(true) * 10000;
-        $timeHex = str_pad(dechex($time), 12, '0', STR_PAD_LEFT);
+        $timeHex = str_pad(dechex((int) $time), 16, '0', STR_PAD_LEFT);
         $node = bin2hex(random_bytes(6));
-        $clockSeq = bin2hex(random_bytes(2));
+        $clockSeq = random_bytes(2);
+
+        // Set variant bits (10xxxxxx in the first byte of clock_seq)
+        $clockSeq[0] = chr((ord($clockSeq[0]) & 0x3F) | 0x80);
+        $clockSeqHex = bin2hex($clockSeq);
 
         // Format: time_low-time_mid-time_hi_and_version-clock_seq_hi_and_reserved-clock_seq_low-node
         return sprintf(
-            '%08s-%04s-1%03s-%02s%02s-%012s',
-            substr($timeHex, 0, 8),
-            substr($timeHex, 8, 4),
-            substr($timeHex, 12, 3),
-            substr($clockSeq, 0, 2),
-            substr($clockSeq, 2, 2),
+            '%08s-%04s-1%03s-%04s-%012s',
+            substr($timeHex, 8, 8),  // time_low (last 32 bits)
+            substr($timeHex, 4, 4),  // time_mid
+            substr($timeHex, 1, 3),  // time_hi
+            $clockSeqHex,             // clock_seq (with variant bits)
             $node
         );
     }

@@ -139,7 +139,7 @@ use Symfony\Component\HttpFoundation\Response;
     ]
 )]
 #[OA\Schema(
-    schema: 'UserServer',
+    schema: 'AdminUserServer',
     type: 'object',
     properties: [
         new OA\Property(property: 'id', type: 'integer', description: 'Server ID'),
@@ -783,7 +783,7 @@ class UsersController
                 description: 'Owned servers retrieved successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'servers', type: 'array', items: new OA\Items(ref: '#/components/schemas/UserServer')),
+                        new OA\Property(property: 'servers', type: 'array', items: new OA\Items(ref: '#/components/schemas/AdminUserServer')),
                     ]
                 )
             ),
@@ -820,6 +820,20 @@ class UsersController
         tags: ['Admin - Users'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', description: 'User ID', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'User retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'user', ref: '#/components/schemas/User'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'User not found'),
         ]
     )]
     public function serverRequest(Request $request, int $id): Response

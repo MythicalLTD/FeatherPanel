@@ -89,7 +89,7 @@ use Symfony\Component\HttpFoundation\Response;
     ]
 )]
 #[OA\Schema(
-    schema: 'ServerPagination',
+    schema: 'UserServerPagination',
     type: 'object',
     properties: [
         new OA\Property(property: 'current_page', type: 'integer', description: 'Current page number'),
@@ -219,7 +219,7 @@ class ServerUserController
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'servers', type: 'array', items: new OA\Items(ref: '#/components/schemas/UserServer')),
-                        new OA\Property(property: 'pagination', ref: '#/components/schemas/ServerPagination'),
+                        new OA\Property(property: 'pagination', ref: '#/components/schemas/UserServerPagination'),
                         new OA\Property(property: 'search', ref: '#/components/schemas/ServerSearch'),
                     ]
                 )

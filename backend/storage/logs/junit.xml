@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="CLI Arguments" tests="189" assertions="380" errors="0" failures="0" skipped="0" time="18.545913">
+    <testsuite name="AllocationsControllerTest" file="/var/www/featherpanel/backend/tests/AllocationsControllerTest.php" tests="4" assertions="6" errors="0" failures="0" skipped="0" time="0.729507">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/AllocationsControllerTest.php" line="80" class="AllocationsControllerTest" classname="AllocationsControllerTest" assertions="2" time="0.188605"/>
+      <testcase name="testShowReturnsNotFoundForInvalidId" file="/var/www/featherpanel/backend/tests/AllocationsControllerTest.php" line="89" class="AllocationsControllerTest" classname="AllocationsControllerTest" assertions="2" time="0.182124"/>
+      <testcase name="testCreateValidationFails" file="/var/www/featherpanel/backend/tests/AllocationsControllerTest.php" line="98" class="AllocationsControllerTest" classname="AllocationsControllerTest" assertions="1" time="0.181434"/>
+      <testcase name="testCreateRequiresValidNode" file="/var/www/featherpanel/backend/tests/AllocationsControllerTest.php" line="106" class="AllocationsControllerTest" classname="AllocationsControllerTest" assertions="1" time="0.177344"/>
+    </testsuite>
+    <testsuite name="ConsoleControllerTest" file="/var/www/featherpanel/backend/tests/ConsoleControllerTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.178185">
+      <testcase name="testExecuteCommandReturnsMissingCommand" file="/var/www/featherpanel/backend/tests/ConsoleControllerTest.php" line="74" class="ConsoleControllerTest" classname="ConsoleControllerTest" assertions="1" time="0.178185"/>
+    </testsuite>
+    <testsuite name="CronTest" file="/var/www/featherpanel/backend/tests/Cron/CronTest.php" tests="12" assertions="18" errors="0" failures="0" skipped="0" time="0.003223">
+      <testcase name="testCronAcceptsValidIntervalFormats" file="/var/www/featherpanel/backend/tests/Cron/CronTest.php" line="67" class="CronTest" classname="CronTest" assertions="3" time="0.000692"/>
+      <testcase name="testCronThrowsExceptionForInvalidInterval" file="/var/www/featherpanel/backend/tests/Cron/CronTest.php" line="79" class="CronTest" classname="CronTest" assertions="2" time="0.000405"/>
+      <testcase name="testCronThrowsExceptionForInvalidTimeUnit" file="/var/www/featherpanel/backend/tests/Cron/CronTest.php" line="86" class="CronTest" classname="CronTest" assertions="1" time="0.000153"/>
+      <testcase name="testShouldRunReturnsTrueForFirstRun" file="/var/www/featherpanel/backend/tests/Cron/CronTest.php" line="92" class="CronTest" classname="CronTest" assertions="1" time="0.000127"/>
+      <testcase name="testShouldRunReturnsFalseAfterRecentRun" file="/var/www/featherpanel/backend/tests/Cron/CronTest.php" line="98" class="CronTest" classname="CronTest" assertions="1" time="0.000295"/>
+      <testcase name="testMarkAsRunCreatesTimestampFile" file="/var/www/featherpanel/backend/tests/Cron/CronTest.php" line="109" class="CronTest" classname="CronTest" assertions="1" time="0.000261"/>
+      <testcase name="testGetLastRunTimeReturnsNullForNeverRun" file="/var/www/featherpanel/backend/tests/Cron/CronTest.php" line="119" class="CronTest" classname="CronTest" assertions="1" time="0.000227"/>
+      <testcase name="testGetNextRunTimeReturnsCorrectTime" file="/var/www/featherpanel/backend/tests/Cron/CronTest.php" line="125" class="CronTest" classname="CronTest" assertions="1" time="0.000214"/>
+      <testcase name="testRunIfDueExecutesCallback" file="/var/www/featherpanel/backend/tests/Cron/CronTest.php" line="135" class="CronTest" classname="CronTest" assertions="2" time="0.000183"/>
+      <testcase name="testRunIfDueDoesNotExecuteIfNotDue" file="/var/www/featherpanel/backend/tests/Cron/CronTest.php" line="148" class="CronTest" classname="CronTest" assertions="2" time="0.000199"/>
+      <testcase name="testRunIfDueWithForceParameter" file="/var/www/featherpanel/backend/tests/Cron/CronTest.php" line="164" class="CronTest" classname="CronTest" assertions="2" time="0.000318"/>
+      <testcase name="testRunIfDueReturnsFalseOnException" file="/var/www/featherpanel/backend/tests/Cron/CronTest.php" line="180" class="CronTest" classname="CronTest" assertions="1" time="0.000149"/>
+    </testsuite>
+    <testsuite name="DatabaseManagmentControllerTest" file="/var/www/featherpanel/backend/tests/DatabaseManagmentControllerTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.177723">
+      <testcase name="testStatusReturnsSuccess" file="/var/www/featherpanel/backend/tests/DatabaseManagmentControllerTest.php" line="74" class="DatabaseManagmentControllerTest" classname="DatabaseManagmentControllerTest" assertions="1" time="0.177723"/>
+    </testsuite>
+    <testsuite name="DatabasesControllerTest" file="/var/www/featherpanel/backend/tests/DatabasesControllerTest.php" tests="3" assertions="5" errors="0" failures="0" skipped="0" time="0.532111">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/DatabasesControllerTest.php" line="74" class="DatabasesControllerTest" classname="DatabasesControllerTest" assertions="2" time="0.178749"/>
+      <testcase name="testShowReturnsNotFoundForInvalidId" file="/var/www/featherpanel/backend/tests/DatabasesControllerTest.php" line="83" class="DatabasesControllerTest" classname="DatabasesControllerTest" assertions="2" time="0.176767"/>
+      <testcase name="testCreateValidationFails" file="/var/www/featherpanel/backend/tests/DatabasesControllerTest.php" line="92" class="DatabasesControllerTest" classname="DatabasesControllerTest" assertions="1" time="0.176595"/>
+    </testsuite>
+    <testsuite name="FileManagerControllerTest" file="/var/www/featherpanel/backend/tests/FileManagerControllerTest.php" tests="2" assertions="4" errors="0" failures="0" skipped="0" time="0.357245">
+      <testcase name="testBrowseChecksPermissions" file="/var/www/featherpanel/backend/tests/FileManagerControllerTest.php" line="74" class="FileManagerControllerTest" classname="FileManagerControllerTest" assertions="2" time="0.179480"/>
+      <testcase name="testReadFileChecksPermissions" file="/var/www/featherpanel/backend/tests/FileManagerControllerTest.php" line="84" class="FileManagerControllerTest" classname="FileManagerControllerTest" assertions="2" time="0.177765"/>
+    </testsuite>
+    <testsuite name="HelloWorldTest" file="/var/www/featherpanel/backend/tests/HelloWorldTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.000135">
+      <testcase name="testHelloWorld" file="/var/www/featherpanel/backend/tests/HelloWorldTest.php" line="35" class="HelloWorldTest" classname="HelloWorldTest" assertions="1" time="0.000135"/>
+    </testsuite>
+    <testsuite name="ApiResponseTest" file="/var/www/featherpanel/backend/tests/Helpers/ApiResponseTest.php" tests="9" assertions="28" errors="0" failures="0" skipped="0" time="0.001130">
+      <testcase name="testSuccessReturnsCorrectStructure" file="/var/www/featherpanel/backend/tests/Helpers/ApiResponseTest.php" line="36" class="ApiResponseTest" classname="ApiResponseTest" assertions="6" time="0.000159"/>
+      <testcase name="testSuccessReturns200Status" file="/var/www/featherpanel/backend/tests/Helpers/ApiResponseTest.php" line="49" class="ApiResponseTest" classname="ApiResponseTest" assertions="1" time="0.000096"/>
+      <testcase name="testSuccessHasCorsHeaders" file="/var/www/featherpanel/backend/tests/Helpers/ApiResponseTest.php" line="55" class="ApiResponseTest" classname="ApiResponseTest" assertions="2" time="0.000087"/>
+      <testcase name="testErrorReturnsCorrectStructure" file="/var/www/featherpanel/backend/tests/Helpers/ApiResponseTest.php" line="62" class="ApiResponseTest" classname="ApiResponseTest" assertions="6" time="0.000098"/>
+      <testcase name="testErrorReturns400StatusByDefault" file="/var/www/featherpanel/backend/tests/Helpers/ApiResponseTest.php" line="75" class="ApiResponseTest" classname="ApiResponseTest" assertions="1" time="0.000106"/>
+      <testcase name="testErrorIncludesErrorsArray" file="/var/www/featherpanel/backend/tests/Helpers/ApiResponseTest.php" line="81" class="ApiResponseTest" classname="ApiResponseTest" assertions="5" time="0.000271"/>
+      <testcase name="testExceptionReturnsCorrectStructure" file="/var/www/featherpanel/backend/tests/Helpers/ApiResponseTest.php" line="93" class="ApiResponseTest" classname="ApiResponseTest" assertions="4" time="0.000114"/>
+      <testcase name="testExceptionReturns500Status" file="/var/www/featherpanel/backend/tests/Helpers/ApiResponseTest.php" line="104" class="ApiResponseTest" classname="ApiResponseTest" assertions="1" time="0.000100"/>
+      <testcase name="testSendManualResponseReturnsCustomData" file="/var/www/featherpanel/backend/tests/Helpers/ApiResponseTest.php" line="110" class="ApiResponseTest" classname="ApiResponseTest" assertions="2" time="0.000099"/>
+    </testsuite>
+    <testsuite name="ServerGatewayTest" file="/var/www/featherpanel/backend/tests/Helpers/ServerGatewayTest.php" tests="3" assertions="3" errors="0" failures="0" skipped="0" time="0.505901">
+      <testcase name="testCanUserAccessServerReturnsFalseForInvalidUser" file="/var/www/featherpanel/backend/tests/Helpers/ServerGatewayTest.php" line="71" class="ServerGatewayTest" classname="ServerGatewayTest" assertions="1" time="0.168951"/>
+      <testcase name="testCanUserAccessServerReturnsFalseForInvalidServer" file="/var/www/featherpanel/backend/tests/Helpers/ServerGatewayTest.php" line="77" class="ServerGatewayTest" classname="ServerGatewayTest" assertions="1" time="0.169131"/>
+      <testcase name="testCanUserAccessServerReturnsFalseWhenNoAccess" file="/var/www/featherpanel/backend/tests/Helpers/ServerGatewayTest.php" line="83" class="ServerGatewayTest" classname="ServerGatewayTest" assertions="1" time="0.167819"/>
+    </testsuite>
+    <testsuite name="UUIDUtilsTest" file="/var/www/featherpanel/backend/tests/Helpers/UUIDUtilsTest.php" tests="14" assertions="26" errors="0" failures="0" skipped="0" time="0.002355">
+      <testcase name="testGenerateV4ReturnsValidUUID" file="/var/www/featherpanel/backend/tests/Helpers/UUIDUtilsTest.php" line="36" class="UUIDUtilsTest" classname="UUIDUtilsTest" assertions="2" time="0.000446"/>
+      <testcase name="testGenerateV4ReturnsUniqueValues" file="/var/www/featherpanel/backend/tests/Helpers/UUIDUtilsTest.php" line="43" class="UUIDUtilsTest" classname="UUIDUtilsTest" assertions="1" time="0.000845"/>
+      <testcase name="testGenerateV4FollowsUUIDFormat" file="/var/www/featherpanel/backend/tests/Helpers/UUIDUtilsTest.php" line="50" class="UUIDUtilsTest" classname="UUIDUtilsTest" assertions="1" time="0.000174"/>
+      <testcase name="testGenerateV1ReturnsValidUUID" file="/var/www/featherpanel/backend/tests/Helpers/UUIDUtilsTest.php" line="57" class="UUIDUtilsTest" classname="UUIDUtilsTest" assertions="2" time="0.000132"/>
+      <testcase name="testIsValidReturnsTrueForValidUUID" file="/var/www/featherpanel/backend/tests/Helpers/UUIDUtilsTest.php" line="64" class="UUIDUtilsTest" classname="UUIDUtilsTest" assertions="1" time="0.000087"/>
+      <testcase name="testIsValidReturnsFalseForInvalidUUID" file="/var/www/featherpanel/backend/tests/Helpers/UUIDUtilsTest.php" line="70" class="UUIDUtilsTest" classname="UUIDUtilsTest" assertions="4" time="0.000078"/>
+      <testcase name="testIsValidWithVersionCheck" file="/var/www/featherpanel/backend/tests/Helpers/UUIDUtilsTest.php" line="78" class="UUIDUtilsTest" classname="UUIDUtilsTest" assertions="3" time="0.000076"/>
+      <testcase name="testGetVersionReturnsCorrectVersion" file="/var/www/featherpanel/backend/tests/Helpers/UUIDUtilsTest.php" line="86" class="UUIDUtilsTest" classname="UUIDUtilsTest" assertions="2" time="0.000099"/>
+      <testcase name="testGetVersionReturnsNullForInvalidUUID" file="/var/www/featherpanel/backend/tests/Helpers/UUIDUtilsTest.php" line="95" class="UUIDUtilsTest" classname="UUIDUtilsTest" assertions="3" time="0.000067"/>
+      <testcase name="testFormatReturnsFormattedUUID" file="/var/www/featherpanel/backend/tests/Helpers/UUIDUtilsTest.php" line="102" class="UUIDUtilsTest" classname="UUIDUtilsTest" assertions="1" time="0.000080"/>
+      <testcase name="testFormatHandlesUUIDWithBraces" file="/var/www/featherpanel/backend/tests/Helpers/UUIDUtilsTest.php" line="109" class="UUIDUtilsTest" classname="UUIDUtilsTest" assertions="1" time="0.000064"/>
+      <testcase name="testFormatHandlesUUIDWithParentheses" file="/var/www/featherpanel/backend/tests/Helpers/UUIDUtilsTest.php" line="116" class="UUIDUtilsTest" classname="UUIDUtilsTest" assertions="1" time="0.000082"/>
+      <testcase name="testFormatReturnsNullForInvalidUUID" file="/var/www/featherpanel/backend/tests/Helpers/UUIDUtilsTest.php" line="123" class="UUIDUtilsTest" classname="UUIDUtilsTest" assertions="3" time="0.000066"/>
+      <testcase name="testFormatHandlesUppercaseUUID" file="/var/www/featherpanel/backend/tests/Helpers/UUIDUtilsTest.php" line="130" class="UUIDUtilsTest" classname="UUIDUtilsTest" assertions="1" time="0.000059"/>
+    </testsuite>
+    <testsuite name="XChaCha20Test" file="/var/www/featherpanel/backend/tests/Helpers/XChaCha20Test.php" tests="8" assertions="14" errors="0" failures="0" skipped="0" time="0.000821">
+      <testcase name="testGenerateStrongKeyReturnsHashedKey" file="/var/www/featherpanel/backend/tests/Helpers/XChaCha20Test.php" line="36" class="XChaCha20Test" classname="XChaCha20Test" assertions="2" time="0.000228"/>
+      <testcase name="testGenerateStrongKeyReturnsRawKey" file="/var/www/featherpanel/backend/tests/Helpers/XChaCha20Test.php" line="44" class="XChaCha20Test" classname="XChaCha20Test" assertions="2" time="0.000073"/>
+      <testcase name="testCheckIfStrongKeyReturnsTrueForStrongKey" file="/var/www/featherpanel/backend/tests/Helpers/XChaCha20Test.php" line="51" class="XChaCha20Test" classname="XChaCha20Test" assertions="1" time="0.000068"/>
+      <testcase name="testCheckIfStrongKeyReturnsFalseForWeakKey" file="/var/www/featherpanel/backend/tests/Helpers/XChaCha20Test.php" line="57" class="XChaCha20Test" classname="XChaCha20Test" assertions="1" time="0.000066"/>
+      <testcase name="testEncryptAndDecryptWithHashedKey" file="/var/www/featherpanel/backend/tests/Helpers/XChaCha20Test.php" line="63" class="XChaCha20Test" classname="XChaCha20Test" assertions="2" time="0.000117"/>
+      <testcase name="testEncryptAndDecryptWithRawKey" file="/var/www/featherpanel/backend/tests/Helpers/XChaCha20Test.php" line="75" class="XChaCha20Test" classname="XChaCha20Test" assertions="2" time="0.000084"/>
+      <testcase name="testEncryptProducesDifferentCiphertexts" file="/var/www/featherpanel/backend/tests/Helpers/XChaCha20Test.php" line="87" class="XChaCha20Test" classname="XChaCha20Test" assertions="3" time="0.000100"/>
+      <testcase name="testEncryptedDataIsBase64Encoded" file="/var/www/featherpanel/backend/tests/Helpers/XChaCha20Test.php" line="103" class="XChaCha20Test" classname="XChaCha20Test" assertions="1" time="0.000085"/>
+    </testsuite>
+    <testsuite name="ImagesControllerTest" file="/var/www/featherpanel/backend/tests/ImagesControllerTest.php" tests="4" assertions="7" errors="0" failures="0" skipped="0" time="0.735279">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/ImagesControllerTest.php" line="74" class="ImagesControllerTest" classname="ImagesControllerTest" assertions="2" time="0.179941"/>
+      <testcase name="testShowReturnsNotFoundForInvalidId" file="/var/www/featherpanel/backend/tests/ImagesControllerTest.php" line="83" class="ImagesControllerTest" classname="ImagesControllerTest" assertions="2" time="0.177652"/>
+      <testcase name="testCreateValidationFails" file="/var/www/featherpanel/backend/tests/ImagesControllerTest.php" line="92" class="ImagesControllerTest" classname="ImagesControllerTest" assertions="2" time="0.177894"/>
+      <testcase name="testCreateValidatesUrl" file="/var/www/featherpanel/backend/tests/ImagesControllerTest.php" line="101" class="ImagesControllerTest" classname="ImagesControllerTest" assertions="1" time="0.199793"/>
+    </testsuite>
+    <testsuite name="LocationsControllerTest" file="/var/www/featherpanel/backend/tests/LocationsControllerTest.php" tests="4" assertions="11" errors="0" failures="0" skipped="0" time="0.753833">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/LocationsControllerTest.php" line="74" class="LocationsControllerTest" classname="LocationsControllerTest" assertions="2" time="0.177715"/>
+      <testcase name="testShowReturnsNotFoundForInvalidId" file="/var/www/featherpanel/backend/tests/LocationsControllerTest.php" line="83" class="LocationsControllerTest" classname="LocationsControllerTest" assertions="2" time="0.180314"/>
+      <testcase name="testCreateValidationFails" file="/var/www/featherpanel/backend/tests/LocationsControllerTest.php" line="92" class="LocationsControllerTest" classname="LocationsControllerTest" assertions="2" time="0.180846"/>
+      <testcase name="testCreateAndDeleteLocation" file="/var/www/featherpanel/backend/tests/LocationsControllerTest.php" line="101" class="LocationsControllerTest" classname="LocationsControllerTest" assertions="5" time="0.214958"/>
+    </testsuite>
+    <testsuite name="LogViewerControllerTest" file="/var/www/featherpanel/backend/tests/LogViewerControllerTest.php" tests="2" assertions="4" errors="0" failures="0" skipped="0" time="0.355767">
+      <testcase name="testGetLogsReturnsSuccess" file="/var/www/featherpanel/backend/tests/LogViewerControllerTest.php" line="74" class="LogViewerControllerTest" classname="LogViewerControllerTest" assertions="2" time="0.178009"/>
+      <testcase name="testGetLogFilesReturnsSuccess" file="/var/www/featherpanel/backend/tests/LogViewerControllerTest.php" line="83" class="LogViewerControllerTest" classname="LogViewerControllerTest" assertions="2" time="0.177758"/>
+    </testsuite>
+    <testsuite name="LoggerFactoryTest" file="/var/www/featherpanel/backend/tests/Logger/LoggerFactoryTest.php" tests="9" assertions="16" errors="0" failures="0" skipped="0" time="0.002549">
+      <testcase name="testLoggerCreatesLogFile" file="/var/www/featherpanel/backend/tests/Logger/LoggerFactoryTest.php" line="56" class="LoggerFactoryTest" classname="LoggerFactoryTest" assertions="1" time="0.000367"/>
+      <testcase name="testInfoWritesToLog" file="/var/www/featherpanel/backend/tests/Logger/LoggerFactoryTest.php" line="62" class="LoggerFactoryTest" classname="LoggerFactoryTest" assertions="2" time="0.000459"/>
+      <testcase name="testWarningWritesToLog" file="/var/www/featherpanel/backend/tests/Logger/LoggerFactoryTest.php" line="72" class="LoggerFactoryTest" classname="LoggerFactoryTest" assertions="2" time="0.000207"/>
+      <testcase name="testErrorWritesToLog" file="/var/www/featherpanel/backend/tests/Logger/LoggerFactoryTest.php" line="82" class="LoggerFactoryTest" classname="LoggerFactoryTest" assertions="2" time="0.000210"/>
+      <testcase name="testCriticalWritesToLog" file="/var/www/featherpanel/backend/tests/Logger/LoggerFactoryTest.php" line="92" class="LoggerFactoryTest" classname="LoggerFactoryTest" assertions="2" time="0.000201"/>
+      <testcase name="testDebugWritesToLogWhenDebugEnabled" file="/var/www/featherpanel/backend/tests/Logger/LoggerFactoryTest.php" line="102" class="LoggerFactoryTest" classname="LoggerFactoryTest" assertions="2" time="0.000189"/>
+      <testcase name="testGetLogsReturnsLogEntries" file="/var/www/featherpanel/backend/tests/Logger/LoggerFactoryTest.php" line="114" class="LoggerFactoryTest" classname="LoggerFactoryTest" assertions="3" time="0.000432"/>
+      <testcase name="testGetLogsFiltersDebugEntriesWhenNotWebServer" file="/var/www/featherpanel/backend/tests/Logger/LoggerFactoryTest.php" line="125" class="LoggerFactoryTest" classname="LoggerFactoryTest" assertions="1" time="0.000226"/>
+      <testcase name="testLogEntriesContainTimestamp" file="/var/www/featherpanel/backend/tests/Logger/LoggerFactoryTest.php" line="138" class="LoggerFactoryTest" classname="LoggerFactoryTest" assertions="1" time="0.000259"/>
+    </testsuite>
+    <testsuite name="MailTemplatesControllerTest" file="/var/www/featherpanel/backend/tests/MailTemplatesControllerTest.php" tests="4" assertions="7" errors="0" failures="0" skipped="0" time="0.735162">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/MailTemplatesControllerTest.php" line="74" class="MailTemplatesControllerTest" classname="MailTemplatesControllerTest" assertions="2" time="0.177912"/>
+      <testcase name="testShowReturnsNotFoundForInvalidId" file="/var/www/featherpanel/backend/tests/MailTemplatesControllerTest.php" line="83" class="MailTemplatesControllerTest" classname="MailTemplatesControllerTest" assertions="2" time="0.177186"/>
+      <testcase name="testCreateValidationFails" file="/var/www/featherpanel/backend/tests/MailTemplatesControllerTest.php" line="92" class="MailTemplatesControllerTest" classname="MailTemplatesControllerTest" assertions="2" time="0.181273"/>
+      <testcase name="testCreateWithValidData" file="/var/www/featherpanel/backend/tests/MailTemplatesControllerTest.php" line="101" class="MailTemplatesControllerTest" classname="MailTemplatesControllerTest" assertions="1" time="0.198790"/>
+    </testsuite>
+    <testsuite name="NodesControllerTest" file="/var/www/featherpanel/backend/tests/NodesControllerTest.php" tests="4" assertions="8" errors="0" failures="0" skipped="0" time="0.712233">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/NodesControllerTest.php" line="78" class="NodesControllerTest" classname="NodesControllerTest" assertions="3" time="0.178296"/>
+      <testcase name="testShowReturnsNotFoundForInvalidId" file="/var/www/featherpanel/backend/tests/NodesControllerTest.php" line="88" class="NodesControllerTest" classname="NodesControllerTest" assertions="2" time="0.177317"/>
+      <testcase name="testCreateValidationFails" file="/var/www/featherpanel/backend/tests/NodesControllerTest.php" line="97" class="NodesControllerTest" classname="NodesControllerTest" assertions="1" time="0.177911"/>
+      <testcase name="testCreateRequiresValidLocation" file="/var/www/featherpanel/backend/tests/NodesControllerTest.php" line="105" class="NodesControllerTest" classname="NodesControllerTest" assertions="2" time="0.178709"/>
+    </testsuite>
+    <testsuite name="PermissionsControllerTest" file="/var/www/featherpanel/backend/tests/PermissionsControllerTest.php" tests="4" assertions="11" errors="0" failures="0" skipped="0" time="0.788620">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/PermissionsControllerTest.php" line="93" class="PermissionsControllerTest" classname="PermissionsControllerTest" assertions="2" time="0.189284"/>
+      <testcase name="testShowReturnsNotFoundForInvalidId" file="/var/www/featherpanel/backend/tests/PermissionsControllerTest.php" line="102" class="PermissionsControllerTest" classname="PermissionsControllerTest" assertions="2" time="0.188632"/>
+      <testcase name="testCreateValidationFails" file="/var/www/featherpanel/backend/tests/PermissionsControllerTest.php" line="111" class="PermissionsControllerTest" classname="PermissionsControllerTest" assertions="2" time="0.186480"/>
+      <testcase name="testCreateAndDeletePermission" file="/var/www/featherpanel/backend/tests/PermissionsControllerTest.php" line="120" class="PermissionsControllerTest" classname="PermissionsControllerTest" assertions="5" time="0.224224"/>
+    </testsuite>
+    <testsuite name="PluginManagerControllerTest" file="/var/www/featherpanel/backend/tests/PluginManagerControllerTest.php" tests="2" assertions="3" errors="0" failures="0" skipped="0" time="0.366808">
+      <testcase name="testGetPluginsReturnsSuccess" file="/var/www/featherpanel/backend/tests/PluginManagerControllerTest.php" line="82" class="PluginManagerControllerTest" classname="PluginManagerControllerTest" assertions="1" time="0.188967"/>
+      <testcase name="testGetPluginDetailsReturnsErrorForInvalidPlugin" file="/var/www/featherpanel/backend/tests/PluginManagerControllerTest.php" line="97" class="PluginManagerControllerTest" classname="PluginManagerControllerTest" assertions="2" time="0.177841"/>
+    </testsuite>
+    <testsuite name="PluginConfigTest" file="/var/www/featherpanel/backend/tests/Plugins/PluginConfigTest.php" tests="7" assertions="20" errors="0" failures="0" skipped="0" time="0.001252">
+      <testcase name="testGetRequiredReturnsArray" file="/var/www/featherpanel/backend/tests/Plugins/PluginConfigTest.php" line="45" class="PluginConfigTest" classname="PluginConfigTest" assertions="2" time="0.000145"/>
+      <testcase name="testGetRequiredContainsExpectedFields" file="/var/www/featherpanel/backend/tests/Plugins/PluginConfigTest.php" line="52" class="PluginConfigTest" classname="PluginConfigTest" assertions="7" time="0.000110"/>
+      <testcase name="testIsValidIdentifierReturnsTrueForValidIdentifier" file="/var/www/featherpanel/backend/tests/Plugins/PluginConfigTest.php" line="64" class="PluginConfigTest" classname="PluginConfigTest" assertions="3" time="0.000278"/>
+      <testcase name="testIsValidIdentifierReturnsFalseForInvalidIdentifier" file="/var/www/featherpanel/backend/tests/Plugins/PluginConfigTest.php" line="71" class="PluginConfigTest" classname="PluginConfigTest" assertions="5" time="0.000227"/>
+      <testcase name="testIsConfigValidReturnsFalseForEmptyConfig" file="/var/www/featherpanel/backend/tests/Plugins/PluginConfigTest.php" line="80" class="PluginConfigTest" classname="PluginConfigTest" assertions="1" time="0.000105"/>
+      <testcase name="testIsConfigValidReturnsFalseForMissingRequiredFields" file="/var/www/featherpanel/backend/tests/Plugins/PluginConfigTest.php" line="86" class="PluginConfigTest" classname="PluginConfigTest" assertions="1" time="0.000107"/>
+      <testcase name="testIsConfigValidReturnsTrueForValidConfig" file="/var/www/featherpanel/backend/tests/Plugins/PluginConfigTest.php" line="98" class="PluginConfigTest" classname="PluginConfigTest" assertions="1" time="0.000280"/>
+    </testsuite>
+    <testsuite name="PluginDependenciesTest" file="/var/www/featherpanel/backend/tests/Plugins/PluginDependenciesTest.php" tests="5" assertions="7" errors="0" failures="0" skipped="0" time="0.000515">
+      <testcase name="testCheckDependenciesReturnsTrueForNoDependencies" file="/var/www/featherpanel/backend/tests/Plugins/PluginDependenciesTest.php" line="36" class="PluginDependenciesTest" classname="PluginDependenciesTest" assertions="1" time="0.000086"/>
+      <testcase name="testGetUnmetDependenciesReturnsArray" file="/var/www/featherpanel/backend/tests/Plugins/PluginDependenciesTest.php" line="47" class="PluginDependenciesTest" classname="PluginDependenciesTest" assertions="1" time="0.000075"/>
+      <testcase name="testGetUnmetDependenciesReturnsEmptyForNoDependencies" file="/var/www/featherpanel/backend/tests/Plugins/PluginDependenciesTest.php" line="58" class="PluginDependenciesTest" classname="PluginDependenciesTest" assertions="1" time="0.000069"/>
+      <testcase name="testGetUnmetDependenciesHandlesMissingDependenciesKey" file="/var/www/featherpanel/backend/tests/Plugins/PluginDependenciesTest.php" line="69" class="PluginDependenciesTest" classname="PluginDependenciesTest" assertions="2" time="0.000065"/>
+      <testcase name="testGetUnmetDependenciesDetectsUnmetPhpVersion" file="/var/www/featherpanel/backend/tests/Plugins/PluginDependenciesTest.php" line="79" class="PluginDependenciesTest" classname="PluginDependenciesTest" assertions="2" time="0.000219"/>
+    </testsuite>
+    <testsuite name="PluginEventsTest" file="/var/www/featherpanel/backend/tests/Plugins/PluginEventsTest.php" tests="8" assertions="10" errors="0" failures="0" skipped="0" time="0.000782">
+      <testcase name="testGetInstanceReturnsSingleton" file="/var/www/featherpanel/backend/tests/Plugins/PluginEventsTest.php" line="36" class="PluginEventsTest" classname="PluginEventsTest" assertions="2" time="0.000351"/>
+      <testcase name="testOnAddsListener" file="/var/www/featherpanel/backend/tests/Plugins/PluginEventsTest.php" line="45" class="PluginEventsTest" classname="PluginEventsTest" assertions="1" time="0.000068"/>
+      <testcase name="testOnAllowsChaining" file="/var/www/featherpanel/backend/tests/Plugins/PluginEventsTest.php" line="58" class="PluginEventsTest" classname="PluginEventsTest" assertions="1" time="0.000058"/>
+      <testcase name="testEmitCallsListeners" file="/var/www/featherpanel/backend/tests/Plugins/PluginEventsTest.php" line="69" class="PluginEventsTest" classname="PluginEventsTest" assertions="1" time="0.000061"/>
+      <testcase name="testEmitPassesDataToListeners" file="/var/www/featherpanel/backend/tests/Plugins/PluginEventsTest.php" line="87" class="PluginEventsTest" classname="PluginEventsTest" assertions="1" time="0.000061"/>
+      <testcase name="testEmitPassesMultipleArgumentsToListeners" file="/var/www/featherpanel/backend/tests/Plugins/PluginEventsTest.php" line="104" class="PluginEventsTest" classname="PluginEventsTest" assertions="1" time="0.000061"/>
+      <testcase name="testEmitDoesNothingForUnregisteredEvent" file="/var/www/featherpanel/backend/tests/Plugins/PluginEventsTest.php" line="118" class="PluginEventsTest" classname="PluginEventsTest" assertions="1" time="0.000057"/>
+      <testcase name="testRemoveListenerRemovesSpecificListener" file="/var/www/featherpanel/backend/tests/Plugins/PluginEventsTest.php" line="126" class="PluginEventsTest" classname="PluginEventsTest" assertions="2" time="0.000064"/>
+    </testsuite>
+    <testsuite name="PluginFlagsTest" file="/var/www/featherpanel/backend/tests/Plugins/PluginFlagsTest.php" tests="6" assertions="10" errors="0" failures="0" skipped="0" time="0.000655">
+      <testcase name="testGetFlagsReturnsArray" file="/var/www/featherpanel/backend/tests/Plugins/PluginFlagsTest.php" line="45" class="PluginFlagsTest" classname="PluginFlagsTest" assertions="2" time="0.000093"/>
+      <testcase name="testGetFlagsContainsExpectedFlags" file="/var/www/featherpanel/backend/tests/Plugins/PluginFlagsTest.php" line="52" class="PluginFlagsTest" classname="PluginFlagsTest" assertions="4" time="0.000077"/>
+      <testcase name="testValidFlagsReturnsTrueForValidFlag" file="/var/www/featherpanel/backend/tests/Plugins/PluginFlagsTest.php" line="61" class="PluginFlagsTest" classname="PluginFlagsTest" assertions="1" time="0.000132"/>
+      <testcase name="testValidFlagsReturnsTrueForMultipleValidFlags" file="/var/www/featherpanel/backend/tests/Plugins/PluginFlagsTest.php" line="67" class="PluginFlagsTest" classname="PluginFlagsTest" assertions="1" time="0.000118"/>
+      <testcase name="testValidFlagsReturnsFalseForInvalidFlags" file="/var/www/featherpanel/backend/tests/Plugins/PluginFlagsTest.php" line="73" class="PluginFlagsTest" classname="PluginFlagsTest" assertions="1" time="0.000113"/>
+      <testcase name="testValidFlagsReturnsFalseForEmptyArray" file="/var/www/featherpanel/backend/tests/Plugins/PluginFlagsTest.php" line="79" class="PluginFlagsTest" classname="PluginFlagsTest" assertions="1" time="0.000122"/>
+    </testsuite>
+    <testsuite name="PluginHelperTest" file="/var/www/featherpanel/backend/tests/Plugins/PluginHelperTest.php" tests="3" assertions="4" errors="0" failures="0" skipped="0" time="0.000373">
+      <testcase name="testGetPluginsDirReturnsDirectory" file="/var/www/featherpanel/backend/tests/Plugins/PluginHelperTest.php" line="48" class="PluginHelperTest" classname="PluginHelperTest" assertions="1" time="0.000098"/>
+      <testcase name="testGetPluginConfigReturnsEmptyForNonExistent" file="/var/www/featherpanel/backend/tests/Plugins/PluginHelperTest.php" line="55" class="PluginHelperTest" classname="PluginHelperTest" assertions="2" time="0.000153"/>
+      <testcase name="testGetPluginConfigReturnsArrayForValidPlugin" file="/var/www/featherpanel/backend/tests/Plugins/PluginHelperTest.php" line="62" class="PluginHelperTest" classname="PluginHelperTest" assertions="1" time="0.000122"/>
+    </testsuite>
+    <testsuite name="PluginRequiredConfigsTest" file="/var/www/featherpanel/backend/tests/Plugins/PluginRequiredConfigsTest.php" tests="4" assertions="5" errors="0" failures="0" skipped="0" time="0.000526">
+      <testcase name="testGetRequiredConfigsReturnsArray" file="/var/www/featherpanel/backend/tests/Plugins/PluginRequiredConfigsTest.php" line="48" class="PluginRequiredConfigsTest" classname="PluginRequiredConfigsTest" assertions="1" time="0.000135"/>
+      <testcase name="testGetRequiredConfigsReturnsEmptyForNonExistent" file="/var/www/featherpanel/backend/tests/Plugins/PluginRequiredConfigsTest.php" line="54" class="PluginRequiredConfigsTest" classname="PluginRequiredConfigsTest" assertions="2" time="0.000135"/>
+      <testcase name="testAreRequiredConfigsSetReturnsTrueForNoRequiredConfigs" file="/var/www/featherpanel/backend/tests/Plugins/PluginRequiredConfigsTest.php" line="61" class="PluginRequiredConfigsTest" classname="PluginRequiredConfigsTest" assertions="1" time="0.000127"/>
+      <testcase name="testAreRequiredConfigsSetHandlesErrors" file="/var/www/featherpanel/backend/tests/Plugins/PluginRequiredConfigsTest.php" line="68" class="PluginRequiredConfigsTest" classname="PluginRequiredConfigsTest" assertions="1" time="0.000129"/>
+    </testsuite>
+    <testsuite name="PluginSettingsTest" file="/var/www/featherpanel/backend/tests/Plugins/PluginSettingsTest.php" tests="6" assertions="7" errors="0" failures="0" skipped="0" time="0.062177">
+      <testcase name="testGetSettingsReturnsArray" file="/var/www/featherpanel/backend/tests/Plugins/PluginSettingsTest.php" line="58" class="PluginSettingsTest" classname="PluginSettingsTest" assertions="1" time="0.001163"/>
+      <testcase name="testSetAndGetSetting" file="/var/www/featherpanel/backend/tests/Plugins/PluginSettingsTest.php" line="64" class="PluginSettingsTest" classname="PluginSettingsTest" assertions="1" time="0.011358"/>
+      <testcase name="testSetSettingsWithArray" file="/var/www/featherpanel/backend/tests/Plugins/PluginSettingsTest.php" line="71" class="PluginSettingsTest" classname="PluginSettingsTest" assertions="1" time="0.015246"/>
+      <testcase name="testGetSettingReturnsNullForNonExistent" file="/var/www/featherpanel/backend/tests/Plugins/PluginSettingsTest.php" line="78" class="PluginSettingsTest" classname="PluginSettingsTest" assertions="1" time="0.001067"/>
+      <testcase name="testDeleteSettingsMarksSoftDelete" file="/var/www/featherpanel/backend/tests/Plugins/PluginSettingsTest.php" line="84" class="PluginSettingsTest" classname="PluginSettingsTest" assertions="1" time="0.011262"/>
+      <testcase name="testGetSettingsReturnsOnlyActiveSettings" file="/var/www/featherpanel/backend/tests/Plugins/PluginSettingsTest.php" line="94" class="PluginSettingsTest" classname="PluginSettingsTest" assertions="2" time="0.022081"/>
+    </testsuite>
+    <testsuite name="PluginsControllerTest" file="/var/www/featherpanel/backend/tests/PluginsControllerTest.php" tests="2" assertions="5" errors="0" failures="0" skipped="0" time="0.357384">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/PluginsControllerTest.php" line="91" class="PluginsControllerTest" classname="PluginsControllerTest" assertions="2" time="0.178943"/>
+      <testcase name="testIndexReturnsPluginsList" file="/var/www/featherpanel/backend/tests/PluginsControllerTest.php" line="100" class="PluginsControllerTest" classname="PluginsControllerTest" assertions="3" time="0.178441"/>
+    </testsuite>
+    <testsuite name="RealmsControllerTest" file="/var/www/featherpanel/backend/tests/RealmsControllerTest.php" tests="4" assertions="11" errors="0" failures="0" skipped="0" time="0.755063">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/RealmsControllerTest.php" line="74" class="RealmsControllerTest" classname="RealmsControllerTest" assertions="2" time="0.179625"/>
+      <testcase name="testShowReturnsNotFoundForInvalidId" file="/var/www/featherpanel/backend/tests/RealmsControllerTest.php" line="83" class="RealmsControllerTest" classname="RealmsControllerTest" assertions="2" time="0.181075"/>
+      <testcase name="testCreateValidationFails" file="/var/www/featherpanel/backend/tests/RealmsControllerTest.php" line="92" class="RealmsControllerTest" classname="RealmsControllerTest" assertions="2" time="0.180088"/>
+      <testcase name="testCreateAndDeleteRealm" file="/var/www/featherpanel/backend/tests/RealmsControllerTest.php" line="101" class="RealmsControllerTest" classname="RealmsControllerTest" assertions="5" time="0.214275"/>
+    </testsuite>
+    <testsuite name="RedirectLinksControllerTest" file="/var/www/featherpanel/backend/tests/RedirectLinksControllerTest.php" tests="4" assertions="7" errors="0" failures="0" skipped="0" time="0.736163">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/RedirectLinksControllerTest.php" line="74" class="RedirectLinksControllerTest" classname="RedirectLinksControllerTest" assertions="2" time="0.177745"/>
+      <testcase name="testShowReturnsNotFoundForInvalidId" file="/var/www/featherpanel/backend/tests/RedirectLinksControllerTest.php" line="83" class="RedirectLinksControllerTest" classname="RedirectLinksControllerTest" assertions="2" time="0.177302"/>
+      <testcase name="testCreateValidationFails" file="/var/www/featherpanel/backend/tests/RedirectLinksControllerTest.php" line="92" class="RedirectLinksControllerTest" classname="RedirectLinksControllerTest" assertions="2" time="0.176495"/>
+      <testcase name="testCreateWithValidData" file="/var/www/featherpanel/backend/tests/RedirectLinksControllerTest.php" line="101" class="RedirectLinksControllerTest" classname="RedirectLinksControllerTest" assertions="1" time="0.204621"/>
+    </testsuite>
+    <testsuite name="RolesControllerTest" file="/var/www/featherpanel/backend/tests/RolesControllerTest.php" tests="4" assertions="11" errors="0" failures="0" skipped="0" time="0.744635">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/RolesControllerTest.php" line="74" class="RolesControllerTest" classname="RolesControllerTest" assertions="2" time="0.178443"/>
+      <testcase name="testShowReturnsNotFoundForInvalidId" file="/var/www/featherpanel/backend/tests/RolesControllerTest.php" line="83" class="RolesControllerTest" classname="RolesControllerTest" assertions="2" time="0.177260"/>
+      <testcase name="testCreateValidationFails" file="/var/www/featherpanel/backend/tests/RolesControllerTest.php" line="92" class="RolesControllerTest" classname="RolesControllerTest" assertions="2" time="0.176945"/>
+      <testcase name="testCreateAndDeleteRole" file="/var/www/featherpanel/backend/tests/RolesControllerTest.php" line="101" class="RolesControllerTest" classname="RolesControllerTest" assertions="5" time="0.211987"/>
+    </testsuite>
+    <testsuite name="ServerActivitiesControllerTest" file="/var/www/featherpanel/backend/tests/ServerActivitiesControllerTest.php" tests="2" assertions="4" errors="0" failures="0" skipped="0" time="0.357405">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/ServerActivitiesControllerTest.php" line="74" class="ServerActivitiesControllerTest" classname="ServerActivitiesControllerTest" assertions="2" time="0.178482"/>
+      <testcase name="testByServerReturnsEmptyForInvalidId" file="/var/www/featherpanel/backend/tests/ServerActivitiesControllerTest.php" line="83" class="ServerActivitiesControllerTest" classname="ServerActivitiesControllerTest" assertions="2" time="0.178922"/>
+    </testsuite>
+    <testsuite name="ServersControllerTest" file="/var/www/featherpanel/backend/tests/ServersControllerTest.php" tests="3" assertions="5" errors="0" failures="0" skipped="0" time="0.543675">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/ServersControllerTest.php" line="74" class="ServersControllerTest" classname="ServersControllerTest" assertions="2" time="0.187717"/>
+      <testcase name="testShowReturnsNotFoundForInvalidId" file="/var/www/featherpanel/backend/tests/ServersControllerTest.php" line="83" class="ServersControllerTest" classname="ServersControllerTest" assertions="2" time="0.178663"/>
+      <testcase name="testCreateValidationFails" file="/var/www/featherpanel/backend/tests/ServersControllerTest.php" line="92" class="ServersControllerTest" classname="ServersControllerTest" assertions="1" time="0.177295"/>
+    </testsuite>
+    <testsuite name="SettingsControllerTest" file="/var/www/featherpanel/backend/tests/SettingsControllerTest.php" tests="2" assertions="4" errors="0" failures="0" skipped="0" time="0.357091">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/SettingsControllerTest.php" line="74" class="SettingsControllerTest" classname="SettingsControllerTest" assertions="2" time="0.178551"/>
+      <testcase name="testCategoriesReturnsSuccess" file="/var/www/featherpanel/backend/tests/SettingsControllerTest.php" line="83" class="SettingsControllerTest" classname="SettingsControllerTest" assertions="2" time="0.178540"/>
+    </testsuite>
+    <testsuite name="SpellsControllerTest" file="/var/www/featherpanel/backend/tests/SpellsControllerTest.php" tests="16" assertions="37" errors="0" failures="0" skipped="0" time="4.871830">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/SpellsControllerTest.php" line="99" class="SpellsControllerTest" classname="SpellsControllerTest" assertions="3" time="0.190360"/>
+      <testcase name="testIndexWithRealmFilter" file="/var/www/featherpanel/backend/tests/SpellsControllerTest.php" line="109" class="SpellsControllerTest" classname="SpellsControllerTest" assertions="2" time="0.201385"/>
+      <testcase name="testShowReturnsNotFoundForInvalidId" file="/var/www/featherpanel/backend/tests/SpellsControllerTest.php" line="118" class="SpellsControllerTest" classname="SpellsControllerTest" assertions="2" time="0.187370"/>
+      <testcase name="testCreateValidationFails" file="/var/www/featherpanel/backend/tests/SpellsControllerTest.php" line="127" class="SpellsControllerTest" classname="SpellsControllerTest" assertions="2" time="0.189468"/>
+      <testcase name="testCreateValidationFailsWithInvalidRealm" file="/var/www/featherpanel/backend/tests/SpellsControllerTest.php" line="136" class="SpellsControllerTest" classname="SpellsControllerTest" assertions="2" time="0.188691"/>
+      <testcase name="testCreateAndDeleteSpell" file="/var/www/featherpanel/backend/tests/SpellsControllerTest.php" line="150" class="SpellsControllerTest" classname="SpellsControllerTest" assertions="5" time="0.226396"/>
+      <testcase name="testCreateSpellWithJsonFields" file="/var/www/featherpanel/backend/tests/SpellsControllerTest.php" line="188" class="SpellsControllerTest" classname="SpellsControllerTest" assertions="1" time="0.206922"/>
+      <testcase name="testCreateSpellWithInvalidJson" file="/var/www/featherpanel/backend/tests/SpellsControllerTest.php" line="205" class="SpellsControllerTest" classname="SpellsControllerTest" assertions="2" time="0.191582"/>
+      <testcase name="testUpdateSpellValidationFails" file="/var/www/featherpanel/backend/tests/SpellsControllerTest.php" line="220" class="SpellsControllerTest" classname="SpellsControllerTest" assertions="2" time="0.213757"/>
+      <testcase name="testGetByRealm" file="/var/www/featherpanel/backend/tests/SpellsControllerTest.php" line="248" class="SpellsControllerTest" classname="SpellsControllerTest" assertions="3" time="0.191723"/>
+      <testcase name="testGetByRealmNotFound" file="/var/www/featherpanel/backend/tests/SpellsControllerTest.php" line="258" class="SpellsControllerTest" classname="SpellsControllerTest" assertions="2" time="0.188216"/>
+      <testcase name="testImportSpell" file="/var/www/featherpanel/backend/tests/SpellsControllerTest.php" line="267" class="SpellsControllerTest" classname="SpellsControllerTest" assertions="1" time="0.513665"/>
+      <testcase name="testImportSpellValidationFails" file="/var/www/featherpanel/backend/tests/SpellsControllerTest.php" line="328" class="SpellsControllerTest" classname="SpellsControllerTest" assertions="2" time="0.331139"/>
+      <testcase name="testListVariables" file="/var/www/featherpanel/backend/tests/SpellsControllerTest.php" line="338" class="SpellsControllerTest" classname="SpellsControllerTest" assertions="2" time="0.595055"/>
+      <testcase name="testCreateAndDeleteVariable" file="/var/www/featherpanel/backend/tests/SpellsControllerTest.php" line="365" class="SpellsControllerTest" classname="SpellsControllerTest" assertions="4" time="0.674602"/>
+      <testcase name="testCreateVariableValidationFails" file="/var/www/featherpanel/backend/tests/SpellsControllerTest.php" line="414" class="SpellsControllerTest" classname="SpellsControllerTest" assertions="2" time="0.581499"/>
+    </testsuite>
+    <testsuite name="ApiDocsTest" file="/var/www/featherpanel/backend/tests/System/ApiDocsTest.php" tests="3" assertions="7" errors="0" failures="0" skipped="0" time="1.850870">
+      <testcase name="testIndexReturnsValidJson" file="/var/www/featherpanel/backend/tests/System/ApiDocsTest.php" line="44" class="ApiDocsTest" classname="ApiDocsTest" assertions="2" time="0.604780"/>
+      <testcase name="testIndexReturnsOpenApiSpec" file="/var/www/featherpanel/backend/tests/System/ApiDocsTest.php" line="55" class="ApiDocsTest" classname="ApiDocsTest" assertions="4" time="0.591826"/>
+      <testcase name="testIndexReturns200Status" file="/var/www/featherpanel/backend/tests/System/ApiDocsTest.php" line="72" class="ApiDocsTest" classname="ApiDocsTest" assertions="1" time="0.654264"/>
+    </testsuite>
+    <testsuite name="PluginCssControllerTest" file="/var/www/featherpanel/backend/tests/System/PluginCssControllerTest.php" tests="3" assertions="5" errors="0" failures="0" skipped="0" time="0.000776">
+      <testcase name="testIndexReturnsCSS" file="/var/www/featherpanel/backend/tests/System/PluginCssControllerTest.php" line="44" class="PluginCssControllerTest" classname="PluginCssControllerTest" assertions="2" time="0.000368"/>
+      <testcase name="testIndexReturnsNoCacheHeaders" file="/var/www/featherpanel/backend/tests/System/PluginCssControllerTest.php" line="56" class="PluginCssControllerTest" classname="PluginCssControllerTest" assertions="2" time="0.000220"/>
+      <testcase name="testIndexReturnsValidCSSString" file="/var/www/featherpanel/backend/tests/System/PluginCssControllerTest.php" line="66" class="PluginCssControllerTest" classname="PluginCssControllerTest" assertions="1" time="0.000187"/>
+    </testsuite>
+    <testsuite name="PluginJsControllerTest" file="/var/www/featherpanel/backend/tests/System/PluginJsControllerTest.php" tests="3" assertions="5" errors="0" failures="0" skipped="0" time="0.000580">
+      <testcase name="testIndexReturnsJavaScript" file="/var/www/featherpanel/backend/tests/System/PluginJsControllerTest.php" line="44" class="PluginJsControllerTest" classname="PluginJsControllerTest" assertions="2" time="0.000214"/>
+      <testcase name="testIndexReturnsNoCacheHeaders" file="/var/www/featherpanel/backend/tests/System/PluginJsControllerTest.php" line="56" class="PluginJsControllerTest" classname="PluginJsControllerTest" assertions="2" time="0.000196"/>
+      <testcase name="testIndexReturnsValidJavaScriptString" file="/var/www/featherpanel/backend/tests/System/PluginJsControllerTest.php" line="66" class="PluginJsControllerTest" classname="PluginJsControllerTest" assertions="1" time="0.000170"/>
+    </testsuite>
+    <testsuite name="PluginSidebarControllerTest" file="/var/www/featherpanel/backend/tests/System/PluginSidebarControllerTest.php" tests="3" assertions="9" errors="0" failures="0" skipped="0" time="0.000553">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/System/PluginSidebarControllerTest.php" line="44" class="PluginSidebarControllerTest" classname="PluginSidebarControllerTest" assertions="2" time="0.000206"/>
+      <testcase name="testIndexReturnsSidebarStructure" file="/var/www/featherpanel/backend/tests/System/PluginSidebarControllerTest.php" line="54" class="PluginSidebarControllerTest" classname="PluginSidebarControllerTest" assertions="6" time="0.000172"/>
+      <testcase name="testIndexReturns200Status" file="/var/www/featherpanel/backend/tests/System/PluginSidebarControllerTest.php" line="73" class="PluginSidebarControllerTest" classname="PluginSidebarControllerTest" assertions="1" time="0.000175"/>
+    </testsuite>
+    <testsuite name="RedirectLinksTest" file="/var/www/featherpanel/backend/tests/System/RedirectLinksTest.php" tests="3" assertions="11" errors="0" failures="0" skipped="0" time="0.001919">
+      <testcase name="testGetAllReturnsSuccess" file="/var/www/featherpanel/backend/tests/System/RedirectLinksTest.php" line="47" class="RedirectLinksTest" classname="RedirectLinksTest" assertions="4" time="0.000763"/>
+      <testcase name="testGetBySlugReturnsNotFoundForInvalidSlug" file="/var/www/featherpanel/backend/tests/System/RedirectLinksTest.php" line="58" class="RedirectLinksTest" classname="RedirectLinksTest" assertions="2" time="0.000640"/>
+      <testcase name="testGetAllReturnsOnlyPublicData" file="/var/www/featherpanel/backend/tests/System/RedirectLinksTest.php" line="67" class="RedirectLinksTest" classname="RedirectLinksTest" assertions="5" time="0.000516"/>
+    </testsuite>
+    <testsuite name="SystemSettingsControllerTest" file="/var/www/featherpanel/backend/tests/System/SystemSettingsControllerTest.php" tests="3" assertions="10" errors="0" failures="0" skipped="0" time="0.001329">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/System/SystemSettingsControllerTest.php" line="67" class="SystemSettingsControllerTest" classname="SystemSettingsControllerTest" assertions="3" time="0.000698"/>
+      <testcase name="testIndexReturnsCoreInformation" file="/var/www/featherpanel/backend/tests/System/SystemSettingsControllerTest.php" line="77" class="SystemSettingsControllerTest" classname="SystemSettingsControllerTest" assertions="5" time="0.000319"/>
+      <testcase name="testIndexReturnsPublicSettingsOnly" file="/var/www/featherpanel/backend/tests/System/SystemSettingsControllerTest.php" line="93" class="SystemSettingsControllerTest" classname="SystemSettingsControllerTest" assertions="2" time="0.000312"/>
+    </testsuite>
+    <testsuite name="UsersControllerTest" file="/var/www/featherpanel/backend/tests/UsersControllerTest.php" tests="4" assertions="12" errors="0" failures="0" skipped="0" time="0.961771">
+      <testcase name="testIndexReturnsSuccess" file="/var/www/featherpanel/backend/tests/UsersControllerTest.php" line="75" class="UsersControllerTest" classname="UsersControllerTest" assertions="2" time="0.179074"/>
+      <testcase name="testShowReturnsNotFoundForInvalidUuid" file="/var/www/featherpanel/backend/tests/UsersControllerTest.php" line="84" class="UsersControllerTest" classname="UsersControllerTest" assertions="2" time="0.178909"/>
+      <testcase name="testCreateValidationFails" file="/var/www/featherpanel/backend/tests/UsersControllerTest.php" line="93" class="UsersControllerTest" classname="UsersControllerTest" assertions="2" time="0.178515"/>
+      <testcase name="testCreateAndDeleteUser" file="/var/www/featherpanel/backend/tests/UsersControllerTest.php" line="102" class="UsersControllerTest" classname="UsersControllerTest" assertions="6" time="0.425272"/>
+    </testsuite>
+  </testsuite>
+</testsuites>

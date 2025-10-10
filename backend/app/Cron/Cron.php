@@ -30,6 +30,8 @@
 
 namespace App\Cron;
 
+use App\App;
+
 class Cron
 {
     /**
@@ -145,8 +147,10 @@ class Cron
 
             return true;
         } catch (\Exception $e) {
-            // Log the error but don't mark as run
-            error_log("Cron job {$this->identifier} failed: " . $e->getMessage());
+            // Log the error but don't mark as run (skip logging in test environment)
+            if (!defined('PHPUNIT_RUNNING') || !PHPUNIT_RUNNING) {
+                App::getInstance(false, true)->getLogger()->error("Cron job {$this->identifier} failed: " . $e->getMessage());
+            }
 
             return false;
         }

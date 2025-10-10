@@ -37,7 +37,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 #[OA\Schema(
-    schema: 'RedirectLink',
+    schema: 'PublicRedirectLink',
     type: 'object',
     properties: [
         new OA\Property(property: 'slug', type: 'string', description: 'Redirect link slug'),
@@ -49,7 +49,7 @@ use Symfony\Component\HttpFoundation\Response;
     schema: 'RedirectLinksResponse',
     type: 'object',
     properties: [
-        new OA\Property(property: 'redirect_links', type: 'array', items: new OA\Items(ref: '#/components/schemas/RedirectLink')),
+        new OA\Property(property: 'redirect_links', type: 'array', items: new OA\Items(ref: '#/components/schemas/PublicRedirectLink')),
         new OA\Property(property: 'count', type: 'integer', description: 'Total number of redirect links'),
     ]
 )]
@@ -112,7 +112,7 @@ class RedirectLinks
                 description: 'Redirect link retrieved successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'redirect_link', ref: '#/components/schemas/RedirectLink'),
+                        new OA\Property(property: 'redirect_link', ref: '#/components/schemas/PublicRedirectLink'),
                     ]
                 )
             ),

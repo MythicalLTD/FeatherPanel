@@ -82,13 +82,13 @@ class LoginController
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'User logged in successfully',
-                content: new OA\JsonContent(ref: '#/components/schemas/LoginResponse')
-            ),
-            new OA\Response(
-                response: 401,
-                description: 'Two-factor authentication required',
-                content: new OA\JsonContent(ref: '#/components/schemas/TwoFactorRequiredResponse')
+                description: 'User logged in successfully or two-factor authentication required',
+                content: new OA\JsonContent(
+                    oneOf: [
+                        new OA\Schema(ref: '#/components/schemas/LoginResponse'),
+                        new OA\Schema(ref: '#/components/schemas/TwoFactorRequiredResponse'),
+                    ]
+                )
             ),
             new OA\Response(response: 400, description: 'Bad request - Missing required fields, invalid email format, Turnstile validation failed, or Turnstile keys not set'),
             new OA\Response(response: 401, description: 'Unauthorized - Email does not exist, user is banned, or invalid password'),

@@ -41,7 +41,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 #[OA\Schema(
-    schema: 'ServerActivity',
+    schema: 'UserServerActivity',
     type: 'object',
     properties: [
         new OA\Property(property: 'id', type: 'integer', description: 'Activity ID'),
@@ -109,7 +109,7 @@ class ServerActivityController
                 description: 'Server activities retrieved successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'activities', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServerActivity')),
+                        new OA\Property(property: 'activities', type: 'array', items: new OA\Items(ref: '#/components/schemas/UserServerActivity')),
                         new OA\Property(property: 'pagination', ref: '#/components/schemas/ActivityPagination'),
                     ]
                 )
@@ -197,7 +197,7 @@ class ServerActivityController
                 description: 'Recent server activities retrieved successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'activities', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServerActivity')),
+                        new OA\Property(property: 'activities', type: 'array', items: new OA\Items(ref: '#/components/schemas/UserServerActivity')),
                     ]
                 )
             ),
@@ -279,7 +279,7 @@ class ServerActivityController
                 description: 'Server activities retrieved successfully',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'activities', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServerActivity')),
+                        new OA\Property(property: 'activities', type: 'array', items: new OA\Items(ref: '#/components/schemas/UserServerActivity')),
                         new OA\Property(property: 'pagination', ref: '#/components/schemas/ActivityPagination'),
                     ]
                 )

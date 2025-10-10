@@ -57,7 +57,7 @@ use App\Plugins\Events\Events\PluginManagerEvent;
         new OA\Property(property: 'author', type: 'array', items: new OA\Items(type: 'string'), description: 'Plugin authors'),
         new OA\Property(property: 'icon', type: 'string', description: 'Plugin icon URL'),
         new OA\Property(property: 'flags', type: 'array', items: new OA\Items(type: 'string'), description: 'Plugin flags'),
-        new OA\Property(property: 'dependencies', type: 'array', description: 'Plugin dependencies'),
+        new OA\Property(property: 'dependencies', type: 'array', items: new OA\Items(type: 'string'), description: 'Plugin dependencies'),
         new OA\Property(property: 'requiredConfigs', type: 'array', items: new OA\Items(type: 'string'), description: 'Required configuration keys'),
         new OA\Property(property: 'status', type: 'string', description: 'Plugin status'),
         new OA\Property(property: 'dependencies_met', type: 'boolean', description: 'Whether dependencies are met'),
@@ -70,7 +70,7 @@ use App\Plugins\Events\Events\PluginManagerEvent;
             new OA\Property(property: 'modified', type: 'string', format: 'date-time'),
             new OA\Property(property: 'type', type: 'string'),
         ])),
-        new OA\Property(property: 'config', type: 'array', description: 'Plugin configuration schema'),
+        new OA\Property(property: 'config', type: 'array', items: new OA\Items(type: 'object'), description: 'Plugin configuration schema'),
     ]
 )]
 #[OA\Schema(
@@ -84,9 +84,9 @@ use App\Plugins\Events\Events\PluginManagerEvent;
         new OA\Property(property: 'version', type: 'string', description: 'Plugin version', default: '1.0.0'),
         new OA\Property(property: 'author', type: 'array', items: new OA\Items(type: 'string'), description: 'Plugin authors'),
         new OA\Property(property: 'flags', type: 'array', items: new OA\Items(type: 'string'), description: 'Plugin flags'),
-        new OA\Property(property: 'dependencies', type: 'array', description: 'Plugin dependencies'),
+        new OA\Property(property: 'dependencies', type: 'array', items: new OA\Items(type: 'string'), description: 'Plugin dependencies'),
         new OA\Property(property: 'requiredConfigs', type: 'array', items: new OA\Items(type: 'string'), description: 'Required configuration keys'),
-        new OA\Property(property: 'configSchema', type: 'array', description: 'Configuration schema'),
+        new OA\Property(property: 'configSchema', type: 'array', items: new OA\Items(type: 'object'), description: 'Configuration schema'),
     ]
 )]
 #[OA\Schema(
@@ -99,9 +99,9 @@ use App\Plugins\Events\Events\PluginManagerEvent;
         new OA\Property(property: 'target', type: 'string', description: 'Target FeatherPanel version'),
         new OA\Property(property: 'author', type: 'array', items: new OA\Items(type: 'string'), description: 'Plugin authors'),
         new OA\Property(property: 'flags', type: 'array', items: new OA\Items(type: 'string'), description: 'Plugin flags'),
-        new OA\Property(property: 'dependencies', type: 'array', description: 'Plugin dependencies'),
+        new OA\Property(property: 'dependencies', type: 'array', items: new OA\Items(type: 'string'), description: 'Plugin dependencies'),
         new OA\Property(property: 'requiredConfigs', type: 'array', items: new OA\Items(type: 'string'), description: 'Required configuration keys'),
-        new OA\Property(property: 'configSchema', type: 'array', description: 'Configuration schema'),
+        new OA\Property(property: 'configSchema', type: 'array', items: new OA\Items(type: 'object'), description: 'Configuration schema'),
     ]
 )]
 #[OA\Schema(

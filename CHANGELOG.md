@@ -12,12 +12,15 @@
 - Added a new `logs` CLI command that allows uploading logs from the command line for diagnostics and support.
 - Added a new `settings` CLI command to allow toggling settings directly from the command line for easy configuration management.
 - Added a new `users` CLI command for managing users from the CLI, including creating, updating, and deleting user accounts.
+- Added comprehensive unit tests for more core admin controllers.
 
 ## Fixed
 
 - Fixed broken event manager handling in some admin controllers by adding proper null checks before emitting events.
 - Fixed an issue where unit tests were failing because the kernel was not booted or called in the test setup. Tests now correctly initialize the application kernel where needed.
 - Fixed broken event manager handling in some user controllers by adding proper null checks before emitting events.
+- Fixed broken redirect link API endpoints where links could not be deleted, edited, or updated due to incorrect ID handling. All update and delete operations for redirect links now function as expected.
+- Resolved issues with API documentation schemas, ensuring the generated API docs are now fully accurate and up-to-date.
 
 ### Improved
 

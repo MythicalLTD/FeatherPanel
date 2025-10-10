@@ -37,7 +37,7 @@ class LoggerFactory
     public function __construct(string $logFile)
     {
         $this->logFile = $logFile;
-        if ($this->doesLogFileExist()) {
+        if (!$this->doesLogFileExist()) {
             $this->createLogFile();
         }
     }
