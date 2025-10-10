@@ -27,6 +27,7 @@ use App\Services\Wings\Services\Wings;
 use App\Plugins\Events\Events\ServerEvent;
 use App\Services\Wings\Services\JwtService;
 use Symfony\Component\HttpFoundation\Request;
+use App\Plugins\Events\Events\ServerUserEvent;
 use Symfony\Component\HttpFoundation\Response;
 
 #[OA\Schema(
@@ -816,10 +817,15 @@ class ServerUserController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerUpdated(),
-            ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid']]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerUserEvent::onServerUserUpdated(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'server_uuid' => $server['uuid'],
+                ]
+            );
+        }
 
         return ApiResponse::success([
             'server' => [
@@ -938,10 +944,15 @@ class ServerUserController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerReinstalled(),
-            ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid']]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerReinstalled(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'server_uuid' => $server['uuid'],
+                ]
+            );
+        }
 
         return ApiResponse::success([
             'server' => [
@@ -1037,10 +1048,15 @@ class ServerUserController
 
             // Emit event
             global $eventManager;
-            $eventManager->emit(
-                ServerEvent::onServerDeleted(),
-                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid']]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerUserEvent::onServerUserDeleted(),
+                    [
+                        'user_uuid' => $user['uuid'],
+                        'server_uuid' => $server['uuid'],
+                    ]
+                );
+            }
 
             return ApiResponse::success([], 'Server deleted successfully', 200);
         } catch (\Exception $e) {

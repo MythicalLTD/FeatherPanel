@@ -25,6 +25,7 @@ use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\ServerBackupEvent;
 
 #[OA\Schema(
     schema: 'Backup',
@@ -153,10 +154,6 @@ class ServerBackupController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get page and per_page from query parameters
         $page = max(1, (int) $request->query->get('page', 1));
         $perPage = max(1, min(100, (int) $request->query->get('per_page', 20)));
@@ -235,11 +232,6 @@ class ServerBackupController
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
-
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get backup info
         $backup = Backup::getBackupByUuid($backupUuid);
         if (!$backup) {
@@ -299,10 +291,6 @@ class ServerBackupController
         $server = Server::getServerByUuid($serverUuid);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
-
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
         }
 
         // Check backup limit
@@ -410,10 +398,16 @@ class ServerBackupController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerBackupCreated(),
-            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'backup_uuid' => $backupUuid]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerBackupEvent::onServerBackupCreated(),
+                [
+                    'user_uuid' => $request->get('user')['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'backup_uuid' => $backupUuid,
+                ]
+            );
+        }
 
         return ApiResponse::success([
             'id' => $backupId,
@@ -569,10 +563,16 @@ class ServerBackupController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerBackupRestored(),
-            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'backup_uuid' => $backupUuid]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerBackupEvent::onServerBackupRestored(),
+                [
+                    'user_uuid' => $request->get('user')['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'backup_uuid' => $backupUuid,
+                ]
+            );
+        }
 
         return ApiResponse::success(null, 'Backup restoration initiated successfully', 202);
     }
@@ -632,10 +632,6 @@ class ServerBackupController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get backup info
         $backup = Backup::getBackupByUuid($backupUuid);
         if (!$backup) {
@@ -665,10 +661,16 @@ class ServerBackupController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerBackupLocked(),
-            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'backup_uuid' => $backupUuid]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerBackupLocked(),
+                [
+                    'user_uuid' => $request->get('user')['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'backup_uuid' => $backupUuid,
+                ]
+            );
+        }
 
         return ApiResponse::success(null, 'Backup locked successfully', 200);
     }
@@ -728,10 +730,6 @@ class ServerBackupController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get backup info
         $backup = Backup::getBackupByUuid($backupUuid);
         if (!$backup) {
@@ -761,10 +759,16 @@ class ServerBackupController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerBackupUnlocked(),
-            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'backup_uuid' => $backupUuid]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerBackupUnlocked(),
+                [
+                    'user_uuid' => $request->get('user')['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'backup_uuid' => $backupUuid,
+                ]
+            );
+        }
 
         return ApiResponse::success(null, 'Backup unlocked successfully', 200);
     }
@@ -903,10 +907,16 @@ class ServerBackupController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerBackupDeleted(),
-            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'backup_uuid' => $backupUuid]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerBackupEvent::onServerBackupDeleted(),
+                [
+                    'user_uuid' => $request->get('user')['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'backup_uuid' => $backupUuid,
+                ]
+            );
+        }
 
         return ApiResponse::success(null, 'Backup deleted successfully');
     }
@@ -961,11 +971,6 @@ class ServerBackupController
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
-
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
 
         // Get backup info
         $backup = Backup::getBackupByUuid($backupUuid);

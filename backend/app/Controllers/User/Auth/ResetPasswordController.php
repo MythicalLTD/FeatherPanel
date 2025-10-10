@@ -109,14 +109,16 @@ class ResetPasswordController
             if ($userInfo == null) {
                 // Emit password reset failed event
                 global $eventManager;
-                $eventManager->emit(
-                    AuthEvent::onAuthPasswordResetFailed(),
-                    [
-                        'token' => $data['token'],
-                        'reason' => 'INVALID_TOKEN',
-                        'ip_address' => CloudFlareRealIP::getRealIP(),
-                    ]
-                );
+                if (isset($eventManager) && $eventManager !== null) {
+                    $eventManager->emit(
+                        AuthEvent::onAuthPasswordResetFailed(),
+                        [
+                            'token' => $data['token'],
+                            'reason' => 'INVALID_TOKEN',
+                            'ip_address' => CloudFlareRealIP::getRealIP(),
+                        ]
+                    );
+                }
 
                 return ApiResponse::error('Invalid token', 'INVALID_TOKEN');
             }
@@ -128,13 +130,17 @@ class ResetPasswordController
                     'context' => 'User reset password',
                     'ip_address' => CloudFlareRealIP::getRealIP(),
                 ]);
+
+                // Emit event
                 global $eventManager;
-                $eventManager->emit(
-                    AuthEvent::onAuthResetPasswordSuccess(),
-                    [
-                        'user' => $userInfo,
-                    ]
-                );
+                if (isset($eventManager) && $eventManager !== null) {
+                    $eventManager->emit(
+                        AuthEvent::onAuthResetPasswordSuccess(),
+                        [
+                            'user' => $userInfo,
+                        ]
+                    );
+                }
 
                 return ApiResponse::success(null, 'Password reset successfully', 200);
             }

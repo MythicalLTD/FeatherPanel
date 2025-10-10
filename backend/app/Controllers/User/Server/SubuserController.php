@@ -20,9 +20,9 @@ use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Helpers\ServerGateway;
-use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\ServerSubuserEvent;
 
 #[OA\Schema(
     schema: 'Subuser',
@@ -171,10 +171,6 @@ class SubuserController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get page and per_page from query parameters
         $page = max(1, (int) $request->query->get('page', 1));
         $perPage = max(1, min(100, (int) $request->query->get('per_page', 20)));
@@ -251,10 +247,6 @@ class SubuserController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get subuser info
         $subuser = Subuser::getSubuserById($subuserId);
         if (!$subuser) {
@@ -306,10 +298,6 @@ class SubuserController
         $server = Server::getServerByUuid($serverUuid);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
-
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
         }
 
         // Get request data
@@ -383,10 +371,16 @@ class SubuserController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerSubuserCreated(),
-            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'subuser_id' => $subuserId]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerSubuserEvent::onServerSubuserCreated(),
+                [
+                    'user_uuid' => $request->get('user')['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'subuser_id' => $subuserId,
+                ]
+            );
+        }
 
         return ApiResponse::success($subuser, 'Subuser created successfully', 201);
     }
@@ -437,10 +431,6 @@ class SubuserController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get subuser info
         $subuser = Subuser::getSubuserById($subuserId);
         if (!$subuser) {
@@ -486,10 +476,16 @@ class SubuserController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerSubuserUpdated(),
-            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'subuser_id' => $subuserId]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerSubuserEvent::onServerSubuserUpdated(),
+                [
+                    'user_uuid' => $request->get('user')['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'subuser_id' => $subuserId,
+                ]
+            );
+        }
 
         return ApiResponse::success($updatedSubuser, 'Subuser updated successfully');
     }
@@ -540,10 +536,6 @@ class SubuserController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get subuser info
         $subuser = Subuser::getSubuserById($subuserId);
         if (!$subuser) {
@@ -579,10 +571,16 @@ class SubuserController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerSubuserDeleted(),
-            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'subuser_id' => $subuserId]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerSubuserEvent::onServerSubuserDeleted(),
+                [
+                    'user_uuid' => $request->get('user')['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'subuser_id' => $subuserId,
+                ]
+            );
+        }
 
         return ApiResponse::success(null, 'Subuser deleted successfully');
     }
@@ -627,10 +625,6 @@ class SubuserController
         $server = Server::getServerByUuid($serverUuid);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
-
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
         }
 
         // Get subuser with details
@@ -686,10 +680,6 @@ class SubuserController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get subusers with details
         $subusers = Subuser::getSubusersWithDetailsByServerId($server['id']);
 
@@ -737,12 +727,6 @@ class SubuserController
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
-
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
-
         // Get search query
         $search = $request->query->get('search', '');
         if (empty($search)) {
@@ -818,11 +802,6 @@ class SubuserController
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
-
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
 
         return ApiResponse::success([
             'permissions' => ['*'],

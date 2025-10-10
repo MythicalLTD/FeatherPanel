@@ -166,12 +166,17 @@ class TwoFactorController
             'context' => '2FA enabled',
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
-        $eventManager->emit(
-            AuthEvent::onAuth2FAEnabled(),
-            [
-                'user' => $userInfo,
-            ]
-        );
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                AuthEvent::onAuth2FAEnabled(),
+                [
+                    'user' => $userInfo,
+                ]
+            );
+        }
 
         return ApiResponse::success($userInfo, 'Two factor authentication enabled', 200);
     }
@@ -213,12 +218,14 @@ class TwoFactorController
 
         // Emit 2FA setup event
         global $eventManager;
-        $eventManager->emit(
-            AuthEvent::onAuth2FASetup(),
-            [
-                'user' => $userInfo,
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                AuthEvent::onAuth2FASetup(),
+                [
+                    'user' => $userInfo,
+                ]
+            );
+        }
 
         return ApiResponse::success([
             'qr_code_url' => $qrCodeUrl,
@@ -263,13 +270,15 @@ class TwoFactorController
         if (!$google2fa->verifyKey($userInfo['two_fa_key'], $data['code'])) {
             // Emit 2FA failed event
             global $eventManager;
-            $eventManager->emit(
-                AuthEvent::onAuth2FAFailed(),
-                [
-                    'user' => $userInfo,
-                    'ip_address' => CloudFlareRealIP::getRealIP(),
-                ]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    AuthEvent::onAuth2FAFailed(),
+                    [
+                        'user' => $userInfo,
+                        'ip_address' => CloudFlareRealIP::getRealIP(),
+                    ]
+                );
+            }
 
             return ApiResponse::error('Invalid 2FA code', 'INVALID_CODE');
         }
@@ -284,19 +293,23 @@ class TwoFactorController
             'context' => '2FA verified, user logged in',
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit events
         global $eventManager;
-        $eventManager->emit(
-            AuthEvent::onAuth2FAVerified(),
-            [
-                'user' => $userInfo,
-            ]
-        );
-        $eventManager->emit(
-            AuthEvent::onAuthLoginSuccess(),
-            [
-                'user' => $userInfo,
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                AuthEvent::onAuth2FAVerified(),
+                [
+                    'user' => $userInfo,
+                ]
+            );
+            $eventManager->emit(
+                AuthEvent::onAuthLoginSuccess(),
+                [
+                    'user' => $userInfo,
+                ]
+            );
+        }
 
         return ApiResponse::success($userInfo, '2FA verified, user logged in', 200);
     }

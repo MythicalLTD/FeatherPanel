@@ -8,7 +8,7 @@ To test locally, please follow these improved and detailed steps:
 
     Ensure your server or development machine has the following installed:
 
-    - [Pelican Wings](https://pelican.dev/docs/wings/install) (if required for nodes)
+    - [FeatherWings](https://docs.mythical.systems/docs/featherpanel/welcome-featherwings) (if required for nodes)
 
     ```bash
     curl -sSL https://get.featherpanel.com/canary.sh | bash

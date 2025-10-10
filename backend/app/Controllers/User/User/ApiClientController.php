@@ -20,9 +20,9 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
-use App\Plugins\Events\Events\UserEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\UserApiClientEvent;
 
 #[OA\Schema(
     schema: 'ApiClient',
@@ -359,14 +359,17 @@ class ApiClientController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
         global $eventManager;
-        $eventManager->emit(
-            UserEvent::onUserApiKeyCreated(),
-            [
-                'user_uuid' => $user['uuid'],
-                'api_key_id' => $apiClientId,
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                UserApiClientEvent::onUserApiClientCreated(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'api_client' => $apiClient,
+                ]
+            );
+        }
 
         // Return the API client with keys (only on creation)
         return ApiResponse::success($apiClient, 'API client created successfully', 201);
@@ -469,14 +472,19 @@ class ApiClientController
             'context' => 'Updated API client: ' . $existingApiClient['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
         global $eventManager;
-        $eventManager->emit(
-            UserEvent::onUserApiKeyUpdated(),
-            [
-                'user_uuid' => $user['uuid'],
-                'api_key_id' => $id,
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                UserApiClientEvent::onUserApiClientUpdated(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'api_client' => $updatedApiClient,
+                    'updated_data' => $data,
+                ]
+            );
+        }
 
         return ApiResponse::success($updatedApiClient, 'API client updated successfully', 200);
     }
@@ -547,14 +555,17 @@ class ApiClientController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
         global $eventManager;
-        $eventManager->emit(
-            UserEvent::onUserApiKeyDeleted(),
-            [
-                'user_uuid' => $user['uuid'],
-                'api_key_id' => $id,
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                UserApiClientEvent::onUserApiClientDeleted(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'api_client' => $existingApiClient,
+                ]
+            );
+        }
 
         return ApiResponse::success(null, 'API client deleted successfully', 200);
     }
@@ -635,14 +646,18 @@ class ApiClientController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
         global $eventManager;
-        $eventManager->emit(
-            UserEvent::onUserApiKeyUpdated(),
-            [
-                'user_uuid' => $user['uuid'],
-                'api_key_id' => $id,
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                UserApiClientEvent::onUserApiClientUpdated(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'api_client' => $updatedApiClient,
+                    'action' => 'keys_regenerated',
+                ]
+            );
+        }
 
         return ApiResponse::success($updatedApiClient, 'API keys regenerated successfully', 200);
     }

@@ -147,30 +147,34 @@ class RegisterController
         if (User::getUserByUsername($data['username']) !== null) {
             // Emit registration failed event
             global $eventManager;
-            $eventManager->emit(
-                AuthEvent::onAuthRegistrationFailed(),
-                [
-                    'email' => $data['email'],
-                    'username' => $data['username'],
-                    'reason' => 'USERNAME_ALREADY_EXISTS',
-                    'ip_address' => CloudFlareRealIP::getRealIP(),
-                ]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    AuthEvent::onAuthRegistrationFailed(),
+                    [
+                        'email' => $data['email'],
+                        'username' => $data['username'],
+                        'reason' => 'USERNAME_ALREADY_EXISTS',
+                        'ip_address' => CloudFlareRealIP::getRealIP(),
+                    ]
+                );
+            }
 
             return ApiResponse::error('Username already exists', 'USERNAME_ALREADY_EXISTS');
         }
         if (User::getUserByEmail($data['email']) !== null) {
             // Emit registration failed event
             global $eventManager;
-            $eventManager->emit(
-                AuthEvent::onAuthRegistrationFailed(),
-                [
-                    'email' => $data['email'],
-                    'username' => $data['username'],
-                    'reason' => 'EMAIL_ALREADY_EXISTS',
-                    'ip_address' => CloudFlareRealIP::getRealIP(),
-                ]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    AuthEvent::onAuthRegistrationFailed(),
+                    [
+                        'email' => $data['email'],
+                        'username' => $data['username'],
+                        'reason' => 'EMAIL_ALREADY_EXISTS',
+                        'ip_address' => CloudFlareRealIP::getRealIP(),
+                    ]
+                );
+            }
 
             return ApiResponse::error('Email already exists', 'EMAIL_ALREADY_EXISTS');
         }
@@ -192,15 +196,17 @@ class RegisterController
         if ($user == false) {
             // Emit registration failed event
             global $eventManager;
-            $eventManager->emit(
-                AuthEvent::onAuthRegistrationFailed(),
-                [
-                    'email' => $data['email'],
-                    'username' => $data['username'],
-                    'reason' => 'FAILED_TO_CREATE_USER',
-                    'ip_address' => CloudFlareRealIP::getRealIP(),
-                ]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    AuthEvent::onAuthRegistrationFailed(),
+                    [
+                        'email' => $data['email'],
+                        'username' => $data['username'],
+                        'reason' => 'FAILED_TO_CREATE_USER',
+                        'ip_address' => CloudFlareRealIP::getRealIP(),
+                    ]
+                );
+            }
 
             return ApiResponse::error('Failed to create user', 'FAILED_TO_CREATE_USER');
         }
@@ -230,13 +236,17 @@ class RegisterController
             'context' => 'User registered',
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
         global $eventManager;
-        $eventManager->emit(
-            AuthEvent::onAuthRegisterSuccess(),
-            [
-                'user' => $userInfo,
-            ]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                AuthEvent::onAuthRegisterSuccess(),
+                [
+                    'user' => $userInfo,
+                ]
+            );
+        }
 
         // If user creation succeeds, return the user info
         return ApiResponse::success($userInfo, 'User registered successfully', 200);

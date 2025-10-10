@@ -199,11 +199,15 @@ class SessionController
         if (!$userQuery) {
             return ApiResponse::error('Failed to update user', 'FAILED_TO_UPDATE_USER', 500);
         }
+
+        // Emit event
         global $eventManager;
-        $eventManager->emit(
-            UserEvent::onUserUpdate(),
-            ['user_uuid' => $user['uuid']]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                UserEvent::onUserUpdate(),
+                ['user_uuid' => $user['uuid']]
+            );
+        }
 
         return ApiResponse::success($data, 'Session created', 200);
     }

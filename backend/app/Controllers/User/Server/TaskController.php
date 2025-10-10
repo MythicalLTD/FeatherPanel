@@ -22,6 +22,7 @@ use OpenApi\Attributes as OA;
 use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
+use App\Plugins\Events\Events\ServerTaskEvent;
 use Symfony\Component\HttpFoundation\Response;
 
 #[OA\Schema(
@@ -168,10 +169,6 @@ class TaskController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get schedule info and verify it belongs to this server
         $schedule = ServerSchedule::getScheduleById($scheduleId);
         if (!$schedule) {
@@ -261,10 +258,6 @@ class TaskController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get schedule info and verify it belongs to this server
         $schedule = ServerSchedule::getScheduleById($scheduleId);
         if (!$schedule) {
@@ -335,10 +328,6 @@ class TaskController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get schedule info and verify it belongs to this server
         $schedule = ServerSchedule::getScheduleById($scheduleId);
         if (!$schedule) {
@@ -403,10 +392,17 @@ class TaskController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerTaskCreated(),
-            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'schedule_id' => $scheduleId, 'task_id' => $taskId]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerTaskEvent::onServerTaskCreated(),
+                [
+                    'user_uuid' => $request->get('user')['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'schedule_id' => $scheduleId,
+                    'task_id' => $taskId,
+                ]
+            );
+        }
 
         return ApiResponse::success([
             'id' => $taskId,
@@ -472,10 +468,6 @@ class TaskController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get schedule info and verify it belongs to this server
         $schedule = ServerSchedule::getScheduleById($scheduleId);
         if (!$schedule) {
@@ -529,10 +521,17 @@ class TaskController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerTaskUpdated(),
-            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'schedule_id' => $scheduleId, 'task_id' => $taskId]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerTaskEvent::onServerTaskUpdated(),
+                [
+                    'user_uuid' => $request->get('user')['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'schedule_id' => $scheduleId,
+                    'task_id' => $taskId,
+                ]
+            );
+        }
 
         return ApiResponse::success(null, 'Task updated successfully', 200);
     }
@@ -594,10 +593,6 @@ class TaskController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get schedule info and verify it belongs to this server
         $schedule = ServerSchedule::getScheduleById($scheduleId);
         if (!$schedule) {
@@ -652,10 +647,17 @@ class TaskController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerTaskSequenceUpdated(),
-            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'schedule_id' => $scheduleId, 'task_id' => $taskId]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerTaskEvent::onServerTaskSequenceUpdated(),
+                [
+                    'user_uuid' => $request->get('user')['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'schedule_id' => $scheduleId,
+                    'task_id' => $taskId,
+                ]
+            );
+        }
 
         return ApiResponse::success(null, 'Task sequence updated successfully', 200);
     }
@@ -709,10 +711,6 @@ class TaskController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get schedule info and verify it belongs to this server
         $schedule = ServerSchedule::getScheduleById($scheduleId);
         if (!$schedule) {
@@ -758,10 +756,17 @@ class TaskController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerTaskStatusToggled(),
-            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'schedule_id' => $scheduleId, 'task_id' => $taskId]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerTaskStatusToggled(),
+                [
+                    'user_uuid' => $request->get('user')['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'schedule_id' => $scheduleId,
+                    'task_id' => $taskId,
+                ]
+            );
+        }
 
         return ApiResponse::success([
             'is_queued' => $newQueuedStatus ? 1 : 0,
@@ -822,11 +827,6 @@ class TaskController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
-
         // Get schedule info and verify it belongs to this server
         $schedule = ServerSchedule::getScheduleById($scheduleId);
         if (!$schedule) {
@@ -877,10 +877,17 @@ class TaskController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerTaskDeleted(),
-            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'schedule_id' => $scheduleId, 'task_id' => $taskId]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerTaskEvent::onServerTaskDeleted(),
+                [
+                    'user_uuid' => $request->get('user')['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'schedule_id' => $scheduleId,
+                    'task_id' => $taskId,
+                ]
+            );
+        }
 
         return ApiResponse::success(null, 'Task deleted successfully', 200);
     }
@@ -902,11 +909,6 @@ class TaskController
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
-
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
 
         // Get schedule info and verify it belongs to this server
         $schedule = ServerSchedule::getScheduleById($scheduleId);
@@ -978,11 +980,6 @@ class TaskController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
-
         // Get schedule info and verify it belongs to this server
         $schedule = ServerSchedule::getScheduleById($scheduleId);
         if (!$schedule) {
@@ -1037,11 +1034,6 @@ class TaskController
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
-
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
 
         // Get all schedules for this server
         $schedules = ServerSchedule::getSchedulesByServerId($server['id']);
@@ -1098,11 +1090,6 @@ class TaskController
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
-
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
 
         // Get all schedules for this server
         $schedules = ServerSchedule::getSchedulesByServerId($server['id']);

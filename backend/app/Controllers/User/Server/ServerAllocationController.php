@@ -19,10 +19,10 @@ use App\Chat\Server;
 use App\Chat\Allocation;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
-use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\ServerAllocationEvent;
 
 #[OA\Schema(
     schema: 'ServerAllocation',
@@ -130,11 +130,6 @@ class ServerAllocationController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        // Verify access via ServerGateway
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get server allocations
         $allocations = Allocation::getByServerId($serverId);
 
@@ -212,11 +207,6 @@ class ServerAllocationController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        // Verify access via ServerGateway
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get allocation details
         $allocation = Allocation::getById($allocationId);
         if (!$allocation) {
@@ -241,10 +231,16 @@ class ServerAllocationController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerAllocationDeleted(),
-            ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'allocation_id' => $allocationId]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerAllocationEvent::onServerAllocationDeleted(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'allocation_id' => $allocationId,
+                ]
+            );
+        }
 
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
@@ -346,11 +342,6 @@ class ServerAllocationController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        // Verify access via ServerGateway
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get allocation details
         $allocation = Allocation::getById($allocationId);
         if (!$allocation) {
@@ -370,10 +361,16 @@ class ServerAllocationController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerAllocationUpdated(),
-            ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'allocation_id' => $allocationId]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerAllocationEvent::onServerAllocationSetPrimary(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'allocation_id' => $allocationId,
+                ]
+            );
+        }
 
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
@@ -468,11 +465,6 @@ class ServerAllocationController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        // Verify access via ServerGateway
-        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Check allocation limit
         $currentAllocations = count(Allocation::getByServerId($serverId));
         $allocationLimit = (int) ($server['allocation_limit'] ?? 100);
@@ -554,10 +546,16 @@ class ServerAllocationController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerAllocationCreated(),
-            ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'allocation_id' => $updatedAllocation['id']]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerAllocationCreated(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'allocation_id' => $updatedAllocation['id'],
+                ]
+            );
+        }
 
         return ApiResponse::success([
             'assigned_allocation' => $updatedAllocation,

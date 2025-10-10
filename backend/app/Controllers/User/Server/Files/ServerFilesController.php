@@ -19,10 +19,10 @@ use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
-use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\ServerFilesEvent;
 
 #[OA\Schema(
     schema: 'FileItem',
@@ -153,9 +153,7 @@ class ServerFilesController
             $user = $this->validateUser($request);
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
-            if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
-                return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-            }
+
             $path = $this->getPathFromQuery();
 
             $wings = $this->createWingsConnection($node);
@@ -229,9 +227,7 @@ class ServerFilesController
             $user = $this->validateUser($request);
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
-            if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
-                return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-            }
+
             $path = $this->getPathFromQuery();
 
             $wings = $this->createWingsConnection($node);
@@ -325,9 +321,7 @@ class ServerFilesController
             $user = $this->validateUser($request);
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
-            if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
-                return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-            }
+
             $path = $this->getPathFromQuery();
 
             // Reject JSON bodies – file saves must be raw text/binary
@@ -360,10 +354,16 @@ class ServerFilesController
 
             // Emit event
             global $eventManager;
-            $eventManager->emit(
-                ServerEvent::onServerFileWritten(),
-                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'file_path' => $path]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerFilesEvent::onServerFileSaved(),
+                    [
+                        'user_uuid' => $user['uuid'],
+                        'server_uuid' => $server['uuid'],
+                        'file_path' => $path,
+                    ]
+                );
+            }
 
             return ApiResponse::success($response->getData(), 'File written successfully');
         } catch (\Exception $e) {
@@ -412,9 +412,6 @@ class ServerFilesController
             $user = $this->validateUser($request);
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
-            if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
-                return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-            }
 
             $data = $this->validateJsonBody($request, ['files', 'root']);
 
@@ -436,10 +433,17 @@ class ServerFilesController
 
             // Emit event
             global $eventManager;
-            $eventManager->emit(
-                ServerEvent::onServerFileRenamed(),
-                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'root' => $data['root'], 'files' => $data['files']]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerFilesEvent::onServerFileRenamed(),
+                    [
+                        'user_uuid' => $user['uuid'],
+                        'server_uuid' => $server['uuid'],
+                        'root' => $data['root'],
+                        'files' => $data['files'],
+                    ]
+                );
+            }
 
             return ApiResponse::success($response->getData(), 'File renamed successfully');
         } catch (\Exception $e) {
@@ -488,9 +492,6 @@ class ServerFilesController
             $user = $this->validateUser($request);
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
-            if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
-                return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-            }
 
             $data = $this->validateJsonBody($request, ['files', 'root']);
 
@@ -513,10 +514,15 @@ class ServerFilesController
 
             // Emit event
             global $eventManager;
-            $eventManager->emit(
-                ServerEvent::onServerFilesDeleted(),
-                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid']]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerFilesEvent::onServerFilesDeleted(),
+                    [
+                        'user_uuid' => $user['uuid'],
+                        'server_uuid' => $server['uuid'],
+                    ]
+                );
+            }
 
             return ApiResponse::success($response->getData(), 'Files deleted successfully');
         } catch (\Exception $e) {
@@ -565,9 +571,6 @@ class ServerFilesController
             $user = $this->validateUser($request);
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
-            if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
-                return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-            }
 
             $data = $this->validateJsonBody($request, ['files', 'location']);
 
@@ -590,10 +593,16 @@ class ServerFilesController
 
             // Emit event
             global $eventManager;
-            $eventManager->emit(
-                ServerEvent::onServerFilesCopied(),
-                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'file_paths' => $data['files']]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerEvent::onServerFilesCopied(),
+                    [
+                        'user_uuid' => $user['uuid'],
+                        'server_uuid' => $server['uuid'],
+                        'file_paths' => $data['files'],
+                    ]
+                );
+            }
 
             return ApiResponse::success($response->getData(), 'Files copied successfully');
         } catch (\Exception $e) {
@@ -642,9 +651,6 @@ class ServerFilesController
             $user = $this->validateUser($request);
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
-            if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
-                return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-            }
 
             $data = $this->validateJsonBody($request, ['name', 'path']);
 
@@ -667,10 +673,16 @@ class ServerFilesController
 
             // Emit event
             global $eventManager;
-            $eventManager->emit(
-                ServerEvent::onServerDirectoryCreated(),
-                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'directory_path' => rtrim($data['path'], '/') . '/' . $data['name']]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerFilesEvent::onServerDirectoryCreated(),
+                    [
+                        'user_uuid' => $user['uuid'],
+                        'server_uuid' => $server['uuid'],
+                        'directory_path' => rtrim($data['path'], '/') . '/' . $data['name'],
+                    ]
+                );
+            }
 
             return ApiResponse::success($response->getData(), 'Directory created successfully');
         } catch (\Exception $e) {
@@ -719,9 +731,6 @@ class ServerFilesController
             $user = $this->validateUser($request);
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
-            if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
-                return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-            }
 
             $data = $this->validateJsonBody($request, ['files', 'root']);
 
@@ -744,10 +753,16 @@ class ServerFilesController
 
             // Emit event
             global $eventManager;
-            $eventManager->emit(
-                ServerEvent::onServerFileCompressed(),
-                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'file_path' => $data['root']]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerEvent::onServerFileCompressed(),
+                    [
+                        'user_uuid' => $user['uuid'],
+                        'server_uuid' => $server['uuid'],
+                        'file_path' => $data['root'],
+                    ]
+                );
+            }
 
             return ApiResponse::success($response->getData(), 'Files compressed successfully');
         } catch (\Exception $e) {
@@ -796,9 +811,6 @@ class ServerFilesController
             $user = $this->validateUser($request);
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
-            if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
-                return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-            }
 
             $data = $this->validateJsonBody($request, ['file', 'root']);
 
@@ -820,10 +832,16 @@ class ServerFilesController
 
             // Emit event
             global $eventManager;
-            $eventManager->emit(
-                ServerEvent::onServerFileDecompressed(),
-                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'file_path' => $data['root']]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerEvent::onServerFileDecompressed(),
+                    [
+                        'user_uuid' => $user['uuid'],
+                        'server_uuid' => $server['uuid'],
+                        'file_path' => $data['root'],
+                    ]
+                );
+            }
 
             return ApiResponse::success($response->getData(), 'Archive decompressed successfully');
         } catch (\Exception $e) {
@@ -894,10 +912,17 @@ class ServerFilesController
 
             // Emit event
             global $eventManager;
-            $eventManager->emit(
-                ServerEvent::onServerFilePermissionsChanged(),
-                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'file_path' => $data['root'], 'permissions' => ['*']]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerEvent::onServerFilePermissionsChanged(),
+                    [
+                        'user_uuid' => $user['uuid'],
+                        'server_uuid' => $server['uuid'],
+                        'file_path' => $data['root'],
+                        'permissions' => ['*'],
+                    ]
+                );
+            }
 
             return ApiResponse::success($response->getData(), 'File permissions changed successfully');
         } catch (\Exception $e) {
@@ -1104,10 +1129,16 @@ class ServerFilesController
 
             // Emit event
             global $eventManager;
-            $eventManager->emit(
-                ServerEvent::onServerPullProcessDeleted(),
-                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'pull_id' => $pullId]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerFilesEvent::onServerPullProcessDeleted(),
+                    [
+                        'user_uuid' => $user['uuid'],
+                        'server_uuid' => $server['uuid'],
+                        'pull_id' => $pullId,
+                    ]
+                );
+            }
 
             return ApiResponse::success($response->getData(), 'Pull process deleted successfully');
         } catch (\Exception $e) {
@@ -1216,10 +1247,16 @@ class ServerFilesController
 
             // Emit event
             global $eventManager;
-            $eventManager->emit(
-                ServerEvent::onServerFileUploaded(),
-                ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'file_path' => $path]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerFilesEvent::onServerFileUploaded(),
+                    [
+                        'user_uuid' => $user['uuid'],
+                        'server_uuid' => $server['uuid'],
+                        'file_path' => $path,
+                    ]
+                );
+            }
 
             return ApiResponse::success($response->getData(), 'File uploaded successfully');
         } catch (\Exception $e) {

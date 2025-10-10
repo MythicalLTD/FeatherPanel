@@ -148,10 +148,16 @@ class ServerPowerController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerPowerAction(),
-            ['user_uuid' => $user['uuid'], 'server_uuid' => $server['uuid'], 'action' => $action]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerPowerAction(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'action' => $action,
+                ]
+            );
+        }
 
         return ApiResponse::success(['response' => $response->getData()], 'Response from Wings', 200);
     }

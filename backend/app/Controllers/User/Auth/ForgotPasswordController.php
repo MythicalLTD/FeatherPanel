@@ -128,14 +128,16 @@ class ForgotPasswordController
         if ($userInfo == null) {
             // Emit forgot password failed event
             global $eventManager;
-            $eventManager->emit(
-                AuthEvent::onAuthForgotPasswordFailed(),
-                [
-                    'email' => $data['email'],
-                    'reason' => 'EMAIL_DOES_NOT_EXIST',
-                    'ip_address' => CloudFlareRealIP::getRealIP(),
-                ]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    AuthEvent::onAuthForgotPasswordFailed(),
+                    [
+                        'email' => $data['email'],
+                        'reason' => 'EMAIL_DOES_NOT_EXIST',
+                        'ip_address' => CloudFlareRealIP::getRealIP(),
+                    ]
+                );
+            }
 
             return ApiResponse::error('Email does not exist', 'EMAIL_DOES_NOT_EXIST');
         }
@@ -164,15 +166,18 @@ class ForgotPasswordController
                 'reset_url' => $resetUrl,
             ]);
 
-            $eventManager->emit(
-                AuthEvent::onAuthForgotPassword(),
-                [
-                    'user' => $userInfo,
-                    'reset_url' => $resetUrl,
-                    'ip_address' => CloudFlareRealIP::getRealIP(),
-                    'reset_token' => $resetToken,
-                ]
-            );
+            // Emit event
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    AuthEvent::onAuthForgotPassword(),
+                    [
+                        'user' => $userInfo,
+                        'reset_url' => $resetUrl,
+                        'ip_address' => CloudFlareRealIP::getRealIP(),
+                        'reset_token' => $resetToken,
+                    ]
+                );
+            }
             Activity::createActivity([
                 'user_uuid' => $userInfo['uuid'],
                 'name' => 'forgot_password',

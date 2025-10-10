@@ -718,10 +718,11 @@ onMounted(() => {
                         </span>
                     </div>
                     <div>
-                        <div class="font-semibold text-blue-900 mb-1">SDK: v3 (Aurora) 24.09.2025</div>
+                        <div class="font-semibold text-blue-900 mb-1">SDK: v3.2 (Aurora) 10.10.2025</div>
                         <div class="text-blue-800 text-sm">
-                            <strong>Latest change:</strong> You can now create plugin actions directly via the web UI!
-                            Several options and behaviors have also been improved and fixed for a smoother experience.
+                            <strong>Latest change:</strong> Full event plugin support for users, admins, and servers!
+							Several other improvements and fixes have been made to the plugin manager.
+							Plugins can now seamlessly register custom pages with fully custom HTML UI—unleash your creativity and integrate rich, interactive interfaces directly within FeatherPanel.
                         </div>
                     </div>
                 </div>

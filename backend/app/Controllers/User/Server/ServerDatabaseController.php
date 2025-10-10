@@ -21,9 +21,9 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Chat\DatabaseInstance;
 use App\Helpers\ServerGateway;
-use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\ServerDatabaseEvent;
 
 #[OA\Schema(
     schema: 'ServerDatabase',
@@ -182,10 +182,6 @@ class ServerDatabaseController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get page and per_page from query parameters
         $page = max(1, (int) $request->query->get('page', 1));
         $perPage = max(1, min(100, (int) $request->query->get('per_page', 20)));
@@ -272,10 +268,6 @@ class ServerDatabaseController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get database info with details
         $database = ServerDatabase::getServerDatabaseWithDetails($databaseId);
         if (!$database) {
@@ -335,10 +327,6 @@ class ServerDatabaseController
         $server = Server::getServerByUuid($serverUuid);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
-
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
         }
 
         // Check database limit
@@ -419,10 +407,16 @@ class ServerDatabaseController
 
             // Emit event
             global $eventManager;
-            $eventManager->emit(
-                ServerEvent::onServerDatabaseCreated(),
-                ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'database_id' => $databaseId]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerDatabaseEvent::onServerDatabaseCreated(),
+                    [
+                        'user_uuid' => $request->get('user')['uuid'],
+                        'server_uuid' => $server['uuid'],
+                        'database_id' => $databaseId,
+                    ]
+                );
+            }
 
             return ApiResponse::success([
                 'id' => $databaseId,
@@ -498,10 +492,6 @@ class ServerDatabaseController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get database info
         $database = ServerDatabase::getServerDatabaseById($databaseId);
         if (!$database) {
@@ -552,10 +542,16 @@ class ServerDatabaseController
 
         // Emit event
         global $eventManager;
-        $eventManager->emit(
-            ServerEvent::onServerDatabaseUpdated(),
-            ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'database_id' => $databaseId]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerDatabaseEvent::onServerDatabaseUpdated(),
+                [
+                    'user_uuid' => $request->get('user')['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'database_id' => $databaseId,
+                ]
+            );
+        }
 
         return ApiResponse::success([
             'message' => 'Database updated successfully',
@@ -617,10 +613,6 @@ class ServerDatabaseController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get database info with details
         $database = ServerDatabase::getServerDatabaseWithDetails($databaseId);
         if (!$database) {
@@ -663,10 +655,16 @@ class ServerDatabaseController
 
             // Emit event
             global $eventManager;
-            $eventManager->emit(
-                ServerEvent::onServerDatabaseDeleted(),
-                ['user_uuid' => $request->get('user')['uuid'], 'server_uuid' => $server['uuid'], 'database_id' => $databaseId]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerDatabaseEvent::onServerDatabaseDeleted(),
+                    [
+                        'user_uuid' => $request->get('user')['uuid'],
+                        'server_uuid' => $server['uuid'],
+                        'database_id' => $databaseId,
+                    ]
+                );
+            }
 
             return ApiResponse::success([
                 'message' => 'Database deleted successfully',
@@ -725,10 +723,6 @@ class ServerDatabaseController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        }
-
         // Get all available database hosts
         $databaseHosts = DatabaseInstance::getAllDatabasesWithNode();
 
@@ -784,11 +778,6 @@ class ServerDatabaseController
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
-
-        // TODO: Add user permission check here
-        // if (!$this->userCanAccessServer($request, $server)) {
-        //     return ApiResponse::error('Access denied', 'ACCESS_DENIED', 403);
-        // }
 
         // Get database host info
         $databaseHost = DatabaseInstance::getDatabaseById($databaseHostId);

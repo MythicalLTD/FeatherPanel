@@ -6,11 +6,16 @@
 
 - Added a new `setup` CLI command to quickly initialize your database and environment settings. This command streamlines configuration for new developers and eases onboarding.
 - Added a bunch of new plugin events for almost all remaining admin area functions that didn't previously emit events. This greatly expands plugin extensibility and allows plugins to hook into more actions across Locations, Nodes, Realms, Spells, and others in the admin panel.
+- Added a wide range of new plugin events for user and server operations, allowing plugins to hook into user actions and server management processes across the user areas.
 
 ## Fixed
 - Fixed broken event manager handling in some admin controllers by adding proper null checks before emitting events.
 - Fixed an issue where unit tests were failing because the kernel was not booted or called in the test setup. Tests now correctly initialize the application kernel where needed.
+- Fixed broken event manager handling in some user controllers by adding proper null checks before emitting events.
 
+### Improved
+
+- Removed redundant double server permission check in server-related API endpoints. All authentication and permission checks are now solely handled by the server middleware, eliminating unnecessary duplicate verification and improving efficiency.
 
 ## v0.0.4-Canary
 

@@ -20,8 +20,8 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
-use App\Plugins\Events\Events\UserEvent;
 use Symfony\Component\HttpFoundation\Request;
+use App\Plugins\Events\Events\UserSshKeyEvent;
 use Symfony\Component\HttpFoundation\Response;
 
 #[OA\Schema(
@@ -351,11 +351,17 @@ class UserSshKeyController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
         global $eventManager;
-        $eventManager->emit(
-            UserEvent::onUserSshKeyCreated(),
-            ['user_uuid' => $user['uuid'], 'ssh_key_id' => $sshKeyId]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                UserSshKeyEvent::onUserSshKeyCreated(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'ssh_key' => $sshKey,
+                ]
+            );
+        }
 
         return ApiResponse::success($sshKey, 'SSH key created successfully', 201);
     }
@@ -455,11 +461,18 @@ class UserSshKeyController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
         global $eventManager;
-        $eventManager->emit(
-            UserEvent::onUserSshKeyUpdated(),
-            ['user_uuid' => $user['uuid'], 'ssh_key_id' => $id]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                UserSshKeyEvent::onUserSshKeyUpdated(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'ssh_key' => $updatedSshKey,
+                    'updated_data' => $data,
+                ]
+            );
+        }
 
         return ApiResponse::success($updatedSshKey, 'SSH key updated successfully', 200);
     }
@@ -530,11 +543,17 @@ class UserSshKeyController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
         global $eventManager;
-        $eventManager->emit(
-            UserEvent::onUserSshKeyDeleted(),
-            ['user_uuid' => $user['uuid'], 'ssh_key_id' => $id]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                UserSshKeyEvent::onUserSshKeyDeleted(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'ssh_key' => $existingSshKey,
+                ]
+            );
+        }
 
         return ApiResponse::success(null, 'SSH key deleted successfully', 200);
     }
@@ -621,11 +640,18 @@ class UserSshKeyController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
         global $eventManager;
-        $eventManager->emit(
-            UserEvent::onUserSshKeyUpdated(),
-            ['user_uuid' => $user['uuid'], 'ssh_key_id' => $id]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                UserSshKeyEvent::onUserSshKeyUpdated(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'ssh_key' => $restoredSshKey,
+                    'action' => 'restored',
+                ]
+            );
+        }
 
         return ApiResponse::success($restoredSshKey, 'SSH key restored successfully', 200);
     }
@@ -704,11 +730,18 @@ class UserSshKeyController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
         global $eventManager;
-        $eventManager->emit(
-            UserEvent::onUserSshKeyDeleted(),
-            ['user_uuid' => $user['uuid'], 'ssh_key_id' => $id]
-        );
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                UserSshKeyEvent::onUserSshKeyDeleted(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'ssh_key' => $sshKey,
+                    'action' => 'hard_deleted',
+                ]
+            );
+        }
 
         return ApiResponse::success(null, 'SSH key permanently deleted successfully', 200);
     }

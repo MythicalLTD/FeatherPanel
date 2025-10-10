@@ -143,42 +143,48 @@ class LoginController
         if ($userInfo == null) {
             // Emit login failed event
             global $eventManager;
-            $eventManager->emit(
-                AuthEvent::onAuthLoginFailed(),
-                [
-                    'email' => $data['email'],
-                    'reason' => 'EMAIL_DOES_NOT_EXIST',
-                    'ip_address' => CloudFlareRealIP::getRealIP(),
-                ]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    AuthEvent::onAuthLoginFailed(),
+                    [
+                        'email' => $data['email'],
+                        'reason' => 'EMAIL_DOES_NOT_EXIST',
+                        'ip_address' => CloudFlareRealIP::getRealIP(),
+                    ]
+                );
+            }
 
             return ApiResponse::error('Email does not exist', 'EMAIL_DOES_NOT_EXIST');
         }
         if ($userInfo['banned'] == 'true') {
             // Emit login failed event
             global $eventManager;
-            $eventManager->emit(
-                AuthEvent::onAuthLoginFailed(),
-                [
-                    'user' => $userInfo,
-                    'reason' => 'USER_BANNED',
-                    'ip_address' => CloudFlareRealIP::getRealIP(),
-                ]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    AuthEvent::onAuthLoginFailed(),
+                    [
+                        'user' => $userInfo,
+                        'reason' => 'USER_BANNED',
+                        'ip_address' => CloudFlareRealIP::getRealIP(),
+                    ]
+                );
+            }
 
             return ApiResponse::error('User is banned', 'USER_BANNED');
         }
         if (!password_verify($data['password'], $userInfo['password'])) {
             // Emit login failed event
             global $eventManager;
-            $eventManager->emit(
-                AuthEvent::onAuthLoginFailed(),
-                [
-                    'user' => $userInfo,
-                    'reason' => 'INVALID_PASSWORD',
-                    'ip_address' => CloudFlareRealIP::getRealIP(),
-                ]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    AuthEvent::onAuthLoginFailed(),
+                    [
+                        'user' => $userInfo,
+                        'reason' => 'INVALID_PASSWORD',
+                        'ip_address' => CloudFlareRealIP::getRealIP(),
+                    ]
+                );
+            }
 
             return ApiResponse::error('Invalid password', 'INVALID_PASSWORD');
         }
@@ -186,8 +192,6 @@ class LoginController
         // 2FA logic
         if (isset($userInfo['two_fa_enabled']) && $userInfo['two_fa_enabled'] == 'true') {
             // Do NOT set session/cookie yet
-            global $eventManager;
-
             return ApiResponse::error('2FA required', 'TWO_FACTOR_REQUIRED', 401, [
                 'email' => $userInfo['email'],
             ]);
@@ -205,13 +209,17 @@ class LoginController
                 'context' => 'User logged in',
                 'ip_address' => CloudFlareRealIP::getRealIP(),
             ]);
+
+            // Emit event
             global $eventManager;
-            $eventManager->emit(
-                AuthEvent::onAuthLoginSuccess(),
-                [
-                    'user' => $userInfo,
-                ]
-            );
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    AuthEvent::onAuthLoginSuccess(),
+                    [
+                        'user' => $userInfo,
+                    ]
+                );
+            }
 
             return ApiResponse::success($userInfo, 'User logged in successfully', 200);
         }

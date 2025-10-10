@@ -76,9 +76,13 @@ class AuthLogoutController
                     ]
                 );
             }
-            $eventManager->emit(
-                AuthEvent::onAuthLogout(),
-            );
+
+            // Emit event
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    AuthEvent::onAuthLogout(),
+                );
+            }
             Activity::createActivity([
                 'user_uuid' => $user['uuid'],
                 'name' => 'logout',
