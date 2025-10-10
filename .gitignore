@@ -9,3 +9,5 @@ dockerfiles/mariadb/data
 installer.log
 devlogs.log
 mysql/
+docs/
+nginx.conf
