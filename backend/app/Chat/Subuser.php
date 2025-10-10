@@ -365,7 +365,6 @@ class Subuser
 
             return $stmt->execute($data);
         } catch (\PDOException $e) {
-            error_log($e->getMessage());
             App::getInstance(true)->getLogger()->error('Failed to update subuser: ' . $e->getMessage());
 
             return false;

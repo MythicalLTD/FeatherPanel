@@ -30,6 +30,7 @@
 
 namespace App\Controllers\Admin;
 
+use App\App;
 use App\Chat\Activity;
 use App\Chat\Database;
 use App\Helpers\ApiResponse;
@@ -740,7 +741,7 @@ class PluginsController
                     }
                 } catch (\Throwable $e) {
                     // Log the error but continue with uninstallation
-                    error_log('Plugin uninstall hook failed for ' . $identifier . ': ' . $e->getMessage());
+                    App::getInstance(true)->getLogger()->error('Plugin uninstall hook failed for ' . $identifier . ': ' . $e->getMessage());
                 }
             }
 

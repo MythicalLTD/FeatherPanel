@@ -441,7 +441,6 @@ private static function sanitizeDataForLogging(array $data): array
 try {
     // Database operation
 } catch (\PDOException $e) {
-    error_log($e->getMessage());
     App::getInstance(true)->getLogger()->error('Failed to perform operation: ' . $e->getMessage());
     return false;
 }

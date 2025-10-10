@@ -30,6 +30,7 @@
 
 namespace App\Controllers\System;
 
+use App\App;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
@@ -112,7 +113,7 @@ class PluginSidebarController
                         }
                     } catch (\Exception $e) {
                         // Log error but continue processing other plugins
-                        error_log("Error processing sidebar config for plugin {$plugin}: " . $e->getMessage());
+                        App::getInstance(true)->getLogger()->error('Error processing sidebar config for plugin ' . $plugin . ': ' . $e->getMessage());
                     }
                 }
 
@@ -136,7 +137,7 @@ class PluginSidebarController
                             }
                         }
                     } catch (\Exception $e) {
-                        error_log("Error processing legacy sidebar for plugin {$plugin}: " . $e->getMessage());
+                        App::getInstance(true)->getLogger()->error('Error processing legacy sidebar for plugin ' . $plugin . ': ' . $e->getMessage());
                     }
                 }
             }

@@ -30,7 +30,9 @@ RUN apt-get update && apt-get install -y \
     nginx \
     supervisor \
     mariadb-client \
-	cron \
+    cron \
+    pkg-config \
+    libsasl2-dev \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -47,6 +49,9 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 
 # Install Redis extension
 RUN pecl install redis && docker-php-ext-enable redis
+
+# Install MongoDB extension
+RUN pecl install mongodb && docker-php-ext-enable mongodb
 
 # Reset environment variables
 ENV DEBIAN_FRONTEND=

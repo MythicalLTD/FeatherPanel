@@ -30,6 +30,7 @@
 
 namespace App\Services\Wings;
 
+use App\App;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 use App\Services\Wings\Utils\DnsResolver;
@@ -218,7 +219,7 @@ class WingsConnection
 
                 if ($attempt < $maxRetries && $this->isDnsResolutionError($e)) {
                     $delay = $this->calculateRetryDelay($attempt);
-                    error_log("DNS resolution failed for {$url}, retrying in {$delay}s (attempt " . ($attempt + 1) . "/{$maxRetries})");
+                    App::getInstance(true)->getLogger()->error('DNS resolution failed for ' . $url . ', retrying in ' . $delay . 's (attempt ' . ($attempt + 1) . '/' . $maxRetries . ')');
                     usleep($delay * 1000000);
                     continue;
                 }
@@ -229,7 +230,7 @@ class WingsConnection
 
                 if ($attempt < $maxRetries && $this->isTimeoutError($e)) {
                     $delay = $this->calculateRetryDelay($attempt);
-                    error_log("Request timeout for {$url}, retrying in {$delay}s (attempt " . ($attempt + 1) . "/{$maxRetries})");
+                    App::getInstance(true)->getLogger()->error('Request timeout for ' . $url . ', retrying in ' . $delay . 's (attempt ' . ($attempt + 1) . '/' . $maxRetries . ')');
                     usleep($delay * 1000000);
                     continue;
                 }
@@ -240,7 +241,7 @@ class WingsConnection
 
                 if ($attempt < $maxRetries) {
                     $delay = $this->calculateRetryDelay($attempt);
-                    error_log("Unexpected error for {$url}, retrying in {$delay}s (attempt " . ($attempt + 1) . "/{$maxRetries}): " . $e->getMessage());
+                    App::getInstance(true)->getLogger()->error('Unexpected error for ' . $url . ', retrying in ' . $delay . 's (attempt ' . ($attempt + 1) . '/' . $maxRetries . '): ' . $e->getMessage());
                     usleep($delay * 1000000);
                     continue;
                 }
@@ -320,7 +321,7 @@ class WingsConnection
 
                 if ($attempt < $maxRetries && $this->isDnsResolutionError($e)) {
                     $delay = $this->calculateRetryDelay($attempt);
-                    error_log("DNS resolution failed for {$url}, retrying in {$delay}s (attempt " . ($attempt + 1) . "/{$maxRetries})");
+                    App::getInstance(true)->getLogger()->error('DNS resolution failed for ' . $url . ', retrying in ' . $delay . 's (attempt ' . ($attempt + 1) . '/' . $maxRetries . ')');
                     usleep($delay * 1000000);
                     continue;
                 }
@@ -331,7 +332,7 @@ class WingsConnection
 
                 if ($attempt < $maxRetries && $this->isTimeoutError($e)) {
                     $delay = $this->calculateRetryDelay($attempt);
-                    error_log("Request timeout for {$url}, retrying in {$delay}s (attempt " . ($attempt + 1) . "/{$maxRetries})");
+                    App::getInstance(true)->getLogger()->error('Request timeout for ' . $url . ', retrying in ' . $delay . 's (attempt ' . ($attempt + 1) . '/' . $maxRetries . ')');
                     usleep($delay * 1000000);
                     continue;
                 }
@@ -342,7 +343,7 @@ class WingsConnection
 
                 if ($attempt < $maxRetries) {
                     $delay = $this->calculateRetryDelay($attempt);
-                    error_log("Unexpected error for {$url}, retrying in {$delay}s (attempt " . ($attempt + 1) . "/{$maxRetries}): " . $e->getMessage());
+                    App::getInstance(true)->getLogger()->error('Unexpected error for ' . $url . ', retrying in ' . $delay . 's (attempt ' . ($attempt + 1) . '/' . $maxRetries . '): ' . $e->getMessage());
                     usleep($delay * 1000000);
                     continue;
                 }
@@ -462,7 +463,7 @@ class WingsConnection
                 // Check if it's a DNS resolution error and we have retries left
                 if ($attempt < $maxRetries && $this->isDnsResolutionError($e)) {
                     $delay = $this->calculateRetryDelay($attempt);
-                    error_log("DNS resolution failed for {$url}, retrying in {$delay}s (attempt " . ($attempt + 1) . "/{$maxRetries})");
+                    App::getInstance(true)->getLogger()->error('DNS resolution failed for ' . $url . ', retrying in ' . $delay . 's (attempt ' . ($attempt + 1) . '/' . $maxRetries . ')');
                     usleep($delay * 1000000); // Convert to microseconds
                     continue;
                 }
@@ -474,7 +475,7 @@ class WingsConnection
                 // Check if it's a timeout error and we have retries left
                 if ($attempt < $maxRetries && $this->isTimeoutError($e)) {
                     $delay = $this->calculateRetryDelay($attempt);
-                    error_log("Request timeout for {$url}, retrying in {$delay}s (attempt " . ($attempt + 1) . "/{$maxRetries})");
+                    App::getInstance(true)->getLogger()->error('Request timeout for ' . $url . ', retrying in ' . $delay . 's (attempt ' . ($attempt + 1) . '/' . $maxRetries . ')');
                     usleep($delay * 1000000);
                     continue;
                 }
@@ -485,7 +486,7 @@ class WingsConnection
 
                 if ($attempt < $maxRetries) {
                     $delay = $this->calculateRetryDelay($attempt);
-                    error_log("Unexpected error for {$url}, retrying in {$delay}s (attempt " . ($attempt + 1) . "/{$maxRetries}): " . $e->getMessage());
+                    App::getInstance(true)->getLogger()->error('Unexpected error for ' . $url . ', retrying in ' . $delay . 's (attempt ' . ($attempt + 1) . '/' . $maxRetries . '): ' . $e->getMessage());
                     usleep($delay * 1000000);
                     continue;
                 }

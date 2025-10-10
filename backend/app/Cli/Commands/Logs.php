@@ -31,6 +31,7 @@
 namespace App\Cli\Commands;
 
 use App\Cli\App;
+use App\Helpers\LogHelper;
 use App\Cli\CommandBuilder;
 
 class Logs extends App implements CommandBuilder
@@ -49,12 +50,12 @@ class Logs extends App implements CommandBuilder
         $lineLimit = 10000;
 
         // Upload web logs
-        $webLogFile = self::getLogFilePath('web');
+        $webLogFile = LogHelper::getLogFilePath('web');
         // If the log file exists but is empty, warn and skip upload.
         if (file_exists($webLogFile) && filesize($webLogFile) > 0) {
             $app->send('&eUploading web logs...');
-            $webContent = self::readLastLines($webLogFile, $lineLimit);
-            $webResult = self::uploadToMcloGs($webContent);
+            $webContent = LogHelper::readLastLines($webLogFile, $lineLimit);
+            $webResult = LogHelper::uploadToMcloGs($webContent);
             if ($webResult['success']) {
                 $app->send('&aWeb logs uploaded: ' . $webResult['url']);
             } else {
@@ -65,11 +66,11 @@ class Logs extends App implements CommandBuilder
         }
 
         // Upload app logs
-        $appLogFile = self::getLogFilePath('app');
+        $appLogFile = LogHelper::getLogFilePath('app');
         if (file_exists($appLogFile) && filesize($appLogFile) > 0) {
             $app->send('&eUploading app logs...');
-            $appContent = self::readLastLines($appLogFile, $lineLimit);
-            $appResult = self::uploadToMcloGs($appContent);
+            $appContent = LogHelper::readLastLines($appLogFile, $lineLimit);
+            $appResult = LogHelper::uploadToMcloGs($appContent);
             if ($appResult['success']) {
                 $app->send('&aApp logs uploaded: ' . $appResult['url']);
             } else {
@@ -92,89 +93,5 @@ class Logs extends App implements CommandBuilder
     public static function getSubCommands(): array
     {
         return [];
-    }
-
-    private static function getLogFilePath(string $type): string
-    {
-        $logDir = dirname(__DIR__, 3) . '/storage/logs/';
-
-        switch ($type) {
-            case 'web':
-                return $logDir . 'featherpanel-web.fplog';
-            case 'app':
-                return $logDir . 'App.fplog';
-            default:
-                return $logDir . 'featherpanel-web.fplog';
-        }
-    }
-
-    private static function uploadToMcloGs(string $content): array
-    {
-        try {
-            $ch = curl_init('https://api.mclo.gs/1/log');
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(['content' => $content]));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Content-Type: application/x-www-form-urlencoded',
-            ]);
-
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-
-            if ($httpCode !== 200) {
-                return [
-                    'success' => false,
-                    'error' => 'Failed to upload to mclo.gs (HTTP ' . $httpCode . ')',
-                ];
-            }
-
-            $result = json_decode($response, true);
-
-            if (!$result || !isset($result['success']) || !$result['success']) {
-                return [
-                    'success' => false,
-                    'error' => $result['error'] ?? 'Unknown error from mclo.gs',
-                ];
-            }
-
-            return [
-                'success' => true,
-                'id' => $result['id'],
-                'url' => $result['url'],
-                'raw' => $result['raw'],
-            ];
-        } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'error' => 'Exception: ' . $e->getMessage(),
-            ];
-        }
-    }
-
-    private static function readLastLines(string $filePath, int $lines): string
-    {
-        $handle = fopen($filePath, 'r');
-        if (!$handle) {
-            return '';
-        }
-
-        $buffer = [];
-        $lineCount = 0;
-
-        while (($line = fgets($handle)) !== false) {
-            $buffer[] = $line;
-            ++$lineCount;
-
-            if ($lineCount > $lines) {
-                array_shift($buffer);
-                --$lineCount;
-            }
-        }
-
-        fclose($handle);
-
-        return implode('', $buffer);
     }
 }

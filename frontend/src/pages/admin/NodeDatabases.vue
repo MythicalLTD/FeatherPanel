@@ -187,8 +187,6 @@
                                     <SelectItem value="mysql">MySQL</SelectItem>
                                     <SelectItem value="postgresql">PostgreSQL</SelectItem>
                                     <SelectItem value="mariadb">MariaDB</SelectItem>
-                                    <SelectItem value="mongodb">MongoDB</SelectItem>
-                                    <SelectItem value="redis">Redis</SelectItem>
                                 </SelectContent>
                             </Select>
                             <div v-if="formErrors.database_type" class="text-red-500 text-xs mt-1">
@@ -214,7 +212,7 @@
                                 placeholder="3306"
                             />
                             <div class="text-xs text-muted-foreground">
-                                Default ports: MySQL/MariaDB (3306), PostgreSQL (5432), MongoDB (27017), Redis (6379)
+                                Default ports: MySQL/MariaDB (3306), PostgreSQL (5432)
                             </div>
                             <div v-if="formErrors.database_port" class="text-red-500 text-xs mt-1">
                                 {{ formErrors.database_port }}
@@ -335,6 +333,19 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
+
+// Helper function to get default port based on database type
+function getDefaultPort(databaseType: string): number {
+    switch (databaseType) {
+        case 'mysql':
+        case 'mariadb':
+            return 3306;
+        case 'postgresql':
+            return 5432;
+        default:
+            return 3306;
+    }
+}
 
 interface Database {
     id: number;
@@ -660,6 +671,14 @@ watch(searchQuery, () => {
 });
 
 // Lifecycle
+// Watch for database type changes and auto-fill port
+watch(
+    () => form.value.database_type,
+    (newType) => {
+        form.value.database_port = getDefaultPort(newType);
+    },
+);
+
 onMounted(async () => {
     await fetchNode();
     await fetchDatabases();

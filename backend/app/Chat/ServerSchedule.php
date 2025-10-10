@@ -332,7 +332,6 @@ class ServerSchedule
 
             return $stmt->execute($data);
         } catch (\PDOException $e) {
-            error_log($e->getMessage());
             App::getInstance(true)->getLogger()->error('Failed to update schedule: ' . $e->getMessage());
 
             return false;

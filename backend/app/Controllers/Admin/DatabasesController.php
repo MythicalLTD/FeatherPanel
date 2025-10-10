@@ -47,7 +47,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'id', type: 'integer', description: 'Database ID'),
         new OA\Property(property: 'name', type: 'string', description: 'Database name'),
         new OA\Property(property: 'node_id', type: 'integer', description: 'Node ID'),
-        new OA\Property(property: 'database_type', type: 'string', description: 'Database type', enum: ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis']),
+        new OA\Property(property: 'database_type', type: 'string', description: 'Database type', enum: ['mysql', 'postgresql', 'mariadb']),
         new OA\Property(property: 'database_port', type: 'integer', description: 'Database port', minimum: 1, maximum: 65535),
         new OA\Property(property: 'database_username', type: 'string', description: 'Database username'),
         new OA\Property(property: 'database_host', type: 'string', description: 'Database host'),
@@ -62,7 +62,7 @@ use Symfony\Component\HttpFoundation\Response;
     properties: [
         new OA\Property(property: 'name', type: 'string', description: 'Database name', minLength: 1, maxLength: 255),
         new OA\Property(property: 'node_id', type: 'integer', description: 'Node ID', minimum: 1),
-        new OA\Property(property: 'database_type', type: 'string', description: 'Database type', enum: ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis']),
+        new OA\Property(property: 'database_type', type: 'string', description: 'Database type', enum: ['mysql', 'postgresql', 'mariadb']),
         new OA\Property(property: 'database_port', type: 'integer', description: 'Database port', minimum: 1, maximum: 65535),
         new OA\Property(property: 'database_username', type: 'string', description: 'Database username', minLength: 1, maxLength: 255),
         new OA\Property(property: 'database_password', type: 'string', description: 'Database password', minLength: 1, maxLength: 255),
@@ -75,7 +75,7 @@ use Symfony\Component\HttpFoundation\Response;
     properties: [
         new OA\Property(property: 'name', type: 'string', description: 'Database name', minLength: 1, maxLength: 255),
         new OA\Property(property: 'node_id', type: 'integer', description: 'Node ID', minimum: 1),
-        new OA\Property(property: 'database_type', type: 'string', description: 'Database type', enum: ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis']),
+        new OA\Property(property: 'database_type', type: 'string', description: 'Database type', enum: ['mysql', 'postgresql', 'mariadb']),
         new OA\Property(property: 'database_port', type: 'integer', description: 'Database port', minimum: 1, maximum: 65535),
         new OA\Property(property: 'database_username', type: 'string', description: 'Database username', minLength: 1, maxLength: 255),
         new OA\Property(property: 'database_password', type: 'string', description: 'Database password', minLength: 1, maxLength: 255),
@@ -87,7 +87,7 @@ use Symfony\Component\HttpFoundation\Response;
     type: 'object',
     required: ['database_type', 'database_port', 'database_username', 'database_password', 'database_host'],
     properties: [
-        new OA\Property(property: 'database_type', type: 'string', description: 'Database type', enum: ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis']),
+        new OA\Property(property: 'database_type', type: 'string', description: 'Database type', enum: ['mysql', 'postgresql', 'mariadb']),
         new OA\Property(property: 'database_port', type: 'integer', description: 'Database port', minimum: 1, maximum: 65535),
         new OA\Property(property: 'database_username', type: 'string', description: 'Database username'),
         new OA\Property(property: 'database_password', type: 'string', description: 'Database password'),
@@ -341,13 +341,18 @@ class DatabasesController
             return ApiResponse::error('Node ID must be a positive number', 'INVALID_NODE_ID');
         }
 
+        // Set default port if not provided or is 0
+        if (!isset($data['database_port']) || (int) $data['database_port'] === 0) {
+            $data['database_port'] = $this->getDefaultPort($data['database_type']);
+        }
+
         // Validate database_port
         if (!is_numeric($data['database_port']) || (int) $data['database_port'] < 1 || (int) $data['database_port'] > 65535) {
             return ApiResponse::error('Database port must be between 1 and 65535', 'INVALID_DATABASE_PORT');
         }
 
         // Validate database_type
-        $allowedTypes = ['mysql', 'postgresql', 'mariadb', 'mongodb', 'redis'];
+        $allowedTypes = ['mysql', 'postgresql', 'mariadb'];
         if (!in_array($data['database_type'], $allowedTypes)) {
             return ApiResponse::error('Invalid database type. Allowed types: ' . implode(', ', $allowedTypes), 'INVALID_DATABASE_TYPE');
         }
@@ -821,32 +826,24 @@ class DatabasesController
         $startTime = microtime(true);
 
         try {
-            $dsn = '';
-            $options = [
-                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-                \PDO::ATTR_TIMEOUT => 10, // 10 second timeout
-            ];
-
             switch ($data['database_type']) {
                 case 'mysql':
                 case 'mariadb':
-                    $dsn = "mysql:host={$data['database_host']};port={$data['database_port']}";
-                    break;
+                    return $this->testPDOConnection(
+                        "mysql:host={$data['database_host']};port={$data['database_port']}",
+                        $data['database_username'],
+                        $data['database_password'],
+                        $startTime
+                    );
+
                 case 'postgresql':
-                    $dsn = "pgsql:host={$data['database_host']};port={$data['database_port']}";
-                    break;
-                case 'mongodb':
-                    // MongoDB connection test would require MongoDB extension
-                    return [
-                        'success' => false,
-                        'message' => 'MongoDB connection testing not implemented yet',
-                    ];
-                case 'redis':
-                    // Redis connection test would require Redis extension
-                    return [
-                        'success' => false,
-                        'message' => 'Redis connection testing not implemented yet',
-                    ];
+                    return $this->testPDOConnection(
+                        "pgsql:host={$data['database_host']};port={$data['database_port']}",
+                        $data['database_username'],
+                        $data['database_password'],
+                        $startTime
+                    );
+
                 default:
                     return [
                         'success' => false,
@@ -854,13 +851,33 @@ class DatabasesController
                     ];
             }
 
-            $pdo = new \PDO($dsn, $data['database_username'], $data['database_password'], $options);
+        } catch (\Exception $e) {
+            $endTime = microtime(true);
+            $responseTime = round(($endTime - $startTime) * 1000, 2);
+
+            return [
+                'success' => false,
+                'message' => 'Unexpected error: ' . $e->getMessage(),
+                'response_time' => $responseTime,
+            ];
+        }
+    }
+
+    private function testPDOConnection(string $dsn, string $username, string $password, float $startTime): array
+    {
+        try {
+            $options = [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_TIMEOUT => 10, // 10 second timeout
+            ];
+
+            $pdo = new \PDO($dsn, $username, $password, $options);
 
             // Test the connection with a simple query
             $pdo->query('SELECT 1');
 
             $endTime = microtime(true);
-            $responseTime = round(($endTime - $startTime) * 1000, 2); // Convert to milliseconds
+            $responseTime = round(($endTime - $startTime) * 1000, 2);
 
             return [
                 'success' => true,
@@ -877,15 +894,22 @@ class DatabasesController
                 'message' => 'Connection failed: ' . $e->getMessage(),
                 'response_time' => $responseTime,
             ];
-        } catch (\Exception $e) {
-            $endTime = microtime(true);
-            $responseTime = round(($endTime - $startTime) * 1000, 2);
-
-            return [
-                'success' => false,
-                'message' => 'Unexpected error: ' . $e->getMessage(),
-                'response_time' => $responseTime,
-            ];
         }
+    }
+
+    /**
+     * Get default port for database type.
+     *
+     * @param string $databaseType Database type
+     *
+     * @return int Default port
+     */
+    private function getDefaultPort(string $databaseType): int
+    {
+        return match ($databaseType) {
+            'mysql', 'mariadb' => 3306,
+            'postgresql' => 5432,
+            default => 3306,
+        };
     }
 }

@@ -28,7 +28,7 @@
     "gravatarphp/gravatar": "^1.0",
     "phpmailer/phpmailer": "^6.9",
     "pragmarx/google2fa": "^8.0",
-    "predis/predis": "^2.3",
+    "predis/predis": "^3.2",
     "nikolaposa/rate-limit": "^3.2",
     "guzzlehttp/guzzle": "^7.0",
     "composer-runtime-api": "^2.0",
@@ -41,7 +41,8 @@
     "symfony/mime": "^7.3",
     "zircote/swagger-php": "^5.4",
     "ext-redis": "*",
-    "ext-sodium": "*"
+    "ext-sodium": "*",
+    "mongodb/mongodb": "^2.1"
   },
   "require-dev": {
     "phpunit/phpunit": "^11.1",
