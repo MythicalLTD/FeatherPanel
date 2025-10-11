@@ -352,31 +352,46 @@
 
             <!-- XTerm.js Terminal Console -->
             <Card class="overflow-hidden">
-                <CardHeader class="border-b bg-muted/50">
+                <CardHeader class="border-b">
                     <div class="flex items-center justify-between">
                         <CardTitle class="flex items-center gap-2">
                             <Terminal class="h-5 w-5" />
                             {{ t('common.console') }}
                         </CardTitle>
-                        <Button variant="outline" size="sm" @click="clearTerminal">
-                            <Trash2 class="h-4 w-4" />
-                        </Button>
+                        <div class="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                class="hidden sm:flex"
+                                :disabled="
+                                    uploading || !(server?.status === 'running' || server?.status === 'starting')
+                                "
+                                @click="uploadConsoleLogs"
+                            >
+                                <Upload class="h-4 w-4 mr-2" />
+                                {{ t('serverLogs.uploadToMcloGs') }}
+                            </Button>
+                            <Button variant="outline" size="sm" @click="clearTerminal">
+                                <Trash2 class="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent class="p-0">
                     <div
                         ref="terminalContainer"
-                        class="w-full h-[600px] bg-black overflow-hidden"
+                        class="w-full h-[500px] sm:h-[600px] bg-black overflow-hidden"
                         @wheel.stop
                         @touchmove.stop
                     ></div>
 
                     <!-- Command Input Bar -->
-                    <div class="border-t bg-muted/30 p-3">
+                    <div class="border-t p-3">
                         <div class="flex gap-2">
                             <Input
                                 v-model="commandInput"
                                 type="text"
+                                class="flex-1"
                                 placeholder="Enter command..."
                                 :disabled="
                                     sendingCommand || !(server?.status === 'running' || server?.status === 'starting')
@@ -394,12 +409,24 @@
                             >
                                 <Send class="h-4 w-4" />
                             </Button>
+                            <!-- Mobile upload button -->
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                class="sm:hidden"
+                                :disabled="
+                                    uploading || !(server?.status === 'running' || server?.status === 'starting')
+                                "
+                                @click="uploadConsoleLogs"
+                            >
+                                <Upload class="h-4 w-4" />
+                            </Button>
                         </div>
                         <p
                             v-if="server && server.status !== 'running' && server.status !== 'starting'"
                             class="text-xs text-yellow-500 mt-2"
                         >
-                            Server must be running or starting to send commands.
+                            Server must be running or starting to send commands and upload logs.
                         </p>
                     </div>
                 </CardContent>
@@ -457,7 +484,7 @@ import ServerHeader from '@/components/server/ServerHeader.vue';
 import ServerInfoCards from '@/components/server/ServerInfoCards.vue';
 import ServerPerformance from '@/components/server/ServerPerformance.vue';
 import { Button } from '@/components/ui/button';
-import { Settings, RotateCcw, Save, Terminal, Trash2, Send } from 'lucide-vue-next';
+import { Settings, RotateCcw, Save, Terminal, Trash2, Send, Upload } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import { useI18n } from 'vue-i18n';
@@ -496,6 +523,7 @@ const WRITE_DELAY = 16; // ~60fps
 // Command input
 const commandInput = ref('');
 const sendingCommand = ref(false);
+const uploading = ref(false);
 
 // Customization system
 const showCustomization = ref(false);
@@ -694,8 +722,11 @@ function initializeTerminal(): void {
 
     if (server.value?.status !== 'running') {
         writeToTerminal(
-            '\r\n\x1b[33m⚠ Server is offline. Use the power buttons above to start the server.\x1b[0m\r\n\r\n',
+            '\r\n\x1b[33m⚠ Server is offline. Use the power buttons above to start the server.\x1b[0m\r\n',
         );
+        writeToTerminal('\x1b[36m¶ Server status: offline\x1b[0m\r\n\r\n');
+    } else {
+        writeToTerminal('\x1b[36m¶ Server status: ' + server.value.status + '\x1b[0m\r\n\r\n');
     }
 }
 
@@ -773,6 +804,46 @@ function clearTerminal(): void {
     if (terminal) {
         terminal.clear();
         writeToTerminal('\r\n\x1b[1;36mTerminal cleared\x1b[0m\r\n\r\n');
+    }
+}
+
+// Upload console logs to mclo.gs
+async function uploadConsoleLogs(): Promise<void> {
+    if (!terminal) {
+        toast.warning('No console content to upload');
+        return;
+    }
+
+    // Check if server is running or starting
+    if (server.value?.status !== 'running' && server.value?.status !== 'starting') {
+        toast.error('Server must be running or starting to upload logs');
+        return;
+    }
+
+    try {
+        uploading.value = true;
+
+        // Get terminal content - we'll use the server logs API as fallback
+        const response = await axios.post(`/api/user/servers/${route.params.uuidShort}/logs/upload`);
+
+        if (response.data && response.data.success) {
+            const mclogsUrl = response.data.data.url;
+
+            // Copy URL to clipboard
+            try {
+                await navigator.clipboard.writeText(mclogsUrl);
+                toast.success(t('serverLogs.logsUploaded'));
+            } catch {
+                toast.success(`Console logs uploaded: ${mclogsUrl}`);
+            }
+        } else {
+            toast.error(t('serverLogs.failedToUpload'));
+        }
+    } catch (error) {
+        console.error('Error uploading console logs:', error);
+        toast.error(t('serverLogs.failedToUpload'));
+    } finally {
+        uploading.value = false;
     }
 }
 
@@ -876,8 +947,10 @@ onMounted(async () => {
 
     await fetchServer();
 
-    // Initialize XTerm.js terminal
-    initializeTerminal();
+    // Initialize XTerm.js terminal after a short delay to ensure DOM is ready
+    setTimeout(() => {
+        initializeTerminal();
+    }, 100);
 
     // Set up navigation detection
     const unsubscribe = router.beforeEach((to, from, next) => {
@@ -941,6 +1014,24 @@ onMounted(async () => {
         (wingsStatus, previousStatus) => {
             if (wingsStatus === 'error' && previousStatus === 'healthy') {
                 toast.error('⚠️ Wings daemon stopped responding - switching to API fallback mode');
+            }
+        },
+    );
+
+    // Watch for server status changes to update terminal
+    watch(
+        () => server.value?.status,
+        (newStatus, oldStatus) => {
+            if (newStatus !== oldStatus && terminal) {
+                writeToTerminalImmediate(`\r\n\x1b[36m¶ Server status: ${newStatus}\x1b[0m\r\n`);
+
+                if (newStatus === 'offline' || newStatus === 'stopped') {
+                    writeToTerminalImmediate(
+                        '\x1b[33m⚠ Server is offline. Use the power buttons above to start the server.\x1b[0m\r\n\r\n',
+                    );
+                } else if (newStatus === 'running') {
+                    writeToTerminalImmediate('\x1b[32m✅ Server is now running\x1b[0m\r\n\r\n');
+                }
             }
         },
     );
@@ -1345,6 +1436,7 @@ function requestServerLogs(): void {
     padding: 1rem;
     height: 100%;
     width: 100%;
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
 }
 
 :deep(.xterm-viewport) {
@@ -1352,6 +1444,25 @@ function requestServerLogs(): void {
     overflow-x: hidden !important;
     /* Prevent scroll chaining to parent */
     overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+:deep(.xterm-viewport::-webkit-scrollbar) {
+    width: 8px;
+}
+
+:deep(.xterm-viewport::-webkit-scrollbar-track) {
+    background: transparent;
+}
+
+:deep(.xterm-viewport::-webkit-scrollbar-thumb) {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+:deep(.xterm-viewport::-webkit-scrollbar-thumb:hover) {
+    background: rgba(255, 255, 255, 0.5);
 }
 
 :deep(.xterm-screen) {
@@ -1360,6 +1471,7 @@ function requestServerLogs(): void {
 
 :deep(.xterm-rows) {
     font-variant-ligatures: none;
+    line-height: 1.2;
 }
 
 /* Ensure terminal container takes full width */
@@ -1371,5 +1483,23 @@ function requestServerLogs(): void {
     width: 0;
     height: 0;
     z-index: -10;
+}
+
+/* Terminal cursor styling */
+:deep(.xterm-cursor-layer) {
+    z-index: 2;
+}
+
+/* Fix terminal focus and selection */
+:deep(.xterm-screen) {
+    user-select: text;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 640px) {
+    :deep(.xterm) {
+        padding: 0.5rem;
+        font-size: 12px;
+    }
 }
 </style>

@@ -99,7 +99,9 @@
                 </template>
 
                 <template #cell-database="{ item }">
-                    <div class="font-medium">{{ (item as DatabaseItem).database }}</div>
+                    <div class="font-medium truncate max-w-[120px]" :title="(item as DatabaseItem).database">
+                        {{ (item as DatabaseItem).database }}
+                    </div>
                 </template>
 
                 <template #cell-username="{ item }">
@@ -107,7 +109,10 @@
                 </template>
 
                 <template #cell-host="{ item }">
-                    <div class="text-sm text-muted-foreground">
+                    <div
+                        class="text-sm text-muted-foreground truncate max-w-[200px]"
+                        :title="`${(item as DatabaseItem).database_host || 'N/A'}:${(item as DatabaseItem).database_port || 'N/A'}`"
+                    >
                         {{ (item as DatabaseItem).database_host || 'N/A' }}:{{
                             (item as DatabaseItem).database_port || 'N/A'
                         }}
@@ -116,7 +121,7 @@
 
                 <template #cell-remote="{ item }">
                     <Badge variant="outline" class="text-xs">
-                        {{ (item as DatabaseItem).remote }}
+                        {{ (item as DatabaseItem).remote === '%' ? 'All Hosts' : (item as DatabaseItem).remote }}
                     </Badge>
                 </template>
 
@@ -610,7 +615,7 @@
                     <AlertDialogAction
                         :class="
                             confirmDialog.variant === 'destructive'
-                                ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                                ? 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
                                 : ''
                         "
                         @click="onConfirmDialog"
@@ -768,12 +773,12 @@ const breadcrumbs = computed(() => [
 ]);
 
 const tableColumns: TableColumn[] = [
-    { key: 'database', label: t('serverDatabases.database'), searchable: true },
+    { key: 'database', label: t('serverDatabases.database'), searchable: true, headerClass: 'min-w-[120px]' },
     { key: 'username', label: t('serverDatabases.username'), searchable: true },
-    { key: 'host', label: t('serverDatabases.host') },
-    { key: 'remote', label: t('serverDatabases.remote') },
-    { key: 'connections', label: t('serverDatabases.maxConnections') },
-    { key: 'created', label: t('serverDatabases.createdAt') },
+    { key: 'host', label: t('serverDatabases.host'), headerClass: 'min-w-[200px]' },
+    { key: 'remote', label: t('serverDatabases.remote'), headerClass: 'min-w-[100px]' },
+    { key: 'connections', label: t('serverDatabases.maxConnections'), headerClass: 'min-w-[120px]' },
+    { key: 'created', label: t('serverDatabases.createdAt'), headerClass: 'min-w-[150px]' },
     { key: 'actions', label: t('common.actions'), headerClass: 'w-[200px] font-semibold' },
 ];
 

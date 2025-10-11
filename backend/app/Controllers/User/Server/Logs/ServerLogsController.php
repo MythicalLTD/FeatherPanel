@@ -32,6 +32,7 @@ namespace App\Controllers\User\Server\Logs;
 
 use App\App;
 use App\Chat\Server;
+use App\Helpers\LogHelper;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
@@ -237,5 +238,237 @@ class ServerLogsController
         }
 
         return ApiResponse::success(['response' => $response->getData()], 'Response from Wings', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/logs/upload',
+        summary: 'Upload server logs to mclo.gs',
+        description: 'Upload the current server logs to mclo.gs paste service and return the shareable URL.',
+        tags: ['User - Server Logs'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Logs uploaded successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'id', type: 'string', description: 'mclo.gs paste ID'),
+                        new OA\Property(property: 'url', type: 'string', description: 'Full mclo.gs URL'),
+                        new OA\Property(property: 'raw', type: 'string', description: 'Raw paste URL'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - No logs to upload or upload failed'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to upload logs'),
+        ]
+    )]
+    public function uploadLogs(Request $request, string $uuidShort): Response
+    {
+        // Get authenticated user
+        $user = $request->get('user');
+        if (!$user) {
+            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+        }
+
+        // Get server details
+        $server = Server::getServerByUuidShort($uuidShort);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
+        }
+
+        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+            return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
+        }
+
+        // Get node information
+        $node = \App\Chat\Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $scheme = $node['scheme'];
+        $host = $node['fqdn'];
+        $port = $node['daemonListen'];
+        $token = $node['daemon_token'];
+
+        $timeout = (int) 30;
+        try {
+            $wings = new Wings(
+                $host,
+                $port,
+                $scheme,
+                $token,
+                $timeout
+            );
+
+            $response = $wings->getServer()->getServerLogs($server['uuid']);
+
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+
+                return ApiResponse::error('Failed to fetch logs from Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            // Get log data
+            $logData = $response->getData();
+            if (empty($logData)) {
+                return ApiResponse::error('No logs available to upload', 'NO_LOGS', 400);
+            }
+
+            // Convert array to string if needed
+            if (is_array($logData)) {
+                $logContent = implode("\n", $logData);
+            } else {
+                $logContent = (string) $logData;
+            }
+
+            if (trim($logContent) === '') {
+                return ApiResponse::error('No logs available to upload', 'NO_LOGS', 400);
+            }
+
+            // Upload to mclo.gs
+            $uploadResult = LogHelper::uploadToMcloGs($logContent);
+
+            if (!$uploadResult['success']) {
+                return ApiResponse::error($uploadResult['error'] ?? 'Failed to upload logs', 'UPLOAD_FAILED', 500);
+            }
+
+            return ApiResponse::success([
+                'id' => $uploadResult['id'],
+                'url' => $uploadResult['url'],
+                'raw' => $uploadResult['raw'],
+            ], 'Logs uploaded successfully', 200);
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to upload logs to mclo.gs: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to upload logs: ' . $e->getMessage(), 'UPLOAD_ERROR', 500);
+        }
+    }
+
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/install-logs/upload',
+        summary: 'Upload server installation logs to mclo.gs',
+        description: 'Upload the server installation logs to mclo.gs paste service and return the shareable URL.',
+        tags: ['User - Server Logs'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Installation logs uploaded successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'id', type: 'string', description: 'mclo.gs paste ID'),
+                        new OA\Property(property: 'url', type: 'string', description: 'Full mclo.gs URL'),
+                        new OA\Property(property: 'raw', type: 'string', description: 'Raw paste URL'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - No logs to upload or upload failed'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to upload logs'),
+        ]
+    )]
+    public function uploadInstallLogs(Request $request, string $uuidShort): Response
+    {
+        // Get authenticated user
+        $user = $request->get('user');
+        if (!$user) {
+            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+        }
+
+        // Get server details
+        $server = Server::getServerByUuidShort($uuidShort);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
+        }
+
+        if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
+            return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
+        }
+
+        // Get node information
+        $node = \App\Chat\Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $scheme = $node['scheme'];
+        $host = $node['fqdn'];
+        $port = $node['daemonListen'];
+        $token = $node['daemon_token'];
+
+        $timeout = (int) 30;
+        try {
+            $wings = new Wings(
+                $host,
+                $port,
+                $scheme,
+                $token,
+                $timeout
+            );
+
+            $response = $wings->getServer()->getServerInstallLogs($server['uuid']);
+
+            if (!$response->isSuccessful()) {
+                $error = $response->getError();
+
+                return ApiResponse::error('Failed to fetch install logs from Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            // Get log data
+            $logData = $response->getData();
+            if (empty($logData)) {
+                return ApiResponse::error('No installation logs available to upload', 'NO_LOGS', 400);
+            }
+
+            // Convert array to string if needed
+            if (is_array($logData)) {
+                $logContent = implode("\n", $logData);
+            } else {
+                $logContent = (string) $logData;
+            }
+
+            if (trim($logContent) === '') {
+                return ApiResponse::error('No installation logs available to upload', 'NO_LOGS', 400);
+            }
+
+            // Upload to mclo.gs
+            $uploadResult = LogHelper::uploadToMcloGs($logContent);
+
+            if (!$uploadResult['success']) {
+                return ApiResponse::error($uploadResult['error'] ?? 'Failed to upload installation logs', 'UPLOAD_FAILED', 500);
+            }
+
+            return ApiResponse::success([
+                'id' => $uploadResult['id'],
+                'url' => $uploadResult['url'],
+                'raw' => $uploadResult['raw'],
+            ], 'Installation logs uploaded successfully', 200);
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to upload installation logs to mclo.gs: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to upload installation logs: ' . $e->getMessage(), 'UPLOAD_ERROR', 500);
+        }
     }
 }

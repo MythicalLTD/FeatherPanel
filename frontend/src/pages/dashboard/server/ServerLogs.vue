@@ -17,6 +17,17 @@
                         <Download class="h-4 w-4 sm:mr-2" />
                         <span class="hidden sm:inline">{{ t('serverLogs.download') }}</span>
                     </Button>
+                    <Button
+                        variant="outline"
+                        :disabled="loading || uploading"
+                        class="flex-1 sm:flex-none"
+                        @click="uploadLogs"
+                    >
+                        <Upload class="h-4 w-4 sm:mr-2" />
+                        <span class="hidden sm:inline">{{
+                            uploading ? t('serverLogs.uploading') : t('serverLogs.uploadToMcloGs')
+                        }}</span>
+                    </Button>
                 </div>
             </div>
 
@@ -120,7 +131,7 @@ import { useSettingsStore } from '@/stores/settings';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { RefreshCw, Download, FileText } from 'lucide-vue-next';
+import { RefreshCw, Download, FileText, Upload } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import { useI18n } from 'vue-i18n';
@@ -136,6 +147,7 @@ const toast = useToast();
 
 const server = ref<Server | null>(null);
 const loading = ref(false);
+const uploading = ref(false);
 const logs = ref<string[]>([]);
 const lastUpdated = ref<string>('');
 
@@ -246,6 +258,37 @@ function replaceBrandNames(content: string): string {
 async function refreshLogs(): Promise<void> {
     await fetchLogs();
     toast.success(t('serverLogs.logsRefreshed'));
+}
+
+async function uploadLogs(): Promise<void> {
+    if (logs.value.length === 0) {
+        toast.warning(t('serverLogs.noLogsToUpload'));
+        return;
+    }
+
+    try {
+        uploading.value = true;
+        const response = await axios.post(`/api/user/servers/${route.params.uuidShort}/logs/upload`);
+
+        if (response.data && response.data.success) {
+            const mclogsUrl = response.data.data.url;
+
+            // Copy URL to clipboard
+            try {
+                await navigator.clipboard.writeText(mclogsUrl);
+                toast.success(t('serverLogs.logsUploaded'));
+            } catch {
+                toast.success(`Logs uploaded: ${mclogsUrl}`);
+            }
+        } else {
+            toast.error(t('serverLogs.failedToUpload'));
+        }
+    } catch (error) {
+        console.error('Error uploading logs:', error);
+        toast.error(t('serverLogs.failedToUpload'));
+    } finally {
+        uploading.value = false;
+    }
 }
 
 function downloadLogs(): void {

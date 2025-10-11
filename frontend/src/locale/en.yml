@@ -532,12 +532,17 @@ serverLogs:
     noLogs: 'No logs available'
     refresh: 'Refresh'
     download: 'Download'
+    uploadToMcloGs: 'Upload to mclo.gs'
+    uploading: 'Uploading...'
     logsRefreshed: 'Logs refreshed successfully'
     logsDownloaded: 'Logs downloaded successfully'
+    logsUploaded: 'Logs uploaded successfully! URL copied to clipboard.'
     noLogsToDownload: 'No logs available to download'
+    noLogsToUpload: 'No logs available to upload'
     failedToFetchServer: 'Failed to fetch server details'
     failedToFetchLogs: 'Logs are empty... Start the server to see logs.'
     failedToDownload: 'Failed to download logs'
+    failedToUpload: 'Failed to upload logs to mclo.gs'
 
 # Server Install Logs
 serverInstallLogs:
@@ -549,12 +554,17 @@ serverInstallLogs:
     noLogs: 'No install logs available'
     refresh: 'Refresh'
     download: 'Download'
+    uploadToMcloGs: 'Upload to mclo.gs'
+    uploading: 'Uploading...'
     logsRefreshed: 'Install logs refreshed successfully'
     logsDownloaded: 'Install logs downloaded successfully'
+    logsUploaded: 'Install logs uploaded successfully! URL copied to clipboard.'
     noLogsToDownload: 'No install logs available to download'
+    noLogsToUpload: 'No install logs available to upload'
     failedToFetchServer: 'Failed to fetch server details'
     failedToFetchLogs: 'Failed to fetch install logs'
     failedToDownload: 'Failed to download install logs'
+    failedToUpload: 'Failed to upload install logs to mclo.gs'
 
 # Table Component
 table:

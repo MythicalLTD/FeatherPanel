@@ -60,4 +60,30 @@ return function (RouteCollection $routes): void {
         'uuidShort',
         ['GET']
     );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-logs-upload',
+        '/api/user/servers/{uuidShort}/logs/upload',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+
+            return (new ServerLogsController())->uploadLogs($request, $uuidShort);
+        },
+        'uuidShort',
+        ['POST']
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-install-logs-upload',
+        '/api/user/servers/{uuidShort}/install-logs/upload',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+
+            return (new ServerLogsController())->uploadInstallLogs($request, $uuidShort);
+        },
+        'uuidShort',
+        ['POST']
+    );
 };

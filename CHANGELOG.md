@@ -17,6 +17,7 @@
 - Added "Pull file" support to the file manager, enabling users to pull/download files directly from remote URLs into the server. Manage and monitor remote downloads in real time from the Active Downloads panel.
 - Added automatic route indexing for plugins: Rather than requiring each plugin to register its own API routes during the app ready event, the route indexer now automatically discovers and loads routes from a `Routes` folder within each plugin. This simplifies plugin development—just place your route files in a `Routes` directory in your plugin, and they’ll be auto-registered without manual setup!
 - Added full support for PostgreSQL databases, enabling seamless integration and management alongside MySQL and MariaDB.
+- Added support for users to upload their server and install logs to mclo.gs for easy sharing and diagnostics.
 
 ## Fixed
 
@@ -27,6 +28,8 @@
 - Resolved issues with API documentation schemas, ensuring the generated API docs are now fully accurate and up-to-date.
 - **CRITICAL:** Fixed SQL injection vulnerability in PostgreSQL database creation and deletion operations. Database identifiers are now properly escaped to prevent SQL injection attacks through malicious database names.
 - **CRITICAL:** Fixed SQL injection vulnerability in MySQL/MariaDB database creation and deletion operations. Database identifiers are now properly escaped using backtick escaping to prevent SQL injection attacks.
+- Fixed minor UI bugs in the server console.
+- Fixed UI bugs with deletion buttons: they are now properly styled to be readable and are correctly indexed in the UI.
 
 ### Improved
 
