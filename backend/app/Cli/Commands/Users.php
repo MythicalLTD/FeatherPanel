@@ -31,213 +31,350 @@
 namespace App\Cli\Commands;
 
 use App\Cli\App;
+use App\Chat\Role;
 use App\Chat\User;
+use App\Chat\Server;
+use App\Chat\Subuser;
+use App\Chat\Activity;
+use App\Chat\MailList;
+use App\Chat\ApiClient;
+use App\Chat\MailQueue;
 use App\Helpers\UUIDUtils;
 use App\Cli\CommandBuilder;
 
 class Users extends App implements CommandBuilder
 {
+    private static $cliApp;
+    private static $app;
+    private static $currentPage = 1;
+    private static $pageSize = 10;
+    private static $searchQuery = '';
+    private static $users = [];
+    private static $totalUsers = 0;
+
     public static function execute(array $args): void
     {
-        $app = App::getInstance();
+        self::$cliApp = App::getInstance();
+
         if (!file_exists(__DIR__ . '/../../../storage/config/.env')) {
-            \App\App::getInstance(true)->getLogger()->warning('Executed a command without a .env file');
-            $app->send('The .env file does not exist. Please create one before running this command');
+            self::$app->getLogger()->warning('Executed a command without a .env file');
+            self::$cliApp->send('&cThe .env file does not exist. Please create one before running this command');
             exit;
         }
 
-        // Check for subcommands
-        if (isset($args[1])) {
-            $subCommand = $args[1];
-            switch ($subCommand) {
-                case 'list':
-                    self::listUsers($app, $args);
-                    break;
-                case 'show':
-                    self::showUser($app, $args[2] ?? null);
-                    break;
-                case 'create':
-                    self::createUser($app, $args);
-                    break;
-                case 'update':
-                    self::updateUser($app, $args);
-                    break;
-                case 'delete':
-                    self::deleteUser($app, $args[2] ?? null);
-                    break;
-                case 'ban':
-                    self::banUser($app, $args[2] ?? null);
-                    break;
-                case 'unban':
-                    self::unbanUser($app, $args[2] ?? null);
-                    break;
-                case 'search':
-                    self::searchUsers($app, $args[2] ?? '');
-                    break;
-                default:
-                    $app->send('&cInvalid subcommand. Use: list, show, create, update, delete, ban, unban, or search');
-                    break;
-            }
-        } else {
-            $app->send('&cPlease specify a subcommand: list, show, create, update, delete, ban, unban, or search');
-        }
+        // Initialize database connection
+        self::$app = new \App\App(false, false, true);
+        self::$app->loadEnv();
 
-        exit;
+        try {
+            // Test database connection by loading initial users
+            self::loadUsers();
+            self::showMainMenu();
+        } catch (\Exception $e) {
+            self::$cliApp->send('&cAn error occurred while connecting to the database: ' . $e->getMessage());
+            exit;
+        }
     }
 
     public static function getDescription(): string
     {
-        return 'Manage users (list, show, create, update, delete, ban, unban, search)';
+        return 'Interactive user management with a beautiful UI!';
     }
 
     public static function getSubCommands(): array
     {
-        return [
-            'list' => 'List all users (usage: users list [page] [limit])',
-            'show' => 'Show user details (usage: users show <uuid|username|email>)',
-            'create' => 'Create a new user (usage: users create <username> <email> <first_name> <last_name> <password>)',
-            'update' => 'Update a user (usage: users update <uuid|username|email> <field> <value>)',
-            'delete' => 'Delete a user (usage: users delete <uuid|username|email>)',
-            'ban' => 'Ban a user (usage: users ban <uuid|username|email>)',
-            'unban' => 'Unban a user (usage: users unban <uuid|username|email>)',
-            'search' => 'Search users (usage: users search <query>)',
-        ];
+        return [];
     }
 
-    private static function listUsers(App $app, array $args): void
+    private static function loadUsers(): void
     {
-        $page = (int) ($args[2] ?? 1);
-        $limit = (int) ($args[3] ?? 10);
-
-        if ($page < 1) {
-            $page = 1;
-        }
-        if ($limit < 1) {
-            $limit = 10;
-        }
-
-        $users = User::searchUsers(
-            $page,
-            $limit,
-            '',
+        self::$users = User::searchUsers(
+            self::$currentPage,
+            self::$pageSize,
+            self::$searchQuery,
             false,
             ['id', 'username', 'uuid', 'email', 'role_id', 'banned', 'first_seen'],
             'id',
             'ASC'
         );
 
-        $total = User::getCount('');
-        $totalPages = ceil($total / $limit);
-
-        $app->send('&aUsers (Page ' . $page . ' of ' . $totalPages . ', Total: ' . $total . '):');
-        $app->send('&7' . str_repeat('-', 100));
-        $app->send(sprintf('&e%-5s %-20s %-36s %-30s %-8s %-8s', 'ID', 'Username', 'UUID', 'Email', 'Role', 'Banned'));
-        $app->send('&7' . str_repeat('-', 100));
-
-        foreach ($users as $user) {
-            $banned = ($user['banned'] == 1 || $user['banned'] === true || $user['banned'] === 'true') ? '&cYes' : '&aNo';
-            $app->send(sprintf(
-                '%-5s %-20s %-36s %-30s %-8s %s',
-                $user['id'],
-                substr($user['username'], 0, 20),
-                $user['uuid'],
-                substr($user['email'], 0, 30),
-                $user['role_id'],
-                $banned
-            ));
-        }
-
-        $app->send('&7' . str_repeat('-', 100));
+        self::$totalUsers = User::getCount(self::$searchQuery);
     }
 
-    private static function showUser(App $app, ?string $identifier): void
+    private static function showMainMenu(): void
     {
-        if (!$identifier) {
-            $app->send('&cPlease provide a user UUID, username, or email');
+        while (true) {
+            self::clearScreen();
+            self::showHeader();
+            self::showUsersList();
+            self::showFooter();
+
+            $input = self::getUserInput();
+
+            if ($input === 'q' || $input === 'quit') {
+                self::$cliApp->send('&aGoodbye!');
+                exit;
+            } elseif ($input === 'n' || $input === 'next') {
+                self::nextPage();
+            } elseif ($input === 'p' || $input === 'prev') {
+                self::prevPage();
+            } elseif ($input === 'c' || $input === 'create') {
+                self::createUserInteractive();
+            } elseif ($input === 's' || $input === 'search') {
+                self::searchInteractive();
+            } elseif ($input === 'r' || $input === 'reset') {
+                self::$searchQuery = '';
+                self::$currentPage = 1;
+                self::loadUsers();
+            } elseif (is_numeric($input)) {
+                $index = (int) $input - 1;
+                if ($index >= 0 && $index < count(self::$users)) {
+                    self::viewUser($index);
+                } else {
+                    self::$cliApp->send('&cInvalid selection. Press any key to continue...');
+                    self::waitForInput();
+                }
+            } else {
+                self::$cliApp->send('&cInvalid input. Press any key to continue...');
+                self::waitForInput();
+            }
+        }
+    }
+
+    private static function showHeader(): void
+    {
+        self::$cliApp->send('&3&l╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
+        self::$cliApp->send('&3&l║                                    FeatherPanel User Management                                                 ║');
+        self::$cliApp->send('&3&l╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
+
+        $totalPages = max(1, ceil(self::$totalUsers / self::$pageSize));
+        $searchInfo = !empty(self::$searchQuery) ? ' &7(Search: &e' . self::$searchQuery . '&7)' : '';
+        self::$cliApp->send('&aTotal Users: &f' . self::$totalUsers . ' &7| &aPage: &f' . self::$currentPage . '/' . $totalPages . $searchInfo);
+        self::$cliApp->send('');
+    }
+
+    private static function showUsersList(): void
+    {
+        if (empty(self::$users)) {
+            self::$cliApp->send('&eNo users found.');
+            self::$cliApp->send('');
 
             return;
         }
 
-        $user = self::findUser($identifier);
-        if (!$user) {
-            $app->send('&cUser not found: ' . $identifier);
+        self::$cliApp->send('&7' . str_repeat('─', 115));
+        self::$cliApp->send(sprintf('&e%-4s %-3s %-18s %-32s %-25s %-6s %-8s', '#', 'ID', 'Username', 'Email', 'UUID', 'Role', 'Status'));
+        self::$cliApp->send('&7' . str_repeat('─', 115));
+
+        foreach (self::$users as $index => $user) {
+            $number = $index + 1;
+            $banned = ($user['banned'] == 1 || $user['banned'] === true || $user['banned'] === 'true') ? '&cBanned' : '&aActive';
+            $username = substr($user['username'], 0, 18);
+            $email = substr($user['email'], 0, 32);
+            $uuid = substr($user['uuid'], 0, 8) . '...';
+
+            $line = sprintf(
+                '&7%2d. &f%-3s &b%-18s &7%-32s &8%-25s &e%-6s %s',
+                $number,
+                $user['id'],
+                $username,
+                $email,
+                $uuid,
+                $user['role_id'],
+                $banned
+            );
+            self::$cliApp->send($line);
+        }
+
+        self::$cliApp->send('&7' . str_repeat('─', 115));
+        self::$cliApp->send('');
+    }
+
+    private static function showFooter(): void
+    {
+        self::$cliApp->send('&6Commands: &f[number]&7=view user &7| &fc&7=create &7| &fs&7=search &7| &fr&7=reset search &7| &fn&7/&fnext &7| &fp&7/&fprev &7| &fq&7/&fquit');
+        self::$cliApp->send('&aEnter your choice: ');
+    }
+
+    private static function viewUser(int $index): void
+    {
+        $user = self::$users[$index];
+
+        // Get full user details
+        $fullUser = User::getUserByUuid($user['uuid']);
+        if (!$fullUser) {
+            self::$cliApp->send('&cUser not found!');
+            self::waitForInput();
 
             return;
         }
 
-        $roles = \App\Chat\Role::getAllRoles();
+        $roles = Role::getAllRoles();
         $roleName = 'Unknown';
         foreach ($roles as $role) {
-            if ($role['id'] == $user['role_id']) {
+            if ($role['id'] == $fullUser['role_id']) {
                 $roleName = $role['display_name'];
                 break;
             }
         }
 
-        $app->send('&aUser Details:');
-        $app->send('&7' . str_repeat('-', 80));
-        $app->send('&eID: &f' . $user['id']);
-        $app->send('&eUUID: &f' . $user['uuid']);
-        $app->send('&eUsername: &f' . $user['username']);
-        $app->send('&eEmail: &f' . $user['email']);
-        $app->send('&eFirst Name: &f' . $user['first_name']);
-        $app->send('&eLast Name: &f' . $user['last_name']);
-        $app->send('&eRole: &f' . $roleName . ' (' . $user['role_id'] . ')');
-        $app->send('&eBanned: &f' . (($user['banned'] == 1 || $user['banned'] === true || $user['banned'] === 'true') ? '&cYes' : '&aNo'));
-        $app->send('&e2FA Enabled: &f' . (($user['two_fa_enabled'] == 1 || $user['two_fa_enabled'] === true || $user['two_fa_enabled'] === 'true') ? '&aYes' : '&cNo'));
-        $app->send('&eCreated At: &f' . $user['first_seen']);
-        $app->send('&eUpdated At: &f' . $user['updated_at']);
-        if ($user['last_seen']) {
-            $app->send('&eLast Seen: &f' . $user['last_seen']);
+        while (true) {
+            self::clearScreen();
+            self::$cliApp->send('&3&l╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
+            self::$cliApp->send('&3&l║                                           User Details                                                          ║');
+            self::$cliApp->send('&3&l╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
+            self::$cliApp->send('');
+
+            self::$cliApp->send('&eID:              &f' . $fullUser['id']);
+            self::$cliApp->send('&eUUID:            &f' . $fullUser['uuid']);
+            self::$cliApp->send('&eUsername:        &f' . $fullUser['username']);
+            self::$cliApp->send('&eEmail:           &f' . $fullUser['email']);
+            self::$cliApp->send('&eFirst Name:      &f' . $fullUser['first_name']);
+            self::$cliApp->send('&eLast Name:       &f' . $fullUser['last_name']);
+            self::$cliApp->send('&eRole:            &f' . $roleName . ' &7(ID: ' . $fullUser['role_id'] . ')');
+
+            $bannedStatus = ($fullUser['banned'] == 1 || $fullUser['banned'] === true || $fullUser['banned'] === 'true') ? '&cYes' : '&aNo';
+            self::$cliApp->send('&eBanned:          ' . $bannedStatus);
+
+            $twoFaStatus = ($fullUser['two_fa_enabled'] == 1 || $fullUser['two_fa_enabled'] === true || $fullUser['two_fa_enabled'] === 'true') ? '&aYes' : '&cNo';
+            self::$cliApp->send('&e2FA Enabled:     ' . $twoFaStatus);
+
+            self::$cliApp->send('&eCreated At:      &f' . $fullUser['first_seen']);
+            if ($fullUser['last_seen']) {
+                self::$cliApp->send('&eLast Seen:       &f' . $fullUser['last_seen']);
+            }
+
+            self::$cliApp->send('');
+            self::$cliApp->send('&7' . str_repeat('─', 115));
+
+            $isBanned = ($fullUser['banned'] == 1 || $fullUser['banned'] === true || $fullUser['banned'] === 'true');
+            $banAction = $isBanned ? '&fun&7=unban' : '&fb&7=ban';
+
+            self::$cliApp->send('&6Actions: &fe&7=edit &7| &fd&7=delete &7| ' . $banAction . ' &7| &fback&7=return');
+            self::$cliApp->send('&aEnter your choice: ');
+
+            $input = self::getUserInput();
+
+            if ($input === 'back' || $input === 'b') {
+                break;
+            } elseif ($input === 'e' || $input === 'edit') {
+                self::editUserInteractive($fullUser);
+                // Reload user data after edit
+                $fullUser = User::getUserByUuid($user['uuid']);
+                if (!$fullUser) {
+                    break;
+                }
+            } elseif ($input === 'd' || $input === 'delete') {
+                if (self::deleteUserInteractive($fullUser)) {
+                    break; // User was deleted, return to main menu
+                }
+            } elseif (($input === 'b' || $input === 'ban') && !$isBanned) {
+                self::banUserInteractive($fullUser);
+                $fullUser = User::getUserByUuid($user['uuid']);
+                if (!$fullUser) {
+                    break;
+                }
+            } elseif (($input === 'un' || $input === 'unban') && $isBanned) {
+                self::unbanUserInteractive($fullUser);
+                $fullUser = User::getUserByUuid($user['uuid']);
+                if (!$fullUser) {
+                    break;
+                }
+            } else {
+                self::$cliApp->send('&cInvalid input. Press any key to continue...');
+                self::waitForInput();
+            }
         }
-        $app->send('&7' . str_repeat('-', 80));
+
+        // Reload users list
+        self::loadUsers();
     }
 
-    private static function createUser(App $app, array $args): void
+    private static function createUserInteractive(): void
     {
-        if (count($args) < 7) {
-            $app->send('&cUsage: users create <username> <email> <first_name> <last_name> <password> [role_id]');
+        self::clearScreen();
+        self::$cliApp->send('&3&l╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
+        self::$cliApp->send('&3&l║                                          Create New User                                                        ║');
+        self::$cliApp->send('&3&l╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
+        self::$cliApp->send('');
 
+        // Get username
+        self::$cliApp->send('&eEnter username &7(3-32 characters, or &cq&7 to cancel)&7:');
+        $username = trim(fgets(STDIN));
+        if ($username === 'q' || $username === 'quit') {
             return;
         }
 
-        $username = $args[2];
-        $email = $args[3];
-        $firstName = $args[4];
-        $lastName = $args[5];
-        $password = $args[6];
-        $roleId = (int) ($args[7] ?? 1);
-
-        // Validate email
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $app->send('&cInvalid email address');
-
-            return;
-        }
-
-        // Check for existing user
-        if (User::getUserByEmail($email)) {
-            $app->send('&cEmail already exists');
-
-            return;
-        }
-        if (User::getUserByUsername($username)) {
-            $app->send('&cUsername already exists');
-
-            return;
-        }
-
-        // Validate lengths
         if (strlen($username) < 3 || strlen($username) > 32) {
-            $app->send('&cUsername must be between 3 and 32 characters');
+            self::$cliApp->send('&cUsername must be between 3 and 32 characters. Press any key...');
+            self::waitForInput();
 
             return;
         }
+
+        if (User::getUserByUsername($username)) {
+            self::$cliApp->send('&cUsername already exists. Press any key...');
+            self::waitForInput();
+
+            return;
+        }
+
+        // Get email
+        self::$cliApp->send('&eEnter email:');
+        $email = trim(fgets(STDIN));
+        if ($email === 'q' || $email === 'quit') {
+            return;
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            self::$cliApp->send('&cInvalid email address. Press any key...');
+            self::waitForInput();
+
+            return;
+        }
+
+        if (User::getUserByEmail($email)) {
+            self::$cliApp->send('&cEmail already exists. Press any key...');
+            self::waitForInput();
+
+            return;
+        }
+
+        // Get first name
+        self::$cliApp->send('&eEnter first name:');
+        $firstName = trim(fgets(STDIN));
+        if ($firstName === 'q' || $firstName === 'quit') {
+            return;
+        }
+
+        // Get last name
+        self::$cliApp->send('&eEnter last name:');
+        $lastName = trim(fgets(STDIN));
+        if ($lastName === 'q' || $lastName === 'quit') {
+            return;
+        }
+
+        // Get password
+        self::$cliApp->send('&eEnter password &7(min 8 characters)&7:');
+        $password = trim(fgets(STDIN));
+        if ($password === 'q' || $password === 'quit') {
+            return;
+        }
+
         if (strlen($password) < 8) {
-            $app->send('&cPassword must be at least 8 characters');
+            self::$cliApp->send('&cPassword must be at least 8 characters. Press any key...');
+            self::waitForInput();
 
             return;
         }
+
+        // Get role ID
+        self::$cliApp->send('&eEnter role ID &7(default: 1)&7:');
+        $roleIdInput = trim(fgets(STDIN));
+        if ($roleIdInput === 'q' || $roleIdInput === 'quit') {
+            return;
+        }
+        $roleId = empty($roleIdInput) ? 1 : (int) $roleIdInput;
 
         $data = [
             'username' => $username,
@@ -253,85 +390,113 @@ class Users extends App implements CommandBuilder
 
         $userId = User::createUser($data);
         if ($userId) {
-            $app->send('&aUser created successfully!');
-            $app->send('&eUser ID: &f' . $userId);
-            $app->send('&eUUID: &f' . $data['uuid']);
+            self::$cliApp->send('');
+            self::$cliApp->send('&a✓ User created successfully!');
+            self::$cliApp->send('&eUser ID: &f' . $userId);
+            self::$cliApp->send('&eUUID: &f' . $data['uuid']);
+            self::$cliApp->send('&7Press any key to continue...');
+            self::waitForInput();
+            self::loadUsers();
         } else {
-            $app->send('&cFailed to create user');
+            self::$cliApp->send('&c✗ Failed to create user. Press any key...');
+            self::waitForInput();
         }
     }
 
-    private static function updateUser(App $app, array $args): void
+    private static function editUserInteractive(array $user): void
     {
-        if (count($args) < 5) {
-            $app->send('&cUsage: users update <uuid|username|email> <field> <value>');
-            $app->send('&eAvailable fields: username, email, first_name, last_name, password, role_id, banned');
+        $fields = [
+            '1' => ['name' => 'username', 'label' => 'Username', 'current' => $user['username']],
+            '2' => ['name' => 'email', 'label' => 'Email', 'current' => $user['email']],
+            '3' => ['name' => 'first_name', 'label' => 'First Name', 'current' => $user['first_name']],
+            '4' => ['name' => 'last_name', 'label' => 'Last Name', 'current' => $user['last_name']],
+            '5' => ['name' => 'password', 'label' => 'Password', 'current' => '********'],
+            '6' => ['name' => 'role_id', 'label' => 'Role ID', 'current' => $user['role_id']],
+        ];
+
+        self::clearScreen();
+        self::$cliApp->send('&3&l╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
+        self::$cliApp->send('&3&l║                                           Edit User                                                             ║');
+        self::$cliApp->send('&3&l╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
+        self::$cliApp->send('');
+        self::$cliApp->send('&eEditing user: &f' . $user['username'] . ' &7(' . $user['uuid'] . ')');
+        self::$cliApp->send('');
+
+        foreach ($fields as $num => $field) {
+            self::$cliApp->send("&7$num. &e" . $field['label'] . ': &f' . $field['current']);
+        }
+
+        self::$cliApp->send('');
+        self::$cliApp->send('&6Select field to edit &7(or &cq&7 to cancel)&7:');
+
+        $selection = self::getUserInput();
+        if ($selection === 'q' || $selection === 'quit') {
+            return;
+        }
+
+        if (!isset($fields[$selection])) {
+            self::$cliApp->send('&cInvalid selection. Press any key...');
+            self::waitForInput();
 
             return;
         }
 
-        $identifier = $args[2];
-        $field = $args[3];
-        $value = $args[4];
+        $selectedField = $fields[$selection];
+        self::$cliApp->send('&eEnter new value for &f' . $selectedField['label'] . '&e:');
+        $newValue = trim(fgets(STDIN));
 
-        $user = self::findUser($identifier);
-        if (!$user) {
-            $app->send('&cUser not found: ' . $identifier);
-
-            return;
-        }
-
-        $allowedFields = ['username', 'email', 'first_name', 'last_name', 'password', 'role_id', 'banned'];
-        if (!in_array($field, $allowedFields)) {
-            $app->send('&cInvalid field. Allowed fields: ' . implode(', ', $allowedFields));
+        if (empty($newValue)) {
+            self::$cliApp->send('&cValue cannot be empty. Press any key...');
+            self::waitForInput();
 
             return;
         }
 
         $updateData = [];
 
-        switch ($field) {
+        switch ($selectedField['name']) {
             case 'password':
-                $updateData['password'] = password_hash($value, PASSWORD_DEFAULT);
+                if (strlen($newValue) < 8) {
+                    self::$cliApp->send('&cPassword must be at least 8 characters. Press any key...');
+                    self::waitForInput();
+
+                    return;
+                }
+                $updateData['password'] = password_hash($newValue, PASSWORD_DEFAULT);
                 $updateData['remember_token'] = User::generateAccountToken();
                 break;
-            case 'banned':
-                $updateData['banned'] = $value === 'true' || $value === '1' ? true : false;
+            case 'email':
+                if (!filter_var($newValue, FILTER_VALIDATE_EMAIL)) {
+                    self::$cliApp->send('&cInvalid email address. Press any key...');
+                    self::waitForInput();
+
+                    return;
+                }
+                $updateData['email'] = $newValue;
                 break;
             case 'role_id':
-                $updateData['role_id'] = (int) $value;
+                $updateData['role_id'] = (int) $newValue;
                 break;
             default:
-                $updateData[$field] = $value;
+                $updateData[$selectedField['name']] = $newValue;
                 break;
         }
 
         $updated = User::updateUser($user['uuid'], $updateData);
         if ($updated) {
-            $app->send('&aUser updated successfully!');
-            $app->send('&eUpdated field: &f' . $field);
+            self::$cliApp->send('&a✓ User updated successfully!');
+            self::$cliApp->send('&7Press any key to continue...');
+            self::waitForInput();
         } else {
-            $app->send('&cFailed to update user');
+            self::$cliApp->send('&c✗ Failed to update user. Press any key...');
+            self::waitForInput();
         }
     }
 
-    private static function deleteUser(App $app, ?string $identifier): void
+    private static function deleteUserInteractive(array $user): bool
     {
-        if (!$identifier) {
-            $app->send('&cPlease provide a user UUID, username, or email');
-
-            return;
-        }
-
-        $user = self::findUser($identifier);
-        if (!$user) {
-            $app->send('&cUser not found: ' . $identifier);
-
-            return;
-        }
-
         // Check if user has servers
-        $servers = \App\Chat\Server::searchServers(
+        $servers = Server::searchServers(
             page: 1,
             limit: 1,
             search: '',
@@ -342,149 +507,153 @@ class Users extends App implements CommandBuilder
         );
 
         if (!empty($servers)) {
-            $app->send('&cCannot delete user with active servers. Please transfer or delete all servers first.');
+            self::clearScreen();
+            self::$cliApp->send('&c✗ Cannot delete user with active servers!');
+            self::$cliApp->send('&7Please transfer or delete all servers first.');
+            self::$cliApp->send('&7Press any key to continue...');
+            self::waitForInput();
 
-            return;
+            return false;
         }
 
-        $app->send('&eDeleting user: ' . $user['username'] . ' (' . $user['uuid'] . ')');
+        self::clearScreen();
+        self::$cliApp->send('&c&l╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
+        self::$cliApp->send('&c&l║                                          DELETE USER WARNING                                                     ║');
+        self::$cliApp->send('&c&l╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
+        self::$cliApp->send('');
+        self::$cliApp->send('&eYou are about to permanently delete:');
+        self::$cliApp->send('&fUsername: &e' . $user['username']);
+        self::$cliApp->send('&fEmail: &e' . $user['email']);
+        self::$cliApp->send('&fUUID: &e' . $user['uuid']);
+        self::$cliApp->send('');
+        self::$cliApp->send('&cThis action cannot be undone!');
+        self::$cliApp->send('');
+        self::$cliApp->send('&6Type &fDELETE&6 to confirm or anything else to cancel:');
+
+        $confirmation = trim(fgets(STDIN));
+
+        if ($confirmation !== 'DELETE') {
+            self::$cliApp->send('&7Deletion cancelled. Press any key...');
+            self::waitForInput();
+
+            return false;
+        }
 
         // Delete related data
-        \App\Chat\Activity::deleteUserData($user['uuid']);
-        \App\Chat\MailList::deleteAllMailListsByUserId($user['uuid']);
-        \App\Chat\ApiClient::deleteAllApiClientsByUserId($user['uuid']);
-        \App\Chat\Subuser::deleteAllSubusersByUserId((int) $user['id']);
-        \App\Chat\MailQueue::deleteAllMailQueueByUserId($user['uuid']);
+        Activity::deleteUserData($user['uuid']);
+        MailList::deleteAllMailListsByUserId($user['uuid']);
+        ApiClient::deleteAllApiClientsByUserId($user['uuid']);
+        Subuser::deleteAllSubusersByUserId((int) $user['id']);
+        MailQueue::deleteAllMailQueueByUserId($user['uuid']);
 
         $deleted = User::hardDeleteUser($user['id']);
         if ($deleted) {
-            $app->send('&aUser deleted successfully!');
-        } else {
-            $app->send('&cFailed to delete user');
+            self::$cliApp->send('');
+            self::$cliApp->send('&a✓ User deleted successfully!');
+            self::$cliApp->send('&7Press any key to continue...');
+            self::waitForInput();
+            self::loadUsers();
+
+            return true;
         }
+        self::$cliApp->send('');
+        self::$cliApp->send('&c✗ Failed to delete user. Press any key...');
+        self::waitForInput();
+
+        return false;
+
     }
 
-    private static function banUser(App $app, ?string $identifier): void
+    private static function banUserInteractive(array $user): void
     {
-        if (!$identifier) {
-            $app->send('&cPlease provide a user UUID, username, or email');
-
-            return;
-        }
-
-        $user = self::findUser($identifier);
-        if (!$user) {
-            $app->send('&cUser not found: ' . $identifier);
-
-            return;
-        }
-
-        if ($user['banned'] == 1 || $user['banned'] === true || $user['banned'] === 'true') {
-            $app->send('&cUser is already banned');
-
-            return;
-        }
-
         $updated = User::updateUser($user['uuid'], ['banned' => true]);
         if ($updated) {
-            $app->send('&aUser banned successfully!');
-            $app->send('&eUsername: &f' . $user['username']);
+            self::clearScreen();
+            self::$cliApp->send('&a✓ User banned successfully!');
+            self::$cliApp->send('&eUsername: &f' . $user['username']);
+            self::$cliApp->send('&7Press any key to continue...');
+            self::waitForInput();
         } else {
-            $app->send('&cFailed to ban user');
+            self::clearScreen();
+            self::$cliApp->send('&c✗ Failed to ban user. Press any key...');
+            self::waitForInput();
         }
     }
 
-    private static function unbanUser(App $app, ?string $identifier): void
+    private static function unbanUserInteractive(array $user): void
     {
-        if (!$identifier) {
-            $app->send('&cPlease provide a user UUID, username, or email');
-
-            return;
-        }
-
-        $user = self::findUser($identifier);
-        if (!$user) {
-            $app->send('&cUser not found: ' . $identifier);
-
-            return;
-        }
-
-        if (!($user['banned'] == 1 || $user['banned'] === true || $user['banned'] === 'true')) {
-            $app->send('&cUser is not banned');
-
-            return;
-        }
-
         $updated = User::updateUser($user['uuid'], ['banned' => false]);
         if ($updated) {
-            $app->send('&aUser unbanned successfully!');
-            $app->send('&eUsername: &f' . $user['username']);
+            self::clearScreen();
+            self::$cliApp->send('&a✓ User unbanned successfully!');
+            self::$cliApp->send('&eUsername: &f' . $user['username']);
+            self::$cliApp->send('&7Press any key to continue...');
+            self::waitForInput();
         } else {
-            $app->send('&cFailed to unban user');
+            self::clearScreen();
+            self::$cliApp->send('&c✗ Failed to unban user. Press any key...');
+            self::waitForInput();
         }
     }
 
-    private static function searchUsers(App $app, string $query): void
+    private static function searchInteractive(): void
     {
-        if (empty($query)) {
-            $app->send('&cPlease provide a search query');
+        self::clearScreen();
+        self::$cliApp->send('&3&l╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
+        self::$cliApp->send('&3&l║                                          Search Users                                                            ║');
+        self::$cliApp->send('&3&l╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
+        self::$cliApp->send('');
+        self::$cliApp->send('&eEnter search query &7(username, email, UUID or &cq&7 to cancel)&7:');
 
+        $query = trim(fgets(STDIN));
+        if ($query === 'q' || $query === 'quit' || empty($query)) {
             return;
         }
 
-        $users = User::searchUsers(
-            1,
-            50,
-            $query,
-            false,
-            ['id', 'username', 'uuid', 'email', 'role_id', 'banned'],
-            'id',
-            'ASC'
-        );
-
-        $total = count($users);
-
-        $app->send('&aSearch Results for "' . $query . '" (Found: ' . $total . '):');
-        $app->send('&7' . str_repeat('-', 100));
-        $app->send(sprintf('&e%-5s %-20s %-36s %-30s %-8s %-8s', 'ID', 'Username', 'UUID', 'Email', 'Role', 'Banned'));
-        $app->send('&7' . str_repeat('-', 100));
-
-        foreach ($users as $user) {
-            $banned = ($user['banned'] == 1 || $user['banned'] === true || $user['banned'] === 'true') ? '&cYes' : '&aNo';
-            $app->send(sprintf(
-                '%-5s %-20s %-36s %-30s %-8s %s',
-                $user['id'],
-                substr($user['username'], 0, 20),
-                $user['uuid'],
-                substr($user['email'], 0, 30),
-                $user['role_id'],
-                $banned
-            ));
-        }
-
-        $app->send('&7' . str_repeat('-', 100));
+        self::$searchQuery = $query;
+        self::$currentPage = 1;
+        self::loadUsers();
     }
 
-    private static function findUser(string $identifier): ?array
+    private static function nextPage(): void
     {
-        // Try UUID first
-        $user = User::getUserByUuid($identifier);
-        if ($user) {
-            return $user;
+        $maxPage = ceil(self::$totalUsers / self::$pageSize);
+        if (self::$currentPage < $maxPage) {
+            ++self::$currentPage;
+            self::loadUsers();
         }
+    }
 
-        // Try username
-        $user = User::getUserByUsername($identifier);
-        if ($user) {
-            return $user;
+    private static function prevPage(): void
+    {
+        if (self::$currentPage > 1) {
+            --self::$currentPage;
+            self::loadUsers();
         }
+    }
 
-        // Try email
-        $user = User::getUserByEmail($identifier);
-        if ($user) {
-            return $user;
+    private static function clearScreen(): void
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            system('cls');
+        } else {
+            system('clear');
         }
+    }
 
-        return null;
+    private static function getUserInput(): string
+    {
+        $handle = fopen('php://stdin', 'r');
+        $input = trim(fgets($handle));
+        fclose($handle);
+
+        return strtolower($input);
+    }
+
+    private static function waitForInput(): void
+    {
+        $handle = fopen('php://stdin', 'r');
+        fgets($handle);
+        fclose($handle);
     }
 }

@@ -62,7 +62,7 @@ class App
     public RouteCollection $routes;
     public array $middleware = [];
 
-    public function __construct(bool $softBoot, bool $isCron = false, bool $testMode = false)
+    public function __construct(bool $softBoot, bool $isCron = false, bool $isCli = false)
     {
         /**
          * Load the environment variables.
@@ -92,7 +92,7 @@ class App
         }
 
         // If running in test mode, skip Redis and plugin manager, just init DB
-        if ($testMode) {
+        if ($isCli) {
             $this->db = new Database($_ENV['DATABASE_HOST'], $_ENV['DATABASE_DATABASE'], $_ENV['DATABASE_USER'], $_ENV['DATABASE_PASSWORD'], $_ENV['DATABASE_PORT']);
 
             return;

@@ -19,6 +19,7 @@
 - Added full support for PostgreSQL databases, enabling seamless integration and management alongside MySQL and MariaDB.
 - Added support for users to upload their server and install logs to mclo.gs for easy sharing and diagnostics.
 - Added support for unique request IDs (`REQUEST_ID`) throughout backend and frontend responses for improved traceability of API calls, debugging, and support. All API responses now include a `request_id` field, and logs/diagnostics reference this value where possible.
+- Added a new `saas` CLI command to enable FeatherPanel SaaS reselling capabilities, allowing users to manage hosted reselling operations via the command line.
 
 ## Fixed
 
