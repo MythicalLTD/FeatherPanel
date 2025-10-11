@@ -259,7 +259,7 @@
                     </div>
 
                     <div class="flex gap-2">
-                        <Button type="submit" :loading="updating">
+                        <Button type="submit" variant="default" :loading="updating">
                             {{ updating ? 'Updating...' : 'Update Template' }}
                         </Button>
                         <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
@@ -312,7 +312,7 @@
                     </div>
 
                     <div class="flex gap-2">
-                        <Button type="submit" :loading="creating">
+                        <Button type="submit" variant="default" :loading="creating">
                             {{ creating ? 'Creating...' : 'Create Template' }}
                         </Button>
                         <Button type="button" variant="outline" @click="closeCreateDrawer">Cancel</Button>
@@ -433,7 +433,12 @@
                     </div>
 
                     <div class="flex gap-2">
-                        <Button type="submit" :loading="sendingMassEmail" :disabled="sendingMassEmail">
+                        <Button
+                            type="submit"
+                            variant="default"
+                            :loading="sendingMassEmail"
+                            :disabled="sendingMassEmail"
+                        >
                             {{ sendingMassEmail ? 'Sending...' : 'Send to All Users' }}
                         </Button>
                         <Button

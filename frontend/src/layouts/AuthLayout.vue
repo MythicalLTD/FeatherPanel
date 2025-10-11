@@ -118,6 +118,7 @@ const toggleTheme = () => {
             detail: { theme: isDarkTheme.value ? 'dark' : 'light' },
         }),
     );
+    location.reload();
 };
 
 // Initialize theme on mount

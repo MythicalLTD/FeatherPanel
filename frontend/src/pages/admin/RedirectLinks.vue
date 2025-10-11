@@ -329,7 +329,7 @@
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-2">
-                        <Button type="submit" :loading="updating" class="w-full sm:w-auto">
+                        <Button type="submit" variant="default" :loading="updating" class="w-full sm:w-auto">
                             {{ updating ? 'Updating...' : 'Update Redirect Link' }}
                         </Button>
                         <Button type="button" variant="outline" class="w-full sm:w-auto" @click="closeEditDrawer"
@@ -405,7 +405,7 @@
                     </div>
 
                     <div class="flex gap-2">
-                        <Button type="submit" :loading="creating">
+                        <Button type="submit" variant="default" :loading="creating">
                             {{ creating ? 'Creating...' : 'Create Redirect Link' }}
                         </Button>
                         <Button type="button" variant="outline" @click="closeCreateDrawer">Cancel</Button>

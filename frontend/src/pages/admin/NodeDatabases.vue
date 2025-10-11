@@ -240,7 +240,7 @@
                         </div>
                     </div>
                     <DrawerFooter class="mt-4">
-                        <Button type="submit" class="w-full" :loading="formLoading">
+                        <Button type="submit" variant="default" class="w-full" :loading="formLoading">
                             {{ drawerMode === 'create' ? 'Create Database' : 'Update Database' }}
                         </Button>
                         <Button type="button" class="w-full" variant="outline" @click="closeDrawer"> Cancel </Button>

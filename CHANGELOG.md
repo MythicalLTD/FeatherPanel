@@ -30,6 +30,8 @@
 - **CRITICAL:** Fixed SQL injection vulnerability in MySQL/MariaDB database creation and deletion operations. Database identifiers are now properly escaped using backtick escaping to prevent SQL injection attacks.
 - Fixed minor UI bugs in the server console.
 - Fixed UI bugs with deletion buttons: they are now properly styled to be readable and are correctly indexed in the UI.
+- Improved UI/UX: Added a hover color for the submit button across the application for more consistent feedback and better user experience. (#42)
+- Fixed a bug where the auth screen would not change themes when toggling between dark and light mode.
 
 ### Improved
 

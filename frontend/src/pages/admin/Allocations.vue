@@ -310,7 +310,7 @@
                 <Textarea id="edit-notes" v-model="editForm.notes" placeholder="Additional notes..." />
                 <div class="flex justify-end gap-2 mt-4">
                     <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
-                    <Button type="submit" variant="secondary">Save</Button>
+                    <Button type="submit" variant="default">Save</Button>
                 </div>
             </form>
         </DrawerContent>
@@ -392,7 +392,7 @@
                 <Textarea id="create-notes" v-model="createForm.notes" placeholder="Additional notes..." />
                 <div class="flex justify-end gap-2 mt-4">
                     <Button type="button" variant="outline" @click="closeCreateDrawer">Cancel</Button>
-                    <Button type="submit" variant="secondary">Create</Button>
+                    <Button type="submit" variant="default">Create</Button>
                 </div>
             </form>
         </DrawerContent>

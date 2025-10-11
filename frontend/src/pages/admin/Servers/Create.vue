@@ -563,7 +563,12 @@
                             <Button type="button" variant="outline" @click="$router.push('/admin/servers')">
                                 Cancel
                             </Button>
-                            <Button type="submit" :loading="submitting" class="bg-green-600 hover:bg-green-700">
+                            <Button
+                                type="submit"
+                                variant="default"
+                                :loading="submitting"
+                                class="bg-green-600 hover:bg-green-700"
+                            >
                                 Create Server
                             </Button>
                         </div>

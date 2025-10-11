@@ -269,7 +269,7 @@
                     </div>
 
                     <div class="flex gap-2">
-                        <Button type="submit" :loading="updating">
+                        <Button type="submit" variant="default" :loading="updating">
                             {{ updating ? 'Updating...' : 'Update Image' }}
                         </Button>
                         <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
@@ -313,7 +313,7 @@
                     </div>
 
                     <div class="flex gap-2">
-                        <Button type="submit" :loading="uploading">
+                        <Button type="submit" variant="default" :loading="uploading">
                             {{ uploading ? 'Uploading...' : 'Upload Image' }}
                         </Button>
                         <Button type="button" variant="outline" @click="closeCreateDrawer">Cancel</Button>
