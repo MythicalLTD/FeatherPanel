@@ -37,10 +37,12 @@ class Help extends App implements CommandBuilder
 {
     public static function execute(array $args): void
     {
-        $cmdInstance = self::getInstance();
-        $cmdInstance->send($cmdInstance->bars);
-        $cmdInstance->send('&5&lMythical&d&lDash &7- &d&lHelp');
-        $cmdInstance->send('');
+        $cmd = self::getInstance();
+
+        // Use simple ASCII bars and basic MC color codes (ampersand codes, as above)
+        $cmd->send('&8' . str_repeat('-', 60));
+        $cmd->send($cmd->color1 . '&lFeatherPanel &7Help Menu');
+        $cmd->send('');
 
         $commands = scandir(__DIR__);
 
@@ -49,30 +51,32 @@ class Help extends App implements CommandBuilder
                 continue;
             }
 
-            $command = str_replace('.php', '', $command);
-            $commandClass = "App\\Cli\\Commands\\$command";
-            $commandFile = __DIR__ . "/$command.php";
+            $commandName = str_replace('.php', '', $command);
+            $commandClass = "App\\Cli\\Commands\\$commandName";
+            $commandFile = __DIR__ . "/$commandName.php";
 
             require_once $commandFile;
 
             if (!class_exists($commandClass)) {
-                return;
+                continue;
             }
 
-            $description = $commandClass::getDescription();
-            $command = lcfirst($command);
+            $desc = $commandClass::getDescription();
+            $cmdKey = lcfirst($commandName);
             $subCommands = $commandClass::getSubCommands();
-            $cmdInstance->send("&b{$command} &8> &7{$description}");
+
+            // FeatherPanel style: primary = aqua (&b), accent = gold (&6), secondary = gray (&7), desc = white (&f)
+            $cmd->send($cmd->color1 . '/' . $cmd->color2 . $cmdKey . $cmd->color3 . ': &f' . $desc);
 
             if (!empty($subCommands)) {
-                foreach ($subCommands as $subCommand => $description) {
-                    $cmdInstance->send("    &8> &b{$command} {$subCommand} &8- &7{$description}");
+                foreach ($subCommands as $subCommand => $subDesc) {
+                    $cmd->send('     ' . $cmd->color2 . '-' . $cmd->color3 . " &a{$cmdKey} &e{$subCommand}&7: &f{$subDesc}");
                 }
             }
-
         }
-        $cmdInstance->send('');
-        $cmdInstance->send('&d&lPlugin Commands:');
+
+        $cmd->send('');
+        $cmd->send($cmd->color1 . 'Plugins:');
         $pluginDir = getcwd() . '/backend/storage/addons';
         if (is_dir($pluginDir)) {
             $plugins = array_diff(scandir($pluginDir), ['.', '..']);
@@ -93,20 +97,20 @@ class Help extends App implements CommandBuilder
                     if (!class_exists($commandClass)) {
                         continue;
                     }
-                    $description = $commandClass::getDescription();
-                    $command = lcfirst($className);
+                    $desc = $commandClass::getDescription();
+                    $cmdKey = lcfirst($className);
                     $subCommands = $commandClass::getSubCommands();
-                    $cmdInstance->send("&b[{$plugin}] {$command} &8> &7{$description}");
+                    $cmd->send($cmd->color3 . '[' . $plugin . '] ' . $cmd->color1 . '/' . $cmd->color2 . $cmdKey . $cmd->color3 . ': &f' . $desc);
                     if (!empty($subCommands)) {
                         foreach ($subCommands as $subCommand => $subDesc) {
-                            $cmdInstance->send("    &8> &b{$command} {$subCommand} &8- &7{$subDesc}");
+                            $cmd->send('     ' . $cmd->color2 . '-' . $cmd->color3 . " {$cmdKey} {$subCommand}&7: &f{$subDesc}");
                         }
                     }
                 }
             }
         }
-        $cmdInstance->send('');
-        $cmdInstance->send($cmdInstance->bars);
+        $cmd->send('');
+        $cmd->send($cmd->color2 . str_repeat('-', 60));
     }
 
     public static function getDescription(): string

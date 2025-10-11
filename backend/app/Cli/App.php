@@ -34,9 +34,17 @@ use App\Cli\Commands\Help;
 
 class App extends Utils\MinecraftColorCodeSupport
 {
-    public $prefix = '&7[&5&lMythical&d&lPanel&7] &8&l| &7';
-    public $bars = '&7&m-----------------------------------------------------&r';
+    // FeatherPanel CLI prefix - using bold golden yellow for "Feather", aqua for "Panel", then a stylish gold/gray divider
+    // FeatherPanel CLI Colors: refined, professional palette
+    public $prefix = '&8[&3&lFeather&b&lPanel&8] &3❱ &f';
+    public $color1 = '&3'; // deep blue accent (primary brand)
+    public $color2 = '&b'; // aqua highlight (secondary/active)
+    public $color3 = '&7'; // soft gray (subtle details and prompts)
+    public $bars   = '&8&m---------------------------------------------------------------&r'; // dark elegant bar
     public static App $instance;
+    public static bool $isColorEnabled = true;
+    public static bool $isCleanOutputEnabled = false;
+    public static bool $noPrefix = false;
 
     public function __construct(string $commandName, array $args)
     {
@@ -51,6 +59,25 @@ class App extends Utils\MinecraftColorCodeSupport
         ];
         if (!in_array($cwd, $validDirs, true)) {
             exit('We detected that you are not running this command from the root directory of App. Please run this command from the root directory.');
+        }
+
+        // Check for the --no-colors flag and set color output accordingly
+        if (in_array('--no-colors', $args, true)) {
+            self::$isColorEnabled = false;
+            // Remove --no-colors from $args so it's not passed to the command handlers
+            $args = array_values(array_diff($args, ['--no-colors']));
+        }
+
+        if (in_array('--clean-output', $args, true)) {
+            self::$isCleanOutputEnabled = true;
+            // Remove --clean-output from $args so it's not passed to the command handlers
+            $args = array_values(array_diff($args, ['--clean-output']));
+        }
+
+        if (in_array('--no-prefix', $args, true)) {
+            self::$noPrefix = true;
+            // Remove --no-prefix from $args so it's not passed to the command handlers
+            $args = array_values(array_diff($args, ['--no-prefix']));
         }
 
         // Try plugin commands first, then fall back to built-in commands
@@ -155,7 +182,11 @@ class App extends Utils\MinecraftColorCodeSupport
      */
     public function send(string $message): void
     {
-        self::sendOutputWithNewLine($this->prefix . $message);
+        if (self::$noPrefix) {
+            self::sendOutputWithNewLine($message, !self::$isColorEnabled, self::$isCleanOutputEnabled);
+        } else {
+            self::sendOutputWithNewLine($this->prefix . $message, !self::$isColorEnabled, self::$isCleanOutputEnabled);
+        }
     }
 
     /**

@@ -136,27 +136,28 @@ class Saas extends App implements CommandBuilder
 
     private static function showHelp(): void
     {
-        self::$cliApp->send('&3&l=== FeatherPanel SaaS Helper ===');
+        self::$cliApp->send(self::$cliApp->color1 . '&l=== FeatherPanel SaaS Helper ===');
         self::$cliApp->send('');
-        self::$cliApp->send('&eAvailable Commands:');
+        self::$cliApp->send(self::$cliApp->color3 . 'Available Commands:');
         self::$cliApp->send('');
 
         foreach (self::getSubCommands() as $command => $description) {
-            self::$cliApp->send("&a$command&7: &f$description");
+            self::$cliApp->send('&a' . $command . '&7: &f' . $description);
         }
 
         self::$cliApp->send('');
         self::$cliApp->send('&7Examples:');
-        self::$cliApp->send('&ephp fuse saas createuser john john@example.com John Doe MyPass123 1');
-        self::$cliApp->send('&ephp fuse saas setsetting APP_NAME "My Panel"');
-        self::$cliApp->send('&ephp fuse saas userinfo john@example.com');
+        self::$cliApp->send(self::$cliApp->color3 . 'php fuse saas createuser john john@example.com John Doe MyPass123 1');
+        self::$cliApp->send(self::$cliApp->color3 . 'php fuse saas setsetting APP_NAME "My Panel"');
+        self::$cliApp->send(self::$cliApp->color3 . 'php fuse saas userinfo john@example.com');
     }
 
     private static function createUser(array $args): void
     {
         if (count($args) < 7) {
             self::$cliApp->send('&cUsage: saas createuser <username> <email> <firstName> <lastName> <password> [roleId]');
-            self::$cliApp->send('&eExample: saas createuser john john@example.com John Doe MyPass123 1');
+            self::$cliApp->send(self::$cliApp->color3 . 'Example: saas createuser john john@example.com John Doe MyPass123 1');
+
             return;
         }
 
@@ -170,26 +171,31 @@ class Saas extends App implements CommandBuilder
         // Validate email
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             self::$cliApp->send('&cError: Invalid email address');
+
             return;
         }
 
         // Check for existing user
         if (User::getUserByEmail($email)) {
             self::$cliApp->send('&cError: Email already exists');
+
             return;
         }
         if (User::getUserByUsername($username)) {
             self::$cliApp->send('&cError: Username already exists');
+
             return;
         }
 
         // Validate lengths
         if (strlen($username) < 3 || strlen($username) > 32) {
             self::$cliApp->send('&cError: Username must be between 3 and 32 characters');
+
             return;
         }
         if (strlen($password) < 8) {
             self::$cliApp->send('&cError: Password must be at least 8 characters');
+
             return;
         }
 
@@ -209,10 +215,10 @@ class Saas extends App implements CommandBuilder
         $userId = User::createUser($data);
         if ($userId) {
             self::$cliApp->send('&aSuccess: User created');
-            self::$cliApp->send('&eUser ID: &f' . $userId);
-            self::$cliApp->send('&eUUID: &f' . $uuid);
-            self::$cliApp->send('&eUsername: &f' . $username);
-            self::$cliApp->send('&eEmail: &f' . $email);
+            self::$cliApp->send(self::$cliApp->color3 . 'User ID: &f' . $userId);
+            self::$cliApp->send(self::$cliApp->color3 . 'UUID: &f' . $uuid);
+            self::$cliApp->send(self::$cliApp->color3 . 'Username: &f' . $username);
+            self::$cliApp->send(self::$cliApp->color3 . 'Email: &f' . $email);
         } else {
             self::$cliApp->send('&cError: Failed to create user');
         }
@@ -222,6 +228,7 @@ class Saas extends App implements CommandBuilder
     {
         if (count($args) < 3) {
             self::$cliApp->send('&cUsage: saas deleteuser <uuid|username|email>');
+
             return;
         }
 
@@ -230,6 +237,7 @@ class Saas extends App implements CommandBuilder
 
         if (!$user) {
             self::$cliApp->send('&cError: User not found');
+
             return;
         }
 
@@ -246,6 +254,7 @@ class Saas extends App implements CommandBuilder
 
         if (!empty($servers)) {
             self::$cliApp->send('&cError: Cannot delete user with active servers');
+
             return;
         }
 
@@ -259,8 +268,8 @@ class Saas extends App implements CommandBuilder
         $deleted = User::hardDeleteUser($user['id']);
         if ($deleted) {
             self::$cliApp->send('&aSuccess: User deleted');
-            self::$cliApp->send('&eUsername: &f' . $user['username']);
-            self::$cliApp->send('&eUUID: &f' . $user['uuid']);
+            self::$cliApp->send(self::$cliApp->color3 . 'Username: &f' . $user['username']);
+            self::$cliApp->send(self::$cliApp->color3 . 'UUID: &f' . $user['uuid']);
         } else {
             self::$cliApp->send('&cError: Failed to delete user');
         }
@@ -270,7 +279,8 @@ class Saas extends App implements CommandBuilder
     {
         if (count($args) < 5) {
             self::$cliApp->send('&cUsage: saas updateuser <uuid|username|email> <field> <value>');
-            self::$cliApp->send('&eAvailable fields: username, email, first_name, last_name, role_id, banned');
+            self::$cliApp->send(self::$cliApp->color3 . 'Available fields: username, email, first_name, last_name, role_id, banned');
+
             return;
         }
 
@@ -281,12 +291,14 @@ class Saas extends App implements CommandBuilder
         $user = self::findUser($identifier);
         if (!$user) {
             self::$cliApp->send('&cError: User not found');
+
             return;
         }
 
         $allowedFields = ['username', 'email', 'first_name', 'last_name', 'role_id', 'banned'];
         if (!in_array($field, $allowedFields)) {
             self::$cliApp->send('&cError: Invalid field. Allowed: ' . implode(', ', $allowedFields));
+
             return;
         }
 
@@ -302,6 +314,7 @@ class Saas extends App implements CommandBuilder
             case 'email':
                 if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
                     self::$cliApp->send('&cError: Invalid email address');
+
                     return;
                 }
                 $updateData['email'] = $value;
@@ -314,8 +327,8 @@ class Saas extends App implements CommandBuilder
         $updated = User::updateUser($user['uuid'], $updateData);
         if ($updated) {
             self::$cliApp->send('&aSuccess: User updated');
-            self::$cliApp->send('&eField: &f' . $field);
-            self::$cliApp->send('&eNew value: &f' . $value);
+            self::$cliApp->send(self::$cliApp->color3 . 'Field: &f' . $field);
+            self::$cliApp->send(self::$cliApp->color3 . 'New value: &f' . $value);
         } else {
             self::$cliApp->send('&cError: Failed to update user');
         }
@@ -325,6 +338,7 @@ class Saas extends App implements CommandBuilder
     {
         if (count($args) < 3) {
             self::$cliApp->send('&cUsage: saas banuser <uuid|username|email>');
+
             return;
         }
 
@@ -333,18 +347,20 @@ class Saas extends App implements CommandBuilder
 
         if (!$user) {
             self::$cliApp->send('&cError: User not found');
+
             return;
         }
 
         if ($user['banned'] == 1 || $user['banned'] === true) {
             self::$cliApp->send('&cError: User is already banned');
+
             return;
         }
 
         $updated = User::updateUser($user['uuid'], ['banned' => true]);
         if ($updated) {
             self::$cliApp->send('&aSuccess: User banned');
-            self::$cliApp->send('&eUsername: &f' . $user['username']);
+            self::$cliApp->send(self::$cliApp->color3 . 'Username: &f' . $user['username']);
         } else {
             self::$cliApp->send('&cError: Failed to ban user');
         }
@@ -354,6 +370,7 @@ class Saas extends App implements CommandBuilder
     {
         if (count($args) < 3) {
             self::$cliApp->send('&cUsage: saas unbanuser <uuid|username|email>');
+
             return;
         }
 
@@ -362,18 +379,20 @@ class Saas extends App implements CommandBuilder
 
         if (!$user) {
             self::$cliApp->send('&cError: User not found');
+
             return;
         }
 
         if (!($user['banned'] == 1 || $user['banned'] === true)) {
             self::$cliApp->send('&cError: User is not banned');
+
             return;
         }
 
         $updated = User::updateUser($user['uuid'], ['banned' => false]);
         if ($updated) {
             self::$cliApp->send('&aSuccess: User unbanned');
-            self::$cliApp->send('&eUsername: &f' . $user['username']);
+            self::$cliApp->send(self::$cliApp->color3 . 'Username: &f' . $user['username']);
         } else {
             self::$cliApp->send('&cError: Failed to unban user');
         }
@@ -383,6 +402,7 @@ class Saas extends App implements CommandBuilder
     {
         if (count($args) < 4) {
             self::$cliApp->send('&cUsage: saas resetpassword <uuid|username|email> <newPassword>');
+
             return;
         }
 
@@ -392,11 +412,13 @@ class Saas extends App implements CommandBuilder
         $user = self::findUser($identifier);
         if (!$user) {
             self::$cliApp->send('&cError: User not found');
+
             return;
         }
 
         if (strlen($newPassword) < 8) {
             self::$cliApp->send('&cError: Password must be at least 8 characters');
+
             return;
         }
 
@@ -408,8 +430,8 @@ class Saas extends App implements CommandBuilder
         $updated = User::updateUser($user['uuid'], $updateData);
         if ($updated) {
             self::$cliApp->send('&aSuccess: Password reset');
-            self::$cliApp->send('&eUsername: &f' . $user['username']);
-            self::$cliApp->send('&eNote: User will be logged out of all sessions');
+            self::$cliApp->send(self::$cliApp->color3 . 'Username: &f' . $user['username']);
+            self::$cliApp->send(self::$cliApp->color3 . 'Note: User will be logged out of all sessions');
         } else {
             self::$cliApp->send('&cError: Failed to reset password');
         }
@@ -419,6 +441,7 @@ class Saas extends App implements CommandBuilder
     {
         if (count($args) < 3) {
             self::$cliApp->send('&cUsage: saas userinfo <uuid|username|email>');
+
             return;
         }
 
@@ -427,6 +450,7 @@ class Saas extends App implements CommandBuilder
 
         if (!$user) {
             self::$cliApp->send('&cError: User not found');
+
             return;
         }
 
@@ -440,18 +464,18 @@ class Saas extends App implements CommandBuilder
         }
 
         self::$cliApp->send('&7' . str_repeat('-', 80));
-        self::$cliApp->send('&eID: &f' . $user['id']);
-        self::$cliApp->send('&eUUID: &f' . $user['uuid']);
-        self::$cliApp->send('&eUsername: &f' . $user['username']);
-        self::$cliApp->send('&eEmail: &f' . $user['email']);
-        self::$cliApp->send('&eFirst Name: &f' . $user['first_name']);
-        self::$cliApp->send('&eLast Name: &f' . $user['last_name']);
-        self::$cliApp->send('&eRole: &f' . $roleName . ' (ID: ' . $user['role_id'] . ')');
-        self::$cliApp->send('&eBanned: &f' . (($user['banned'] == 1 || $user['banned'] === true) ? '&cYes' : '&aNo'));
-        self::$cliApp->send('&e2FA Enabled: &f' . (($user['two_fa_enabled'] == 1 || $user['two_fa_enabled'] === true) ? '&aYes' : '&cNo'));
-        self::$cliApp->send('&eCreated At: &f' . $user['first_seen']);
+        self::$cliApp->send(self::$cliApp->color3 . 'ID: &f' . $user['id']);
+        self::$cliApp->send(self::$cliApp->color3 . 'UUID: &f' . $user['uuid']);
+        self::$cliApp->send(self::$cliApp->color3 . 'Username: &f' . $user['username']);
+        self::$cliApp->send(self::$cliApp->color3 . 'Email: &f' . $user['email']);
+        self::$cliApp->send(self::$cliApp->color3 . 'First Name: &f' . $user['first_name']);
+        self::$cliApp->send(self::$cliApp->color3 . 'Last Name: &f' . $user['last_name']);
+        self::$cliApp->send(self::$cliApp->color3 . 'Role: &f' . $roleName . ' (ID: ' . $user['role_id'] . ')');
+        self::$cliApp->send(self::$cliApp->color3 . 'Banned: &f' . (($user['banned'] == 1 || $user['banned'] === true) ? '&cYes' : '&aNo'));
+        self::$cliApp->send(self::$cliApp->color3 . '2FA Enabled: &f' . (($user['two_fa_enabled'] == 1 || $user['two_fa_enabled'] === true) ? '&aYes' : '&cNo'));
+        self::$cliApp->send(self::$cliApp->color3 . 'Created At: &f' . $user['first_seen']);
         if ($user['last_seen']) {
-            self::$cliApp->send('&eLast Seen: &f' . $user['last_seen']);
+            self::$cliApp->send(self::$cliApp->color3 . 'Last Seen: &f' . $user['last_seen']);
         }
         self::$cliApp->send('&7' . str_repeat('-', 80));
     }
@@ -479,7 +503,7 @@ class Saas extends App implements CommandBuilder
 
         self::$cliApp->send('&aUsers (Showing: ' . count($users) . ', Total: ' . $total . '):');
         self::$cliApp->send('&7' . str_repeat('-', 100));
-        self::$cliApp->send(sprintf('&e%-5s %-20s %-30s %-8s %-8s', 'ID', 'Username', 'Email', 'Role', 'Banned'));
+        self::$cliApp->send(sprintf(self::$cliApp->color3 . '%-5s %-20s %-30s %-8s %-8s', 'ID', 'Username', 'Email', 'Role', 'Banned'));
         self::$cliApp->send('&7' . str_repeat('-', 100));
 
         foreach ($users as $user) {
@@ -501,7 +525,8 @@ class Saas extends App implements CommandBuilder
     {
         if (count($args) < 4) {
             self::$cliApp->send('&cUsage: saas setsetting <key> <value>');
-            self::$cliApp->send('&eExample: saas setsetting APP_NAME "FeatherPanel"');
+            self::$cliApp->send(self::$cliApp->color3 . 'Example: saas setsetting APP_NAME "FeatherPanel"');
+
             return;
         }
 
@@ -512,7 +537,8 @@ class Saas extends App implements CommandBuilder
         $configurableSettings = self::$config->getConfigurableSettings();
         if (!in_array($key, $configurableSettings)) {
             self::$cliApp->send('&cError: Setting not found or not configurable');
-            self::$cliApp->send('&eUse &fsaas listsettings&e to see available settings');
+            self::$cliApp->send(self::$cliApp->color3 . 'Use &fsaas listsettings' . self::$cliApp->color3 . ' to see available settings');
+
             return;
         }
 
@@ -520,8 +546,8 @@ class Saas extends App implements CommandBuilder
             $result = self::$config->setSetting($key, $value);
             if ($result) {
                 self::$cliApp->send('&aSuccess: Setting updated');
-                self::$cliApp->send('&eKey: &f' . $key);
-                self::$cliApp->send('&eValue: &f' . $value);
+                self::$cliApp->send(self::$cliApp->color3 . 'Key: &f' . $key);
+                self::$cliApp->send(self::$cliApp->color3 . 'Value: &f' . $value);
             } else {
                 self::$cliApp->send('&cError: Failed to update setting');
             }
@@ -534,6 +560,7 @@ class Saas extends App implements CommandBuilder
     {
         if (count($args) < 3) {
             self::$cliApp->send('&cUsage: saas getsetting <key>');
+
             return;
         }
 
@@ -542,8 +569,8 @@ class Saas extends App implements CommandBuilder
         try {
             $value = self::$config->getSetting($key, null);
             if ($value !== null) {
-                self::$cliApp->send('&eKey: &f' . $key);
-                self::$cliApp->send('&eValue: &f' . $value);
+                self::$cliApp->send(self::$cliApp->color3 . 'Key: &f' . $key);
+                self::$cliApp->send(self::$cliApp->color3 . 'Value: &f' . $value);
             } else {
                 self::$cliApp->send('&cError: Setting not found');
             }
@@ -562,7 +589,7 @@ class Saas extends App implements CommandBuilder
         foreach ($settings as $setting) {
             $value = self::$config->getSetting($setting, 'NOT SET');
             $displayValue = strlen($value) > 50 ? substr($value, 0, 47) . '...' : $value;
-            self::$cliApp->send(sprintf('&e%-30s &7→ &f%s', $setting, $displayValue));
+            self::$cliApp->send(sprintf(self::$cliApp->color3 . '%-30s &7→ &f%s', $setting, $displayValue));
         }
 
         self::$cliApp->send('&7' . str_repeat('-', 80));
@@ -591,4 +618,3 @@ class Saas extends App implements CommandBuilder
         return null;
     }
 }
-

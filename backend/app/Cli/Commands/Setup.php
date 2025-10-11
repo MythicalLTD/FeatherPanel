@@ -62,7 +62,7 @@ class Setup extends App implements CommandBuilder
         $defultDBUser = 'featherpanel';
         $defultDBPassword = '';
 
-        $cliApp->send("&7Please enter the database encryption &8[&e$defultEncryption&8]&7");
+        $cliApp->send('&7Please enter the database encryption &8[' . $cliApp->color3 . $defultEncryption . '&8]&7');
         $dbEncryption = readline('> ') ?: $defultEncryption;
         $allowedEncryptions = ['xchacha20'];
         if (!in_array($dbEncryption, $allowedEncryptions)) {
@@ -70,19 +70,19 @@ class Setup extends App implements CommandBuilder
             exit;
         }
 
-        $cliApp->send("&7Please enter the database name &8[&e$defultDBName&8]&7");
+        $cliApp->send('&7Please enter the database name &8[' . $cliApp->color3 . $defultDBName . '&8]&7');
         $defultDBName = readline('> ') ?: $defultDBName;
 
-        $cliApp->send("&7Please enter the database host &8[&e$defultDBHost&8]&7");
+        $cliApp->send('&7Please enter the database host &8[' . $cliApp->color3 . $defultDBHost . '&8]&7');
         $defultDBHost = readline('> ') ?: $defultDBHost;
 
-        $cliApp->send("&7Please enter the database port &8[&e$defultDBPort&8]&7");
+        $cliApp->send('&7Please enter the database port &8[' . $cliApp->color3 . $defultDBPort . '&8]&7');
         $defultDBPort = readline('> ') ?: $defultDBPort;
 
-        $cliApp->send("&7Please enter the database user &8[&e$defultDBUser&8]&7");
+        $cliApp->send('&7Please enter the database user &8[' . $cliApp->color3 . $defultDBUser . '&8]&7');
         $defultDBUser = readline('> ') ?: $defultDBUser;
 
-        $cliApp->send("&7Please enter the database password &8[&e$defultDBPassword&8]&7");
+        $cliApp->send('&7Please enter the database password &8[' . $cliApp->color3 . $defultDBPassword . '&8]&7');
         $defultDBPassword = readline('> ') ?: $defultDBPassword;
 
         try {

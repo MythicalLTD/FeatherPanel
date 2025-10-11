@@ -143,12 +143,12 @@ class Users extends App implements CommandBuilder
 
     private static function showHeader(): void
     {
-        self::$cliApp->send('&3&l╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
-        self::$cliApp->send('&3&l║                                    FeatherPanel User Management                                                 ║');
-        self::$cliApp->send('&3&l╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
+        self::$cliApp->send(self::$cliApp->color1 . '&l╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
+        self::$cliApp->send(self::$cliApp->color1 . '&l║                                    FeatherPanel User Management                                                 ║');
+        self::$cliApp->send(self::$cliApp->color1 . '&l╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
 
         $totalPages = max(1, ceil(self::$totalUsers / self::$pageSize));
-        $searchInfo = !empty(self::$searchQuery) ? ' &7(Search: &e' . self::$searchQuery . '&7)' : '';
+        $searchInfo = !empty(self::$searchQuery) ? ' &7(Search: ' . self::$cliApp->color3 . self::$searchQuery . '&7)' : '';
         self::$cliApp->send('&aTotal Users: &f' . self::$totalUsers . ' &7| &aPage: &f' . self::$currentPage . '/' . $totalPages . $searchInfo);
         self::$cliApp->send('');
     }
@@ -156,14 +156,14 @@ class Users extends App implements CommandBuilder
     private static function showUsersList(): void
     {
         if (empty(self::$users)) {
-            self::$cliApp->send('&eNo users found.');
+            self::$cliApp->send(self::$cliApp->color3 . 'No users found.');
             self::$cliApp->send('');
 
             return;
         }
 
         self::$cliApp->send('&7' . str_repeat('─', 115));
-        self::$cliApp->send(sprintf('&e%-4s %-3s %-18s %-32s %-25s %-6s %-8s', '#', 'ID', 'Username', 'Email', 'UUID', 'Role', 'Status'));
+        self::$cliApp->send(sprintf(self::$cliApp->color3 . '%-4s %-3s %-18s %-32s %-25s %-6s %-8s', '#', 'ID', 'Username', 'Email', 'UUID', 'Role', 'Status'));
         self::$cliApp->send('&7' . str_repeat('─', 115));
 
         foreach (self::$users as $index => $user) {
@@ -174,7 +174,7 @@ class Users extends App implements CommandBuilder
             $uuid = substr($user['uuid'], 0, 8) . '...';
 
             $line = sprintf(
-                '&7%2d. &f%-3s &b%-18s &7%-32s &8%-25s &e%-6s %s',
+                '&7%2d. &f%-3s ' . self::$cliApp->color2 . '%-18s &7%-32s &8%-25s ' . self::$cliApp->color3 . '%-6s %s',
                 $number,
                 $user['id'],
                 $username,
@@ -192,8 +192,8 @@ class Users extends App implements CommandBuilder
 
     private static function showFooter(): void
     {
-        self::$cliApp->send('&6Commands: &f[number]&7=view user &7| &fc&7=create &7| &fs&7=search &7| &fr&7=reset search &7| &fn&7/&fnext &7| &fp&7/&fprev &7| &fq&7/&fquit');
-        self::$cliApp->send('&aEnter your choice: ');
+        self::$cliApp->send(self::$cliApp->color3 . 'Commands: &f[number]&7=view user &7| &fc&7=create &7| &fs&7=search &7| &fr&7=reset search &7| &fn&7/&fnext &7| &fp&7/&fprev &7| &fq&7/&fquit');
+        self::$cliApp->send(self::$cliApp->color2 . 'Enter your choice: ');
     }
 
     private static function viewUser(int $index): void
@@ -220,28 +220,28 @@ class Users extends App implements CommandBuilder
 
         while (true) {
             self::clearScreen();
-            self::$cliApp->send('&3&l╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
-            self::$cliApp->send('&3&l║                                           User Details                                                          ║');
-            self::$cliApp->send('&3&l╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
+            self::$cliApp->send(self::$cliApp->color1 . '&l╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
+            self::$cliApp->send(self::$cliApp->color1 . '&l║                                           User Details                                                          ║');
+            self::$cliApp->send(self::$cliApp->color1 . '&l╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
             self::$cliApp->send('');
 
-            self::$cliApp->send('&eID:              &f' . $fullUser['id']);
-            self::$cliApp->send('&eUUID:            &f' . $fullUser['uuid']);
-            self::$cliApp->send('&eUsername:        &f' . $fullUser['username']);
-            self::$cliApp->send('&eEmail:           &f' . $fullUser['email']);
-            self::$cliApp->send('&eFirst Name:      &f' . $fullUser['first_name']);
-            self::$cliApp->send('&eLast Name:       &f' . $fullUser['last_name']);
-            self::$cliApp->send('&eRole:            &f' . $roleName . ' &7(ID: ' . $fullUser['role_id'] . ')');
+            self::$cliApp->send(self::$cliApp->color3 . 'ID:              &f' . $fullUser['id']);
+            self::$cliApp->send(self::$cliApp->color3 . 'UUID:            &f' . $fullUser['uuid']);
+            self::$cliApp->send(self::$cliApp->color3 . 'Username:        &f' . $fullUser['username']);
+            self::$cliApp->send(self::$cliApp->color3 . 'Email:           &f' . $fullUser['email']);
+            self::$cliApp->send(self::$cliApp->color3 . 'First Name:      &f' . $fullUser['first_name']);
+            self::$cliApp->send(self::$cliApp->color3 . 'Last Name:       &f' . $fullUser['last_name']);
+            self::$cliApp->send(self::$cliApp->color3 . 'Role:            &f' . $roleName . ' &7(ID: ' . $fullUser['role_id'] . ')');
 
             $bannedStatus = ($fullUser['banned'] == 1 || $fullUser['banned'] === true || $fullUser['banned'] === 'true') ? '&cYes' : '&aNo';
-            self::$cliApp->send('&eBanned:          ' . $bannedStatus);
+            self::$cliApp->send(self::$cliApp->color3 . 'Banned:          ' . $bannedStatus);
 
             $twoFaStatus = ($fullUser['two_fa_enabled'] == 1 || $fullUser['two_fa_enabled'] === true || $fullUser['two_fa_enabled'] === 'true') ? '&aYes' : '&cNo';
-            self::$cliApp->send('&e2FA Enabled:     ' . $twoFaStatus);
+            self::$cliApp->send(self::$cliApp->color3 . '2FA Enabled:     ' . $twoFaStatus);
 
-            self::$cliApp->send('&eCreated At:      &f' . $fullUser['first_seen']);
+            self::$cliApp->send(self::$cliApp->color3 . 'Created At:      &f' . $fullUser['first_seen']);
             if ($fullUser['last_seen']) {
-                self::$cliApp->send('&eLast Seen:       &f' . $fullUser['last_seen']);
+                self::$cliApp->send(self::$cliApp->color3 . 'Last Seen:       &f' . $fullUser['last_seen']);
             }
 
             self::$cliApp->send('');
@@ -250,8 +250,8 @@ class Users extends App implements CommandBuilder
             $isBanned = ($fullUser['banned'] == 1 || $fullUser['banned'] === true || $fullUser['banned'] === 'true');
             $banAction = $isBanned ? '&fun&7=unban' : '&fb&7=ban';
 
-            self::$cliApp->send('&6Actions: &fe&7=edit &7| &fd&7=delete &7| ' . $banAction . ' &7| &fback&7=return');
-            self::$cliApp->send('&aEnter your choice: ');
+            self::$cliApp->send(self::$cliApp->color3 . 'Actions: &fe&7=edit &7| &fd&7=delete &7| ' . $banAction . ' &7| &fback&7=return');
+            self::$cliApp->send(self::$cliApp->color2 . 'Enter your choice: ');
 
             $input = self::getUserInput();
 
@@ -293,13 +293,13 @@ class Users extends App implements CommandBuilder
     private static function createUserInteractive(): void
     {
         self::clearScreen();
-        self::$cliApp->send('&3&l╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
-        self::$cliApp->send('&3&l║                                          Create New User                                                        ║');
-        self::$cliApp->send('&3&l╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
+        self::$cliApp->send(self::$cliApp->color1 . '&l╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
+        self::$cliApp->send(self::$cliApp->color1 . '&l║                                          Create New User                                                        ║');
+        self::$cliApp->send(self::$cliApp->color1 . '&l╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
         self::$cliApp->send('');
 
         // Get username
-        self::$cliApp->send('&eEnter username &7(3-32 characters, or &cq&7 to cancel)&7:');
+        self::$cliApp->send(self::$cliApp->color3 . 'Enter username &7(3-32 characters, or &cq&7 to cancel)&7:');
         $username = trim(fgets(STDIN));
         if ($username === 'q' || $username === 'quit') {
             return;
@@ -320,7 +320,7 @@ class Users extends App implements CommandBuilder
         }
 
         // Get email
-        self::$cliApp->send('&eEnter email:');
+        self::$cliApp->send(self::$cliApp->color3 . 'Enter email:');
         $email = trim(fgets(STDIN));
         if ($email === 'q' || $email === 'quit') {
             return;
@@ -341,21 +341,21 @@ class Users extends App implements CommandBuilder
         }
 
         // Get first name
-        self::$cliApp->send('&eEnter first name:');
+        self::$cliApp->send(self::$cliApp->color3 . 'Enter first name:');
         $firstName = trim(fgets(STDIN));
         if ($firstName === 'q' || $firstName === 'quit') {
             return;
         }
 
         // Get last name
-        self::$cliApp->send('&eEnter last name:');
+        self::$cliApp->send(self::$cliApp->color3 . 'Enter last name:');
         $lastName = trim(fgets(STDIN));
         if ($lastName === 'q' || $lastName === 'quit') {
             return;
         }
 
         // Get password
-        self::$cliApp->send('&eEnter password &7(min 8 characters)&7:');
+        self::$cliApp->send(self::$cliApp->color3 . 'Enter password &7(min 8 characters)&7:');
         $password = trim(fgets(STDIN));
         if ($password === 'q' || $password === 'quit') {
             return;
@@ -369,7 +369,7 @@ class Users extends App implements CommandBuilder
         }
 
         // Get role ID
-        self::$cliApp->send('&eEnter role ID &7(default: 1)&7:');
+        self::$cliApp->send(self::$cliApp->color3 . 'Enter role ID &7(default: 1)&7:');
         $roleIdInput = trim(fgets(STDIN));
         if ($roleIdInput === 'q' || $roleIdInput === 'quit') {
             return;
@@ -392,8 +392,8 @@ class Users extends App implements CommandBuilder
         if ($userId) {
             self::$cliApp->send('');
             self::$cliApp->send('&a✓ User created successfully!');
-            self::$cliApp->send('&eUser ID: &f' . $userId);
-            self::$cliApp->send('&eUUID: &f' . $data['uuid']);
+            self::$cliApp->send(self::$cliApp->color3 . 'User ID: &f' . $userId);
+            self::$cliApp->send(self::$cliApp->color3 . 'UUID: &f' . $data['uuid']);
             self::$cliApp->send('&7Press any key to continue...');
             self::waitForInput();
             self::loadUsers();
@@ -415,19 +415,19 @@ class Users extends App implements CommandBuilder
         ];
 
         self::clearScreen();
-        self::$cliApp->send('&3&l╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
-        self::$cliApp->send('&3&l║                                           Edit User                                                             ║');
-        self::$cliApp->send('&3&l╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
+        self::$cliApp->send(self::$cliApp->color1 . '&l╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
+        self::$cliApp->send(self::$cliApp->color1 . '&l║                                           Edit User                                                             ║');
+        self::$cliApp->send(self::$cliApp->color1 . '&l╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
         self::$cliApp->send('');
-        self::$cliApp->send('&eEditing user: &f' . $user['username'] . ' &7(' . $user['uuid'] . ')');
+        self::$cliApp->send(self::$cliApp->color3 . 'Editing user: &f' . $user['username'] . ' &7(' . $user['uuid'] . ')');
         self::$cliApp->send('');
 
         foreach ($fields as $num => $field) {
-            self::$cliApp->send("&7$num. &e" . $field['label'] . ': &f' . $field['current']);
+            self::$cliApp->send('&7' . $num . '. ' . self::$cliApp->color3 . $field['label'] . ': &f' . $field['current']);
         }
 
         self::$cliApp->send('');
-        self::$cliApp->send('&6Select field to edit &7(or &cq&7 to cancel)&7:');
+        self::$cliApp->send(self::$cliApp->color3 . 'Select field to edit &7(or &cq&7 to cancel)&7:');
 
         $selection = self::getUserInput();
         if ($selection === 'q' || $selection === 'quit') {
@@ -442,7 +442,7 @@ class Users extends App implements CommandBuilder
         }
 
         $selectedField = $fields[$selection];
-        self::$cliApp->send('&eEnter new value for &f' . $selectedField['label'] . '&e:');
+        self::$cliApp->send(self::$cliApp->color3 . 'Enter new value for &f' . $selectedField['label'] . self::$cliApp->color3 . ':');
         $newValue = trim(fgets(STDIN));
 
         if (empty($newValue)) {
@@ -599,11 +599,11 @@ class Users extends App implements CommandBuilder
     private static function searchInteractive(): void
     {
         self::clearScreen();
-        self::$cliApp->send('&3&l╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
-        self::$cliApp->send('&3&l║                                          Search Users                                                            ║');
-        self::$cliApp->send('&3&l╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
+        self::$cliApp->send(self::$cliApp->color1 . '&l╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
+        self::$cliApp->send(self::$cliApp->color1 . '&l║                                          Search Users                                                            ║');
+        self::$cliApp->send(self::$cliApp->color1 . '&l╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
         self::$cliApp->send('');
-        self::$cliApp->send('&eEnter search query &7(username, email, UUID or &cq&7 to cancel)&7:');
+        self::$cliApp->send(self::$cliApp->color3 . 'Enter search query &7(username, email, UUID or &cq&7 to cancel)&7:');
 
         $query = trim(fgets(STDIN));
         if ($query === 'q' || $query === 'quit' || empty($query)) {

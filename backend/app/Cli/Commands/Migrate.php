@@ -43,7 +43,7 @@ class Migrate extends App implements CommandBuilder
         $cliApp = App::getInstance();
 
         // Display header
-        $cliApp->send('&6&l[FeatherPanel] &r&eDatabase Migration Tool');
+        $cliApp->send($cliApp->color1 . '&l[FeatherPanel] &r' . $cliApp->color3 . 'Database Migration Tool');
         $cliApp->send('&7' . str_repeat('─', 50));
 
         if (!file_exists(__DIR__ . '/../../../storage/config/.env')) {
@@ -57,7 +57,7 @@ class Migrate extends App implements CommandBuilder
 
         try {
             MainApp::getInstance(true)->loadEnv();
-            $cliApp->send('&e&l⏳ Connecting to database... &r&7' . $_ENV['DATABASE_HOST'] . ':' . $_ENV['DATABASE_PORT']);
+            $cliApp->send($cliApp->color3 . '&l⏳ Connecting to database... &r&7' . $_ENV['DATABASE_HOST'] . ':' . $_ENV['DATABASE_PORT']);
 
             $db = new Database($_ENV['DATABASE_HOST'], $_ENV['DATABASE_DATABASE'], $_ENV['DATABASE_USER'], $_ENV['DATABASE_PASSWORD'], $_ENV['DATABASE_PORT']);
 
@@ -65,7 +65,7 @@ class Migrate extends App implements CommandBuilder
             $pdo = $db->getPdo();
             $tableExists = $pdo->query("SHOW TABLES LIKE 'featherpanel_settings'")->rowCount() > 0;
             if ($tableExists) {
-                $cliApp->send('&e&l🔧 Cleaning duplicate settings...');
+                $cliApp->send($cliApp->color3 . '&l🔧 Cleaning duplicate settings...');
                 $fixSql = 'DELETE FROM featherpanel_settings WHERE id NOT IN (SELECT id FROM (SELECT MAX(id) as id FROM featherpanel_settings GROUP BY name) as keep_ids);';
                 $deletedRows = $pdo->exec($fixSql);
                 if ($deletedRows > 0) {
@@ -89,9 +89,9 @@ class Migrate extends App implements CommandBuilder
         try {
             $query = $db->getPdo()->query("SHOW TABLES LIKE 'featherpanel_migrations'");
             if ($query->rowCount() > 0) {
-                $cliApp->send('&e&l📋 Migrations table already exists');
+                $cliApp->send($cliApp->color3 . '&l📋 Migrations table already exists');
             } else {
-                $cliApp->send('&e&l🏗️  Creating migrations table...');
+                $cliApp->send($cliApp->color3 . '&l🏗️  Creating migrations table...');
                 $db->getPdo()->exec(statement: $sqlScript);
                 $cliApp->send('&a&l✅ Migrations table created successfully!');
             }
@@ -113,7 +113,7 @@ class Migrate extends App implements CommandBuilder
         $skippedMigrations = 0;
         $failedMigrations = 0;
 
-        $cliApp->send('&e&l📊 Found &r&f' . $totalMigrations . '&r&e migration files');
+        $cliApp->send($cliApp->color3 . '&l📊 Found &r&f' . $totalMigrations . '&r' . $cliApp->color3 . ' migration files');
         $cliApp->send('&7' . str_repeat('─', 50));
 
         foreach ($migrationFiles as $migration) {
@@ -137,12 +137,12 @@ class Migrate extends App implements CommandBuilder
             /**
              * Execute the migration.
              */
-            $cliApp->send('&e&l🔄 Executing: &r&f' . $migrationName);
+            $cliApp->send($cliApp->color3 . '&l🔄 Executing: &r&f' . $migrationName);
             $migrationStartTime = microtime(true);
 
             try {
                 if ($migrationName == '2024-11-15-22.17-create-settings.sql') {
-                    $cliApp->send('&e&l🔄 Generating encryption key...');
+                    $cliApp->send($cliApp->color3 . '&l🔄 Generating encryption key...');
                     // Generate an encryption key for xchacha20
                     $encryptionKey = XChaCha20::generateStrongKey(true);
                     MainApp::getInstance(true)->updateEnvValue('DATABASE_ENCRYPTION', 'xchacha20', false);
@@ -178,11 +178,11 @@ class Migrate extends App implements CommandBuilder
         $totalTime = round((microtime(true) - $startTime) * 1000, 2);
 
         $cliApp->send('&7' . str_repeat('─', 50));
-        $cliApp->send('&6&l📈 Migration Summary:');
+        $cliApp->send($cliApp->color1 . '&l📈 Migration Summary:');
         $cliApp->send('&a&l   ✅ Executed: &r&f' . $executedMigrations . '&r&a migrations');
         $cliApp->send('&7&l   ⏭️  Skipped: &r&f' . $skippedMigrations . '&r&7 migrations');
         $cliApp->send('&c&l   ❌ Failed: &r&f' . $failedMigrations . '&r&c migrations');
-        $cliApp->send('&e&l   ⏱️  Total Time: &r&f' . $totalTime . '&r&e ms');
+        $cliApp->send($cliApp->color3 . '&l   ⏱️  Total Time: &r&f' . $totalTime . '&r' . $cliApp->color3 . ' ms');
 
         if ($failedMigrations > 0) {
             $cliApp->send('&c&l⚠️  Some migrations failed. Please check the errors above.');
@@ -190,7 +190,7 @@ class Migrate extends App implements CommandBuilder
             $cliApp->send('&a&l🎉 All migrations completed successfully!');
         }
 
-        $cliApp->send('&e&l🔄 Please restart the server to apply the changes!');
+        $cliApp->send($cliApp->color3 . '&l🔄 Please restart the server to apply the changes!');
     }
 
     public static function getDescription(): string

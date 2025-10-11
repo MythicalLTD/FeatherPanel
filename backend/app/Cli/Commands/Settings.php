@@ -111,8 +111,8 @@ class Settings extends App implements CommandBuilder
 
     private static function showHeader(): void
     {
-        self::$cliApp->send('=== FeatherPanel Settings ===');
-        self::$cliApp->send('Total Settings: ' . count(self::$settings) . ' | Page: ' . (self::$currentPage + 1) . '/' . max(1, ceil(count(self::$settings) / max(1, self::$pageSize))));
+        self::$cliApp->send(self::$cliApp->color1 . '=== FeatherPanel Settings ===');
+        self::$cliApp->send('&7Total Settings: &f' . count(self::$settings) . ' &7| Page: &f' . (self::$currentPage + 1) . '/' . max(1, ceil(count(self::$settings) / max(1, self::$pageSize))));
         self::$cliApp->send('');
     }
 
@@ -127,7 +127,7 @@ class Settings extends App implements CommandBuilder
             $displayValue = strlen($currentValue) > 30 ? substr($currentValue, 0, 27) . '...' : $currentValue;
 
             $number = $i + 1;
-            $line = sprintf('&7%2d. &e%-25s &7→ &a%s', $number, $setting, $displayValue);
+            $line = sprintf('&7%2d. ' . self::$cliApp->color3 . '%-25s &7→ ' . self::$cliApp->color2 . '%s', $number, $setting, $displayValue);
             self::$cliApp->send($line);
         }
 
@@ -136,8 +136,8 @@ class Settings extends App implements CommandBuilder
 
     private static function showFooter(): void
     {
-        self::$cliApp->send('Commands: [number]=edit | n/next | p/prev | q/quit');
-        self::$cliApp->send('Enter your choice: ');
+        self::$cliApp->send(self::$cliApp->color3 . 'Commands: &f[number]&7=edit | &fn&7/&fnext | &fp&7/&fprev | &fq&7/&fquit');
+        self::$cliApp->send(self::$cliApp->color2 . 'Enter your choice: ');
     }
 
     private static function editSetting(int $index): void
@@ -147,11 +147,11 @@ class Settings extends App implements CommandBuilder
 
         while (true) {
             self::clearScreen();
-            self::$cliApp->send('&3&lEdit Setting');
-            self::$cliApp->send("&bSetting: &e$setting");
-            self::$cliApp->send('&7Current Value: &a' . (strlen($currentValue) > 65 ? substr($currentValue, 0, 62) . '...' : $currentValue));
+            self::$cliApp->send(self::$cliApp->color1 . '&lEdit Setting');
+            self::$cliApp->send(self::$cliApp->color2 . 'Setting: ' . self::$cliApp->color3 . $setting);
+            self::$cliApp->send('&7Current Value: ' . self::$cliApp->color2 . (strlen($currentValue) > 65 ? substr($currentValue, 0, 62) . '...' : $currentValue));
             self::$cliApp->send('');
-            self::$cliApp->send('&6Enter new value &8(&cq&6 to cancel&8)&7: ');
+            self::$cliApp->send(self::$cliApp->color3 . 'Enter new value &8(&cq' . self::$cliApp->color3 . ' to cancel&8)&7: ');
             $newValue = trim(fgets(STDIN));
 
             if ($newValue === 'q' || $newValue === 'quit') {

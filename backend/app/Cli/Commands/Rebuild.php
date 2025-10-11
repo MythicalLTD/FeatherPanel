@@ -41,10 +41,10 @@ class Rebuild extends App implements CommandBuilder
         $app = App::getInstance();
         if (!file_exists(__DIR__ . '/../../../storage/config/.env')) {
             \App\App::getInstance(true)->getLogger()->warning('Executed a command without a .env file');
-            $app->send('The .env file does not exist. Please create one before running this command');
+            $app->send('&cThe .env file does not exist. Please create one before running this command');
             exit;
         }
-        $app->send('&aRebuilding the database...');
+        $app->send($app->color1 . 'Rebuilding the database...');
 
         $app->send('&7Are you sure you want to rebuild the database? This will delete all data! Type &ayes &7to continue or &cno &7to cancel.');
         $app->send('&7This action is irreversible!');
@@ -57,7 +57,7 @@ class Rebuild extends App implements CommandBuilder
             return;
         }
 
-        $app->send('&aRebuilding...');
+        $app->send($app->color3 . 'Rebuilding...');
 
         try {
             \App\App::getInstance(true)->loadEnv();

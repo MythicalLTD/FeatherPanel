@@ -160,12 +160,22 @@ class MinecraftColorCodeSupport
      *
      * @return string The message to send
      */
-    public static function sendOutputWithNewLine(string $message): void
+    public static function sendOutputWithNewLine(string $message, bool $stripColors = false, bool $stripClean = false): void
     {
         $pattern = '/&([0-9a-fklmnor])/i';
-        $translatedMessage = preg_replace_callback($pattern, function ($matches) {
+        $translatedMessage = preg_replace_callback($pattern, function ($matches) use ($stripColors) {
+            if ($stripColors) {
+                return '';
+            }
+
             return self::getColorCode($matches[1]);
         }, $message);
+
+        if ($stripClean) {
+            // Allow only basic keyboard printable characters and whitespace
+            $translatedMessage = preg_replace('/[^a-zA-Z0-9\s\.\,\_\-\!\?\:\;\@\#\$\%\^\&\*\(\)\[\]\{\}\<\>\=\+\/\\\\\|\~\`\'\"\§]/u', '', $translatedMessage);
+        }
+
         echo $translatedMessage . self::NewLine();
     }
 
