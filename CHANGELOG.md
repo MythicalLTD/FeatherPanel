@@ -23,6 +23,8 @@
 - Added new `--no-colors` CLI flag: Disables colored output in all CLI command responses for improved accessibility and easier log parsing.
 - Added new `--clean-output` CLI flag: Strips out decorative lines, bars, and extra formatting from CLI output, making results easier to parse for automation tools and scripts.
 - Added new `--no-prefix` CLI flag: Outputs raw command responses without the FeatherPanel CLI prefix, allowing for cleaner and more script-friendly output in automated workflows.
+- Added dynamic page titles support throughout the frontend. Page titles now automatically reflect the current section, improving navigation and accessibility.
+- Added support for dynamic page favicons throughout the frontend. Favicons now update automatically based on application settings and changes.
 
 ## Fixed
 

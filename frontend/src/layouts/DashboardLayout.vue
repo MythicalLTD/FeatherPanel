@@ -42,7 +42,8 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useLocalStorage } from '@vueuse/core';
-import { computed } from 'vue';
+import { computed, onMounted, watch, watchEffect } from 'vue';
+import { useSettingsStore } from '@/stores/settings'; // <-- Import settings store
 
 export interface BreadcrumbEntry {
     text: string;
@@ -50,9 +51,114 @@ export interface BreadcrumbEntry {
     isCurrent?: boolean;
 }
 
-defineProps<{ breadcrumbs?: BreadcrumbEntry[] }>();
+const props = defineProps<{ breadcrumbs?: BreadcrumbEntry[] }>();
 
 const isSidebarVisible = computed(() => useLocalStorage('sidebar-visibility', 'visible').value !== 'hidden');
+
+// Use the settings store to get appName for the title
+const settingsStore = useSettingsStore();
+
+// -- Fix: always use up-to-date settingsStore.appName instead of hardcoded fallback --
+const getAppName = () => settingsStore.appName || 'FeatherPanel';
+
+// Ensure appName is always loaded on mount
+onMounted(async () => {
+    await settingsStore.fetchSettings();
+
+    // Always set document.title for the initial load
+    let title = getAppName();
+    if (props.breadcrumbs && props.breadcrumbs.length > 0) {
+        const currentBreadcrumb = props.breadcrumbs.find((crumb) => crumb.isCurrent);
+        if (currentBreadcrumb) {
+            title = `${currentBreadcrumb.text} - ${getAppName()}`;
+        }
+    }
+    document.title = String(title);
+});
+
+// Update page title and always use fresh settingsStore.appName
+watch(
+    [() => props.breadcrumbs, () => settingsStore.appName],
+    ([breadcrumbs]) => {
+        let title = getAppName();
+        if (breadcrumbs && breadcrumbs.length > 0) {
+            const currentBreadcrumb = breadcrumbs.find((crumb) => crumb.isCurrent);
+            if (currentBreadcrumb) {
+                title = `${currentBreadcrumb.text} - ${getAppName()}`;
+            }
+        }
+        document.title = String(title);
+    },
+    { immediate: false },
+);
+
+// Dynamically update favicon whenever appLogo changes (force reloads for browsers that cache aggressively)
+watchEffect(() => {
+    const appLogo = settingsStore.appLogo;
+    if (!appLogo) return;
+
+    // Remove any existing favicon links to avoid browser confusion
+    const existingIcons = Array.from(
+        document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]'),
+    );
+    existingIcons.forEach((el) => el.parentNode?.removeChild(el));
+
+    // Helper to append a favicon link, with cache-busting query
+    const appendFavicon = (rel: string, type: string, href: string) => {
+        const link = document.createElement('link');
+        link.rel = rel;
+        if (type) link.type = type;
+        // Add a cache-buster so browser reloads favicon (changes each time appLogo changes!)
+        const cacheBust = `fpfcache=${Date.now()}`;
+        // Don't double cache-bust
+        link.href = href.includes('?') ? `${href}&${cacheBust}` : `${href}?${cacheBust}`;
+        document.head.appendChild(link);
+    };
+
+    // Standard PNG favicon
+    appendFavicon('icon', 'image/png', String(appLogo));
+    // Legacy shortcut icon (for IE/Edge and some Firefox versions, can be PNG or ICO)
+    appendFavicon('shortcut icon', 'image/png', String(appLogo));
+    // Apple Touch icon for iOS
+    appendFavicon('apple-touch-icon', '', String(appLogo));
+
+    // If appLogo is already a .ico, add as x-icon explicitly for best browser support
+    if (String(appLogo).toLowerCase().endsWith('.ico')) {
+        appendFavicon('icon', 'image/x-icon', String(appLogo));
+        appendFavicon('shortcut icon', 'image/x-icon', String(appLogo));
+    }
+    // If appLogo is a PNG, try to convert to ICO and add as favicon (in-memory conversion)
+    // (This does not create a true ICO, just a fallback for some browsers.)
+    else if (String(appLogo).toLowerCase().endsWith('.png')) {
+        const image = new window.Image();
+        image.crossOrigin = 'anonymous';
+        image.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 32;
+                canvas.height = 32;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.clearRect(0, 0, 32, 32);
+                    ctx.drawImage(image, 0, 0, 32, 32);
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            const url = URL.createObjectURL(blob);
+                            appendFavicon('icon', 'image/x-icon', url);
+                            appendFavicon('shortcut icon', 'image/x-icon', url);
+                            // Revoke object URL after a short time
+                            setTimeout(() => URL.revokeObjectURL(url), 4000);
+                        }
+                    }, 'image/png');
+                }
+            } catch {
+                // If conversion fails, do nothing (already added PNG favicons above)
+            }
+        };
+        // Force reload (in case src is the same as before)
+        image.src = String(appLogo) + (String(appLogo).includes('?') ? '&' : '?') + `fpfcache=${Date.now()}`;
+    }
+});
 </script>
 
 <template>
