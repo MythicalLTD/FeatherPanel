@@ -83,6 +83,7 @@ class SettingsController
             'hostname' => gethostname(),
             'telemetry' => TELEMETRY,
             'startup' => defined('APP_START') ? number_format((microtime(true) - APP_START) * 1000, 2) . ' ms' : 'N/A',
+            'request_id' => defined('REQUEST_ID') ? REQUEST_ID : '',
         ];
 
         return ApiResponse::success(['settings' => $settings, 'core' => $core], 'Providing settings', 200);

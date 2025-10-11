@@ -18,6 +18,7 @@
 - Added automatic route indexing for plugins: Rather than requiring each plugin to register its own API routes during the app ready event, the route indexer now automatically discovers and loads routes from a `Routes` folder within each plugin. This simplifies plugin development—just place your route files in a `Routes` directory in your plugin, and they’ll be auto-registered without manual setup!
 - Added full support for PostgreSQL databases, enabling seamless integration and management alongside MySQL and MariaDB.
 - Added support for users to upload their server and install logs to mclo.gs for easy sharing and diagnostics.
+- Added support for unique request IDs (`REQUEST_ID`) throughout backend and frontend responses for improved traceability of API calls, debugging, and support. All API responses now include a `request_id` field, and logs/diagnostics reference this value where possible.
 
 ## Fixed
 

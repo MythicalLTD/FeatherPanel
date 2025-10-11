@@ -53,6 +53,7 @@ define('SYSTEM_KERNEL_NAME', php_uname('s'));
 define('TELEMETRY', true);
 define('APP_VERSION', 'v0.0.4');
 define('APP_UPSTREAM', 'canary');
+define('REQUEST_ID', uniqid());
 
 if (APP_DEBUG) {
     define('RATE_LIMIT', 500000);

@@ -78,7 +78,7 @@ class CloudFlareRealIP
     public static function getRealIP()
     {
         $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
-        
+
         // Cloudflare - highest priority
         if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
             $cfIP = $_SERVER['HTTP_CF_CONNECTING_IP'];
@@ -87,8 +87,8 @@ class CloudFlareRealIP
                 return $cfIP;
             }
         }
-        
-        // Special case: If we're behind Cloudflare but don't have CF header, 
+
+        // Special case: If we're behind Cloudflare but don't have CF header,
         // and remote_addr is 127.0.0.1, try to trust X-Forwarded-For anyway
         if ($remoteAddr === '127.0.0.1' || $remoteAddr === '::1' || self::isFromCloudflare($remoteAddr)) {
             if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
@@ -99,7 +99,7 @@ class CloudFlareRealIP
                 }
             }
         }
-        
+
         // Only check proxy headers if we should trust them
         if (self::shouldTrustProxyHeaders()) {
             // X-Forwarded-For (most common proxy header)
@@ -110,7 +110,7 @@ class CloudFlareRealIP
                     return $realIP;
                 }
             }
-            
+
             // X-Real-IP (Nginx, other proxies)
             if (!empty($_SERVER['HTTP_X_REAL_IP'])) {
                 $realIP = $_SERVER['HTTP_X_REAL_IP'];
@@ -118,7 +118,7 @@ class CloudFlareRealIP
                     return $realIP;
                 }
             }
-            
+
             // X-Client-IP (some proxies)
             if (!empty($_SERVER['HTTP_X_CLIENT_IP'])) {
                 $clientIP = $_SERVER['HTTP_X_CLIENT_IP'];
@@ -126,7 +126,7 @@ class CloudFlareRealIP
                     return $clientIP;
                 }
             }
-            
+
             // Client-IP (some proxies)
             if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
                 $clientIP = $_SERVER['HTTP_CLIENT_IP'];
@@ -137,6 +137,27 @@ class CloudFlareRealIP
         }
 
         return $remoteAddr;
+    }
+
+    /**
+     * Get debug information about IP detection.
+     * This method can be used for troubleshooting IP detection issues.
+     *
+     * @return array Debug information
+     */
+    public static function getDebugInfo()
+    {
+        return [
+            'remote_addr' => $_SERVER['REMOTE_ADDR'] ?? '',
+            'http_cf_connecting_ip' => $_SERVER['HTTP_CF_CONNECTING_IP'] ?? '',
+            'http_x_forwarded_for' => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '',
+            'http_x_real_ip' => $_SERVER['HTTP_X_REAL_IP'] ?? '',
+            'http_x_client_ip' => $_SERVER['HTTP_X_CLIENT_IP'] ?? '',
+            'http_client_ip' => $_SERVER['HTTP_CLIENT_IP'] ?? '',
+            'detected_ip' => self::getRealIP(),
+            'is_from_cloudflare' => self::isFromCloudflare($_SERVER['REMOTE_ADDR'] ?? ''),
+            'trust_proxy_headers' => self::shouldTrustProxyHeaders(),
+        ];
     }
 
     /**
@@ -190,6 +211,7 @@ class CloudFlareRealIP
      * Validate if an IP address is valid and not a private/local IP.
      *
      * @param string $ip IP address to validate
+     *
      * @return bool True if valid and not private/local
      */
     private static function isValidIP($ip)
@@ -212,27 +234,6 @@ class CloudFlareRealIP
     }
 
     /**
-     * Get debug information about IP detection.
-     * This method can be used for troubleshooting IP detection issues.
-     *
-     * @return array Debug information
-     */
-    public static function getDebugInfo()
-    {
-        return [
-            'remote_addr' => $_SERVER['REMOTE_ADDR'] ?? '',
-            'http_cf_connecting_ip' => $_SERVER['HTTP_CF_CONNECTING_IP'] ?? '',
-            'http_x_forwarded_for' => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '',
-            'http_x_real_ip' => $_SERVER['HTTP_X_REAL_IP'] ?? '',
-            'http_x_client_ip' => $_SERVER['HTTP_X_CLIENT_IP'] ?? '',
-            'http_client_ip' => $_SERVER['HTTP_CLIENT_IP'] ?? '',
-            'detected_ip' => self::getRealIP(),
-            'is_from_cloudflare' => self::isFromCloudflare($_SERVER['REMOTE_ADDR'] ?? ''),
-            'trust_proxy_headers' => self::shouldTrustProxyHeaders(),
-        ];
-    }
-
-    /**
      * Check if we should trust proxy headers.
      * This can be configured via environment variable TRUST_PROXY_HEADERS.
      *
@@ -245,30 +246,30 @@ class CloudFlareRealIP
         if ($trustProxy === 'true' || $trustProxy === '1') {
             return true;
         }
-        
+
         // Auto-detect if we're behind a reverse proxy
         $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
-        
+
         // If remote_addr is localhost, we're likely behind a proxy
         if ($remoteAddr === '127.0.0.1' || $remoteAddr === '::1') {
             return true;
         }
-        
+
         // If we have any proxy headers, we're likely behind a proxy
         $proxyHeaders = [
             'HTTP_X_FORWARDED_FOR',
             'HTTP_X_REAL_IP',
             'HTTP_X_CLIENT_IP',
             'HTTP_CLIENT_IP',
-            'HTTP_CF_CONNECTING_IP'
+            'HTTP_CF_CONNECTING_IP',
         ];
-        
+
         foreach ($proxyHeaders as $header) {
             if (!empty($_SERVER[$header])) {
                 return true;
             }
         }
-        
+
         return false;
     }
 }

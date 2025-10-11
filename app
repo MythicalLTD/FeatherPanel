@@ -17,6 +17,7 @@ define('APP_VERSION', 'v0.0.4');
 define('APP_UPSTREAM', 'canary');
 define("TELEMETRY", true);
 define('IS_CLI', true);
+define('REQUEST_ID', uniqid());
 
 require_once APP_DIR . "/boot/kernel.php";
 
