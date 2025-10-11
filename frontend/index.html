@@ -73,7 +73,7 @@
                 scrollbar-color: #374151 #0a0a15;
             }
 
-            /* Preloader Styles - Dark Theme (Default) */
+            /* Preloader Styles - Professional Dark Design */
             .preloader {
                 position: fixed;
                 top: 0;
@@ -86,118 +86,247 @@
                 justify-content: center;
                 align-items: center;
                 z-index: 9999;
-                transition: all 0.5s ease-out;
+                transition:
+                    opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                    transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+                overflow: hidden;
             }
 
-            /* Preloader Light Theme */
+            /* Subtle grid background */
+            .preloader::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-image:
+                    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+                background-size: 50px 50px;
+                opacity: 0.3;
+            }
+
+            /* Very subtle ambient glow */
+            .preloader::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 600px;
+                height: 600px;
+                background: radial-gradient(circle, rgba(255, 255, 255, 0.01) 0%, transparent 70%);
+                transform: translate(-50%, -50%);
+            }
+
+            /* Light theme */
             .preloader.light {
                 background: #ffffff;
             }
 
+            .preloader.light::before {
+                background-image:
+                    linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+                opacity: 0.5;
+            }
+
+            .preloader.light::after {
+                background: radial-gradient(circle, rgba(0, 0, 0, 0.01) 0%, transparent 70%);
+            }
+
             .preloader.fade-out {
                 opacity: 0;
+                transform: scale(1.05);
                 pointer-events: none;
             }
 
-            .preloader-logo {
-                width: 60px;
-                height: 60px;
-                margin-bottom: 1.5rem;
+            /* Main content container */
+            .preloader-content {
                 position: relative;
-                border: 2px solid #374151;
-                border-radius: 50%;
+                z-index: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2rem;
+            }
+
+            /* Modern card-style container */
+            .preloader-card {
+                background: rgba(10, 10, 10, 0.5);
+                backdrop-filter: blur(20px);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 12px;
+                padding: 3rem 4rem;
+                box-shadow:
+                    0 20px 60px rgba(0, 0, 0, 0.5),
+                    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+                transition: all 0.3s ease;
+                min-width: 420px;
+            }
+
+            .preloader.light .preloader-card {
+                background: rgba(255, 255, 255, 0.9);
+                border: 1px solid rgba(0, 0, 0, 0.1);
+                box-shadow:
+                    0 20px 60px rgba(0, 0, 0, 0.08),
+                    0 0 0 1px rgba(0, 0, 0, 0.02) inset;
+            }
+
+            /* Logo container with modern design */
+            .preloader-logo-container {
+                position: relative;
+                width: 100px;
+                height: 100px;
+                margin: 0 auto 2rem;
+            }
+
+            .preloader-logo {
+                width: 100%;
+                height: 100%;
+                position: relative;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                background: #0a0a15;
+                background: rgba(255, 255, 255, 0.03);
+                border-radius: 20px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
                 transition: all 0.3s ease;
             }
 
-            /* Light theme logo */
             .preloader.light .preloader-logo {
-                border-color: #d1d5db;
-                background: #f9fafb;
+                background: rgba(0, 0, 0, 0.02);
+                border: 1px solid rgba(0, 0, 0, 0.1);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
             }
 
+            /* Subtle border effect */
             .preloader-logo::before {
                 content: '';
                 position: absolute;
-                top: -2px;
-                left: -2px;
-                width: calc(100% + 4px);
-                height: calc(100% + 4px);
-                border: 2px solid transparent;
-                border-top: 2px solid #ffffff;
-                border-radius: 50%;
-                animation: logoRotate 1.2s linear infinite;
-                transition: all 0.3s ease;
+                inset: -1px;
+                border-radius: 20px;
+                padding: 1px;
+                background: linear-gradient(
+                    45deg,
+                    rgba(255, 255, 255, 0.1),
+                    rgba(255, 255, 255, 0.05),
+                    rgba(255, 255, 255, 0.1)
+                );
+                -webkit-mask:
+                    linear-gradient(#fff 0 0) content-box,
+                    linear-gradient(#fff 0 0);
+                -webkit-mask-composite: xor;
+                mask-composite: exclude;
+                opacity: 0.5;
+                animation: logoRotate 8s linear infinite;
             }
 
-            /* Light theme logo border */
             .preloader.light .preloader-logo::before {
-                border-top-color: #1f2937;
+                background: linear-gradient(45deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.1));
+                opacity: 0.6;
             }
 
+            /* Icon */
             .preloader-logo::after {
                 content: '⚡';
-                font-size: 1.5rem;
+                font-size: 3rem;
+                filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.1));
+            }
+
+            /* Brand name */
+            .preloader-brand {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                font-size: 1.75rem;
+                font-weight: 700;
                 color: #ffffff;
-                animation: logoPulse 2s ease-in-out infinite;
-                transition: all 0.3s ease;
-            }
-
-            /* Light theme logo icon */
-            .preloader.light .preloader-logo::after {
-                color: #1f2937;
-            }
-
-            .preloader-tip {
-                font-family: 'Arial', sans-serif;
-                font-size: 0.875rem;
-                color: #9ca3af;
                 text-align: center;
-                margin-bottom: 1.5rem;
-                max-width: 300px;
-                line-height: 1.4;
-                padding: 0 1rem;
+                margin-bottom: 0.5rem;
+                letter-spacing: -0.02em;
+            }
+
+            .preloader.light .preloader-brand {
+                color: #0a0a0a;
+            }
+
+            /* Status text */
+            .preloader-status {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                font-size: 0.875rem;
+                color: rgba(255, 255, 255, 0.5);
+                text-align: center;
+                margin-bottom: 2rem;
+                font-weight: 500;
                 transition: all 0.3s ease;
             }
 
-            /* Light theme tip text */
-            .preloader.light .preloader-tip {
-                color: #6b7280;
+            .preloader.light .preloader-status {
+                color: rgba(0, 0, 0, 0.5);
+            }
+
+            /* Progress bar container */
+            .preloader-progress-container {
+                width: 100%;
+                margin-bottom: 1.5rem;
+            }
+
+            .preloader-progress-label {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 0.75rem;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                font-size: 0.8125rem;
+                color: rgba(255, 255, 255, 0.4);
+                font-weight: 500;
+            }
+
+            .preloader.light .preloader-progress-label {
+                color: rgba(0, 0, 0, 0.4);
+            }
+
+            .preloader-percentage {
+                font-variant-numeric: tabular-nums;
+                color: rgba(255, 255, 255, 0.8);
+                font-weight: 600;
+            }
+
+            .preloader.light .preloader-percentage {
+                color: rgba(0, 0, 0, 0.8);
             }
 
             .loading-bar {
-                width: 180px;
-                height: 2px;
-                background: #1f2937;
-                border-radius: 1px;
+                width: 100%;
+                height: 6px;
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 999px;
                 overflow: hidden;
                 position: relative;
-                transition: all 0.3s ease;
+                box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1) inset;
             }
 
-            /* Light theme loading bar background */
             .preloader.light .loading-bar {
-                background: #e5e7eb;
+                background: rgba(0, 0, 0, 0.08);
+                box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
             }
 
             .loading-progress {
                 height: 100%;
-                background: #ffffff;
-                border-radius: 1px;
+                background: rgba(255, 255, 255, 0.9);
+                border-radius: 999px;
                 width: 0%;
-                animation: loadingProgress 2s ease-in-out infinite;
                 position: relative;
-                transition: all 0.3s ease;
+                box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+                transition: width 0.3s ease-out;
             }
 
-            /* Light theme loading bar progress */
             .preloader.light .loading-progress {
-                background: #1f2937;
+                background: rgba(0, 0, 0, 0.9);
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             }
 
+            /* Shimmer effect on progress bar */
             .loading-progress::after {
                 content: '';
                 position: absolute;
@@ -205,34 +334,66 @@
                 left: 0;
                 width: 100%;
                 height: 100%;
-                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-                animation: loadingShine 1.5s ease-in-out infinite;
-                transition: all 0.3s ease;
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+                animation: loadingShimmer 2s ease-in-out infinite;
             }
 
-            /* Light theme loading bar shine */
             .preloader.light .loading-progress::after {
-                background: linear-gradient(90deg, transparent, rgba(31, 41, 55, 0.4), transparent);
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
             }
 
-            .server-status {
+
+            /* System status indicators */
+            .system-status {
                 display: flex;
-                gap: 0.5rem;
+                gap: 1.5rem;
+                justify-content: center;
                 margin-top: 1.5rem;
+                padding-top: 1.5rem;
+                border-top: 1px solid rgba(255, 255, 255, 0.05);
+            }
+
+            .preloader.light .system-status {
+                border-top: 1px solid rgba(0, 0, 0, 0.08);
+            }
+
+            .status-item {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                font-size: 0.75rem;
+                color: rgba(255, 255, 255, 0.35);
+                font-weight: 500;
+            }
+
+            .preloader.light .status-item {
+                color: rgba(0, 0, 0, 0.4);
             }
 
             .status-indicator {
                 width: 6px;
                 height: 6px;
                 border-radius: 50%;
-                background: #374151;
-                animation: statusPulse 1.5s ease-in-out infinite;
-                transition: all 0.3s ease;
+                background: rgba(255, 255, 255, 0.6);
+                box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+                animation: statusBlink 2s ease-in-out infinite;
+                position: relative;
             }
 
-            /* Light theme status indicators */
             .preloader.light .status-indicator {
-                background: #9ca3af;
+                background: rgba(0, 0, 0, 0.5);
+                box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+            }
+
+            .status-indicator::before {
+                content: '';
+                position: absolute;
+                inset: -2px;
+                border-radius: 50%;
+                background: inherit;
+                opacity: 0.3;
+                animation: statusRipple 2s ease-in-out infinite;
             }
 
             /* Animations */
@@ -245,48 +406,49 @@
                 }
             }
 
-            @keyframes logoPulse {
+            @keyframes iconPulse {
                 0%,
                 100% {
                     opacity: 1;
                     transform: scale(1);
                 }
                 50% {
-                    opacity: 0.7;
-                    transform: scale(1.1);
+                    opacity: 0.8;
+                    transform: scale(1.05);
                 }
             }
 
-            @keyframes loadingProgress {
-                0% {
-                    width: 0%;
-                }
-                50% {
-                    width: 60%;
-                }
-                100% {
-                    width: 100%;
-                }
-            }
-
-            @keyframes loadingShine {
+            @keyframes loadingShimmer {
                 0% {
                     transform: translateX(-100%);
                 }
                 100% {
-                    transform: translateX(100%);
+                    transform: translateX(200%);
                 }
             }
 
-            @keyframes statusPulse {
+            @keyframes statusBlink {
                 0%,
                 100% {
-                    opacity: 0.3;
-                    transform: scale(1);
+                    opacity: 1;
                 }
                 50% {
-                    opacity: 1;
-                    transform: scale(1.2);
+                    opacity: 0.5;
+                }
+            }
+
+            @keyframes statusRipple {
+                0% {
+                    transform: scale(1);
+                    opacity: 0.3;
+                }
+                50% {
+                    transform: scale(1.5);
+                    opacity: 0;
+                }
+                100% {
+                    transform: scale(1);
+                    opacity: 0;
                 }
             }
 
@@ -294,23 +456,68 @@
             .preloader.hidden {
                 display: none;
             }
+
+            /* Responsive design */
+            @media (max-width: 640px) {
+                .preloader-card {
+                    min-width: unset;
+                    width: 90%;
+                    padding: 2rem 1.5rem;
+                }
+
+                .preloader-logo-container {
+                    width: 80px;
+                    height: 80px;
+                }
+
+                .preloader-brand {
+                    font-size: 1.5rem;
+                }
+
+                .system-status {
+                    flex-direction: column;
+                    gap: 0.75rem;
+                }
+            }
         </style>
 
         <!-- FEATHERPANEL_HEADER_PLACEHOLDER_START -->
         <!-- FEATHERPANEL_HEADER_PLACEHOLDER_END -->
     </head>
     <body class="dark">
-        <!-- Awesome Preloader -->
+        <!-- Modern shadcn Game Panel Preloader -->
         <div class="preloader" id="preloader">
-            <div class="preloader-logo"></div>
-            <div class="preloader-tip" id="tip-text">Preloading assets...</div>
-            <div class="loading-bar">
-                <div class="loading-progress"></div>
-            </div>
-            <div class="server-status">
-                <div class="status-indicator"></div>
-                <div class="status-indicator"></div>
-                <div class="status-indicator"></div>
+            <div class="preloader-content">
+                <div class="preloader-card">
+                    <div class="preloader-logo-container">
+                        <div class="preloader-logo"></div>
+                    </div>
+                    <div class="preloader-brand">FeatherPanel</div>
+                    <div class="preloader-status" id="status-text">Initializing system...</div>
+                    <div class="preloader-progress-container">
+                        <div class="preloader-progress-label">
+                            <span id="progress-text">Loading assets</span>
+                            <span class="preloader-percentage" id="progress-percentage">0%</span>
+                        </div>
+                        <div class="loading-bar">
+                            <div class="loading-progress" id="loading-progress"></div>
+                        </div>
+                    </div>
+                    <div class="system-status">
+                        <div class="status-item">
+                            <div class="status-indicator"></div>
+                            <span>API</span>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-indicator"></div>
+                            <span>Database</span>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-indicator"></div>
+                            <span>Cache</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -395,76 +602,73 @@
                 }
             });
 
-            // Realistic game engine loading messages
-            const loadingMessages = [
-                'Preloading assets...',
-                'Building caches...',
-                'Compiling shaders...',
-                'Starting WebGPU...',
-                'Prewarming UI...',
-                'Initializing renderer...',
-                'Loading game data...',
-                'Setting up networking...',
-                'Preparing server connections...',
-                'Optimizing performance...',
-                'Loading configuration...',
-                'Initializing components...',
-                'Preparing dashboard...',
-                'Loading server list...',
-                'Setting up monitoring...',
-                'Preparing database...',
-                'Loading user preferences...',
-                'Setting up notifications...',
-                'Finalizing startup...',
+            // Modern loading stages with progress tracking
+            const loadingStages = [
+                { message: 'Initializing core systems', progress: 15 },
+                { message: 'Loading asset bundles', progress: 25 },
+                { message: 'Compiling shaders', progress: 35 },
+                { message: 'Building caches', progress: 45 },
+                { message: 'Initializing renderer', progress: 55 },
+                { message: 'Loading configurations', progress: 65 },
+                { message: 'Preparing components', progress: 75 },
+                { message: 'Setting up networking', progress: 85 },
+                { message: 'Finalizing startup', progress: 95 },
             ];
 
-            // Random gaming tips for after loading
-            const gamingTips = [
-                'Pro tip: Regular server backups can save you hours of troubleshooting!',
-                'Did you know? Server performance improves with regular restarts.',
-                'Keep your server plugins updated for better security and performance.',
-                'Monitor your server resources to prevent crashes during peak hours.',
-                'A good server admin always checks logs before making changes.',
-                'Automate routine tasks to focus on what matters most.',
-                'Regular maintenance prevents 99% of server issues.',
-                'Backup before update, update before backup!',
-                'Server optimization is an art, not a science.',
-                "The best server is the one you don't have to think about.",
-                'Keep your server environment clean and organized.',
-                'Document everything - future you will thank past you!',
-                "Server security is everyone's responsibility.",
-                'Performance monitoring is key to happy players.',
-                'A well-configured server is a happy server.',
-            ];
-
-            let currentMessageIndex = 0;
+            let currentStageIndex = 0;
             let messageInterval;
-            let tipInterval;
+            let progressInterval;
             let isPageFullyLoaded = false;
-            let pageLoadTime = 0;
+            let currentProgress = 0;
+            let preloaderStartTime = Date.now();
+            const MIN_PRELOADER_DISPLAY_TIME = 3500; // Minimum 3 seconds (1.5s base + 1.5s extra for Vue loading)
 
-            // Function to show loading message
-            function showLoadingMessage() {
-                const tipElement = document.getElementById('tip-text');
-                if (tipElement && currentMessageIndex < loadingMessages.length) {
-                    tipElement.textContent = loadingMessages[currentMessageIndex];
-                    currentMessageIndex++;
+            // Function to update progress
+            function updateProgress(targetProgress, message) {
+                const progressBar = document.getElementById('loading-progress');
+                const progressText = document.getElementById('progress-text');
+                const progressPercentage = document.getElementById('progress-percentage');
+                const statusText = document.getElementById('status-text');
+
+                if (progressBar && progressPercentage && progressText) {
+                    // Smooth progress animation
+                    const startProgress = currentProgress;
+                    const progressDiff = targetProgress - startProgress;
+                    const duration = 600; // ms
+                    const startTime = Date.now();
+
+                    const animateProgress = () => {
+                        const elapsed = Date.now() - startTime;
+                        const progress = Math.min(elapsed / duration, 1);
+                        const easeProgress =
+                            progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+                        currentProgress = startProgress + progressDiff * easeProgress;
+                        progressBar.style.width = currentProgress + '%';
+                        progressPercentage.textContent = Math.round(currentProgress) + '%';
+
+                        if (progress < 1) {
+                            requestAnimationFrame(animateProgress);
+                        }
+                    };
+
+                    animateProgress();
+                    progressText.textContent = message;
+                    if (statusText) {
+                        statusText.textContent = message + '...';
+                    }
                 }
             }
 
-            // Function to show random tip
-            function showRandomTip() {
-                const tipElement = document.getElementById('tip-text');
-                if (tipElement) {
-                    const randomTip = gamingTips[Math.floor(Math.random() * gamingTips.length)];
-                    tipElement.textContent = randomTip;
+            // Function to show next loading stage
+            function showNextStage() {
+                if (currentStageIndex < loadingStages.length) {
+                    const stage = loadingStages[currentStageIndex];
+                    updateProgress(stage.progress, stage.message);
+                    currentStageIndex++;
+                } else {
+                    clearInterval(messageInterval);
                 }
-            }
-
-            // Function to start showing tips
-            function startShowingTips() {
-                showRandomTip();
-                tipInterval = setInterval(showRandomTip, 3000);
             }
 
             // Function to hide preloader
@@ -472,12 +676,29 @@
                 const preloader = document.getElementById('preloader');
                 if (preloader) {
                     clearInterval(messageInterval);
-                    clearInterval(tipInterval);
-                    preloader.classList.add('fade-out');
+                    clearInterval(progressInterval);
+
+                    // Complete progress to 100%
+                    updateProgress(100, 'Ready');
+
                     setTimeout(() => {
-                        preloader.classList.add('hidden');
-                    }, 500);
+                        preloader.classList.add('fade-out');
+                        setTimeout(() => {
+                            preloader.classList.add('hidden');
+                        }, 600);
+                    }, 300);
                 }
+            }
+
+            // Function to hide preloader with minimum display time check
+            function hidePreloaderWithDelay() {
+                const elapsedTime = Date.now() - preloaderStartTime;
+                const remainingTime = Math.max(0, MIN_PRELOADER_DISPLAY_TIME - elapsedTime);
+
+                // Ensure minimum display time before hiding
+                setTimeout(() => {
+                    hidePreloader();
+                }, remainingTime);
             }
 
             // Initialize theme when DOM is ready (for any remaining elements)
@@ -485,26 +706,23 @@
                 // Ensure theme is applied to any newly created elements
                 updatePreloaderTheme(currentTheme);
 
-                // Start showing loading messages immediately
-                showLoadingMessage();
+                // Initialize progress with first stage
+                showNextStage();
+
+                // Start showing loading stages
                 messageInterval = setInterval(() => {
-                    if (currentMessageIndex < loadingMessages.length) {
-                        showLoadingMessage();
-                    } else {
-                        // All messages shown, wait for page load
-                        clearInterval(messageInterval);
-                    }
-                }, 800); // Show message every 800ms
+                    showNextStage();
+                }, 700); // Show stage every 700ms
 
                 // Check if Vue app is ready
                 const checkAppReady = setInterval(() => {
                     if (document.querySelector('#app').children.length > 0) {
                         clearInterval(checkAppReady);
 
-                        // If page is already loaded, proceed with hiding
+                        // If page is already loaded, proceed with hiding (with minimum time check)
                         if (isPageFullyLoaded) {
                             setTimeout(() => {
-                                hidePreloader();
+                                hidePreloaderWithDelay();
                             }, 500);
                         }
                     }
@@ -513,20 +731,17 @@
 
             // Track page load progress
             window.addEventListener('load', () => {
-                pageLoadTime = Date.now();
                 isPageFullyLoaded = true;
 
-                // Wait additional 500ms after page load to ensure everything is ready
+                // Wait for remaining stages to complete
                 setTimeout(() => {
                     if (isPageFullyLoaded) {
-                        // Switch to showing tips for a bit before hiding
                         clearInterval(messageInterval);
-                        startShowingTips();
 
-                        // Hide after showing a few tips
+                        // Show final completion message (with minimum time check)
                         setTimeout(() => {
-                            hidePreloader();
-                        }, 2000);
+                            hidePreloaderWithDelay();
+                        }, 800);
                     }
                 }, 500);
             });
