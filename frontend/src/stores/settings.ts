@@ -34,7 +34,7 @@ function asBool(value: unknown): boolean {
 function getBooleanSetting(state: { settings: Record<string, unknown> | null }, key: string): boolean {
     const source: Record<string, unknown> | null = state.settings ?? null;
     const raw: unknown = source ? (source as Record<string, unknown>)[key] : undefined;
-    return asBool(raw);
+    return raw !== undefined ? asBool(raw) : false;
 }
 
 export const useSettingsStore = defineStore('settings', {
@@ -83,17 +83,17 @@ export const useSettingsStore = defineStore('settings', {
         },
     },
     getters: {
-        appName: (state) => state.settings?.app_name || 'App',
-        appLogo: (state) => state.settings?.app_logo || '',
-        appLogoWhite: (state) => state.settings?.app_logo_white || '',
+        appName: (state) => state.settings?.app_name || 'FeatherPanel',
+        appLogo: (state) => state.settings?.app_logo || 'https://github.com/mythicalltd.png',
+        appLogoWhite: (state) => state.settings?.app_logo_white || 'https://github.com/mythicalltd.png',
         appDeveloperMode: (state) => getBooleanSetting(state, 'app_developer_mode'),
         appLang: (state) => state.settings?.app_lang || 'en_US',
-        appUrl: (state) => state.settings?.app_url || '',
+        appUrl: (state) => state.settings?.app_url || 'https://mythicalpanel.mythical.systems',
         appTimezone: (state) => state.settings?.app_timezone || 'UTC',
         turnstile_enabled: (state) => getBooleanSetting(state, 'turnstile_enabled'),
         turnstile_key_pub: (state) => state.settings?.turnstile_key_pub || '',
-        legalTos: (state) => state.settings?.legal_tos || '',
-        legalPrivacy: (state) => state.settings?.legal_privacy || '',
+        legalTos: (state) => state.settings?.legal_tos || '/tos',
+        legalPrivacy: (state) => state.settings?.legal_privacy || '/privacy',
         smtpEnabled: (state) => getBooleanSetting(state, 'smtp_enabled'),
         registrationEnabled: (state) => getBooleanSetting(state, 'registration_enabled'),
     },
