@@ -48,8 +48,8 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    width: 200,
-    height: 64,
+    width: 280,
+    height: 80,
     color: '#60a5fa',
     unit: '',
     label: '',
@@ -61,10 +61,10 @@ const animationFrame: number | null = null;
 
 // Chart configuration
 const chartConfig = {
-    padding: 8,
-    lineWidth: 2,
-    pointRadius: 2,
-    gridLines: 3,
+    padding: 12,
+    lineWidth: 2.5,
+    pointRadius: 2.5,
+    gridLines: 4,
     animationDuration: 300,
 };
 
@@ -147,9 +147,10 @@ function drawEmptyState(): void {
 function drawGridLines(chartWidth: number, chartHeight: number, maxValue: number): void {
     if (!ctx) return;
 
+    // More subtle grid lines
     ctx.strokeStyle = '#374151';
     ctx.lineWidth = 0.5;
-    ctx.setLineDash([2, 2]);
+    ctx.setLineDash([3, 3]);
 
     // Draw grid lines with value labels
     for (let i = 1; i < chartConfig.gridLines; i++) {
@@ -162,12 +163,12 @@ function drawGridLines(chartWidth: number, chartHeight: number, maxValue: number
         ctx.lineTo(chartConfig.padding + chartWidth, y);
         ctx.stroke();
 
-        // Draw value label
-        ctx.fillStyle = '#6b7280';
-        ctx.font = '10px system-ui';
+        // Draw value label with better visibility
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '11px system-ui';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
-        ctx.fillText(value.toFixed(1), chartConfig.padding - 4, y);
+        ctx.fillText(value.toFixed(1), chartConfig.padding - 6, y);
     }
 
     ctx.setLineDash([]);
@@ -241,24 +242,27 @@ function drawValueLabel(value: number): void {
 
     const formattedValue = formatValue(value);
 
-    ctx.fillStyle = '#f9fafb';
-    ctx.font = 'bold 14px system-ui';
+    ctx.font = 'bold 16px system-ui';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'top';
 
     const x = props.width - chartConfig.padding;
     const y = chartConfig.padding;
 
-    // Draw background
+    // Draw background with better contrast
     const textMetrics = ctx.measureText(formattedValue);
-    const padding = 4;
+    const padding = 6;
     const bgWidth = textMetrics.width + padding * 2;
-    const bgHeight = 20;
+    const bgHeight = 24;
+
+    // Dark background with subtle border
+    ctx.fillStyle = '#111827';
+    ctx.fillRect(x - bgWidth - 1, y - 1, bgWidth + 2, bgHeight + 2);
 
     ctx.fillStyle = '#1f2937';
     ctx.fillRect(x - bgWidth, y, bgWidth, bgHeight);
 
-    // Draw text
+    // Draw text with better visibility
     ctx.fillStyle = '#f9fafb';
     ctx.fillText(formattedValue, x - padding, y + padding);
 }
@@ -270,6 +274,8 @@ function formatValue(value: number): string {
         return value.toFixed(1) + '%';
     } else if (props.unit === 'MiB') {
         return value.toFixed(1) + ' MiB';
+    } else if (props.unit === 'GiB') {
+        return value.toFixed(1) + ' GiB';
     }
     return value.toFixed(1);
 }
@@ -287,10 +293,14 @@ function formatBytes(bytes: number): string {
 .performance-chart {
     position: relative;
     display: inline-block;
+    width: 100%;
 }
 
 canvas {
     display: block;
-    border-radius: 4px;
+    border-radius: 6px;
+    width: 100%;
+    height: auto;
+    max-width: 100%;
 }
 </style>

@@ -42,10 +42,16 @@ export interface Server {
     name: string;
     description?: string;
     status: 'running' | 'stopped' | 'starting' | 'stopping' | 'installing' | 'error' | 'offline' | 'unknown';
-    cpu: number;
-    memory: number;
-    memoryLimit?: number;
-    disk: number;
+    // Limits (from API)
+    cpu: number; // CPU limit percentage
+    memory: number; // Memory limit in MB
+    disk: number; // Disk limit in MB
+    swap?: number; // Swap limit in MB
+    io?: number; // IO limit
+    // Current usage (from Wings stats)
+    cpuUsage?: number; // Current CPU usage percentage
+    memoryUsage?: number; // Current memory usage in MB
+    diskUsage?: number; // Current disk usage in MB
     uuidShort: string;
     uuid: string;
     started_at?: string;

@@ -1,100 +1,369 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6">
-            <TableComponent
-                :title="t('serverActivities.title')"
-                :description="t('serverActivities.description')"
-                :columns="tableColumns"
-                :data="activities"
-                :search-placeholder="t('serverActivities.searchPlaceholder')"
-                :server-side-pagination="true"
-                :total-records="pagination.total_records"
-                :total-pages="pagination.total_pages"
-                :current-page="pagination.current_page"
-                :has-next="pagination.has_next"
-                :has-prev="pagination.has_prev"
-                :from="pagination.from"
-                :to="pagination.to"
-                local-storage-key="featherpanel-server-activities-columns"
-                @search="handleSearch"
-                @page-change="changePage"
-            >
-                <template #header-actions>
-                    <Button variant="outline" size="sm" :disabled="loading" @click="refresh">
-                        <RefreshCw class="h-4 w-4 mr-2" />
-                        {{ t('common.refresh') }}
-                    </Button>
-                </template>
-
-                <template #cell-event="{ item }">
-                    <div class="font-medium">{{ formatEvent((item as ActivityItem).event) }}</div>
-                </template>
-
-                <template #cell-message="{ item }">
-                    <div class="text-sm text-muted-foreground flex items-center justify-between gap-2">
-                        <span class="truncate">{{ displayMessage(item as ActivityItem) }}</span>
-                        <Button variant="outline" size="sm" @click="openDetails(item as ActivityItem)">{{
-                            t('common.view') || 'View'
-                        }}</Button>
-                    </div>
-                </template>
-
-                <template #cell-timestamp="{ item }">
-                    <span class="text-sm">{{
-                        formatDate((item as ActivityItem).timestamp || (item as ActivityItem).created_at)
-                    }}</span>
-                </template>
-            </TableComponent>
-        </div>
-
-        <!-- Activity Details Dialog -->
-        <Dialog v-model:open="detailsOpen">
-            <DialogContent class="max-w-3xl">
-                <DialogHeader>
-                    <DialogTitle>{{ t('serverActivities.title') }} - {{ selectedItem?.event }}</DialogTitle>
-                    <DialogDescription>
-                        {{ t('serverActivities.recentAction') || 'Detailed information for the selected event.' }}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                            <div class="text-xs text-muted-foreground">Event</div>
-                            <div class="font-medium break-words">{{ selectedItem?.event }}</div>
-                        </div>
-                        <div>
-                            <div class="text-xs text-muted-foreground">Time</div>
-                            <div class="font-medium">
-                                {{ formatDate(selectedItem?.timestamp || selectedItem?.created_at) }}
+            <!-- Header Section -->
+            <div class="space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+                            <div class="p-2 rounded-lg bg-primary/10">
+                                <Activity class="h-6 w-6 text-primary" />
                             </div>
-                        </div>
-                        <div class="md:col-span-2">
-                            <div class="text-xs text-muted-foreground">Message</div>
-                            <div class="font-medium break-words">{{ baseMessage }}</div>
-                        </div>
+                            {{ t('serverActivities.title') }}
+                        </h1>
+                        <p class="text-sm sm:text-base text-muted-foreground mt-2">
+                            {{ t('serverActivities.description') }}
+                        </p>
                     </div>
-
-                    <div v-if="detailsPairs.length" class="bg-muted/30 rounded-md p-3 border">
-                        <h4 class="text-sm font-medium mb-2">Metadata</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            <div v-for="pair in detailsPairs" :key="pair.key" class="text-sm">
-                                <div class="text-xs text-muted-foreground">{{ pair.key }}</div>
-                                <div class="font-mono break-words">{{ pair.value }}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div v-if="rawJson" class="space-y-1">
-                        <div class="text-xs text-muted-foreground">Raw JSON</div>
-                        <pre
-                            class="text-xs bg-muted/30 p-3 rounded-md overflow-x-auto border"
-                        ><code>{{ rawJson }}</code></pre>
+                    <div class="flex items-center gap-2">
+                        <span
+                            class="text-sm font-semibold px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/20 to-primary/10 text-primary border border-primary/20"
+                        >
+                            {{ pagination.total_records }} events
+                        </span>
+                        <Button variant="outline" size="sm" :disabled="loading" @click="refresh">
+                            <RefreshCw :class="['h-4 w-4 mr-2', loading && 'animate-spin']" />
+                            {{ t('common.refresh') }}
+                        </Button>
                     </div>
                 </div>
 
-                <DialogFooter>
-                    <Button variant="outline" @click="detailsOpen = false">{{ t('common.close') }}</Button>
+                <!-- Enhanced Search and Filters -->
+                <Card class="border-2 shadow-sm hover:shadow-md transition-all">
+                    <CardContent class="p-4">
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="flex-1 relative">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <Search class="h-5 w-5 text-muted-foreground" />
+                                </div>
+                                <Input
+                                    v-model="searchQuery"
+                                    :placeholder="t('serverActivities.searchPlaceholder')"
+                                    :disabled="loading"
+                                    class="pl-10 pr-4 h-11 border-2 focus:border-primary transition-all"
+                                    @keyup.enter="handleSearch"
+                                />
+                            </div>
+                            <div class="flex gap-2">
+                                <Select v-model="selectedEventFilter">
+                                    <SelectTrigger class="w-48 h-11 border-2">
+                                        <SelectValue placeholder="Filter by event" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Events</SelectItem>
+                                        <SelectItem value="backup">Backup Events</SelectItem>
+                                        <SelectItem value="power">Power Events</SelectItem>
+                                        <SelectItem value="console">Console Events</SelectItem>
+                                        <SelectItem value="file">File Events</SelectItem>
+                                        <SelectItem value="download">Download Events</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Button variant="outline" size="sm" class="h-11" @click="clearFilters">
+                                    <X class="h-4 w-4 mr-2" />
+                                    Clear
+                                </Button>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <!-- Loading State -->
+            <div v-if="loading" class="space-y-4">
+                <div class="grid gap-4">
+                    <div v-for="i in 5" :key="i" class="animate-pulse">
+                        <Card class="border-2">
+                            <CardContent class="p-4">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 bg-muted-foreground/20 rounded-lg"></div>
+                                    <div class="flex-1 space-y-2">
+                                        <div class="h-4 bg-muted-foreground/20 rounded w-1/3"></div>
+                                        <div class="h-3 bg-muted-foreground/20 rounded w-2/3"></div>
+                                    </div>
+                                    <div class="h-8 w-20 bg-muted-foreground/20 rounded"></div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div v-else-if="activities.length === 0" class="flex flex-col items-center justify-center py-16">
+                <div class="text-center max-w-md space-y-6">
+                    <div class="flex justify-center">
+                        <div class="relative">
+                            <div class="absolute inset-0 animate-ping opacity-20">
+                                <div class="w-32 h-32 rounded-full bg-primary/20"></div>
+                            </div>
+                            <div class="relative p-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5">
+                                <Activity class="h-16 w-16 text-primary" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <h3 class="text-2xl sm:text-3xl font-bold text-foreground">No Activities Yet</h3>
+                        <p class="text-sm sm:text-base text-muted-foreground">
+                            {{
+                                searchQuery
+                                    ? 'No activities match your search criteria.'
+                                    : 'Server activities will appear here once actions are performed.'
+                            }}
+                        </p>
+                    </div>
+                    <Button v-if="searchQuery" variant="outline" @click="clearFilters">
+                        <X class="h-4 w-4 mr-2" />
+                        Clear Search
+                    </Button>
+                </div>
+            </div>
+
+            <!-- Activities List -->
+            <div v-else class="space-y-4">
+                <div v-for="activity in activities" :key="activity.id" class="group">
+                    <Card
+                        class="border-2 shadow-sm hover:shadow-md transition-all duration-200 hover:border-primary/20"
+                    >
+                        <CardContent class="p-4">
+                            <div class="flex items-start gap-4">
+                                <!-- Event Icon -->
+                                <div class="flex-shrink-0">
+                                    <div
+                                        class="w-12 h-12 rounded-lg flex items-center justify-center transition-colors"
+                                        :class="getEventIconClass(activity.event)"
+                                    >
+                                        <component :is="getEventIcon(activity.event)" class="h-6 w-6" />
+                                    </div>
+                                </div>
+
+                                <!-- Activity Content -->
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h3 class="font-semibold text-base">
+                                                    {{ formatEvent(activity.event) }}
+                                                </h3>
+                                                <Badge :variant="getEventBadgeVariant(activity.event)" class="text-xs">
+                                                    {{ getEventCategory(activity.event) }}
+                                                </Badge>
+                                            </div>
+                                            <p class="text-sm text-muted-foreground mb-2 line-clamp-2">
+                                                {{ displayMessage(activity) }}
+                                            </p>
+                                            <div class="flex items-center gap-4 text-xs text-muted-foreground">
+                                                <div class="flex items-center gap-1">
+                                                    <Clock class="h-3 w-3" />
+                                                    <span>{{
+                                                        formatRelativeTime(activity.timestamp || activity.created_at)
+                                                    }}</span>
+                                                </div>
+                                                <div class="flex items-center gap-1">
+                                                    <Calendar class="h-3 w-3" />
+                                                    <span>{{
+                                                        formatDate(activity.timestamp || activity.created_at)
+                                                    }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Action Button -->
+                                        <div class="flex-shrink-0">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                class="opacity-0 group-hover:opacity-100 transition-opacity"
+                                                @click="openDetails(activity)"
+                                            >
+                                                <Eye class="h-4 w-4 mr-2" />
+                                                {{ t('common.view') || 'View' }}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <!-- Pagination -->
+                <div class="flex items-center justify-between pt-6">
+                    <div class="text-sm text-muted-foreground">
+                        Showing {{ pagination.from }} to {{ pagination.to }} of {{ pagination.total_records }} events
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="!pagination.has_prev || loading"
+                            @click="changePage(pagination.current_page - 1)"
+                        >
+                            <ChevronLeft class="h-4 w-4 mr-1" />
+                            Previous
+                        </Button>
+
+                        <div class="flex items-center gap-1">
+                            <Button
+                                v-for="page in getVisiblePages()"
+                                :key="page"
+                                :variant="page === pagination.current_page ? 'default' : 'outline'"
+                                size="sm"
+                                class="w-8 h-8 p-0"
+                                :disabled="typeof page === 'string'"
+                                @click="typeof page === 'number' && changePage(page)"
+                            >
+                                {{ page }}
+                            </Button>
+                        </div>
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="!pagination.has_next || loading"
+                            @click="changePage(pagination.current_page + 1)"
+                        >
+                            Next
+                            <ChevronRight class="h-4 w-4 ml-1" />
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Activity Details Dialog -->
+        <Dialog v-model:open="detailsOpen">
+            <DialogContent class="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader class="pb-4">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-12 h-12 rounded-lg flex items-center justify-center"
+                            :class="selectedItem ? getEventIconClass(selectedItem.event) : ''"
+                        >
+                            <component
+                                :is="selectedItem ? getEventIcon(selectedItem.event) : Activity"
+                                class="h-6 w-6"
+                            />
+                        </div>
+                        <div>
+                            <DialogTitle class="text-xl">
+                                {{ selectedItem ? formatEvent(selectedItem.event) : 'Activity Details' }}
+                            </DialogTitle>
+                            <DialogDescription class="mt-1">
+                                {{
+                                    t('serverActivities.recentAction') || 'Detailed information for the selected event.'
+                                }}
+                            </DialogDescription>
+                        </div>
+                    </div>
+                </DialogHeader>
+
+                <div class="space-y-6">
+                    <!-- Event Information Card -->
+                    <Card class="border-2">
+                        <CardContent class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="space-y-2">
+                                    <div class="text-sm font-medium text-muted-foreground">Event Type</div>
+                                    <div class="flex items-center gap-2">
+                                        <Badge
+                                            :variant="
+                                                selectedItem ? getEventBadgeVariant(selectedItem.event) : 'outline'
+                                            "
+                                        >
+                                            {{ selectedItem ? getEventCategory(selectedItem.event) : 'Unknown' }}
+                                        </Badge>
+                                    </div>
+                                </div>
+                                <div class="space-y-2">
+                                    <div class="text-sm font-medium text-muted-foreground">Timestamp</div>
+                                    <div class="font-medium">
+                                        {{ formatDate(selectedItem?.timestamp || selectedItem?.created_at) }}
+                                    </div>
+                                    <div class="text-xs text-muted-foreground">
+                                        {{ formatRelativeTime(selectedItem?.timestamp || selectedItem?.created_at) }}
+                                    </div>
+                                </div>
+                                <div class="space-y-2">
+                                    <div class="text-sm font-medium text-muted-foreground">Event ID</div>
+                                    <div class="font-mono text-sm">{{ selectedItem?.id || 'N/A' }}</div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <!-- Message Card -->
+                    <Card v-if="baseMessage" class="border-2">
+                        <CardContent class="p-6">
+                            <div class="space-y-3">
+                                <div class="flex items-center gap-2">
+                                    <FileText class="h-4 w-4 text-muted-foreground" />
+                                    <h3 class="text-lg font-semibold">Message</h3>
+                                </div>
+                                <div class="bg-muted/30 rounded-lg p-4 border">
+                                    <p class="text-sm font-medium break-words">{{ baseMessage }}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <!-- Metadata Card -->
+                    <Card v-if="detailsPairs.length" class="border-2">
+                        <CardContent class="p-6">
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-2">
+                                    <Settings class="h-4 w-4 text-muted-foreground" />
+                                    <h3 class="text-lg font-semibold">Metadata</h3>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div
+                                        v-for="pair in detailsPairs"
+                                        :key="pair.key"
+                                        class="bg-muted/30 rounded-lg p-4 border"
+                                    >
+                                        <div
+                                            class="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide"
+                                        >
+                                            {{ pair.key }}
+                                        </div>
+                                        <div class="font-mono text-sm break-words">{{ pair.value }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <!-- Raw JSON Card -->
+                    <Card v-if="rawJson" class="border-2">
+                        <CardContent class="p-6">
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-2">
+                                    <Terminal class="h-4 w-4 text-muted-foreground" />
+                                    <h3 class="text-lg font-semibold">Raw JSON</h3>
+                                </div>
+                                <div class="relative">
+                                    <pre
+                                        class="text-xs bg-muted/30 p-4 rounded-lg overflow-x-auto border font-mono"
+                                    ><code>{{ rawJson }}</code></pre>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        class="absolute top-2 right-2"
+                                        @click="copyToClipboard(rawJson)"
+                                    >
+                                        <Copy class="h-3 w-3 mr-1" />
+                                        Copy
+                                    </Button>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <DialogFooter class="pt-6">
+                    <Button variant="outline" @click="detailsOpen = false">
+                        <X class="h-4 w-4 mr-2" />
+                        {{ t('common.close') }}
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -131,11 +400,39 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-vue-next';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Activity,
+    RefreshCw,
+    Search,
+    X,
+    Eye,
+    Clock,
+    Calendar,
+    ChevronLeft,
+    ChevronRight,
+    Archive,
+    Power,
+    Terminal,
+    FileText,
+    Download,
+    Server,
+    Database,
+    Users,
+    Settings,
+    Play,
+    Pause,
+    RotateCcw,
+    Trash2,
+    Lock,
+    Unlock,
+    Copy,
+} from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
-import TableComponent from '@/kit/TableComponent.vue';
-import type { TableColumn } from '@/kit/types';
 import {
     Dialog,
     DialogContent,
@@ -174,6 +471,7 @@ const toast = useToast();
 const activities = ref<ActivityItem[]>([]);
 const loading = ref(false);
 const searchQuery = ref('');
+const selectedEventFilter = ref('all');
 const server = ref<{ name: string } | null>(null);
 const pagination = ref({
     current_page: 1,
@@ -198,11 +496,7 @@ onMounted(async () => {
     await fetchActivities();
 });
 
-const tableColumns: TableColumn[] = [
-    { key: 'event', label: t('serverActivities.event'), searchable: true },
-    { key: 'message', label: t('serverActivities.message'), searchable: true },
-    { key: 'timestamp', label: t('serverActivities.time') },
-];
+// Removed tableColumns as we're using a custom card layout now
 
 async function fetchActivities(page = pagination.value.current_page) {
     try {
@@ -446,5 +740,137 @@ function summarizePrimitive(v: unknown): string {
     if (typeof v === 'number' || typeof v === 'boolean') return String(v);
     if (typeof v === 'object') return '{…}';
     return String(v);
+}
+
+// New helper functions for the redesigned interface
+function getEventIcon(event: string) {
+    if (event.includes('backup')) return Archive;
+    if (event.includes('power')) return Power;
+    if (event.includes('console')) return Terminal;
+    if (event.includes('file')) return FileText;
+    if (event.includes('download')) return Download;
+    if (event.includes('database')) return Database;
+    if (event.includes('user')) return Users;
+    if (event.includes('setting')) return Settings;
+    if (event.includes('start')) return Play;
+    if (event.includes('stop')) return Pause;
+    if (event.includes('restart')) return RotateCcw;
+    if (event.includes('delete')) return Trash2;
+    if (event.includes('lock')) return Lock;
+    if (event.includes('unlock')) return Unlock;
+    return Server;
+}
+
+function getEventIconClass(event: string) {
+    if (event.includes('backup')) return 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
+    if (event.includes('power')) return 'bg-green-500/10 text-green-600 dark:text-green-400';
+    if (event.includes('console')) return 'bg-purple-500/10 text-purple-600 dark:text-purple-400';
+    if (event.includes('file')) return 'bg-orange-500/10 text-orange-600 dark:text-orange-400';
+    if (event.includes('download')) return 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400';
+    if (event.includes('database')) return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400';
+    if (event.includes('user')) return 'bg-pink-500/10 text-pink-600 dark:text-pink-400';
+    if (event.includes('setting')) return 'bg-gray-500/10 text-gray-600 dark:text-gray-400';
+    if (event.includes('start')) return 'bg-green-500/10 text-green-600 dark:text-green-400';
+    if (event.includes('stop')) return 'bg-red-500/10 text-red-600 dark:text-red-400';
+    if (event.includes('restart')) return 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400';
+    if (event.includes('delete')) return 'bg-red-500/10 text-red-600 dark:text-red-400';
+    if (event.includes('lock')) return 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
+    if (event.includes('unlock')) return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
+    return 'bg-primary/10 text-primary';
+}
+
+function getEventCategory(event: string) {
+    if (event.includes('backup')) return 'Backup';
+    if (event.includes('power')) return 'Power';
+    if (event.includes('console')) return 'Console';
+    if (event.includes('file')) return 'File';
+    if (event.includes('download')) return 'Download';
+    if (event.includes('database')) return 'Database';
+    if (event.includes('user')) return 'User';
+    if (event.includes('setting')) return 'Settings';
+    return 'System';
+}
+
+function getEventBadgeVariant(event: string) {
+    if (event.includes('backup')) return 'default';
+    if (event.includes('power')) return 'secondary';
+    if (event.includes('console')) return 'outline';
+    if (event.includes('file')) return 'default';
+    if (event.includes('download')) return 'secondary';
+    if (event.includes('database')) return 'outline';
+    if (event.includes('user')) return 'default';
+    if (event.includes('setting')) return 'secondary';
+    return 'outline';
+}
+
+function formatRelativeTime(timestamp?: string) {
+    if (!timestamp) return '';
+
+    const now = new Date();
+    const date = new Date(timestamp);
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+
+    return date.toLocaleDateString();
+}
+
+function getVisiblePages() {
+    const current = pagination.value.current_page;
+    const total = pagination.value.total_pages;
+    const pages: (number | string)[] = [];
+
+    if (total <= 7) {
+        for (let i = 1; i <= total; i++) {
+            pages.push(i);
+        }
+    } else {
+        pages.push(1);
+
+        if (current > 4) {
+            pages.push('...');
+        }
+
+        const start = Math.max(2, current - 1);
+        const end = Math.min(total - 1, current + 1);
+
+        for (let i = start; i <= end; i++) {
+            pages.push(i);
+        }
+
+        if (current < total - 3) {
+            pages.push('...');
+        }
+
+        if (total > 1) {
+            pages.push(total);
+        }
+    }
+
+    return pages.filter((page, index, arr) => {
+        if (typeof page === 'string') return true;
+        return arr.indexOf(page) === index;
+    });
+}
+
+function clearFilters() {
+    searchQuery.value = '';
+    selectedEventFilter.value = 'all';
+    pagination.value.current_page = 1;
+    fetchActivities(1);
+}
+
+function copyToClipboard(text: string) {
+    navigator.clipboard
+        .writeText(text)
+        .then(() => {
+            toast.success('Copied to clipboard');
+        })
+        .catch(() => {
+            toast.error('Failed to copy to clipboard');
+        });
 }
 </script>

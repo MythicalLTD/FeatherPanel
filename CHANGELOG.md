@@ -44,6 +44,7 @@
 - Fixed an issue where the "View" button for servers did not function correctly and the "View Console" button was missing from the server details drawer.
 - Fixed an issue where nginx file compression was limited to 2MB on non-Cloudflare tunnel installs. Compression limits have been removed to ensure proper handling of large assets.
 - Fixed an issue where the server creation page did not allow setting unlimited values for CPU, disk, and RAM; setting these to 0 will now correctly allow unlimited usage as intended.
+- Fixed issues with stats charts: resolved bugs where some performance/resource charts were not displaying or updating correctly on the dashboard and server console pages.
 
 ### Improved
 
@@ -52,6 +53,7 @@
 - Updated log upload functionality: The CLI and settings log upload commands now use a centralized helper for interacting with mclo.gs, instead of making direct API requests each time. This streamlines the code, reduces duplication, and provides better reliability and error handling for log uploads.
 - Improved IP detection for non-Cloudflare hosting providers: The system now properly resolves the client's real public IP even if requests are proxied (e.g., when $_SERVER['REMOTE_ADDR'] is 127.0.0.1). This ensures accurate detection regardless of Cloudflare or local reverse proxy setups, enhancing audit logging and security tracking.
 - CLI experience greatly improved: All CLI commands now leverage centralized color codes and style conventions for a consistent, branded look across help, logs, setup, settings, users, and SaaS commands. Output formatting, error messages, and UI prompts are now unified for a more professional and user-friendly developer workflow.
+- Complete redesign of all dashboard and server charts for a significantly improved appearance, enhanced accuracy, and more modern visual presentation. Charts now feature smoother lines, clearer grid lines, improved labels, dynamic coloring, and more precise data rendering for a vastly better user experience.
 
 ### Removed
 

@@ -296,7 +296,7 @@ return function (RouteCollection $routes): void {
         function (Request $request, array $args) {
             $serverId = $args['serverId'] ?? null;
             $allocationId = $args['allocationId'] ?? null;
-            
+
             if (!$serverId || !is_numeric($serverId)) {
                 return ApiResponse::error('Missing or invalid server ID', 'INVALID_SERVER_ID', 400);
             }
@@ -318,7 +318,7 @@ return function (RouteCollection $routes): void {
         function (Request $request, array $args) {
             $serverId = $args['serverId'] ?? null;
             $allocationId = $args['allocationId'] ?? null;
-            
+
             if (!$serverId || !is_numeric($serverId)) {
                 return ApiResponse::error('Missing or invalid server ID', 'INVALID_SERVER_ID', 400);
             }

@@ -738,7 +738,6 @@ class App
             ?? $_SERVER['HTTP_HOST']
             ?? ($_SERVER['SERVER_NAME'] ?? 'localhost');
 
-
         // Build final URL
         $baseUrl = sprintf('%s://%s', $protocol, $host);
 

@@ -65,7 +65,9 @@ class ServerAllocationsController
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'success', type: 'boolean'),
-                        new OA\Property(property: 'data', type: 'object',
+                        new OA\Property(
+                            property: 'data',
+                            type: 'object',
                             properties: [
                                 new OA\Property(property: 'server', type: 'object'),
                                 new OA\Property(property: 'allocations', type: 'array', items: new OA\Items(type: 'object')),
@@ -428,4 +430,3 @@ class ServerAllocationsController
         }
     }
 }
-

@@ -33,6 +33,7 @@ namespace App\Middleware;
 use App\Chat\User;
 use App\Chat\ApiClient;
 use App\Helpers\ApiResponse;
+use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -49,6 +50,8 @@ class AuthMiddleware implements MiddlewareInterface
             if ($userInfo['banned'] == 'true') {
                 return ApiResponse::error('User is banned', 'USER_BANNED');
             }
+
+            User::updateUser($userInfo['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
             // Attach user info to the request attributes for downstream use
             $request->attributes->set('user', $userInfo);
             $request->attributes->set('auth_type', 'session');

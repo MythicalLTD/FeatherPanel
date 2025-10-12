@@ -322,23 +322,44 @@
                 </Button>
             </div>
 
-            <!-- Wings Connection Status Banner -->
+            <!-- Wings Panel: Professional Design -->
             <div
                 v-if="!customization.components.wingsStatus"
-                class="flex items-start sm:items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border"
+                class="flex items-center gap-4 px-5 py-3 border rounded-lg shadow-sm transition-colors"
                 :class="{
-                    'border-green-200 bg-green-50 dark:bg-green-900/20': wingsConnectionInfo.status === 'healthy',
-                    'border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20': wingsConnectionInfo.status === 'error',
-                    'border-red-200 bg-red-50 dark:bg-red-900/20': wingsConnectionInfo.status === 'disconnected',
-                    'border-blue-200 bg-blue-50 dark:bg-blue-900/20': wingsConnectionInfo.status === 'connecting',
+                    'border-green-300 bg-green-50 dark:bg-green-900/50 dark:border-green-700':
+                        wingsConnectionInfo.status === 'healthy',
+                    'border-yellow-300 bg-yellow-50 dark:bg-yellow-900/40 dark:border-yellow-600':
+                        wingsConnectionInfo.status === 'error',
+                    'border-red-300 bg-red-50 dark:bg-red-900/45 dark:border-red-700':
+                        wingsConnectionInfo.status === 'disconnected',
+                    'border-blue-300 bg-blue-50 dark:bg-blue-900/50 dark:border-blue-600':
+                        wingsConnectionInfo.status === 'connecting',
                 }"
             >
-                <span class="text-lg flex-shrink-0">{{ wingsConnectionInfo.icon }}</span>
-                <span class="text-sm font-medium flex-1 min-w-0" :class="wingsConnectionInfo.color">
-                    {{ wingsConnectionInfo.message }}
+                <span
+                    class="flex items-center justify-center h-9 w-9 rounded-full border"
+                    :class="{
+                        'border-green-400 bg-green-100 dark:bg-green-800/80 dark:border-green-500':
+                            wingsConnectionInfo.status === 'healthy',
+                        'border-yellow-400 bg-yellow-100 dark:bg-yellow-800/60 dark:border-yellow-400':
+                            wingsConnectionInfo.status === 'error',
+                        'border-red-400 bg-red-100 dark:bg-red-800/70 dark:border-red-500':
+                            wingsConnectionInfo.status === 'disconnected',
+                        'border-blue-400 bg-blue-100 dark:bg-blue-800/70 dark:border-blue-500':
+                            wingsConnectionInfo.status === 'connecting',
+                    }"
+                    aria-hidden="true"
+                >
+                    <span class="text-xl">{{ wingsConnectionInfo.icon }}</span>
                 </span>
-                <div v-if="wingsConnectionInfo.status === 'connecting'" class="flex-shrink-0">
-                    <div class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-base leading-tight truncate" :class="wingsConnectionInfo.color">
+                        {{ wingsConnectionInfo.message }}
+                    </div>
+                </div>
+                <div v-if="wingsConnectionInfo.status === 'connecting'" class="flex-shrink-0 ml-2">
+                    <div class="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
             </div>
 
@@ -1181,10 +1202,10 @@ function setupWebSocketHandlers(): void {
 function updateServerStats(stats: WingsStats): void {
     if (!server.value) return;
 
-    server.value.cpu = Math.round(stats.cpu_absolute || 0);
-    server.value.memory = Math.round((stats.memory_bytes || 0) / (1024 * 1024));
-    server.value.memoryLimit = Math.round((stats.memory_limit_bytes || 0) / (1024 * 1024));
-    server.value.disk = Math.round((stats.disk_bytes || 0) / (1024 * 1024));
+    // Update current usage (NOT limits - those come from the API)
+    server.value.cpuUsage = Math.round(stats.cpu_absolute || 0);
+    server.value.memoryUsage = Math.round((stats.memory_bytes || 0) / (1024 * 1024));
+    server.value.diskUsage = Math.round((stats.disk_bytes || 0) / (1024 * 1024));
 
     networkStats.value = {
         upload: formatBytes(stats.network?.tx_bytes || 0),

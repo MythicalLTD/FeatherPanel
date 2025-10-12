@@ -157,28 +157,8 @@ class ServerActivityController
             serverIds: $serverIds,
         );
 
-        // Add server information to activities
-        $activities = [];
-        foreach ($result['data'] as $activity) {
-            $activityData = $activity;
-
-            // Parse metadata if it's JSON
-            if (!empty($activity['metadata'])) {
-                try {
-                    $metadata = json_decode($activity['metadata'], true);
-                    if (is_array($metadata)) {
-                        $activityData['metadata'] = $metadata;
-                    }
-                } catch (\Exception $e) {
-                    // Keep original metadata if parsing fails
-                }
-            }
-
-            $activities[] = $activityData;
-        }
-
         return ApiResponse::success([
-            'activities' => $activities,
+            'activities' => $result,
             'pagination' => $result['pagination'],
         ]);
     }
@@ -215,20 +195,6 @@ class ServerActivityController
 
         // Get recent activities with server information
         $activities = ServerActivity::getActivitiesByUserIdWithServerInfo($user['id'], 10);
-
-        // Parse metadata for each activity
-        foreach ($activities as &$activity) {
-            if (!empty($activity['metadata'])) {
-                try {
-                    $metadata = json_decode($activity['metadata'], true);
-                    if (is_array($metadata)) {
-                        $activity['metadata'] = $metadata;
-                    }
-                } catch (\Exception $e) {
-                    // Keep original metadata if parsing fails
-                }
-            }
-        }
 
         return ApiResponse::success([
             'activities' => $activities,
@@ -323,28 +289,8 @@ class ServerActivityController
             serverId: $serverId,
         );
 
-        // Add server information to activities
-        $activities = [];
-        foreach ($result['data'] as $activity) {
-            $activityData = $activity;
-
-            // Parse metadata if it's JSON
-            if (!empty($activity['metadata'])) {
-                try {
-                    $metadata = json_decode($activity['metadata'], true);
-                    if (is_array($metadata)) {
-                        $activityData['metadata'] = $metadata;
-                    }
-                } catch (\Exception $e) {
-                    // Keep original metadata if parsing fails
-                }
-            }
-
-            $activities[] = $activityData;
-        }
-
         return ApiResponse::success([
-            'activities' => $activities,
+            'activities' => $result,
             'pagination' => $result['pagination'],
         ]);
     }

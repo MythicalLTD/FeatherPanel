@@ -48,9 +48,11 @@ use Symfony\Component\HttpFoundation\Response;
     type: 'object',
     required: ['server', 'event'],
     properties: [
+        new OA\Property(property: 'user', type: 'string', format: 'uuid', description: 'User UUID (nullable)', nullable: true),
         new OA\Property(property: 'server', type: 'string', format: 'uuid', description: 'Server UUID'),
         new OA\Property(property: 'event', type: 'string', description: 'Activity event name'),
         new OA\Property(property: 'metadata', type: 'object', description: 'Additional activity metadata'),
+        new OA\Property(property: 'ip', type: 'string', description: 'IP address of the user'),
         new OA\Property(property: 'timestamp', type: 'string', format: 'date-time', description: 'Activity timestamp'),
     ]
 )]
@@ -153,6 +155,8 @@ class WingsActivityController
                 $event = $activity['event'];
                 $metadata = $activity['metadata'] ?? [];
                 $timestamp = $activity['timestamp'] ?? date('Y-m-d H:i:s');
+                $userUuid = $activity['user'] ?? null; // User UUID from top level
+                $ipAddress = $activity['ip'] ?? null; // IP address from top level
 
                 // Validate server UUID format
                 if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $serverUuid)) {
@@ -173,13 +177,10 @@ class WingsActivityController
                     continue;
                 }
 
-                // Get user information from metadata
+                // Get user information
                 $userId = null;
-                $userUuid = null;
 
-                if (isset($metadata['user']) && !empty($metadata['user'])) {
-                    $userUuid = $metadata['user'];
-
+                if ($userUuid !== null && !empty($userUuid)) {
                     // Validate user UUID format
                     if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $userUuid)) {
                         // Get user by UUID
@@ -206,7 +207,7 @@ class WingsActivityController
                             );
                         }
                     } else {
-                        $errors[] = "Activity at index {$index}: Invalid user UUID format in metadata";
+                        $errors[] = "Activity at index {$index}: Invalid user UUID format";
                         continue;
                     }
                 }
@@ -228,6 +229,7 @@ class WingsActivityController
                     'server_id' => $server['id'],
                     'node_id' => $node['id'],
                     'user_id' => $userId, // Link to user if found
+                    'ip' => $ipAddress, // IP address from Wings
                     'event' => $event,
                     'metadata' => is_array($metadata) ? json_encode($metadata) : $metadata,
                     'timestamp' => $timestampObj->format('Y-m-d H:i:s'),

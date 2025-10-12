@@ -185,8 +185,8 @@ class ServerFilesController
             // Log activity
             $this->logActivity($server, $node, 'files_listed', [
                 'path' => $path,
-                'user_id' => $user['id'] ?? null,
-            ]);
+
+            ], $user);
 
             return ApiResponse::success(['contents' => $response->getData()], 'Files fetched successfully');
         } catch (\Exception $e) {
@@ -274,10 +274,10 @@ class ServerFilesController
             // Log activity
             $this->logActivity($server, $node, 'file_viewed', [
                 'path' => $path,
-                'user_id' => $user['id'] ?? null,
+
                 'file_size' => strlen($fileContent),
                 'content_type' => $contentType,
-            ]);
+            ], $user);
 
             // Return file content with appropriate content type
             return new Response($fileContent, 200, ['Content-Type' => $contentType]);
@@ -364,10 +364,10 @@ class ServerFilesController
             // Log activity
             $this->logActivity($server, $node, 'file_written', [
                 'path' => $path,
-                'user_id' => $user['id'] ?? null,
+
                 'content_length' => strlen($content),
                 'file_exists' => file_exists($path),
-            ]);
+            ], $user);
 
             // Emit event
             global $eventManager;
@@ -445,8 +445,8 @@ class ServerFilesController
             $this->logActivity($server, $node, 'file_renamed', [
                 'root' => $data['root'],
                 'files' => $data['files'],
-                'user_id' => $user['id'] ?? null,
-            ]);
+
+            ], $user);
 
             // Emit event
             global $eventManager;
@@ -525,9 +525,9 @@ class ServerFilesController
             $this->logActivity($server, $node, 'files_deleted', [
                 'root' => $data['root'],
                 'files' => $data['files'],
-                'user_id' => $user['id'] ?? null,
+
                 'file_count' => count($data['files']),
-            ]);
+            ], $user);
 
             // Emit event
             global $eventManager;
@@ -604,9 +604,9 @@ class ServerFilesController
             $this->logActivity($server, $node, 'files_copied', [
                 'location' => $data['location'],
                 'files' => $data['files'],
-                'user_id' => $user['id'] ?? null,
+
                 'file_count' => count($data['files']),
-            ]);
+            ], $user);
 
             // Emit event
             global $eventManager;
@@ -684,9 +684,9 @@ class ServerFilesController
             $this->logActivity($server, $node, 'directory_created', [
                 'name' => $data['name'],
                 'path' => $data['path'],
-                'user_id' => $user['id'] ?? null,
+
                 'full_path' => rtrim($data['path'], '/') . '/' . $data['name'],
-            ]);
+            ], $user);
 
             // Emit event
             global $eventManager;
@@ -764,9 +764,9 @@ class ServerFilesController
             $this->logActivity($server, $node, 'files_compressed', [
                 'root' => $data['root'],
                 'files' => $data['files'],
-                'user_id' => $user['id'] ?? null,
+
                 'file_count' => count($data['files']),
-            ]);
+            ], $user);
 
             // Emit event
             global $eventManager;
@@ -844,8 +844,8 @@ class ServerFilesController
             $this->logActivity($server, $node, 'archive_decompressed', [
                 'file' => $data['file'],
                 'root' => $data['root'],
-                'user_id' => $user['id'] ?? null,
-            ]);
+
+            ], $user);
 
             // Emit event
             global $eventManager;
@@ -923,9 +923,9 @@ class ServerFilesController
             $this->logActivity($server, $node, 'file_permissions_changed', [
                 'root' => $data['root'],
                 'files' => $data['files'],
-                'user_id' => $user['id'] ?? null,
+
                 'file_count' => count($data['files']),
-            ]);
+            ], $user);
 
             // Emit event
             global $eventManager;
@@ -1018,8 +1018,8 @@ class ServerFilesController
                 'file_name' => $fileName,
                 'foreground' => $foreground,
                 'use_header' => $useHeader,
-                'user_id' => $user['id'] ?? null,
-            ]);
+
+            ], $user);
 
             return ApiResponse::success($response->getData(), 'File pull initiated successfully');
         } catch (\Exception $e) {
@@ -1075,8 +1075,8 @@ class ServerFilesController
 
             // Log activity
             $this->logActivity($server, $node, 'downloads_list_viewed', [
-                'user_id' => $user['id'] ?? null,
-            ]);
+
+            ], $user);
 
             return ApiResponse::success($response->getData(), 'Downloads list retrieved successfully');
         } catch (\Exception $e) {
@@ -1141,8 +1141,8 @@ class ServerFilesController
             // Log activity
             $this->logActivity($server, $node, 'pull_process_deleted', [
                 'pull_id' => $pullId,
-                'user_id' => $user['id'] ?? null,
-            ]);
+
+            ], $user);
 
             // Emit event
             global $eventManager;
@@ -1258,9 +1258,9 @@ class ServerFilesController
                 'path' => $path,
                 'filename' => $filename,
                 'full_path' => $fullPath,
-                'user_id' => $user['id'] ?? null,
+
                 'file_size' => strlen($fileContent),
-            ]);
+            ], $user);
 
             // Emit event
             global $eventManager;
@@ -1383,10 +1383,10 @@ class ServerFilesController
             $this->logActivity($server, $node, 'file_downloaded', [
                 'path' => $path,
                 'filename' => $filename,
-                'user_id' => $user['id'] ?? null,
+
                 'file_size' => strlen($fileContent),
                 'content_type' => $contentType,
-            ]);
+            ], $user);
 
             // Return file content with download headers
             return new Response($fileContent, 200, [
@@ -1485,11 +1485,13 @@ class ServerFilesController
     /**
      * Helper method to log server activity.
      */
-    private function logActivity(array $server, array $node, string $event, array $metadata): void
+    private function logActivity(array $server, array $node, string $event, array $metadata, array $user): void
     {
         ServerActivity::createActivity([
             'server_id' => $server['id'],
             'node_id' => $server['node_id'],
+            'user_id' => $user['id'],
+            'ip' => $user['last_ip'],
             'event' => $event,
             'metadata' => json_encode($metadata),
         ]);
