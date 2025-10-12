@@ -39,6 +39,8 @@
 - Fixed UI bugs with deletion buttons: they are now properly styled to be readable and are correctly indexed in the UI.
 - Improved UI/UX: Added a hover color for the submit button across the application for more consistent feedback and better user experience. (#42)
 - Fixed a bug where the auth screen would not change themes when toggling between dark and light mode.
+- Added missing translation keys for "server" and related server actions in all locale files, ensuring UI strings for server management and actions are fully localizable.
+- Fixed an issue where the "View" button for servers did not function correctly and the "View Console" button was missing from the server details drawer.
 
 ### Improved
 

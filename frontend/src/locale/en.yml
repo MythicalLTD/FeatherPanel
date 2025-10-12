@@ -505,6 +505,19 @@ serverConsole:
     commandFilteringStatus: 'Command filtering {status}'
     recentCommandsDebug: 'Recent commands: {commands}'
     serverKilling: 'Server killed'
+    # Terminal Settings
+    fontSize: 'Font Size'
+    scrollbackLines: 'Scrollback Lines'
+    # Command Input Messages
+    serverMustBeRunningCommands: 'Server must be running or starting to send commands and upload logs.'
+    noConsoleContent: 'No console content to upload'
+    serverMustBeRunningUpload: 'Server must be running or starting to upload logs'
+    serverMustBeRunning: 'Server must be running to send commands'
+    # Error Messages
+    failedToStartServer: 'Failed to start server'
+    failedToStopServer: 'Failed to stop server'
+    failedToRestartServer: 'Failed to restart server'
+    failedToKillServer: 'Failed to kill server'
 
 # Server Startup
 serverStartup:

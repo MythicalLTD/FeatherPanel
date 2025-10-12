@@ -38,7 +38,7 @@
                     description="Manage all servers in your system."
                     :columns="tableColumns"
                     :data="servers"
-                    :search-placeholder="'Search by name, description, or status...'"
+                    search-placeholder="Search by name, description, or status..."
                     :server-side-pagination="true"
                     :total-records="pagination.total"
                     :total-pages="Math.ceil(pagination.total / pagination.pageSize)"
@@ -214,8 +214,20 @@
         >
             <DrawerContent v-if="selectedServer">
                 <DrawerHeader>
-                    <DrawerTitle>Server Details</DrawerTitle>
-                    <DrawerDescription>Viewing details for server: {{ selectedServer.name }}</DrawerDescription>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <DrawerTitle>Server Details</DrawerTitle>
+                            <DrawerDescription>Viewing details for server: {{ selectedServer.name }}</DrawerDescription>
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            @click="$router.push(`/server/${selectedServer.uuidShort}`)"
+                        >
+                            <Server class="h-4 w-4 mr-2" />
+                            View Console
+                        </Button>
+                    </div>
                 </DrawerHeader>
                 <div class="flex items-center gap-4 mb-6 px-6 pt-6">
                     <div class="flex items-center gap-3">
@@ -446,8 +458,10 @@ import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Layers, Gauge, HelpCircle } from 'lucide-vue-next';
+import { useToast } from 'vue-toastification';
 
 const router = useRouter();
+const toast = useToast();
 
 // Type for axios error responses
 type AxiosError = {
@@ -598,16 +612,18 @@ function changePage(page: number) {
 }
 
 async function onView(server: ApiServer) {
-    viewing.value = true;
     try {
         const { data } = await axios.get(`/api/admin/servers/${server.id}`);
-        selectedServer.value = data.data.server;
+        if (data && data.success && data.data) {
+            selectedServer.value = data.data;
+            viewing.value = true;
+        } else {
+            toast.error('Failed to fetch server details');
+        }
     } catch (error: unknown) {
-        selectedServer.value = null;
-        message.value = {
-            type: 'error',
-            text: (error as AxiosError)?.response?.data?.message || 'Failed to fetch server details',
-        };
+        const errorMessage = (error as AxiosError)?.response?.data?.message || 'Failed to fetch server details';
+        toast.error(errorMessage);
+        console.error('Error fetching server details:', error);
     }
 }
 

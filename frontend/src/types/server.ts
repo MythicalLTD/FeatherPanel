@@ -34,6 +34,7 @@ export interface ServerSpell {
     id: number;
     name: string;
     banner?: string;
+    features?: string[] | string;
 }
 
 export interface Server {

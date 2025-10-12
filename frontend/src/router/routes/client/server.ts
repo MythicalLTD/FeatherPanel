@@ -30,7 +30,7 @@ const clientRoutes: RouteRecordRaw[] = [
     {
         path: '/server/:uuidShort',
         name: 'ServerConsole',
-        component: () => import('@/pages/dashboard/server/ServerConsoleNew.vue'),
+        component: () => import('@/pages/dashboard/server/ServerConsole.vue'),
     },
     {
         path: '/server/:uuidShort/logs',

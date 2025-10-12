@@ -104,7 +104,7 @@
                             <h4 class="font-medium text-sm">{{ t('serverConsole.terminalSettings') }}</h4>
                             <div class="space-y-3">
                                 <div class="space-y-2">
-                                    <Label for="fontSize">Font Size</Label>
+                                    <Label for="fontSize">{{ t('serverConsole.fontSize') }}</Label>
                                     <Select
                                         :model-value="customization.terminal.fontSize"
                                         @update:model-value="
@@ -128,7 +128,7 @@
                                 </div>
 
                                 <div class="space-y-2">
-                                    <Label for="scrollback">Scrollback Lines</Label>
+                                    <Label for="scrollback">{{ t('serverConsole.scrollbackLines') }}</Label>
                                     <Select
                                         :model-value="customization.terminal.scrollback"
                                         @update:model-value="
@@ -426,7 +426,7 @@
                             v-if="server && server.status !== 'running' && server.status !== 'starting'"
                             class="text-xs text-yellow-500 mt-2"
                         >
-                            Server must be running or starting to send commands and upload logs.
+                            {{ t('serverConsole.serverMustBeRunningCommands') }}
                         </p>
                     </div>
                 </CardContent>
@@ -810,13 +810,13 @@ function clearTerminal(): void {
 // Upload console logs to mclo.gs
 async function uploadConsoleLogs(): Promise<void> {
     if (!terminal) {
-        toast.warning('No console content to upload');
+        toast.warning(t('serverConsole.noConsoleContent'));
         return;
     }
 
     // Check if server is running or starting
     if (server.value?.status !== 'running' && server.value?.status !== 'starting') {
-        toast.error('Server must be running or starting to upload logs');
+        toast.error(t('serverConsole.serverMustBeRunningUpload'));
         return;
     }
 
@@ -1225,7 +1225,7 @@ async function sendCommand(): Promise<void> {
 
     // Check if server is running
     if (server.value?.status !== 'running') {
-        toast.error('Server must be running to send commands');
+        toast.error(t('serverConsole.serverMustBeRunning'));
         return;
     }
 
@@ -1244,12 +1244,12 @@ async function sendCommand(): Promise<void> {
         commandInput.value = '';
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            const errorMessage = error.response?.data?.message || 'Failed to send command';
+            const errorMessage = error.response?.data?.message || t('serverConsole.failedToSendCommand');
             toast.error(errorMessage);
             writeToTerminalImmediate(`\r\n\x1b[31m✗ Error: ${errorMessage}\x1b[0m\r\n`);
         } else {
-            toast.error('Failed to send command');
-            writeToTerminalImmediate('\r\n\x1b[31m✗ Error: Failed to send command\x1b[0m\r\n');
+            toast.error(t('serverConsole.failedToSendCommand'));
+            writeToTerminalImmediate(`\r\n\x1b[31m✗ Error: ${t('serverConsole.failedToSendCommand')}\x1b[0m\r\n`);
         }
     } finally {
         sendingCommand.value = false;
@@ -1292,7 +1292,7 @@ async function startServer(): Promise<void> {
             server.value.status = 'offline';
         }
         wingsState.value = 'offline';
-        toast.error('Failed to start server');
+        toast.error(t('serverConsole.failedToStartServer'));
         console.error('Start server error:', error);
     } finally {
         loading.value = false;
@@ -1326,7 +1326,7 @@ async function stopServer(): Promise<void> {
             statsInterval = null;
         }
     } catch (error) {
-        toast.error('Failed to stop server');
+        toast.error(t('serverConsole.failedToStopServer'));
         console.error('Stop server error:', error);
     } finally {
         loading.value = false;
@@ -1358,7 +1358,7 @@ async function restartServer(): Promise<void> {
             await wingsWebSocket.connect();
         }
     } catch (error) {
-        toast.error('Failed to restart server');
+        toast.error(t('serverConsole.failedToRestartServer'));
         console.error('Restart server error:', error);
     } finally {
         loading.value = false;
@@ -1392,7 +1392,7 @@ async function killServer(): Promise<void> {
             statsInterval = null;
         }
     } catch (error) {
-        toast.error('Failed to kill server');
+        toast.error(t('serverConsole.failedToKillServer'));
         console.error('Kill server error:', error);
     } finally {
         loading.value = false;
