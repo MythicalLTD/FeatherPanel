@@ -580,6 +580,121 @@
                             </div>
                         </div>
 
+                        <!-- Allocation Management -->
+                        <div class="bg-card border rounded-lg p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h2 class="text-xl font-semibold">Allocation Management</h2>
+                                    <p class="text-sm text-muted-foreground mt-1">
+                                        Manage additional network allocations for this server
+                                    </p>
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    :disabled="loadingAllocations"
+                                    @click="fetchAllocations"
+                                >
+                                    <svg
+                                        v-if="loadingAllocations"
+                                        class="animate-spin h-4 w-4"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            class="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            stroke-width="4"
+                                        ></circle>
+                                        <path
+                                            class="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
+                                    </svg>
+                                    <span v-else>Refresh</span>
+                                </Button>
+                            </div>
+
+                            <!-- Allocation Status -->
+                            <div
+                                v-if="serverAllocations.server"
+                                class="mb-4 p-3 bg-muted rounded-lg flex items-center justify-between"
+                            >
+                                <div class="text-sm">
+                                    Using
+                                    <span class="font-bold">{{ serverAllocations.server.current_allocations }}</span>
+                                    of
+                                    <span class="font-bold">{{ serverAllocations.server.allocation_limit }}</span>
+                                    allowed allocations
+                                </div>
+                                <Badge :variant="serverAllocations.server.can_add_more ? 'default' : 'destructive'">
+                                    {{ serverAllocations.server.can_add_more ? 'Can add more' : 'Limit reached' }}
+                                </Badge>
+                            </div>
+
+                            <!-- Allocations List -->
+                            <div v-if="serverAllocations.allocations.length > 0" class="space-y-2">
+                                <div
+                                    v-for="allocation in serverAllocations.allocations"
+                                    :key="allocation.id"
+                                    class="flex items-center justify-between p-3 border rounded-lg"
+                                >
+                                    <div class="flex items-center gap-3">
+                                        <div>
+                                            <div class="font-medium font-mono">
+                                                {{ allocation.ip }}:{{ allocation.port }}
+                                            </div>
+                                            <div class="text-xs text-muted-foreground">
+                                                {{ allocation.ip_alias || 'No alias' }}
+                                            </div>
+                                        </div>
+                                        <Badge v-if="allocation.is_primary" variant="default">Primary</Badge>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <Button
+                                            v-if="!allocation.is_primary"
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            :disabled="settingPrimary === allocation.id"
+                                            @click="setPrimaryAllocation(allocation.id)"
+                                        >
+                                            {{ settingPrimary === allocation.id ? 'Setting...' : 'Set Primary' }}
+                                        </Button>
+                                        <Button
+                                            v-if="!allocation.is_primary"
+                                            type="button"
+                                            variant="destructive"
+                                            size="sm"
+                                            :disabled="deletingAllocation === allocation.id"
+                                            @click="deleteAllocation(allocation.id)"
+                                        >
+                                            {{ deletingAllocation === allocation.id ? 'Deleting...' : 'Delete' }}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Add Allocation Button -->
+                            <div v-if="serverAllocations.server?.can_add_more" class="mt-4">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    class="w-full"
+                                    @click="allocationModal.openModal()"
+                                >
+                                    <Plus class="h-4 w-4 mr-2" />
+                                    Add Allocation
+                                </Button>
+                            </div>
+                        </div>
+
                         <!-- Form Actions -->
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <div class="flex items-center gap-3">
@@ -872,7 +987,8 @@ import axios from 'axios';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Check, ChevronsUpDown } from 'lucide-vue-next';
+import { Check, ChevronsUpDown, Plus } from 'lucide-vue-next';
+import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { SelectionModal } from '@/components/ui/selection-modal';
@@ -1027,7 +1143,18 @@ function getSelectedAllocationName() {
         const selected = allocationModal.state.value.selectedItem;
         return `${selected.ip}:${selected.port}`;
     }
-    // Fallback to filtered allocations
+
+    // Check in server allocations (already assigned to this server)
+    if (serverAllocations.value.allocations.length > 0) {
+        const selected = serverAllocations.value.allocations.find(
+            (allocation) => String(allocation.id) === form.value.allocation_id,
+        );
+        if (selected) {
+            return `${selected.ip}:${selected.port}`;
+        }
+    }
+
+    // Fallback to filtered allocations (free allocations from the node)
     const selected = filteredAllocations.value.find((allocation) => String(allocation.id) === form.value.allocation_id);
     return selected ? `${selected.ip}:${selected.port}` : '';
 }
@@ -1095,7 +1222,13 @@ function selectSpell(item: ApiSpell) {
 
 function selectAllocation(item: ApiAllocation) {
     if (item && item.id) {
-        form.value.allocation_id = String(item.id);
+        // If we're in allocation management mode (allocations already loaded), assign it
+        if (serverAllocations.value.server) {
+            assignAllocationToServer(item.id);
+        } else {
+            // Otherwise, this is for the primary allocation during server edit
+            form.value.allocation_id = String(item.id);
+        }
         allocationModal.closeModal();
     }
 }
@@ -1198,6 +1331,34 @@ async function fetchSpellDetails(spellId: number) {
 
 // User search results for fallback display (keeping for current owner display)
 const userSearchResults = ref<ApiUser[]>([]);
+
+// Allocation management
+const serverAllocations = ref<{
+    server: {
+        id: number;
+        name: string;
+        uuid: string;
+        allocation_limit: number;
+        current_allocations: number;
+        can_add_more: boolean;
+        primary_allocation_id: number;
+    } | null;
+    allocations: Array<{
+        id: number;
+        ip: string;
+        port: number;
+        ip_alias: string | null;
+        is_primary: boolean;
+        server_id: number;
+        node_id: number;
+    }>;
+}>({
+    server: null,
+    allocations: [],
+});
+const loadingAllocations = ref(false);
+const settingPrimary = ref<number | null>(null);
+const deletingAllocation = ref<number | null>(null);
 
 // Load server data for editing
 async function loadServerData() {
@@ -1566,7 +1727,95 @@ async function submitUpdate() {
     }
 }
 
-onMounted(() => {
-    loadServerData();
+// Fetch server allocations
+async function fetchAllocations() {
+    const serverId = route.params.id;
+    if (!serverId) return;
+
+    loadingAllocations.value = true;
+    try {
+        const { data } = await axios.get(`/api/admin/servers/${serverId}/allocations`);
+        if (data && data.success) {
+            serverAllocations.value = data.data;
+        }
+    } catch (error) {
+        console.error('Failed to fetch allocations:', error);
+        toast.error('Failed to fetch server allocations');
+    } finally {
+        loadingAllocations.value = false;
+    }
+}
+
+// Assign allocation to server
+async function assignAllocationToServer(allocationId: number) {
+    const serverId = route.params.id;
+    if (!serverId) return;
+
+    try {
+        const { data } = await axios.post(`/api/admin/servers/${serverId}/allocations`, {
+            allocation_id: allocationId,
+        });
+
+        if (data && data.success) {
+            toast.success('Allocation assigned successfully!');
+            await fetchAllocations();
+        } else {
+            toast.error(data?.message || 'Failed to assign allocation');
+        }
+    } catch (error) {
+        console.error('Failed to assign allocation:', error);
+        toast.error('Failed to assign allocation');
+    }
+}
+
+// Delete allocation from server
+async function deleteAllocation(allocationId: number) {
+    const serverId = route.params.id;
+    if (!serverId) return;
+
+    deletingAllocation.value = allocationId;
+    try {
+        const { data } = await axios.delete(`/api/admin/servers/${serverId}/allocations/${allocationId}`);
+
+        if (data && data.success) {
+            toast.success('Allocation deleted successfully!');
+            await fetchAllocations();
+        } else {
+            toast.error(data?.message || 'Failed to delete allocation');
+        }
+    } catch (error) {
+        console.error('Failed to delete allocation:', error);
+        toast.error('Failed to delete allocation');
+    } finally {
+        deletingAllocation.value = null;
+    }
+}
+
+// Set primary allocation
+async function setPrimaryAllocation(allocationId: number) {
+    const serverId = route.params.id;
+    if (!serverId) return;
+
+    settingPrimary.value = allocationId;
+    try {
+        const { data } = await axios.post(`/api/admin/servers/${serverId}/allocations/${allocationId}/primary`);
+
+        if (data && data.success) {
+            toast.success('Primary allocation updated successfully!');
+            await fetchAllocations();
+        } else {
+            toast.error(data?.message || 'Failed to set primary allocation');
+        }
+    } catch (error) {
+        console.error('Failed to set primary allocation:', error);
+        toast.error('Failed to set primary allocation');
+    } finally {
+        settingPrimary.value = null;
+    }
+}
+
+onMounted(async () => {
+    await loadServerData();
+    await fetchAllocations();
 });
 </script>

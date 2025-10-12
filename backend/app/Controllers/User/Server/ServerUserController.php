@@ -556,7 +556,7 @@ class ServerUserController
             // Create JWT service instance
             $jwtService = new JwtService(
                 $token, // Node secret
-                App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://devsv.mythical.systems'), // Panel URL
+                App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://mythicalpanel.mythical.systems'), // Panel URL
                 $scheme . '://' . $host . ':' . $port // Wings URL
             );
 

@@ -724,4 +724,24 @@ class App
 
         return XChaCha20::decrypt($value, $_ENV['DATABASE_ENCRYPTION_KEY'], true);
     }
+
+    public function getBaseUrl(): string
+    {
+        $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+          || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)
+          || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+
+        $protocol = $https ? 'https' : 'http';
+
+        // Detect host (prefer forwarded headers if behind proxy)
+        $host = $_SERVER['HTTP_X_FORWARDED_HOST']
+            ?? $_SERVER['HTTP_HOST']
+            ?? ($_SERVER['SERVER_NAME'] ?? 'localhost');
+
+
+        // Build final URL
+        $baseUrl = sprintf('%s://%s', $protocol, $host);
+
+        return rtrim($baseUrl, '/');
+    }
 }

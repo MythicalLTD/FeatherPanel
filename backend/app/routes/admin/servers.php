@@ -35,6 +35,7 @@ use App\Controllers\Admin\ServersController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\Admin\ServerActivitiesController;
+use App\Controllers\Admin\ServerAllocationsController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
@@ -252,5 +253,82 @@ return function (RouteCollection $routes): void {
             return (new ServerActivitiesController())->byServer($request, (int) $id);
         },
         Permissions::ADMIN_SERVERS_VIEW,
+    );
+
+    // Server allocations - Get allocations
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-servers-allocations',
+        '/api/admin/servers/{id}/allocations',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid server ID', 'INVALID_SERVER_ID', 400);
+            }
+
+            return (new ServerAllocationsController())->getServerAllocations($request, (int) $id);
+        },
+        Permissions::ADMIN_SERVERS_VIEW,
+    );
+
+    // Server allocations - Assign allocation
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-servers-allocations-assign',
+        '/api/admin/servers/{id}/allocations',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid server ID', 'INVALID_SERVER_ID', 400);
+            }
+
+            return (new ServerAllocationsController())->assignAllocation($request, (int) $id);
+        },
+        Permissions::ADMIN_SERVERS_EDIT,
+        ['POST']
+    );
+
+    // Server allocations - Delete allocation
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-servers-allocations-delete',
+        '/api/admin/servers/{serverId}/allocations/{allocationId}',
+        function (Request $request, array $args) {
+            $serverId = $args['serverId'] ?? null;
+            $allocationId = $args['allocationId'] ?? null;
+            
+            if (!$serverId || !is_numeric($serverId)) {
+                return ApiResponse::error('Missing or invalid server ID', 'INVALID_SERVER_ID', 400);
+            }
+            if (!$allocationId || !is_numeric($allocationId)) {
+                return ApiResponse::error('Missing or invalid allocation ID', 'INVALID_ALLOCATION_ID', 400);
+            }
+
+            return (new ServerAllocationsController())->deleteAllocation($request, (int) $serverId, (int) $allocationId);
+        },
+        Permissions::ADMIN_SERVERS_EDIT,
+        ['DELETE']
+    );
+
+    // Server allocations - Set primary
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-servers-allocations-set-primary',
+        '/api/admin/servers/{serverId}/allocations/{allocationId}/primary',
+        function (Request $request, array $args) {
+            $serverId = $args['serverId'] ?? null;
+            $allocationId = $args['allocationId'] ?? null;
+            
+            if (!$serverId || !is_numeric($serverId)) {
+                return ApiResponse::error('Missing or invalid server ID', 'INVALID_SERVER_ID', 400);
+            }
+            if (!$allocationId || !is_numeric($allocationId)) {
+                return ApiResponse::error('Missing or invalid allocation ID', 'INVALID_ALLOCATION_ID', 400);
+            }
+
+            return (new ServerAllocationsController())->setPrimaryAllocation($request, (int) $serverId, (int) $allocationId);
+        },
+        Permissions::ADMIN_SERVERS_EDIT,
+        ['POST']
     );
 };

@@ -780,7 +780,7 @@ class ServersController
                 'email' => $user['email'],
                 'subject' => 'New server created on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
                 'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-                'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
+                'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://mythicalpanel.mythical.systems'),
                 'first_name' => $user['first_name'],
                 'last_name' => $user['last_name'],
                 'username' => $user['username'],
@@ -789,7 +789,7 @@ class ServersController
                 'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
                 'server_name' => $data['name'],
                 'server_ip' => $allocation['ip'] . ':' . $allocation['port'],
-                'panel_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems') . '/dashboard',
+                'panel_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://mythicalpanel.mythical.systems') . '/dashboard',
             ]);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to send server created email: ' . $e->getMessage());
@@ -1271,7 +1271,7 @@ class ServersController
                 'email' => $user['email'],
                 'subject' => 'Server deleted on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
                 'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-                'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
+                'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://mythicalpanel.mythical.systems'),
                 'first_name' => $user['first_name'],
                 'last_name' => $user['last_name'],
                 'username' => $user['username'],
@@ -1647,7 +1647,7 @@ class ServersController
                 'email' => $user['email'],
                 'subject' => 'Server suspended on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
                 'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
-                'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
+                'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://mythicalpanel.mythical.systems'),
                 'first_name' => $user['first_name'],
                 'last_name' => $user['last_name'],
                 'username' => $user['username'],

@@ -25,6 +25,7 @@
 - Added new `--no-prefix` CLI flag: Outputs raw command responses without the FeatherPanel CLI prefix, allowing for cleaner and more script-friendly output in automated workflows.
 - Added dynamic page titles support throughout the frontend. Page titles now automatically reflect the current section, improving navigation and accessibility.
 - Added support for dynamic page favicons throughout the frontend. Favicons now update automatically based on application settings and changes.
+- Added a new `allocations` field to the server editing UI and API, enabling users to assign and customize ports for their servers directly during server management.
 
 ## Fixed
 
@@ -41,6 +42,8 @@
 - Fixed a bug where the auth screen would not change themes when toggling between dark and light mode.
 - Added missing translation keys for "server" and related server actions in all locale files, ensuring UI strings for server management and actions are fully localizable.
 - Fixed an issue where the "View" button for servers did not function correctly and the "View Console" button was missing from the server details drawer.
+- Fixed an issue where nginx file compression was limited to 2MB on non-Cloudflare tunnel installs. Compression limits have been removed to ensure proper handling of large assets.
+- Fixed an issue where the server creation page did not allow setting unlimited values for CPU, disk, and RAM; setting these to 0 will now correctly allow unlimited usage as intended.
 
 ### Improved
 

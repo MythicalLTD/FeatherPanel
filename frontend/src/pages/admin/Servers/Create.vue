@@ -392,7 +392,7 @@
                                         v-model.number="form.memory"
                                         type="number"
                                         placeholder="1024"
-                                        min="128"
+                                        min="0"
                                         :class="{ 'border-red-500': validationErrors.memory }"
                                         required
                                     />
@@ -430,7 +430,7 @@
                                         v-model.number="form.disk"
                                         type="number"
                                         placeholder="1024"
-                                        min="1024"
+                                        min="0"
                                         :class="{ 'border-red-500': validationErrors.disk }"
                                         required
                                     />
@@ -467,7 +467,7 @@
                                         v-model.number="form.io"
                                         type="number"
                                         placeholder="500"
-                                        min="10"
+                                        min="0"
                                         max="1000"
                                         :class="{ 'border-red-500': validationErrors.io }"
                                         required

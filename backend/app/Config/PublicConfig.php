@@ -61,7 +61,7 @@ class PublicConfig extends ConfigFactory
         return [
             // App settings
             ConfigInterface::APP_NAME => 'FeatherPanel',
-            ConfigInterface::APP_URL => 'framework.mythical.systems',
+            ConfigInterface::APP_URL => 'https://mythicalpanel.mythical.systems',
             ConfigInterface::APP_DEVELOPER_MODE => 'false',
             ConfigInterface::APP_TIMEZONE => 'UTC',
             ConfigInterface::APP_LOGO => 'https://cdn.mythical.systems/featherpanel/logo.png',
