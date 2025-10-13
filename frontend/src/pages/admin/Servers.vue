@@ -122,9 +122,18 @@
                                     size="sm"
                                     variant="destructive"
                                     :loading="deleting"
-                                    @click="confirmDelete(item as ApiServer)"
+                                    @click="confirmDelete(item as ApiServer, false)"
                                 >
                                     Confirm Delete
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    class="bg-red-700 hover:bg-red-800 dark:bg-red-800 dark:hover:bg-red-900"
+                                    :loading="deleting"
+                                    @click="onHardDelete(item as ApiServer)"
+                                >
+                                    Hard Delete
                                 </Button>
                                 <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
                                     Cancel
@@ -201,6 +210,63 @@
                 </div>
             </div>
         </div>
+
+        <!-- Hard Delete Warning Dialog -->
+        <AlertDialog
+            :open="showHardDeleteWarning"
+            @update:open="
+                (val: boolean) => {
+                    if (!val) cancelHardDelete();
+                }
+            "
+        >
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle class="flex items-center gap-2 text-red-600 dark:text-red-500">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                            />
+                        </svg>
+                        Woah! Hard Delete Warning
+                    </AlertDialogTitle>
+                    <AlertDialogDescription class="space-y-3 pt-4">
+                        <p class="text-base font-semibold text-foreground">
+                            Hard deleting a server should only be used if:
+                        </p>
+                        <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground">
+                            <li>You have lost connection to Wings (the node daemon)</li>
+                            <li>The node this server is on is permanently dead/offline</li>
+                            <li>You need to remove the server from the database without contacting Wings</li>
+                        </ul>
+                        <div
+                            class="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-md p-3 mt-4"
+                        >
+                            <p class="text-sm text-red-800 dark:text-red-400 font-medium">
+                                ⚠️ Hard delete will ONLY remove the server from the database. It will NOT delete the
+                                server files, containers, or any data from Wings!
+                            </p>
+                        </div>
+                        <p class="text-sm text-muted-foreground pt-2">
+                            If the node is still operational, use the regular "Confirm Delete" option instead to
+                            properly clean up all server resources.
+                        </p>
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel @click="cancelHardDelete">Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                        class="bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
+                        @click="confirmHardDelete"
+                    >
+                        Yes, Hard Delete
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
 
         <!-- View Drawer -->
         <Drawer
@@ -453,6 +519,16 @@ import {
     DrawerDescription,
     DrawerClose,
 } from '@/components/ui/drawer';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
@@ -547,6 +623,8 @@ const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<string | null>(null);
 const selectedServer = ref<ApiServer | null>(null);
 const viewing = ref(false);
+const showHardDeleteWarning = ref(false);
+const serverToHardDelete = ref<ApiServer | null>(null);
 
 // Table columns configuration
 const tableColumns: TableColumn[] = [
@@ -631,23 +709,30 @@ function onEdit(server: ApiServer) {
     router.push(`/admin/servers/${server.id}/edit`);
 }
 
-async function confirmDelete(server: ApiServer) {
+async function confirmDelete(server: ApiServer, hardDelete: boolean = false) {
     deleting.value = true;
     let success = false;
     try {
-        const response = await axios.delete(`/api/admin/servers/${server.id}`);
+        const endpoint = hardDelete ? `/api/admin/servers/${server.id}/hard` : `/api/admin/servers/${server.id}`;
+        const response = await axios.delete(endpoint);
         if (response.data && response.data.success) {
-            message.value = { type: 'success', text: 'Server deleted successfully' };
+            message.value = {
+                type: 'success',
+                text: hardDelete ? 'Server hard deleted successfully' : 'Server deleted successfully',
+            };
             await fetchServers();
             success = true;
+            toast.success(hardDelete ? 'Server hard deleted successfully' : 'Server deleted successfully');
         } else {
             message.value = { type: 'error', text: response.data?.message || 'Failed to delete server' };
         }
     } catch (error: unknown) {
+        const errorMessage = (error as AxiosError)?.response?.data?.message || 'Failed to delete server';
         message.value = {
             type: 'error',
-            text: (error as AxiosError)?.response?.data?.message || 'Failed to delete server',
+            text: errorMessage,
         };
+        toast.error(errorMessage);
     } finally {
         deleting.value = false;
         if (success) confirmDeleteRow.value = null;
@@ -658,6 +743,25 @@ async function confirmDelete(server: ApiServer) {
 }
 function onDelete(server: ApiServer) {
     confirmDeleteRow.value = String(server.id);
+}
+
+function onHardDelete(server: ApiServer) {
+    serverToHardDelete.value = server;
+    showHardDeleteWarning.value = true;
+}
+
+async function confirmHardDelete() {
+    if (serverToHardDelete.value) {
+        showHardDeleteWarning.value = false;
+        await confirmDelete(serverToHardDelete.value, true);
+        serverToHardDelete.value = null;
+    }
+}
+
+function cancelHardDelete() {
+    showHardDeleteWarning.value = false;
+    serverToHardDelete.value = null;
+    confirmDeleteRow.value = null;
 }
 
 function onCancelDelete() {

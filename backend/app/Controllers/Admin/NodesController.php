@@ -119,6 +119,13 @@ class NodesController
                 required: false,
                 schema: new OA\Schema(type: 'string')
             ),
+            new OA\Parameter(
+                name: 'location_id',
+                in: 'query',
+                description: 'Location ID to filter nodes by',
+                required: false,
+                schema: new OA\Schema(type: 'integer')
+            ),
         ],
         responses: [
             new OA\Response(
@@ -144,7 +151,8 @@ class NodesController
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         $search = $request->query->get('search', '');
-
+        $locationId = $request->query->get('location_id', null);
+        $locationId = $locationId ? (int) $locationId : null;
         if ($page < 1) {
             $page = 1;
         }
@@ -156,8 +164,8 @@ class NodesController
         }
 
         $offset = ($page - 1) * $limit;
-        $nodes = Node::searchNodes($page, $limit, $search);
-        $total = Node::getNodesCount($search);
+        $nodes = Node::searchNodes(page: $page, limit: $limit, search: $search, locationId: $locationId);
+        $total = Node::getNodesCount(search: $search, locationId: $locationId);
 
         $totalPages = ceil($total / $limit);
         $from = ($page - 1) * $limit + 1;

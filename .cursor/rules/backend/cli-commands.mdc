@@ -2,6 +2,7 @@
 globs: backend/app/Cli/Commands/*,backend/app/Cli/*
 alwaysApply: false
 ---
+
 # FeatherPanel CLI Commands - Coding Standards & Patterns
 
 ## Project Context
@@ -853,7 +854,7 @@ $data['uuid'] = $uuid;
 $data['password'] = password_hash($password, PASSWORD_BCRYPT);
 
 // Update password and regenerate token
-$updateData['password'] = password_hash($newPassword, PASSWORD_DEFAULT);
+$updateData['password'] = password_hash($newPassword, PASSWORD_BCRYPT);
 $updateData['remember_token'] = User::generateAccountToken();
 ```
 

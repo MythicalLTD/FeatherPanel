@@ -95,9 +95,15 @@
                                 :placeholder="v.default_value || ''"
                                 :disabled="!v.user_editable"
                                 class="text-xs sm:text-sm"
-                                @input="() => validateOneVariable(v)"
+                                @input="validateOneVariable(v)"
+                                @keyup="validateOneVariable(v)"
+                                @change="validateOneVariable(v)"
                             />
-                            <p v-if="variableErrors[v.variable_id]" class="text-xs text-red-500">
+                            <p
+                                v-if="variableErrors[v.variable_id]"
+                                :key="`error-${v.variable_id}`"
+                                class="text-xs text-red-500"
+                            >
                                 {{ variableErrors[v.variable_id] }}
                             </p>
                             <div
@@ -331,20 +337,31 @@ function validateVariableAgainstRules(value: string, rules: string): string | ''
     const isRequired = parsed.some((r) => r.type === 'required');
     const isNumeric = parsed.some((r) => r.type === 'numeric');
 
-    const trimmed = value ?? '';
-    if (!isRequired && hasNullable && trimmed === '') return '';
-    if (isRequired && trimmed === '') return 'This field is required';
+    // Use the raw value, don't trim for regex patterns
+    const val = value ?? '';
 
-    if (isNumeric && !/^\d+$/.test(trimmed)) return 'This field must be numeric';
+    // Handle required/nullable with trimmed check for empty
+    const trimmedForEmptyCheck = val.trim();
+    if (!isRequired && hasNullable && trimmedForEmptyCheck === '') return '';
+    if (isRequired && trimmedForEmptyCheck === '') return 'This field is required';
 
+    // If empty and not required, pass validation
+    if (!isRequired && trimmedForEmptyCheck === '') return '';
+
+    // Check numeric (use trimmed value)
+    if (isNumeric && !/^\d+$/.test(trimmedForEmptyCheck)) return 'This field must be numeric';
+
+    // Check other rules (use raw value for regex, trimmed for min/max)
     for (const rule of parsed) {
         if (rule.type === 'min' && typeof rule.value === 'number') {
-            if ((isNumeric ? Number(trimmed).toString().length : trimmed.length) < rule.value) {
+            const checkValue = isNumeric ? Number(trimmedForEmptyCheck).toString() : trimmedForEmptyCheck;
+            if (checkValue.length < rule.value) {
                 return `Minimum ${rule.value} ${isNumeric ? 'digits' : 'characters'}`;
             }
         }
         if (rule.type === 'max' && typeof rule.value === 'number') {
-            if ((isNumeric ? Number(trimmed).toString().length : trimmed.length) > rule.value) {
+            const checkValue = isNumeric ? Number(trimmedForEmptyCheck).toString() : trimmedForEmptyCheck;
+            if (checkValue.length > rule.value) {
                 return `Maximum ${rule.value} ${isNumeric ? 'digits' : 'characters'}`;
             }
         }
@@ -352,8 +369,12 @@ function validateVariableAgainstRules(value: string, rules: string): string | ''
             try {
                 const pattern = normalizeRegexPattern(rule.value as string);
                 const re = new RegExp(pattern);
-                if (!re.test(trimmed)) return 'Value does not match required format';
-            } catch {
+                // Test against trimmed value for regex
+                if (!re.test(trimmedForEmptyCheck)) {
+                    return 'Value does not match required format';
+                }
+            } catch (err) {
+                console.error('Invalid regex pattern:', rule.value, err);
                 // Ignore malformed regex
             }
         }
@@ -364,33 +385,51 @@ function validateVariableAgainstRules(value: string, rules: string): string | ''
 function validateOneVariable(v: Variable): void {
     const val = variableValues.value[v.variable_id] ?? '';
     const message = validateVariableAgainstRules(val, v.rules || '');
+
+    // Always update the errors object to ensure reactivity
     if (message) {
-        variableErrors.value[v.variable_id] = message;
+        variableErrors.value = {
+            ...variableErrors.value,
+            [v.variable_id]: message,
+        };
     } else {
-        delete variableErrors.value[v.variable_id];
+        // Create new object without the error to ensure reactivity
+        const newErrors = { ...variableErrors.value };
+        delete newErrors[v.variable_id];
+        variableErrors.value = newErrors;
     }
 }
 
 function validateAllVariables(): boolean {
     let ok = true;
+    const newErrors: Record<number, string> = {};
+
     for (const v of variables.value) {
         const val = variableValues.value[v.variable_id] ?? '';
         const message = validateVariableAgainstRules(val, v.rules || '');
         if (message) {
-            variableErrors.value[v.variable_id] = message;
+            newErrors[v.variable_id] = message;
             ok = false;
-        } else {
-            delete variableErrors.value[v.variable_id];
         }
     }
+
+    // Update errors object to trigger reactivity
+    variableErrors.value = newErrors;
     return ok;
 }
 
+// Watch for changes in variable values and validate immediately
 watch(
     variableValues,
-    () => {
-        // Validate on any change, but keep it lightweight by validating only touched fields via input handler.
-        // Here we could run a full validation if needed.
+    (newVals, oldVals) => {
+        // Only validate variables that actually changed
+        if (oldVals) {
+            for (const v of variables.value) {
+                if (newVals[v.variable_id] !== oldVals[v.variable_id]) {
+                    validateOneVariable(v);
+                }
+            }
+        }
     },
     { deep: true },
 );

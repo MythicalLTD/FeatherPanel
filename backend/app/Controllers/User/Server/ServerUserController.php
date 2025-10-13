@@ -31,6 +31,7 @@
 namespace App\Controllers\User\Server;
 
 use App\App;
+use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\Subuser;
 use App\Chat\SpellVariable;
@@ -308,7 +309,7 @@ class ServerUserController
                 $server['subuser_id'] = null;
             }
 
-            $node = \App\Chat\Node::getNodeById($server['node_id']);
+            $node = Node::getNodeById($server['node_id']);
             $server['node'] = [
                 'name' => $node['name'] ?? null,
                 'maintenance_mode' => $node['maintenance_mode'] ?? null,
@@ -418,7 +419,7 @@ class ServerUserController
         if (!$this->userCanAccessServer($request, $server)) {
             return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
         }
-        $server['node'] = \App\Chat\Node::getNodeById($server['node_id']);
+        $server['node'] = Node::getNodeById($server['node_id']);
         $server['realm'] = \App\Chat\Realm::getById($server['realms_id']);
         $server['spell'] = \App\Chat\Spell::getSpellById($server['spell_id']);
 
@@ -542,7 +543,7 @@ class ServerUserController
         }
 
         // Get node information
-        $node = \App\Chat\Node::getNodeById($server['node_id']);
+        $node = Node::getNodeById($server['node_id']);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
@@ -788,7 +789,7 @@ class ServerUserController
 
         // Log the update
         App::getInstance(true)->getLogger()->info('Server updated');
-        $node = \App\Chat\Node::getNodeById($server['node_id']);
+        $node = Node::getNodeById($server['node_id']);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
@@ -831,6 +832,11 @@ class ServerUserController
 
             return ApiResponse::error('Failed to send power action to Wings: ' . $e->getMessage(), 'FAILED_TO_SEND_POWER_ACTION_TO_WINGS', 500);
         }
+
+        // Log activity
+        $this->logActivity($server, $node, 'server_updated', [
+            'server_uuid' => $server['uuid'],
+        ], $user);
 
         // Emit event
         global $eventManager;
@@ -915,7 +921,7 @@ class ServerUserController
         }
 
         // Get node information
-        $node = \App\Chat\Node::getNodeById($server['node_id']);
+        $node = Node::getNodeById($server['node_id']);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
@@ -970,6 +976,11 @@ class ServerUserController
                 ]
             );
         }
+
+        // Log activity
+        $this->logActivity($server, $node, 'server_reinstalled', [
+            'server_uuid' => $server['uuid'],
+        ], $user);
 
         return ApiResponse::success([
             'server' => [
@@ -1033,7 +1044,7 @@ class ServerUserController
         }
 
         // Get node information
-        $node = \App\Chat\Node::getNodeById($server['node_id']);
+        $node = Node::getNodeById($server['node_id']);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
@@ -1074,6 +1085,11 @@ class ServerUserController
                     ]
                 );
             }
+
+            // Log activity
+            $this->logActivity($server, $node, 'server_deleted', [
+                'server_uuid' => $server['uuid'],
+            ], $user);
 
             return ApiResponse::success([], 'Server deleted successfully', 200);
         } catch (\Exception $e) {
@@ -1173,7 +1189,7 @@ class ServerUserController
         }
 
         // Get node information
-        $node = \App\Chat\Node::getNodeById($server['node_id']);
+        $node = Node::getNodeById($server['node_id']);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
         }
@@ -1210,7 +1226,13 @@ class ServerUserController
             }
 
             // Log the command execution
-            App::getInstance(true)->getLogger()->info('Console command sent to server ' . $server['uuidShort'] . ' by user ' . $user['username']);
+            $node = Node::getNodeById($server['node_id']);
+            if (!$node) {
+                return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+            }
+            $this->logActivity($server, $node, 'command_sent', [
+                'command' => $command,
+            ], $user);
 
             return ApiResponse::success([
                 'message' => 'Command sent successfully',
@@ -1382,5 +1404,20 @@ class ServerUserController
 
         // User is neither owner nor subuser
         return [];
+    }
+
+    /**
+     * Helper method to log server activity.
+     */
+    private function logActivity(array $server, array $node, string $event, array $metadata, array $user): void
+    {
+        ServerActivity::createActivity([
+            'server_id' => $server['id'],
+            'node_id' => $server['node_id'],
+            'user_id' => $user['id'],
+            'ip' => $user['last_ip'],
+            'event' => $event,
+            'metadata' => json_encode($metadata),
+        ]);
     }
 }

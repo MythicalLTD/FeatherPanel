@@ -196,14 +196,22 @@ class SessionController
             if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
                 return ApiResponse::error('Invalid email address', 'INVALID_EMAIL_ADDRESS');
             }
-            if (User::getUserByEmail($data['email'])) {
-                return ApiResponse::error('Email already exists', 'EMAIL_ALREADY_EXISTS', 409);
+            // Only check for duplicate email if it's different from the current user's email
+            if ($data['email'] !== $user['email']) {
+                $existingUser = User::getUserByEmail($data['email']);
+                if ($existingUser) {
+                    return ApiResponse::error('Email already exists', 'EMAIL_ALREADY_EXISTS', 409);
+                }
             }
         }
 
         if (isset($data['username'])) {
-            if (User::getUserByUsername($data['username'])) {
-                return ApiResponse::error('Username already exists', 'USERNAME_ALREADY_EXISTS', 409);
+            // Only check for duplicate username if it's different from the current user's username
+            if ($data['username'] !== $user['username']) {
+                $existingUser = User::getUserByUsername($data['username']);
+                if ($existingUser) {
+                    return ApiResponse::error('Username already exists', 'USERNAME_ALREADY_EXISTS', 409);
+                }
             }
         }
         // Hash password if provided

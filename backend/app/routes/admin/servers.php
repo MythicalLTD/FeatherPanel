@@ -93,6 +93,21 @@ return function (RouteCollection $routes): void {
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-servers-hard-delete',
+        '/api/admin/servers/{id}/hard',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid server ID', 'INVALID_SERVER_ID', 400);
+            }
+
+            return (new ServersController())->hardDelete($request, (int) $id);
+        },
+        Permissions::ADMIN_SERVERS_DELETE,
+        ['DELETE']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-servers-create',
         '/api/admin/servers',
         function (Request $request) {

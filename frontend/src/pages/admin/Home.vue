@@ -91,6 +91,111 @@
 
             <!-- First-time Tutorial -->
             <DashboardTutorial />
+
+            <!-- APP_URL Misconfiguration Warning -->
+            <AlertDialog
+                :open="showAppUrlWarning"
+                @update:open="
+                    (val: boolean) => {
+                        if (!val) dismissAppUrlWarning();
+                    }
+                "
+            >
+                <AlertDialogContent class="max-w-2xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle class="flex items-center gap-2 text-red-600 dark:text-red-500">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                                />
+                            </svg>
+                            WOAH! APP_URL Mismatch Detected
+                        </AlertDialogTitle>
+                        <AlertDialogDescription class="space-y-4 pt-4">
+                            <p class="text-base font-semibold text-foreground">
+                                Your panel is configured with the default APP_URL, which will cause serious issues!
+                            </p>
+
+                            <div
+                                class="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-md p-4"
+                            >
+                                <p class="text-sm text-red-800 dark:text-red-400 font-medium mb-2">
+                                    Current APP_URL:
+                                    <code class="bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded">{{
+                                        currentAppUrl
+                                    }}</code>
+                                </p>
+                                <p class="text-sm text-red-800 dark:text-red-400">
+                                    This is the default example URL and needs to be updated immediately!
+                                </p>
+                            </div>
+
+                            <div class="space-y-3">
+                                <p class="text-sm font-semibold text-foreground">This misconfiguration will cause:</p>
+                                <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground pl-2">
+                                    <li>
+                                        <strong class="text-foreground">Wings Communication Failures:</strong> Wings
+                                        daemon won't be able to properly communicate with your panel
+                                    </li>
+                                    <li>
+                                        <strong class="text-foreground">Broken Email Links:</strong> Password resets,
+                                        server notifications, and other emails will link to the wrong panel
+                                    </li>
+                                    <li>
+                                        <strong class="text-foreground">OAuth/SSO Issues:</strong> Third-party
+                                        authentication and integrations won't work correctly
+                                    </li>
+                                    <li>
+                                        <strong class="text-foreground">Security Vulnerabilities:</strong> CORS and CSRF
+                                        protections may not function properly
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div
+                                class="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-md p-4"
+                            >
+                                <p class="text-sm font-semibold text-blue-900 dark:text-blue-400 mb-2">
+                                    How to fix this:
+                                </p>
+                                <ol
+                                    class="list-decimal list-inside space-y-2 text-sm text-blue-800 dark:text-blue-400 pl-2"
+                                >
+                                    <li>Go to <strong>Settings → General</strong></li>
+                                    <li>
+                                        Update the <strong>Application URL</strong> field to your actual panel URL
+                                        (e.g.,
+                                        <code class="bg-blue-100 dark:bg-blue-900/30 px-1 py-0.5 rounded">{{
+                                            detectedAppUrl
+                                        }}</code
+                                        >)
+                                    </li>
+                                    <li>Make sure to include the protocol (https:// or http://)</li>
+                                    <li>Do NOT include a trailing slash</li>
+                                    <li>Click <strong>Save Changes</strong></li>
+                                </ol>
+                            </div>
+
+                            <p class="text-sm text-muted-foreground">
+                                <strong>Note:</strong> After updating, you may need to restart Wings daemons on all
+                                nodes for the changes to take effect.
+                            </p>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter class="flex-col sm:flex-row gap-2">
+                        <AlertDialogCancel @click="dismissAppUrlWarning">I'll Fix This Later</AlertDialogCancel>
+                        <AlertDialogAction
+                            class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
+                            @click="goToSettings"
+                        >
+                            Go to Settings
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </main>
     </DashboardLayout>
 </template>
@@ -120,15 +225,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import draggable from 'vuedraggable';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { BookOpen, MessageCircle as Discord, Settings, Sparkles } from 'lucide-vue-next';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
 import { useDashboardStore } from '@/stores/dashboard';
 import { useWidgetsStore } from '@/stores/widgets';
+import { useRouter } from 'vue-router';
 
 // Widget Components
 import WidgetContainer from '@/components/admin/WidgetContainer.vue';
@@ -146,16 +262,53 @@ const settingsStore = useSettingsStore();
 const sessionStore = useSessionStore();
 const dashboardStore = useDashboardStore();
 const widgetsStore = useWidgetsStore();
+const router = useRouter();
 
 onMounted(async () => {
     widgetsStore.loadWidgets();
     await settingsStore.fetchSettings();
     await sessionStore.checkSessionOrRedirect();
     await dashboardStore.fetchDashboardStats();
+
+    // Check APP_URL after settings are loaded
+    checkAppUrlConfiguration();
 });
 
 // User name
 const userName = computed(() => sessionStore.user?.first_name + ' ' + sessionStore.user?.last_name);
+
+// APP_URL Warning Logic
+const showAppUrlWarning = ref(false);
+const APP_URL_WARNING_DISMISSED_KEY = 'app-url-warning-dismissed';
+
+const currentAppUrl = computed(() => settingsStore.appUrl || 'https://mythicalpanel.mythical.systems');
+const detectedAppUrl = computed(() => {
+    if (typeof window !== 'undefined') {
+        return window.location.origin;
+    }
+    return 'https://your-panel.example.com';
+});
+
+const checkAppUrlConfiguration = () => {
+    const defaultUrl = 'https://mythicalpanel.mythical.systems';
+    const isDismissed = localStorage.getItem(APP_URL_WARNING_DISMISSED_KEY);
+
+    // Show warning if APP_URL is the default and user hasn't dismissed it
+    if (currentAppUrl.value === defaultUrl && !isDismissed) {
+        showAppUrlWarning.value = true;
+    }
+};
+
+const dismissAppUrlWarning = () => {
+    // Store dismissal in localStorage (valid for this session until they fix it)
+    localStorage.setItem(APP_URL_WARNING_DISMISSED_KEY, 'true');
+    showAppUrlWarning.value = false;
+};
+
+const goToSettings = () => {
+    showAppUrlWarning.value = false;
+    router.push('/admin/setting');
+};
 
 // Widgets management
 const sortedWidgets = computed({

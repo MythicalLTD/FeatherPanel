@@ -30,13 +30,13 @@
 
 namespace App\Controllers\User\Server;
 
+use App\Chat\Node;
 use App\Chat\Task;
 use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
-use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use App\Plugins\Events\Events\ServerTaskEvent;
@@ -394,18 +394,18 @@ class TaskController
         }
 
         // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'task_created',
-            'metadata' => json_encode([
-                'schedule_id' => $scheduleId,
-                'schedule_name' => $schedule['name'],
-                'task_id' => $taskId,
-                'action' => $body['action'],
-                'sequence_id' => $nextSequenceId,
-            ]),
-        ]);
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'task_created', [
+            'schedule_id' => $scheduleId,
+            'schedule_name' => $schedule['name'],
+            'task_id' => $taskId,
+            'action' => $body['action'],
+            'sequence_id' => $nextSequenceId,
+        ], $user);
 
         // Emit event
         global $eventManager;
@@ -523,19 +523,18 @@ class TaskController
         }
 
         // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'task_updated',
-            'metadata' => json_encode([
-                'schedule_id' => $scheduleId,
-                'schedule_name' => $schedule['name'],
-                'task_id' => $taskId,
-                'action' => $task['action'],
-                'updated_fields' => array_keys($body),
-            ]),
-        ]);
-
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'task_updated', [
+            'schedule_id' => $scheduleId,
+            'schedule_name' => $schedule['name'],
+            'task_id' => $taskId,
+            'action' => $task['action'],
+            'updated_fields' => array_keys($body),
+        ], $user);
         // Emit event
         global $eventManager;
         if (isset($eventManager) && $eventManager !== null) {
@@ -648,19 +647,19 @@ class TaskController
         }
 
         // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'task_sequence_updated',
-            'metadata' => json_encode([
-                'schedule_id' => $scheduleId,
-                'schedule_name' => $schedule['name'],
-                'task_id' => $taskId,
-                'action' => $task['action'],
-                'old_sequence' => $task['sequence_id'],
-                'new_sequence' => $newSequenceId,
-            ]),
-        ]);
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'task_sequence_updated', [
+            'schedule_id' => $scheduleId,
+            'schedule_name' => $schedule['name'],
+            'task_id' => $taskId,
+            'action' => $task['action'],
+            'old_sequence' => $task['sequence_id'],
+            'new_sequence' => $newSequenceId,
+        ], $user);
 
         // Emit event
         global $eventManager;
@@ -758,18 +757,18 @@ class TaskController
         $statusText = $newQueuedStatus ? 'queued' : 'unqueued';
 
         // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'task_queued_status_toggled',
-            'metadata' => json_encode([
-                'schedule_id' => $scheduleId,
-                'schedule_name' => $schedule['name'],
-                'task_id' => $taskId,
-                'action' => $task['action'],
-                'new_status' => $statusText,
-            ]),
-        ]);
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'task_queued_status_toggled', [
+            'schedule_id' => $scheduleId,
+            'schedule_name' => $schedule['name'],
+            'task_id' => $taskId,
+            'action' => $task['action'],
+            'new_status' => $statusText,
+        ], $user);
 
         // Emit event
         global $eventManager;
@@ -879,18 +878,18 @@ class TaskController
         Task::reorderTasks($scheduleId);
 
         // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'task_deleted',
-            'metadata' => json_encode([
-                'schedule_id' => $scheduleId,
-                'schedule_name' => $schedule['name'],
-                'task_id' => $taskId,
-                'action' => $task['action'],
-                'sequence_id' => $task['sequence_id'],
-            ]),
-        ]);
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'task_deleted', [
+            'schedule_id' => $scheduleId,
+            'schedule_name' => $schedule['name'],
+            'task_id' => $taskId,
+            'action' => $task['action'],
+            'sequence_id' => $task['sequence_id'],
+        ], $user);
 
         // Emit event
         global $eventManager;
@@ -1126,15 +1125,17 @@ class TaskController
     }
 
     /**
-     * Centralized check using ServerGateway with current request user.
+     * Helper method to log server activity.
      */
-    private function userCanAccessServer(Request $request, array $server): bool
+    private function logActivity(array $server, array $node, string $event, array $metadata, array $user): void
     {
-        $currentUser = $request->get('user');
-        if (!$currentUser || !isset($currentUser['uuid'])) {
-            return false;
-        }
-
-        return ServerGateway::canUserAccessServer($currentUser['uuid'], $server['uuid']);
+        ServerActivity::createActivity([
+            'server_id' => $server['id'],
+            'node_id' => $server['node_id'],
+            'user_id' => $user['id'],
+            'ip' => $user['last_ip'],
+            'event' => $event,
+            'metadata' => json_encode($metadata),
+        ]);
     }
 }

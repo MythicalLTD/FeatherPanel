@@ -326,14 +326,24 @@ class ServerLogsController
                 return ApiResponse::error('No logs available to upload', 'NO_LOGS', 400);
             }
 
-            // Convert array to string if needed
+            // Convert to string properly
             if (is_array($logData)) {
-                $logContent = implode("\n", $logData);
+                // Flatten array and convert to string
+                $logLines = [];
+                array_walk_recursive($logData, function ($value) use (&$logLines) {
+                    if (is_scalar($value)) {
+                        $logLines[] = (string) $value;
+                    }
+                });
+                $logContent = implode("\n", $logLines);
+            } elseif (is_string($logData)) {
+                $logContent = $logData;
             } else {
-                $logContent = (string) $logData;
+                // Try to convert to JSON if it's an object
+                $logContent = json_encode($logData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
             }
 
-            if (trim($logContent) === '') {
+            if (empty($logContent) || trim($logContent) === '') {
                 return ApiResponse::error('No logs available to upload', 'NO_LOGS', 400);
             }
 

@@ -890,6 +890,12 @@ const folderDialogOpen = ref(false);
 const editingFolder = ref<Folder | null>(null);
 const folderForm = ref({ name: '' });
 
+// Load view mode from localStorage
+const savedViewMode = localStorage.getItem('featherpanel-server_view_mode');
+if (savedViewMode === 'folders' || savedViewMode === 'list') {
+    viewMode.value = savedViewMode;
+}
+
 const serverFolders = ref<Folder[]>([]);
 const unassignedServers = ref<Server[]>([]);
 
@@ -1017,6 +1023,11 @@ watch(
     },
     { immediate: true },
 );
+
+// Watch for view mode changes and save to localStorage
+watch(viewMode, (newMode) => {
+    localStorage.setItem('featherpanel-server_view_mode', newMode);
+});
 
 async function fetchServers() {
     loading.value = true;

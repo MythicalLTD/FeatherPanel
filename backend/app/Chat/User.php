@@ -221,15 +221,12 @@ class User
             if (isset($data['id'])) {
                 unset($data['id']);
             }
-            // If password is already hashed (starts with $2y$), don't update it
-            if (isset($data['password']) && str_starts_with($data['password'], '$2y$')) {
-                unset($data['password']);
-            }
+
             $columns = self::getColumns();
             $columns = array_map(fn ($c) => $c['Field'], $columns);
             $missing = array_diff(array_keys($data), $columns);
             if (!empty($missing)) {
-                App::getInstance(true)->getLogger()->error('Missing fields: ' . implode(', ', $missing));
+                App::getInstance(true)->getLogger()->error('Invalid fields: ' . implode(', ', $missing));
 
                 return false;
             }

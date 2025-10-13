@@ -84,24 +84,32 @@ class Server
         foreach ($required as $field) {
             if (!isset($data[$field])) {
                 $sanitizedData = self::sanitizeDataForLogging($data);
-                App::getInstance(true)->getLogger()->error('Missing required field: ' . $field . ' for server: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+                App::getInstance(true)->getLogger()->error('Missing required field: ' . $field . ' for server: ' . ($data['name'] ?? '[unknown]') . ' with data: ' . json_encode($sanitizedData));
 
                 return false;
             }
 
-            // Special validation for different field types
-            if (in_array($field, ['node_id', 'owner_id', 'memory', 'disk', 'io', 'cpu', 'allocation_id', 'realms_id', 'spell_id'])) {
+            // Integer fields that must be positive (>0)
+            $strictPositiveFields = [
+                'node_id', 'owner_id', 'allocation_id', 'realms_id', 'spell_id',
+            ];
+
+            // Integer fields that must be non-negative (>=0, can be 0 for unlimited)
+            $nonNegativeFields = [
+                'memory', 'swap', 'disk', 'io', 'cpu',
+            ];
+
+            if (in_array($field, $strictPositiveFields, true)) {
                 if (!is_numeric($data[$field]) || (int) $data[$field] <= 0) {
                     $sanitizedData = self::sanitizeDataForLogging($data);
-                    App::getInstance(true)->getLogger()->error('Invalid ' . $field . ': ' . $data[$field] . ' for server: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+                    App::getInstance(true)->getLogger()->error('Invalid ' . $field . ': ' . $data[$field] . ' for server: ' . ($data['name'] ?? '[unknown]') . ' with data: ' . json_encode($sanitizedData));
 
                     return false;
                 }
-            } elseif ($field === 'swap') {
-                // Swap can be 0 or positive
+            } elseif (in_array($field, $nonNegativeFields, true)) {
                 if (!is_numeric($data[$field]) || (int) $data[$field] < 0) {
                     $sanitizedData = self::sanitizeDataForLogging($data);
-                    App::getInstance(true)->getLogger()->error('Invalid ' . $field . ': ' . $data[$field] . ' for server: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+                    App::getInstance(true)->getLogger()->error('Invalid ' . $field . ': ' . $data[$field] . ' for server: ' . ($data['name'] ?? '[unknown]') . ' with data: ' . json_encode($sanitizedData));
 
                     return false;
                 }
@@ -109,7 +117,7 @@ class Server
                 // String fields validation
                 if (!is_string($data[$field]) || trim($data[$field]) === '') {
                     $sanitizedData = self::sanitizeDataForLogging($data);
-                    App::getInstance(true)->getLogger()->error('Missing required field: ' . $field . ' for server: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+                    App::getInstance(true)->getLogger()->error('Missing required field: ' . $field . ' for server: ' . ($data['name'] ?? '[unknown]') . ' with data: ' . json_encode($sanitizedData));
 
                     return false;
                 }
@@ -119,15 +127,15 @@ class Server
         // UUID validation (basic)
         if (!preg_match('/^[a-f0-9\-]{36}$/i', $data['uuid'])) {
             $sanitizedData = self::sanitizeDataForLogging($data);
-            App::getInstance(true)->getLogger()->error('Invalid UUID: ' . $data['uuid'] . ' for server: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+            App::getInstance(true)->getLogger()->error('Invalid UUID: ' . $data['uuid'] . ' for server: ' . ($data['name'] ?? '[unknown]') . ' with data: ' . json_encode($sanitizedData));
 
             return false;
         }
 
-        // UUID Short validation (8 characters)
+        // UUID Short validation (8 hexadecimal characters)
         if (!preg_match('/^[a-f0-9]{8}$/i', $data['uuidShort'])) {
             $sanitizedData = self::sanitizeDataForLogging($data);
-            App::getInstance(true)->getLogger()->error('Invalid UUID Short: ' . $data['uuidShort'] . ' for server: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+            App::getInstance(true)->getLogger()->error('Invalid UUID Short: ' . $data['uuidShort'] . ' for server: ' . ($data['name'] ?? '[unknown]') . ' with data: ' . json_encode($sanitizedData));
 
             return false;
         }
@@ -135,35 +143,35 @@ class Server
         // Validate foreign key relationships
         if (!Node::getNodeById($data['node_id'])) {
             $sanitizedData = self::sanitizeDataForLogging($data);
-            App::getInstance(true)->getLogger()->error('Invalid node_id: ' . $data['node_id'] . ' for server: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+            App::getInstance(true)->getLogger()->error('Invalid node_id: ' . $data['node_id'] . ' for server: ' . ($data['name'] ?? '[unknown]') . ' with data: ' . json_encode($sanitizedData));
 
             return false;
         }
 
         if (!User::getUserById($data['owner_id'])) {
             $sanitizedData = self::sanitizeDataForLogging($data);
-            App::getInstance(true)->getLogger()->error('Invalid owner_id: ' . $data['owner_id'] . ' for server: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+            App::getInstance(true)->getLogger()->error('Invalid owner_id: ' . $data['owner_id'] . ' for server: ' . ($data['name'] ?? '[unknown]') . ' with data: ' . json_encode($sanitizedData));
 
             return false;
         }
 
         if (!Allocation::getAllocationById($data['allocation_id'])) {
             $sanitizedData = self::sanitizeDataForLogging($data);
-            App::getInstance(true)->getLogger()->error('Invalid allocation_id: ' . $data['allocation_id'] . ' for server: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+            App::getInstance(true)->getLogger()->error('Invalid allocation_id: ' . $data['allocation_id'] . ' for server: ' . ($data['name'] ?? '[unknown]') . ' with data: ' . json_encode($sanitizedData));
 
             return false;
         }
 
         if (!Realm::getById($data['realms_id'])) {
             $sanitizedData = self::sanitizeDataForLogging($data);
-            App::getInstance(true)->getLogger()->error('Invalid realms_id: ' . $data['realms_id'] . ' for server: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+            App::getInstance(true)->getLogger()->error('Invalid realms_id: ' . $data['realms_id'] . ' for server: ' . ($data['name'] ?? '[unknown]') . ' with data: ' . json_encode($sanitizedData));
 
             return false;
         }
 
         if (!Spell::getSpellById($data['spell_id'])) {
             $sanitizedData = self::sanitizeDataForLogging($data);
-            App::getInstance(true)->getLogger()->error('Invalid spell_id: ' . $data['spell_id'] . ' for server: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+            App::getInstance(true)->getLogger()->error('Invalid spell_id: ' . $data['spell_id'] . ' for server: ' . ($data['name'] ?? '[unknown]') . ' with data: ' . json_encode($sanitizedData));
 
             return false;
         }

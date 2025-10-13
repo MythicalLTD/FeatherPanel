@@ -30,13 +30,13 @@
 
 namespace App\Controllers\User\Server;
 
+use App\Chat\Node;
 use App\Chat\User;
 use App\Chat\Server;
 use App\Chat\Subuser;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
-use App\Helpers\ServerGateway;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Plugins\Events\Events\ServerSubuserEvent;
@@ -209,6 +209,16 @@ class SubuserController
         $offset = ($page - 1) * $perPage;
         $subusers = array_slice($subusers, $offset, $perPage);
 
+        // Log activity
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'subusers_retrieved', [
+            'subusers' => $subusers,
+        ], $user);
+
         return ApiResponse::success([
             'data' => $subusers,
             'pagination' => [
@@ -370,18 +380,14 @@ class SubuserController
         }
 
         // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'subuser_created',
-            'metadata' => json_encode([
-                'user_id' => $user['id'],
-                'username' => $user['username'],
-                'email' => $user['email'],
-                'permissions' => '*',
-            ]),
-            'user_id' => $request->get('user')['id'] ?? null,
-        ]);
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'subuser_created', [
+            'subuser_id' => $subuserId,
+        ], $user);
 
         // Get created subuser with details
         $subuser = Subuser::getSubuserWithDetails($subuserId);
@@ -476,17 +482,15 @@ class SubuserController
 
         // Log activity
         $user = User::getUserById($subuser['user_id']);
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'subuser_updated',
-            'metadata' => json_encode([
-                'user_id' => $user['id'],
-                'username' => $user['username'],
-                'email' => $user['email'],
-            ]),
-            'user_id' => $request->get('user')['id'] ?? null,
-        ]);
+
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'subuser_updated', [
+            'subuser_id' => $subuserId,
+        ], $user);
 
         // Get updated subuser
         $updatedSubuser = Subuser::getSubuserWithDetails($subuserId);
@@ -573,19 +577,6 @@ class SubuserController
             return ApiResponse::error('Failed to delete subuser', 'DELETE_FAILED', 500);
         }
 
-        // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'subuser_deleted',
-            'metadata' => json_encode([
-                'user_id' => $user['id'],
-                'username' => $user['username'],
-                'email' => $user['email'],
-            ]),
-            'user_id' => $request->get('user')['id'] ?? null,
-        ]);
-
         // Emit event
         global $eventManager;
         if (isset($eventManager) && $eventManager !== null) {
@@ -598,6 +589,16 @@ class SubuserController
                 ]
             );
         }
+
+        // Log activity
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'subuser_deleted', [
+            'subuser_id' => $subuserId,
+        ], $user);
 
         return ApiResponse::success(null, 'Subuser deleted successfully');
     }
@@ -655,6 +656,16 @@ class SubuserController
             return ApiResponse::error('Subuser not found', 'SUBUSER_NOT_FOUND', 404);
         }
 
+        // Log activity
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'subuser_with_details_retrieved', [
+            'subuser' => $subuser,
+        ], $user);
+
         return ApiResponse::success($subuser);
     }
 
@@ -699,6 +710,16 @@ class SubuserController
 
         // Get subusers with details
         $subusers = Subuser::getSubusersWithDetailsByServerId($server['id']);
+
+        // Log activity
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'subusers_with_details_retrieved', [
+            'subusers' => $subusers,
+        ], $user);
 
         return ApiResponse::success($subusers);
     }
@@ -779,6 +800,16 @@ class SubuserController
             ];
         }, $availableUsers);
 
+        // Log activity
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'users_searched', [
+            'users' => $formattedUsers,
+        ], $user);
+
         return ApiResponse::success([
             'users' => $formattedUsers,
             'total' => count($formattedUsers),
@@ -827,15 +858,17 @@ class SubuserController
     }
 
     /**
-     * Centralized check using ServerGateway with current request user.
+     * Helper method to log server activity.
      */
-    private function userCanAccessServer(Request $request, array $server): bool
+    private function logActivity(array $server, array $node, string $event, array $metadata, array $user): void
     {
-        $currentUser = $request->get('user');
-        if (!$currentUser || !isset($currentUser['uuid'])) {
-            return false;
-        }
-
-        return ServerGateway::canUserAccessServer($currentUser['uuid'], $server['uuid']);
+        ServerActivity::createActivity([
+            'server_id' => $server['id'],
+            'node_id' => $server['node_id'],
+            'user_id' => $user['id'],
+            'ip' => $user['last_ip'],
+            'event' => $event,
+            'metadata' => json_encode($metadata),
+        ]);
     }
 }

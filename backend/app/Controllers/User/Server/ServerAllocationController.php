@@ -34,6 +34,7 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\Allocation;
+use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Plugins\Events\Events\ServerEvent;
@@ -301,6 +302,11 @@ class ServerAllocationController
 
             return ApiResponse::error('Failed to send power action to Wings: ' . $e->getMessage(), 'FAILED_TO_SEND_POWER_ACTION_TO_WINGS', 500);
         }
+        // Log activity
+        $this->logActivity($server, $node, 'allocation_deleted', [
+            'allocation_ip' => $allocation['ip'],
+            'allocation_port' => $allocation['port'],
+        ], $user);
 
         return ApiResponse::success([
             'message' => 'Allocation deleted successfully',
@@ -426,6 +432,11 @@ class ServerAllocationController
 
                 return ApiResponse::error('Failed to send power action to Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
             }
+            // Log activity
+            $this->logActivity($server, $node, 'allocation_primary_set', [
+                'allocation_ip' => $allocation['ip'],
+                'allocation_port' => $allocation['port'],
+            ], $user);
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to send power action to Wings: ' . $e->getMessage());
 
@@ -560,6 +571,11 @@ class ServerAllocationController
 
             return ApiResponse::error('Failed to send power action to Wings: ' . $e->getMessage(), 'FAILED_TO_SEND_POWER_ACTION_TO_WINGS', 500);
         }
+        // Log activity
+        $this->logActivity($server, $node, 'allocation_auto_allocated', [
+            'allocation_ip' => $updatedAllocation['ip'],
+            'allocation_port' => $updatedAllocation['port'],
+        ], $user);
 
         // Emit event
         global $eventManager;
@@ -578,5 +594,20 @@ class ServerAllocationController
             'assigned_allocation' => $updatedAllocation,
             'message' => $message,
         ], $message);
+    }
+
+    /**
+     * Helper method to log server activity.
+     */
+    private function logActivity(array $server, array $node, string $event, array $metadata, array $user): void
+    {
+        ServerActivity::createActivity([
+            'server_id' => $server['id'],
+            'node_id' => $server['node_id'],
+            'user_id' => $user['id'],
+            'ip' => $user['last_ip'],
+            'event' => $event,
+            'metadata' => json_encode($metadata),
+        ]);
     }
 }

@@ -543,10 +543,19 @@ class ServersController
         }
 
         // Validate data types
-        $numericFields = ['node_id', 'owner_id', 'memory', 'disk', 'io', 'cpu', 'allocation_id', 'realms_id', 'spell_id'];
-        foreach ($numericFields as $field) {
+        // Fields that must be positive integers (> 0)
+        $strictPositiveFields = ['node_id', 'owner_id', 'allocation_id', 'realms_id', 'spell_id'];
+        foreach ($strictPositiveFields as $field) {
             if (!is_numeric($data[$field]) || (int) $data[$field] <= 0) {
                 return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a positive integer', 'INVALID_DATA_TYPE', 400);
+            }
+        }
+
+        // Fields that can be 0 (for unlimited) or positive integers
+        $nonNegativeFields = ['memory', 'swap', 'disk', 'io', 'cpu'];
+        foreach ($nonNegativeFields as $field) {
+            if (!is_numeric($data[$field]) || (int) $data[$field] < 0) {
+                return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a non-negative integer (0 for unlimited)', 'INVALID_DATA_TYPE', 400);
             }
         }
 
@@ -657,12 +666,14 @@ class ServersController
 
         $missingRequiredVariables = array_diff($requiredVariables, $providedVariables);
         if (!empty($missingRequiredVariables)) {
+            Server::hardDeleteServer($serverId);
+
             return ApiResponse::error('Missing required spell variables: ' . implode(', ', $missingRequiredVariables), 'MISSING_REQUIRED_VARIABLES', 400);
         }
 
         // Handle server variables if provided
         if (isset($data['variables']) && is_array($data['variables']) && !empty($data['variables'])) {
-            App::getInstance(true)->getLogger()->info('Processing server variables for server ID: ' . $serverId . ', variables: ' . json_encode($data['variables']));
+            App::getInstance(true)->getLogger()->debug('Processing server variables for server ID: ' . $serverId . ', variables: ' . json_encode($data['variables']));
 
             $variables = [];
             foreach ($data['variables'] as $envVariable => $value) {
@@ -676,36 +687,47 @@ class ServersController
                 }
 
                 if ($spellVariable) {
-                    // Validate required variables have non-empty values
-                    if (strpos($spellVariable['rules'], 'required') !== false && (empty($value) || trim($value) === '')) {
-                        return ApiResponse::error('Required variable ' . $spellVariable['name'] . ' cannot be empty', 'REQUIRED_VARIABLE_EMPTY', 400);
+                    // Use the provided value or fall back to default value
+                    // Note: Check for null/empty string, not empty() because "0" is a valid value
+                    $effectiveValue = ($value !== null && $value !== '' && trim($value) !== '') ? $value : $spellVariable['default_value'];
+
+                    // Validate required variables have non-empty values (allow default values)
+                    if (strpos($spellVariable['rules'], 'required') !== false) {
+                        // Check for null or empty string, but allow "0" as a valid value
+                        if ($effectiveValue === null || $effectiveValue === '' || trim($effectiveValue) === '') {
+                            Server::hardDeleteServer($serverId);
+
+                            return ApiResponse::error('Required variable ' . $spellVariable['name'] . ' cannot be empty', 'REQUIRED_VARIABLE_EMPTY', 400);
+                        }
                     }
 
                     $variables[] = [
                         'variable_id' => $spellVariable['id'],
-                        'variable_value' => (string) $value,
+                        'variable_value' => (string) $effectiveValue,
                     ];
-                    App::getInstance(true)->getLogger()->info('Found spell variable for ' . $envVariable . ': ID=' . $spellVariable['id'] . ', value=' . $value);
+                    App::getInstance(true)->getLogger()->debug('Found spell variable for ' . $envVariable . ': ID=' . $spellVariable['id'] . ', value=' . $effectiveValue);
                 } else {
                     App::getInstance(true)->getLogger()->warning('Spell variable not found for env_variable: ' . $envVariable);
                 }
             }
 
             if (!empty($variables)) {
-                App::getInstance(true)->getLogger()->info('Creating ' . count($variables) . ' server variables for server ID: ' . $serverId);
+                App::getInstance(true)->getLogger()->debug('Creating ' . count($variables) . ' server variables for server ID: ' . $serverId);
                 $variablesCreated = ServerVariable::createOrUpdateServerVariables($serverId, $variables);
                 if (!$variablesCreated) {
                     // Log the error but don't fail the server creation
                     App::getInstance(true)->getLogger()->error('Failed to create server variables for server ID: ' . $serverId);
                 } else {
-                    App::getInstance(true)->getLogger()->info('Successfully created server variables for server ID: ' . $serverId);
+                    App::getInstance(true)->getLogger()->debug('Successfully created server variables for server ID: ' . $serverId);
                 }
             } else {
-                App::getInstance(true)->getLogger()->info('No valid server variables to create for server ID: ' . $serverId);
+                App::getInstance(true)->getLogger()->debug('No valid server variables to create for server ID: ' . $serverId);
             }
         } else {
             // Check if there are required variables but no variables provided
             if (!empty($requiredVariables)) {
+                Server::hardDeleteServer($serverId);
+
                 return ApiResponse::error('Missing required spell variables: ' . implode(', ', $requiredVariables), 'MISSING_REQUIRED_VARIABLES', 400);
             }
             App::getInstance(true)->getLogger()->info('No server variables provided for server ID: ' . $serverId);
@@ -736,19 +758,29 @@ class ServersController
             if (!$response->isSuccessful()) {
                 $error = $response->getError();
                 if ($response->getStatusCode() === 400) {
+                    Server::hardDeleteServer($serverId);
+
                     return ApiResponse::error('Invalid server configuration: ' . $error, 'INVALID_SERVER_CONFIG', 400);
                 } elseif ($response->getStatusCode() === 401) {
+                    Server::hardDeleteServer($serverId);
+
                     return ApiResponse::error('Unauthorized access to Wings daemon', 'WINGS_UNAUTHORIZED', 401);
                 } elseif ($response->getStatusCode() === 403) {
+                    Server::hardDeleteServer($serverId);
+
                     return ApiResponse::error('Forbidden access to Wings daemon', 'WINGS_FORBIDDEN', 403);
                 } elseif ($response->getStatusCode() === 422) {
+                    Server::hardDeleteServer($serverId);
+
                     return ApiResponse::error('Invalid server data: ' . $error, 'INVALID_SERVER_DATA', 422);
                 }
+                Server::hardDeleteServer($serverId);
 
                 return ApiResponse::error('Failed to create server in Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
             }
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to create server in Wings: ' . $e->getMessage());
+            Server::hardDeleteServer($serverId);
 
             return ApiResponse::error('Failed to create server in Wings: ' . $e->getMessage(), 'FAILED_TO_CREATE_SERVER_IN_WINGS', 500);
         }
@@ -1286,6 +1318,111 @@ class ServersController
         }
 
         return ApiResponse::success([], 'Server deleted successfully', 200);
+    }
+
+    #[OA\Delete(
+        path: '/api/admin/servers/{id}/hard',
+        summary: 'Hard delete server',
+        description: 'Force delete a server from the database only, without contacting Wings. Use this only when Wings is unreachable or the node is dead. This will NOT remove server files from Wings.',
+        tags: ['Admin - Servers'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Server ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server hard deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to delete server from database'),
+        ]
+    )]
+    public function hardDelete(Request $request, int $id): Response
+    {
+        $server = Server::getServerById($id);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Unclaim the allocation before deleting the server
+        if (isset($server['allocation_id'])) {
+            $allocationUnclaimed = Allocation::unassignFromServer($server['allocation_id']);
+            if (!$allocationUnclaimed) {
+                App::getInstance(true)->getLogger()->error('Failed to unclaim allocation for server ID: ' . $id);
+                // Continue with deletion even if unclaiming fails
+            }
+        }
+
+        $config = App::getInstance(true)->getConfig();
+        $user = User::getUserById($server['owner_id']);
+
+        // Hard delete - only removes from database, does NOT contact Wings
+        $deleted = Server::hardDeleteServer($id);
+        if (!$deleted) {
+            return ApiResponse::error('Failed to hard delete server from database', 'FAILED_TO_HARD_DELETE_SERVER', 500);
+        }
+
+        // Log activity with clear indication this was a hard delete
+        Activity::createActivity([
+            'user_uuid' => $request->get('user')['uuid'],
+            'name' => 'hard_delete_server',
+            'context' => 'Hard deleted server ' . $server['name'] . ' (database only, Wings not contacted)',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        // Log warning about hard delete
+        App::getInstance(true)->getLogger()->warning(
+            'Server hard deleted (database only): ' . $server['name'] .
+            ' (ID: ' . $id . ', UUID: ' . $server['uuid'] . ') by user ' .
+            $request->get('user')['username'] . '. Wings was NOT contacted - server files may still exist on node.'
+        );
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerDeleted(),
+                [
+                    'server' => $server,
+                    'deleted_by' => $request->get('user'),
+                    'hard_delete' => true,
+                ]
+            );
+        }
+
+        try {
+            ServerDeleted::send([
+                'email' => $user['email'],
+                'subject' => 'Server deleted on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://mythicalpanel.mythical.systems'),
+                'first_name' => $user['first_name'],
+                'last_name' => $user['last_name'],
+                'username' => $user['username'],
+                'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+                'uuid' => $user['uuid'],
+                'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+                'server_name' => $server['name'],
+                'deletion_time' => date('Y-m-d H:i:s'),
+            ]);
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to send server deleted email: ' . $e->getMessage());
+        }
+
+        return ApiResponse::success([], 'Server hard deleted successfully (database only - Wings was not contacted)', 200);
     }
 
     #[OA\Get(

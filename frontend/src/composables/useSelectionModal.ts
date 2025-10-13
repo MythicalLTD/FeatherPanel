@@ -25,7 +25,7 @@ SOFTWARE.
 */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ref, computed } from 'vue';
+import { ref, computed, type Ref } from 'vue';
 import axios from 'axios';
 
 interface SelectionModalState {
@@ -44,6 +44,9 @@ export function useSelectionModal(
     pageSize: number = 20,
     searchParam: string = 'search',
     pageParam: string = 'page',
+    additionalParams:
+        | Record<string, string | number | null | undefined>
+        | Ref<Record<string, string | number | null | undefined>> = {},
 ) {
     const state = ref<SelectionModalState>({
         isOpen: false,
@@ -79,6 +82,17 @@ export function useSelectionModal(
             if (state.value.searchQuery.trim()) {
                 params.append(searchParam, state.value.searchQuery.trim());
             }
+
+            // Add additional query parameters (handle both Ref and plain object)
+            const paramsToAdd =
+                'value' in additionalParams && additionalParams.value
+                    ? additionalParams.value
+                    : (additionalParams as Record<string, string | number | null | undefined>);
+            Object.entries(paramsToAdd).forEach(([key, value]) => {
+                if (value !== null && value !== undefined) {
+                    params.append(key, String(value));
+                }
+            });
 
             const response = await axios.get(`${apiEndpoint}?${params.toString()}`);
 

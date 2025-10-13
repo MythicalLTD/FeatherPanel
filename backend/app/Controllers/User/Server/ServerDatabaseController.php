@@ -31,6 +31,7 @@
 namespace App\Controllers\User\Server;
 
 use App\App;
+use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Chat\ServerDatabase;
@@ -296,6 +297,16 @@ class ServerDatabaseController
             return ApiResponse::error('Database not found', 'DATABASE_NOT_FOUND', 404);
         }
 
+        // Get node information
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        // Log activity
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'database_details_retrieved', $database, $user);
+
         return ApiResponse::success($database);
     }
 
@@ -417,19 +428,20 @@ class ServerDatabaseController
                 return ApiResponse::error('Failed to create server database record', 'CREATION_FAILED', 500);
             }
 
+            // Get node information
+            $node = Node::getNodeById($server['node_id']);
+            if (!$node) {
+                return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+            }
+
             // Log activity
-            ServerActivity::createActivity([
-                'server_id' => $server['id'],
-                'node_id' => $server['node_id'],
-                'event' => 'database_created',
-                'metadata' => json_encode([
-                    'database_id' => $databaseId,
-                    'database_name' => $databaseName,
-                    'username' => $username,
-                    'database_host_name' => $databaseHost['name'],
-                ]),
-                'user_id' => $request->get('user')['id'] ?? null,
-            ]);
+            $user = $request->get('user');
+            $this->logActivity($server, $node, 'database_created', [
+                'database_id' => $databaseId,
+                'database_name' => $databaseName,
+                'username' => $username,
+                'database_host_name' => $databaseHost['name'],
+            ], $user);
 
             // Emit event
             global $eventManager;
@@ -553,18 +565,19 @@ class ServerDatabaseController
             return ApiResponse::error('Failed to update database', 'UPDATE_FAILED', 500);
         }
 
+        // Get node information
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
         // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'database_updated',
-            'metadata' => json_encode([
-                'database_id' => $databaseId,
-                'database_name' => $database['database'],
-                'updated_fields' => array_keys($updateData),
-            ]),
-            'user_id' => $request->get('user')['id'] ?? null,
-        ]);
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'database_updated', [
+            'database_id' => $databaseId,
+            'database_name' => $database['database'],
+            'updated_fields' => array_keys($updateData),
+        ], $user);
 
         // Emit event
         global $eventManager;
@@ -665,19 +678,20 @@ class ServerDatabaseController
                 return ApiResponse::error('Failed to delete server database record', 'DELETE_FAILED', 500);
             }
 
+            // Get node information
+            $node = Node::getNodeById($server['node_id']);
+            if (!$node) {
+                return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+            }
+
             // Log activity
-            ServerActivity::createActivity([
-                'server_id' => $server['id'],
-                'node_id' => $server['node_id'],
-                'event' => 'database_deleted',
-                'metadata' => json_encode([
-                    'database_id' => $databaseId,
-                    'database_name' => $database['database'],
-                    'username' => $database['username'],
-                    'database_host_name' => $database['database_host_name'],
-                ]),
-                'user_id' => $request->get('user')['id'] ?? null,
-            ]);
+            $user = $request->get('user');
+            $this->logActivity($server, $node, 'database_deleted', [
+                'database_id' => $databaseId,
+                'database_name' => $database['database'],
+                'username' => $database['username'],
+                'database_host_name' => $databaseHost['name'],
+            ], $user);
 
             // Emit event
             global $eventManager;
@@ -813,6 +827,18 @@ class ServerDatabaseController
 
         // Test the connection
         $connectionTest = $this->testDatabaseConnection($databaseHost);
+
+        // Get node information
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        // Log activity
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'database_host_connection_tested', [
+            'database_host_id' => $databaseHostId,
+        ], $user);
 
         return ApiResponse::success([
             'database_host_id' => $databaseHostId,
@@ -1088,5 +1114,20 @@ class ServerDatabaseController
     private function quoteIdentifierMySQL(string $identifier): string
     {
         return '`' . str_replace('`', '``', $identifier) . '`';
+    }
+
+    /**
+     * Helper method to log server activity.
+     */
+    private function logActivity(array $server, array $node, string $event, array $metadata, array $user): void
+    {
+        ServerActivity::createActivity([
+            'server_id' => $server['id'],
+            'node_id' => $server['node_id'],
+            'user_id' => $user['id'],
+            'ip' => $user['last_ip'],
+            'event' => $event,
+            'metadata' => json_encode($metadata),
+        ]);
     }
 }

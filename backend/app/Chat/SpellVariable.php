@@ -56,27 +56,32 @@ class SpellVariable
     {
         // Log incoming data for debugging
         \App\App::getInstance(true)->getLogger()->debug('SpellVariable::createVariable called with data: ' . json_encode($data));
-        
+
         // Validate required fields exist
         // Note: name and env_variable must be non-empty, but description and default_value can be empty strings (Pterodactyl compatibility)
         if (!isset($data['spell_id']) || !is_numeric($data['spell_id']) || (int) $data['spell_id'] <= 0) {
             \App\App::getInstance(true)->getLogger()->error('SpellVariable validation failed: Invalid spell_id. Data: ' . json_encode($data));
+
             return false;
         }
         if (!isset($data['name']) || trim((string) $data['name']) === '') {
             \App\App::getInstance(true)->getLogger()->error('SpellVariable validation failed: Missing or empty name. Data: ' . json_encode($data));
+
             return false;
         }
         if (!isset($data['env_variable']) || trim((string) $data['env_variable']) === '') {
             \App\App::getInstance(true)->getLogger()->error('SpellVariable validation failed: Missing or empty env_variable. Data: ' . json_encode($data));
+
             return false;
         }
         if (!isset($data['description'])) {
             \App\App::getInstance(true)->getLogger()->error('SpellVariable validation failed: description not set. Data: ' . json_encode($data));
+
             return false;
         }
         if (!isset($data['default_value'])) {
             \App\App::getInstance(true)->getLogger()->error('SpellVariable validation failed: default_value not set. Data: ' . json_encode($data));
+
             return false;
         }
 
@@ -95,7 +100,7 @@ class SpellVariable
         $placeholders = array_map(fn ($f) => ':' . $f, $fields);
         $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $pdo->prepare($sql);
-        
+
         if ($stmt->execute($filteredData)) {
             return (int) $pdo->lastInsertId();
         }
@@ -103,7 +108,7 @@ class SpellVariable
         // Log the actual database error
         $errorInfo = $stmt->errorInfo();
         \App\App::getInstance(true)->getLogger()->error('SpellVariable database insert failed. SQL: ' . $sql . '. Data: ' . json_encode($filteredData) . '. Error: ' . json_encode($errorInfo));
-        
+
         return false;
     }
 

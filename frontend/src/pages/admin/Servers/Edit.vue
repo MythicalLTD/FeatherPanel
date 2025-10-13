@@ -1038,10 +1038,32 @@ const dockerImagePopoverOpen = ref(false);
 // Selection modals
 const locationModal = useSelectionModal('/api/admin/locations', 20, 'search', 'page');
 const userModal = useSelectionModal('/api/admin/users', 20, 'search', 'page');
-const nodeModal = useSelectionModal('/api/admin/nodes', 20, 'search', 'page');
-const allocationModal = useSelectionModal('/api/admin/allocations?not_used=true', 20, 'search', 'page');
+
+// Node modal with reactive location_id filter
+const nodeAdditionalParams = computed(() => ({
+    location_id: form.value.location_id || null,
+}));
+const nodeModal = useSelectionModal('/api/admin/nodes', 20, 'search', 'page', nodeAdditionalParams);
+
+// Allocation modal with reactive node_id filter
+const allocationAdditionalParams = computed(() => ({
+    node_id: form.value.node_id || null,
+}));
+const allocationModal = useSelectionModal(
+    '/api/admin/allocations?not_used=true',
+    20,
+    'search',
+    'page',
+    allocationAdditionalParams,
+);
+
 const realmModal = useSelectionModal('/api/admin/realms', 20, 'search', 'page');
-const spellModal = useSelectionModal('/api/admin/spells', 20, 'search', 'page');
+
+// Spell modal with reactive realm_id filter
+const spellAdditionalParams = computed(() => ({
+    realm_id: form.value.realms_id || null,
+}));
+const spellModal = useSelectionModal('/api/admin/spells', 20, 'search', 'page', spellAdditionalParams);
 
 // Form data
 const form = ref<EditForm>({
@@ -1583,14 +1605,18 @@ function validateForm(): boolean {
         spellVariables.value.forEach((variable) => {
             const value = spellVariableValues.value[variable.env_variable];
 
+            // Check if required - allow default values
             if (variable.rules.includes('required')) {
-                if (!value || value.trim() === '') {
+                // If value is empty/null/undefined, check if there's a default value
+                const effectiveValue = value ?? variable.default_value ?? '';
+                if (!effectiveValue || (typeof effectiveValue === 'string' && effectiveValue.trim() === '')) {
                     validationErrors.value[variable.env_variable] = `${variable.name} is required and cannot be empty`;
                     return;
                 }
             }
 
-            if (!value || value.trim() === '') {
+            // Skip validation if no value provided for optional fields
+            if (!value || (typeof value === 'string' && value.trim() === '')) {
                 return;
             }
 

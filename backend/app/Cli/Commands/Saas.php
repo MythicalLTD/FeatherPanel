@@ -423,7 +423,7 @@ class Saas extends App implements CommandBuilder
         }
 
         $updateData = [
-            'password' => password_hash($newPassword, PASSWORD_DEFAULT),
+            'password' => password_hash($newPassword, PASSWORD_BCRYPT),
             'remember_token' => User::generateAccountToken(),
         ];
 

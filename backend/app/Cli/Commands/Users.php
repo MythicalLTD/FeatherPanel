@@ -462,7 +462,7 @@ class Users extends App implements CommandBuilder
 
                     return;
                 }
-                $updateData['password'] = password_hash($newValue, PASSWORD_DEFAULT);
+                $updateData['password'] = password_hash($newValue, PASSWORD_BCRYPT);
                 $updateData['remember_token'] = User::generateAccountToken();
                 break;
             case 'email':

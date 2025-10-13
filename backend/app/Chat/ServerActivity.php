@@ -254,10 +254,18 @@ class ServerActivity
         }
 
         $pdo = Database::getPdoConnection();
-        $sql = 'SELECT sa.*, s.name as server_name, s.uuid as server_uuid, n.name as node_name 
+        $sql = 'SELECT sa.*, 
+                       s.name as server_name, 
+                       s.uuid as server_uuid, 
+                       n.name as node_name,
+                       u.username as user_username, 
+                       u.avatar as user_avatar,
+                       r.name as user_role_name
 				FROM ' . self::$table . ' sa
 				LEFT JOIN featherpanel_servers s ON sa.server_id = s.id
 				LEFT JOIN featherpanel_nodes n ON sa.node_id = n.id
+				LEFT JOIN featherpanel_users u ON sa.user_id = u.id
+				LEFT JOIN featherpanel_roles r ON u.role_id = r.id
 				WHERE sa.user_id = :user_id 
 				ORDER BY sa.timestamp DESC 
 				LIMIT :limit';
@@ -266,7 +274,34 @@ class ServerActivity
         $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
         $stmt->execute();
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $activities = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Parse metadata JSON and format user info
+        foreach ($activities as &$activity) {
+            // Parse metadata from JSON string to object
+            if (isset($activity['metadata']) && !empty($activity['metadata'])) {
+                $decoded = json_decode($activity['metadata'], true);
+                $activity['metadata'] = $decoded !== null ? $decoded : null;
+            } else {
+                $activity['metadata'] = null;
+            }
+
+            // Add user object with avatar, username, and role
+            if ($activity['user_id'] !== null && isset($activity['user_username'])) {
+                $activity['user'] = [
+                    'username' => $activity['user_username'],
+                    'avatar' => $activity['user_avatar'],
+                    'role' => $activity['user_role_name'],
+                ];
+            } else {
+                $activity['user'] = null;
+            }
+
+            // Remove redundant fields from root level
+            unset($activity['user_username'], $activity['user_avatar'], $activity['user_role_name']);
+        }
+
+        return $activities;
     }
 
     /**
@@ -295,12 +330,13 @@ class ServerActivity
         $params = [];
 
         if ($search !== '') {
-            $where[] = 'event LIKE :search';
+            $where[] = '(sa.event LIKE :search OR sa.metadata LIKE :search2)';
             $params['search'] = '%' . $search . '%';
+            $params['search2'] = '%' . $search . '%';
         }
 
         if ($serverId !== null) {
-            $where[] = 'server_id = :server_id';
+            $where[] = 'sa.server_id = :server_id';
             $params['server_id'] = $serverId;
         }
 
@@ -312,23 +348,23 @@ class ServerActivity
                 $inPlaceholders[] = $ph;
                 $params['sid' . $idx] = (int) $sid;
             }
-            $where[] = 'server_id IN (' . implode(',', $inPlaceholders) . ')';
+            $where[] = 'sa.server_id IN (' . implode(',', $inPlaceholders) . ')';
         }
 
         if ($nodeId !== null) {
-            $where[] = 'node_id = :node_id';
+            $where[] = 'sa.node_id = :node_id';
             $params['node_id'] = $nodeId;
         }
 
         if ($userId !== null) {
-            $where[] = 'user_id = :user_id';
+            $where[] = 'sa.user_id = :user_id';
             $params['user_id'] = $userId;
         }
 
         $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
 
         // Get total count
-        $countSql = 'SELECT COUNT(*) FROM ' . self::$table . ' ' . $whereClause;
+        $countSql = 'SELECT COUNT(*) FROM ' . self::$table . ' sa ' . $whereClause;
         $countStmt = $pdo->prepare($countSql);
         $countStmt->execute($params);
         $total = (int) $countStmt->fetchColumn();
@@ -337,8 +373,17 @@ class ServerActivity
         $offset = ($page - 1) * $perPage;
         $totalPages = max(1, (int) ceil($total / $perPage));
 
-        // Get activities
-        $sql = 'SELECT * FROM ' . self::$table . ' ' . $whereClause . ' ORDER BY timestamp DESC LIMIT :limit OFFSET :offset';
+        // Get activities with user information
+        $sql = 'SELECT sa.*, 
+                       u.username as user_username, 
+                       u.avatar as user_avatar,
+                       r.name as user_role_name
+                FROM ' . self::$table . ' sa
+                LEFT JOIN featherpanel_users u ON sa.user_id = u.id
+                LEFT JOIN featherpanel_roles r ON u.role_id = r.id
+                ' . $whereClause . ' 
+                ORDER BY sa.timestamp DESC 
+                LIMIT :limit OFFSET :offset';
         $stmt = $pdo->prepare($sql);
         $stmt->bindValue(':limit', $perPage, \PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
@@ -348,6 +393,31 @@ class ServerActivity
         $stmt->execute();
 
         $activities = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Parse metadata JSON and format user info
+        foreach ($activities as &$activity) {
+            // Parse metadata from JSON string to object
+            if (isset($activity['metadata']) && !empty($activity['metadata'])) {
+                $decoded = json_decode($activity['metadata'], true);
+                $activity['metadata'] = $decoded !== null ? $decoded : null;
+            } else {
+                $activity['metadata'] = null;
+            }
+
+            // Add user object with avatar, username, and role
+            if ($activity['user_id'] !== null && isset($activity['user_username'])) {
+                $activity['user'] = [
+                    'username' => $activity['user_username'],
+                    'avatar' => $activity['user_avatar'],
+                    'role' => $activity['user_role_name'],
+                ];
+            } else {
+                $activity['user'] = null;
+            }
+
+            // Remove redundant fields from root level
+            unset($activity['user_username'], $activity['user_avatar'], $activity['user_role_name']);
+        }
 
         return [
             'data' => $activities,

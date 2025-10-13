@@ -41,11 +41,11 @@
                                     :placeholder="t('serverActivities.searchPlaceholder')"
                                     :disabled="loading"
                                     class="pl-10 pr-4 h-11 border-2 focus:border-primary transition-all"
-                                    @keyup.enter="handleSearch"
+                                    @input="debouncedSearch"
                                 />
                             </div>
                             <div class="flex gap-2">
-                                <Select v-model="selectedEventFilter">
+                                <Select v-model="selectedEventFilter" @update:model-value="handleFilterChange">
                                     <SelectTrigger class="w-48 h-11 border-2">
                                         <SelectValue placeholder="Filter by event" />
                                     </SelectTrigger>
@@ -53,9 +53,13 @@
                                         <SelectItem value="all">All Events</SelectItem>
                                         <SelectItem value="backup">Backup Events</SelectItem>
                                         <SelectItem value="power">Power Events</SelectItem>
-                                        <SelectItem value="console">Console Events</SelectItem>
                                         <SelectItem value="file">File Events</SelectItem>
-                                        <SelectItem value="download">Download Events</SelectItem>
+                                        <SelectItem value="database">Database Events</SelectItem>
+                                        <SelectItem value="schedule">Schedule Events</SelectItem>
+                                        <SelectItem value="task">Task Events</SelectItem>
+                                        <SelectItem value="subuser">Subuser Events</SelectItem>
+                                        <SelectItem value="allocation">Allocation Events</SelectItem>
+                                        <SelectItem value="server">Server Events</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <Button variant="outline" size="sm" class="h-11" @click="clearFilters">
@@ -105,15 +109,15 @@
                         <h3 class="text-2xl sm:text-3xl font-bold text-foreground">No Activities Yet</h3>
                         <p class="text-sm sm:text-base text-muted-foreground">
                             {{
-                                searchQuery
+                                searchQuery || selectedEventFilter !== 'all'
                                     ? 'No activities match your search criteria.'
                                     : 'Server activities will appear here once actions are performed.'
                             }}
                         </p>
                     </div>
-                    <Button v-if="searchQuery" variant="outline" @click="clearFilters">
+                    <Button v-if="searchQuery || selectedEventFilter !== 'all'" variant="outline" @click="clearFilters">
                         <X class="h-4 w-4 mr-2" />
-                        Clear Search
+                        Clear Filters
                     </Button>
                 </div>
             </div>
@@ -140,7 +144,7 @@
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-start justify-between gap-4">
                                         <div class="min-w-0 flex-1">
-                                            <div class="flex items-center gap-2 mb-1">
+                                            <div class="flex items-center gap-2 mb-1 flex-wrap">
                                                 <h3 class="font-semibold text-base">
                                                     {{ formatEvent(activity.event) }}
                                                 </h3>
@@ -151,7 +155,34 @@
                                             <p class="text-sm text-muted-foreground mb-2 line-clamp-2">
                                                 {{ displayMessage(activity) }}
                                             </p>
-                                            <div class="flex items-center gap-4 text-xs text-muted-foreground">
+                                            <div
+                                                class="flex items-center gap-4 text-xs text-muted-foreground flex-wrap"
+                                            >
+                                                <!-- User Info -->
+                                                <div v-if="activity.user" class="flex items-center gap-2">
+                                                    <Avatar class="h-5 w-5">
+                                                        <AvatarImage
+                                                            v-if="activity.user.avatar"
+                                                            :src="activity.user.avatar"
+                                                            :alt="activity.user.username"
+                                                        />
+                                                        <AvatarFallback>
+                                                            {{ activity.user.username[0]?.toUpperCase() }}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <span class="font-medium">{{ activity.user.username }}</span>
+                                                    <Badge
+                                                        v-if="activity.user.role"
+                                                        variant="outline"
+                                                        class="text-xs px-1.5 py-0"
+                                                    >
+                                                        {{ activity.user.role }}
+                                                    </Badge>
+                                                </div>
+                                                <div v-else class="flex items-center gap-1">
+                                                    <Server class="h-3 w-3" />
+                                                    <span class="italic">System Event</span>
+                                                </div>
                                                 <div class="flex items-center gap-1">
                                                     <Clock class="h-3 w-3" />
                                                     <span>{{
@@ -291,6 +322,57 @@
                         </CardContent>
                     </Card>
 
+                    <!-- User Information Card -->
+                    <Card v-if="selectedItem?.user" class="border-2">
+                        <CardContent class="p-6">
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-2">
+                                    <Users class="h-4 w-4 text-muted-foreground" />
+                                    <h3 class="text-lg font-semibold">User Information</h3>
+                                </div>
+                                <div class="flex items-center gap-4">
+                                    <Avatar class="h-12 w-12">
+                                        <AvatarImage
+                                            v-if="selectedItem.user.avatar"
+                                            :src="selectedItem.user.avatar"
+                                            :alt="selectedItem.user.username"
+                                        />
+                                        <AvatarFallback class="text-lg">
+                                            {{ selectedItem.user.username[0]?.toUpperCase() }}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div class="flex-1">
+                                        <div class="font-semibold text-base">{{ selectedItem.user.username }}</div>
+                                        <div v-if="selectedItem.user.role" class="flex items-center gap-2 mt-1">
+                                            <Badge variant="outline" class="text-xs">
+                                                {{ selectedItem.user.role }}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                    <div v-if="selectedItem.ip" class="text-sm text-muted-foreground">
+                                        <div class="text-xs font-medium mb-1">IP Address</div>
+                                        <code class="bg-muted px-2 py-1 rounded text-xs">{{ selectedItem.ip }}</code>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card v-else class="border-2">
+                        <CardContent class="p-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center">
+                                    <Server class="h-5 w-5 text-muted-foreground" />
+                                </div>
+                                <div>
+                                    <div class="font-semibold">System Event</div>
+                                    <div class="text-sm text-muted-foreground">
+                                        This action was performed automatically by the system
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     <!-- Message Card -->
                     <Card v-if="baseMessage" class="border-2">
                         <CardContent class="p-6">
@@ -403,6 +485,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
     Activity,
@@ -415,10 +498,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Archive,
-    Power,
     Terminal,
     FileText,
-    Download,
     Server,
     Database,
     Users,
@@ -430,6 +511,10 @@ import {
     Lock,
     Unlock,
     Copy,
+    CalendarClock,
+    ListTodo,
+    Network,
+    Edit,
 } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
@@ -448,20 +533,58 @@ type ActivityMetadata = {
     files?: string[];
     action?: string;
     exit_code?: number | string;
+    backup_name?: string;
+    backup_uuid?: string;
+    adapter?: string;
+    truncate_directory?: boolean;
+    allocation_ip?: string;
+    allocation_port?: number;
+    server_uuid?: string;
+    path?: string;
+    filename?: string;
+    file_size?: number;
+    content_type?: string;
+    content_length?: number;
+    file_exists?: boolean;
+    root?: string;
+    file_count?: number;
+    database_id?: number;
+    database_name?: string;
+    username?: string;
+    database_host_name?: string;
+    schedule_id?: number;
+    schedule_name?: string;
+    new_status?: string;
+    updated_fields?: string[];
+    task_id?: number;
+    sequence_id?: number;
+    subuser_id?: number;
+    subusers?: unknown[];
+    schedules?: unknown[];
     [key: string]: unknown;
+};
+
+type ActivityUser = {
+    username: string;
+    avatar: string | null;
+    role: string | null;
 };
 
 type ActivityItem = {
     id: number;
     server_id: number;
+    node_id: number;
+    user_id: number | null;
     event: string;
     message?: string;
-    metadata?: ActivityMetadata;
+    metadata?: ActivityMetadata | null;
+    ip?: string | null;
     timestamp?: string;
     created_at?: string;
+    updated_at?: string;
+    user?: ActivityUser | null;
 };
 
-// Raw API item where metadata may be unknown
 type ApiActivityItem = Omit<ActivityItem, 'metadata'> & { metadata?: unknown };
 
 const route = useRoute();
@@ -484,6 +607,9 @@ const pagination = ref({
     to: 0,
 });
 
+// Debounce timer
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
 const breadcrumbs = computed(() => [
     { text: t('common.dashboard'), href: '/dashboard' },
     { text: t('common.servers'), href: '/dashboard' },
@@ -496,25 +622,76 @@ onMounted(async () => {
     await fetchActivities();
 });
 
-// Removed tableColumns as we're using a custom card layout now
-
 async function fetchActivities(page = pagination.value.current_page) {
     try {
         loading.value = true;
-        const { data } = await axios.get(`/api/user/servers/${route.params.uuidShort}/activities`, {
-            params: { page, per_page: pagination.value.per_page, search: searchQuery.value || undefined },
-        });
+
+        // Build query with proper search filtering
+        const params: Record<string, string | number> = {
+            page,
+            per_page: pagination.value.per_page,
+        };
+
+        // Add search query
+        if (searchQuery.value.trim()) {
+            params.search = searchQuery.value.trim();
+        }
+
+        const { data } = await axios.get(`/api/user/servers/${route.params.uuidShort}/activities`, { params });
+
         if (!data.success) {
             toast.error(data.message || t('serverActivities.failedToFetch'));
             return;
         }
-        const apiItems: ApiActivityItem[] = (data.data.activities || []) as ApiActivityItem[];
-        activities.value = apiItems.map(
+
+        const apiItems: ApiActivityItem[] = (data.data.activities.data ||
+            data.data.activities ||
+            []) as ApiActivityItem[];
+
+        // Apply client-side event filter
+        let filteredActivities = apiItems.map(
             (a): ActivityItem => ({
                 ...a,
                 metadata: normalizeMetadata(a.metadata),
             }),
         );
+
+        // Filter by event type if not "all"
+        if (selectedEventFilter.value !== 'all') {
+            filteredActivities = filteredActivities.filter((a) => {
+                const eventLower = a.event.toLowerCase();
+                switch (selectedEventFilter.value) {
+                    case 'backup':
+                        return eventLower.includes('backup');
+                    case 'power':
+                        return (
+                            eventLower.includes('power') ||
+                            eventLower.includes('start') ||
+                            eventLower.includes('stop') ||
+                            eventLower.includes('restart') ||
+                            eventLower.includes('kill')
+                        );
+                    case 'file':
+                        return eventLower.includes('file') || eventLower.includes('download');
+                    case 'database':
+                        return eventLower.includes('database');
+                    case 'schedule':
+                        return eventLower.includes('schedule');
+                    case 'task':
+                        return eventLower.includes('task');
+                    case 'subuser':
+                        return eventLower.includes('subuser');
+                    case 'allocation':
+                        return eventLower.includes('allocation');
+                    case 'server':
+                        return eventLower.includes('server') && !eventLower.includes('subuser');
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        activities.value = filteredActivities;
 
         const p = data.data.pagination as {
             current_page: number;
@@ -526,6 +703,7 @@ async function fetchActivities(page = pagination.value.current_page) {
             from?: number;
             to?: number;
         };
+
         pagination.value = {
             current_page: p.current_page,
             per_page: p.per_page,
@@ -557,27 +735,17 @@ async function fetchServer() {
 // Details dialog state
 const detailsOpen = ref(false);
 const selectedItem = ref<ActivityItem | null>(null);
+
 const baseMessage = computed(() => {
     const item = selectedItem.value;
     if (!item) return '';
-    const meta = normalizeMetadata(item.metadata);
-    if (meta && typeof meta.message === 'string' && meta.message.trim()) {
-        const parsed = tryParseJson(meta.message);
-        if (parsed != null) return summarizeJson(parsed);
-        return meta.message;
-    }
-    if (typeof item.message === 'string' && item.message.trim()) {
-        const parsed = tryParseJson(item.message);
-        if (parsed != null) return summarizeJson(parsed);
-        return item.message;
-    }
     return displayMessage(item);
 });
 
 const detailsPairs = computed(() => {
     const item = selectedItem.value;
     if (!item) return [] as Array<{ key: string; value: string }>;
-    const meta = normalizeMetadata(item.metadata);
+    const meta = item.metadata;
     if (!meta) return [] as Array<{ key: string; value: string }>;
     const entries = Object.entries(meta as Record<string, unknown>);
     return entries.map(([k, v]) => ({ key: k, value: summarizePrimitive(v) }));
@@ -586,7 +754,7 @@ const detailsPairs = computed(() => {
 const rawJson = computed(() => {
     const item = selectedItem.value;
     if (!item) return '';
-    const meta = normalizeMetadata(item.metadata);
+    const meta = item.metadata;
     try {
         return meta ? JSON.stringify(meta, null, 2) : '';
     } catch {
@@ -601,7 +769,9 @@ function openDetails(item: ActivityItem) {
 
 function normalizeMetadata(m: unknown): ActivityMetadata | undefined {
     if (m == null) return undefined;
+    // Backend now returns metadata already parsed as object
     if (typeof m === 'object') return m as ActivityMetadata;
+    // Fallback for any string metadata (shouldn't happen with new backend)
     if (typeof m === 'string') {
         try {
             return JSON.parse(m) as ActivityMetadata;
@@ -621,8 +791,17 @@ function refresh() {
     fetchActivities();
 }
 
-function handleSearch(query: string) {
-    searchQuery.value = query;
+function debouncedSearch() {
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+    searchTimeout = setTimeout(() => {
+        pagination.value.current_page = 1;
+        fetchActivities(1);
+    }, 500);
+}
+
+function handleFilterChange() {
     pagination.value.current_page = 1;
     fetchActivities(1);
 }
@@ -633,173 +812,222 @@ function formatDate(value?: string) {
 }
 
 function formatEvent(event: string) {
-    // Keep colons to preserve event namespaces; only replace underscores with spaces
-    return event.replace(/_/g, ' ');
+    // Replace underscores and colons with spaces, then capitalize
+    return event
+        .replace(/_/g, ' ')
+        .replace(/:/g, ' ')
+        .split(' ')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
 }
 
 function displayMessage(item: ActivityItem): string {
     const meta = item.metadata;
 
-    // Prefer explicit message
-    if (meta && typeof meta.message === 'string' && meta.message.trim()) {
-        const parsedMetaMessage = tryParseJson(meta.message);
-        if (parsedMetaMessage != null) return summarizeJson(parsedMetaMessage);
-        return meta.message;
-    }
-    if (typeof item.message === 'string' && item.message.trim()) {
-        const parsedItemMessage = tryParseJson(item.message);
-        if (parsedItemMessage != null) return summarizeJson(parsedItemMessage);
-        return item.message;
-    }
-
-    // Backup-related event summaries
-    if (item.event.includes('backup.created') && meta) {
+    // Backup events
+    if (item.event.includes('backup_created') && meta) {
         const backupName = meta.backup_name || 'Unknown';
         const adapter = meta.adapter || 'Unknown';
         return `Created backup "${backupName}" using ${adapter} storage`;
     }
-    if (item.event.includes('backup.deleted') && meta) {
+    if (item.event.includes('backup_deleted') && meta) {
         const backupName = meta.backup_name || 'Unknown';
         return `Deleted backup "${backupName}"`;
     }
-    if (item.event.includes('backup.restored') && meta) {
-        const backupName = meta.backup_name || 'Unknown';
+    if (item.event.includes('backup_restored') && meta) {
         const adapter = meta.adapter || 'Unknown';
         const truncate = meta.truncate_directory ? 'with directory truncation' : 'without directory truncation';
-        return `Restored backup "${backupName}" from ${adapter} storage (${truncate})`;
+        return `Restored backup from ${adapter} storage (${truncate})`;
     }
-    if (item.event.includes('backup.locked') && meta) {
+    if (item.event.includes('backup_download_url_generated') && meta) {
         const backupName = meta.backup_name || 'Unknown';
-        return `Locked backup "${backupName}"`;
-    }
-    if (item.event.includes('backup.unlocked') && meta) {
-        const backupName = meta.backup_name || 'Unknown';
-        return `Unlocked backup "${backupName}"`;
+        return `Generated download URL for backup "${backupName}"`;
     }
 
-    // Common event summaries
-    if (item.event.includes('console.command') && meta && typeof meta.command === 'string') {
-        return `Command: ${meta.command}`;
+    // Allocation events
+    if (item.event.includes('allocation_primary_set') && meta) {
+        return `Set primary allocation to ${meta.allocation_ip || ''}:${meta.allocation_port || ''}`;
     }
-    if (item.event.includes('sftp.write') && meta && Array.isArray(meta.files)) {
-        return `Files written: ${meta.files.join(', ')}`;
+    if (item.event.includes('allocation_auto_allocated') && meta) {
+        return `Auto-allocated ${meta.allocation_ip || ''}:${meta.allocation_port || ''}`;
     }
-    if (item.event.includes('power.') && meta && typeof meta.action === 'string') {
-        return `Action: ${meta.action}`;
-    }
-    if (item.event.includes('crashed') && meta && typeof meta.exit_code !== 'undefined') {
-        return `Exit code: ${String(meta.exit_code)}`;
+    if (item.event.includes('allocation_deleted') && meta) {
+        return `Deleted allocation ${meta.allocation_ip || ''}:${meta.allocation_port || ''}`;
     }
 
-    // Fallbacks
-    if (meta && Object.keys(meta).length > 0) {
-        // Always present metadata in a summarized/parsed form to avoid noisy blobs
-        try {
-            return summarizeJson(meta);
-        } catch {
-            // noop
-        }
+    // Server events
+    if (item.event.includes('server_updated')) {
+        return 'Server configuration updated';
     }
-    return '';
-}
 
-function tryParseJson(value: string): unknown | null {
-    const t = value.trim();
-    if (!(t.startsWith('{') || t.startsWith('['))) return null;
-    try {
-        return JSON.parse(t);
-    } catch {
-        return null;
+    // File events
+    if (item.event.includes('file_written') && meta) {
+        const path = meta.path || 'file';
+        const existed = meta.file_exists ? 'Updated' : 'Created';
+        return `${existed} file: ${path}`;
     }
-}
+    if (item.event.includes('file_viewed') && meta) {
+        return `Viewed file: ${meta.path || 'file'}`;
+    }
+    if (item.event.includes('file_downloaded') && meta) {
+        return `Downloaded file: ${meta.filename || meta.path || 'file'}`;
+    }
+    if (item.event.includes('files_deleted') && meta) {
+        const count = meta.file_count || (Array.isArray(meta.files) ? meta.files.length : 0);
+        return `Deleted ${count} file(s) from ${meta.root || 'directory'}`;
+    }
+    if (item.event.includes('files_listed') && meta) {
+        return `Listed files in: ${meta.path || '/'}`;
+    }
+    if (item.event.includes('downloads_list_viewed')) {
+        return 'Viewed downloads list';
+    }
 
-function summarizeJson(value: unknown): string {
-    if (Array.isArray(value)) {
-        if (value.length === 0) return '[]';
-        const sample = value
-            .slice(0, 5)
-            .map((v) => summarizePrimitive(v))
-            .join(', ');
-        return value.length > 5 ? `[${sample}, …]` : `[${sample}]`;
+    // Database events
+    if (item.event.includes('database_created') && meta) {
+        return `Created database "${meta.database_name}" on ${meta.database_host_name}`;
     }
-    if (value && typeof value === 'object') {
-        const entries = Object.entries(value as Record<string, unknown>);
-        if (entries.length === 0) return '{}';
-        const sample = entries
-            .slice(0, 6)
-            .map(([k, v]) => `${k}: ${summarizePrimitive(v)}`)
-            .join(', ');
-        return entries.length > 6 ? `{ ${sample}, … }` : `{ ${sample} }`;
+    if (item.event.includes('database_deleted') && meta) {
+        return `Deleted database "${meta.database_name}" from ${meta.database_host_name}`;
     }
-    return summarizePrimitive(value);
+
+    // Schedule events
+    if (item.event.includes('schedule_created') && meta) {
+        return `Created schedule "${meta.schedule_name}"`;
+    }
+    if (item.event.includes('schedule_updated') && meta) {
+        const fields = Array.isArray(meta.updated_fields) ? meta.updated_fields.join(', ') : 'multiple fields';
+        return `Updated schedule "${meta.schedule_name}" (${fields})`;
+    }
+    if (item.event.includes('schedule_deleted') && meta) {
+        return `Deleted schedule "${meta.schedule_name}"`;
+    }
+    if (item.event.includes('schedule_status_toggled') && meta) {
+        return `${meta.new_status === 'enabled' ? 'Enabled' : 'Disabled'} schedule "${meta.schedule_name}"`;
+    }
+    if (item.event.includes('schedule_retrieved') && meta) {
+        return `Retrieved schedule "${meta.schedule_name}"`;
+    }
+    if (item.event.includes('schedules_retrieved')) {
+        const count = Array.isArray(meta?.schedules) ? meta.schedules.length : 0;
+        return `Retrieved ${count} schedule(s)`;
+    }
+
+    // Task events
+    if (item.event.includes('task_created') && meta) {
+        return `Created task for schedule "${meta.schedule_name}" (action: ${meta.action})`;
+    }
+    if (item.event.includes('task_updated') && meta) {
+        const fields = Array.isArray(meta.updated_fields) ? meta.updated_fields.join(', ') : 'multiple fields';
+        return `Updated task in "${meta.schedule_name}" (${fields})`;
+    }
+    if (item.event.includes('task_deleted') && meta) {
+        return `Deleted task from "${meta.schedule_name}" (action: ${meta.action})`;
+    }
+
+    // Subuser events
+    if (item.event.includes('subuser_created') && meta) {
+        return `Created subuser (ID: ${meta.subuser_id})`;
+    }
+    if (item.event.includes('subuser_deleted') && meta) {
+        return `Deleted subuser (ID: ${meta.subuser_id})`;
+    }
+    if (item.event.includes('subusers_retrieved')) {
+        const count = Array.isArray(meta?.subusers) ? meta.subusers.length : 0;
+        return `Retrieved ${count} subuser(s)`;
+    }
+
+    // Power events
+    if (item.event.includes('server:power')) {
+        const action = item.event.split('.')[1] || 'action';
+        return `Server power: ${action}`;
+    }
+
+    // Fallback
+    return item.event.replace(/_/g, ' ').replace(/:/g, ' ');
 }
 
 function summarizePrimitive(v: unknown): string {
     if (v == null) return 'null';
     if (typeof v === 'string') return v.length > 80 ? `${v.slice(0, 77)}…` : v;
     if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+    if (Array.isArray(v)) return `[${v.length} items]`;
     if (typeof v === 'object') return '{…}';
     return String(v);
 }
 
-// New helper functions for the redesigned interface
 function getEventIcon(event: string) {
-    if (event.includes('backup')) return Archive;
-    if (event.includes('power')) return Power;
-    if (event.includes('console')) return Terminal;
-    if (event.includes('file')) return FileText;
-    if (event.includes('download')) return Download;
-    if (event.includes('database')) return Database;
-    if (event.includes('user')) return Users;
-    if (event.includes('setting')) return Settings;
-    if (event.includes('start')) return Play;
-    if (event.includes('stop')) return Pause;
-    if (event.includes('restart')) return RotateCcw;
-    if (event.includes('delete')) return Trash2;
-    if (event.includes('lock')) return Lock;
-    if (event.includes('unlock')) return Unlock;
+    const eventLower = event.toLowerCase();
+    if (eventLower.includes('backup')) return Archive;
+    if (eventLower.includes('power') || eventLower.includes('start')) return Play;
+    if (eventLower.includes('stop') || eventLower.includes('kill')) return Pause;
+    if (eventLower.includes('restart')) return RotateCcw;
+    if (eventLower.includes('file') || eventLower.includes('download')) return FileText;
+    if (eventLower.includes('database')) return Database;
+    if (eventLower.includes('schedule')) return CalendarClock;
+    if (eventLower.includes('task')) return ListTodo;
+    if (eventLower.includes('subuser') || eventLower.includes('user')) return Users;
+    if (eventLower.includes('allocation') || eventLower.includes('network')) return Network;
+    if (eventLower.includes('setting') || eventLower.includes('updated')) return Edit;
+    if (eventLower.includes('delete') || eventLower.includes('deleted')) return Trash2;
+    if (eventLower.includes('lock')) return Lock;
+    if (eventLower.includes('unlock')) return Unlock;
     return Server;
 }
 
 function getEventIconClass(event: string) {
-    if (event.includes('backup')) return 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
-    if (event.includes('power')) return 'bg-green-500/10 text-green-600 dark:text-green-400';
-    if (event.includes('console')) return 'bg-purple-500/10 text-purple-600 dark:text-purple-400';
-    if (event.includes('file')) return 'bg-orange-500/10 text-orange-600 dark:text-orange-400';
-    if (event.includes('download')) return 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400';
-    if (event.includes('database')) return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400';
-    if (event.includes('user')) return 'bg-pink-500/10 text-pink-600 dark:text-pink-400';
-    if (event.includes('setting')) return 'bg-gray-500/10 text-gray-600 dark:text-gray-400';
-    if (event.includes('start')) return 'bg-green-500/10 text-green-600 dark:text-green-400';
-    if (event.includes('stop')) return 'bg-red-500/10 text-red-600 dark:text-red-400';
-    if (event.includes('restart')) return 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400';
-    if (event.includes('delete')) return 'bg-red-500/10 text-red-600 dark:text-red-400';
-    if (event.includes('lock')) return 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
-    if (event.includes('unlock')) return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
+    const eventLower = event.toLowerCase();
+    if (eventLower.includes('backup')) return 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
+    if (eventLower.includes('start') || eventLower.includes('play'))
+        return 'bg-green-500/10 text-green-600 dark:text-green-400';
+    if (eventLower.includes('stop') || eventLower.includes('kill'))
+        return 'bg-red-500/10 text-red-600 dark:text-red-400';
+    if (eventLower.includes('restart')) return 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400';
+    if (eventLower.includes('power')) return 'bg-green-500/10 text-green-600 dark:text-green-400';
+    if (eventLower.includes('file')) return 'bg-orange-500/10 text-orange-600 dark:text-orange-400';
+    if (eventLower.includes('database')) return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400';
+    if (eventLower.includes('schedule')) return 'bg-purple-500/10 text-purple-600 dark:text-purple-400';
+    if (eventLower.includes('task')) return 'bg-pink-500/10 text-pink-600 dark:text-pink-400';
+    if (eventLower.includes('subuser') || eventLower.includes('user'))
+        return 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400';
+    if (eventLower.includes('allocation')) return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
+    if (eventLower.includes('delete')) return 'bg-red-500/10 text-red-600 dark:text-red-400';
+    if (eventLower.includes('lock')) return 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
+    if (eventLower.includes('unlock')) return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
     return 'bg-primary/10 text-primary';
 }
 
 function getEventCategory(event: string) {
-    if (event.includes('backup')) return 'Backup';
-    if (event.includes('power')) return 'Power';
-    if (event.includes('console')) return 'Console';
-    if (event.includes('file')) return 'File';
-    if (event.includes('download')) return 'Download';
-    if (event.includes('database')) return 'Database';
-    if (event.includes('user')) return 'User';
-    if (event.includes('setting')) return 'Settings';
+    const eventLower = event.toLowerCase();
+    if (eventLower.includes('backup')) return 'Backup';
+    if (
+        eventLower.includes('power') ||
+        eventLower.includes('start') ||
+        eventLower.includes('stop') ||
+        eventLower.includes('restart') ||
+        eventLower.includes('kill')
+    )
+        return 'Power';
+    if (eventLower.includes('file') || eventLower.includes('download')) return 'File';
+    if (eventLower.includes('database')) return 'Database';
+    if (eventLower.includes('schedule')) return 'Schedule';
+    if (eventLower.includes('task')) return 'Task';
+    if (eventLower.includes('subuser')) return 'Subuser';
+    if (eventLower.includes('allocation')) return 'Allocation';
+    if (eventLower.includes('server')) return 'Server';
     return 'System';
 }
 
 function getEventBadgeVariant(event: string) {
-    if (event.includes('backup')) return 'default';
-    if (event.includes('power')) return 'secondary';
-    if (event.includes('console')) return 'outline';
-    if (event.includes('file')) return 'default';
-    if (event.includes('download')) return 'secondary';
-    if (event.includes('database')) return 'outline';
-    if (event.includes('user')) return 'default';
-    if (event.includes('setting')) return 'secondary';
+    const eventLower = event.toLowerCase();
+    if (eventLower.includes('backup')) return 'default';
+    if (eventLower.includes('power')) return 'secondary';
+    if (eventLower.includes('file')) return 'default';
+    if (eventLower.includes('database')) return 'outline';
+    if (eventLower.includes('schedule')) return 'secondary';
+    if (eventLower.includes('task')) return 'default';
+    if (eventLower.includes('subuser')) return 'outline';
+    if (eventLower.includes('allocation')) return 'secondary';
     return 'outline';
 }
 

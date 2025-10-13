@@ -953,7 +953,7 @@ class SpellsController
                 // Validate required fields exist and name/env_variable are not empty
                 // Note: description and default_value can be empty strings (valid in Pterodactyl)
                 $missingFields = [];
-                
+
                 if (!isset($var['name']) || trim((string) $var['name']) === '') {
                     $missingFields[] = 'name';
                 }
@@ -986,7 +986,7 @@ class SpellsController
                     'rules' => $var['rules'] ?? '',
                     'field_type' => $var['field_type'] ?? 'text',
                 ];
-                
+
                 $varId = SpellVariable::createVariable($variableData);
                 if ($varId) {
                     ++$importedVariablesCount;
@@ -1739,7 +1739,7 @@ class SpellsController
                     // Validate required fields exist and name/env_variable are not empty
                     // Note: description and default_value can be empty strings (valid in Pterodactyl)
                     $missingFields = [];
-                    
+
                     if (!isset($var['name']) || trim((string) $var['name']) === '') {
                         $missingFields[] = 'name';
                     }
@@ -1772,7 +1772,7 @@ class SpellsController
                         'rules' => $var['rules'] ?? '',
                         'field_type' => $var['field_type'] ?? 'text',
                     ];
-                    
+
                     $varId = SpellVariable::createVariable($variableData);
                     if ($varId) {
                         ++$importedVariablesCount;

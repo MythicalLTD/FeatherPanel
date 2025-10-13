@@ -46,14 +46,25 @@ use Symfony\Component\HttpFoundation\Response;
     properties: [
         new OA\Property(property: 'id', type: 'integer', description: 'Activity ID'),
         new OA\Property(property: 'server_id', type: 'integer', description: 'Server ID'),
+        new OA\Property(property: 'node_id', type: 'integer', description: 'Node ID'),
         new OA\Property(property: 'user_id', type: 'integer', nullable: true, description: 'User ID (null for daemon events)'),
         new OA\Property(property: 'event', type: 'string', description: 'Activity event name'),
-        new OA\Property(property: 'metadata', type: 'object', nullable: true, description: 'Activity metadata (parsed JSON)'),
-        new OA\Property(property: 'ip_address', type: 'string', nullable: true, description: 'IP address'),
-        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Activity timestamp'),
-        new OA\Property(property: 'server_name', type: 'string', nullable: true, description: 'Server name'),
-        new OA\Property(property: 'server_uuid', type: 'string', nullable: true, description: 'Server UUID'),
-        new OA\Property(property: 'server_uuid_short', type: 'string', nullable: true, description: 'Server short UUID'),
+        new OA\Property(property: 'metadata', type: 'object', nullable: true, description: 'Activity metadata (parsed from JSON)'),
+        new OA\Property(property: 'ip', type: 'string', nullable: true, description: 'IP address'),
+        new OA\Property(property: 'timestamp', type: 'string', format: 'date-time', description: 'Activity timestamp'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Created timestamp'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Updated timestamp'),
+        new OA\Property(
+            property: 'user',
+            type: 'object',
+            nullable: true,
+            description: 'User information (null for daemon events)',
+            properties: [
+                new OA\Property(property: 'username', type: 'string', description: 'Username'),
+                new OA\Property(property: 'avatar', type: 'string', nullable: true, description: 'User avatar URL'),
+                new OA\Property(property: 'role', type: 'string', nullable: true, description: 'User role name'),
+            ]
+        ),
     ]
 )]
 #[OA\Schema(

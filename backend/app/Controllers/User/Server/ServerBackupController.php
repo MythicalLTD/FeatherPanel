@@ -38,7 +38,6 @@ use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
-use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -400,18 +399,13 @@ class ServerBackupController
 
             return ApiResponse::error('Failed to initiate backup on Wings: ' . $e->getMessage(), 'FAILED_TO_INITIATE_BACKUP_ON_WINGS', 500);
         }
-
         // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'backup_created',
-            'metadata' => json_encode([
-                'backup_uuid' => $backupUuid,
-                'adapter' => $adapter,
-                'backup_name' => $backupName,
-            ]),
-        ]);
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'backup_created', [
+            'backup_uuid' => $backupUuid,
+            'adapter' => $adapter,
+            'backup_name' => $backupName,
+        ], $user);
 
         // Emit event
         global $eventManager;
@@ -565,18 +559,14 @@ class ServerBackupController
 
             return ApiResponse::error('Failed to initiate restore on Wings: ' . $e->getMessage(), 'FAILED_TO_INITIATE_RESTORE_ON_WINGS', 500);
         }
-
         // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'backup_restored',
-            'metadata' => json_encode([
-                'backup_uuid' => $backupUuid,
-                'adapter' => $adapter,
-                'truncate_directory' => $truncateDirectory,
-            ]),
-        ]);
+        $user = $request->get('user');
+        // Log activity
+        $this->logActivity($server, $node, 'backup_restored', [
+            'backup_uuid' => $backupUuid,
+            'adapter' => $adapter,
+            'truncate_directory' => $truncateDirectory,
+        ], $user);
 
         // Emit event
         global $eventManager;
@@ -665,16 +655,18 @@ class ServerBackupController
             return ApiResponse::error('Failed to lock backup', 'LOCK_FAILED', 500);
         }
 
+        // Get node information
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
         // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'backup_locked',
-            'metadata' => json_encode([
-                'backup_uuid' => $backupUuid,
-                'backup_name' => $backup['name'],
-            ]),
-        ]);
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'backup_locked', [
+            'backup_uuid' => $backupUuid,
+            'backup_name' => $backup['name'],
+        ], $user);
 
         // Emit event
         global $eventManager;
@@ -763,17 +755,18 @@ class ServerBackupController
             return ApiResponse::error('Failed to unlock backup', 'UNLOCK_FAILED', 500);
         }
 
-        // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'backup_unlocked',
-            'metadata' => json_encode([
-                'backup_uuid' => $backupUuid,
-                'backup_name' => $backup['name'],
-            ]),
-        ]);
+        // Get node information
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
 
+        // Log activity
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'backup_unlocked', [
+            'backup_uuid' => $backupUuid,
+            'backup_name' => $backup['name'],
+        ], $user);
         // Emit event
         global $eventManager;
         if (isset($eventManager) && $eventManager !== null) {
@@ -912,15 +905,11 @@ class ServerBackupController
         }
 
         // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'backup_deleted',
-            'metadata' => json_encode([
-                'backup_uuid' => $backupUuid,
-                'backup_name' => $backup['name'],
-            ]),
-        ]);
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'backup_deleted', [
+            'backup_uuid' => $backupUuid,
+            'backup_name' => $backup['name'],
+        ], $user);
 
         // Emit event
         global $eventManager;
@@ -1041,6 +1030,13 @@ class ServerBackupController
             $baseUrl = rtrim($scheme . '://' . $host . ':' . $port, '/');
             $downloadUrl = "{$baseUrl}/download/backup?token={$jwtToken}&server={$serverUuid}&backup={$backupUuid}";
 
+            // Log activity
+            $this->logActivity($server, $node, 'backup_download_url_generated', [
+                'backup_uuid' => $backupUuid,
+                'backup_name' => $backup['name'],
+            ], $user);
+
+            // Log activity
             return ApiResponse::success([
                 'download_url' => $downloadUrl,
                 'expires_in' => 300, // 5 minutes
@@ -1048,19 +1044,6 @@ class ServerBackupController
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to generate download URL: ' . $e->getMessage(), 'DOWNLOAD_URL_GENERATION_FAILED', 500);
         }
-    }
-
-    /**
-     * Centralized check using ServerGateway with current request user.
-     */
-    private function userCanAccessServer(Request $request, array $server): bool
-    {
-        $currentUser = $request->get('user');
-        if (!$currentUser || !isset($currentUser['uuid'])) {
-            return false;
-        }
-
-        return ServerGateway::canUserAccessServer($currentUser['uuid'], $server['uuid']);
     }
 
     /**
@@ -1081,5 +1064,20 @@ class ServerBackupController
             mt_rand(0, 0xFFFF),
             mt_rand(0, 0xFFFF)
         );
+    }
+
+    /**
+     * Helper method to log server activity.
+     */
+    private function logActivity(array $server, array $node, string $event, array $metadata, array $user): void
+    {
+        ServerActivity::createActivity([
+            'server_id' => $server['id'],
+            'node_id' => $server['node_id'],
+            'user_id' => $user['id'],
+            'ip' => $user['last_ip'],
+            'event' => $event,
+            'metadata' => json_encode($metadata),
+        ]);
     }
 }

@@ -598,7 +598,7 @@ class UsersController
         }
         // Hash password if updating password
         if (isset($data['password'])) {
-            $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+            $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
             $data['remember_token'] = User::generateAccountToken();
         }
         $updated = User::updateUser($user['uuid'], $data);

@@ -30,12 +30,12 @@
 
 namespace App\Controllers\User\Server;
 
+use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
-use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -199,6 +199,16 @@ class ServerScheduleController
         $totalSchedules = ServerSchedule::getSchedulesByServerId($server['id']);
         $total = count($totalSchedules);
 
+        // Log activity
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'schedules_retrieved', [
+            'schedules' => $schedules,
+        ], $user);
+
         return ApiResponse::success([
             'data' => $schedules,
             'pagination' => [
@@ -264,6 +274,17 @@ class ServerScheduleController
         if ($schedule['server_id'] != $server['id']) {
             return ApiResponse::error('Schedule not found', 'SCHEDULE_NOT_FOUND', 404);
         }
+
+        // Log activity
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'schedule_retrieved', [
+            'schedule_id' => $scheduleId,
+            'schedule_name' => $schedule['name'],
+        ], $user);
 
         return ApiResponse::success($schedule);
     }
@@ -363,18 +384,6 @@ class ServerScheduleController
             return ApiResponse::error('Failed to create schedule', 'CREATION_FAILED', 500);
         }
 
-        // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'schedule_created',
-            'metadata' => json_encode([
-                'schedule_id' => $scheduleId,
-                'schedule_name' => $body['name'],
-                'cron_expression' => "{$body['cron_minute']} {$body['cron_hour']} {$body['cron_day_of_month']} {$body['cron_month']} {$body['cron_day_of_week']}",
-            ]),
-        ]);
-
         // Emit event
         global $eventManager;
         if (isset($eventManager) && $eventManager !== null) {
@@ -387,6 +396,17 @@ class ServerScheduleController
                 ]
             );
         }
+
+        // Log activity
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'schedule_created', [
+            'schedule_id' => $scheduleId,
+            'schedule_name' => $body['name'],
+        ], $user);
 
         return ApiResponse::success([
             'id' => $scheduleId,
@@ -484,16 +504,16 @@ class ServerScheduleController
         }
 
         // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'schedule_updated',
-            'metadata' => json_encode([
-                'schedule_id' => $scheduleId,
-                'schedule_name' => $schedule['name'],
-                'updated_fields' => array_keys($body),
-            ]),
-        ]);
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'schedule_updated', [
+            'schedule_id' => $scheduleId,
+            'schedule_name' => $schedule['name'],
+            'updated_fields' => array_keys($body),
+        ], $user);
 
         // Emit event
         global $eventManager;
@@ -574,16 +594,16 @@ class ServerScheduleController
         $newStatus = $updatedSchedule['is_active'] ? 'enabled' : 'disabled';
 
         // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'schedule_status_toggled',
-            'metadata' => json_encode([
-                'schedule_id' => $scheduleId,
-                'schedule_name' => $schedule['name'],
-                'new_status' => $newStatus,
-            ]),
-        ]);
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'schedule_status_toggled', [
+            'schedule_id' => $scheduleId,
+            'schedule_name' => $schedule['name'],
+            'new_status' => $newStatus,
+        ], $user);
 
         // Emit event
         global $eventManager;
@@ -672,15 +692,15 @@ class ServerScheduleController
         }
 
         // Log activity
-        ServerActivity::createActivity([
-            'server_id' => $server['id'],
-            'node_id' => $server['node_id'],
-            'event' => 'schedule_deleted',
-            'metadata' => json_encode([
-                'schedule_id' => $scheduleId,
-                'schedule_name' => $schedule['name'],
-            ]),
-        ]);
+        $node = Node::getNodeById($server['node_id']);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+        $user = $request->get('user');
+        $this->logActivity($server, $node, 'schedule_deleted', [
+            'schedule_id' => $scheduleId,
+            'schedule_name' => $schedule['name'],
+        ], $user);
 
         // Emit event
         global $eventManager;
@@ -847,15 +867,17 @@ class ServerScheduleController
     }
 
     /**
-     * Centralized check using ServerGateway with current request user.
+     * Helper method to log server activity.
      */
-    private function userCanAccessServer(Request $request, array $server): bool
+    private function logActivity(array $server, array $node, string $event, array $metadata, array $user): void
     {
-        $currentUser = $request->get('user');
-        if (!$currentUser || !isset($currentUser['uuid'])) {
-            return false;
-        }
-
-        return ServerGateway::canUserAccessServer($currentUser['uuid'], $server['uuid']);
+        ServerActivity::createActivity([
+            'server_id' => $server['id'],
+            'node_id' => $server['node_id'],
+            'user_id' => $user['id'],
+            'ip' => $user['last_ip'],
+            'event' => $event,
+            'metadata' => json_encode($metadata),
+        ]);
     }
 }
