@@ -413,7 +413,7 @@
                                 v-model="commandInput"
                                 type="text"
                                 class="flex-1"
-                                placeholder="Enter command..."
+                                :placeholder="t('serverConsole.enterCommandPlaceholder')"
                                 :disabled="
                                     sendingCommand || !(server?.status === 'running' || server?.status === 'starting')
                                 "
@@ -626,28 +626,28 @@ const wingsConnectionInfo = computed(() => {
     if (!wingsWebSocket.isConnected) {
         return {
             status: 'disconnected',
-            message: 'Wings daemon disconnected - Using API fallback mode',
+            message: t('serverConsole.wingsDaemonDisconnected'),
             color: 'text-red-500',
             icon: '🔌',
         };
     } else if (wingsWebSocket.wingsStatus?.value === 'healthy') {
         return {
             status: 'healthy',
-            message: 'Wings daemon connected - Server management available',
+            message: t('serverConsole.wingsDaemonConnected'),
             color: 'text-green-500',
             icon: '✅',
         };
     } else if (wingsWebSocket.wingsStatus?.value === 'error') {
         return {
             status: 'error',
-            message: 'Wings daemon error - Limited functionality',
+            message: t('serverConsole.wingsDaemonError'),
             color: 'text-yellow-500',
             icon: '⚠️',
         };
     } else {
         return {
             status: 'connecting',
-            message: 'Connecting to Wings daemon...',
+            message: t('serverConsole.connectingToWings'),
             color: 'text-blue-500',
             icon: '🔄',
         };
@@ -1034,7 +1034,7 @@ onMounted(async () => {
         () => wingsWebSocket.wingsStatus?.value,
         (wingsStatus, previousStatus) => {
             if (wingsStatus === 'error' && previousStatus === 'healthy') {
-                toast.error('⚠️ Wings daemon stopped responding - switching to API fallback mode');
+                toast.error(t('serverConsole.wingsStoppedResponding'));
             }
         },
     );
@@ -1162,9 +1162,13 @@ function setupWebSocketHandlers(): void {
                     console.warn('Failed to parse stats:', parseError);
                 }
             } else if (data.event === 'daemon error') {
-                writeToTerminalImmediate(`\r\n\x1b[31m❌ Daemon Error: ${data.args?.[0] ?? ''}\x1b[0m\r\n`);
+                writeToTerminalImmediate(
+                    `\r\n\x1b[31m${t('serverConsole.daemonErrorPrefix', { message: data.args?.[0] ?? '' })}\x1b[0m\r\n`,
+                );
             } else if (data.event === 'jwt error') {
-                writeToTerminalImmediate(`\r\n\x1b[31m❌ JWT Error: ${data.args?.[0] ?? ''}\x1b[0m\r\n`);
+                writeToTerminalImmediate(
+                    `\r\n\x1b[31m${t('serverConsole.jwtErrorPrefix', { message: data.args?.[0] ?? '' })}\x1b[0m\r\n`,
+                );
                 toast.error(t('serverConsole.authErrorRefresh'));
             } else if (data.event === 'install started') {
                 writeToTerminalImmediate('\r\n\x1b[33m📦 Installation started...\x1b[0m\r\n');
@@ -1267,10 +1271,14 @@ async function sendCommand(): Promise<void> {
         if (axios.isAxiosError(error)) {
             const errorMessage = error.response?.data?.message || t('serverConsole.failedToSendCommand');
             toast.error(errorMessage);
-            writeToTerminalImmediate(`\r\n\x1b[31m✗ Error: ${errorMessage}\x1b[0m\r\n`);
+            writeToTerminalImmediate(
+                `\r\n\x1b[31m${t('serverConsole.errorPrefix', { message: errorMessage })}\x1b[0m\r\n`,
+            );
         } else {
             toast.error(t('serverConsole.failedToSendCommand'));
-            writeToTerminalImmediate(`\r\n\x1b[31m✗ Error: ${t('serverConsole.failedToSendCommand')}\x1b[0m\r\n`);
+            writeToTerminalImmediate(
+                `\r\n\x1b[31m${t('serverConsole.errorPrefix', { message: t('serverConsole.failedToSendCommand') })}\x1b[0m\r\n`,
+            );
         }
     } finally {
         sendingCommand.value = false;

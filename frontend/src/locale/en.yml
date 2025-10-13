@@ -88,6 +88,7 @@ account:
     profile: 'Profile'
     settings: 'Settings'
     appearance: 'Appearance'
+    unknown: 'Unknown'
     appearanceSettings: 'Appearance Settings'
     appearanceSettingsDescription: 'Customize your interface theme, background, language, sidebar, and dock settings'
     theme: 'Theme'
@@ -399,6 +400,7 @@ serverConsole:
     clear: 'Clear'
     downloadLogs: 'Download Logs'
     enterCommand: 'Enter command...'
+    enterCommandPlaceholder: 'Enter command...'
     send: 'Send'
     noConsoleOutput: 'No console output available. Start the server to see logs.'
     lines: 'lines'
@@ -513,6 +515,15 @@ serverConsole:
     noConsoleContent: 'No console content to upload'
     serverMustBeRunningUpload: 'Server must be running or starting to upload logs'
     serverMustBeRunning: 'Server must be running to send commands'
+    # Wings Daemon Messages
+    wingsDaemonDisconnected: 'Wings daemon disconnected - Using API fallback mode'
+    wingsDaemonConnected: 'Wings daemon connected - Server management available'
+    wingsDaemonError: 'Wings daemon error - Limited functionality'
+    connectingToWings: 'Connecting to Wings daemon...'
+    wingsStoppedResponding: '⚠️ Wings daemon stopped responding - switching to API fallback mode'
+    daemonErrorPrefix: '❌ Daemon Error: {message}'
+    jwtErrorPrefix: '❌ JWT Error: {message}'
+    errorPrefix: '✗ Error: {message}'
     # Error Messages
     failedToStartServer: 'Failed to start server'
     failedToStopServer: 'Failed to stop server'
@@ -534,6 +545,12 @@ serverStartup:
     saveSuccess: 'Startup command, Docker image, and variables saved successfully'
     saveError: 'Failed to save startup command, Docker image, and variables'
     notFound: 'Server not found'
+    failedToFetchServer: 'Failed to fetch server'
+    valueDoesNotMatchFormat: 'Value does not match required format'
+    failed: 'Failed'
+    failedToSave: 'Failed to save'
+    fieldRequired: 'This field is required'
+    fieldMustBeNumeric: 'This field must be numeric'
 
 # Server Logs
 serverLogs:
@@ -929,6 +946,7 @@ serverSchedules:
     noSchedules: 'Oh... It looks like there are no schedules here'
     noSchedulesDescription: 'Create your first schedule to automate server tasks and maintenance'
     viewAllSchedules: 'View all {count} schedules'
+    selectOption: 'Select option'
 
 # Server Tasks
 serverTasks:
@@ -1457,6 +1475,14 @@ admin:
     apiKeys:
         title: 'API Keys Management'
         description: 'Manage API keys for all users in the system.'
+
+plugins:
+    loadingContent: 'Loading plugin content'
+    failedToLoadContent: 'Failed to load plugin content'
+    retry: 'Retry Loading'
+    pluginPage: 'Plugin Page'
+    failedToLoadPluginData: 'Failed to load plugin data'
+    failedToLoadIframeContent: 'Failed to load iframe content'
 
 footer:
     description: 'Modern server management made simple and elegant.'

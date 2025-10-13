@@ -140,7 +140,7 @@ onMounted(async () => {
 
 // Format date helper
 const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Unknown';
+    if (!dateString) return $t('account.unknown');
     try {
         return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
@@ -148,7 +148,7 @@ const formatDate = (dateString?: string) => {
             day: 'numeric',
         });
     } catch {
-        return 'Unknown';
+        return $t('account.unknown');
     }
 };
 </script>

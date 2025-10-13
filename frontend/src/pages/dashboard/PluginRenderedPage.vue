@@ -17,7 +17,7 @@
                         <div class="absolute inset-0 animate-pulse rounded-full h-16 w-16 bg-blue-500/20"></div>
                     </div>
                     <div class="text-center">
-                        <p class="text-slate-300 text-lg font-medium mb-2">Loading plugin content</p>
+                        <p class="text-slate-300 text-lg font-medium mb-2">{{ t('plugins.loadingContent') }}</p>
                         <div class="flex space-x-1">
                             <div
                                 class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
@@ -65,7 +65,7 @@
                             <span class="text-white text-xs font-bold">!</span>
                         </div>
                     </div>
-                    <h3 class="text-slate-200 font-semibold text-xl mb-3">Failed to load plugin content</h3>
+                    <h3 class="text-slate-200 font-semibold text-xl mb-3">{{ t('plugins.failedToLoadContent') }}</h3>
                     <p class="text-slate-400 text-sm mb-6 leading-relaxed">{{ iframeError }}</p>
                     <button
                         class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl font-medium"
@@ -79,7 +79,7 @@
                                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                             ></path>
                         </svg>
-                        Retry Loading
+                        {{ t('plugins.retry') }}
                     </button>
                 </div>
             </div>
@@ -156,7 +156,7 @@ const iframeSrc = computed(() => {
 });
 
 const breadcrumbs = computed(() => {
-    const pageName = pluginData.value?.name || 'Plugin Page';
+    const pageName = pluginData.value?.name || t('plugins.pluginPage');
     const crumbs = [];
 
     if (context.value === 'admin') {
@@ -284,11 +284,11 @@ const fetchPluginSidebar = async () => {
                 error.value = `Plugin page not found. Context: ${context.value}, Looking for: ${pluginPath}`;
             }
         } else {
-            error.value = 'Failed to load plugin data';
+            error.value = t('plugins.failedToLoadPluginData');
         }
     } catch (err) {
         console.error('Error fetching plugin sidebar:', err);
-        error.value = 'Failed to load plugin data';
+        error.value = t('plugins.failedToLoadPluginData');
     } finally {
         loading.value = false;
     }

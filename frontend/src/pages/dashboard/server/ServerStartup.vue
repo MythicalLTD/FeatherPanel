@@ -252,7 +252,7 @@ async function fetchServer() {
         }
     } catch (e: unknown) {
         const err = e as { message?: string };
-        error.value = err?.message || 'Failed to fetch server';
+        error.value = err?.message || t('serverStartup.failedToFetchServer');
         toast.error(error.value);
         console.error(e);
     } finally {
@@ -371,7 +371,7 @@ function validateVariableAgainstRules(value: string, rules: string): string | ''
                 const re = new RegExp(pattern);
                 // Test against trimmed value for regex
                 if (!re.test(trimmedForEmptyCheck)) {
-                    return 'Value does not match required format';
+                    return t('serverStartup.valueDoesNotMatchFormat');
                 }
             } catch (err) {
                 console.error('Invalid regex pattern:', rule.value, err);

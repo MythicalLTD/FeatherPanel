@@ -19,6 +19,7 @@
 - Fixed an issue where updating user passwords sometimes failed silently and did not actually update the password as expected. Password changes in the UI and API are now reliably saved.
 - Fixed an error where attempting to upload logs could result in a PHP "Array to string conversion" This error occurred under certain conditions when processing log arrays for upload, and is now resolved. Log uploads now work without PHP warnings and return correct success responses.
 - File manager still used some hardcoded strings now shifted to translation api!
+- A lot of missing translation keys :<
 
 ## Removed
 
