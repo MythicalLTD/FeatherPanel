@@ -93,7 +93,6 @@
         "vue-toastification": "2.0.0-rc.5",
         "vue-tsc": "^3.1.1",
         "vue-turnstile": "^1.0.11",
-        "vue-web-terminal": "^3.4.1",
         "vue3-ace-editor": "^2.2.4",
         "vuedraggable": "^4.1.0"
     },

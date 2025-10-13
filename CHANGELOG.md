@@ -10,7 +10,6 @@
 - Added detection and UI support for server process/PID limit issues. When a server reaches the maximum allowed processes (PID limit), the panel now detects this from the server console output and prompts users with a dialog explaining the issue and suggestions for resolution. Users can also trigger a server restart directly from the dialog. This helps users and admins troubleshoot and resolve "process limit reached" errors more easily.
 - Added detection and UI support for Java version mismatch in the server console. When the server output indicates an incompatible or unsupported Java version, users are prompted with detailed guidance and suggestions to resolve the issue, including the ability to select compatible Docker images directly in the UI.
 
-
 ## Fixed
 - Fixed an issue where filtering logic for Locations, Realms, Nodes, Spells, and Allocations in the server creation/edit UI was showing items from other selections rather than only the relevant filtered subset. For example, selecting a Location would not correctly filter Nodes to just that Location, and Spells were not correctly associated with their Realms. Filtering now respects the current selection so only valid items are shown based on your previous choices on server create/edit pages.
 - Fixed a bug where the location page now correctly counts only the nodes owned by each Location, instead of showing all nodes.

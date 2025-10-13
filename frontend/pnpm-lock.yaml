@@ -131,9 +131,6 @@ importers:
       vue-turnstile:
         specifier: ^1.0.11
         version: 1.0.11(vue@3.5.22(typescript@5.9.3))
-      vue-web-terminal:
-        specifier: ^3.4.1
-        version: 3.4.1(typescript@5.9.3)
       vue3-ace-editor:
         specifier: ^2.2.4
         version: 2.2.4(ace-builds@1.43.3)(vue@3.5.22(typescript@5.9.3))
@@ -1151,9 +1148,6 @@ packages:
   class-variance-authority@0.7.1:
     resolution: {integrity: sha512-Ka+9Trutv7G8M6WT6SeiRWz792K5qEqIGEGzXKhAE6xOWAY6pPH8U+9IY3oCMv6kqTmLsv7Xh/2w2RigkePMsg==}
 
-  clipboard@2.0.11:
-    resolution: {integrity: sha512-C+0bbOqkezLIsmWSvlsXS0Q0bmkugu7jcfMIACB+RDEntIzQIkdr148we28AfSloQLRdZlYL/QYyrq05j/3Faw==}
-
   cliui@6.0.0:
     resolution: {integrity: sha512-t6wbgtoCXvAzst7QgXxJYqPt0usEfbgQdftEPbLL/cvv6HPE5VgvqCuAIDR0NgU52ds6rFwqrgakNLrHEjCbrQ==}
 
@@ -1228,9 +1222,6 @@ packages:
   delayed-stream@1.0.0:
     resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
     engines: {node: '>=0.4.0'}
-
-  delegate@3.2.0:
-    resolution: {integrity: sha512-IofjkYBZaZivn0V8nnsMJGBr4jVLxHDheKSW88PyxS5QC4Vo9ZbZVvhzlSxY87fVq3STR6r+4cGepyHkcWOQSw==}
 
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
@@ -1472,9 +1463,6 @@ packages:
   globals@16.4.0:
     resolution: {integrity: sha512-ob/2LcVVaVGCYN+r14cnwnoDPUufjiYgSqRhiFD0Q1iI4Odora5RE8Iv1D24hAz5oMophRGkGz+yuvQmmUMnMw==}
     engines: {node: '>=18'}
-
-  good-listener@1.2.2:
-    resolution: {integrity: sha512-goW1b+d9q/HIwbVYZzZ6SsTr4IgE+WA44A0GmPIQstuOrgsFcT7VEJ48nmr9GaRtNu0XTKacFLGnBPAM6Afouw==}
 
   gopd@1.2.0:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
@@ -1966,9 +1954,6 @@ packages:
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
 
-  select@1.1.2:
-    resolution: {integrity: sha512-OwpTSOfy6xSs1+pwcNrv0RBMOzI39Lp3qQKUTPVVPRjCdNa5JH/oPRiqsesIskK8TVgmRiHwO4KXlV2Li9dANA==}
-
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
     hasBin: true
@@ -2049,9 +2034,6 @@ packages:
   tar@7.5.1:
     resolution: {integrity: sha512-nlGpxf+hv0v7GkWBK2V9spgactGOp0qvfWRxUMjqHyzrt3SgwE48DIv/FhqPHJYLHpgW1opq3nERbz5Anq7n1g==}
     engines: {node: '>=18'}
-
-  tiny-emitter@2.1.0:
-    resolution: {integrity: sha512-NB6Dk1A9xgQPMoGqC5CVXn123gWyte215ONT5Pp5a0yt4nlEoO1ZWeCwpncaekPHXO60i47ihFnZPiRPjRMq4Q==}
 
   tinyglobby@0.2.15:
     resolution: {integrity: sha512-j2Zq4NyQYG5XMST4cbs02Ak8iJUdxRM0XI5QyxXuZOzKOINmWurp3smXu3y5wDcJrptwpSjgXHzIQxR0omXljQ==}
@@ -2232,11 +2214,6 @@ packages:
     peerDependencies:
       vue: ^3.0.0
 
-  vue-json-viewer@3.0.4:
-    resolution: {integrity: sha512-pnC080rTub6YjccthVSNQod2z9Sl5IUUq46srXtn6rxwhW8QM4rlYn+CTSLFKXWfw+N3xv77Cioxw7B4XUKIbQ==}
-    peerDependencies:
-      vue: ^3.2.2
-
   vue-qrcode@2.2.2:
     resolution: {integrity: sha512-SbrXq/mSb1g2tbDyXPe9gy9KiMYsvxWKRErlpij1BqiFoHwQckheZV63CTw6yRLLUVG2RXAVlX+APkpdCK7SQQ==}
     peerDependencies:
@@ -2263,9 +2240,6 @@ packages:
     resolution: {integrity: sha512-iaTBoZ5oUqtNRto6bmbn6FQvW0h/sK7mPUJc1Qn4em+cELXN59U2FQTcpWfKssV3OY6lEZzmCpcn/zrb7htK3A==}
     peerDependencies:
       vue: ^3.2.45
-
-  vue-web-terminal@3.4.1:
-    resolution: {integrity: sha512-+gU28qClqvIZQlzokcvDS2tbFpGfIJKIPc6dvLm2VYX110c6NOh7mV1YrcUESnaE5VQ9DgxqtIbr1YraEA/GRQ==}
 
   vue3-ace-editor@2.2.4:
     resolution: {integrity: sha512-FZkEyfpbH068BwjhMyNROxfEI8135Sc+x8ouxkMdCNkuj/Tuw83VP/gStFQqZHqljyX9/VfMTCdTqtOnJZGN8g==}
@@ -3356,12 +3330,6 @@ snapshots:
     dependencies:
       clsx: 2.1.1
 
-  clipboard@2.0.11:
-    dependencies:
-      good-listener: 1.2.2
-      select: 1.1.2
-      tiny-emitter: 2.1.0
-
   cliui@6.0.0:
     dependencies:
       string-width: 4.2.3
@@ -3418,8 +3386,6 @@ snapshots:
   defu@6.1.4: {}
 
   delayed-stream@1.0.0: {}
-
-  delegate@3.2.0: {}
 
   detect-libc@2.1.2: {}
 
@@ -3705,10 +3671,6 @@ snapshots:
   globals@14.0.0: {}
 
   globals@16.4.0: {}
-
-  good-listener@1.2.2:
-    dependencies:
-      delegate: 3.2.0
 
   gopd@1.2.0: {}
 
@@ -4116,8 +4078,6 @@ snapshots:
     dependencies:
       queue-microtask: 1.2.3
 
-  select@1.1.2: {}
-
   semver@6.3.1: {}
 
   semver@7.7.3: {}
@@ -4181,8 +4141,6 @@ snapshots:
       minipass: 7.1.2
       minizlib: 3.1.0
       yallist: 5.0.0
-
-  tiny-emitter@2.1.0: {}
 
   tinyglobby@0.2.15:
     dependencies:
@@ -4353,11 +4311,6 @@ snapshots:
       '@vue/devtools-api': 6.6.4
       vue: 3.5.22(typescript@5.9.3)
 
-  vue-json-viewer@3.0.4(vue@3.5.22(typescript@5.9.3)):
-    dependencies:
-      clipboard: 2.0.11
-      vue: 3.5.22(typescript@5.9.3)
-
   vue-qrcode@2.2.2(qrcode@1.5.4)(vue@3.5.22(typescript@5.9.3)):
     dependencies:
       qrcode: 1.5.4
@@ -4382,13 +4335,6 @@ snapshots:
   vue-turnstile@1.0.11(vue@3.5.22(typescript@5.9.3)):
     dependencies:
       vue: 3.5.22(typescript@5.9.3)
-
-  vue-web-terminal@3.4.1(typescript@5.9.3):
-    dependencies:
-      vue: 3.5.22(typescript@5.9.3)
-      vue-json-viewer: 3.0.4(vue@3.5.22(typescript@5.9.3))
-    transitivePeerDependencies:
-      - typescript
 
   vue3-ace-editor@2.2.4(ace-builds@1.43.3)(vue@3.5.22(typescript@5.9.3)):
     dependencies:

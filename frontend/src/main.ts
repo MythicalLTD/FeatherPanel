@@ -30,7 +30,6 @@ import 'vue-toastification/dist/index.css';
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import App from './App.vue';
-import { createTerminal } from 'vue-web-terminal';
 import router from './router';
 import { createI18n } from 'vue-i18n';
 import Toast from 'vue-toastification';
@@ -104,7 +103,6 @@ const registerPlugins = async () => {
         app.use(i18n);
         app.use(pinia);
         app.use(router);
-        app.use(createTerminal());
         app.use(Toast, {
             // Toast configuration options
             position: 'top-right',
