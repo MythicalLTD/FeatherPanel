@@ -473,6 +473,35 @@ class ServerUserController
 
         $server['variables'] = $mergedVariables;
 
+        // Start flatten specific fields if they are valid JSON, else leave as is (do not json_decode, just keep string if not)
+        $spell = &$server['spell'];
+        $fieldsToMaybeJsonDecode = [
+            'features',
+            'docker_images',
+            'file_denylist',
+            'update_url',
+            'config_files',
+            'config_startup',
+            'config_logs',
+        ];
+        foreach ($fieldsToMaybeJsonDecode as $field) {
+            if (isset($spell[$field]) && is_string($spell[$field])) {
+                // Only decode if it starts with [ or {, otherwise leave as-is
+                $trimmed = ltrim($spell[$field]);
+                if (
+                    ($trimmed[0] ?? '') === '{'
+                    || ($trimmed[0] ?? '') === '['
+                ) {
+                    $decoded = json_decode($spell[$field], true);
+                    // If it's valid JSON (returns array), use decoded. Else leave as-is
+                    if (is_array($decoded)) {
+                        $spell[$field] = $decoded;
+                    }
+                }
+            }
+        }
+        // End flatten
+
         unset(
             $server['node']['memory'],
             $server['node']['memory_overallocate'],

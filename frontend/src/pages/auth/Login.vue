@@ -185,7 +185,7 @@ async function onSubmit(e: Event) {
                     </Button>
                     <div v-if="error" class="text-center text-sm text-red-500">{{ error }}</div>
                     <div v-if="success" class="text-center text-sm text-green-500">{{ success }}</div>
-                    <div class="text-center text-sm">
+                    <div v-if="settingsStore.smtpEnabled" class="text-center text-sm">
                         <router-link to="/auth/forgot-password" class="underline underline-offset-4">
                             {{ $t('auth.forgotPassword') }}
                         </router-link>

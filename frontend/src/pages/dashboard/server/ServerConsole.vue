@@ -596,6 +596,41 @@
                 :show-network="customization.charts.showNetwork"
             />
         </div>
+
+        <!-- Feature Dialogs -->
+        <EulaFeature
+            v-if="server"
+            :server-uuid="server.uuidShort"
+            :is-open="showEulaDialog"
+            @close="showEulaDialog = false"
+            @accepted="handleEulaAccepted"
+        />
+
+        <JavaVersionFeature
+            v-if="server"
+            :server="server"
+            :is-open="showJavaVersionDialog"
+            :detected-issue="detectedJavaIssue"
+            @close="showJavaVersionDialog = false"
+            @updated="
+                () => {
+                    detectedFeatures.delete('java_version');
+                    fetchServer();
+                }
+            "
+        />
+
+        <PidLimitFeature
+            v-if="server"
+            :server="server"
+            :is-open="showPidLimitDialog"
+            @close="showPidLimitDialog = false"
+            @restarted="
+                () => {
+                    detectedFeatures.delete('pid_limit');
+                }
+            "
+        />
     </DashboardLayout>
 </template>
 
@@ -646,6 +681,10 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import EulaFeature from '@/components/server/features/EulaFeature.vue';
+import JavaVersionFeature from '@/components/server/features/JavaVersionFeature.vue';
+import PidLimitFeature from '@/components/server/features/PidLimitFeature.vue';
+import { detectFeature } from '@/components/server/features/featureDetector';
 
 // XTerm.js imports
 import { Terminal as XTerm } from '@xterm/xterm';
@@ -721,6 +760,13 @@ const filterForm = ref({
     highlightColor: '#ffff00',
     replacementText: '',
 });
+
+// Feature detection
+const showEulaDialog = ref(false);
+const showJavaVersionDialog = ref(false);
+const showPidLimitDialog = ref(false);
+const detectedFeatures = ref<Set<string>>(new Set());
+const detectedJavaIssue = ref<string>('');
 
 // Flag to track if user is navigating away
 const isNavigatingAway = ref(false);
@@ -972,12 +1018,52 @@ function applyConsoleFilters(data: string): string | null {
     return processedData;
 }
 
+// Detect features from console output
+function checkForFeatures(data: string): void {
+    if (!server.value?.spell?.features) return;
+
+    // Normalize features to always be an array
+    const features = Array.isArray(server.value.spell.features)
+        ? server.value.spell.features
+        : [server.value.spell.features];
+
+    const detection = detectFeature(data, features);
+
+    if (detection && detection.matched) {
+        // Prevent showing the same feature dialog multiple times
+        if (detectedFeatures.value.has(detection.feature)) {
+            return;
+        }
+
+        detectedFeatures.value.add(detection.feature);
+
+        // Handle specific features
+        switch (detection.feature) {
+            case 'eula':
+                showEulaDialog.value = true;
+                break;
+            case 'java_version':
+                detectedJavaIssue.value = detection.message || '';
+                showJavaVersionDialog.value = true;
+                break;
+            case 'pid_limit':
+                showPidLimitDialog.value = true;
+                break;
+            default:
+                break;
+        }
+    }
+}
+
 // Write to terminal with buffering for better performance
 function writeToTerminal(data: string): void {
     if (!terminal) return;
 
     // Replace brand names
     let processedData = replaceBrandNames(data);
+
+    // Check for features in the original output (before filtering)
+    checkForFeatures(processedData);
 
     // Apply console filters
     const filteredData = applyConsoleFilters(processedData);
@@ -1160,6 +1246,18 @@ function toggleFilter(filterId: string): void {
         filter.enabled = !filter.enabled;
         saveCustomization();
     }
+}
+
+// Handle EULA acceptance
+function handleEulaAccepted(): void {
+    // Clear the detected feature so it can be detected again if needed
+    detectedFeatures.value.delete('eula');
+
+    // Write a message to the terminal
+    writeToTerminalImmediate('\r\n\x1b[32m✅ EULA accepted! You can now start the server.\x1b[0m\r\n\r\n');
+
+    // Optionally restart the server automatically
+    toast.success(t('features.eula.eulaAccepted'));
 }
 
 // Customization functions
@@ -1818,4 +1916,17 @@ function requestServerLogs(): void {
         font-size: 12px;
     }
 }
+
+/* Make the xterm console more transparent */
+:deep(.xterm) {
+    background-color: rgba(20, 20, 20, 0.65) !important; /* more transparent */
+    backdrop-filter: blur(4px) saturate(140%);
+    /* Remove any box-shadow that may cause opacity issues */
+    box-shadow: none !important;
+}
+/* Also target the actual terminal viewport for transparency */
+:deep(.xterm-viewport) {
+    background-color: transparent !important;
+}
+
 </style>

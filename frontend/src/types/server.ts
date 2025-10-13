@@ -35,6 +35,7 @@ export interface ServerSpell {
     name: string;
     banner?: string;
     features?: string[] | string;
+    docker_images?: string | Record<string, string>;
 }
 
 export interface Server {

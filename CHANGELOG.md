@@ -6,6 +6,10 @@
 - Added ability to hard delete servers directly from the UI if the associated node is permanently offline or unreachable. This allows admins to remove orphaned servers from the database when normal deletion isn't possible.
 - Added a prominent warning dialog on the admin dashboard if the panel is still configured with the default `APP_URL`. This warning guides administrators to fix their application URL setting and provides clear instructions, as incorrect configuration can cause broken links, failed daemon communication, and security issues. The warning can be temporarily dismissed but will reappear until properly addressed.
 - Added new keyboard shortcuts to the file manager for quick access and navigation.
+- Added support for Minecraft EULA agreement in the server console. When a server requires EULA acceptance, users are prompted to accept the EULA directly in the UI. On acceptance, the panel writes the necessary `eula.txt` file and attempts to auto-start the server, improving the user experience for Minecraft server setup and compliance.
+- Added detection and UI support for server process/PID limit issues. When a server reaches the maximum allowed processes (PID limit), the panel now detects this from the server console output and prompts users with a dialog explaining the issue and suggestions for resolution. Users can also trigger a server restart directly from the dialog. This helps users and admins troubleshoot and resolve "process limit reached" errors more easily.
+- Added detection and UI support for Java version mismatch in the server console. When the server output indicates an incompatible or unsupported Java version, users are prompted with detailed guidance and suggestions to resolve the issue, including the ability to select compatible Docker images directly in the UI.
+
 
 ## Fixed
 - Fixed an issue where filtering logic for Locations, Realms, Nodes, Spells, and Allocations in the server creation/edit UI was showing items from other selections rather than only the relevant filtered subset. For example, selecting a Location would not correctly filter Nodes to just that Location, and Spells were not correctly associated with their Realms. Filtering now respects the current selection so only valid items are shown based on your previous choices on server create/edit pages.
@@ -30,6 +34,7 @@
 - Server Activity system has been completely rewritten for much faster performance, richer detail, and a greatly improved UI. The new system provides deeper insights into actions, features more detailed metadata, allows advanced filtering, and loads activity logs significantly faster. The updated frontend offers a more intuitive and visually appealing experience for reviewing and investigating server activity.
 - Expanded file manager functionality to include additional actions and greater flexibility. Users now have access to more file operations and improved tools, making file management easier and more powerful.
 - JWT token refresh now works seamlessly in the background and does not require a page reload.
+- Fixed an issue where the API logic for server info did not correctly parse and return some components. Now, all relevant components are properly parsed and included in the response payload.
 
 ## Updated
 

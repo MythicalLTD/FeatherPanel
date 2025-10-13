@@ -96,5 +96,6 @@ export const useSettingsStore = defineStore('settings', {
         legalPrivacy: (state) => state.settings?.legal_privacy || '/privacy',
         smtpEnabled: (state) => getBooleanSetting(state, 'smtp_enabled'),
         registrationEnabled: (state) => getBooleanSetting(state, 'registration_enabled'),
+        requireTwoFaAdmins: (state) => getBooleanSetting(state, 'require_two_fa_admins'),
     },
 });
