@@ -278,6 +278,56 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Console Filters -->
+                        <div class="space-y-4 lg:col-span-3">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium text-sm">{{ t('serverConsole.consoleFilters') }}</h4>
+                                    <p class="text-xs text-muted-foreground mt-1">
+                                        {{ t('serverConsole.consoleFiltersDescription') }}
+                                    </p>
+                                </div>
+                                <Button size="sm" @click="addFilter">
+                                    <Plus class="h-4 w-4 mr-2" />
+                                    {{ t('serverConsole.addFilterButton') }}
+                                </Button>
+                            </div>
+
+                            <!-- Filter List -->
+                            <div v-if="customization.filters.length > 0" class="space-y-2">
+                                <div
+                                    v-for="filter in customization.filters"
+                                    :key="filter.id"
+                                    class="flex items-center gap-3 p-3 border rounded-lg bg-card"
+                                >
+                                    <Switch :checked="filter.enabled" @update:checked="() => toggleFilter(filter.id)" />
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-medium text-sm">{{ filter.name }}</span>
+                                            <Badge variant="outline" class="text-xs">
+                                                {{ filter.type }}
+                                            </Badge>
+                                        </div>
+                                        <code class="text-xs text-muted-foreground break-all">{{
+                                            filter.pattern
+                                        }}</code>
+                                    </div>
+                                    <div class="flex gap-1">
+                                        <Button size="sm" variant="ghost" @click="editFilter(filter)">
+                                            <Pencil class="h-4 w-4" />
+                                        </Button>
+                                        <Button size="sm" variant="ghost" @click="deleteFilter(filter.id)">
+                                            <Trash2 class="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p v-else class="text-sm text-muted-foreground text-center py-4">
+                                {{ t('serverConsole.noFiltersConfigured') }}
+                            </p>
+                        </div>
                     </div>
 
                     <!-- Reset Button -->
@@ -298,6 +348,84 @@
                     </div>
                 </CardContent>
             </Card>
+
+            <!-- Filter Dialog -->
+            <Dialog :open="showFilterDialog" @update:open="(val) => (showFilterDialog = val)">
+                <DialogContent class="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>{{
+                            editingFilter ? t('serverConsole.editFilter') : t('serverConsole.addFilter')
+                        }}</DialogTitle>
+                    </DialogHeader>
+
+                    <div class="space-y-4 py-4">
+                        <div class="space-y-2">
+                            <Label for="filter-name">{{ t('serverConsole.filterName') }}</Label>
+                            <Input
+                                id="filter-name"
+                                v-model="filterForm.name"
+                                :placeholder="t('serverConsole.filterNamePlaceholder')"
+                            />
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="filter-pattern">{{ t('serverConsole.regexPattern') }}</Label>
+                            <Input
+                                id="filter-pattern"
+                                v-model="filterForm.pattern"
+                                :placeholder="t('serverConsole.regexPatternPlaceholder')"
+                                class="font-mono text-sm"
+                            />
+                            <p class="text-xs text-muted-foreground">{{ t('serverConsole.regexSyntaxHelp') }}</p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="filter-type">{{ t('serverConsole.filterType') }}</Label>
+                            <Select v-model="filterForm.type">
+                                <SelectTrigger>
+                                    <SelectValue :placeholder="filterForm.type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="remove">{{ t('serverConsole.filterTypeRemove') }}</SelectItem>
+                                    <SelectItem value="highlight">{{
+                                        t('serverConsole.filterTypeHighlight')
+                                    }}</SelectItem>
+                                    <SelectItem value="replace">{{ t('serverConsole.filterTypeReplace') }}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div v-if="filterForm.type === 'highlight'" class="space-y-2">
+                            <Label for="filter-color">{{ t('serverConsole.highlightColor') }}</Label>
+                            <div class="flex gap-2">
+                                <Input
+                                    id="filter-color"
+                                    v-model="filterForm.highlightColor"
+                                    type="color"
+                                    class="w-20 h-10"
+                                />
+                                <Input v-model="filterForm.highlightColor" placeholder="#ffff00" class="flex-1" />
+                            </div>
+                        </div>
+
+                        <div v-if="filterForm.type === 'replace'" class="space-y-2">
+                            <Label for="filter-replacement">{{ t('serverConsole.replacementTextLabel') }}</Label>
+                            <Input
+                                id="filter-replacement"
+                                v-model="filterForm.replacementText"
+                                :placeholder="t('serverConsole.replacementTextPlaceholder')"
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" @click="showFilterDialog = false">{{ t('common.cancel') }}</Button>
+                        <Button @click="saveFilter">{{
+                            editingFilter ? t('serverConsole.updateFilter') : t('serverConsole.addNewFilter')
+                        }}</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <!-- Header Section -->
             <ServerHeader
@@ -505,7 +633,7 @@ import ServerHeader from '@/components/server/ServerHeader.vue';
 import ServerInfoCards from '@/components/server/ServerInfoCards.vue';
 import ServerPerformance from '@/components/server/ServerPerformance.vue';
 import { Button } from '@/components/ui/button';
-import { Settings, RotateCcw, Save, Terminal, Trash2, Send, Upload } from 'lucide-vue-next';
+import { Settings, RotateCcw, Save, Terminal, Trash2, Send, Upload, Plus, Pencil } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import { useI18n } from 'vue-i18n';
@@ -515,6 +643,9 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 
 // XTerm.js imports
 import { Terminal as XTerm } from '@xterm/xterm';
@@ -546,6 +677,17 @@ const commandInput = ref('');
 const sendingCommand = ref(false);
 const uploading = ref(false);
 
+// Console filter types
+interface ConsoleFilter {
+    id: string;
+    name: string;
+    pattern: string;
+    type: 'remove' | 'highlight' | 'replace';
+    enabled: boolean;
+    highlightColor?: string;
+    replacementText?: string;
+}
+
 // Customization system
 const showCustomization = ref(false);
 const customization = ref({
@@ -566,6 +708,18 @@ const customization = ref({
         showNetwork: true,
         dataPoints: 60,
     },
+    filters: [] as ConsoleFilter[],
+});
+
+// Filter management
+const showFilterDialog = ref(false);
+const editingFilter = ref<ConsoleFilter | null>(null);
+const filterForm = ref({
+    name: '',
+    pattern: '',
+    type: 'remove' as 'remove' | 'highlight' | 'replace',
+    highlightColor: '#ffff00',
+    replacementText: '',
 });
 
 // Flag to track if user is navigating away
@@ -737,17 +891,17 @@ function initializeTerminal(): void {
         resizeObserver.observe(terminalContainer.value);
     }
 
-    // Write welcome message
-    writeToTerminal('\r\n\x1b[1;36mFeatherPanel Console\x1b[0m\r\n');
-    writeToTerminal('\x1b[90m' + '─'.repeat(50) + '\x1b[0m\r\n');
+    // Write a pretty console welcome message (no emojis)
+    writeToTerminal('\r\n\x1b[1;36m╔' + '═'.repeat(48) + '╗\x1b[0m\r\n');
+    writeToTerminal('\x1b[1;36m║       Welcome to the FeatherPanel Console      ║\x1b[0m\r\n');
+    writeToTerminal('\x1b[1;36m╚' + '═'.repeat(48) + '╝\x1b[0m\r\n');
+    writeToTerminal('\x1b[90m' + '─'.repeat(52) + '\x1b[0m\r\n');
 
     if (server.value?.status !== 'running') {
-        writeToTerminal(
-            '\r\n\x1b[33m⚠ Server is offline. Use the power buttons above to start the server.\x1b[0m\r\n',
-        );
-        writeToTerminal('\x1b[36m¶ Server status: offline\x1b[0m\r\n\r\n');
+        writeToTerminal('\r\n\x1b[33mServer is offline. Use the power buttons above to start the server.\x1b[0m\r\n');
+        writeToTerminal('\x1b[36mServer status: offline\x1b[0m\r\n\r\n');
     } else {
-        writeToTerminal('\x1b[36m¶ Server status: ' + server.value.status + '\x1b[0m\r\n\r\n');
+        writeToTerminal('\x1b[36mServer status: ' + server.value.status + '\x1b[0m\r\n\r\n');
     }
 }
 
@@ -785,12 +939,53 @@ function flushWriteBuffer(): void {
     writeTimeout = null;
 }
 
+// Apply console filters to output
+function applyConsoleFilters(data: string): string | null {
+    let processedData = data;
+
+    for (const filter of customization.value.filters) {
+        if (!filter.enabled) continue;
+
+        try {
+            const regex = new RegExp(filter.pattern, 'gi');
+
+            if (filter.type === 'remove') {
+                // If pattern matches, return null to skip this line
+                if (regex.test(processedData)) {
+                    return null;
+                }
+            } else if (filter.type === 'highlight') {
+                // Highlight matching text with ANSI color codes
+                // Convert hex to ANSI color (simplified - using yellow for highlights)
+                const ansiColor = '\x1b[43m\x1b[30m'; // Yellow background, black text
+                const ansiReset = '\x1b[0m';
+                processedData = processedData.replace(regex, (match) => `${ansiColor}${match}${ansiReset}`);
+            } else if (filter.type === 'replace') {
+                // Replace matching text
+                processedData = processedData.replace(regex, filter.replacementText || '');
+            }
+        } catch (error) {
+            console.warn(`Invalid regex pattern in filter "${filter.name}":`, error);
+        }
+    }
+
+    return processedData;
+}
+
 // Write to terminal with buffering for better performance
 function writeToTerminal(data: string): void {
     if (!terminal) return;
 
     // Replace brand names
-    const processedData = replaceBrandNames(data);
+    let processedData = replaceBrandNames(data);
+
+    // Apply console filters
+    const filteredData = applyConsoleFilters(processedData);
+    if (filteredData === null) {
+        // Output was filtered out - don't write to terminal
+        return;
+    }
+    processedData = filteredData;
 
     // Ensure proper line endings for terminal
     // Replace \n with \r\n for proper terminal display
@@ -879,6 +1074,94 @@ function applyTerminalSettings(): void {
     }
 }
 
+// Filter management functions
+function addFilter(): void {
+    editingFilter.value = null;
+    filterForm.value = {
+        name: '',
+        pattern: '',
+        type: 'remove',
+        highlightColor: '#ffff00',
+        replacementText: '',
+    };
+    showFilterDialog.value = true;
+}
+
+function editFilter(filter: ConsoleFilter): void {
+    editingFilter.value = filter;
+    filterForm.value = {
+        name: filter.name,
+        pattern: filter.pattern,
+        type: filter.type,
+        highlightColor: filter.highlightColor || '#ffff00',
+        replacementText: filter.replacementText || '',
+    };
+    showFilterDialog.value = true;
+}
+
+function saveFilter(): void {
+    if (!filterForm.value.name || !filterForm.value.pattern) {
+        toast.error(t('serverConsole.filterMissingFields'));
+        return;
+    }
+
+    // Test regex validity
+    try {
+        new RegExp(filterForm.value.pattern);
+    } catch {
+        toast.error(t('serverConsole.invalidRegexPattern'));
+        return;
+    }
+
+    if (editingFilter.value) {
+        // Update existing filter
+        const index = customization.value.filters.findIndex((f) => f.id === editingFilter.value?.id);
+        if (index !== -1) {
+            const existingFilter = customization.value.filters[index];
+            if (existingFilter) {
+                customization.value.filters[index] = {
+                    id: existingFilter.id,
+                    enabled: existingFilter.enabled,
+                    name: filterForm.value.name,
+                    pattern: filterForm.value.pattern,
+                    type: filterForm.value.type,
+                    highlightColor: filterForm.value.highlightColor,
+                    replacementText: filterForm.value.replacementText,
+                };
+            }
+        }
+    } else {
+        // Add new filter
+        customization.value.filters.push({
+            id: Date.now().toString(),
+            name: filterForm.value.name,
+            pattern: filterForm.value.pattern,
+            type: filterForm.value.type,
+            enabled: true,
+            highlightColor: filterForm.value.highlightColor,
+            replacementText: filterForm.value.replacementText,
+        });
+    }
+
+    showFilterDialog.value = false;
+    saveCustomization();
+    toast.success(editingFilter.value ? t('serverConsole.filterUpdated') : t('serverConsole.filterAdded'));
+}
+
+function deleteFilter(filterId: string): void {
+    customization.value.filters = customization.value.filters.filter((f) => f.id !== filterId);
+    saveCustomization();
+    toast.success(t('serverConsole.filterDeleted'));
+}
+
+function toggleFilter(filterId: string): void {
+    const filter = customization.value.filters.find((f) => f.id === filterId);
+    if (filter) {
+        filter.enabled = !filter.enabled;
+        saveCustomization();
+    }
+}
+
 // Customization functions
 async function saveCustomization(): Promise<void> {
     try {
@@ -886,6 +1169,7 @@ async function saveCustomization(): Promise<void> {
             components: customization.value.components,
             terminal: customization.value.terminal,
             charts: customization.value.charts,
+            filters: customization.value.filters,
         };
 
         localStorage.setItem('featherpanel-console-customization', JSON.stringify(customizationData));
@@ -911,6 +1195,7 @@ async function loadCustomization(): Promise<void> {
                     components: Record<string, boolean>;
                     terminal: Record<string, unknown>;
                     charts: Record<string, unknown>;
+                    filters?: ConsoleFilter[];
                 };
 
                 customization.value = {
@@ -920,6 +1205,7 @@ async function loadCustomization(): Promise<void> {
                         ...typedParsed.terminal,
                     },
                     charts: { ...customization.value.charts, ...typedParsed.charts },
+                    filters: typedParsed.filters || [],
                 };
             }
         }
@@ -947,6 +1233,7 @@ async function resetCustomization(): Promise<void> {
             showNetwork: true,
             dataPoints: 60,
         },
+        filters: [],
     };
     await saveCustomization();
     applyTerminalSettings();

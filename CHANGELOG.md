@@ -19,14 +19,17 @@
 - Fixed an issue where updating user passwords sometimes failed silently and did not actually update the password as expected. Password changes in the UI and API are now reliably saved.
 - Fixed an error where attempting to upload logs could result in a PHP "Array to string conversion" This error occurred under certain conditions when processing log arrays for upload, and is now resolved. Log uploads now work without PHP warnings and return correct success responses.
 - File manager still used some hardcoded strings now shifted to translation api!
-- A lot of missing translation keys :<
+- Filled in many previously missing translation keys to improve localization and provide a more consistent multilingual experience.
+- Console filters are back so you can 
 
 ## Removed
+- Removed deprecated legacy addons that were no longer necessary or compatible with the current system.
 
 ## Improved
 - Added persistent list view mode: when users switch between list and other views, their choice is now remembered and automatically restored next time they visit.
 - Server Activity system has been completely rewritten for much faster performance, richer detail, and a greatly improved UI. The new system provides deeper insights into actions, features more detailed metadata, allows advanced filtering, and loads activity logs significantly faster. The updated frontend offers a more intuitive and visually appealing experience for reviewing and investigating server activity.
 - Expanded file manager functionality to include additional actions and greater flexibility. Users now have access to more file operations and improved tools, making file management easier and more powerful.
+- JWT token refresh now works seamlessly in the background and does not require a page reload.
 
 ## Updated
 
