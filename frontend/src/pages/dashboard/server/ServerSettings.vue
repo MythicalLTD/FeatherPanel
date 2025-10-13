@@ -181,7 +181,7 @@
                                         variant="ghost"
                                         size="sm"
                                         class="h-8 w-8 p-0 flex-shrink-0"
-                                        @click="copyToClipboard('Use your panel login password')"
+                                        @click="copyToClipboard(t('serverSettings.usePanelPassword'))"
                                     >
                                         <Copy class="h-3 w-3 sm:h-4 sm:w-4" />
                                     </Button>

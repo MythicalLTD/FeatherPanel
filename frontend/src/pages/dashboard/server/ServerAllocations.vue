@@ -68,21 +68,21 @@
                                         <span class="hidden sm:inline">{{
                                             t('serverAllocations.autoAllocateDescription')
                                         }}</span>
-                                        <span class="sm:hidden">Auto-assign available allocation</span>
+                                        <span class="sm:hidden">{{ t('serverAllocations.autoAllocateShort') }}</span>
                                     </li>
                                     <li>
                                         • <strong>{{ t('serverAllocations.setPrimary') }}:</strong>
                                         <span class="hidden sm:inline">{{
                                             t('serverAllocations.setPrimaryDescription')
                                         }}</span>
-                                        <span class="sm:hidden">Set as main connection</span>
+                                        <span class="sm:hidden">{{ t('serverAllocations.setPrimaryShort') }}</span>
                                     </li>
                                     <li>
                                         • <strong>{{ t('serverAllocations.delete') }}:</strong>
                                         <span class="hidden sm:inline">{{
                                             t('serverAllocations.deleteDescription')
                                         }}</span>
-                                        <span class="sm:hidden">Remove allocation</span>
+                                        <span class="sm:hidden">{{ t('serverAllocations.deleteShort') }}</span>
                                     </li>
                                 </ul>
                             </div>

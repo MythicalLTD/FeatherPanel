@@ -71,7 +71,7 @@
                             class="text-sm font-semibold px-3 py-1.5 rounded-full bg-gradient-to-r from-yellow-500/20 to-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/30 animate-pulse flex items-center gap-2"
                         >
                             <Upload class="h-3.5 w-3.5 animate-bounce" />
-                            Uploading...
+                            {{ t('serverFiles.uploadingStatus') }}
                         </span>
                         <span
                             class="text-sm font-semibold px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/20 to-primary/10 text-primary border border-primary/20"
@@ -201,9 +201,9 @@
                                     <Download class="h-4 w-4 text-blue-600 dark:text-blue-400 animate-bounce" />
                                 </div>
                                 <div>
-                                    <h3 class="text-sm font-semibold">Active Downloads</h3>
+                                    <h3 class="text-sm font-semibold">{{ t('serverFiles.activeDownloads') }}</h3>
                                     <p class="text-xs text-muted-foreground">
-                                        {{ activeDownloads.length }} download(s) in progress
+                                        {{ t('serverFiles.downloadsInProgress', { count: activeDownloads.length }) }}
                                     </p>
                                 </div>
                             </div>
@@ -220,7 +220,7 @@
                                 <div class="flex items-center gap-3 flex-1 min-w-0">
                                     <Download class="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                                     <div class="min-w-0 flex-1">
-                                        <p class="text-sm font-medium">File Download</p>
+                                        <p class="text-sm font-medium">{{ t('serverFiles.fileDownload') }}</p>
                                         <p class="text-xs text-muted-foreground truncate font-mono">
                                             {{ download.Identifier }}
                                         </p>
@@ -268,7 +268,7 @@
                                 <p class="text-sm font-semibold">
                                     {{ t('serverFiles.selectedFiles', { count: selectedFiles.length }) }}
                                 </p>
-                                <p class="text-xs text-muted-foreground">Choose an action below</p>
+                                <p class="text-xs text-muted-foreground">{{ t('serverFiles.chooseAction') }}</p>
                             </div>
                         </div>
                         <div class="flex flex-wrap gap-2">
@@ -281,6 +281,26 @@
                             >
                                 <Download class="h-4 w-4" />
                                 <span>{{ t('serverFiles.download') }}</span>
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                :disabled="loading"
+                                class="gap-2 hover:bg-primary/10 hover:text-primary transition-all"
+                                @click="showCopyDialog = true"
+                            >
+                                <Copy class="h-4 w-4" />
+                                <span>{{ t('serverFiles.copy') }}</span>
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                :disabled="loading"
+                                class="gap-2 hover:bg-primary/10 hover:text-primary transition-all"
+                                @click="showMoveDialog = true"
+                            >
+                                <FileEdit class="h-4 w-4" />
+                                <span>{{ t('serverFiles.move', { defaultValue: 'Move' }) }}</span>
                             </Button>
                             <Button
                                 variant="outline"
@@ -304,7 +324,7 @@
                             </Button>
                             <Button variant="ghost" size="sm" class="gap-2 hover:bg-background" @click="clearSelection">
                                 <X class="h-4 w-4" />
-                                <span>Clear</span>
+                                <span>{{ t('serverFiles.clear') }}</span>
                             </Button>
                         </div>
                     </div>
@@ -329,7 +349,7 @@
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent class="p-0">
+                <CardContent class="p-0 file-list-container" @click="handleEmptySpaceClick">
                     <div v-if="loading">
                         <!-- Skeleton Loader -->
                         <div class="divide-y">
@@ -370,17 +390,20 @@
                         </div>
                     </div>
 
-                    <div v-else-if="files.length === 0" class="flex flex-col items-center justify-center py-16">
+                    <div
+                        v-else-if="files.length === 0"
+                        class="flex flex-col items-center justify-center py-16 empty-space-click"
+                    >
                         <div class="p-4 rounded-full bg-muted/50 mb-4">
                             <FolderOpen class="h-12 w-12 text-muted-foreground" />
                         </div>
                         <p class="text-base font-medium text-muted-foreground">{{ t('serverFiles.emptyFolder') }}</p>
-                        <p class="text-sm text-muted-foreground mt-1">Create files or folders to get started</p>
+                        <p class="text-sm text-muted-foreground mt-1">{{ t('serverFiles.emptyFolderHint') }}</p>
                     </div>
 
                     <div v-else class="divide-y">
                         <!-- File List Header -->
-                        <div class="bg-muted/50 px-4 py-3">
+                        <div class="bg-muted/50 px-4 py-3 empty-space-click">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
                                     <!-- Custom Select All Checkbox -->
@@ -392,7 +415,7 @@
                                                 !allFilesSelected && !someFilesSelected && files.length > 0,
                                             'border-muted bg-muted cursor-not-allowed': files.length === 0,
                                         }"
-                                        @click="files.length > 0 && toggleSelectAll(!allFilesSelected)"
+                                        @click.stop="files.length > 0 && toggleSelectAll(!allFilesSelected)"
                                     >
                                         <!-- Full selection checkmark -->
                                         <svg
@@ -431,7 +454,7 @@
 
                         <!-- Go Up Directory -->
                         <div v-if="currentPath !== '/'" class="hover:bg-muted/30 transition-all cursor-pointer group">
-                            <div class="flex items-center gap-3 px-4 py-3" @click="navigateUp">
+                            <div class="flex items-center gap-3 px-4 py-3" @click.stop="navigateUp">
                                 <div class="w-5"></div>
                                 <div class="p-1.5 rounded-md bg-muted group-hover:bg-primary/10 transition-all">
                                     <FolderUp class="h-4 w-4 text-muted-foreground group-hover:text-primary" />
@@ -452,7 +475,7 @@
                                 <!-- Mobile Layout -->
                                 <div
                                     class="sm:hidden px-4 py-3 cursor-pointer"
-                                    @click="handleRowClick($event, file.name)"
+                                    @click.stop="handleRowClick($event, file)"
                                     @contextmenu.prevent="handleRightClick($event, file)"
                                 >
                                     <div class="flex items-start gap-3">
@@ -495,10 +518,7 @@
                                                 />
                                             </div>
                                             <div class="min-w-0 flex-1">
-                                                <div
-                                                    class="text-sm font-medium truncate cursor-pointer hover:text-primary transition-colors"
-                                                    @click.stop="handleFileClick(file)"
-                                                >
+                                                <div class="text-sm font-medium truncate">
                                                     <template
                                                         v-for="(seg, i) in getHighlightSegments(file.name)"
                                                         :key="i"
@@ -578,7 +598,7 @@
                                 <!-- Desktop Layout -->
                                 <div
                                     class="hidden sm:flex items-center px-4 py-3 cursor-pointer gap-6"
-                                    @click="handleRowClick($event, file.name)"
+                                    @click.stop="handleRowClick($event, file)"
                                     @contextmenu.prevent="handleRightClick($event, file)"
                                 >
                                     <div class="flex items-center gap-3 flex-1 min-w-0">
@@ -623,10 +643,7 @@
                                                 "
                                             />
                                         </div>
-                                        <span
-                                            class="text-sm font-medium truncate cursor-pointer hover:text-primary transition-colors"
-                                            @click.stop="handleFileClick(file)"
-                                        >
+                                        <span class="text-sm font-medium truncate">
                                             <template v-for="(seg, i) in getHighlightSegments(file.name)" :key="i">
                                                 <mark
                                                     v-if="seg.match"
@@ -921,8 +938,7 @@
                 <div class="space-y-4">
                     <div class="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
                         <p class="text-sm text-blue-600 dark:text-blue-400">
-                            💡 Download a file directly from a URL to your server. The file will be saved to the current
-                            directory.
+                            {{ t('serverFiles.pullFileHint') }}
                         </p>
                     </div>
                     <div class="space-y-2">
@@ -934,7 +950,7 @@
                             type="url"
                             @keyup.enter="pullUrl && pullFile()"
                         />
-                        <p class="text-xs text-muted-foreground">Enter the direct download URL of the file</p>
+                        <p class="text-xs text-muted-foreground">{{ t('serverFiles.fileUrlHint') }}</p>
                     </div>
                     <div class="space-y-2">
                         <Label for="pullFileName">
@@ -948,11 +964,11 @@
                             @keyup.enter="pullUrl && pullFile()"
                         />
                         <p class="text-xs text-muted-foreground">
-                            Leave empty to use the original filename from the URL
+                            {{ t('serverFiles.fileNameHint') }}
                         </p>
                     </div>
                     <div class="space-y-2">
-                        <Label class="text-sm font-medium">Current Directory</Label>
+                        <Label class="text-sm font-medium">{{ t('serverFiles.currentDirectory') }}</Label>
                         <div class="p-2 rounded-md bg-muted text-sm font-mono">
                             {{ currentPath }}
                         </div>
@@ -965,6 +981,132 @@
                     <Button :disabled="!pullUrl || pulling" class="w-full sm:w-auto" @click="pullFile">
                         <Download :class="['h-4 w-4 mr-2', pulling && 'animate-bounce']" />
                         {{ pulling ? t('serverFiles.pulling') : t('serverFiles.pull') }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <!-- Copy Dialog -->
+        <Dialog v-model:open="showCopyDialog">
+            <DialogContent class="mx-4 sm:mx-0 sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle class="flex items-center gap-2">
+                        <Copy class="h-5 w-5 text-primary" />
+                        {{ t('serverFiles.copyFiles', { defaultValue: 'Copy Files' }) }}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {{
+                            t('serverFiles.copyFilesDescription', {
+                                defaultValue: 'Copy the selected files to a new location.',
+                            })
+                        }}
+                    </DialogDescription>
+                </DialogHeader>
+                <div class="space-y-4">
+                    <div class="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                        <p class="text-sm text-blue-600 dark:text-blue-400">
+                            {{ t('serverFiles.copyingFiles', { count: selectedFiles.length }) }}
+                        </p>
+                    </div>
+                    <div class="space-y-2">
+                        <Label for="copyDestination"
+                            >{{ t('serverFiles.destination', { defaultValue: 'Destination Path' }) }} *</Label
+                        >
+                        <Input
+                            id="copyDestination"
+                            v-model="copyDestination"
+                            placeholder="/path/to/destination"
+                            @keyup.enter="copyDestination && copySelected()"
+                        />
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('serverFiles.enterCopyDestination') }}
+                        </p>
+                    </div>
+                    <div class="space-y-2">
+                        <Label class="text-sm font-medium">{{ t('serverFiles.currentDirectory') }}</Label>
+                        <div class="p-2 rounded-md bg-muted text-sm font-mono">
+                            {{ currentPath }}
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <Label class="text-sm font-medium">{{ t('serverFiles.selectedFilesLabel') }}</Label>
+                        <div class="max-h-32 overflow-y-auto p-2 rounded-md bg-muted text-sm">
+                            <div v-for="file in selectedFiles" :key="file" class="py-1 font-mono text-xs">
+                                {{ file }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <Button variant="outline" class="w-full sm:w-auto" @click="showCopyDialog = false">
+                        {{ t('common.cancel') }}
+                    </Button>
+                    <Button :disabled="!copyDestination || loading" class="w-full sm:w-auto" @click="copySelected">
+                        <Copy class="h-4 w-4 mr-2" />
+                        {{ t('serverFiles.copy', { defaultValue: 'Copy' }) }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <!-- Move Dialog -->
+        <Dialog v-model:open="showMoveDialog">
+            <DialogContent class="mx-4 sm:mx-0 sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle class="flex items-center gap-2">
+                        <FileEdit class="h-5 w-5 text-primary" />
+                        {{ t('serverFiles.moveFiles', { defaultValue: 'Move Files' }) }}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {{
+                            t('serverFiles.moveFilesDescription', {
+                                defaultValue: 'Move the selected files to a new location.',
+                            })
+                        }}
+                    </DialogDescription>
+                </DialogHeader>
+                <div class="space-y-4">
+                    <div class="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                        <p class="text-sm text-orange-600 dark:text-orange-400">
+                            {{ t('serverFiles.movingFilesFromCurrent', { count: selectedFiles.length }) }}
+                        </p>
+                    </div>
+                    <div class="space-y-2">
+                        <Label for="moveDestination"
+                            >{{ t('serverFiles.destination', { defaultValue: 'Destination Path' }) }} *</Label
+                        >
+                        <Input
+                            id="moveDestination"
+                            v-model="moveDestination"
+                            placeholder="/path/to/destination"
+                            @keyup.enter="moveDestination && moveSelected()"
+                        />
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('serverFiles.enterMoveDestinationHint') }}
+                        </p>
+                    </div>
+                    <div class="space-y-2">
+                        <Label class="text-sm font-medium">{{ t('serverFiles.currentDirectory') }}</Label>
+                        <div class="p-2 rounded-md bg-muted text-sm font-mono">
+                            {{ currentPath }}
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <Label class="text-sm font-medium">{{ t('serverFiles.selectedFilesLabel') }}</Label>
+                        <div class="max-h-32 overflow-y-auto p-2 rounded-md bg-muted text-sm">
+                            <div v-for="file in selectedFiles" :key="file" class="py-1 font-mono text-xs">
+                                {{ file }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <Button variant="outline" class="w-full sm:w-auto" @click="showMoveDialog = false">
+                        {{ t('common.cancel') }}
+                    </Button>
+                    <Button :disabled="!moveDestination || loading" class="w-full sm:w-auto" @click="moveSelected">
+                        <FileEdit class="h-4 w-4 mr-2" />
+                        {{ t('serverFiles.move', { defaultValue: 'Move' }) }}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -1054,6 +1196,194 @@
                 </div>
             </div>
         </Teleport>
+
+        <!-- Keyboard Shortcuts Help Panel (Desktop Only) -->
+        <div class="hidden lg:block fixed bottom-4 right-4 z-40">
+            <Transition
+                enter-active-class="transition-all duration-300 ease-out"
+                enter-from-class="opacity-0 translate-y-4"
+                enter-to-class="opacity-100 translate-y-0"
+                leave-active-class="transition-all duration-200 ease-in"
+                leave-from-class="opacity-100 translate-y-0"
+                leave-to-class="opacity-0 translate-y-4"
+            >
+                <Card
+                    v-if="showKeyboardShortcuts"
+                    class="w-[500px] max-w-[90vw] border-2 shadow-2xl bg-background/95 backdrop-blur-lg"
+                >
+                    <CardHeader class="border-b pb-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <CardTitle class="text-xl flex items-center gap-2">
+                                    <div class="p-2 rounded-lg bg-primary/10">
+                                        <Code class="h-5 w-5 text-primary" />
+                                    </div>
+                                    {{ t('serverFiles.shortcuts.title') }}
+                                </CardTitle>
+                                <CardDescription class="mt-1.5">
+                                    {{ t('serverFiles.shortcuts.description') }}
+                                </CardDescription>
+                            </div>
+                            <Button variant="ghost" size="sm" @click="showKeyboardShortcuts = false">
+                                <X class="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent class="pt-4 max-h-[60vh] overflow-y-auto">
+                        <div class="space-y-4">
+                            <!-- Selection Shortcuts -->
+                            <div>
+                                <h3 class="text-sm font-semibold mb-3 text-primary">
+                                    {{ t('serverFiles.shortcuts.selection') }}
+                                </h3>
+                                <div class="space-y-2">
+                                    <div
+                                        class="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors"
+                                    >
+                                        <span class="text-sm">{{ t('serverFiles.shortcuts.selectAll') }}</span>
+                                        <kbd
+                                            class="px-2 py-1 text-xs font-semibold bg-muted border border-border rounded-md"
+                                            >Ctrl + A</kbd
+                                        >
+                                    </div>
+                                    <div
+                                        class="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors"
+                                    >
+                                        <span class="text-sm">{{ t('serverFiles.shortcuts.multiSelect') }}</span>
+                                        <kbd
+                                            class="px-2 py-1 text-xs font-semibold bg-muted border border-border rounded-md"
+                                            >Ctrl + Click</kbd
+                                        >
+                                    </div>
+                                    <div
+                                        class="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors"
+                                    >
+                                        <span class="text-sm">{{ t('serverFiles.shortcuts.rangeSelect') }}</span>
+                                        <kbd
+                                            class="px-2 py-1 text-xs font-semibold bg-muted border border-border rounded-md"
+                                            >Shift + Click</kbd
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- File Operations -->
+                            <div>
+                                <h3 class="text-sm font-semibold mb-3 text-primary">
+                                    {{ t('serverFiles.shortcuts.operations') }}
+                                </h3>
+                                <div class="space-y-2">
+                                    <div
+                                        class="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors"
+                                    >
+                                        <span class="text-sm">{{ t('serverFiles.shortcuts.copyFiles') }}</span>
+                                        <kbd
+                                            class="px-2 py-1 text-xs font-semibold bg-muted border border-border rounded-md"
+                                            >Ctrl + C</kbd
+                                        >
+                                    </div>
+                                    <div
+                                        class="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors"
+                                    >
+                                        <span class="text-sm">{{ t('serverFiles.shortcuts.moveFiles') }}</span>
+                                        <kbd
+                                            class="px-2 py-1 text-xs font-semibold bg-muted border border-border rounded-md"
+                                            >Ctrl + X</kbd
+                                        >
+                                    </div>
+                                    <div
+                                        class="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors"
+                                    >
+                                        <span class="text-sm">{{ t('serverFiles.shortcuts.deleteFiles') }}</span>
+                                        <kbd
+                                            class="px-2 py-1 text-xs font-semibold bg-muted border border-border rounded-md"
+                                            >Ctrl + D</kbd
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Navigation -->
+                            <div>
+                                <h3 class="text-sm font-semibold mb-3 text-primary">
+                                    {{ t('serverFiles.shortcuts.navigation') }}
+                                </h3>
+                                <div class="space-y-2">
+                                    <div
+                                        class="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors"
+                                    >
+                                        <span class="text-sm">{{ t('serverFiles.shortcuts.focusSearch') }}</span>
+                                        <div class="flex gap-2">
+                                            <kbd
+                                                class="px-2 py-1 text-xs font-semibold bg-muted border border-border rounded-md"
+                                                >Ctrl + F</kbd
+                                            >
+                                            <span class="text-muted-foreground">{{ t('serverFiles.or') }}</span>
+                                            <kbd
+                                                class="px-2 py-1 text-xs font-semibold bg-muted border border-border rounded-md"
+                                                >/</kbd
+                                            >
+                                        </div>
+                                    </div>
+                                    <div
+                                        class="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors"
+                                    >
+                                        <span class="text-sm">{{ t('serverFiles.shortcuts.closeDialogs') }}</span>
+                                        <kbd
+                                            class="px-2 py-1 text-xs font-semibold bg-muted border border-border rounded-md"
+                                            >ESC</kbd
+                                        >
+                                    </div>
+                                    <div
+                                        class="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors"
+                                    >
+                                        <span class="text-sm">{{ t('serverFiles.shortcuts.toggleHelp') }}</span>
+                                        <kbd
+                                            class="px-2 py-1 text-xs font-semibold bg-muted border border-border rounded-md"
+                                            >?</kbd
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pro Tips -->
+                            <div class="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                                <h3 class="text-sm font-semibold mb-2 text-blue-600 dark:text-blue-400">
+                                    💡 {{ t('serverFiles.shortcuts.tips') }}
+                                </h3>
+                                <ul class="space-y-1.5 text-xs text-blue-600/80 dark:text-blue-400/80">
+                                    <li>• {{ t('serverFiles.shortcuts.tip1') }}</li>
+                                    <li>• {{ t('serverFiles.shortcuts.tip2') }}</li>
+                                    <li>• {{ t('serverFiles.shortcuts.tip3') }}</li>
+                                    <li>• {{ t('serverFiles.shortcuts.tip4') }}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </Transition>
+
+            <!-- Toggle Button -->
+            <Button
+                variant="outline"
+                size="sm"
+                class="shadow-lg border-2 group hover:border-primary transition-all"
+                @click="showKeyboardShortcuts = !showKeyboardShortcuts"
+            >
+                <Code class="h-4 w-4 mr-2 group-hover:text-primary transition-colors" />
+                <span>
+                    {{
+                        showKeyboardShortcuts
+                            ? t('serverFiles.hideKeyboardShortcuts')
+                            : t('serverFiles.showKeyboardShortcuts')
+                    }}
+                </span>
+                <kbd
+                    class="ml-2 px-1.5 py-0.5 text-xs font-semibold bg-muted border border-border rounded group-hover:bg-primary/10 group-hover:border-primary/50 transition-all"
+                    >?</kbd
+                >
+            </Button>
+        </div>
     </DashboardLayout>
 </template>
 
@@ -1171,6 +1501,8 @@ const showCreateFolderDialog = ref(false);
 const showRenameDialog = ref(false);
 const showPermissionsDialog = ref(false);
 const showPullDialog = ref(false);
+const showCopyDialog = ref(false);
+const showMoveDialog = ref(false);
 
 // Drag and drop state
 const isDraggingOver = ref(false);
@@ -1191,6 +1523,14 @@ const permissionsFile = ref<FileItem | null>(null);
 const newPermissions = ref('');
 const pullUrl = ref('');
 const pullFileName = ref('');
+const copyDestination = ref('');
+const moveDestination = ref('');
+
+// For range selection with Shift+Click
+const lastSelectedIndex = ref<number>(-1);
+
+// Keyboard shortcuts panel
+const showKeyboardShortcuts = ref(false);
 
 // File input ref
 const fileInput = ref<HTMLInputElement>();
@@ -1240,13 +1580,32 @@ const someFilesSelected = computed(() => {
     return selectedFiles.value.length > 0 && selectedFiles.value.length < filteredFiles.value.length;
 });
 
-// Row click handler (Ctrl+Click to toggle selection)
-const handleRowClick = (event: MouseEvent, fileName: string) => {
-    if (event.ctrlKey || event.metaKey) {
+// Row click handler (Ctrl+Click to toggle selection, Shift+Click for range selection, regular click to navigate)
+const handleRowClick = (event: MouseEvent, file: FileItem) => {
+    const currentIndex = filteredFiles.value.findIndex((f) => f.name === file.name);
+
+    if (event.shiftKey && lastSelectedIndex.value !== -1) {
+        // Shift+Click: select range from last selected to current
+        event.preventDefault();
+        const start = Math.min(lastSelectedIndex.value, currentIndex);
+        const end = Math.max(lastSelectedIndex.value, currentIndex);
+        const rangeFiles = filteredFiles.value.slice(start, end + 1).map((f) => f.name);
+
+        // Add all files in range to selection (don't deselect existing)
+        rangeFiles.forEach((fileName) => {
+            if (!selectedFiles.value.includes(fileName)) {
+                selectedFiles.value.push(fileName);
+            }
+        });
+    } else if (event.ctrlKey || event.metaKey) {
         // Ctrl/Cmd+Click: toggle selection
-        toggleFileSelection(fileName);
+        toggleFileSelection(file.name);
+        lastSelectedIndex.value = currentIndex;
+    } else {
+        // Regular click: navigate to folder or open file
+        handleFileClick(file);
+        lastSelectedIndex.value = -1; // Reset range selection
     }
-    // Otherwise, do nothing (let the file name click handler do its job)
 };
 
 // Right-click handler (context menu)
@@ -1264,6 +1623,14 @@ const closeContextMenu = () => {
 
 // Event handlers for drag and drop
 const handleKeyboard = (e: KeyboardEvent) => {
+    // Check if the active element is an input, textarea, or contenteditable
+    const target = e.target as HTMLElement;
+    const isInputField =
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable ||
+        target.getAttribute('contenteditable') === 'true';
+
     // ESC key to close drag overlay or context menu
     if (e.key === 'Escape') {
         if (isDraggingOver.value) {
@@ -1274,10 +1641,49 @@ const handleKeyboard = (e: KeyboardEvent) => {
         }
     }
 
-    // Forward slash (/) to focus search
-    if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    // Forward slash (/) to focus search (only if not in an input field)
+    if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && !isInputField) {
         e.preventDefault();
         searchInput.value?.focus();
+    }
+
+    // Ctrl+F - Focus search (only if not already in search input)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        searchInput.value?.focus();
+    }
+
+    // Ctrl+A - Toggle select all files (only if not in an input field)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'a' && !isInputField) {
+        e.preventDefault();
+        // Toggle: if all selected, deselect all; otherwise select all
+        toggleSelectAll(!allFilesSelected.value);
+    }
+
+    // Ctrl+D - Delete selected files (only if not in an input field)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'd' && !isInputField) {
+        e.preventDefault();
+        if (selectedFiles.value.length > 0) {
+            deleteSelected();
+        }
+    }
+
+    // Ctrl+C - Copy selected files (only if not in an input field)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'c' && selectedFiles.value.length > 0 && !isInputField) {
+        e.preventDefault();
+        showCopyDialog.value = true;
+    }
+
+    // Ctrl+X - Move selected files (only if not in an input field)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'x' && selectedFiles.value.length > 0 && !isInputField) {
+        e.preventDefault();
+        showMoveDialog.value = true;
+    }
+
+    // ? - Toggle keyboard shortcuts panel (only if not in an input field)
+    if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey && !isInputField) {
+        e.preventDefault();
+        showKeyboardShortcuts.value = !showKeyboardShortcuts.value;
     }
 };
 
@@ -1316,16 +1722,16 @@ const cancelDownload = async (downloadId: string) => {
         );
 
         if (response.data && response.data.success) {
-            toast.success('Download cancelled successfully');
+            toast.success(t('serverFiles.downloadCancelledSuccess'));
             await refreshDownloads();
             await refreshFiles();
         } else {
-            toast.error(response.data?.message || 'Failed to cancel download');
+            toast.error(response.data?.message || t('serverFiles.downloadCancelledError'));
         }
     } catch (error) {
         console.error('Error cancelling download:', error);
         const err = error as { response?: { data?: { message?: string } } };
-        toast.error(err.response?.data?.message || 'Failed to cancel download');
+        toast.error(err.response?.data?.message || t('serverFiles.downloadCancelledError'));
     }
 };
 
@@ -1455,6 +1861,12 @@ const clearSelection = () => {
     selectedFiles.value = [];
 };
 
+// Handle click on empty space to deselect
+const handleEmptySpaceClick = () => {
+    // Clear selection when clicking on card content (will be stopped by file rows)
+    clearSelection();
+};
+
 const clearSearch = () => {
     searchQuery.value = '';
     if (searchInput.value) {
@@ -1480,6 +1892,99 @@ const copySingle = async (fileName: string) => {
         console.error('Error copying file:', error);
         const err = error as { response?: { data?: { message?: string } } };
         toast.error(err.response?.data?.message || t('serverFiles.copyError'));
+    }
+};
+
+// Copy selected files
+const copySelected = async () => {
+    if (selectedFiles.value.length === 0) {
+        toast.error(t('serverFiles.noFilesSelected'));
+        return;
+    }
+
+    if (!copyDestination.value) {
+        toast.error(t('serverFiles.destinationRequired'));
+        return;
+    }
+
+    loading.value = true;
+    try {
+        const base = currentPath.value === '/' ? '' : currentPath.value.replace(/^\//, '');
+        const filePaths = selectedFiles.value.map((fileName) =>
+            base ? `${base}/${fileName}`.replace(/\/+/g, '/') : fileName,
+        );
+
+        const response = await axios.post(`/api/user/servers/${route.params.uuidShort}/copy-files`, {
+            location: copyDestination.value,
+            files: filePaths,
+        });
+
+        if (response.data.success) {
+            toast.success(t('serverFiles.filesCopied', { count: selectedFiles.value.length }));
+            showCopyDialog.value = false;
+            copyDestination.value = '';
+            clearSelection();
+            refreshFiles();
+        } else {
+            toast.error(response.data.message || t('serverFiles.copyError'));
+        }
+    } catch (error) {
+        console.error('Error copying files:', error);
+        const err = error as { response?: { data?: { message?: string } } };
+        toast.error(err.response?.data?.message || t('serverFiles.copyError'));
+    } finally {
+        loading.value = false;
+    }
+};
+
+// Move selected files
+const moveSelected = async () => {
+    if (selectedFiles.value.length === 0) {
+        toast.error(t('serverFiles.noFilesSelected'));
+        return;
+    }
+
+    if (!moveDestination.value) {
+        toast.error(t('serverFiles.destinationRequired'));
+        return;
+    }
+
+    loading.value = true;
+    try {
+        const renamePayload = selectedFiles.value.map((fileName) => ({
+            from: fileName,
+            to: moveDestination.value.endsWith('/')
+                ? moveDestination.value + fileName
+                : `${moveDestination.value}/${fileName}`,
+        }));
+
+        const response = await axios.put(`/api/user/servers/${route.params.uuidShort}/rename`, {
+            root: currentPath.value,
+            files: renamePayload,
+        });
+
+        if (response.data.success) {
+            toast.success(
+                t('serverFiles.filesMoved', {
+                    count: selectedFiles.value.length,
+                    defaultValue: `${selectedFiles.value.length} file(s) moved successfully`,
+                }),
+            );
+            showMoveDialog.value = false;
+            moveDestination.value = '';
+            clearSelection();
+            refreshFiles();
+        } else {
+            toast.error(response.data.message || t('serverFiles.moveError', { defaultValue: 'Failed to move files' }));
+        }
+    } catch (error) {
+        console.error('Error moving files:', error);
+        const err = error as { response?: { data?: { message?: string } } };
+        toast.error(
+            err.response?.data?.message || t('serverFiles.moveError', { defaultValue: 'Failed to move files' }),
+        );
+    } finally {
+        loading.value = false;
     }
 };
 
@@ -2155,7 +2660,7 @@ const confirmPermissions = async () => {
 
 const pullFile = async () => {
     if (!pullUrl.value) {
-        toast.warning('Please enter a valid URL');
+        toast.warning(t('serverFiles.pullUrlRequired'));
         return;
     }
 

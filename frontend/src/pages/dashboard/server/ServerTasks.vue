@@ -223,7 +223,7 @@
                         </Label>
                         <Select v-model="createForm.action" required>
                             <SelectTrigger class="w-full text-sm">
-                                <SelectValue placeholder="Select action type" />
+                                <SelectValue :placeholder="t('serverTasks.selectActionType')" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="power">{{ t('serverTasks.actionPower') }}</SelectItem>
@@ -246,13 +246,13 @@
                         <div v-if="createForm.action === 'power'">
                             <Select v-model="createForm.payload" required>
                                 <SelectTrigger class="w-full text-sm">
-                                    <SelectValue placeholder="Select power action" />
+                                    <SelectValue :placeholder="t('serverTasks.selectPowerAction')" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="start">Start Server</SelectItem>
-                                    <SelectItem value="stop">Stop Server</SelectItem>
-                                    <SelectItem value="restart">Restart Server</SelectItem>
-                                    <SelectItem value="kill">Kill Server</SelectItem>
+                                    <SelectItem value="start">{{ t('serverTasks.startServer') }}</SelectItem>
+                                    <SelectItem value="stop">{{ t('serverTasks.stopServer') }}</SelectItem>
+                                    <SelectItem value="restart">{{ t('serverTasks.restartServer') }}</SelectItem>
+                                    <SelectItem value="kill">{{ t('serverTasks.killServer') }}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -262,7 +262,7 @@
                             <Input
                                 id="task-payload"
                                 v-model="createForm.payload"
-                                placeholder="*.log,temp/*,cache/* (optional ignored files)"
+                                :placeholder="t('serverTasks.backupIgnoredFilesPlaceholder')"
                                 class="text-sm"
                             />
                         </div>
@@ -272,7 +272,7 @@
                             <Input
                                 id="task-payload"
                                 v-model="createForm.payload"
-                                placeholder="Enter command to execute"
+                                :placeholder="t('serverTasks.enterCommand')"
                                 class="text-sm"
                                 required
                             />
@@ -320,7 +320,7 @@
                         </Label>
                         <Select v-model="createForm.continue_on_failure">
                             <SelectTrigger class="w-full text-sm">
-                                <SelectValue placeholder="Select option" />
+                                <SelectValue :placeholder="t('serverTasks.selectOption')" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="0">{{ t('serverTasks.stopOnFailure') }}</SelectItem>
@@ -370,7 +370,7 @@
                         </Label>
                         <Select v-model="editForm.action" required>
                             <SelectTrigger class="w-full text-sm">
-                                <SelectValue placeholder="Select action type" />
+                                <SelectValue :placeholder="t('serverTasks.selectActionType')" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="power">{{ t('serverTasks.actionPower') }}</SelectItem>
@@ -410,13 +410,13 @@
                         <div v-if="editForm.action === 'power'">
                             <Select v-model="editForm.payload" required>
                                 <SelectTrigger class="w-full text-sm">
-                                    <SelectValue placeholder="Select power action" />
+                                    <SelectValue :placeholder="t('serverTasks.selectPowerAction')" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="start">Start Server</SelectItem>
-                                    <SelectItem value="stop">Stop Server</SelectItem>
-                                    <SelectItem value="restart">Restart Server</SelectItem>
-                                    <SelectItem value="kill">Kill Server</SelectItem>
+                                    <SelectItem value="start">{{ t('serverTasks.startServer') }}</SelectItem>
+                                    <SelectItem value="stop">{{ t('serverTasks.stopServer') }}</SelectItem>
+                                    <SelectItem value="restart">{{ t('serverTasks.restartServer') }}</SelectItem>
+                                    <SelectItem value="kill">{{ t('serverTasks.killServer') }}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -426,7 +426,7 @@
                             <Input
                                 id="edit-task-payload"
                                 v-model="editForm.payload"
-                                placeholder="*.log,temp/*,cache/* (optional ignored files)"
+                                :placeholder="t('serverTasks.backupIgnoredFilesPlaceholder')"
                                 class="text-sm"
                             />
                         </div>
@@ -436,7 +436,7 @@
                             <Input
                                 id="edit-task-payload"
                                 v-model="editForm.payload"
-                                placeholder="Enter command to execute"
+                                :placeholder="t('serverTasks.enterCommand')"
                                 class="text-sm"
                                 required
                             />
@@ -481,7 +481,7 @@
                         </Label>
                         <Select v-model="editForm.continue_on_failure">
                             <SelectTrigger class="w-full text-sm">
-                                <SelectValue placeholder="Select option" />
+                                <SelectValue :placeholder="t('serverTasks.selectOption')" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="0">{{ t('serverTasks.stopOnFailure') }}</SelectItem>
@@ -725,26 +725,26 @@ function getActionVariant(action: string): 'default' | 'secondary' | 'destructiv
 function getPayloadPlaceholder(action: string): string {
     switch (action) {
         case 'power':
-            return 'Select power action from dropdown';
+            return t('serverTasks.selectPowerActionFromDropdown');
         case 'backup':
-            return '*.log,temp/*,cache/* (optional ignored files)';
+            return t('serverTasks.backupIgnoredFilesPlaceholder');
         case 'command':
-            return 'Enter command to execute';
+            return t('serverTasks.enterCommand');
         default:
-            return 'payload value';
+            return t('serverTasks.payloadValue');
     }
 }
 
 function getPayloadHelp(action: string): string {
     switch (action) {
         case 'power':
-            return 'Select the power action to perform on the server';
+            return t('serverTasks.selectPowerActionHelp');
         case 'backup':
-            return 'Optional comma-separated file patterns to ignore during backup (e.g., *.log,temp/*,cache/*)';
+            return t('serverTasks.backupIgnoredFilesHelp');
         case 'command':
-            return 'Command to execute on the server';
+            return t('serverTasks.commandHelp');
         default:
-            return 'Additional data for the task';
+            return t('serverTasks.additionalDataHelp');
     }
 }
 

@@ -19,7 +19,7 @@
                         <span
                             class="text-sm font-semibold px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/20 to-primary/10 text-primary border border-primary/20"
                         >
-                            {{ pagination.total_records }} events
+                            {{ pagination.total_records }} {{ t('serverActivities.events') }}
                         </span>
                         <Button variant="outline" size="sm" :disabled="loading" @click="refresh">
                             <RefreshCw :class="['h-4 w-4 mr-2', loading && 'animate-spin']" />
@@ -47,24 +47,32 @@
                             <div class="flex gap-2">
                                 <Select v-model="selectedEventFilter" @update:model-value="handleFilterChange">
                                     <SelectTrigger class="w-48 h-11 border-2">
-                                        <SelectValue placeholder="Filter by event" />
+                                        <SelectValue :placeholder="t('serverActivities.filterByEvent')" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">All Events</SelectItem>
-                                        <SelectItem value="backup">Backup Events</SelectItem>
-                                        <SelectItem value="power">Power Events</SelectItem>
-                                        <SelectItem value="file">File Events</SelectItem>
-                                        <SelectItem value="database">Database Events</SelectItem>
-                                        <SelectItem value="schedule">Schedule Events</SelectItem>
-                                        <SelectItem value="task">Task Events</SelectItem>
-                                        <SelectItem value="subuser">Subuser Events</SelectItem>
-                                        <SelectItem value="allocation">Allocation Events</SelectItem>
-                                        <SelectItem value="server">Server Events</SelectItem>
+                                        <SelectItem value="all">{{ t('serverActivities.allEvents') }}</SelectItem>
+                                        <SelectItem value="backup">{{ t('serverActivities.backupEvents') }}</SelectItem>
+                                        <SelectItem value="power">{{ t('serverActivities.powerEvents') }}</SelectItem>
+                                        <SelectItem value="file">{{ t('serverActivities.fileEvents') }}</SelectItem>
+                                        <SelectItem value="database">{{
+                                            t('serverActivities.databaseEvents')
+                                        }}</SelectItem>
+                                        <SelectItem value="schedule">{{
+                                            t('serverActivities.scheduleEvents')
+                                        }}</SelectItem>
+                                        <SelectItem value="task">{{ t('serverActivities.taskEvents') }}</SelectItem>
+                                        <SelectItem value="subuser">{{
+                                            t('serverActivities.subuserEvents')
+                                        }}</SelectItem>
+                                        <SelectItem value="allocation">{{
+                                            t('serverActivities.allocationEvents')
+                                        }}</SelectItem>
+                                        <SelectItem value="server">{{ t('serverActivities.serverEvents') }}</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <Button variant="outline" size="sm" class="h-11" @click="clearFilters">
                                     <X class="h-4 w-4 mr-2" />
-                                    Clear
+                                    {{ t('common.clear') }}
                                 </Button>
                             </div>
                         </div>
@@ -106,18 +114,20 @@
                         </div>
                     </div>
                     <div class="space-y-3">
-                        <h3 class="text-2xl sm:text-3xl font-bold text-foreground">No Activities Yet</h3>
+                        <h3 class="text-2xl sm:text-3xl font-bold text-foreground">
+                            {{ t('serverActivities.noActivitiesYet') }}
+                        </h3>
                         <p class="text-sm sm:text-base text-muted-foreground">
                             {{
                                 searchQuery || selectedEventFilter !== 'all'
-                                    ? 'No activities match your search criteria.'
-                                    : 'Server activities will appear here once actions are performed.'
+                                    ? t('serverActivities.noActivitiesMatch')
+                                    : t('serverActivities.activitiesWillAppear')
                             }}
                         </p>
                     </div>
                     <Button v-if="searchQuery || selectedEventFilter !== 'all'" variant="outline" @click="clearFilters">
                         <X class="h-4 w-4 mr-2" />
-                        Clear Filters
+                        {{ t('serverActivities.clearFilters') }}
                     </Button>
                 </div>
             </div>
@@ -181,7 +191,7 @@
                                                 </div>
                                                 <div v-else class="flex items-center gap-1">
                                                     <Server class="h-3 w-3" />
-                                                    <span class="italic">System Event</span>
+                                                    <span class="italic">{{ t('serverActivities.systemEvent') }}</span>
                                                 </div>
                                                 <div class="flex items-center gap-1">
                                                     <Clock class="h-3 w-3" />
@@ -220,7 +230,13 @@
                 <!-- Pagination -->
                 <div class="flex items-center justify-between pt-6">
                     <div class="text-sm text-muted-foreground">
-                        Showing {{ pagination.from }} to {{ pagination.to }} of {{ pagination.total_records }} events
+                        {{
+                            t('serverActivities.showingEvents', {
+                                from: pagination.from,
+                                to: pagination.to,
+                                total: pagination.total_records,
+                            })
+                        }}
                     </div>
                     <div class="flex items-center gap-2">
                         <Button
@@ -230,7 +246,7 @@
                             @click="changePage(pagination.current_page - 1)"
                         >
                             <ChevronLeft class="h-4 w-4 mr-1" />
-                            Previous
+                            {{ t('serverActivities.previous') }}
                         </Button>
 
                         <div class="flex items-center gap-1">
@@ -253,7 +269,7 @@
                             :disabled="!pagination.has_next || loading"
                             @click="changePage(pagination.current_page + 1)"
                         >
-                            Next
+                            {{ t('serverActivities.next') }}
                             <ChevronRight class="h-4 w-4 ml-1" />
                         </Button>
                     </div>
@@ -277,12 +293,14 @@
                         </div>
                         <div>
                             <DialogTitle class="text-xl">
-                                {{ selectedItem ? formatEvent(selectedItem.event) : 'Activity Details' }}
+                                {{
+                                    selectedItem
+                                        ? formatEvent(selectedItem.event)
+                                        : t('serverActivities.activityDetails')
+                                }}
                             </DialogTitle>
                             <DialogDescription class="mt-1">
-                                {{
-                                    t('serverActivities.recentAction') || 'Detailed information for the selected event.'
-                                }}
+                                {{ t('serverActivities.detailedInformation') }}
                             </DialogDescription>
                         </div>
                     </div>
@@ -294,19 +312,27 @@
                         <CardContent class="p-6">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div class="space-y-2">
-                                    <div class="text-sm font-medium text-muted-foreground">Event Type</div>
+                                    <div class="text-sm font-medium text-muted-foreground">
+                                        {{ t('serverActivities.eventType') }}
+                                    </div>
                                     <div class="flex items-center gap-2">
                                         <Badge
                                             :variant="
                                                 selectedItem ? getEventBadgeVariant(selectedItem.event) : 'outline'
                                             "
                                         >
-                                            {{ selectedItem ? getEventCategory(selectedItem.event) : 'Unknown' }}
+                                            {{
+                                                selectedItem
+                                                    ? getEventCategory(selectedItem.event)
+                                                    : t('serverActivities.unknown')
+                                            }}
                                         </Badge>
                                     </div>
                                 </div>
                                 <div class="space-y-2">
-                                    <div class="text-sm font-medium text-muted-foreground">Timestamp</div>
+                                    <div class="text-sm font-medium text-muted-foreground">
+                                        {{ t('serverActivities.timestamp') }}
+                                    </div>
                                     <div class="font-medium">
                                         {{ formatDate(selectedItem?.timestamp || selectedItem?.created_at) }}
                                     </div>
@@ -315,8 +341,10 @@
                                     </div>
                                 </div>
                                 <div class="space-y-2">
-                                    <div class="text-sm font-medium text-muted-foreground">Event ID</div>
-                                    <div class="font-mono text-sm">{{ selectedItem?.id || 'N/A' }}</div>
+                                    <div class="text-sm font-medium text-muted-foreground">
+                                        {{ t('serverActivities.eventId') }}
+                                    </div>
+                                    <div class="font-mono text-sm">{{ selectedItem?.id || t('common.nA') }}</div>
                                 </div>
                             </div>
                         </CardContent>
@@ -328,7 +356,7 @@
                             <div class="space-y-4">
                                 <div class="flex items-center gap-2">
                                     <Users class="h-4 w-4 text-muted-foreground" />
-                                    <h3 class="text-lg font-semibold">User Information</h3>
+                                    <h3 class="text-lg font-semibold">{{ t('serverActivities.userInformation') }}</h3>
                                 </div>
                                 <div class="flex items-center gap-4">
                                     <Avatar class="h-12 w-12">
@@ -350,7 +378,9 @@
                                         </div>
                                     </div>
                                     <div v-if="selectedItem.ip" class="text-sm text-muted-foreground">
-                                        <div class="text-xs font-medium mb-1">IP Address</div>
+                                        <div class="text-xs font-medium mb-1">
+                                            {{ t('serverActivities.ipAddress') }}
+                                        </div>
                                         <code class="bg-muted px-2 py-1 rounded text-xs">{{ selectedItem.ip }}</code>
                                     </div>
                                 </div>
@@ -364,9 +394,9 @@
                                     <Server class="h-5 w-5 text-muted-foreground" />
                                 </div>
                                 <div>
-                                    <div class="font-semibold">System Event</div>
+                                    <div class="font-semibold">{{ t('serverActivities.systemEvent') }}</div>
                                     <div class="text-sm text-muted-foreground">
-                                        This action was performed automatically by the system
+                                        {{ t('serverActivities.systemEventDescription') }}
                                     </div>
                                 </div>
                             </div>
@@ -379,7 +409,7 @@
                             <div class="space-y-3">
                                 <div class="flex items-center gap-2">
                                     <FileText class="h-4 w-4 text-muted-foreground" />
-                                    <h3 class="text-lg font-semibold">Message</h3>
+                                    <h3 class="text-lg font-semibold">{{ t('serverActivities.message') }}</h3>
                                 </div>
                                 <div class="bg-muted/30 rounded-lg p-4 border">
                                     <p class="text-sm font-medium break-words">{{ baseMessage }}</p>
@@ -394,7 +424,7 @@
                             <div class="space-y-4">
                                 <div class="flex items-center gap-2">
                                     <Settings class="h-4 w-4 text-muted-foreground" />
-                                    <h3 class="text-lg font-semibold">Metadata</h3>
+                                    <h3 class="text-lg font-semibold">{{ t('serverActivities.metadata') }}</h3>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div
@@ -420,7 +450,7 @@
                             <div class="space-y-4">
                                 <div class="flex items-center gap-2">
                                     <Terminal class="h-4 w-4 text-muted-foreground" />
-                                    <h3 class="text-lg font-semibold">Raw JSON</h3>
+                                    <h3 class="text-lg font-semibold">{{ t('serverActivities.rawJson') }}</h3>
                                 </div>
                                 <div class="relative">
                                     <pre
@@ -433,7 +463,7 @@
                                         @click="copyToClipboard(rawJson)"
                                     >
                                         <Copy class="h-3 w-3 mr-1" />
-                                        Copy
+                                        {{ t('common.copy') }}
                                     </Button>
                                 </div>
                             </div>
@@ -826,121 +856,151 @@ function displayMessage(item: ActivityItem): string {
 
     // Backup events
     if (item.event.includes('backup_created') && meta) {
-        const backupName = meta.backup_name || 'Unknown';
-        const adapter = meta.adapter || 'Unknown';
-        return `Created backup "${backupName}" using ${adapter} storage`;
+        const backupName = meta.backup_name || t('serverActivities.unknown');
+        const adapter = meta.adapter || t('serverActivities.unknown');
+        return t('serverActivities.messages.createdBackup', { backupName, adapter });
     }
     if (item.event.includes('backup_deleted') && meta) {
-        const backupName = meta.backup_name || 'Unknown';
-        return `Deleted backup "${backupName}"`;
+        const backupName = meta.backup_name || t('serverActivities.unknown');
+        return t('serverActivities.messages.deletedBackup', { backupName });
     }
     if (item.event.includes('backup_restored') && meta) {
-        const adapter = meta.adapter || 'Unknown';
-        const truncate = meta.truncate_directory ? 'with directory truncation' : 'without directory truncation';
-        return `Restored backup from ${adapter} storage (${truncate})`;
+        const adapter = meta.adapter || t('serverActivities.unknown');
+        const truncate = meta.truncate_directory
+            ? t('serverActivities.messages.withDirectoryTruncation')
+            : t('serverActivities.messages.withoutDirectoryTruncation');
+        return t('serverActivities.messages.restoredBackup', { adapter, truncate });
     }
     if (item.event.includes('backup_download_url_generated') && meta) {
-        const backupName = meta.backup_name || 'Unknown';
-        return `Generated download URL for backup "${backupName}"`;
+        const backupName = meta.backup_name || t('serverActivities.unknown');
+        return t('serverActivities.messages.generatedDownloadUrl', { backupName });
     }
 
     // Allocation events
     if (item.event.includes('allocation_primary_set') && meta) {
-        return `Set primary allocation to ${meta.allocation_ip || ''}:${meta.allocation_port || ''}`;
+        return t('serverActivities.messages.setPrimaryAllocation', {
+            ip: meta.allocation_ip || '',
+            port: meta.allocation_port || '',
+        });
     }
     if (item.event.includes('allocation_auto_allocated') && meta) {
-        return `Auto-allocated ${meta.allocation_ip || ''}:${meta.allocation_port || ''}`;
+        return t('serverActivities.messages.autoAllocated', {
+            ip: meta.allocation_ip || '',
+            port: meta.allocation_port || '',
+        });
     }
     if (item.event.includes('allocation_deleted') && meta) {
-        return `Deleted allocation ${meta.allocation_ip || ''}:${meta.allocation_port || ''}`;
+        return t('serverActivities.messages.deletedAllocation', {
+            ip: meta.allocation_ip || '',
+            port: meta.allocation_port || '',
+        });
     }
 
     // Server events
     if (item.event.includes('server_updated')) {
-        return 'Server configuration updated';
+        return t('serverActivities.messages.serverConfigUpdated');
     }
 
     // File events
     if (item.event.includes('file_written') && meta) {
-        const path = meta.path || 'file';
-        const existed = meta.file_exists ? 'Updated' : 'Created';
-        return `${existed} file: ${path}`;
+        const path = meta.path || t('serverActivities.messages.file');
+        const existed = meta.file_exists;
+        return existed
+            ? t('serverActivities.messages.fileUpdated', { path })
+            : t('serverActivities.messages.fileCreated', { path });
     }
     if (item.event.includes('file_viewed') && meta) {
-        return `Viewed file: ${meta.path || 'file'}`;
+        return t('serverActivities.messages.fileViewed', { path: meta.path || t('serverActivities.messages.file') });
     }
     if (item.event.includes('file_downloaded') && meta) {
-        return `Downloaded file: ${meta.filename || meta.path || 'file'}`;
+        return t('serverActivities.messages.fileDownloaded', {
+            filename: meta.filename || meta.path || t('serverActivities.messages.file'),
+        });
     }
     if (item.event.includes('files_deleted') && meta) {
         const count = meta.file_count || (Array.isArray(meta.files) ? meta.files.length : 0);
-        return `Deleted ${count} file(s) from ${meta.root || 'directory'}`;
+        return t('serverActivities.messages.filesDeleted', {
+            count,
+            root: meta.root || t('serverActivities.messages.directory'),
+        });
     }
     if (item.event.includes('files_listed') && meta) {
-        return `Listed files in: ${meta.path || '/'}`;
+        return t('serverActivities.messages.filesListed', { path: meta.path || '/' });
     }
     if (item.event.includes('downloads_list_viewed')) {
-        return 'Viewed downloads list';
+        return t('serverActivities.messages.downloadsListViewed');
     }
 
     // Database events
     if (item.event.includes('database_created') && meta) {
-        return `Created database "${meta.database_name}" on ${meta.database_host_name}`;
+        return t('serverActivities.messages.databaseCreated', {
+            databaseName: meta.database_name,
+            host: meta.database_host_name,
+        });
     }
     if (item.event.includes('database_deleted') && meta) {
-        return `Deleted database "${meta.database_name}" from ${meta.database_host_name}`;
+        return t('serverActivities.messages.databaseDeleted', {
+            databaseName: meta.database_name,
+            host: meta.database_host_name,
+        });
     }
 
     // Schedule events
     if (item.event.includes('schedule_created') && meta) {
-        return `Created schedule "${meta.schedule_name}"`;
+        return t('serverActivities.messages.scheduleCreated', { scheduleName: meta.schedule_name });
     }
     if (item.event.includes('schedule_updated') && meta) {
-        const fields = Array.isArray(meta.updated_fields) ? meta.updated_fields.join(', ') : 'multiple fields';
-        return `Updated schedule "${meta.schedule_name}" (${fields})`;
+        const fields = Array.isArray(meta.updated_fields)
+            ? meta.updated_fields.join(', ')
+            : t('serverActivities.messages.multipleFields');
+        return t('serverActivities.messages.scheduleUpdated', { scheduleName: meta.schedule_name, fields });
     }
     if (item.event.includes('schedule_deleted') && meta) {
-        return `Deleted schedule "${meta.schedule_name}"`;
+        return t('serverActivities.messages.scheduleDeleted', { scheduleName: meta.schedule_name });
     }
     if (item.event.includes('schedule_status_toggled') && meta) {
-        return `${meta.new_status === 'enabled' ? 'Enabled' : 'Disabled'} schedule "${meta.schedule_name}"`;
+        return meta.new_status === 'enabled'
+            ? t('serverActivities.messages.scheduleEnabled', { scheduleName: meta.schedule_name })
+            : t('serverActivities.messages.scheduleDisabled', { scheduleName: meta.schedule_name });
     }
     if (item.event.includes('schedule_retrieved') && meta) {
-        return `Retrieved schedule "${meta.schedule_name}"`;
+        return t('serverActivities.messages.scheduleRetrieved', { scheduleName: meta.schedule_name });
     }
     if (item.event.includes('schedules_retrieved')) {
         const count = Array.isArray(meta?.schedules) ? meta.schedules.length : 0;
-        return `Retrieved ${count} schedule(s)`;
+        return t('serverActivities.messages.schedulesRetrieved', { count });
     }
 
     // Task events
     if (item.event.includes('task_created') && meta) {
-        return `Created task for schedule "${meta.schedule_name}" (action: ${meta.action})`;
+        return t('serverActivities.messages.taskCreated', { scheduleName: meta.schedule_name, action: meta.action });
     }
     if (item.event.includes('task_updated') && meta) {
-        const fields = Array.isArray(meta.updated_fields) ? meta.updated_fields.join(', ') : 'multiple fields';
-        return `Updated task in "${meta.schedule_name}" (${fields})`;
+        const fields = Array.isArray(meta.updated_fields)
+            ? meta.updated_fields.join(', ')
+            : t('serverActivities.messages.multipleFields');
+        return t('serverActivities.messages.taskUpdated', { scheduleName: meta.schedule_name, fields });
     }
     if (item.event.includes('task_deleted') && meta) {
-        return `Deleted task from "${meta.schedule_name}" (action: ${meta.action})`;
+        return t('serverActivities.messages.taskDeleted', { scheduleName: meta.schedule_name, action: meta.action });
     }
 
     // Subuser events
     if (item.event.includes('subuser_created') && meta) {
-        return `Created subuser (ID: ${meta.subuser_id})`;
+        return t('serverActivities.messages.subuserCreated', { id: meta.subuser_id });
     }
     if (item.event.includes('subuser_deleted') && meta) {
-        return `Deleted subuser (ID: ${meta.subuser_id})`;
+        return t('serverActivities.messages.subuserDeleted', { id: meta.subuser_id });
     }
     if (item.event.includes('subusers_retrieved')) {
         const count = Array.isArray(meta?.subusers) ? meta.subusers.length : 0;
-        return `Retrieved ${count} subuser(s)`;
+        return t('serverActivities.messages.subusersRetrieved', { count });
     }
 
     // Power events
     if (item.event.includes('server:power')) {
         const action = item.event.split('.')[1] || 'action';
-        return `Server power: ${action}`;
+        return t('serverActivities.messages.serverPower', { action });
     }
 
     // Fallback
@@ -999,7 +1059,7 @@ function getEventIconClass(event: string) {
 
 function getEventCategory(event: string) {
     const eventLower = event.toLowerCase();
-    if (eventLower.includes('backup')) return 'Backup';
+    if (eventLower.includes('backup')) return t('serverActivities.categories.backup');
     if (
         eventLower.includes('power') ||
         eventLower.includes('start') ||
@@ -1007,15 +1067,15 @@ function getEventCategory(event: string) {
         eventLower.includes('restart') ||
         eventLower.includes('kill')
     )
-        return 'Power';
-    if (eventLower.includes('file') || eventLower.includes('download')) return 'File';
-    if (eventLower.includes('database')) return 'Database';
-    if (eventLower.includes('schedule')) return 'Schedule';
-    if (eventLower.includes('task')) return 'Task';
-    if (eventLower.includes('subuser')) return 'Subuser';
-    if (eventLower.includes('allocation')) return 'Allocation';
-    if (eventLower.includes('server')) return 'Server';
-    return 'System';
+        return t('serverActivities.categories.power');
+    if (eventLower.includes('file') || eventLower.includes('download')) return t('serverActivities.categories.file');
+    if (eventLower.includes('database')) return t('serverActivities.categories.database');
+    if (eventLower.includes('schedule')) return t('serverActivities.categories.schedule');
+    if (eventLower.includes('task')) return t('serverActivities.categories.task');
+    if (eventLower.includes('subuser')) return t('serverActivities.categories.subuser');
+    if (eventLower.includes('allocation')) return t('serverActivities.categories.allocation');
+    if (eventLower.includes('server')) return t('serverActivities.categories.server');
+    return t('serverActivities.categories.system');
 }
 
 function getEventBadgeVariant(event: string) {
@@ -1038,10 +1098,10 @@ function formatRelativeTime(timestamp?: string) {
     const date = new Date(timestamp);
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    if (diffInSeconds < 60) return t('serverActivities.justNow');
+    if (diffInSeconds < 3600) return t('serverActivities.minutesAgo', { minutes: Math.floor(diffInSeconds / 60) });
+    if (diffInSeconds < 86400) return t('serverActivities.hoursAgo', { hours: Math.floor(diffInSeconds / 3600) });
+    if (diffInSeconds < 604800) return t('serverActivities.daysAgo', { days: Math.floor(diffInSeconds / 86400) });
 
     return date.toLocaleDateString();
 }
@@ -1095,10 +1155,10 @@ function copyToClipboard(text: string) {
     navigator.clipboard
         .writeText(text)
         .then(() => {
-            toast.success('Copied to clipboard');
+            toast.success(t('serverActivities.copiedToClipboard'));
         })
         .catch(() => {
-            toast.error('Failed to copy to clipboard');
+            toast.error(t('serverActivities.failedToCopy'));
         });
 }
 </script>
