@@ -898,9 +898,9 @@ class SpellsController
             'name' => $jsonData['name'] ?? 'Imported Spell',
             'author' => $jsonData['author'] ?? 'Unknown',
             'description' => $jsonData['description'] ?? '',
-            'features' => isset($jsonData['features']) ? json_encode($jsonData['features']) : null,
-            'docker_images' => isset($jsonData['docker_images']) ? json_encode($jsonData['docker_images']) : null,
-            'file_denylist' => isset($jsonData['file_denylist']) ? json_encode($jsonData['file_denylist']) : null,
+            'features' => isset($jsonData['features']) && $jsonData['features'] !== null ? json_encode($jsonData['features']) : null,
+            'docker_images' => isset($jsonData['docker_images']) && $jsonData['docker_images'] !== null ? json_encode($jsonData['docker_images']) : null,
+            'file_denylist' => isset($jsonData['file_denylist']) && $jsonData['file_denylist'] !== null ? json_encode($jsonData['file_denylist']) : null,
             'update_url' => $jsonData['meta']['update_url'] ?? null,
             'config_files' => $jsonData['config']['files'] ?? null,
             'config_startup' => $jsonData['config']['startup'] ?? null,
@@ -946,24 +946,66 @@ class SpellsController
         }
 
         // Import variables if present
+        $importedVariablesCount = 0;
+        $skippedVariablesCount = 0;
         if (isset($jsonData['variables']) && is_array($jsonData['variables'])) {
             foreach ($jsonData['variables'] as $var) {
+                // Validate required fields exist and name/env_variable are not empty
+                // Note: description and default_value can be empty strings (valid in Pterodactyl)
+                $missingFields = [];
+                
+                if (!isset($var['name']) || trim((string) $var['name']) === '') {
+                    $missingFields[] = 'name';
+                }
+                if (!isset($var['env_variable']) || trim((string) $var['env_variable']) === '') {
+                    $missingFields[] = 'env_variable';
+                }
+                if (!isset($var['description'])) {
+                    $missingFields[] = 'description';
+                }
+                if (!isset($var['default_value'])) {
+                    $missingFields[] = 'default_value';
+                }
+
+                if (!empty($missingFields)) {
+                    App::getInstance(true)->getLogger()->warning(
+                        'Skipping variable during import: missing required fields (' . implode(', ', $missingFields) . '). Variable data: ' . json_encode($var)
+                    );
+                    ++$skippedVariablesCount;
+                    continue;
+                }
+
                 $variableData = [
                     'spell_id' => $spellId,
-                    'name' => $var['name'] ?? '',
-                    'description' => $var['description'] ?? '',
-                    'env_variable' => $var['env_variable'] ?? '',
-                    'default_value' => $var['default_value'] ?? '',
+                    'name' => trim($var['name']),
+                    'description' => $var['description'], // Allow empty string
+                    'env_variable' => trim($var['env_variable']),
+                    'default_value' => $var['default_value'], // Allow empty string
                     'user_viewable' => isset($var['user_viewable']) ? ($var['user_viewable'] ? 'true' : 'false') : 'true',
                     'user_editable' => isset($var['user_editable']) ? ($var['user_editable'] ? 'true' : 'false') : 'true',
                     'rules' => $var['rules'] ?? '',
                     'field_type' => $var['field_type'] ?? 'text',
                 ];
-                SpellVariable::createVariable($variableData);
+                
+                $varId = SpellVariable::createVariable($variableData);
+                if ($varId) {
+                    ++$importedVariablesCount;
+                } else {
+                    App::getInstance(true)->getLogger()->error(
+                        'Failed to create variable during import: ' . ($var['env_variable'] ?? 'unknown') . '. Variable data: ' . json_encode($var)
+                    );
+                    ++$skippedVariablesCount;
+                }
             }
         }
 
         $spell = Spell::getSpellById($spellId);
+
+        if ($skippedVariablesCount > 0) {
+            App::getInstance(true)->getLogger()->warning(
+                "Spell import completed with warnings: {$importedVariablesCount} variables imported, {$skippedVariablesCount} variables skipped. Spell: " . $spell['name']
+            );
+        }
 
         // Log activity with metadata information
         $logContext = 'Imported spell: ' . $spell['name'];
@@ -1657,9 +1699,9 @@ class SpellsController
                 'name' => $jsonData['name'] ?? $match['display_name'] ?? 'Imported Spell',
                 'author' => $jsonData['author'] ?? $match['author'] ?? 'Unknown',
                 'description' => $jsonData['description'] ?? $match['description'] ?? '',
-                'features' => isset($jsonData['features']) ? json_encode($jsonData['features']) : null,
-                'docker_images' => isset($jsonData['docker_images']) ? json_encode($jsonData['docker_images']) : null,
-                'file_denylist' => isset($jsonData['file_denylist']) ? json_encode($jsonData['file_denylist']) : null,
+                'features' => isset($jsonData['features']) && $jsonData['features'] !== null ? json_encode($jsonData['features']) : null,
+                'docker_images' => isset($jsonData['docker_images']) && $jsonData['docker_images'] !== null ? json_encode($jsonData['docker_images']) : null,
+                'file_denylist' => isset($jsonData['file_denylist']) && $jsonData['file_denylist'] !== null ? json_encode($jsonData['file_denylist']) : null,
                 'update_url' => $jsonData['meta']['update_url'] ?? null,
                 'config_files' => $jsonData['config']['files'] ?? null,
                 'config_startup' => $jsonData['config']['startup'] ?? null,
@@ -1690,24 +1732,66 @@ class SpellsController
             }
 
             // Import variables if present
+            $importedVariablesCount = 0;
+            $skippedVariablesCount = 0;
             if (isset($jsonData['variables']) && is_array($jsonData['variables'])) {
                 foreach ($jsonData['variables'] as $var) {
+                    // Validate required fields exist and name/env_variable are not empty
+                    // Note: description and default_value can be empty strings (valid in Pterodactyl)
+                    $missingFields = [];
+                    
+                    if (!isset($var['name']) || trim((string) $var['name']) === '') {
+                        $missingFields[] = 'name';
+                    }
+                    if (!isset($var['env_variable']) || trim((string) $var['env_variable']) === '') {
+                        $missingFields[] = 'env_variable';
+                    }
+                    if (!isset($var['description'])) {
+                        $missingFields[] = 'description';
+                    }
+                    if (!isset($var['default_value'])) {
+                        $missingFields[] = 'default_value';
+                    }
+
+                    if (!empty($missingFields)) {
+                        App::getInstance(true)->getLogger()->warning(
+                            'Skipping variable during online install: missing required fields (' . implode(', ', $missingFields) . '). Variable data: ' . json_encode($var)
+                        );
+                        ++$skippedVariablesCount;
+                        continue;
+                    }
+
                     $variableData = [
                         'spell_id' => $spellId,
-                        'name' => $var['name'] ?? '',
-                        'description' => $var['description'] ?? '',
-                        'env_variable' => $var['env_variable'] ?? '',
-                        'default_value' => $var['default_value'] ?? '',
+                        'name' => trim($var['name']),
+                        'description' => $var['description'], // Allow empty string
+                        'env_variable' => trim($var['env_variable']),
+                        'default_value' => $var['default_value'], // Allow empty string
                         'user_viewable' => isset($var['user_viewable']) ? ($var['user_viewable'] ? 'true' : 'false') : 'true',
                         'user_editable' => isset($var['user_editable']) ? ($var['user_editable'] ? 'true' : 'false') : 'true',
                         'rules' => $var['rules'] ?? '',
                         'field_type' => $var['field_type'] ?? 'text',
                     ];
-                    SpellVariable::createVariable($variableData);
+                    
+                    $varId = SpellVariable::createVariable($variableData);
+                    if ($varId) {
+                        ++$importedVariablesCount;
+                    } else {
+                        App::getInstance(true)->getLogger()->error(
+                            'Failed to create variable during online install: ' . ($var['env_variable'] ?? 'unknown') . '. Variable data: ' . json_encode($var)
+                        );
+                        ++$skippedVariablesCount;
+                    }
                 }
             }
 
             $spell = Spell::getSpellById($spellId);
+
+            if ($skippedVariablesCount > 0) {
+                App::getInstance(true)->getLogger()->warning(
+                    "Online spell install completed with warnings: {$importedVariablesCount} variables imported, {$skippedVariablesCount} variables skipped. Spell: " . $spell['name']
+                );
+            }
 
             // Log activity
             $admin = $request->get('user');
