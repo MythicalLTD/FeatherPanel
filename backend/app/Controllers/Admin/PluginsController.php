@@ -79,6 +79,9 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'maintainers', type: 'array', items: new OA\Items(type: 'string'), description: 'Addon maintainers'),
         new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'string'), description: 'Addon tags'),
         new OA\Property(property: 'verified', type: 'boolean', description: 'Whether addon is verified'),
+        new OA\Property(property: 'premium', type: 'integer', description: 'Whether addon is premium (0 = free, 1 = premium)'),
+        new OA\Property(property: 'premium_link', type: 'string', description: 'Purchase link for premium addon'),
+        new OA\Property(property: 'premium_price', type: 'string', description: 'Price for premium addon in EUR'),
         new OA\Property(property: 'downloads', type: 'integer', description: 'Download count'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
@@ -565,6 +568,9 @@ class PluginsController
                     // Meta
                     'tags' => $pkg['tags'] ?? [],
                     'verified' => isset($pkg['verified']) ? (int) $pkg['verified'] === 1 : false,
+                    'premium' => isset($pkg['premium']) ? (int) $pkg['premium'] : 0,
+                    'premium_link' => $pkg['premium_link'] ?? null,
+                    'premium_price' => $pkg['premium_price'] ?? null,
                     'downloads' => $pkg['downloads'] ?? 0,
                     'created_at' => $pkg['created_at'] ?? null,
                     'updated_at' => $pkg['updated_at'] ?? null,
@@ -610,6 +616,16 @@ class PluginsController
             ),
             new OA\Response(response: 400, description: 'Bad request - Invalid identifier format'),
             new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(
+                response: 402,
+                description: 'Payment Required - Premium addon must be purchased',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'premium_link', type: 'string', description: 'Purchase link for premium addon'),
+                        new OA\Property(property: 'premium_price', type: 'string', description: 'Price in EUR'),
+                    ]
+                )
+            ),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
             new OA\Response(response: 404, description: 'Package not found in registry'),
             new OA\Response(response: 409, description: 'Conflict - Addon already installed'),
@@ -658,6 +674,22 @@ class PluginsController
             }
             if (!$match || !isset($match['latest_version']['download_url'])) {
                 return ApiResponse::error('Package not found in registry', 'PACKAGE_NOT_FOUND', 404);
+            }
+
+            // Check if addon is premium
+            $isPremium = isset($match['premium']) && (int) $match['premium'] === 1;
+            if ($isPremium) {
+                $premiumLink = $match['premium_link'] ?? null;
+
+                return ApiResponse::error(
+                    'This is a premium addon and must be purchased',
+                    'PREMIUM_ADDON_PURCHASE_REQUIRED',
+                    402,
+                    [
+                        'premium_link' => $premiumLink,
+                        'premium_price' => $match['premium_price'] ?? null,
+                    ]
+                );
             }
             $downloadUrl = 'https://api.featherpanel.com' . $match['latest_version']['download_url'];
             $fileContent = @file_get_contents($downloadUrl, false, $context);

@@ -390,10 +390,18 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <Badge v-if="addon.verified" variant="secondary" class="text-xs flex-shrink-0"
-                                            >Verified</Badge
-                                        >
-                                        <Badge v-else variant="outline" class="text-xs flex-shrink-0">Unverified</Badge>
+                                        <div class="flex flex-col gap-1 flex-shrink-0">
+                                            <Badge v-if="addon.verified" variant="secondary" class="text-xs"
+                                                >Verified</Badge
+                                            >
+                                            <Badge v-else variant="outline" class="text-xs">Unverified</Badge>
+                                            <Badge
+                                                v-if="addon.premium === 1"
+                                                class="text-xs bg-gradient-to-r from-yellow-500 to-amber-600 text-white border-0"
+                                            >
+                                                Premium
+                                            </Badge>
+                                        </div>
                                     </div>
                                     <p class="text-sm text-muted-foreground mt-2 line-clamp-3">
                                         {{ addon.description }}
@@ -401,6 +409,16 @@
                                     <p v-if="!addon.verified" class="mt-1 text-xs text-yellow-700">
                                         This addon is not verified. Review the source before installing.
                                     </p>
+                                    <div v-if="addon.premium === 1 && addon.premium_price" class="mt-2">
+                                        <div
+                                            class="inline-flex items-center gap-1 px-2 py-1 rounded bg-gradient-to-r from-yellow-500/10 to-amber-600/10 border border-yellow-500/30"
+                                        >
+                                            <span class="text-sm font-semibold text-yellow-700 dark:text-yellow-500"
+                                                >€{{ addon.premium_price }}</span
+                                            >
+                                            <span class="text-xs text-muted-foreground">EUR</span>
+                                        </div>
+                                    </div>
                                     <div class="mt-2 text-xs text-muted-foreground flex flex-wrap gap-1">
                                         <span v-for="tag in addon.tags" :key="tag" class="px-2 py-0.5 rounded bg-muted"
                                             >#{{ tag }}</span
@@ -419,6 +437,18 @@
                                     <div class="mt-3 flex justify-end">
                                         <template v-if="installedIds.has(addon.identifier)">
                                             <Button size="sm" variant="outline" disabled>Installed</Button>
+                                        </template>
+                                        <template v-else-if="addon.premium === 1">
+                                            <Button
+                                                size="sm"
+                                                as="a"
+                                                :href="addon.premium_link || '#'"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white"
+                                            >
+                                                Purchase
+                                            </Button>
                                         </template>
                                         <template v-else>
                                             <Button
@@ -1045,6 +1075,9 @@ interface OnlineAddon {
     tags: string[];
     verified: boolean;
     downloads: number;
+    premium: number; // 0 = free, 1 = premium
+    premium_link?: string | null;
+    premium_price?: string | null;
     created_at?: string | null;
     updated_at?: string | null;
     latest_version: {

@@ -11,3 +11,5 @@ devlogs.log
 mysql/
 docs/
 nginx.conf
+backend/public/addons/*
+backend/public/components/*

@@ -1553,6 +1553,7 @@ plugins:
     loadingContent: 'Loading plugin content'
     failedToLoadContent: 'Failed to load plugin content'
     retry: 'Retry Loading'
+    reloadIframe: 'Reload Plugin'
     pluginPage: 'Plugin Page'
     failedToLoadPluginData: 'Failed to load plugin data'
     failedToLoadIframeContent: 'Failed to load iframe content'

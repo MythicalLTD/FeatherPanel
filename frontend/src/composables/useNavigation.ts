@@ -47,15 +47,10 @@ import {
     Globe,
     ImageIcon,
     Link,
-    Shield,
-    AlertTriangle,
-    Lock,
-    FileSearch,
-    Cog,
-    type LucideIcon,
     BookAlert,
     TerminalIcon,
 } from 'lucide-vue-next';
+import type { LucideIcon } from 'lucide-vue-next';
 import Permissions from '@/lib/permissions';
 
 export interface NavigationItem {
@@ -63,7 +58,7 @@ export interface NavigationItem {
     name: string;
     title: string;
     url: string;
-    icon: LucideIcon;
+    icon: LucideIcon | string; // LucideIcon for built-in items, emoji string for plugins
     isActive: boolean;
     category: 'main' | 'admin' | 'server' | 'debug';
     permission?: string;
@@ -72,6 +67,7 @@ export interface NavigationItem {
     pluginRedirect?: string;
     pluginName?: string;
     pluginTag?: string;
+    showBadge?: boolean;
     description?: string;
 }
 
@@ -85,6 +81,7 @@ interface PluginSidebarItem {
     plugin: string;
     pluginName: string;
     permission?: string;
+    showBadge?: boolean;
 }
 
 interface PluginSidebarResponse {
@@ -98,18 +95,10 @@ interface PluginSidebarResponse {
     };
 }
 
-// Convert emoji icons to Lucide components
-function getPluginIcon(emoji: string): LucideIcon {
-    const iconMap: Record<string, LucideIcon> = {
-        '🔍': FileSearch,
-        '🚫': AlertTriangle,
-        '🔐': Lock,
-        '🛡️': Shield,
-        '⚙️': Cog,
-        '📋': FileText,
-    };
-
-    return iconMap[emoji] || Shield; // Default to Shield icon
+// Plugins can ONLY use emojis - no Lucide icon conversion
+function getPluginIcon(emojiIcon: string): string {
+    // Return the emoji string as-is
+    return emojiIcon;
 }
 
 export function useNavigation() {
@@ -159,7 +148,7 @@ export function useNavigation() {
         uuidShort?: string,
     ): NavigationItem[] => {
         return Object.entries(pluginItems)
-            .filter(([, item]) => item.js || item.redirect) // Only include items with js or redirect
+            .filter(([, item]) => item.js || item.redirect)
             .map(([url, item]) => {
                 const fullUrl = category === 'server' && uuidShort ? `/server/${uuidShort}${url}` : url;
 
@@ -187,6 +176,7 @@ export function useNavigation() {
                     pluginRedirect: fullRedirect,
                     pluginName: item.pluginName,
                     pluginTag: item.pluginName,
+                    showBadge: item.showBadge !== false,
                     description: item.description,
                 };
             });

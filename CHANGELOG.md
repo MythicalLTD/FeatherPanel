@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.0.8-Alpha
+
+### Added
+
+- Introduced support for premium plugins—enhance your panel with exclusive addon features!
+- Enabled plugin server UUID forwarding for advanced developer integrations.
+- Added plugin user UUID forwarding to support custom user tracking and integrations (for developers).
+- Allow plugins to optionally hide their name badges in the sidebar for a cleaner look.
+- Plugins can now display custom emojis in the sidebar, letting you personalize your navigation even further.
+- Added an overlay reload button for plugins in the UI when running in development mode. This allows faster iteration on plugin changes during development.
+
+### Fixed
+
+- Resolved an issue where navigating between plugin-rendered pages wouldn’t work as expected—switching between custom plugin pages is now seamless!
+
 ## v0.0.7-Alpha
 
 ### Added
@@ -46,6 +61,7 @@
 - Added detection and UI support for Java version mismatch in the server console. When the server output indicates an incompatible or unsupported Java version, users are prompted with detailed guidance and suggestions to resolve the issue, including the ability to select compatible Docker images directly in the UI.
 
 ### Fixed
+
 - Fixed an issue where filtering logic for Locations, Realms, Nodes, Spells, and Allocations in the server creation/edit UI was showing items from other selections rather than only the relevant filtered subset. For example, selecting a Location would not correctly filter Nodes to just that Location, and Spells were not correctly associated with their Realms. Filtering now respects the current selection so only valid items are shown based on your previous choices on server create/edit pages.
 - Fixed a bug where the location page now correctly counts only the nodes owned by each Location, instead of showing all nodes.
 - Added support for unlimited values for CPU, memory, and disk in server creation and editing. Setting these fields to `0` now correctly allows for unlimited resources, both in the UI and the backend API validation.
@@ -58,12 +74,14 @@
 - Fixed an error where attempting to upload logs could result in a PHP "Array to string conversion" This error occurred under certain conditions when processing log arrays for upload, and is now resolved. Log uploads now work without PHP warnings and return correct success responses.
 - File manager still used some hardcoded strings now shifted to translation api!
 - Filled in many previously missing translation keys to improve localization and provide a more consistent multilingual experience.
-- Console filters are back so you can 
+- Console filters are back so you can
 
 ### Removed
+
 - Removed deprecated legacy addons that were no longer necessary or compatible with the current system.
 
 ### Improved
+
 - Added persistent list view mode: when users switch between list and other views, their choice is now remembered and automatically restored next time they visit.
 - Server Activity system has been completely rewritten for much faster performance, richer detail, and a greatly improved UI. The new system provides deeper insights into actions, features more detailed metadata, allows advanced filtering, and loads activity logs significantly faster. The updated frontend offers a more intuitive and visually appealing experience for reviewing and investigating server activity.
 - Expanded file manager functionality to include additional actions and greater flexibility. Users now have access to more file operations and improved tools, making file management easier and more powerful.
@@ -124,7 +142,7 @@
 - Removed redundant double server permission check in server-related API endpoints. All authentication and permission checks are now solely handled by the server middleware, eliminating unnecessary duplicate verification and improving efficiency.
 - Migrated all legacy error_log instances to the centralized application logger, resulting in more consistent and effective error handling across the codebase.
 - Updated log upload functionality: The CLI and settings log upload commands now use a centralized helper for interacting with mclo.gs, instead of making direct API requests each time. This streamlines the code, reduces duplication, and provides better reliability and error handling for log uploads.
-- Improved IP detection for non-Cloudflare hosting providers: The system now properly resolves the client's real public IP even if requests are proxied (e.g., when $_SERVER['REMOTE_ADDR'] is 127.0.0.1). This ensures accurate detection regardless of Cloudflare or local reverse proxy setups, enhancing audit logging and security tracking.
+- Improved IP detection for non-Cloudflare hosting providers: The system now properly resolves the client's real public IP even if requests are proxied (e.g., when $\_SERVER['REMOTE_ADDR'] is 127.0.0.1). This ensures accurate detection regardless of Cloudflare or local reverse proxy setups, enhancing audit logging and security tracking.
 - CLI experience greatly improved: All CLI commands now leverage centralized color codes and style conventions for a consistent, branded look across help, logs, setup, settings, users, and SaaS commands. Output formatting, error messages, and UI prompts are now unified for a more professional and user-friendly developer workflow.
 - Complete redesign of all dashboard and server charts for a significantly improved appearance, enhanced accuracy, and more modern visual presentation. Charts now feature smoother lines, clearer grid lines, improved labels, dynamic coloring, and more precise data rendering for a vastly better user experience.
 
