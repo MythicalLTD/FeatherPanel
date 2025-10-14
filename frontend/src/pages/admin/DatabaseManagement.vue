@@ -204,8 +204,8 @@ fetchStatus();
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">What is this page?</div>
                                     <p>
-                                        View your database engine status and basic metrics. Useful for quick health checks
-                                        and verifying connectivity.
+                                        View your database engine status and basic metrics. Useful for quick health
+                                        checks and verifying connectivity.
                                     </p>
                                 </div>
                             </div>
@@ -218,8 +218,8 @@ fetchStatus();
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Status & Metrics</div>
                                     <p>
-                                        Inspect engine/version, uptime, connections, QPS, and network I/O. Re‑check using
-                                        the Refresh button when diagnosing issues.
+                                        Inspect engine/version, uptime, connections, QPS, and network I/O. Re‑check
+                                        using the Refresh button when diagnosing issues.
                                     </p>
                                 </div>
                             </div>
@@ -232,8 +232,8 @@ fetchStatus();
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Migrations</div>
                                     <p>
-                                        Run database migrations when upgrading or installing plugins. Review output below
-                                        and back up before major changes.
+                                        Run database migrations when upgrading or installing plugins. Review output
+                                        below and back up before major changes.
                                     </p>
                                 </div>
                             </div>
@@ -246,8 +246,9 @@ fetchStatus();
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Safety & Backups</div>
                                     <p>
-                                        Always maintain recent backups before applying migrations or installing plugins that
-                                        alter schemas. FeatherPanel and its developers are not liable for changes you make.
+                                        Always maintain recent backups before applying migrations or installing plugins
+                                        that alter schemas. FeatherPanel and its developers are not liable for changes
+                                        you make.
                                     </p>
                                 </div>
                             </div>

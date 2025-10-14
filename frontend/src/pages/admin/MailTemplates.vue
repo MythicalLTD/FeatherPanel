@@ -500,7 +500,7 @@ import {
     DrawerFooter,
     DrawerClose,
 } from '@/components/ui/drawer';
-import { Plus, Eye, Pencil, Trash2, Mail, FileText, Send, Scale, Rocket } from 'lucide-vue-next';
+import { Plus, Eye, Pencil, Trash2, Mail, FileText, Send, Scale } from 'lucide-vue-next';
 import { Card, CardContent } from '@/components/ui/card';
 
 // Types

@@ -289,11 +289,16 @@
                                             This spell is not verified. Review the source before installing.
                                         </p>
                                         <div class="mt-2 text-xs text-muted-foreground flex flex-wrap gap-1">
-                                            <span v-for="tag in spell.tags" :key="tag" class="px-2 py-0.5 rounded bg-muted"
+                                            <span
+                                                v-for="tag in spell.tags"
+                                                :key="tag"
+                                                class="px-2 py-0.5 rounded bg-muted"
                                                 >#{{ tag }}</span
                                             >
                                         </div>
-                                        <div class="mt-2 text-xs text-muted-foreground flex items-center justify-between">
+                                        <div
+                                            class="mt-2 text-xs text-muted-foreground flex items-center justify-between"
+                                        >
                                             <span v-if="spell.downloads">{{ spell.downloads }} downloads</span>
                                             <a
                                                 v-if="spell.website"
@@ -336,10 +341,10 @@
                             <div>
                                 <div class="font-semibold text-foreground mb-1">Cross-compatible spells</div>
                                 <p>
-                                    Realms and spells are fully cross-compatible. We maintain a spells repository that works
-                                    with both FeatherPanel and Pterodactyl, so you can fetch and use the same spells in
-                                    either panel. You can also bring your own spells – import them here or host them in your
-                                    own repo.
+                                    Realms and spells are fully cross-compatible. We maintain a spells repository that
+                                    works with both FeatherPanel and Pterodactyl, so you can fetch and use the same
+                                    spells in either panel. You can also bring your own spells – import them here or
+                                    host them in your own repo.
                                 </p>
                             </div>
                         </div>
@@ -355,9 +360,9 @@
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">What are Spells (eggs)?</div>
                                     <p>
-                                        Spells are server templates that define runtime, Docker image, startup, features,
-                                        configs, and scripts. They live inside realms (categories) and power server
-                                        creation.
+                                        Spells are server templates that define runtime, Docker image, startup,
+                                        features, configs, and scripts. They live inside realms (categories) and power
+                                        server creation.
                                     </p>
                                 </div>
                             </div>
@@ -371,7 +376,8 @@
                                     <div class="font-semibold text-foreground mb-1">How you use them</div>
                                     <p>
                                         Install/import a spell, pick a realm, then create servers from it. Spells can
-                                        include update URLs, tags, banners, and author info for easy discovery and updates.
+                                        include update URLs, tags, banners, and author info for easy discovery and
+                                        updates.
                                     </p>
                                 </div>
                             </div>
@@ -384,8 +390,8 @@
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Under the hood</div>
                                     <p>
-                                        Configs (files/startup/logs/stop), file denylist, variables, Docker images, script
-                                        container/entry, and optional privileged install scripts define behavior.
+                                        Configs (files/startup/logs/stop), file denylist, variables, Docker images,
+                                        script container/entry, and optional privileged install scripts define behavior.
                                     </p>
                                 </div>
                             </div>
@@ -398,8 +404,8 @@
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Sources & compatibility</div>
                                     <p>
-                                        Use our cross-compatible spells repo (FeatherPanel ↔ Pterodactyl) or bring your own
-                                        JSON-defined spells. Import locally or host them in your own repository.
+                                        Use our cross-compatible spells repo (FeatherPanel ↔ Pterodactyl) or bring your
+                                        own JSON-defined spells. Import locally or host them in your own repository.
                                     </p>
                                 </div>
                             </div>

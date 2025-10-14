@@ -447,7 +447,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
-import { Eye, Pencil, Trash2, Shield, Plus, Users as UsersIcon, KeyRound, Palette, HelpCircle, Rocket } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Shield, Plus, Users as UsersIcon, KeyRound, Palette, HelpCircle } from 'lucide-vue-next';
 import axios from 'axios';
 import { Alert } from '@/components/ui/alert';
 import {

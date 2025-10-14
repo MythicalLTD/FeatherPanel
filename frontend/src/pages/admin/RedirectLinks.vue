@@ -459,7 +459,7 @@ import {
     DrawerFooter,
     DrawerClose,
 } from '@/components/ui/drawer';
-import { Plus, Eye, Pencil, Trash2, Copy, Link, Hash, Rocket } from 'lucide-vue-next';
+import { Plus, Eye, Pencil, Trash2, Copy, Link, Hash } from 'lucide-vue-next';
 import { Card, CardContent } from '@/components/ui/card';
 
 // Types

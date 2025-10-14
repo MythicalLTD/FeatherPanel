@@ -13,8 +13,12 @@
                             </p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span class="px-2.5 py-1 rounded border border-border bg-muted/40 text-xs">Open Source</span>
-                            <span class="px-2.5 py-1 rounded border border-border bg-muted/40 text-xs">Transparency</span>
+                            <span class="px-2.5 py-1 rounded border border-border bg-muted/40 text-xs"
+                                >Open Source</span
+                            >
+                            <span class="px-2.5 py-1 rounded border border-border bg-muted/40 text-xs"
+                                >Transparency</span
+                            >
                         </div>
                     </div>
                 </div>
@@ -63,8 +67,9 @@
                             <div class="font-semibold text-foreground">Your Responsibilities</div>
                         </div>
                         <p>
-                            Ensure your Terms of Service and Privacy Policy reflect how you use these technologies. You are
-                            responsible for compliance with third‑party licenses when distributing or modifying software.
+                            Ensure your Terms of Service and Privacy Policy reflect how you use these technologies. You
+                            are responsible for compliance with third‑party licenses when distributing or modifying
+                            software.
                         </p>
                     </div>
                 </CardContent>
@@ -97,19 +102,19 @@
                             <li><span class="font-mono">@modyfi/vite-plugin-yaml</span>: YAML import support</li>
                             <li><span class="font-mono">vite-plugin-vue-devtools</span>: DX tooling</li>
                             <li>
-                                <span class="font-mono">qrcode</span> / <span class="font-mono">vue-qrcode</span>: QR code
-                                generation/rendering
+                                <span class="font-mono">qrcode</span> / <span class="font-mono">vue-qrcode</span>: QR
+                                code generation/rendering
                             </li>
                             <li>
-                                <span class="font-mono">ace-builds</span> / <span class="font-mono">vue3-ace-editor</span>:
-                                code editor
+                                <span class="font-mono">ace-builds</span> /
+                                <span class="font-mono">vue3-ace-editor</span>: code editor
                             </li>
                             <li><span class="font-mono">vue-web-terminal</span>: web terminal UI</li>
                             <li><span class="font-mono">reka-ui</span>: UI primitives</li>
                             <li>
                                 <span class="font-mono">class-variance-authority</span> /
-                                <span class="font-mono">clsx</span> / <span class="font-mono">tailwind-merge</span>: class
-                                utilities
+                                <span class="font-mono">clsx</span> / <span class="font-mono">tailwind-merge</span>:
+                                class utilities
                             </li>
                             <li><span class="font-mono">tw-animate-css</span>: animations</li>
                         </ul>
@@ -129,8 +134,8 @@
                             <li><span class="font-mono">nikolaposa/rate-limit</span>: rate limiting utilities</li>
                             <li><span class="font-mono">guzzlehttp/guzzle</span>: HTTP client</li>
                             <li>
-                                <span class="font-mono">symfony/* (routing,http-foundation,mime)</span>: HTTP, routing, MIME
-                                helpers
+                                <span class="font-mono">symfony/* (routing,http-foundation,mime)</span>: HTTP, routing,
+                                MIME helpers
                             </li>
                             <li><span class="font-mono">firebase/php-jwt</span>: JWT handling</li>
                             <li><span class="font-mono">symfony/yaml</span>: YAML parsing</li>
@@ -138,8 +143,8 @@
                             <li><span class="font-mono">sentry/sentry</span>: error reporting</li>
                             <li><span class="font-mono">zircote/swagger-php</span>: OpenAPI annotations</li>
                             <li>
-                                <span class="font-mono">ext-redis</span> / <span class="font-mono">ext-sodium</span>: PHP
-                                extensions (Redis, cryptography)
+                                <span class="font-mono">ext-redis</span> / <span class="font-mono">ext-sodium</span>:
+                                PHP extensions (Redis, cryptography)
                             </li>
                             <li><span class="font-mono">phpunit/phpunit</span> (dev): testing</li>
                             <li><span class="font-mono">friendsofphp/php-cs-fixer</span> (dev): code style</li>
@@ -156,10 +161,10 @@
                     <div class="p-4 sm:p-6 text-sm text-muted-foreground">
                         <div class="font-semibold text-foreground mb-2">Inspiration & Influences</div>
                         <p>
-                            FeatherPanel takes inspiration from modern control panels and open‑source ecosystems. Ideas such
-                            as modular extensions, structured configuration, and clear UX patterns influenced our approach.
-                            We acknowledge prior art from community projects and general best practices across the
-                            container/orchestration space.
+                            FeatherPanel takes inspiration from modern control panels and open‑source ecosystems. Ideas
+                            such as modular extensions, structured configuration, and clear UX patterns influenced our
+                            approach. We acknowledge prior art from community projects and general best practices across
+                            the container/orchestration space.
                         </p>
                     </div>
                 </CardContent>

@@ -100,8 +100,8 @@
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">What are Locations?</div>
                                     <p>
-                                      Locations group nodes by geography or purpose. Keep your infrastructure organized
-                                      and easy to navigate across regions and data centers.
+                                        Locations group nodes by geography or purpose. Keep your infrastructure
+                                        organized and easy to navigate across regions and data centers.
                                     </p>
                                 </div>
                             </div>
@@ -109,19 +109,19 @@
                     </Card>
                     <Card>
                         <CardContent>
-                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                  <Flag class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                                  <div>
-                                      <div class="font-semibold text-foreground mb-1">Examples</div>
-                                      <ul class="list-disc list-inside space-y-1">
-                                          <li><b>USA</b>: nodes where Wings runs for US servers</li>
-                                          <li><b>Romania</b>: nodes where Romanian servers run (or other workloads)</li>
-                                      </ul>
-                                      <p class="mt-2">
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Flag class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Examples</div>
+                                    <ul class="list-disc list-inside space-y-1">
+                                        <li><b>USA</b>: nodes where Wings runs for US servers</li>
+                                        <li><b>Romania</b>: nodes where Romanian servers run (or other workloads)</li>
+                                    </ul>
+                                    <p class="mt-2">
                                         Use specific names like <b>USA-East</b>, <b>USA-West</b>, or
                                         <b>Romania-Bucharest</b> for clarity.
-                                      </p>
-                                  </div>
+                                    </p>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -134,10 +134,10 @@
                                     <ol class="list-decimal list-inside space-y-1">
                                         <li>Click <b>Create Location</b> above to add your first location.</li>
                                         <li>After creating, a <b>Nodes</b> button appears next to row actions.</li>
-                                       <li>Click <b>Nodes</b> to add and manage nodes for that location.</li>
+                                        <li>Click <b>Nodes</b> to add and manage nodes for that location.</li>
                                     </ol>
                                 </div>
-                              </div>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
@@ -325,7 +325,7 @@ import { ref, onMounted, watch } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Eye, Pencil, Trash2, Server, Plus, MapPin, Flag, Rocket, Sparkles, Shield } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Server, Plus, MapPin, Flag, Rocket } from 'lucide-vue-next';
 import axios from 'axios';
 import { Alert } from '@/components/ui/alert';
 import {

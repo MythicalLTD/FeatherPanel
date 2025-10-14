@@ -483,7 +483,7 @@ import {
     Upload,
     ExternalLink,
     Copy,
-    CheckCircle2, Rocket,
+    CheckCircle2,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
