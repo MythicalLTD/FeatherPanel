@@ -34,8 +34,6 @@
 - Updated `vite` to 7.1.10.
 - Updated `vue-router` to ^4.6.0.
 
-
-
 ## v0.0.6-Alpha
 
 ### Added
