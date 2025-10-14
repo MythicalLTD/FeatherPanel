@@ -17,7 +17,7 @@ define('SYSTEM_OS_NAME', gethostname() . '/' . PHP_OS_FAMILY);
 define('SYSTEM_KERNEL_NAME', php_uname('s'));
 define('TELEMETRY', true);
 define('REQUEST_ID', uniqid());
-define('APP_VERSION', 'v0.0.7');
+define('APP_VERSION', 'v0.0.8');
 define('APP_UPSTREAM', 'alpha');
 
 require(__DIR__ . '/../packages/autoload.php');

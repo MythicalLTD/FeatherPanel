@@ -15,6 +15,10 @@
 
 - Resolved an issue where navigating between plugin-rendered pages wouldn’t work as expected—switching between custom plugin pages is now seamless!
 
+### Improved
+
+- Significantly enhanced the overall UI experience, bringing smoother interactions, sharper visuals, and a more cohesive feel—special thanks to @Tweenty_ for the design magic!
+
 ## v0.0.7-Alpha
 
 ### Added
