@@ -9,28 +9,6 @@
                 </div>
             </div>
 
-            <!-- Error State -->
-            <div
-                v-else-if="message?.type === 'error'"
-                class="flex flex-col items-center justify-center py-12 text-center"
-            >
-                <div class="text-red-500 mb-4">
-                    <svg class="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                        />
-                    </svg>
-                </div>
-                <h3 class="text-lg font-medium text-muted-foreground mb-2">Failed to load realms</h3>
-                <p class="text-sm text-muted-foreground max-w-sm">
-                    {{ message.text }}
-                </p>
-                <Button class="mt-4" @click="fetchRealms">Try Again</Button>
-            </div>
-
             <!-- Realms Table -->
             <div v-else class="p-6">
                 <TableComponent
@@ -38,7 +16,7 @@
                     description="Manage all realms in your system."
                     :columns="tableColumns"
                     :data="realms"
-                    :search-placeholder="'Search by name, description, or author...'"
+                    :search-placeholder="'Search by name or description...'"
                     :server-side-pagination="true"
                     :total-records="pagination.total"
                     :total-pages="Math.ceil(pagination.total / pagination.pageSize)"
@@ -59,16 +37,6 @@
                     </template>
 
                     <!-- Custom cell templates -->
-                    <template #cell-logo="{ item }">
-                        <img
-                            v-if="(item as Realm).logo"
-                            :src="(item as Realm).logo"
-                            :alt="(item as Realm).name"
-                            class="h-8 w-8 rounded"
-                        />
-                        <span v-else>-</span>
-                    </template>
-
                     <template #cell-actions="{ item }">
                         <div class="flex gap-2">
                             <Button size="sm" variant="outline" @click="onView(item as Realm)">
@@ -154,17 +122,6 @@
                 <div class="px-6 pt-6 space-y-2">
                     <div><b>Name:</b> {{ selectedRealm.name }}</div>
                     <div><b>Description:</b> {{ selectedRealm.description || '-' }}</div>
-                    <div>
-                        <b>Logo:</b>
-                        <img
-                            v-if="selectedRealm.logo"
-                            :src="selectedRealm.logo"
-                            :alt="selectedRealm.name"
-                            class="h-8 w-8 rounded inline"
-                        />
-                        <span v-else>-</span>
-                    </div>
-                    <div><b>Author:</b> {{ selectedRealm.author || '-' }}</div>
                     <div><b>Created At:</b> {{ selectedRealm.created_at }}</div>
                     <div><b>Updated At:</b> {{ selectedRealm.updated_at }}</div>
                 </div>
@@ -190,13 +147,6 @@
                     <DrawerTitle>Edit Realm</DrawerTitle>
                     <DrawerDescription>Edit details for realm: {{ editingRealm.name }}</DrawerDescription>
                 </DrawerHeader>
-                <Alert
-                    v-if="drawerMessage"
-                    :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                    class="mb-4 whitespace-nowrap overflow-x-auto"
-                >
-                    <span>{{ drawerMessage.text }}</span>
-                </Alert>
                 <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitEdit">
                     <label for="edit-name" class="block mb-1 font-medium">Name</label>
                     <Input id="edit-name" v-model="editForm.name" label="Name" placeholder="Name" required />
@@ -207,17 +157,6 @@
                         label="Description"
                         placeholder="Description"
                     />
-                    <label for="edit-logo" class="block mb-1 font-medium">Logo URL</label>
-                    <Input
-                        id="edit-logo"
-                        v-model="editForm.logo"
-                        label="Logo"
-                        placeholder="https://example.com/logo.png"
-                        type="url"
-                    />
-                    <p class="text-xs text-muted-foreground mt-1">Logo must be a valid URL starting with https://</p>
-                    <label for="edit-author" class="block mb-1 font-medium">Author</label>
-                    <Input id="edit-author" v-model="editForm.author" label="Author" placeholder="Author" />
                     <div class="flex justify-end gap-2 mt-4">
                         <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
                         <Button type="submit" variant="default">Save</Button>
@@ -240,13 +179,6 @@
                     <DrawerTitle>Create Realm</DrawerTitle>
                     <DrawerDescription>Fill in the details to create a new realm.</DrawerDescription>
                 </DrawerHeader>
-                <Alert
-                    v-if="drawerMessage"
-                    :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                    class="mb-4 whitespace-nowrap overflow-x-auto"
-                >
-                    <span>{{ drawerMessage.text }}</span>
-                </Alert>
                 <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreate">
                     <label for="create-name" class="block mb-1 font-medium">Name</label>
                     <Input id="create-name" v-model="createForm.name" label="Name" placeholder="Name" required />
@@ -257,17 +189,6 @@
                         label="Description"
                         placeholder="Description"
                     />
-                    <label for="create-logo" class="block mb-1 font-medium">Logo URL</label>
-                    <Input
-                        id="create-logo"
-                        v-model="createForm.logo"
-                        label="Logo"
-                        placeholder="https://example.com/logo.png"
-                        type="url"
-                    />
-                    <p class="text-xs text-muted-foreground mt-1">Logo must be a valid URL starting with https://</p>
-                    <label for="create-author" class="block mb-1 font-medium">Author</label>
-                    <Input id="create-author" v-model="createForm.author" label="Author" placeholder="Author" />
                     <div class="flex justify-end gap-2 mt-4">
                         <Button type="button" variant="outline" @click="closeCreateDrawer">Cancel</Button>
                         <Button type="submit" variant="default">Create</Button>
@@ -309,7 +230,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Eye, Pencil, Trash2, Sparkles, Plus } from 'lucide-vue-next';
 import axios from 'axios';
-import { Alert } from '@/components/ui/alert';
 import {
     Drawer,
     DrawerContent,
@@ -331,8 +251,6 @@ type Realm = {
     id: number;
     name: string;
     description?: string;
-    logo?: string;
-    author?: string;
     created_at: string;
     updated_at: string;
 };
@@ -350,8 +268,6 @@ const pagination = ref({
 });
 const loading = ref(false);
 const deleting = ref(false);
-const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
-const drawerMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<number | null>(null);
 const selectedRealm = ref<Realm | null>(null);
 const viewing = ref(false);
@@ -361,23 +277,17 @@ const router = useRouter();
 const editForm = ref({
     name: '',
     description: '',
-    logo: '',
-    author: '',
 });
 const createDrawerOpen = ref(false);
 const createForm = ref({
     name: '',
     description: '',
-    logo: '',
-    author: '',
 });
 
 // Table columns configuration
 const tableColumns: TableColumn[] = [
     { key: 'name', label: 'Name', searchable: true },
     { key: 'description', label: 'Description', searchable: true },
-    { key: 'logo', label: 'Logo' },
-    { key: 'author', label: 'Author', searchable: true },
     { key: 'created_at', label: 'Created' },
     { key: 'actions', label: 'Actions', headerClass: 'w-[200px] font-semibold' },
 ];
@@ -406,12 +316,9 @@ async function fetchRealms() {
             to: apiPagination.to,
         };
     } catch (e: unknown) {
-        message.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to fetch realms',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to fetch realms';
+        toast.error(errorMessage);
         // Clear realms on error to show empty state
         realms.value = [];
         pagination.value.total = 0;
@@ -441,7 +348,7 @@ async function onView(realm: Realm) {
         selectedRealm.value = data.data.realm;
     } catch {
         selectedRealm.value = null;
-        message.value = { type: 'error', text: 'Failed to fetch realm details' };
+        toast.error('Failed to fetch realm details');
     }
 }
 
@@ -459,25 +366,19 @@ async function confirmDelete(realm: Realm) {
     try {
         const response = await axios.delete(`/api/admin/realms/${realm.id}`);
         if (response.data && response.data.success) {
-            message.value = { type: 'success', text: 'Realm deleted successfully' };
+            toast.success('Realm deleted successfully');
             await fetchRealms();
             success = true;
         } else {
-            message.value = { type: 'error', text: response.data?.message || 'Failed to delete realm' };
+            toast.error(response.data?.message || 'Failed to delete realm');
         }
     } catch (e: unknown) {
-        message.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to delete realm',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to delete realm';
+        toast.error(errorMessage);
     } finally {
         deleting.value = false;
         if (success) confirmDeleteRow.value = null;
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
     }
 }
 
@@ -502,105 +403,61 @@ async function openEditDrawer(realm: Realm) {
         editForm.value = {
             name: r.name || '',
             description: r.description || '',
-            logo: r.logo || '',
-            author: r.author || '',
         };
         editDrawerOpen.value = true;
     } catch {
-        message.value = { type: 'error', text: 'Failed to fetch realm details for editing' };
+        toast.error('Failed to fetch realm details for editing');
     }
 }
 
 function closeEditDrawer() {
     editDrawerOpen.value = false;
     editingRealm.value = null;
-    drawerMessage.value = null;
 }
 
 async function submitEdit() {
     if (!editingRealm.value) return;
 
-    // Validate logo URL if provided
-    if (editForm.value.logo && editForm.value.logo.trim() !== '') {
-        if (!editForm.value.logo.startsWith('https://')) {
-            toast.error('Logo URL must start with https://');
-            return;
-        }
-        try {
-            new URL(editForm.value.logo);
-        } catch {
-            drawerMessage.value = { type: 'error', text: 'Please enter a valid URL' };
-            return;
-        }
-    }
-
     try {
         const patchData = { ...editForm.value };
         const { data } = await axios.patch(`/api/admin/realms/${editingRealm.value.id}`, patchData);
         if (data && data.success) {
-            drawerMessage.value = { type: 'success', text: 'Realm updated successfully' };
-            setTimeout(() => {
-                drawerMessage.value = null;
-            }, 2000);
+            toast.success('Realm updated successfully');
             await fetchRealms();
             closeEditDrawer();
         } else {
-            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to update realm' };
+            toast.error(data?.message || 'Failed to update realm');
         }
     } catch (e: unknown) {
-        drawerMessage.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to update realm',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to update realm';
+        toast.error(errorMessage);
     }
 }
 
 function openCreateDrawer() {
     createDrawerOpen.value = true;
-    createForm.value = { name: '', description: '', logo: '', author: '' };
+    createForm.value = { name: '', description: '' };
 }
 
 function closeCreateDrawer() {
     createDrawerOpen.value = false;
-    drawerMessage.value = null;
 }
 
 async function submitCreate() {
-    // Validate logo URL if provided
-    if (createForm.value.logo && createForm.value.logo.trim() !== '') {
-        if (!createForm.value.logo.startsWith('https://')) {
-            toast.error('Logo URL must start with https://');
-            return;
-        }
-        try {
-            new URL(createForm.value.logo);
-        } catch {
-            drawerMessage.value = { type: 'error', text: 'Please enter a valid URL' };
-            return;
-        }
-    }
-
     try {
         const { data } = await axios.put('/api/admin/realms', createForm.value);
         if (data && data.success) {
-            drawerMessage.value = { type: 'success', text: 'Realm created successfully' };
-            setTimeout(() => {
-                drawerMessage.value = null;
-            }, 2000);
+            toast.success('Realm created successfully');
             await fetchRealms();
             closeCreateDrawer();
         } else {
-            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to create realm' };
+            toast.error(data?.message || 'Failed to create realm');
         }
     } catch (e: unknown) {
-        drawerMessage.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to create realm',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to create realm';
+        toast.error(errorMessage);
     }
 }
 </script>

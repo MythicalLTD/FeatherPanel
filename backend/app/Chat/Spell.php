@@ -125,6 +125,14 @@ class Spell
             }
         }
 
+        // Convert empty JSON fields to NULL to satisfy CHECK constraints
+        $jsonFields = ['features', 'docker_images', 'file_denylist'];
+        foreach ($jsonFields as $field) {
+            if (isset($data[$field]) && (empty($data[$field]) || trim($data[$field]) === '')) {
+                $data[$field] = null;
+            }
+        }
+
         $pdo = Database::getPdoConnection();
         $fields = array_keys($data);
         $placeholders = array_map(fn ($f) => ':' . $f, $fields);
@@ -336,6 +344,14 @@ class Spell
         foreach ($booleanFields as $field) {
             if (isset($data[$field])) {
                 $data[$field] = $data[$field] ? 1 : 0;
+            }
+        }
+
+        // Convert empty JSON fields to NULL to satisfy CHECK constraints
+        $jsonFields = ['features', 'docker_images', 'file_denylist'];
+        foreach ($jsonFields as $field) {
+            if (isset($data[$field]) && (empty($data[$field]) || trim($data[$field]) === '')) {
+                $data[$field] = null;
             }
         }
 

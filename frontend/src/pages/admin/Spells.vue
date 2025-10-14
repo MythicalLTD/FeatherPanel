@@ -14,28 +14,6 @@
                 </div>
             </div>
 
-            <!-- Error State -->
-            <div
-                v-else-if="message?.type === 'error'"
-                class="flex flex-col items-center justify-center py-12 text-center"
-            >
-                <div class="text-red-500 mb-4">
-                    <svg class="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                        />
-                    </svg>
-                </div>
-                <h3 class="text-lg font-medium text-muted-foreground mb-2">Failed to load spells</h3>
-                <p class="text-sm text-muted-foreground max-w-sm">
-                    {{ message.text }}
-                </p>
-                <Button class="mt-4" @click="fetchSpells">Try Again</Button>
-            </div>
-
             <!-- Spells Tabs -->
             <div v-else class="p-6">
                 <!-- Header -->
@@ -476,13 +454,6 @@
                     <DrawerTitle>Edit Spell</DrawerTitle>
                     <DrawerDescription>Edit details for spell: {{ editingSpell.name }}</DrawerDescription>
                 </DrawerHeader>
-                <Alert
-                    v-if="drawerMessage"
-                    :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                    class="mb-4 whitespace-nowrap overflow-x-auto"
-                >
-                    <span>{{ drawerMessage.text }}</span>
-                </Alert>
                 <Tabs v-model="activeEditTab" default-value="general" class="px-6 pt-2">
                     <TabsList class="mb-4">
                         <TabsTrigger value="general">General</TabsTrigger>
@@ -904,13 +875,6 @@
                     <DrawerTitle>Create Spell</DrawerTitle>
                     <DrawerDescription>Fill in the details to create a new spell.</DrawerDescription>
                 </DrawerHeader>
-                <Alert
-                    v-if="drawerMessage"
-                    :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                    class="mb-4 whitespace-nowrap overflow-x-auto"
-                >
-                    <span>{{ drawerMessage.text }}</span>
-                </Alert>
                 <Tabs default-value="general" class="px-6 pt-2">
                     <TabsList class="mb-4">
                         <TabsTrigger value="general">General</TabsTrigger>
@@ -1236,7 +1200,6 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import axios from 'axios';
-import { Alert } from '@/components/ui/alert';
 import {
     Drawer,
     DrawerContent,
@@ -1259,7 +1222,9 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
+import { useToast } from 'vue-toastification';
 
+const toast = useToast();
 const showOnlinePublishBanner = ref(true);
 
 type Spell = {
@@ -1354,8 +1319,6 @@ const pagination = ref({
 });
 const loading = ref(false);
 const deleting = ref(false);
-const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
-const drawerMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<number | null>(null);
 const selectedSpell = ref<Spell | null>(null);
 const viewing = ref(false);
@@ -1478,12 +1441,9 @@ async function fetchSpells() {
             to: apiPagination.to,
         };
     } catch (e: unknown) {
-        message.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to fetch spells',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to fetch spells';
+        toast.error(errorMessage);
         spells.value = [];
         pagination.value.total = 0;
     } finally {
@@ -1546,7 +1506,7 @@ async function onView(spell: Spell) {
         selectedSpell.value = data.data.spell;
     } catch {
         selectedSpell.value = null;
-        message.value = { type: 'error', text: 'Failed to fetch spell details' };
+        toast.error('Failed to fetch spell details');
     }
 }
 
@@ -1560,25 +1520,19 @@ async function confirmDelete(spell: Spell) {
     try {
         const response = await axios.delete(`/api/admin/spells/${spell.id}`);
         if (response.data && response.data.success) {
-            message.value = { type: 'success', text: 'Spell deleted successfully' };
+            toast.success('Spell deleted successfully');
             await fetchSpells();
             success = true;
         } else {
-            message.value = { type: 'error', text: response.data?.message || 'Failed to delete spell' };
+            toast.error(response.data?.message || 'Failed to delete spell');
         }
     } catch (e: unknown) {
-        message.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to delete spell',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to delete spell';
+        toast.error(errorMessage);
     } finally {
         deleting.value = false;
         if (success) confirmDeleteRow.value = null;
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
     }
 }
 
@@ -1606,18 +1560,9 @@ async function onExport(spell: Spell) {
         link.remove();
         window.URL.revokeObjectURL(url);
 
-        message.value = { type: 'success', text: 'Spell exported successfully' };
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
+        toast.success('Spell exported successfully');
     } catch {
-        message.value = {
-            type: 'error',
-            text: 'Failed to export spell',
-        };
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
+        toast.error('Failed to export spell');
     }
 }
 
@@ -1681,14 +1626,13 @@ async function openEditDrawer(spell: Spell) {
         };
         editDrawerOpen.value = true;
     } catch {
-        message.value = { type: 'error', text: 'Failed to fetch spell details for editing' };
+        toast.error('Failed to fetch spell details for editing');
     }
 }
 
 function closeEditDrawer() {
     editDrawerOpen.value = false;
     editingSpell.value = null;
-    drawerMessage.value = null;
 }
 
 async function submitEdit() {
@@ -1712,22 +1656,16 @@ async function submitEdit() {
         };
         const { data } = await axios.patch(`/api/admin/spells/${editingSpell.value.id}`, patchData);
         if (data && data.success) {
-            drawerMessage.value = { type: 'success', text: 'Spell updated successfully' };
-            setTimeout(() => {
-                drawerMessage.value = null;
-            }, 2000);
+            toast.success('Spell updated successfully');
             await fetchSpells();
             closeEditDrawer();
         } else {
-            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to update spell' };
+            toast.error(data?.message || 'Failed to update spell');
         }
     } catch (e: unknown) {
-        drawerMessage.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to update spell',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to update spell';
+        toast.error(errorMessage);
     }
 }
 
@@ -1762,7 +1700,6 @@ function openCreateDrawer() {
 
 function closeCreateDrawer() {
     createDrawerOpen.value = false;
-    drawerMessage.value = null;
     // Reset form fields
     createForm.value = {
         name: '',
@@ -1790,7 +1727,7 @@ function closeCreateDrawer() {
 async function submitCreate() {
     // Validate realm_id is set (only if not in realm context)
     if (!currentRealm.value && (!createForm.value.realm_id || createForm.value.realm_id === 0)) {
-        drawerMessage.value = { type: 'error', text: 'Please select a realm before creating a spell.' };
+        toast.error('Please select a realm before creating a spell.');
         return;
     }
 
@@ -1814,22 +1751,16 @@ async function submitCreate() {
         };
         const { data } = await axios.put('/api/admin/spells', formData);
         if (data && data.success) {
-            drawerMessage.value = { type: 'success', text: 'Spell created successfully' };
-            setTimeout(() => {
-                drawerMessage.value = null;
-            }, 2000);
+            toast.success('Spell created successfully');
             await fetchSpells();
             closeCreateDrawer();
         } else {
-            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to create spell' };
+            toast.error(data?.message || 'Failed to create spell');
         }
     } catch (e: unknown) {
-        drawerMessage.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to create spell',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to create spell';
+        toast.error(errorMessage);
     }
 }
 
@@ -1844,11 +1775,8 @@ function onImportSpell(event: Event) {
     if (currentRealm.value && currentRealm.value.id) {
         formData.append('realm_id', String(currentRealm.value.id));
     } else {
-        message.value = { type: 'error', text: 'Please select a realm before importing a spell.' };
+        toast.error('Please select a realm before importing a spell.');
         input.value = '';
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
         return;
     }
 
@@ -1857,16 +1785,13 @@ function onImportSpell(event: Event) {
             headers: { 'Content-Type': 'multipart/form-data' },
         })
         .then(() => {
-            message.value = { type: 'success', text: 'Spell imported successfully' };
+            toast.success('Spell imported successfully');
             fetchSpells();
         })
         .catch((err) => {
-            message.value = { type: 'error', text: err?.response?.data?.message || 'Failed to import spell' };
+            toast.error(err?.response?.data?.message || 'Failed to import spell');
         })
         .finally(() => {
-            setTimeout(() => {
-                message.value = null;
-            }, 4000);
             input.value = '';
         });
 }
@@ -1967,7 +1892,7 @@ async function submitVariable() {
         editingVariable.value = null;
     } catch (e: unknown) {
         console.error('Failed to save variable:', e);
-        message.value = { type: 'error', text: 'Failed to save variable. Please try again.' };
+        toast.error('Failed to save variable. Please try again.');
     }
 }
 
@@ -1986,7 +1911,7 @@ async function confirmDeleteVariable(variable: SpellVariable) {
         await fetchSpellVariables();
         confirmDeleteVariableRow.value = null;
     } catch {
-        message.value = { type: 'error', text: 'Failed to delete variable' };
+        toast.error('Failed to delete variable');
     }
 }
 
@@ -2028,15 +1953,9 @@ const onlineInstall = async (identifier: string) => {
             realm_id: currentRealm.value?.id,
         });
         await fetchSpells();
-        message.value = { type: 'success', text: `Installed ${identifier}` };
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
+        toast.success(`Installed ${identifier}`);
     } catch (e) {
-        message.value = { type: 'error', text: e instanceof Error ? e.message : 'Install failed' };
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
+        toast.error(e instanceof Error ? e.message : 'Install failed');
     } finally {
         installingOnlineId.value = null;
     }

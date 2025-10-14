@@ -281,7 +281,7 @@ const userName = computed(() => sessionStore.user?.first_name + ' ' + sessionSto
 const showAppUrlWarning = ref(false);
 const APP_URL_WARNING_DISMISSED_KEY = 'app-url-warning-dismissed';
 
-const currentAppUrl = computed(() => settingsStore.appUrl || 'https://mythicalpanel.mythical.systems');
+const currentAppUrl = computed(() => settingsStore.appUrl || 'https://featherpanel.mythical.systems');
 const detectedAppUrl = computed(() => {
     if (typeof window !== 'undefined') {
         return window.location.origin;
@@ -290,7 +290,7 @@ const detectedAppUrl = computed(() => {
 });
 
 const checkAppUrlConfiguration = () => {
-    const defaultUrl = 'https://mythicalpanel.mythical.systems';
+    const defaultUrl = 'https://featherpanel.mythical.systems';
     const isDismissed = localStorage.getItem(APP_URL_WARNING_DISMISSED_KEY);
 
     // Show warning if APP_URL is the default and user hasn't dismissed it

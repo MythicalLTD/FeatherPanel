@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.0.7-Alpha
+
+## Fixed
+
+- Resolved an issue with the sidebar avatar positioning when collapsed—now perfectly aligned!
+- Addressed a problem where the logo would fail to load until the theme was changed; logos now always appear as expected.
+- Fixed an annoying bug that prevented editing spells without features—you can now edit all spells seamlessly.
+
+## Improved
+
+- Realms now display toast notifications for feedback instead of outdated error messages, for a more modern and user-friendly experience.
+- Spells now use toast notifications rather than the previous error message system, providing clearer and more consistent feedback.
+
+## Removed
+
+- Deprecated legacy realm logos—spells now manage logos for a cleaner and unified experience.
+- Removed redundant realm author field, as this information is now fully managed by spells.
+
 ## v0.0.6-Alpha
 
 ## Added

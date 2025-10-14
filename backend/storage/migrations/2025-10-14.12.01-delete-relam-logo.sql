@@ -1,0 +1,1 @@
+ALTER TABLE `featherpanel_realms` DROP `logo`;

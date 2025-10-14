@@ -439,7 +439,7 @@ class ImagesController
         }
 
         // Generate URL
-        $baseUrl = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://mythicalpanel.mythical.systems');
+        $baseUrl = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
         $url = $baseUrl . '/attachments/' . $filename;
 
         // Create database record

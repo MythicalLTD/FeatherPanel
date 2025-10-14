@@ -102,7 +102,6 @@ backend/
 - `firebase/php-jwt` - JWT tokens
 - `zircote/swagger-php` - OpenAPI documentation
 - `nikolaposa/rate-limit` - Rate limiting
-- `sentry/sentry` - Error tracking
 
 ### Development Dependencies
 

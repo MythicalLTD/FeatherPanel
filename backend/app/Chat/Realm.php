@@ -41,7 +41,7 @@ class Realm
         $params = [];
 
         if ($search !== null) {
-            $sql .= ' WHERE name LIKE :search OR description LIKE :search OR author LIKE :search';
+            $sql .= ' WHERE name LIKE :search OR description LIKE :search';
             $params['search'] = '%' . $search . '%';
         }
 
@@ -75,7 +75,7 @@ class Realm
         $params = [];
 
         if ($search !== null) {
-            $sql .= ' WHERE name LIKE :search OR description LIKE :search OR author LIKE :search';
+            $sql .= ' WHERE name LIKE :search OR description LIKE :search';
             $params['search'] = '%' . $search . '%';
         }
 
@@ -91,13 +91,13 @@ class Realm
 
     public static function create(array $data): int|false
     {
-        $fields = ['name', 'description', 'logo', 'author'];
+        $fields = ['name', 'description'];
         $insert = [];
         foreach ($fields as $field) {
             $insert[$field] = $data[$field] ?? null;
         }
         $pdo = Database::getPdoConnection();
-        $sql = 'INSERT INTO ' . self::$table . ' (name, description, logo, author) VALUES (:name, :description, :logo, :author)';
+        $sql = 'INSERT INTO ' . self::$table . ' (name, description) VALUES (:name, :description)';
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($insert)) {
             return (int) $pdo->lastInsertId();
@@ -108,7 +108,7 @@ class Realm
 
     public static function update(int $id, array $data): bool
     {
-        $fields = ['name', 'description', 'logo', 'author'];
+        $fields = ['name', 'description'];
         $set = [];
         $params = ['id' => $id];
         foreach ($fields as $field) {

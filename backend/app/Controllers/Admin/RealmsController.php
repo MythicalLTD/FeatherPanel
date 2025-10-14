@@ -45,8 +45,6 @@ use Symfony\Component\HttpFoundation\Response;
     properties: [
         new OA\Property(property: 'id', type: 'integer', description: 'Realm ID'),
         new OA\Property(property: 'name', type: 'string', description: 'Realm name'),
-        new OA\Property(property: 'logo', type: 'string', nullable: true, description: 'Realm logo URL'),
-        new OA\Property(property: 'author', type: 'string', nullable: true, description: 'Realm author'),
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Realm description'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
@@ -72,8 +70,6 @@ use Symfony\Component\HttpFoundation\Response;
     required: ['name'],
     properties: [
         new OA\Property(property: 'name', type: 'string', description: 'Realm name', minLength: 2, maxLength: 255),
-        new OA\Property(property: 'logo', type: 'string', nullable: true, description: 'Realm logo URL', maxLength: 255),
-        new OA\Property(property: 'author', type: 'string', nullable: true, description: 'Realm author', maxLength: 255),
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Realm description', maxLength: 65535),
     ]
 )]
@@ -82,8 +78,6 @@ use Symfony\Component\HttpFoundation\Response;
     type: 'object',
     properties: [
         new OA\Property(property: 'name', type: 'string', description: 'Realm name', minLength: 2, maxLength: 255),
-        new OA\Property(property: 'logo', type: 'string', nullable: true, description: 'Realm logo URL', maxLength: 255),
-        new OA\Property(property: 'author', type: 'string', nullable: true, description: 'Realm author', maxLength: 255),
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Realm description', maxLength: 65535),
     ]
 )]
@@ -112,7 +106,7 @@ class RealmsController
             new OA\Parameter(
                 name: 'search',
                 in: 'query',
-                description: 'Search term to filter realms by name, author, or description',
+                description: 'Search term to filter realms by name or description',
                 required: false,
                 schema: new OA\Schema(type: 'string')
             ),
@@ -222,7 +216,7 @@ class RealmsController
     #[OA\Put(
         path: '/api/admin/realms',
         summary: 'Create new realm',
-        description: 'Create a new realm with name and optional logo, author, and description. Validates field lengths and data types.',
+        description: 'Create a new realm with name and optional description. Validates field lengths and data types.',
         tags: ['Admin - Realms'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -263,26 +257,11 @@ class RealmsController
         if (!is_string($data['name'])) {
             return ApiResponse::error('Name must be a string', 'INVALID_DATA_TYPE');
         }
-        if (isset($data['logo']) && !is_string($data['logo'])) {
-            return ApiResponse::error('Logo must be a string', 'INVALID_DATA_TYPE');
-        }
-        if (isset($data['logo']) && strlen($data['logo']) > 255) {
-            return ApiResponse::error('Logo must be less than 255 characters', 'INVALID_DATA_LENGTH');
-        }
-        if (isset($data['author']) && !is_string($data['author'])) {
-            return ApiResponse::error('Author must be a string', 'INVALID_DATA_TYPE');
-        }
         if (isset($data['description']) && !is_string($data['description'])) {
             return ApiResponse::error('Description must be a string', 'INVALID_DATA_TYPE');
         }
         if (strlen($data['name']) < 2 || strlen($data['name']) > 255) {
             return ApiResponse::error('Name must be between 2 and 255 characters', 'INVALID_DATA_LENGTH');
-        }
-        if (isset($data['logo']) && strlen($data['logo']) > 255) {
-            return ApiResponse::error('Logo must be less than 255 characters', 'INVALID_DATA_LENGTH');
-        }
-        if (isset($data['author']) && strlen($data['author']) > 255) {
-            return ApiResponse::error('Author must be less than 255 characters', 'INVALID_DATA_LENGTH');
         }
         if (isset($data['description']) && strlen($data['description']) > 65535) {
             return ApiResponse::error('Description must be less than 65535 characters', 'INVALID_DATA_LENGTH');
@@ -373,20 +352,6 @@ class RealmsController
             }
             if (strlen($data['name']) < 2 || strlen($data['name']) > 255) {
                 return ApiResponse::error('Name must be between 2 and 255 characters', 'INVALID_DATA_LENGTH');
-            }
-        }
-        if (isset($data['logo']) && !is_string($data['logo'])) {
-            return ApiResponse::error('Logo must be a string', 'INVALID_DATA_TYPE');
-        }
-        if (isset($data['logo']) && strlen($data['logo']) > 255) {
-            return ApiResponse::error('Logo must be less than 255 characters', 'INVALID_DATA_LENGTH');
-        }
-        if (isset($data['author'])) {
-            if (!is_string($data['author'])) {
-                return ApiResponse::error('Author must be a string', 'INVALID_DATA_TYPE');
-            }
-            if (strlen($data['author']) > 255) {
-                return ApiResponse::error('Author must be less than 255 characters', 'INVALID_DATA_LENGTH');
             }
         }
         if (isset($data['description'])) {

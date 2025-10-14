@@ -90,10 +90,10 @@ const user = computed(() => {
 
 // Get current theme
 
-const currentTheme = ref<string | null>(window.localStorage.getItem('theme'));
+const currentTheme = ref<string>((window.localStorage.getItem('theme') as string) ?? 'dark');
 
 function updateTheme() {
-    currentTheme.value = window.localStorage.getItem('theme');
+    currentTheme.value = (window.localStorage.getItem('theme') as string) ?? 'dark';
 }
 
 onMounted(() => {
@@ -126,14 +126,12 @@ const isSidebarVisible = computed(() => {
                         :alt="String(settingsStore.appName || '')"
                         class="h-6 w-6 sm:h-8 sm:w-8 object-contain flex-shrink-0"
                     />
-                    <div
-                        v-else
-                        class="h-6 w-6 sm:h-8 sm:w-8 bg-primary rounded flex items-center justify-center text-white font-bold text-sm sm:text-lg flex-shrink-0"
+
+                    <span
+                        v-if="settingsStore.appName && state !== 'collapsed'"
+                        class="ml-2 font-semibold text-base truncate"
                     >
-                        {{ String(settingsStore.appName || '').charAt(0) || 'M' }}
-                    </div>
-                    <span v-if="state === 'expanded'" class="font-medium text-base sm:text-lg truncate ml-2">
-                        {{ settingsStore.appName || '' }}
+                        {{ settingsStore.appName }}
                     </span>
                 </div>
             </div>
@@ -163,7 +161,7 @@ const isSidebarVisible = computed(() => {
                 :items="data.navDebug"
             />
         </SidebarContent>
-        <SidebarFooter class="px-2 sm:px-0">
+        <SidebarFooter class="px-2">
             <NavUser :user="user" />
         </SidebarFooter>
         <SidebarRail />

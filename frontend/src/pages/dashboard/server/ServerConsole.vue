@@ -1928,5 +1928,4 @@ function requestServerLogs(): void {
 :deep(.xterm-viewport) {
     background-color: transparent !important;
 }
-
 </style>
