@@ -31,6 +31,7 @@
 namespace App\Controllers\System;
 
 use App\App;
+use App\Chat\User;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
@@ -103,6 +104,12 @@ class PluginSidebarController
                                     foreach ($sidebarConfig[$section] as $key => $item) {
                                         // Add plugin identifier to avoid conflicts
                                         $pluginKey = "/{$plugin}" . $key;
+
+                                        // Enhance component URL with parameters for all sections
+                                        if (isset($item['component'])) {
+                                            $item['component'] = $this->addComponentParameters($item['component'], $section, $request);
+                                        }
+
                                         $sidebarData[$section][$pluginKey] = array_merge($item, [
                                             'plugin' => $plugin,
                                             'pluginName' => ucfirst($plugin),
@@ -128,6 +135,12 @@ class PluginSidebarController
                                 if (isset($sidebarData[$section]) && is_array($items)) {
                                     foreach ($items as $key => $item) {
                                         $pluginKey = "/{$plugin}" . $key;
+
+                                        // Enhance component URL with parameters for all sections
+                                        if (isset($item['component'])) {
+                                            $item['component'] = $this->addComponentParameters($item['component'], $section, $request);
+                                        }
+
                                         $sidebarData[$section][$pluginKey] = array_merge($item, [
                                             'plugin' => $plugin,
                                             'pluginName' => ucfirst($plugin),
@@ -146,5 +159,58 @@ class PluginSidebarController
         return ApiResponse::success([
             'sidebar' => $sidebarData,
         ], 'Providing sidebar', 200);
+    }
+
+    /**
+     * Add query parameters to component URL based on section.
+     *
+     * @param string $component Original component URL
+     * @param string $section Section type (server, dashboard, admin)
+     *
+     * @return string Enhanced component URL with placeholders
+     */
+    private function addComponentParameters(string $component, string $section, Request $request): string
+    {
+        // Replace all placeholders with testData and always add userUuid
+        $placeholders = [
+            '<userUuid>' => 'testData',
+            '<serverUuid>' => 'testData',
+        ];
+        $component = strtr($component, $placeholders);
+
+        // Build query params based on section
+        $queryParams = [];
+
+        // Always add userUuid=testData
+        if (strpos($component, 'userUuid=testData') === false) {
+            if (isset($_COOKIE['remember_token'])) {
+                $userInfo = User::getUserByRememberToken($_COOKIE['remember_token']);
+                if ($userInfo == null) {
+                    return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+                }
+                if ($userInfo['banned'] == 'true') {
+                    return ApiResponse::error('User is banned', 'USER_BANNED');
+                }
+                $queryParams['userUuid'] = 'userUuid=' . $userInfo['uuid'];
+            } else {
+                $queryParams['userUuid'] = 'notAuthenticated';
+            }
+        }
+
+        // Dynamically add section-specific params
+        if ($section === 'server' && strpos($component, 'serverUuid=testData') === false) {
+            if (isset($_COOKIE['serverUuid'])) {
+                $queryParams['serverUuid'] = 'serverUuid=' . $_COOKIE['serverUuid'];
+            } else {
+                $queryParams['serverUuid'] = 'notFound';
+            }
+        }
+
+        if (!empty($queryParams)) {
+            $separator = (strpos($component, '?') !== false) ? '&' : '?';
+            $component .= $separator . implode('&', $queryParams);
+        }
+
+        return $component;
     }
 }
