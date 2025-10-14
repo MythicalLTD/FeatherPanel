@@ -9,7 +9,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <KeyRound class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <KeyRound class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">About API Keys</div>
                                     <p>
@@ -27,7 +27,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Plug class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <Plug class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Pterodactyl Panel API (legacy)</div>
                                     <p>

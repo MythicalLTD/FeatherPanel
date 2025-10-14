@@ -249,78 +249,80 @@
                         </div>
                         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <Card v-for="spell in onlineSpells" :key="spell.identifier">
-                                <div class="p-4">
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div class="flex items-center gap-3">
-                                            <div
-                                                class="h-10 w-10 rounded bg-muted flex items-center justify-center overflow-hidden"
-                                            >
-                                                <img
-                                                    v-if="spell.icon"
-                                                    :src="spell.icon"
-                                                    :alt="spell.name"
-                                                    class="h-8 w-8 object-contain"
-                                                />
-                                                <Settings v-else class="h-5 w-5 text-muted-foreground" />
-                                            </div>
-                                            <div>
-                                                <div class="font-semibold">
-                                                    {{ spell.name }}
-                                                    <span class="text-xs text-muted-foreground"
-                                                        >({{ spell.identifier }})</span
-                                                    >
-                                                </div>
-                                                <div class="text-xs text-muted-foreground">
-                                                    <template v-if="spell.latest_version?.version"
-                                                        >v{{ spell.latest_version.version }} •
-                                                    </template>
-                                                    <template v-if="spell.author">by {{ spell.author }}</template>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <Badge v-if="spell.verified" variant="secondary">Verified</Badge>
-                                        <Badge v-else variant="outline">Unverified</Badge>
-                                    </div>
-                                    <p class="text-sm text-muted-foreground mt-2 line-clamp-3">
-                                        {{ spell.description }}
-                                    </p>
-                                    <p v-if="!spell.verified" class="mt-1 text-xs text-yellow-700">
-                                        This spell is not verified. Review the source before installing.
-                                    </p>
-                                    <div class="mt-2 text-xs text-muted-foreground flex flex-wrap gap-1">
-                                        <span v-for="tag in spell.tags" :key="tag" class="px-2 py-0.5 rounded bg-muted"
-                                            >#{{ tag }}</span
-                                        >
-                                    </div>
-                                    <div class="mt-2 text-xs text-muted-foreground flex items-center justify-between">
-                                        <span v-if="spell.downloads">{{ spell.downloads }} downloads</span>
-                                        <a
-                                            v-if="spell.website"
-                                            :href="spell.website"
-                                            target="_blank"
-                                            class="hover:underline"
-                                            >Website</a
-                                        >
-                                    </div>
-                                    <div class="mt-3 flex justify-end">
-                                        <template v-if="installedSpellIds.has(spell.identifier)">
-                                            <Button size="sm" variant="outline" disabled>Installed</Button>
-                                        </template>
-                                        <template v-else>
-                                            <Button
-                                                size="sm"
-                                                :disabled="installingOnlineId === spell.identifier"
-                                                @click="openOnlineInstallDialog(spell)"
-                                            >
+                                <CardContent>
+                                    <div class="p-4">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="flex items-center gap-3">
                                                 <div
-                                                    v-if="installingOnlineId === spell.identifier"
-                                                    class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
-                                                ></div>
-                                                Install
-                                            </Button>
-                                        </template>
+                                                    class="h-10 w-10 rounded bg-muted flex items-center justify-center overflow-hidden"
+                                                >
+                                                    <img
+                                                        v-if="spell.icon"
+                                                        :src="spell.icon"
+                                                        :alt="spell.name"
+                                                        class="h-8 w-8 object-contain"
+                                                    />
+                                                    <Settings v-else class="h-5 w-5 text-muted-foreground" />
+                                                </div>
+                                                <div>
+                                                    <div class="font-semibold">
+                                                        {{ spell.name }}
+                                                        <span class="text-xs text-muted-foreground"
+                                                            >({{ spell.identifier }})</span
+                                                        >
+                                                    </div>
+                                                    <div class="text-xs text-muted-foreground">
+                                                        <template v-if="spell.latest_version?.version"
+                                                            >v{{ spell.latest_version.version }} •
+                                                        </template>
+                                                        <template v-if="spell.author">by {{ spell.author }}</template>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <Badge v-if="spell.verified" variant="secondary">Verified</Badge>
+                                            <Badge v-else variant="outline">Unverified</Badge>
+                                        </div>
+                                        <p class="text-sm text-muted-foreground mt-2 line-clamp-3">
+                                            {{ spell.description }}
+                                        </p>
+                                        <p v-if="!spell.verified" class="mt-1 text-xs text-yellow-700">
+                                            This spell is not verified. Review the source before installing.
+                                        </p>
+                                        <div class="mt-2 text-xs text-muted-foreground flex flex-wrap gap-1">
+                                            <span v-for="tag in spell.tags" :key="tag" class="px-2 py-0.5 rounded bg-muted"
+                                                >#{{ tag }}</span
+                                            >
+                                        </div>
+                                        <div class="mt-2 text-xs text-muted-foreground flex items-center justify-between">
+                                            <span v-if="spell.downloads">{{ spell.downloads }} downloads</span>
+                                            <a
+                                                v-if="spell.website"
+                                                :href="spell.website"
+                                                target="_blank"
+                                                class="hover:underline"
+                                                >Website</a
+                                            >
+                                        </div>
+                                        <div class="mt-3 flex justify-end">
+                                            <template v-if="installedSpellIds.has(spell.identifier)">
+                                                <Button size="sm" variant="outline" disabled>Installed</Button>
+                                            </template>
+                                            <template v-else>
+                                                <Button
+                                                    size="sm"
+                                                    :disabled="installingOnlineId === spell.identifier"
+                                                    @click="openOnlineInstallDialog(spell)"
+                                                >
+                                                    <div
+                                                        v-if="installingOnlineId === spell.identifier"
+                                                        class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                                                    ></div>
+                                                    Install
+                                                </Button>
+                                            </template>
+                                        </div>
                                     </div>
-                                </div>
+                                </CardContent>
                             </Card>
                         </div>
                     </TabsContent>
@@ -328,70 +330,80 @@
                 <br />
                 <!-- Cross-compatibility note -->
                 <Card class="mb-4">
-                    <div class="p-4 text-sm text-muted-foreground flex items-start gap-3">
-                        <Sparkles class="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <div>
-                            <div class="font-semibold text-foreground mb-1">Cross-compatible spells</div>
-                            <p>
-                                Realms and spells are fully cross-compatible. We maintain a spells repository that works
-                                with both FeatherPanel and Pterodactyl, so you can fetch and use the same spells in
-                                either panel. You can also bring your own spells – import them here or host them in your
-                                own repo.
-                            </p>
+                    <CardContent>
+                        <div class="p-4 text-sm text-muted-foreground flex items-start gap-3">
+                            <Sparkles class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">Cross-compatible spells</div>
+                                <p>
+                                    Realms and spells are fully cross-compatible. We maintain a spells repository that works
+                                    with both FeatherPanel and Pterodactyl, so you can fetch and use the same spells in
+                                    either panel. You can also bring your own spells – import them here or host them in your
+                                    own repo.
+                                </p>
+                            </div>
                         </div>
-                    </div>
+                    </CardContent>
                 </Card>
 
                 <!-- Spells documentation cards -->
                 <div class="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <Card>
-                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <BookOpen class="h-5 w-5 text-muted-foreground mt-0.5" />
-                            <div>
-                                <div class="font-semibold text-foreground mb-1">What are Spells (eggs)?</div>
-                                <p>
-                                    Spells are server templates that define runtime, Docker image, startup, features,
-                                    configs, and scripts. They live inside realms (categories) and power server
-                                    creation.
-                                </p>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <BookOpen class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">What are Spells (eggs)?</div>
+                                    <p>
+                                        Spells are server templates that define runtime, Docker image, startup, features,
+                                        configs, and scripts. They live inside realms (categories) and power server
+                                        creation.
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        </CardContent>
                     </Card>
                     <Card>
-                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Boxes class="h-5 w-5 text-muted-foreground mt-0.5" />
-                            <div>
-                                <div class="font-semibold text-foreground mb-1">How you use them</div>
-                                <p>
-                                    Install/import a spell, pick a realm, then create servers from it. Spells can
-                                    include update URLs, tags, banners, and author info for easy discovery and updates.
-                                </p>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Boxes class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">How you use them</div>
+                                    <p>
+                                        Install/import a spell, pick a realm, then create servers from it. Spells can
+                                        include update URLs, tags, banners, and author info for easy discovery and updates.
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        </CardContent>
                     </Card>
                     <Card>
-                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Wrench class="h-5 w-5 text-muted-foreground mt-0.5" />
-                            <div>
-                                <div class="font-semibold text-foreground mb-1">Under the hood</div>
-                                <p>
-                                    Configs (files/startup/logs/stop), file denylist, variables, Docker images, script
-                                    container/entry, and optional privileged install scripts define behavior.
-                                </p>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Wrench class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Under the hood</div>
+                                    <p>
+                                        Configs (files/startup/logs/stop), file denylist, variables, Docker images, script
+                                        container/entry, and optional privileged install scripts define behavior.
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        </CardContent>
                     </Card>
                     <Card>
-                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <GitBranch class="h-5 w-5 text-muted-foreground mt-0.5" />
-                            <div>
-                                <div class="font-semibold text-foreground mb-1">Sources & compatibility</div>
-                                <p>
-                                    Use our cross-compatible spells repo (FeatherPanel ↔ Pterodactyl) or bring your own
-                                    JSON-defined spells. Import locally or host them in your own repository.
-                                </p>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <GitBranch class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Sources & compatibility</div>
+                                    <p>
+                                        Use our cross-compatible spells repo (FeatherPanel ↔ Pterodactyl) or bring your own
+                                        JSON-defined spells. Import locally or host them in your own repository.
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        </CardContent>
                     </Card>
                 </div>
             </div>
@@ -1218,7 +1230,7 @@ import {
     DialogFooter,
     DialogClose,
 } from '@/components/ui/dialog';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';

@@ -361,80 +361,82 @@
                         </div>
                         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <Card v-for="addon in onlineAddons" :key="addon.identifier">
-                                <div class="p-4">
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div class="flex items-center gap-3 min-w-0 flex-1">
-                                            <div
-                                                class="h-8 w-8 sm:h-10 sm:w-10 rounded bg-muted flex items-center justify-center overflow-hidden flex-shrink-0"
-                                            >
-                                                <img
-                                                    v-if="addon.icon"
-                                                    :src="addon.icon"
-                                                    :alt="addon.name"
-                                                    class="h-6 w-6 sm:h-8 sm:w-8 object-contain"
-                                                />
-                                                <Puzzle v-else class="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-                                            </div>
-                                            <div class="min-w-0 flex-1">
-                                                <div class="font-semibold text-sm sm:text-base">
-                                                    <div class="truncate">{{ addon.name }}</div>
-                                                    <span class="text-xs text-muted-foreground"
-                                                        >({{ addon.identifier }})</span
-                                                    >
-                                                </div>
-                                                <div class="text-xs text-muted-foreground">
-                                                    <template v-if="addon.latest_version?.version"
-                                                        >v{{ addon.latest_version.version }} •
-                                                    </template>
-                                                    <template v-if="addon.author">by {{ addon.author }}</template>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <Badge v-if="addon.verified" variant="secondary" class="text-xs flex-shrink-0"
-                                            >Verified</Badge
-                                        >
-                                        <Badge v-else variant="outline" class="text-xs flex-shrink-0">Unverified</Badge>
-                                    </div>
-                                    <p class="text-sm text-muted-foreground mt-2 line-clamp-3">
-                                        {{ addon.description }}
-                                    </p>
-                                    <p v-if="!addon.verified" class="mt-1 text-xs text-yellow-700">
-                                        This addon is not verified. Review the source before installing.
-                                    </p>
-                                    <div class="mt-2 text-xs text-muted-foreground flex flex-wrap gap-1">
-                                        <span v-for="tag in addon.tags" :key="tag" class="px-2 py-0.5 rounded bg-muted"
-                                            >#{{ tag }}</span
-                                        >
-                                    </div>
-                                    <div class="mt-2 text-xs text-muted-foreground flex items-center justify-between">
-                                        <span v-if="addon.downloads">{{ addon.downloads }} downloads</span>
-                                        <a
-                                            v-if="addon.website"
-                                            :href="addon.website"
-                                            target="_blank"
-                                            class="hover:underline"
-                                            >Website</a
-                                        >
-                                    </div>
-                                    <div class="mt-3 flex justify-end">
-                                        <template v-if="installedIds.has(addon.identifier)">
-                                            <Button size="sm" variant="outline" disabled>Installed</Button>
-                                        </template>
-                                        <template v-else>
-                                            <Button
-                                                size="sm"
-                                                :disabled="installingOnlineId === addon.identifier"
-                                                @click="openOnlineInstallDialog(addon)"
-                                            >
+                                <CardContent>
+                                    <div class="p-4">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="flex items-center gap-3 min-w-0 flex-1">
                                                 <div
-                                                    v-if="installingOnlineId === addon.identifier"
-                                                    class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
-                                                ></div>
-                                                Install
-                                            </Button>
-                                        </template>
+                                                    class="h-8 w-8 sm:h-10 sm:w-10 rounded bg-muted flex items-center justify-center overflow-hidden flex-shrink-0"
+                                                >
+                                                    <img
+                                                        v-if="addon.icon"
+                                                        :src="addon.icon"
+                                                        :alt="addon.name"
+                                                        class="h-6 w-6 sm:h-8 sm:w-8 object-contain"
+                                                    />
+                                                    <Puzzle v-else class="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+                                                </div>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="font-semibold text-sm sm:text-base">
+                                                        <div class="truncate">{{ addon.name }}</div>
+                                                        <span class="text-xs text-muted-foreground"
+                                                            >({{ addon.identifier }})</span
+                                                        >
+                                                    </div>
+                                                    <div class="text-xs text-muted-foreground">
+                                                        <template v-if="addon.latest_version?.version"
+                                                            >v{{ addon.latest_version.version }} •
+                                                        </template>
+                                                        <template v-if="addon.author">by {{ addon.author }}</template>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <Badge v-if="addon.verified" variant="secondary" class="text-xs flex-shrink-0"
+                                                >Verified</Badge
+                                            >
+                                            <Badge v-else variant="outline" class="text-xs flex-shrink-0">Unverified</Badge>
+                                        </div>
+                                        <p class="text-sm text-muted-foreground mt-2 line-clamp-3">
+                                            {{ addon.description }}
+                                        </p>
+                                        <p v-if="!addon.verified" class="mt-1 text-xs text-yellow-700">
+                                            This addon is not verified. Review the source before installing.
+                                        </p>
+                                        <div class="mt-2 text-xs text-muted-foreground flex flex-wrap gap-1">
+                                            <span v-for="tag in addon.tags" :key="tag" class="px-2 py-0.5 rounded bg-muted"
+                                                >#{{ tag }}</span
+                                            >
+                                        </div>
+                                        <div class="mt-2 text-xs text-muted-foreground flex items-center justify-between">
+                                            <span v-if="addon.downloads">{{ addon.downloads }} downloads</span>
+                                            <a
+                                                v-if="addon.website"
+                                                :href="addon.website"
+                                                target="_blank"
+                                                class="hover:underline"
+                                                >Website</a
+                                            >
+                                        </div>
+                                        <div class="mt-3 flex justify-end">
+                                            <template v-if="installedIds.has(addon.identifier)">
+                                                <Button size="sm" variant="outline" disabled>Installed</Button>
+                                            </template>
+                                            <template v-else>
+                                                <Button
+                                                    size="sm"
+                                                    :disabled="installingOnlineId === addon.identifier"
+                                                    @click="openOnlineInstallDialog(addon)"
+                                                >
+                                                    <div
+                                                        v-if="installingOnlineId === addon.identifier"
+                                                        class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                                                    ></div>
+                                                    Install
+                                                </Button>
+                                            </template>
+                                        </div>
                                     </div>
-                                </div>
+                                </CardContent>
                             </Card>
                         </div>
                     </TabsContent>
@@ -443,54 +445,62 @@
                 <!-- Plugins help cards under the tabs -->
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <Card>
-                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Globe class="h-5 w-5 text-muted-foreground mt-0.5" />
-                            <div>
-                                <div class="font-semibold text-foreground mb-1">Online Repository</div>
-                                <p>
-                                    Like spells, there’s an online repo with community plugins and even paid options.
-                                    Browse and install directly from the Online tab.
-                                </p>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Globe class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Online Repository</div>
+                                    <p>
+                                        Like spells, there’s an online repo with community plugins and even paid options.
+                                        Browse and install directly from the Online tab.
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        </CardContent>
                     </Card>
                     <Card>
-                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Upload class="h-5 w-5 text-muted-foreground mt-0.5" />
-                            <div>
-                                <div class="font-semibold text-foreground mb-1">Install & Upload</div>
-                                <p>
-                                    Install from the repo or upload .fpa files via the GUI. You can also install via a
-                                    direct URL. Use the Installed tab actions to configure or export.
-                                </p>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Upload class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Install & Upload</div>
+                                    <p>
+                                        Install from the repo or upload .fpa files via the GUI. You can also install via a
+                                        direct URL. Use the Installed tab actions to configure or export.
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        </CardContent>
                     </Card>
                     <Card class="md:col-span-2 lg:col-span-1">
-                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <AlertCircle class="h-5 w-5 text-muted-foreground mt-0.5" />
-                            <div>
-                                <div class="font-semibold text-foreground mb-1">Security & Liability</div>
-                                <p>
-                                    Only trust plugins from our official online repo. Installing third‑party code can be
-                                    risky (panel corruption or system compromise). FeatherPanel and its team are not
-                                    liable for what you install or develop.
-                                </p>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <AlertCircle class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">Security & Liability</div>
+                                    <p>
+                                        Only trust plugins from our official online repo. Installing third‑party code can be
+                                        risky (panel corruption or system compromise). FeatherPanel and its team are not
+                                        liable for what you install or develop.
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        </CardContent>
                     </Card>
                     <Card class="md:col-span-2 lg:col-span-3">
-                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Puzzle class="h-5 w-5 text-muted-foreground mt-0.5" />
-                            <div>
-                                <div class="font-semibold text-foreground mb-1">A careful reminder</div>
-                                <p>
-                                    The world can be dangerous—always review documentation and source before installing,
-                                    even for plugins from our repo. Keep backups and test changes in a safe environment
-                                    first.
-                                </p>
+                        <CardContent>
+                            <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                                <Puzzle class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <div class="font-semibold text-foreground mb-1">A careful reminder</div>
+                                    <p>
+                                        The world can be dangerous—always review documentation and source before installing,
+                                        even for plugins from our repo. Keep backups and test changes in a safe environment
+                                        first.
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        </CardContent>
                     </Card>
                 </div>
             </div>
@@ -969,7 +979,7 @@ import {
     Save,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {

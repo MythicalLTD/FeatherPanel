@@ -74,7 +74,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Sparkles class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <Sparkles class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">What are Realms?</div>
                                     <p>
@@ -88,7 +88,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <FolderTree class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <FolderTree class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Organize your spells</div>
                                     <p>
@@ -228,7 +228,7 @@ import { ref, watch, onMounted } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Eye, Pencil, Trash2, Sparkles, Plus } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Sparkles, Plus, KeyRound } from 'lucide-vue-next';
 import axios from 'axios';
 import {
     Drawer,
