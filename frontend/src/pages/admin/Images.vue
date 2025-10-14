@@ -145,7 +145,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Upload class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <Upload class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Upload & Reuse</div>
                                     <p>
@@ -159,7 +159,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <ImageIcon class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <ImageIcon class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Library & Audit</div>
                                     <p>
@@ -367,9 +367,8 @@ import {
     DrawerFooter,
     DrawerClose,
 } from '@/components/ui/drawer';
-import { Plus, Eye, Pencil, Trash2, Copy, ImageIcon } from 'lucide-vue-next';
+import { Plus, Eye, Pencil, Trash2, Copy, ImageIcon, Upload } from 'lucide-vue-next';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload } from 'lucide-vue-next';
 
 // Types
 interface Image {

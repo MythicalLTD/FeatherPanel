@@ -173,7 +173,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <FileText class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <FileText class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">What are Mail Templates?</div>
                                     <p>
@@ -187,7 +187,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Send class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <Send class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Mass Email</div>
                                     <p>
@@ -201,7 +201,7 @@
                     <Card class="md:col-span-2 lg:col-span-1">
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Scale class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <Scale class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Legal & Compliance</div>
                                     <p>
@@ -500,7 +500,7 @@ import {
     DrawerFooter,
     DrawerClose,
 } from '@/components/ui/drawer';
-import { Plus, Eye, Pencil, Trash2, Mail, FileText, Send, Scale } from 'lucide-vue-next';
+import { Plus, Eye, Pencil, Trash2, Mail, FileText, Send, Scale, Rocket } from 'lucide-vue-next';
 import { Card, CardContent } from '@/components/ui/card';
 
 // Types

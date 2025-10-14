@@ -380,7 +380,7 @@
                 <Card>
                     <CardContent>
                         <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Settings class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <Settings class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">What are Settings?</div>
                                 <p>
@@ -394,7 +394,7 @@
                 <Card>
                     <CardContent>
                         <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Globe class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <Globe class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">Categories & Scope</div>
                                 <p>
@@ -408,7 +408,7 @@
                 <Card class="md:col-span-2 lg:col-span-1">
                     <CardContent>
                         <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Lock class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <Lock class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">Tips & Safety</div>
                                 <ul class="list-disc list-inside space-y-1">
@@ -423,7 +423,7 @@
                 <Card class="md:col-span-2 lg:col-span-3">
                     <CardContent>
                         <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <AlertCircle class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <AlertCircle class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">Legal & Audit</div>
                                 <p>
@@ -483,7 +483,7 @@ import {
     Upload,
     ExternalLink,
     Copy,
-    CheckCircle2,
+    CheckCircle2, Rocket,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

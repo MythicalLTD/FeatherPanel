@@ -155,7 +155,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Server class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <Server class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-medium text-foreground mb-1">What are Nodes?</div>
                                     <p>
@@ -169,7 +169,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Network class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <Network class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-medium text-foreground mb-1">What can Nodes do?</div>
                                     <ul class="list-disc list-inside space-y-1">
@@ -185,7 +185,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <MapPin class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <MapPin class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-medium text-foreground mb-1">Nodes and Locations</div>
                                     <p>

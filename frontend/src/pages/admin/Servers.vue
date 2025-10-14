@@ -152,7 +152,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Server class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <Server class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Managing Servers</div>
                                     <p>
@@ -166,7 +166,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Layers class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <Layers class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Relationships</div>
                                     <p>
@@ -181,7 +181,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Gauge class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <Gauge class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Resources & Limits</div>
                                     <p>
@@ -195,7 +195,7 @@
                     <Card class="md:col-span-2 lg:col-span-3">
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <HelpCircle class="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <HelpCircle class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                                 <div class="flex-1">
                                     <div class="font-semibold text-foreground mb-1">Tips</div>
                                     <ul class="list-disc list-inside space-y-1">
@@ -509,7 +509,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Eye, Pencil, Trash2, Plus, Server } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Plus, Server, Layers, Gauge, HelpCircle } from 'lucide-vue-next';
 import axios from 'axios';
 import {
     Drawer,
@@ -533,7 +533,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { Layers, Gauge, HelpCircle } from 'lucide-vue-next';
 import { useToast } from 'vue-toastification';
 
 const router = useRouter();
