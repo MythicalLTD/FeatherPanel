@@ -228,7 +228,7 @@ import { ref, watch, onMounted } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Eye, Pencil, Trash2, Sparkles, Plus, KeyRound } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Sparkles, Plus, FolderTree } from 'lucide-vue-next';
 import axios from 'axios';
 import {
     Drawer,
@@ -243,7 +243,6 @@ import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from 'vue-toastification';
-import { FolderTree } from 'lucide-vue-next';
 
 const toast = useToast();
 

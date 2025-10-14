@@ -509,7 +509,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Eye, Pencil, Trash2, Plus, Server, FolderTree } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Plus, Server, Layers, Gauge, HelpCircle } from 'lucide-vue-next';
 import axios from 'axios';
 import {
     Drawer,
@@ -533,7 +533,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { Layers, Gauge, HelpCircle } from 'lucide-vue-next';
 import { useToast } from 'vue-toastification';
 
 const router = useRouter();

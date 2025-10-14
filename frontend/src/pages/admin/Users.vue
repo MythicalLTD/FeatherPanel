@@ -530,7 +530,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
-import { Eye, Pencil, Trash2, Plus, Rocket } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Plus, Users as UsersIcon, Shield, KeyRound, Search } from 'lucide-vue-next';
 import axios from 'axios';
 import { Alert } from '@/components/ui/alert';
 import {
@@ -555,7 +555,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users as UsersIcon, Shield, KeyRound, Search } from 'lucide-vue-next';
 
 type UserRole = {
     name: string;

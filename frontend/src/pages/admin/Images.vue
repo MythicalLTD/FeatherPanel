@@ -367,9 +367,8 @@ import {
     DrawerFooter,
     DrawerClose,
 } from '@/components/ui/drawer';
-import { Plus, Eye, Pencil, Trash2, Copy, ImageIcon, Rocket } from 'lucide-vue-next';
+import { Plus, Eye, Pencil, Trash2, Copy, ImageIcon, Upload } from 'lucide-vue-next';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload } from 'lucide-vue-next';
 
 // Types
 interface Image {
