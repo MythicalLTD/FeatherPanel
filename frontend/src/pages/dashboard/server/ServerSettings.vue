@@ -1,43 +1,49 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6">
-            <!-- Header -->
-            <div class="space-y-4">
-                <div>
-                    <h1 class="text-xl sm:text-2xl font-bold tracking-tight">{{ t('serverSettings.title') }}</h1>
-                    <p class="text-sm sm:text-base text-muted-foreground">{{ t('serverSettings.description') }}</p>
+        <div class="space-y-6 pb-8">
+            <!-- Header Section -->
+            <div class="flex flex-col gap-4">
+                <div class="space-y-1">
+                    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">{{ t('serverSettings.title') }}</h1>
+                    <p class="text-sm text-muted-foreground">{{ t('serverSettings.description') }}</p>
                 </div>
-                <div class="flex gap-2">
-                    <Button variant="outline" :disabled="loading" class="flex-1 sm:flex-none" @click="refreshServer">
-                        <RefreshCw class="h-4 w-4 sm:mr-2" />
-                        <span class="hidden sm:inline">{{ t('serverSettings.refresh') }}</span>
-                    </Button>
+
+                <!-- Status Indicator -->
+                <div v-if="hasChanges && !loading" class="flex items-center gap-2 text-sm">
+                    <div class="h-2 w-2 rounded-full bg-yellow-500 animate-pulse"></div>
+                    <span class="text-muted-foreground">Unsaved changes</span>
                 </div>
             </div>
 
             <!-- Loading State -->
-            <div v-if="loading" class="flex items-center justify-center py-8">
-                <div class="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
-                <span class="ml-2">{{ t('serverSettings.loading') }}</span>
+            <div v-if="loading" class="flex flex-col items-center justify-center py-16">
+                <div class="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full"></div>
+                <span class="mt-4 text-muted-foreground">{{ t('serverSettings.loading') }}</span>
             </div>
 
             <!-- Content -->
             <div v-else-if="server" class="space-y-6">
                 <!-- Server Information -->
-                <Card>
-                    <CardHeader class="pb-3 sm:pb-6">
-                        <CardTitle class="flex items-center gap-2 text-base sm:text-lg">
-                            <Server class="h-4 w-4 sm:h-5 sm:w-5" />
-                            {{ t('serverSettings.serverInformation') }}
-                        </CardTitle>
-                        <CardDescription class="text-xs sm:text-sm">
-                            {{ t('serverSettings.serverInformationDescription') }}
-                        </CardDescription>
+                <Card class="border-2 hover:border-primary/50 transition-colors">
+                    <CardHeader>
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <Server class="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                                <CardTitle class="text-lg">{{ t('serverSettings.serverInformation') }}</CardTitle>
+                                <CardDescription class="text-sm">
+                                    {{ t('serverSettings.serverInformationDescription') }}
+                                </CardDescription>
+                            </div>
+                        </div>
                     </CardHeader>
                     <CardContent class="space-y-4">
                         <div class="grid grid-cols-1 gap-4">
                             <div class="space-y-2">
-                                <Label for="serverName" class="text-sm">{{ t('serverSettings.serverName') }}</Label>
+                                <Label for="serverName" class="text-sm font-medium">{{
+                                    t('serverSettings.serverName')
+                                }}</Label>
                                 <Input
                                     id="serverName"
                                     v-model="editForm.name"
@@ -47,7 +53,7 @@
                                 />
                             </div>
                             <div class="space-y-2">
-                                <Label for="serverDescription" class="text-sm">{{
+                                <Label for="serverDescription" class="text-sm font-medium">{{
                                     t('serverSettings.serverDescription')
                                 }}</Label>
                                 <Input
@@ -59,183 +65,216 @@
                                 />
                             </div>
                         </div>
-                        <div class="flex flex-col sm:flex-row gap-2">
+                        <div class="flex gap-2 pt-2">
                             <Button
+                                size="sm"
                                 :disabled="saving || !hasChanges"
-                                class="flex-1 sm:flex-none"
+                                class="flex items-center gap-2"
                                 @click="saveServerInfo"
                             >
-                                <Save class="h-4 w-4 sm:mr-2" />
-                                <span class="hidden sm:inline">{{
-                                    saving ? t('serverSettings.saving') : t('serverSettings.saveChanges')
-                                }}</span>
+                                <Save :class="['h-4 w-4', saving && 'animate-pulse']" />
+                                <span>{{ saving ? t('serverSettings.saving') : t('serverSettings.saveChanges') }}</span>
                             </Button>
                             <Button
                                 variant="outline"
+                                size="sm"
                                 :disabled="saving || !hasChanges"
-                                class="flex-1 sm:flex-none"
+                                class="flex items-center gap-2"
                                 @click="resetForm"
                             >
-                                <RotateCcw class="h-4 w-4 sm:mr-2" />
-                                <span class="hidden sm:inline">{{ t('serverSettings.reset') }}</span>
+                                <RotateCcw class="h-4 w-4" />
+                                <span>{{ t('serverSettings.reset') }}</span>
                             </Button>
                         </div>
                     </CardContent>
                 </Card>
 
                 <!-- SFTP Details -->
-                <Card>
-                    <CardHeader class="pb-3 sm:pb-6">
-                        <CardTitle class="flex items-center gap-2 text-base sm:text-lg">
-                            <FolderOpen class="h-4 w-4 sm:h-5 sm:w-5" />
-                            {{ t('serverSettings.sftpDetails') }}
-                        </CardTitle>
-                        <CardDescription class="text-xs sm:text-sm">
-                            {{ t('serverSettings.sftpDetailsDescription') }}
-                        </CardDescription>
+                <Card class="border-2 hover:border-primary/50 transition-colors">
+                    <CardHeader>
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                                <FolderOpen class="h-5 w-5 text-blue-500" />
+                            </div>
+                            <div>
+                                <CardTitle class="text-lg">{{ t('serverSettings.sftpDetails') }}</CardTitle>
+                                <CardDescription class="text-sm">
+                                    {{ t('serverSettings.sftpDetailsDescription') }}
+                                </CardDescription>
+                            </div>
+                        </div>
                     </CardHeader>
-                    <CardContent class="space-y-4 sm:space-y-6">
-                        <!-- SFTP Connection Info -->
-                        <div class="space-y-4">
-                            <!-- Host & Port -->
-                            <div class="space-y-3">
-                                <Label class="text-xs sm:text-sm font-medium text-muted-foreground">{{
-                                    t('serverSettings.sftpHost')
-                                }}</Label>
-                                <div class="flex items-center justify-between p-2 sm:p-3 bg-muted/30 rounded-lg border">
-                                    <code class="text-xs sm:text-sm font-mono break-all min-w-0 flex-1 mr-2">{{
+                    <CardContent class="space-y-5">
+                        <!-- SFTP Connection Info Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Host -->
+                            <div class="space-y-2">
+                                <Label class="text-sm font-medium flex items-center gap-2">
+                                    <Server class="h-3.5 w-3.5 text-muted-foreground" />
+                                    {{ t('serverSettings.sftpHost') }}
+                                </Label>
+                                <div
+                                    class="flex items-center gap-2 p-3 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors"
+                                >
+                                    <code class="text-sm font-mono flex-1 truncate">{{
                                         server?.sftp?.host || 'N/A'
                                     }}</code>
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        class="h-8 w-8 p-0 flex-shrink-0"
+                                        class="h-7 w-7 p-0 hover:bg-background"
                                         @click="copyToClipboard(server?.sftp?.host || '')"
                                     >
-                                        <Copy class="h-3 w-3 sm:h-4 sm:w-4" />
+                                        <Copy class="h-3.5 w-3.5" />
                                     </Button>
                                 </div>
                             </div>
 
-                            <div class="space-y-3">
-                                <Label class="text-xs sm:text-sm font-medium text-muted-foreground">{{
-                                    t('serverSettings.sftpPort')
-                                }}</Label>
-                                <div class="flex items-center justify-between p-2 sm:p-3 bg-muted/30 rounded-lg border">
-                                    <code class="text-xs sm:text-sm font-mono">{{ server?.sftp?.port || 'N/A' }}</code>
+                            <!-- Port -->
+                            <div class="space-y-2">
+                                <Label class="text-sm font-medium flex items-center gap-2">
+                                    <Hash class="h-3.5 w-3.5 text-muted-foreground" />
+                                    {{ t('serverSettings.sftpPort') }}
+                                </Label>
+                                <div
+                                    class="flex items-center gap-2 p-3 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors"
+                                >
+                                    <code class="text-sm font-mono flex-1">{{ server?.sftp?.port || 'N/A' }}</code>
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        class="h-8 w-8 p-0 flex-shrink-0"
+                                        class="h-7 w-7 p-0 hover:bg-background"
                                         @click="copyToClipboard(server?.sftp?.port?.toString() || '')"
                                     >
-                                        <Copy class="h-3 w-3 sm:h-4 sm:w-4" />
+                                        <Copy class="h-3.5 w-3.5" />
                                     </Button>
                                 </div>
                             </div>
 
-                            <!-- Credentials -->
-                            <div class="space-y-3">
-                                <Label class="text-xs sm:text-sm font-medium text-muted-foreground">{{
-                                    t('serverSettings.sftpUsername')
-                                }}</Label>
-                                <div class="flex items-center justify-between p-2 sm:p-3 bg-muted/30 rounded-lg border">
-                                    <code class="text-xs sm:text-sm font-mono break-all min-w-0 flex-1 mr-2">{{
+                            <!-- Username -->
+                            <div class="space-y-2">
+                                <Label class="text-sm font-medium flex items-center gap-2">
+                                    <User class="h-3.5 w-3.5 text-muted-foreground" />
+                                    {{ t('serverSettings.sftpUsername') }}
+                                </Label>
+                                <div
+                                    class="flex items-center gap-2 p-3 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors"
+                                >
+                                    <code class="text-sm font-mono flex-1 truncate">{{
                                         server?.sftp?.username || 'N/A'
                                     }}</code>
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        class="h-8 w-8 p-0 flex-shrink-0"
+                                        class="h-7 w-7 p-0 hover:bg-background"
                                         @click="copyToClipboard(server?.sftp?.username || '')"
                                     >
-                                        <Copy class="h-3 w-3 sm:h-4 sm:w-4" />
+                                        <Copy class="h-3.5 w-3.5" />
                                     </Button>
                                 </div>
                             </div>
 
-                            <div class="space-y-3">
-                                <Label class="text-xs sm:text-sm font-medium text-muted-foreground">{{
-                                    t('serverSettings.sftpPassword')
-                                }}</Label>
-                                <div class="flex items-center justify-between p-2 sm:p-3 bg-muted/30 rounded-lg border">
-                                    <div class="flex items-center gap-2 min-w-0 flex-1 mr-2">
-                                        <code class="text-xs sm:text-sm font-mono break-all">
-                                            {{
-                                                showPassword
-                                                    ? t('serverSettings.sftpPasswordPlaceholder')
-                                                    : '••••••••••••••••••••••••••••••••'
-                                            }}
-                                        </code>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            class="h-6 w-6 p-0 flex-shrink-0"
-                                            @click="showPassword = !showPassword"
-                                        >
-                                            <Eye v-if="!showPassword" class="h-3 w-3" />
-                                            <EyeOff v-else class="h-3 w-3" />
-                                        </Button>
-                                    </div>
+                            <!-- Password -->
+                            <div class="space-y-2">
+                                <Label class="text-sm font-medium flex items-center gap-2">
+                                    <KeyRound class="h-3.5 w-3.5 text-muted-foreground" />
+                                    {{ t('serverSettings.sftpPassword') }}
+                                </Label>
+                                <div
+                                    class="flex items-center gap-2 p-3 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors"
+                                >
+                                    <code class="text-sm font-mono flex-1">
+                                        {{
+                                            showPassword
+                                                ? t('serverSettings.sftpPasswordPlaceholder')
+                                                : '••••••••••••••••'
+                                        }}
+                                    </code>
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        class="h-8 w-8 p-0 flex-shrink-0"
+                                        class="h-7 w-7 p-0 hover:bg-background"
+                                        @click="showPassword = !showPassword"
+                                    >
+                                        <Eye v-if="!showPassword" class="h-3.5 w-3.5" />
+                                        <EyeOff v-else class="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        class="h-7 w-7 p-0 hover:bg-background"
                                         @click="copyToClipboard(t('serverSettings.usePanelPassword'))"
                                     >
-                                        <Copy class="h-3 w-3 sm:h-4 sm:w-4" />
+                                        <Copy class="h-3.5 w-3.5" />
                                     </Button>
                                 </div>
-                                <p class="text-xs text-muted-foreground">
+                                <p class="text-xs text-muted-foreground flex items-center gap-1.5">
+                                    <Info class="h-3 w-3" />
                                     {{ t('serverSettings.sftpPasswordHint') }}
                                 </p>
                             </div>
                         </div>
 
                         <!-- Full SFTP URL -->
-                        <div class="space-y-3">
-                            <Label class="text-xs sm:text-sm font-medium text-muted-foreground">{{
-                                t('serverSettings.sftpUrl')
-                            }}</Label>
-                            <div class="flex items-center justify-between p-2 sm:p-3 bg-muted/30 rounded-lg border">
-                                <code class="text-xs sm:text-sm font-mono break-all min-w-0 flex-1 mr-2">{{
-                                    server?.sftp?.url || 'N/A'
-                                }}</code>
-                                <div class="flex gap-1 sm:gap-2 flex-shrink-0">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        class="h-8 w-8 p-0"
-                                        @click="copyToClipboard(server?.sftp?.url || '')"
-                                    >
-                                        <Copy class="h-3 w-3 sm:h-4 sm:w-4" />
-                                    </Button>
-                                    <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="openInSftpClient">
-                                        <ExternalLink class="h-3 w-3 sm:h-4 sm:w-4" />
-                                    </Button>
-                                </div>
+                        <div class="space-y-2">
+                            <Label class="text-sm font-medium flex items-center gap-2">
+                                <Link class="h-3.5 w-3.5 text-muted-foreground" />
+                                {{ t('serverSettings.sftpUrl') }}
+                            </Label>
+                            <div
+                                class="flex items-center gap-2 p-3 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors"
+                            >
+                                <code class="text-sm font-mono flex-1 truncate">{{ server?.sftp?.url || 'N/A' }}</code>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    class="h-7 w-7 p-0 hover:bg-background"
+                                    @click="copyToClipboard(server?.sftp?.url || '')"
+                                >
+                                    <Copy class="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    class="h-7 w-7 p-0 hover:bg-background"
+                                    @click="openInSftpClient"
+                                >
+                                    <ExternalLink class="h-3.5 w-3.5" />
+                                </Button>
                             </div>
                         </div>
 
                         <!-- Info Box -->
-                        <div class="mt-4 p-3 sm:p-4 bg-muted/50 border rounded-lg">
-                            <div class="flex items-start gap-2 sm:gap-3">
-                                <Info class="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div class="p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg">
+                            <div class="flex items-start gap-3">
+                                <Info class="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
                                 <div class="flex-1 min-w-0">
-                                    <h4 class="font-medium mb-2 text-sm sm:text-base">
-                                        {{ t('serverSettings.sftpInfoTitle') }}
-                                    </h4>
-                                    <p class="text-xs sm:text-sm text-muted-foreground mb-3">
+                                    <h4 class="font-semibold mb-2 text-sm">{{ t('serverSettings.sftpInfoTitle') }}</h4>
+                                    <p class="text-sm text-muted-foreground mb-3">
                                         {{ t('serverSettings.sftpInfoDescription') }}
                                     </p>
-                                    <div class="text-xs text-muted-foreground">
-                                        <p class="font-medium mb-1">{{ t('serverSettings.recommendedClients') }}</p>
-                                        <ul class="list-disc list-inside space-y-1">
-                                            <li>{{ t('serverSettings.sftpClientFileZilla') }}</li>
-                                            <li>{{ t('serverSettings.sftpClientWinSCP') }}</li>
-                                            <li>{{ t('serverSettings.sftpClientCyberduck') }}</li>
-                                            <li>{{ t('serverSettings.sftpClientNautilus') }}</li>
-                                        </ul>
+                                    <div class="text-sm">
+                                        <p class="font-medium mb-2 text-foreground">
+                                            {{ t('serverSettings.recommendedClients') }}
+                                        </p>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <div class="flex items-center gap-2 text-muted-foreground">
+                                                <div class="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
+                                                {{ t('serverSettings.sftpClientFileZilla') }}
+                                            </div>
+                                            <div class="flex items-center gap-2 text-muted-foreground">
+                                                <div class="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
+                                                {{ t('serverSettings.sftpClientWinSCP') }}
+                                            </div>
+                                            <div class="flex items-center gap-2 text-muted-foreground">
+                                                <div class="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
+                                                {{ t('serverSettings.sftpClientCyberduck') }}
+                                            </div>
+                                            <div class="flex items-center gap-2 text-muted-foreground">
+                                                <div class="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
+                                                {{ t('serverSettings.sftpClientNautilus') }}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -244,47 +283,50 @@
                 </Card>
 
                 <!-- Server Actions -->
-                <Card>
-                    <CardHeader class="pb-3 sm:pb-6">
-                        <CardTitle class="flex items-center gap-2 text-base sm:text-lg">
-                            <Settings class="h-4 w-4 sm:h-5 sm:w-5" />
-                            {{ t('serverSettings.serverActions') }}
-                        </CardTitle>
-                        <CardDescription class="text-xs sm:text-sm">
-                            {{ t('serverSettings.serverActionsDescription') }}
-                        </CardDescription>
+                <Card
+                    class="border-2 border-orange-200 dark:border-orange-800 hover:border-orange-300 dark:hover:border-orange-700 transition-colors"
+                >
+                    <CardHeader>
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                                <Settings class="h-5 w-5 text-orange-500" />
+                            </div>
+                            <div>
+                                <CardTitle class="text-lg">{{ t('serverSettings.serverActions') }}</CardTitle>
+                                <CardDescription class="text-sm">
+                                    {{ t('serverSettings.serverActionsDescription') }}
+                                </CardDescription>
+                            </div>
+                        </div>
                     </CardHeader>
-                    <CardContent class="space-y-4">
+                    <CardContent>
                         <!-- Server Reinstall -->
                         <div
-                            class="p-3 sm:p-4 border border-orange-200 dark:border-orange-800 rounded-lg bg-orange-50 dark:bg-orange-950/20"
+                            class="p-4 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800"
                         >
-                            <div class="flex items-start gap-2 sm:gap-3">
-                                <AlertTriangle
-                                    class="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0"
-                                />
+                            <div class="flex items-start gap-3">
+                                <div
+                                    class="h-10 w-10 rounded-lg bg-orange-500/20 flex items-center justify-center flex-shrink-0"
+                                >
+                                    <AlertTriangle class="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                                </div>
                                 <div class="flex-1 min-w-0">
-                                    <h4
-                                        class="font-medium text-orange-800 dark:text-orange-200 mb-2 text-sm sm:text-base"
-                                    >
+                                    <h4 class="font-semibold text-orange-800 dark:text-orange-200 mb-2">
                                         {{ t('serverSettings.reinstallServer') }}
                                     </h4>
-                                    <p class="text-xs sm:text-sm text-orange-700 dark:text-orange-300 mb-3">
+                                    <p class="text-sm text-orange-700 dark:text-orange-300 mb-4">
                                         {{ t('serverSettings.reinstallWarning') }}
                                     </p>
-                                    <div class="flex gap-2">
-                                        <Button
-                                            variant="destructive"
-                                            :disabled="reinstalling"
-                                            class="flex-1 sm:flex-none"
-                                            @click="showReinstallDialog = true"
-                                        >
-                                            <RotateCcw class="h-4 w-4 sm:mr-2" />
-                                            <span class="hidden sm:inline">{{
-                                                t('serverSettings.reinstallServer')
-                                            }}</span>
-                                        </Button>
-                                    </div>
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        :disabled="reinstalling"
+                                        class="flex items-center gap-2"
+                                        @click="showReinstallDialog = true"
+                                    >
+                                        <RotateCcw :class="['h-4 w-4', reinstalling && 'animate-spin']" />
+                                        <span>{{ t('serverSettings.reinstallServer') }}</span>
+                                    </Button>
                                 </div>
                             </div>
                         </div>
@@ -293,73 +335,94 @@
             </div>
 
             <!-- Error State -->
-            <div v-else-if="error" class="text-center py-8">
-                <div class="text-red-600 dark:text-red-400 mb-2">
-                    <AlertCircle class="h-8 w-8 mx-auto" />
-                </div>
-                <h3 class="text-lg font-medium mb-2">{{ t('serverSettings.errorTitle') }}</h3>
-                <p class="text-muted-foreground mb-4">{{ error }}</p>
-                <Button @click="fetchServer">
-                    <RefreshCw class="h-4 w-4 mr-2" />
-                    {{ t('serverSettings.tryAgain') }}
+            <div v-else-if="error" class="flex flex-col items-center justify-center py-16 text-center">
+                <AlertCircle class="h-16 w-16 text-muted-foreground/50 mb-4" />
+                <h3 class="text-lg font-semibold text-foreground mb-2">{{ t('serverSettings.errorTitle') }}</h3>
+                <p class="text-sm text-muted-foreground max-w-md">{{ error }}</p>
+                <Button variant="outline" size="sm" class="mt-4" @click="fetchServer">
+                    <RotateCcw class="h-4 w-4 mr-2" />
+                    Try Again
                 </Button>
             </div>
 
             <!-- Reinstall Confirmation Dialog -->
             <Dialog v-model:open="showReinstallDialog">
-                <DialogContent class="mx-4 sm:mx-0">
+                <DialogContent>
                     <DialogHeader>
-                        <DialogTitle class="flex items-center gap-2 text-base sm:text-lg">
-                            <AlertTriangle class="h-4 w-4 sm:h-5 sm:w-5 text-destructive" />
-                            {{ t('serverSettings.confirmReinstall') }}
+                        <DialogTitle class="flex items-center gap-2">
+                            <div class="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                                <AlertTriangle class="h-5 w-5 text-destructive" />
+                            </div>
+                            <span>{{ t('serverSettings.confirmReinstall') }}</span>
                         </DialogTitle>
-                        <DialogDescription class="text-xs sm:text-sm">
+                        <DialogDescription class="text-sm">
                             {{ t('serverSettings.reinstallConfirmation') }}
                         </DialogDescription>
                     </DialogHeader>
                     <div class="space-y-4">
-                        <div class="p-3 sm:p-4 border border-destructive/20 rounded-lg bg-destructive/5">
-                            <div class="flex items-start gap-2">
-                                <AlertTriangle class="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                                <div class="text-xs sm:text-sm min-w-0">
-                                    <p class="font-medium text-destructive mb-1">
+                        <div class="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
+                            <div class="flex items-start gap-3">
+                                <AlertTriangle class="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+                                <div class="text-sm min-w-0">
+                                    <p class="font-semibold text-destructive mb-2">
                                         {{ t('serverSettings.reinstallWarningTitle') }}
                                     </p>
-                                    <ul class="list-disc list-inside space-y-1 text-muted-foreground">
-                                        <li>{{ t('serverSettings.reinstallWarning1') }}</li>
-                                        <li>{{ t('serverSettings.reinstallWarning2') }}</li>
-                                        <li>{{ t('serverSettings.reinstallWarning3') }}</li>
+                                    <ul class="space-y-1.5 text-muted-foreground">
+                                        <li class="flex items-start gap-2">
+                                            <div
+                                                class="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 flex-shrink-0"
+                                            ></div>
+                                            {{ t('serverSettings.reinstallWarning1') }}
+                                        </li>
+                                        <li class="flex items-start gap-2">
+                                            <div
+                                                class="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 flex-shrink-0"
+                                            ></div>
+                                            {{ t('serverSettings.reinstallWarning2') }}
+                                        </li>
+                                        <li class="flex items-start gap-2">
+                                            <div
+                                                class="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 flex-shrink-0"
+                                            ></div>
+                                            {{ t('serverSettings.reinstallWarning3') }}
+                                        </li>
                                     </ul>
                                 </div>
                             </div>
                         </div>
                         <div class="space-y-2">
-                            <Label for="confirmText" class="text-sm">{{ t('serverSettings.confirmText') }}</Label>
+                            <Label for="confirmText" class="text-sm font-medium">{{
+                                t('serverSettings.confirmText')
+                            }}</Label>
                             <Input
                                 id="confirmText"
                                 v-model="confirmReinstallText"
                                 :placeholder="t('serverSettings.confirmTextPlaceholder')"
-                                class="text-sm"
+                                class="text-sm font-mono"
                             />
+                            <p class="text-xs text-muted-foreground">
+                                Type <code class="px-1.5 py-0.5 rounded bg-muted font-mono">REINSTALL</code> to confirm
+                            </p>
                         </div>
                     </div>
-                    <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <DialogFooter class="gap-2">
                         <Button
                             variant="outline"
+                            size="sm"
                             :disabled="reinstalling"
-                            class="w-full sm:w-auto"
                             @click="showReinstallDialog = false"
                         >
                             {{ t('serverSettings.cancel') }}
                         </Button>
                         <Button
                             variant="destructive"
+                            size="sm"
                             :disabled="reinstalling || confirmReinstallText !== 'REINSTALL'"
-                            class="w-full sm:w-auto"
+                            class="flex items-center gap-2"
                             @click="confirmReinstall"
                         >
-                            <RotateCcw class="h-4 w-4 sm:mr-2" />
-                            <span class="hidden sm:inline">{{
+                            <RotateCcw :class="['h-4 w-4', reinstalling && 'animate-spin']" />
+                            <span>{{
                                 reinstalling ? t('serverSettings.reinstalling') : t('serverSettings.reinstallServer')
                             }}</span>
                         </Button>
@@ -422,13 +485,16 @@ import {
     Save,
     RotateCcw,
     Copy,
-    RefreshCw,
     AlertTriangle,
     AlertCircle,
     Info,
     ExternalLink,
     Eye,
     EyeOff,
+    Hash,
+    User,
+    KeyRound,
+    Link,
 } from 'lucide-vue-next';
 
 // Types
@@ -553,11 +619,6 @@ function resetForm(): void {
             description: server.value.description || '',
         };
     }
-}
-
-async function refreshServer(): Promise<void> {
-    await fetchServer();
-    toast.success(t('serverSettings.serverRefreshed'));
 }
 
 function copyToClipboard(text: string): void {

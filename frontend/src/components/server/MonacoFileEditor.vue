@@ -1,20 +1,22 @@
 <template>
-    <div class="flex flex-col h-full">
+    <div class="flex flex-col h-full border-2 rounded-lg overflow-hidden shadow-sm">
         <!-- Editor Header -->
         <div
-            class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border-b bg-muted/50 gap-3 sm:gap-0"
+            class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border-b bg-muted/30 gap-3 sm:gap-0"
         >
-            <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                <component :is="getFileIcon()" class="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+                <div class="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <component :is="getFileIcon()" class="h-4 w-4 text-primary" />
+                </div>
                 <div class="min-w-0 flex-1">
-                    <h3 class="font-semibold text-sm sm:text-base truncate">{{ fileName }}</h3>
-                    <p class="text-xs sm:text-sm text-muted-foreground truncate">{{ filePath }}</p>
+                    <h3 class="font-semibold text-sm truncate">{{ fileName }}</h3>
+                    <p class="text-xs text-muted-foreground truncate">{{ filePath }}</p>
                 </div>
             </div>
-            <div class="flex items-center gap-1 sm:gap-2 w-full sm:w-auto">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
                 <!-- Language Selector -->
                 <Select v-model="selectedLanguage" @update:model-value="changeLanguage">
-                    <SelectTrigger class="w-24 sm:w-32 text-xs sm:text-sm">
+                    <SelectTrigger class="w-24 sm:w-32 text-xs h-8">
                         <SelectValue :placeholder="t('fileEditor.language')" />
                     </SelectTrigger>
                     <SelectContent>
@@ -25,31 +27,32 @@
                 </Select>
 
                 <!-- Theme Toggle -->
-                <Button
-                    variant="outline"
-                    size="sm"
-                    class="gap-1 h-8 w-8 sm:h-9 sm:w-auto p-0 sm:px-3"
-                    @click="toggleTheme"
-                >
-                    <Monitor v-if="editorTheme === 'chrome'" class="h-3 w-3 sm:h-4 sm:w-4" />
-                    <Sun v-else-if="editorTheme === 'github'" class="h-3 w-3 sm:h-4 sm:w-4" />
-                    <Moon v-else class="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span class="hidden sm:inline">{{
-                        editorTheme === 'monokai' ? 'Dark' : editorTheme === 'github' ? 'Light' : 'Chrome'
+                <Button variant="outline" size="sm" class="gap-1.5 h-8" @click="toggleTheme">
+                    <Monitor v-if="editorTheme === 'chrome'" class="h-3.5 w-3.5" />
+                    <Sun v-else-if="editorTheme === 'github'" class="h-3.5 w-3.5" />
+                    <Moon v-else class="h-3.5 w-3.5" />
+                    <span class="hidden sm:inline text-xs">{{
+                        editorTheme === 'monokai'
+                            ? t('fileEditor.themeDark')
+                            : editorTheme === 'github'
+                              ? t('fileEditor.themeLight')
+                              : t('fileEditor.themeChrome')
                     }}</span>
                 </Button>
 
                 <!-- Save Button -->
-                <Button :disabled="!hasChanges || saving" class="gap-1 h-8 sm:h-9 text-xs sm:text-sm" @click="saveFile">
-                    <Loader2 v-if="saving" class="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
-                    <Save v-else class="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span class="hidden sm:inline">{{ saving ? t('fileEditor.saving') : t('fileEditor.save') }}</span>
+                <Button :disabled="!hasChanges || saving || readonly" size="sm" class="gap-1.5 h-8" @click="saveFile">
+                    <Loader2 v-if="saving" class="h-3.5 w-3.5 animate-spin" />
+                    <Save v-else class="h-3.5 w-3.5" />
+                    <span class="hidden sm:inline text-xs">{{
+                        saving ? t('fileEditor.saving') : t('fileEditor.save')
+                    }}</span>
                 </Button>
 
                 <!-- Close Button -->
-                <Button variant="outline" class="h-8 w-8 sm:h-9 sm:w-auto p-0 sm:px-3" @click="closeEditor">
-                    <X class="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span class="hidden sm:inline ml-1">{{ t('common.close') }}</span>
+                <Button variant="outline" size="sm" class="h-8 gap-1.5" @click="closeEditor">
+                    <X class="h-3.5 w-3.5" />
+                    <span class="hidden sm:inline text-xs">{{ t('common.close') }}</span>
                 </Button>
             </div>
         </div>
@@ -92,23 +95,33 @@
 
         <!-- Editor Footer -->
         <div
-            class="flex flex-col sm:flex-row items-start sm:items-center justify-between px-3 sm:px-4 py-2 border-t bg-muted/30 text-xs sm:text-sm gap-2 sm:gap-0"
+            class="flex flex-col sm:flex-row items-start sm:items-center justify-between px-3 sm:px-4 py-2.5 border-t bg-muted/20 text-xs gap-2 sm:gap-0"
         >
-            <div class="flex items-center gap-2 sm:gap-4 flex-wrap">
-                <Button variant="ghost" size="sm" :disabled="!canFormat" class="h-8 text-xs" @click="formatDocument">
-                    <AlignLeft class="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
-                    <span class="hidden sm:inline">{{ t('fileEditor.format') }}</span>
+            <div class="flex items-center gap-2 flex-wrap">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    :disabled="!canFormat"
+                    class="h-7 text-xs gap-1.5"
+                    @click="formatDocument"
+                >
+                    <AlignLeft class="h-3.5 w-3.5" />
+                    <span>{{ t('fileEditor.format') }}</span>
                 </Button>
-                <Button variant="ghost" size="sm" class="h-8 text-xs" @click="findAndReplace">
-                    <Search class="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
-                    <span class="hidden sm:inline">{{ t('fileEditor.findReplace') }}</span>
+                <Button variant="ghost" size="sm" class="h-7 text-xs gap-1.5" @click="findAndReplace">
+                    <Search class="h-3.5 w-3.5" />
+                    <span>{{ t('fileEditor.findReplace') }}</span>
                 </Button>
             </div>
             <div class="flex items-center gap-2">
-                <span class="text-muted-foreground text-xs">{{ selectedLanguage.toUpperCase() }}</span>
-                <Separator orientation="vertical" class="h-3 sm:h-4" />
+                <span class="text-muted-foreground text-xs font-mono">{{ selectedLanguage.toUpperCase() }}</span>
+                <Separator orientation="vertical" class="h-3" />
                 <span class="text-muted-foreground text-xs">{{
-                    editorTheme === 'monokai' ? 'Dark' : editorTheme === 'github' ? 'Light' : 'Chrome'
+                    editorTheme === 'monokai'
+                        ? t('fileEditor.themeDark')
+                        : editorTheme === 'github'
+                          ? t('fileEditor.themeLight')
+                          : t('fileEditor.themeChrome')
                 }}</span>
             </div>
         </div>

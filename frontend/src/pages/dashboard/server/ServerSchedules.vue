@@ -1,9 +1,41 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6">
+        <div class="space-y-6 pb-8">
+            <!-- Header Section -->
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div class="space-y-1">
+                        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">{{ t('serverSchedules.title') }}</h1>
+                        <p class="text-sm text-muted-foreground">{{ t('serverSchedules.description') }}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="loading"
+                            class="flex items-center gap-2"
+                            @click="refresh"
+                        >
+                            <RefreshCw :class="['h-4 w-4', loading && 'animate-spin']" />
+                            <span>{{ t('serverSchedules.refresh') }}</span>
+                        </Button>
+                        <Button size="sm" class="flex items-center gap-2" @click="openCreateScheduleDrawer">
+                            <Plus class="h-4 w-4" />
+                            <span>{{ t('serverSchedules.createSchedule') }}</span>
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div v-if="loading && schedules.length === 0" class="flex flex-col items-center justify-center py-16">
+                <div class="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full"></div>
+                <span class="mt-4 text-muted-foreground">{{ t('common.loading') }}</span>
+            </div>
+
             <!-- Empty State -->
             <div
-                v-if="!loading && schedules.length === 0 && !searchQuery"
+                v-else-if="!loading && schedules.length === 0 && !searchQuery"
                 class="flex flex-col items-center justify-center py-16 px-4"
             >
                 <div class="text-center max-w-md space-y-6">
@@ -32,78 +64,122 @@
                 </div>
             </div>
 
-            <!-- Table Component -->
-            <TableComponent
-                v-else
-                :title="t('serverSchedules.title')"
-                :description="t('serverSchedules.description')"
-                :columns="tableColumns"
-                :data="schedules"
-                :search-placeholder="t('serverSchedules.searchPlaceholder')"
-                :server-side-pagination="true"
-                :total-records="pagination.total"
-                :total-pages="pagination.last_page"
-                :current-page="pagination.current_page"
-                :has-next="pagination.current_page < pagination.last_page"
-                :has-prev="pagination.current_page > 1"
-                :from="pagination.from"
-                :to="pagination.to"
-                local-storage-key="featherpanel-server-schedules-columns"
-                @search="handleSearch"
-                @page-change="changePage"
-            >
-                <template #header-actions>
-                    <Button @click="openCreateScheduleDrawer">
-                        <Plus class="h-4 w-4 mr-2" />
-                        {{ t('serverSchedules.createSchedule') }}
-                    </Button>
-                </template>
-
-                <template #cell-name="{ item }">
-                    <div class="font-medium">{{ (item as ScheduleItem).name }}</div>
-                </template>
-
-                <template #cell-cron="{ item }">
-                    <div class="text-sm font-mono text-muted-foreground">
-                        {{ formatCronExpression(item as ScheduleItem) }}
+            <!-- Schedules List -->
+            <Card v-else class="border-2 hover:border-primary/50 transition-colors">
+                <CardHeader>
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Calendar class="h-5 w-5 text-primary" />
+                        </div>
+                        <div class="flex-1">
+                            <CardTitle class="text-lg">{{ t('serverSchedules.schedules') }}</CardTitle>
+                            <CardDescription class="text-sm">{{
+                                t('serverSchedules.schedulesDescription')
+                            }}</CardDescription>
+                        </div>
+                        <Badge variant="secondary" class="text-xs">
+                            {{ schedules.length }} {{ schedules.length === 1 ? 'schedule' : 'schedules' }}
+                        </Badge>
                     </div>
-                </template>
-
-                <template #cell-status="{ item }">
-                    <Badge :variant="getStatusVariant(item as ScheduleItem)" class="capitalize">
-                        {{ getStatusText(item as ScheduleItem) }}
-                    </Badge>
-                </template>
-
-                <template #cell-next-run="{ item }">
-                    <span class="text-sm">{{ formatDate((item as ScheduleItem).next_run_at) }}</span>
-                </template>
-
-                <template #cell-last-run="{ item }">
-                    <span class="text-sm">{{ formatDate((item as ScheduleItem).last_run_at) }}</span>
-                </template>
-
-                <template #cell-actions="{ item }">
-                    <div class="flex gap-2">
-                        <Button size="sm" variant="outline" @click="openEditScheduleDrawer(item as ScheduleItem)">
-                            <Pencil class="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="outline" @click="navigateToTasks(item as ScheduleItem)">
-                            <ListTodo class="h-4 w-4" />
-                        </Button>
-                        <Button
-                            size="sm"
-                            :variant="(item as ScheduleItem).is_active ? 'secondary' : 'default'"
-                            @click="toggleScheduleStatus(item as ScheduleItem)"
+                </CardHeader>
+                <CardContent>
+                    <div class="space-y-3">
+                        <div
+                            v-for="schedule in schedules"
+                            :key="schedule.id"
+                            class="group relative rounded-lg border-2 bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
                         >
-                            <Power class="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="destructive" @click="deleteSchedule(item as ScheduleItem)">
-                            <Trash2 class="h-4 w-4" />
-                        </Button>
+                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                <div class="flex items-start gap-3 flex-1 min-w-0">
+                                    <div
+                                        class="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                                        :class="[
+                                            schedule.is_processing
+                                                ? 'bg-blue-500/10'
+                                                : schedule.is_active
+                                                  ? 'bg-green-500/10'
+                                                  : 'bg-gray-500/10',
+                                        ]"
+                                    >
+                                        <Calendar
+                                            class="h-5 w-5"
+                                            :class="[
+                                                schedule.is_processing
+                                                    ? 'text-blue-500'
+                                                    : schedule.is_active
+                                                      ? 'text-green-500'
+                                                      : 'text-gray-500',
+                                            ]"
+                                        />
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <h3 class="font-semibold text-sm truncate">{{ schedule.name }}</h3>
+                                            <Badge :variant="getStatusVariant(schedule) as any" class="text-xs">
+                                                {{ getStatusText(schedule) }}
+                                            </Badge>
+                                        </div>
+                                        <div
+                                            class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground"
+                                        >
+                                            <span class="flex items-center gap-1 font-mono">
+                                                <Clock class="h-3 w-3" />
+                                                {{ formatCronExpression(schedule) }}
+                                            </span>
+                                            <span v-if="schedule.next_run_at" class="flex items-center gap-1">
+                                                <CalendarClock class="h-3 w-3" />
+                                                {{ formatDate(schedule.next_run_at) }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        class="flex items-center gap-2"
+                                        @click="openEditScheduleDrawer(schedule)"
+                                    >
+                                        <Pencil class="h-3.5 w-3.5" />
+                                        <span class="hidden sm:inline">{{ t('common.edit') }}</span>
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        class="flex items-center gap-2"
+                                        @click="navigateToTasks(schedule)"
+                                    >
+                                        <ListTodo class="h-3.5 w-3.5" />
+                                        <span class="hidden sm:inline">{{ t('serverSchedules.tasks') }}</span>
+                                    </Button>
+                                    <Button
+                                        :variant="schedule.is_active ? 'secondary' : 'default'"
+                                        size="sm"
+                                        class="flex items-center gap-2"
+                                        @click="toggleScheduleStatus(schedule)"
+                                    >
+                                        <Power class="h-3.5 w-3.5" />
+                                        <span class="hidden sm:inline">{{
+                                            schedule.is_active ? t('common.disable') : t('common.enable')
+                                        }}</span>
+                                    </Button>
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        class="flex items-center gap-2"
+                                        @click="deleteSchedule(schedule)"
+                                    >
+                                        <Trash2 class="h-3.5 w-3.5" />
+                                        <span class="hidden sm:inline">{{ t('common.delete') }}</span>
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </template>
-            </TableComponent>
+                </CardContent>
+            </Card>
         </div>
 
         <!-- Create Schedule Drawer -->
@@ -442,16 +518,33 @@
         <Dialog v-model:open="showConfirmDialog">
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{{ confirmDialog.title }}</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle class="flex items-center gap-2">
+                        <div
+                            class="h-10 w-10 rounded-lg flex items-center justify-center"
+                            :class="[confirmDialog.variant === 'destructive' ? 'bg-destructive/10' : 'bg-primary/10']"
+                        >
+                            <AlertTriangle
+                                v-if="confirmDialog.variant === 'destructive'"
+                                class="h-5 w-5 text-destructive"
+                            />
+                            <Info v-else class="h-5 w-5 text-primary" />
+                        </div>
+                        <span>{{ confirmDialog.title }}</span>
+                    </DialogTitle>
+                    <DialogDescription class="text-sm">
                         {{ confirmDialog.description }}
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter>
-                    <Button variant="outline" :disabled="confirmLoading" @click="showConfirmDialog = false">
+                <DialogFooter class="gap-2">
+                    <Button variant="outline" size="sm" :disabled="confirmLoading" @click="showConfirmDialog = false">
                         {{ t('common.cancel') }}
                     </Button>
-                    <Button :variant="confirmDialog.variant" :disabled="confirmLoading" @click="onConfirmDialog">
+                    <Button
+                        :variant="confirmDialog.variant"
+                        size="sm"
+                        :disabled="confirmLoading"
+                        @click="onConfirmDialog"
+                    >
                         <Loader2 v-if="confirmLoading" class="h-4 w-4 mr-2 animate-spin" />
                         {{ confirmDialog.confirmText }}
                     </Button>
@@ -494,12 +587,25 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Pencil, Power, Trash2, Loader2, ExternalLink, ListTodo, Calendar } from 'lucide-vue-next';
+import {
+    Plus,
+    Pencil,
+    Power,
+    Trash2,
+    Loader2,
+    ExternalLink,
+    ListTodo,
+    Calendar,
+    RefreshCw,
+    Clock,
+    CalendarClock,
+    AlertTriangle,
+    Info,
+} from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
-import TableComponent from '@/kit/TableComponent.vue';
-import type { TableColumn } from '@/kit/types';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
 import {
     Dialog,
@@ -599,14 +705,9 @@ onMounted(async () => {
     await fetchSchedules();
 });
 
-const tableColumns: TableColumn[] = [
-    { key: 'name', label: t('serverSchedules.name'), searchable: true },
-    { key: 'cron', label: t('serverSchedules.schedule') },
-    { key: 'status', label: t('serverSchedules.status') },
-    { key: 'next-run', label: t('serverSchedules.nextRun') },
-    { key: 'last-run', label: t('serverSchedules.lastRun') },
-    { key: 'actions', label: t('common.actions'), headerClass: 'w-[200px] font-semibold' },
-];
+function refresh() {
+    fetchSchedules(pagination.value.current_page || 1);
+}
 
 async function fetchSchedules(page = pagination.value.current_page) {
     try {
@@ -636,17 +737,6 @@ async function fetchServer() {
     } catch {
         // non-blocking
     }
-}
-
-function changePage(page: number) {
-    if (page < 1) return;
-    fetchSchedules(page);
-}
-
-function handleSearch(query: string) {
-    searchQuery.value = query;
-    pagination.value.current_page = 1;
-    fetchSchedules(1);
 }
 
 function formatDate(value?: string | null) {

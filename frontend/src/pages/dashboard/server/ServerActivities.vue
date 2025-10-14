@@ -1,52 +1,53 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6">
+        <div class="space-y-6 pb-8">
             <!-- Header Section -->
-            <div class="space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h1 class="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-                            <div class="p-2 rounded-lg bg-primary/10">
-                                <Activity class="h-6 w-6 text-primary" />
-                            </div>
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div class="space-y-1">
+                        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
                             {{ t('serverActivities.title') }}
                         </h1>
-                        <p class="text-sm sm:text-base text-muted-foreground mt-2">
+                        <p class="text-sm text-muted-foreground">
                             {{ t('serverActivities.description') }}
                         </p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span
-                            class="text-sm font-semibold px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/20 to-primary/10 text-primary border border-primary/20"
-                        >
+                        <Badge variant="secondary" class="text-sm font-semibold px-3 py-1.5">
                             {{ pagination.total_records }} {{ t('serverActivities.events') }}
-                        </span>
-                        <Button variant="outline" size="sm" :disabled="loading" @click="refresh">
-                            <RefreshCw :class="['h-4 w-4 mr-2', loading && 'animate-spin']" />
-                            {{ t('common.refresh') }}
+                        </Badge>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="loading"
+                            class="flex items-center gap-2"
+                            @click="refresh"
+                        >
+                            <RefreshCw :class="['h-3.5 w-3.5', loading && 'animate-spin']" />
+                            <span class="text-xs sm:text-sm">{{ t('common.refresh') }}</span>
                         </Button>
                     </div>
                 </div>
 
-                <!-- Enhanced Search and Filters -->
-                <Card class="border-2 shadow-sm hover:shadow-md transition-all">
+                <!-- Search and Filters -->
+                <Card class="border-2 hover:border-primary/50 transition-colors">
                     <CardContent class="p-4">
-                        <div class="flex flex-col sm:flex-row gap-4">
+                        <div class="flex flex-col sm:flex-row gap-3">
                             <div class="flex-1 relative">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                    <Search class="h-5 w-5 text-muted-foreground" />
+                                    <Search class="h-4 w-4 text-muted-foreground" />
                                 </div>
                                 <Input
                                     v-model="searchQuery"
                                     :placeholder="t('serverActivities.searchPlaceholder')"
                                     :disabled="loading"
-                                    class="pl-10 pr-4 h-11 border-2 focus:border-primary transition-all"
+                                    class="pl-10 h-9 text-sm"
                                     @input="debouncedSearch"
                                 />
                             </div>
                             <div class="flex gap-2">
                                 <Select v-model="selectedEventFilter" @update:model-value="handleFilterChange">
-                                    <SelectTrigger class="w-48 h-11 border-2">
+                                    <SelectTrigger class="w-full sm:w-48 h-9 text-sm">
                                         <SelectValue :placeholder="t('serverActivities.filterByEvent')" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -70,9 +71,14 @@
                                         <SelectItem value="server">{{ t('serverActivities.serverEvents') }}</SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <Button variant="outline" size="sm" class="h-11" @click="clearFilters">
-                                    <X class="h-4 w-4 mr-2" />
-                                    {{ t('common.clear') }}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="h-9 flex items-center gap-2"
+                                    @click="clearFilters"
+                                >
+                                    <X class="h-3.5 w-3.5" />
+                                    <span class="hidden sm:inline text-xs sm:text-sm">{{ t('common.clear') }}</span>
                                 </Button>
                             </div>
                         </div>
@@ -81,23 +87,9 @@
             </div>
 
             <!-- Loading State -->
-            <div v-if="loading" class="space-y-4">
-                <div class="grid gap-4">
-                    <div v-for="i in 5" :key="i" class="animate-pulse">
-                        <Card class="border-2">
-                            <CardContent class="p-4">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 bg-muted-foreground/20 rounded-lg"></div>
-                                    <div class="flex-1 space-y-2">
-                                        <div class="h-4 bg-muted-foreground/20 rounded w-1/3"></div>
-                                        <div class="h-3 bg-muted-foreground/20 rounded w-2/3"></div>
-                                    </div>
-                                    <div class="h-8 w-20 bg-muted-foreground/20 rounded"></div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
+            <div v-if="loading" class="flex flex-col items-center justify-center py-16">
+                <div class="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full"></div>
+                <span class="mt-4 text-muted-foreground">{{ t('common.loading') }}</span>
             </div>
 
             <!-- Empty State -->
@@ -135,9 +127,7 @@
             <!-- Activities List -->
             <div v-else class="space-y-4">
                 <div v-for="activity in activities" :key="activity.id" class="group">
-                    <Card
-                        class="border-2 shadow-sm hover:shadow-md transition-all duration-200 hover:border-primary/20"
-                    >
+                    <Card class="border-2 hover:border-primary/50 transition-all duration-200">
                         <CardContent class="p-4">
                             <div class="flex items-start gap-4">
                                 <!-- Event Icon -->
@@ -228,52 +218,58 @@
                 </div>
 
                 <!-- Pagination -->
-                <div class="flex items-center justify-between pt-6">
-                    <div class="text-sm text-muted-foreground">
-                        {{
-                            t('serverActivities.showingEvents', {
-                                from: pagination.from,
-                                to: pagination.to,
-                                total: pagination.total_records,
-                            })
-                        }}
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="!pagination.has_prev || loading"
-                            @click="changePage(pagination.current_page - 1)"
-                        >
-                            <ChevronLeft class="h-4 w-4 mr-1" />
-                            {{ t('serverActivities.previous') }}
-                        </Button>
+                <Card class="border-2">
+                    <CardContent class="p-4">
+                        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div class="text-sm text-muted-foreground">
+                                {{
+                                    t('serverActivities.showingEvents', {
+                                        from: pagination.from,
+                                        to: pagination.to,
+                                        total: pagination.total_records,
+                                    })
+                                }}
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="h-9 flex items-center gap-1.5"
+                                    :disabled="!pagination.has_prev || loading"
+                                    @click="changePage(pagination.current_page - 1)"
+                                >
+                                    <ChevronLeft class="h-3.5 w-3.5" />
+                                    <span class="text-xs sm:text-sm">{{ t('common.prev') }}</span>
+                                </Button>
 
-                        <div class="flex items-center gap-1">
-                            <Button
-                                v-for="page in getVisiblePages()"
-                                :key="page"
-                                :variant="page === pagination.current_page ? 'default' : 'outline'"
-                                size="sm"
-                                class="w-8 h-8 p-0"
-                                :disabled="typeof page === 'string'"
-                                @click="typeof page === 'number' && changePage(page)"
-                            >
-                                {{ page }}
-                            </Button>
+                                <div class="flex items-center gap-1">
+                                    <Button
+                                        v-for="page in getVisiblePages()"
+                                        :key="page"
+                                        :variant="page === pagination.current_page ? 'default' : 'outline'"
+                                        size="sm"
+                                        class="w-9 h-9 p-0 text-xs sm:text-sm"
+                                        :disabled="typeof page === 'string'"
+                                        @click="typeof page === 'number' && changePage(page)"
+                                    >
+                                        {{ page }}
+                                    </Button>
+                                </div>
+
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="h-9 flex items-center gap-1.5"
+                                    :disabled="!pagination.has_next || loading"
+                                    @click="changePage(pagination.current_page + 1)"
+                                >
+                                    <span class="text-xs sm:text-sm">{{ t('common.next') }}</span>
+                                    <ChevronRight class="h-3.5 w-3.5" />
+                                </Button>
+                            </div>
                         </div>
-
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            :disabled="!pagination.has_next || loading"
-                            @click="changePage(pagination.current_page + 1)"
-                        >
-                            {{ t('serverActivities.next') }}
-                            <ChevronRight class="h-4 w-4 ml-1" />
-                        </Button>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
 

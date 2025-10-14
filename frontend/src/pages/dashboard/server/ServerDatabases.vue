@@ -1,20 +1,54 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6">
-            <!-- Database Limit Warning -->
-            <div
-                v-if="serverInfo && databases.length >= serverInfo.database_limit"
-                class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 dark:bg-yellow-950/30 dark:border-yellow-800"
-            >
-                <div class="flex items-center gap-3">
-                    <div class="w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
-                        <span class="text-white text-xs font-bold">!</span>
+        <div class="space-y-6 pb-8">
+            <!-- Header Section -->
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div class="space-y-1">
+                        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">{{ t('serverDatabases.title') }}</h1>
+                        <p class="text-sm text-muted-foreground">
+                            {{ t('serverDatabases.description') }}
+                            <span v-if="serverInfo" class="font-medium">
+                                ({{ databases.length }}/{{ serverInfo.database_limit }})
+                            </span>
+                        </p>
                     </div>
-                    <div>
-                        <h3 class="text-yellow-800 dark:text-yellow-200 font-medium">
+                    <div class="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="loading"
+                            class="flex items-center gap-2"
+                            @click="refresh"
+                        >
+                            <RefreshCw :class="['h-4 w-4', loading && 'animate-spin']" />
+                            <span>{{ t('serverDatabases.refresh') }}</span>
+                        </Button>
+                        <Button
+                            size="sm"
+                            :disabled="loading || (serverInfo && databases.length >= serverInfo.database_limit)"
+                            class="flex items-center gap-2"
+                            @click="openCreateDatabaseDrawer"
+                        >
+                            <Plus class="h-4 w-4" />
+                            <span>{{ t('serverDatabases.createDatabase') }}</span>
+                        </Button>
+                    </div>
+                </div>
+
+                <!-- Database Limit Warning -->
+                <div
+                    v-if="serverInfo && databases.length >= serverInfo.database_limit"
+                    class="flex items-start gap-3 p-4 rounded-lg bg-yellow-50 border-2 border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800"
+                >
+                    <div class="h-10 w-10 rounded-lg bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                        <AlertTriangle class="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
                             {{ t('serverDatabases.databaseLimitReached') }}
                         </h3>
-                        <p class="text-yellow-700 dark:text-yellow-300 text-sm">
+                        <p class="text-sm text-yellow-700 dark:text-yellow-300">
                             {{
                                 t('serverDatabases.databaseLimitReachedDescription', {
                                     limit: serverInfo.database_limit,
@@ -25,9 +59,15 @@
                 </div>
             </div>
 
+            <!-- Loading State -->
+            <div v-if="loading && databases.length === 0" class="flex flex-col items-center justify-center py-16">
+                <div class="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full"></div>
+                <span class="mt-4 text-muted-foreground">{{ t('common.loading') }}</span>
+            </div>
+
             <!-- Empty State -->
             <div
-                v-if="!loading && databases.length === 0 && !searchQuery"
+                v-else-if="!loading && databases.length === 0 && !searchQuery"
                 class="flex flex-col items-center justify-center py-16 px-4"
             >
                 <div class="text-center max-w-md space-y-6">
@@ -65,85 +105,86 @@
                 </div>
             </div>
 
-            <!-- Table Component -->
-            <TableComponent
-                v-else
-                :title="t('serverDatabases.title')"
-                :description="
-                    t('serverDatabases.description') +
-                    (serverInfo ? ` (${databases.length}/${serverInfo.database_limit})` : '')
-                "
-                :columns="tableColumns"
-                :data="databases"
-                :search-placeholder="t('serverDatabases.searchPlaceholder')"
-                :server-side-pagination="true"
-                :total-records="pagination.total"
-                :total-pages="pagination.last_page"
-                :current-page="pagination.current_page"
-                :has-next="pagination.current_page < pagination.last_page"
-                :has-prev="pagination.current_page > 1"
-                :from="pagination.from"
-                :to="pagination.to"
-                local-storage-key="featherpanel-server-databases-columns"
-                @search="handleSearch"
-                @page-change="changePage"
-            >
-                <template #header-actions>
-                    <Button
-                        :disabled="serverInfo && databases.length >= serverInfo.database_limit"
-                        @click="openCreateDatabaseDrawer"
-                    >
-                        <Plus class="h-4 w-4 mr-2" />
-                        {{ t('serverDatabases.createDatabase') }}
-                    </Button>
-                </template>
-
-                <template #cell-database="{ item }">
-                    <div class="font-medium truncate max-w-[120px]" :title="(item as DatabaseItem).database">
-                        {{ (item as DatabaseItem).database }}
+            <!-- Databases List -->
+            <Card v-else class="border-2 hover:border-primary/50 transition-colors">
+                <CardHeader>
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Database class="h-5 w-5 text-primary" />
+                        </div>
+                        <div class="flex-1">
+                            <CardTitle class="text-lg">{{ t('serverDatabases.databases') }}</CardTitle>
+                            <CardDescription class="text-sm">{{
+                                t('serverDatabases.databasesDescription')
+                            }}</CardDescription>
+                        </div>
+                        <Badge variant="secondary" class="text-xs">
+                            {{ databases.length }} {{ databases.length === 1 ? 'database' : 'databases' }}
+                        </Badge>
                     </div>
-                </template>
+                </CardHeader>
+                <CardContent>
+                    <div class="space-y-3">
+                        <div
+                            v-for="db in databases"
+                            :key="db.id"
+                            class="group relative rounded-lg border-2 bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
+                        >
+                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                <div class="flex items-start gap-3 flex-1 min-w-0">
+                                    <div
+                                        class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0"
+                                    >
+                                        <Database class="h-5 w-5 text-primary" />
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <h3 class="font-semibold text-sm truncate">{{ db.database }}</h3>
+                                        </div>
+                                        <div
+                                            class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground"
+                                        >
+                                            <span class="flex items-center gap-1">
+                                                <User class="h-3 w-3" />
+                                                {{ db.username }}
+                                            </span>
+                                            <span class="flex items-center gap-1 truncate">
+                                                <Server class="h-3 w-3" />
+                                                {{ db.database_host || 'N/A' }}:{{ db.database_port || 'N/A' }}
+                                            </span>
+                                            <Badge variant="outline" class="text-xs">
+                                                {{ db.remote === '%' ? 'All Hosts' : db.remote }}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </div>
 
-                <template #cell-username="{ item }">
-                    <div class="text-sm text-muted-foreground">{{ (item as DatabaseItem).username }}</div>
-                </template>
-
-                <template #cell-host="{ item }">
-                    <div
-                        class="text-sm text-muted-foreground truncate max-w-[200px]"
-                        :title="`${(item as DatabaseItem).database_host || 'N/A'}:${(item as DatabaseItem).database_port || 'N/A'}`"
-                    >
-                        {{ (item as DatabaseItem).database_host || 'N/A' }}:{{
-                            (item as DatabaseItem).database_port || 'N/A'
-                        }}
+                                <!-- Action Buttons -->
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        class="flex items-center gap-2"
+                                        @click="openViewDatabaseDrawer(db)"
+                                    >
+                                        <Eye class="h-3.5 w-3.5" />
+                                        <span class="hidden sm:inline">{{ t('serverDatabases.view') }}</span>
+                                    </Button>
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        class="flex items-center gap-2"
+                                        @click="deleteDatabase(db)"
+                                    >
+                                        <Trash2 class="h-3.5 w-3.5" />
+                                        <span class="hidden sm:inline">{{ t('common.delete') }}</span>
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </template>
-
-                <template #cell-remote="{ item }">
-                    <Badge variant="outline" class="text-xs">
-                        {{ (item as DatabaseItem).remote === '%' ? 'All Hosts' : (item as DatabaseItem).remote }}
-                    </Badge>
-                </template>
-
-                <template #cell-connections="{ item }">
-                    <span class="text-sm">{{ (item as DatabaseItem).max_connections || 0 }}</span>
-                </template>
-
-                <template #cell-created="{ item }">
-                    <span class="text-sm">{{ formatDate((item as DatabaseItem).created_at) }}</span>
-                </template>
-
-                <template #cell-actions="{ item }">
-                    <div class="flex gap-2">
-                        <Button size="sm" variant="outline" @click="openViewDatabaseDrawer(item as DatabaseItem)">
-                            <Eye class="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="destructive" @click="deleteDatabase(item as DatabaseItem)">
-                            <Trash2 class="h-4 w-4" />
-                        </Button>
-                    </div>
-                </template>
-            </TableComponent>
+                </CardContent>
+            </Card>
         </div>
 
         <!-- Create Database Drawer -->
@@ -158,10 +199,17 @@
         >
             <DrawerContent class="max-h-[90vh] overflow-y-auto">
                 <DrawerHeader>
-                    <DrawerTitle>{{ t('serverDatabases.createDatabase') }}</DrawerTitle>
-                    <DrawerDescription>{{ t('serverDatabases.createDatabaseDescription') }}</DrawerDescription>
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Plus class="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                            <DrawerTitle>{{ t('serverDatabases.createDatabase') }}</DrawerTitle>
+                            <DrawerDescription>{{ t('serverDatabases.createDatabaseDescription') }}</DrawerDescription>
+                        </div>
+                    </div>
                 </DrawerHeader>
-                <form class="space-y-6 p-6" @submit.prevent="createDatabase">
+                <form class="space-y-5 px-6 pb-6 pt-2" @submit.prevent="createDatabase">
                     <!-- Database Host -->
                     <div class="space-y-2">
                         <Label for="database-host" class="text-sm font-medium">
@@ -233,12 +281,15 @@
                         </p>
                     </div>
 
-                    <DrawerFooter>
-                        <Button type="submit" :disabled="creating">
-                            <Loader2 v-if="creating" class="h-4 w-4 mr-2 animate-spin" />
-                            {{ t('serverDatabases.createDatabase') }}
+                    <div class="flex justify-end gap-2 pt-2">
+                        <Button type="button" variant="outline" size="sm" @click="closeCreateDrawer">
+                            {{ t('common.cancel') }}
                         </Button>
-                    </DrawerFooter>
+                        <Button type="submit" size="sm" :disabled="creating" class="flex items-center gap-2">
+                            <Loader2 v-if="creating" class="h-4 w-4 animate-spin" />
+                            <span>{{ t('serverDatabases.create') }}</span>
+                        </Button>
+                    </div>
                 </form>
             </DrawerContent>
         </Drawer>
@@ -255,17 +306,17 @@
         >
             <DrawerContent v-if="viewingDatabase" class="max-h-[90vh] overflow-y-auto">
                 <DrawerHeader>
-                    <DrawerTitle class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                            <Eye class="h-6 w-6 text-primary" />
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Eye class="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                            <div class="text-2xl font-bold">{{ viewingDatabase.database }}</div>
-                            <div class="text-base text-muted-foreground font-normal">
+                            <DrawerTitle>{{ viewingDatabase.database }}</DrawerTitle>
+                            <DrawerDescription>
                                 {{ t('serverDatabases.databaseCredentials') }}
-                            </div>
+                            </DrawerDescription>
                         </div>
-                    </DrawerTitle>
+                    </div>
                 </DrawerHeader>
 
                 <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 py-6 px-6">
@@ -605,12 +656,24 @@
         <AlertDialog v-model:open="showConfirmDialog">
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>{{ confirmDialog.title }}</AlertDialogTitle>
-                    <AlertDialogDescription>
+                    <AlertDialogTitle class="flex items-center gap-2">
+                        <div
+                            class="h-10 w-10 rounded-lg flex items-center justify-center"
+                            :class="[confirmDialog.variant === 'destructive' ? 'bg-destructive/10' : 'bg-primary/10']"
+                        >
+                            <AlertTriangle
+                                v-if="confirmDialog.variant === 'destructive'"
+                                class="h-5 w-5 text-destructive"
+                            />
+                            <Info v-else class="h-5 w-5 text-primary" />
+                        </div>
+                        <span>{{ confirmDialog.title }}</span>
+                    </AlertDialogTitle>
+                    <AlertDialogDescription class="text-sm">
                         {{ confirmDialog.description }}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
+                <AlertDialogFooter class="gap-2">
                     <AlertDialogCancel>{{ t('common.cancel') }}</AlertDialogCancel>
                     <AlertDialogAction
                         :class="
@@ -658,11 +721,11 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
-import TableComponent from '@/kit/TableComponent.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import {
@@ -683,10 +746,22 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Trash2, Loader2, Eye, EyeOff, Copy, AlertTriangle, Database } from 'lucide-vue-next';
+import {
+    Plus,
+    Trash2,
+    Loader2,
+    Eye,
+    EyeOff,
+    Copy,
+    AlertTriangle,
+    Database,
+    RefreshCw,
+    User,
+    Server,
+    Info,
+} from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
-import type { TableColumn } from '@/kit/types';
 
 type DatabaseItem = {
     id: number;
@@ -772,22 +847,15 @@ const breadcrumbs = computed(() => [
     { text: t('serverDatabases.title'), isCurrent: true, href: `/server/${route.params.uuidShort}/databases` },
 ]);
 
-const tableColumns: TableColumn[] = [
-    { key: 'database', label: t('serverDatabases.database'), searchable: true, headerClass: 'min-w-[120px]' },
-    { key: 'username', label: t('serverDatabases.username'), searchable: true },
-    { key: 'host', label: t('serverDatabases.host'), headerClass: 'min-w-[200px]' },
-    { key: 'remote', label: t('serverDatabases.remote'), headerClass: 'min-w-[100px]' },
-    { key: 'connections', label: t('serverDatabases.maxConnections'), headerClass: 'min-w-[120px]' },
-    { key: 'created', label: t('serverDatabases.createdAt'), headerClass: 'min-w-[150px]' },
-    { key: 'actions', label: t('common.actions'), headerClass: 'w-[200px] font-semibold' },
-];
-
 // Lifecycle
 onMounted(async () => {
     await Promise.all([fetchDatabases(), fetchAvailableHosts()]);
 });
 
 // Methods
+function refresh() {
+    fetchDatabases(pagination.value.current_page || 1);
+}
 async function fetchDatabases(page = pagination.value.current_page) {
     try {
         loading.value = true;
@@ -856,17 +924,6 @@ async function fetchAvailableHosts() {
         }
         console.error('Failed to fetch available hosts:', error);
     }
-}
-
-function changePage(page: number) {
-    if (page < 1) return;
-    fetchDatabases(page);
-}
-
-function handleSearch(query: string) {
-    searchQuery.value = query;
-    pagination.value.current_page = 1;
-    fetchDatabases(1);
 }
 
 function formatDate(value?: string | null) {

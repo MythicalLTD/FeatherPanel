@@ -50,85 +50,80 @@
             </div>
         </Transition>
 
-        <div class="space-y-6" @dragenter.prevent="handleDragEnter" @dragover.prevent @drop.prevent="handleDrop">
-            <!-- Header with improved design -->
-            <div class="space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h1 class="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-                            <div class="p-2 rounded-lg bg-primary/10">
-                                <FolderOpen class="h-6 w-6 text-primary" />
-                            </div>
-                            {{ t('serverFiles.title') }}
-                        </h1>
-                        <p class="text-sm sm:text-base text-muted-foreground mt-2">
-                            {{ t('serverFiles.description') }}
-                        </p>
+        <div class="space-y-6 pb-8" @dragenter.prevent="handleDragEnter" @dragover.prevent @drop.prevent="handleDrop">
+            <!-- Header Section -->
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div class="space-y-1">
+                        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">{{ t('serverFiles.title') }}</h1>
+                        <p class="text-sm text-muted-foreground">{{ t('serverFiles.description') }}</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span
+                        <Badge
                             v-if="uploading"
-                            class="text-sm font-semibold px-3 py-1.5 rounded-full bg-gradient-to-r from-yellow-500/20 to-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/30 animate-pulse flex items-center gap-2"
+                            variant="outline"
+                            class="text-sm px-3 py-1.5 bg-gradient-to-r from-yellow-500/20 to-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30 animate-pulse"
                         >
-                            <Upload class="h-3.5 w-3.5 animate-bounce" />
+                            <Upload class="h-3.5 w-3.5 mr-2 animate-bounce" />
                             {{ t('serverFiles.uploadingStatus') }}
-                        </span>
-                        <span
-                            class="text-sm font-semibold px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/20 to-primary/10 text-primary border border-primary/20"
-                        >
+                        </Badge>
+                        <Badge variant="secondary" class="text-sm px-3 py-1.5">
                             {{ filteredFiles.length }} / {{ files.length }} items
-                        </span>
+                        </Badge>
                     </div>
                 </div>
 
-                <!-- Action buttons with better grouping -->
-                <div class="flex flex-col sm:flex-row gap-3">
-                    <div class="flex flex-wrap gap-2 flex-1">
-                        <Button
-                            variant="outline"
-                            :disabled="loading"
-                            class="gap-2 hover:bg-primary/5 hover:text-primary hover:border-primary/50 transition-all"
-                            @click="refreshFiles"
-                        >
-                            <RefreshCw :class="['h-4 w-4', loading && 'animate-spin']" />
-                            <span>{{ t('common.refresh') }}</span>
-                        </Button>
-                        <Button
-                            variant="outline"
-                            :disabled="loading"
-                            class="gap-2 hover:bg-primary/5 hover:text-primary hover:border-primary/50 transition-all"
-                            @click="showCreateFileDialog = true"
-                        >
-                            <FileText class="h-4 w-4" />
-                            <span>{{ t('serverFiles.newFile') }}</span>
-                        </Button>
-                        <Button
-                            variant="outline"
-                            :disabled="loading"
-                            class="gap-2 hover:bg-primary/5 hover:text-primary hover:border-primary/50 transition-all"
-                            @click="showUploadDialog = true"
-                        >
-                            <Upload class="h-4 w-4" />
-                            <span>{{ t('serverFiles.uploadFile') }}</span>
-                        </Button>
-                        <Button
-                            variant="outline"
-                            :disabled="loading"
-                            class="gap-2 hover:bg-primary/5 hover:text-primary hover:border-primary/50 transition-all"
-                            @click="showPullDialog = true"
-                        >
-                            <Download class="h-4 w-4" />
-                            <span>{{ t('serverFiles.pullFile') }}</span>
-                        </Button>
-                        <Button
-                            :disabled="loading"
-                            class="gap-2 bg-primary hover:bg-primary/90 transition-all shadow-sm"
-                            @click="showCreateFolderDialog = true"
-                        >
-                            <FolderPlus class="h-4 w-4" />
-                            <span>{{ t('serverFiles.createFolder') }}</span>
-                        </Button>
-                    </div>
+                <!-- Action Buttons -->
+                <div class="flex flex-wrap gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="loading"
+                        class="flex items-center gap-2"
+                        @click="refreshFiles"
+                    >
+                        <RefreshCw :class="['h-4 w-4', loading && 'animate-spin']" />
+                        <span>{{ t('common.refresh') }}</span>
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="loading"
+                        class="flex items-center gap-2"
+                        @click="showCreateFileDialog = true"
+                    >
+                        <FileText class="h-4 w-4" />
+                        <span>{{ t('serverFiles.newFile') }}</span>
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="loading"
+                        class="flex items-center gap-2"
+                        @click="showUploadDialog = true"
+                    >
+                        <Upload class="h-4 w-4" />
+                        <span>{{ t('serverFiles.uploadFile') }}</span>
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="loading"
+                        class="flex items-center gap-2"
+                        @click="showPullDialog = true"
+                    >
+                        <Download class="h-4 w-4" />
+                        <span>{{ t('serverFiles.pullFile') }}</span>
+                    </Button>
+                    <Button
+                        size="sm"
+                        :disabled="loading"
+                        class="flex items-center gap-2"
+                        @click="showCreateFolderDialog = true"
+                    >
+                        <FolderPlus class="h-4 w-4" />
+                        <span>{{ t('serverFiles.createFolder') }}</span>
+                    </Button>
                 </div>
             </div>
 
@@ -251,10 +246,12 @@
                 </CardContent>
             </Card>
 
-            <!-- Enhanced File Actions Toolbar -->
+            <!-- Enhanced File Actions Toolbar (Sticky) -->
             <Card
                 v-if="selectedFiles.length > 0"
-                class="border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10 shadow-sm"
+                class="sticky top-4 z-30 border border-primary/20 shadow-md bg-white/75 dark:bg-background/80 backdrop-blur-[2px] transition-colors"
+                :class="{ 'shadow-primary/10': true, 'bg-white/75': true }"
+                style="backdrop-filter: blur(2px)"
             >
                 <CardContent class="p-4">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -332,17 +329,15 @@
             </Card>
 
             <!-- Enhanced Files List -->
-            <Card class="border-2 shadow-sm">
+            <Card class="border-2 hover:border-primary/50 transition-colors shadow-sm">
                 <CardHeader class="border-b">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <CardTitle class="flex items-center gap-2 text-xl">
-                                <div class="p-1.5 rounded-md bg-primary/10">
-                                    <FolderOpen class="h-5 w-5 text-primary" />
-                                </div>
-                                {{ t('serverFiles.fileManager') }}
-                            </CardTitle>
-                            <CardDescription class="mt-1.5">
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <FolderOpen class="h-5 w-5 text-primary" />
+                        </div>
+                        <div class="flex-1">
+                            <CardTitle class="text-lg">{{ t('serverFiles.fileManager') }}</CardTitle>
+                            <CardDescription class="text-sm">
                                 {{ t('serverFiles.currentPath') }}:
                                 <code class="text-xs bg-muted px-2 py-0.5 rounded">{{ currentPath }}</code>
                             </CardDescription>
@@ -1418,6 +1413,7 @@ import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

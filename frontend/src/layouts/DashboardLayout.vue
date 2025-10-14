@@ -202,6 +202,7 @@ watchEffect(() => {
                     </Breadcrumb>
                 </div>
             </header>
+            <br />
             <div class="flex flex-1 flex-col gap-4 p-3 sm:p-4 pt-0">
                 <slot />
             </div>

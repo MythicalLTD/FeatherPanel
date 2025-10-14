@@ -1,9 +1,9 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6">
+        <div class="space-y-6 pb-8">
             <!-- Customization Panel -->
-            <Card v-if="showCustomization" class="p-4 sm:p-6">
+            <Card v-if="showCustomization" class="border-2 p-4 sm:p-6">
                 <CardHeader>
                     <CardTitle class="flex items-center gap-2">
                         <Settings class="h-5 w-5" />
@@ -438,58 +438,58 @@
                 @stop="stopServer"
                 @kill="killServer"
             />
-            <div class="fixed top-6 right-6 z-40">
-                <Button variant="outline" size="sm" class="shadow-lg" @click="showCustomization = !showCustomization">
-                    <Settings class="h-4 w-4 mr-2" />
-                    <span class="hidden sm:inline">{{
-                        showCustomization ? t('serverConsole.hideLayout') : t('serverConsole.customizeLayout')
-                    }}</span>
-                    <span class="sm:hidden">{{
+            <div class="fixed top-20 right-4 sm:top-6 sm:right-6 z-40">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="shadow-lg backdrop-blur-sm bg-background/95 flex items-center gap-2"
+                    @click="showCustomization = !showCustomization"
+                >
+                    <Settings :class="['h-3.5 w-3.5 sm:h-4 sm:w-4', showCustomization && 'animate-spin']" />
+                    <span class="text-xs sm:text-sm">{{
                         showCustomization ? t('serverConsole.hideLayout') : t('serverConsole.customizeLayout')
                     }}</span>
                 </Button>
             </div>
 
-            <!-- Wings Panel: Professional Design -->
-            <div
-                v-if="!customization.components.wingsStatus"
-                class="flex items-center gap-4 px-5 py-3 border rounded-lg shadow-sm transition-colors"
+            <!-- Wings Connection Status (Only show when NOT healthy) -->
+            <Card
+                v-if="!customization.components.wingsStatus && wingsConnectionInfo.status !== 'healthy'"
+                class="border-2 transition-all overflow-hidden"
                 :class="{
-                    'border-green-300 bg-green-50 dark:bg-green-900/50 dark:border-green-700':
-                        wingsConnectionInfo.status === 'healthy',
-                    'border-yellow-300 bg-yellow-50 dark:bg-yellow-900/40 dark:border-yellow-600':
-                        wingsConnectionInfo.status === 'error',
-                    'border-red-300 bg-red-50 dark:bg-red-900/45 dark:border-red-700':
-                        wingsConnectionInfo.status === 'disconnected',
-                    'border-blue-300 bg-blue-50 dark:bg-blue-900/50 dark:border-blue-600':
-                        wingsConnectionInfo.status === 'connecting',
+                    'border-yellow-500/50 bg-yellow-500/5': wingsConnectionInfo.status === 'error',
+                    'border-red-500/50 bg-red-500/5': wingsConnectionInfo.status === 'disconnected',
+                    'border-blue-500/50 bg-blue-500/5': wingsConnectionInfo.status === 'connecting',
                 }"
             >
-                <span
-                    class="flex items-center justify-center h-9 w-9 rounded-full border"
-                    :class="{
-                        'border-green-400 bg-green-100 dark:bg-green-800/80 dark:border-green-500':
-                            wingsConnectionInfo.status === 'healthy',
-                        'border-yellow-400 bg-yellow-100 dark:bg-yellow-800/60 dark:border-yellow-400':
-                            wingsConnectionInfo.status === 'error',
-                        'border-red-400 bg-red-100 dark:bg-red-800/70 dark:border-red-500':
-                            wingsConnectionInfo.status === 'disconnected',
-                        'border-blue-400 bg-blue-100 dark:bg-blue-800/70 dark:border-blue-500':
-                            wingsConnectionInfo.status === 'connecting',
-                    }"
-                    aria-hidden="true"
-                >
-                    <span class="text-xl">{{ wingsConnectionInfo.icon }}</span>
-                </span>
-                <div class="flex-1 min-w-0">
-                    <div class="font-semibold text-base leading-tight truncate" :class="wingsConnectionInfo.color">
-                        {{ wingsConnectionInfo.message }}
+                <CardContent class="p-4">
+                    <div class="flex items-center gap-4">
+                        <div
+                            class="h-12 w-12 rounded-lg flex items-center justify-center flex-shrink-0 text-2xl"
+                            :class="{
+                                'bg-yellow-500/10': wingsConnectionInfo.status === 'error',
+                                'bg-red-500/10': wingsConnectionInfo.status === 'disconnected',
+                                'bg-blue-500/10': wingsConnectionInfo.status === 'connecting',
+                            }"
+                        >
+                            {{ wingsConnectionInfo.icon }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p
+                                class="font-semibold text-base leading-tight truncate"
+                                :class="wingsConnectionInfo.color"
+                            >
+                                {{ wingsConnectionInfo.message }}
+                            </p>
+                        </div>
+                        <div v-if="wingsConnectionInfo.status === 'connecting'" class="flex-shrink-0">
+                            <div
+                                class="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
+                            ></div>
+                        </div>
                     </div>
-                </div>
-                <div v-if="wingsConnectionInfo.status === 'connecting'" class="flex-shrink-0 ml-2">
-                    <div class="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             <!-- Server Info Cards -->
             <ServerInfoCards
@@ -500,28 +500,39 @@
             />
 
             <!-- XTerm.js Terminal Console -->
-            <Card class="overflow-hidden">
+            <Card class="border-2 transition-colors overflow-hidden">
                 <CardHeader class="border-b">
-                    <div class="flex items-center justify-between">
-                        <CardTitle class="flex items-center gap-2">
-                            <Terminal class="h-5 w-5" />
-                            {{ t('common.console') }}
-                        </CardTitle>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <Terminal class="h-5 w-5 text-primary" />
+                            </div>
+                            <CardTitle class="text-lg">{{ t('common.console') }}</CardTitle>
+                        </div>
                         <div class="flex items-center gap-2">
                             <Button
                                 variant="outline"
                                 size="sm"
-                                class="hidden sm:flex"
+                                class="hidden sm:flex items-center gap-2"
+                                @click="showCommandHistory = true"
+                            >
+                                <Clock class="h-3.5 w-3.5" />
+                                <span class="text-xs sm:text-sm">{{ t('serverConsole.history') }}</span>
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                class="hidden sm:flex items-center gap-2"
                                 :disabled="
                                     uploading || !(server?.status === 'running' || server?.status === 'starting')
                                 "
                                 @click="uploadConsoleLogs"
                             >
-                                <Upload class="h-4 w-4 mr-2" />
-                                {{ t('serverLogs.uploadToMcloGs') }}
+                                <Upload class="h-3.5 w-3.5" />
+                                <span class="text-xs sm:text-sm">{{ t('serverLogs.uploadToMcloGs') }}</span>
                             </Button>
-                            <Button variant="outline" size="sm" @click="clearTerminal">
-                                <Trash2 class="h-4 w-4" />
+                            <Button variant="outline" size="sm" class="h-8 w-8 p-0" @click="clearTerminal">
+                                <Trash2 class="h-3.5 w-3.5" />
                             </Button>
                         </div>
                     </div>
@@ -535,20 +546,24 @@
                     ></div>
 
                     <!-- Command Input Bar -->
-                    <div class="border-t p-3">
+                    <div class="border-t p-3 bg-muted/30">
                         <div class="flex gap-2">
                             <Input
+                                ref="commandInputRef"
                                 v-model="commandInput"
                                 type="text"
-                                class="flex-1"
+                                class="flex-1 text-sm font-mono"
                                 :placeholder="t('serverConsole.enterCommandPlaceholder')"
                                 :disabled="
                                     sendingCommand || !(server?.status === 'running' || server?.status === 'starting')
                                 "
                                 @keydown.enter="sendCommand"
+                                @keydown.up.prevent="navigateHistoryUp"
+                                @keydown.down.prevent="navigateHistoryDown"
                             />
                             <Button
                                 size="sm"
+                                class="h-9 w-9 p-0"
                                 :disabled="
                                     sendingCommand ||
                                     !commandInput.trim() ||
@@ -556,26 +571,27 @@
                                 "
                                 @click="sendCommand"
                             >
-                                <Send class="h-4 w-4" />
+                                <Send :class="['h-3.5 w-3.5', sendingCommand && 'animate-pulse']" />
                             </Button>
                             <!-- Mobile upload button -->
                             <Button
                                 variant="outline"
                                 size="sm"
-                                class="sm:hidden"
+                                class="sm:hidden h-9 w-9 p-0"
                                 :disabled="
                                     uploading || !(server?.status === 'running' || server?.status === 'starting')
                                 "
                                 @click="uploadConsoleLogs"
                             >
-                                <Upload class="h-4 w-4" />
+                                <Upload :class="['h-3.5 w-3.5', uploading && 'animate-pulse']" />
                             </Button>
                         </div>
                         <p
                             v-if="server && server.status !== 'running' && server.status !== 'starting'"
-                            class="text-xs text-yellow-500 mt-2"
+                            class="text-xs text-yellow-600 dark:text-yellow-400 mt-2 flex items-center gap-1.5"
                         >
-                            {{ t('serverConsole.serverMustBeRunningCommands') }}
+                            <span>⚠️</span>
+                            <span>{{ t('serverConsole.serverMustBeRunningCommands') }}</span>
                         </p>
                     </div>
                 </CardContent>
@@ -631,6 +647,115 @@
                 }
             "
         />
+
+        <!-- Command History Dialog -->
+        <Dialog v-model:open="showCommandHistory">
+            <DialogContent class="max-w-3xl max-h-[80vh]">
+                <DialogHeader>
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Clock class="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                            <DialogTitle>{{ t('serverConsole.commandHistory') }}</DialogTitle>
+                            <DialogDescription>{{ t('serverConsole.commandHistoryDescription') }}</DialogDescription>
+                        </div>
+                    </div>
+                </DialogHeader>
+
+                <!-- History Tabs -->
+                <div class="border-b">
+                    <div class="flex gap-4">
+                        <button
+                            :class="[
+                                'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                                historyTab === 'server'
+                                    ? 'border-primary text-foreground'
+                                    : 'border-transparent text-muted-foreground hover:text-foreground',
+                            ]"
+                            @click="historyTab = 'server'"
+                        >
+                            {{ t('serverConsole.thisServer') }}
+                            <Badge variant="secondary" class="ml-2">{{ serverCommandHistory.length }}</Badge>
+                        </button>
+                        <button
+                            :class="[
+                                'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                                historyTab === 'global'
+                                    ? 'border-primary text-foreground'
+                                    : 'border-transparent text-muted-foreground hover:text-foreground',
+                            ]"
+                            @click="historyTab = 'global'"
+                        >
+                            {{ t('serverConsole.allServers') }}
+                            <Badge variant="secondary" class="ml-2">{{ globalCommandHistory.length }}</Badge>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- History Content -->
+                <div class="overflow-y-auto max-h-[50vh] py-4">
+                    <div v-if="currentHistoryList.length === 0" class="text-center py-8 text-muted-foreground">
+                        <Clock class="h-12 w-12 mx-auto mb-3 opacity-50" />
+                        <p class="text-sm">{{ t('serverConsole.noCommandHistory') }}</p>
+                    </div>
+
+                    <div v-else class="space-y-2">
+                        <div
+                            v-for="(cmd, index) in currentHistoryList"
+                            :key="index"
+                            class="group flex items-center gap-3 p-3 border-2 rounded-lg hover:border-primary/50 transition-colors bg-card"
+                        >
+                            <div class="flex-1 min-w-0">
+                                <code class="text-sm font-mono break-all">{{ cmd.command }}</code>
+                                <div class="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                    <span class="flex items-center gap-1">
+                                        <Calendar class="h-3 w-3" />
+                                        {{ formatDate(cmd.timestamp) }}
+                                    </span>
+                                    <span
+                                        v-if="historyTab === 'global' && cmd.serverName"
+                                        class="flex items-center gap-1"
+                                    >
+                                        <ServerIcon class="h-3 w-3" />
+                                        {{ cmd.serverName }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="flex gap-1">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="h-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    @click="useHistoryCommand(cmd.command)"
+                                >
+                                    <Terminal class="h-3.5 w-3.5 mr-1" />
+                                    <span class="text-xs">{{ t('serverConsole.use') }}</span>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    @click="copyToClipboard(cmd.command)"
+                                >
+                                    <Copy class="h-3.5 w-3.5" />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <DialogFooter class="flex items-center justify-between">
+                    <Button variant="outline" size="sm" @click="clearHistory">
+                        <Trash2 class="h-3.5 w-3.5 mr-2" />
+                        {{ t('serverConsole.clearHistory') }}
+                    </Button>
+                    <Button variant="outline" @click="showCommandHistory = false">
+                        {{ t('common.close') }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </DashboardLayout>
 </template>
 
@@ -659,7 +784,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
@@ -668,7 +793,21 @@ import ServerHeader from '@/components/server/ServerHeader.vue';
 import ServerInfoCards from '@/components/server/ServerInfoCards.vue';
 import ServerPerformance from '@/components/server/ServerPerformance.vue';
 import { Button } from '@/components/ui/button';
-import { Settings, RotateCcw, Save, Terminal, Trash2, Send, Upload, Plus, Pencil } from 'lucide-vue-next';
+import {
+    Settings,
+    RotateCcw,
+    Save,
+    Terminal,
+    Trash2,
+    Send,
+    Upload,
+    Plus,
+    Pencil,
+    Clock,
+    Copy,
+    Calendar,
+    Server as ServerIcon,
+} from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import { useI18n } from 'vue-i18n';
@@ -678,7 +817,14 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import EulaFeature from '@/components/server/features/EulaFeature.vue';
@@ -701,6 +847,7 @@ const toast = useToast();
 
 // Terminal container ref
 const terminalContainer = ref<HTMLElement | null>(null);
+const commandInputRef = ref<InstanceType<typeof Input> | null>(null);
 
 // XTerm instance and addons
 let terminal: XTerm | null = null;
@@ -715,6 +862,25 @@ const WRITE_DELAY = 16; // ~60fps
 const commandInput = ref('');
 const sendingCommand = ref(false);
 const uploading = ref(false);
+
+// Command History
+interface CommandHistoryEntry {
+    command: string;
+    timestamp: string;
+    serverName?: string;
+    serverUuid?: string;
+}
+
+const showCommandHistory = ref(false);
+const historyTab = ref<'server' | 'global'>('server');
+const serverCommandHistory = ref<CommandHistoryEntry[]>([]);
+const globalCommandHistory = ref<CommandHistoryEntry[]>([]);
+const historyIndex = ref(-1); // Current position in history navigation
+const temporaryInput = ref(''); // Store current input when navigating history
+
+const currentHistoryList = computed(() => {
+    return historyTab.value === 'server' ? serverCommandHistory.value : globalCommandHistory.value;
+});
 
 // Console filter types
 interface ConsoleFilter {
@@ -1351,6 +1517,9 @@ onMounted(async () => {
     // Load customization settings
     await loadCustomization();
 
+    // Load command history
+    loadCommandHistory();
+
     await fetchServer();
 
     // Initialize XTerm.js terminal after a short delay to ensure DOM is ready
@@ -1629,6 +1798,132 @@ function formatBytes(bytes: number): string {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
+// Command History Functions
+function loadCommandHistory(): void {
+    try {
+        // Load server-specific history
+        const serverKey = `featherpanel-console-history-${route.params.uuidShort}`;
+        const serverHistoryData = localStorage.getItem(serverKey);
+        if (serverHistoryData) {
+            serverCommandHistory.value = JSON.parse(serverHistoryData);
+        }
+
+        // Load global history
+        const globalHistoryData = localStorage.getItem('featherpanel-console-history-global');
+        if (globalHistoryData) {
+            globalCommandHistory.value = JSON.parse(globalHistoryData);
+        }
+    } catch (error) {
+        console.error('Error loading command history:', error);
+    }
+}
+
+function saveCommandHistory(): void {
+    try {
+        // Save server-specific history (max 100 commands)
+        const serverKey = `featherpanel-console-history-${route.params.uuidShort}`;
+        const serverHistory = serverCommandHistory.value.slice(-100);
+        localStorage.setItem(serverKey, JSON.stringify(serverHistory));
+
+        // Save global history (max 200 commands)
+        const globalHistory = globalCommandHistory.value.slice(-200);
+        localStorage.setItem('featherpanel-console-history-global', JSON.stringify(globalHistory));
+    } catch (error) {
+        console.error('Error saving command history:', error);
+    }
+}
+
+function addToCommandHistory(command: string): void {
+    const entry: CommandHistoryEntry = {
+        command,
+        timestamp: new Date().toISOString(),
+        serverName: server.value?.name,
+        serverUuid: route.params.uuidShort as string,
+    };
+
+    // Add to server-specific history
+    serverCommandHistory.value.push(entry);
+
+    // Add to global history
+    globalCommandHistory.value.push(entry);
+
+    // Save to localStorage
+    saveCommandHistory();
+
+    // Reset history navigation
+    historyIndex.value = -1;
+    temporaryInput.value = '';
+}
+
+function navigateHistoryUp(): void {
+    if (serverCommandHistory.value.length === 0) return;
+
+    // Store current input when starting history navigation
+    if (historyIndex.value === -1) {
+        temporaryInput.value = commandInput.value;
+    }
+
+    if (historyIndex.value < serverCommandHistory.value.length - 1) {
+        historyIndex.value++;
+        const cmd = serverCommandHistory.value[serverCommandHistory.value.length - 1 - historyIndex.value];
+        if (cmd) {
+            commandInput.value = cmd.command;
+        }
+    }
+}
+
+function navigateHistoryDown(): void {
+    if (historyIndex.value > 0) {
+        historyIndex.value--;
+        const cmd = serverCommandHistory.value[serverCommandHistory.value.length - 1 - historyIndex.value];
+        if (cmd) {
+            commandInput.value = cmd.command;
+        }
+    } else if (historyIndex.value === 0) {
+        // Restore the temporary input
+        historyIndex.value = -1;
+        commandInput.value = temporaryInput.value;
+        temporaryInput.value = '';
+    }
+}
+
+async function useHistoryCommand(command: string): Promise<void> {
+    commandInput.value = command;
+    showCommandHistory.value = false;
+    // Focus the input
+    await nextTick();
+    const inputEl = commandInputRef.value?.$el as HTMLInputElement | undefined;
+    inputEl?.focus();
+}
+
+function clearHistory(): void {
+    if (historyTab.value === 'server') {
+        serverCommandHistory.value = [];
+        const serverKey = `featherpanel-console-history-${route.params.uuidShort}`;
+        localStorage.removeItem(serverKey);
+        toast.success(t('serverConsole.serverHistoryCleared'));
+    } else {
+        globalCommandHistory.value = [];
+        localStorage.removeItem('featherpanel-console-history-global');
+        toast.success(t('serverConsole.globalHistoryCleared'));
+    }
+}
+
+function copyToClipboard(text: string): void {
+    navigator.clipboard
+        .writeText(text)
+        .then(() => {
+            toast.success(t('common.copied'));
+        })
+        .catch(() => {
+            toast.error(t('serverConsole.failedToCopy'));
+        });
+}
+
+function formatDate(timestamp: string): string {
+    return new Date(timestamp).toLocaleString();
+}
+
 // Send command to server
 async function sendCommand(): Promise<void> {
     if (!commandInput.value.trim() || sendingCommand.value) return;
@@ -1645,13 +1940,24 @@ async function sendCommand(): Promise<void> {
         sendingCommand.value = true;
 
         // Send command to backend API
-        // Note: We don't echo the command here because the server will echo it back via WebSocket
         await axios.post(`/api/user/servers/${route.params.uuidShort}/command`, {
             command: command,
         });
 
+        // Add to command history
+        addToCommandHistory(command);
+
         // Clear input after successful send
         commandInput.value = '';
+
+        // Reset history navigation
+        historyIndex.value = -1;
+        temporaryInput.value = '';
+
+        // Refocus the input
+        await nextTick();
+        const inputEl = commandInputRef.value?.$el as HTMLInputElement | undefined;
+        inputEl?.focus();
     } catch (error) {
         if (axios.isAxiosError(error)) {
             const errorMessage = error.response?.data?.message || t('serverConsole.failedToSendCommand');

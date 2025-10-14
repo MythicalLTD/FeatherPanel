@@ -1,33 +1,50 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6">
+        <div class="space-y-6 pb-8">
             <!-- Header Section -->
-            <div class="space-y-4">
-                <div>
-                    <h1 class="text-xl sm:text-2xl font-bold">{{ t('serverInstallLogs.title') }}</h1>
-                    <p class="text-sm sm:text-base text-muted-foreground">{{ t('serverInstallLogs.description') }}</p>
-                </div>
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <Button variant="outline" :disabled="loading" class="flex-1 sm:flex-none" @click="refreshLogs">
-                        <RefreshCw class="h-4 w-4 sm:mr-2" />
-                        <span class="hidden sm:inline">{{ t('serverInstallLogs.refresh') }}</span>
-                    </Button>
-                    <Button variant="outline" :disabled="loading" class="flex-1 sm:flex-none" @click="downloadLogs">
-                        <Download class="h-4 w-4 sm:mr-2" />
-                        <span class="hidden sm:inline">{{ t('serverInstallLogs.download') }}</span>
-                    </Button>
-                    <Button
-                        variant="outline"
-                        :disabled="loading || uploading"
-                        class="flex-1 sm:flex-none"
-                        @click="uploadLogs"
-                    >
-                        <Upload class="h-4 w-4 sm:mr-2" />
-                        <span class="hidden sm:inline">{{
-                            uploading ? t('serverInstallLogs.uploading') : t('serverInstallLogs.uploadToMcloGs')
-                        }}</span>
-                    </Button>
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div class="space-y-1">
+                        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
+                            {{ t('serverInstallLogs.title') }}
+                        </h1>
+                        <p class="text-sm text-muted-foreground">{{ t('serverInstallLogs.description') }}</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="loading"
+                            class="flex items-center gap-2 min-w-[100px]"
+                            @click="refreshLogs"
+                        >
+                            <RefreshCw :class="['h-3.5 w-3.5', loading && 'animate-spin']" />
+                            <span class="text-xs sm:text-sm">{{ t('serverInstallLogs.refresh') }}</span>
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="loading || logs.length === 0"
+                            class="flex items-center gap-2 min-w-[100px]"
+                            @click="downloadLogs"
+                        >
+                            <Download class="h-3.5 w-3.5" />
+                            <span class="text-xs sm:text-sm">{{ t('serverInstallLogs.download') }}</span>
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="loading || uploading || logs.length === 0"
+                            class="flex items-center gap-2 min-w-[140px] sm:min-w-[160px]"
+                            @click="uploadLogs"
+                        >
+                            <Upload :class="['h-3.5 w-3.5', uploading && 'animate-pulse']" />
+                            <span class="text-xs sm:text-sm">{{
+                                uploading ? t('serverInstallLogs.uploading') : t('serverInstallLogs.uploadToMcloGs')
+                            }}</span>
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -59,26 +76,33 @@
             </div>
 
             <!-- Install Logs Display -->
-            <Card class="overflow-hidden">
-                <CardHeader class="pb-3 sm:pb-6">
-                    <CardTitle class="flex items-center gap-2 text-base sm:text-lg">
-                        <Download class="h-4 w-4 sm:h-5 sm:w-5" />
-                        {{ t('serverInstallLogs.installLogs') }}
-                    </CardTitle>
-                    <CardDescription class="text-xs sm:text-sm">
-                        {{ t('serverInstallLogs.lastUpdated') }}: {{ lastUpdated }}
-                    </CardDescription>
+            <Card class="border-2 hover:border-primary/50 transition-colors overflow-hidden">
+                <CardHeader class="border-b">
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Download class="h-5 w-5 text-primary" />
+                        </div>
+                        <div class="flex-1">
+                            <CardTitle class="text-lg">{{ t('serverInstallLogs.installLogs') }}</CardTitle>
+                            <CardDescription class="text-sm">
+                                {{ t('serverInstallLogs.lastUpdated') }}: {{ lastUpdated }}
+                            </CardDescription>
+                        </div>
+                    </div>
                 </CardHeader>
-                <CardContent class="overflow-x-auto">
-                    <div v-if="loading" class="flex items-center justify-center py-8">
+                <CardContent class="overflow-x-auto p-4">
+                    <div v-if="loading" class="flex flex-col items-center justify-center py-16">
                         <div
-                            class="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"
+                            class="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full"
                         ></div>
-                        <span class="ml-2 text-sm">{{ t('serverInstallLogs.loading') }}</span>
+                        <span class="mt-4 text-muted-foreground">{{ t('common.loading') }}</span>
                     </div>
 
-                    <div v-else-if="logs.length === 0" class="text-center py-8 text-muted-foreground">
-                        <p class="text-sm">{{ t('serverInstallLogs.noLogs') }}</p>
+                    <div v-else-if="logs.length === 0" class="flex flex-col items-center justify-center py-16">
+                        <div class="p-4 rounded-full bg-muted/50 mb-4">
+                            <Download class="h-12 w-12 text-muted-foreground" />
+                        </div>
+                        <p class="text-base font-medium text-muted-foreground">{{ t('serverInstallLogs.noLogs') }}</p>
                     </div>
 
                     <div v-else class="space-y-2 min-w-0">

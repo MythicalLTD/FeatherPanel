@@ -1,27 +1,23 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
-        <div class="min-h-screen flex flex-col space-y-6">
+        <div class="min-h-screen flex flex-col space-y-6 pb-8">
             <!-- File Editor Header -->
-            <div v-if="!loading && fileContent !== null && server" class="space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h1 class="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-                            <div class="p-2 rounded-lg bg-primary/10">
-                                <FileEdit class="h-6 w-6 text-primary" />
-                            </div>
-                            {{ t('serverFiles.edit') }}
-                        </h1>
-                        <p class="text-sm sm:text-base text-muted-foreground mt-2">
+            <div v-if="!loading && fileContent !== null && server" class="flex flex-col gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div class="space-y-1">
+                        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">{{ t('serverFiles.edit') }}</h1>
+                        <p class="text-sm text-muted-foreground">
                             {{ fileName }}
                         </p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span
+                        <Badge
                             v-if="readonly"
-                            class="text-sm font-semibold px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-500/20 to-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20"
+                            variant="outline"
+                            class="text-sm px-3 py-1.5 bg-gradient-to-r from-orange-500/20 to-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30"
                         >
                             {{ t('common.readonly') }}
-                        </span>
+                        </Badge>
                     </div>
                 </div>
             </div>
@@ -37,71 +33,36 @@
                 @close="handleClose"
             />
 
-            <!-- Loading State with Skeleton -->
-            <div v-else-if="loading" class="space-y-6">
-                <!-- Header Skeleton -->
-                <div class="space-y-4">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 rounded-lg bg-muted-foreground/20 animate-pulse">
-                            <div class="h-6 w-6"></div>
-                        </div>
-                        <div class="space-y-2 flex-1">
-                            <div class="h-8 w-48 bg-muted-foreground/20 rounded animate-pulse"></div>
-                            <div class="h-4 w-64 bg-muted-foreground/20 rounded animate-pulse"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Editor Skeleton -->
-                <div class="border-2 rounded-lg overflow-hidden shadow-sm">
-                    <!-- Toolbar -->
-                    <div class="border-b bg-muted/50 px-4 py-3 flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <div class="h-4 w-24 bg-muted-foreground/20 rounded animate-pulse"></div>
-                            <div class="h-4 w-32 bg-muted-foreground/20 rounded animate-pulse"></div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <div class="h-8 w-20 bg-muted-foreground/20 rounded animate-pulse"></div>
-                            <div class="h-8 w-16 bg-muted-foreground/20 rounded animate-pulse"></div>
-                        </div>
-                    </div>
-                    <!-- Editor Content -->
-                    <div class="bg-muted/30 p-4 space-y-3">
-                        <div
-                            v-for="i in 12"
-                            :key="i"
-                            class="h-4 bg-muted-foreground/20 rounded animate-pulse"
-                            :style="{ width: `${Math.random() * 30 + 50}%` }"
-                        ></div>
-                    </div>
-                    <div class="flex items-center justify-center py-8">
-                        <div class="text-center">
-                            <div
-                                class="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"
-                            ></div>
-                            <p class="text-sm font-medium text-muted-foreground">{{ t('serverFiles.loading') }}</p>
-                        </div>
-                    </div>
-                </div>
+            <!-- Loading State -->
+            <div v-else-if="loading" class="flex flex-col items-center justify-center py-16">
+                <div class="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full"></div>
+                <span class="mt-4 text-muted-foreground">{{ t('common.loading') }}</span>
             </div>
 
             <!-- Error State -->
-            <div v-else class="flex items-center justify-center py-16 px-4">
+            <div v-else class="flex flex-col items-center justify-center py-16 px-4">
                 <div class="text-center max-w-md space-y-6">
                     <div class="flex justify-center">
-                        <div class="p-6 rounded-full bg-destructive/10">
-                            <AlertCircle class="h-16 w-16 text-destructive" />
+                        <div class="relative">
+                            <div class="absolute inset-0 animate-ping opacity-20">
+                                <div class="w-32 h-32 rounded-full bg-destructive/20"></div>
+                            </div>
+                            <div
+                                class="relative p-8 rounded-full bg-gradient-to-br from-destructive/20 to-destructive/5"
+                            >
+                                <AlertCircle class="h-16 w-16 text-destructive" />
+                            </div>
                         </div>
                     </div>
-                    <div class="space-y-2">
-                        <h3 class="text-xl sm:text-2xl font-bold text-foreground">
+                    <div class="space-y-3">
+                        <h3 class="text-2xl sm:text-3xl font-bold text-foreground">
                             {{ t('fileEditor.loadError') }}
                         </h3>
                         <p class="text-sm sm:text-base text-muted-foreground">
                             {{ t('serverFiles.failedToFetchServer') }}
                         </p>
                     </div>
-                    <Button class="w-full sm:w-auto gap-2" @click="handleClose">
+                    <Button size="lg" class="gap-2 shadow-lg" @click="handleClose">
                         <ArrowLeft class="h-4 w-4" />
                         {{ t('common.back') }}
                     </Button>
@@ -144,7 +105,8 @@ import axios from 'axios';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import MonacoFileEditor from '@/components/server/MonacoFileEditor.vue';
 import { Button } from '@/components/ui/button';
-import { FileEdit, AlertCircle, ArrowLeft } from 'lucide-vue-next';
+import { Badge } from '@/components/ui/badge';
+import { AlertCircle, ArrowLeft } from 'lucide-vue-next';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
 import type { Server } from '@/types/server';

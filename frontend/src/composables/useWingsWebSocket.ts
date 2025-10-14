@@ -130,7 +130,6 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                             isReconnecting.value = false;
 
                             // Wings is connected successfully - set as healthy immediately
-                            // We don't need to wait for stats/status since server might be offline
                             wingsStatus.value = 'healthy';
 
                             // Clear any pending health check timeout
@@ -141,28 +140,33 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                         } else if (data.event === 'auth_error') {
                             connectionStatus.value = 'disconnected';
                             wingsStatus.value = 'error';
-                            toast.error(t('serverConsole.authenticationFailed'));
+                            if (!isNavigatingAway?.value) {
+                                toast.error(t('serverConsole.authenticationFailed'));
+                            }
                             websocket.value?.close();
                         } else if (data.event === 'token expired' || data.event === 'jwt error') {
-                            // Token expired - reload page immediately
+                            // Token expired - try to refresh token first before reloading
                             if (!isNavigatingAway?.value) {
-                                toast.error(t('serverConsole.sessionExpiredReloading'));
-                                setTimeout(() => {
-                                    window.location.reload();
-                                }, 1000);
+                                console.warn('Token expired, attempting to refresh...');
+                                refreshToken().catch(() => {
+                                    // If refresh fails, then reload
+                                    toast.error(t('serverConsole.sessionExpiredReloading'));
+                                    setTimeout(() => {
+                                        window.location.reload();
+                                    }, 2000);
+                                });
                             }
                         } else if (data.event === 'daemon error') {
                             wingsStatus.value = 'error';
-                            toast.error(t('serverConsole.wingsDaemonErrorLimited'));
+                            // Don't show toast for every daemon error - can be too noisy
                         } else if (data.event === 'stats' || data.event === 'status') {
-                            // Stats/status received - Wings is definitely healthy (but we already set it as healthy)
-                            // This is just confirmation for running servers
+                            // Stats/status received - Wings is healthy
                             if (wingsStatus.value !== 'healthy') {
                                 wingsStatus.value = 'healthy';
                             }
                         }
                     } catch {
-                        // Ignore parsing errors for auth messages
+                        // Ignore parsing errors for non-JSON messages
                     }
                 };
 
@@ -195,27 +199,29 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                     }
                 };
 
-                // Set authentication timeout
+                // Set authentication timeout (15 seconds instead of 10 for slower connections)
                 const authTimeout = setTimeout(() => {
                     if (connectionStatus.value === 'connecting') {
                         connectionStatus.value = 'disconnected';
-                        toast.error(t('serverConsole.authenticationTimeout'));
+                        if (!isNavigatingAway?.value) {
+                            toast.error(t('serverConsole.authenticationTimeout'));
+                        }
                         websocket.value?.close();
                     }
-                }, 10000); // 10 second timeout
+                }, 15000); // 15 second timeout
 
-                // Clear timeout on successful authentication
-                websocket.value.addEventListener('message', function authHandler(event) {
-                    try {
-                        const data: WingsWebSocketMessage = JSON.parse(event.data);
-                        if (data.event === 'auth success' || data.event === 'auth_error') {
-                            clearTimeout(authTimeout);
-                            websocket.value?.removeEventListener('message', authHandler);
-                        }
-                    } catch {
-                        // Ignore parsing errors
+                // The authTimeout will be cleared when onmessage receives 'auth success' or 'auth_error'
+                // Store reference to the websocket for the closure
+                const ws = websocket.value;
+                const originalOnMessage = ws.onmessage;
+                ws.onmessage = (event) => {
+                    // Clear auth timeout on any message (connection is working)
+                    clearTimeout(authTimeout);
+                    // Call the original handler
+                    if (originalOnMessage && ws) {
+                        originalOnMessage.call(ws, event);
                     }
-                });
+                };
             } else {
                 throw new Error('Failed to get JWT token');
             }
@@ -283,7 +289,7 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                             connectionStatus.value = 'connected';
                             reconnectAttempts.value = 0;
                             wingsStatus.value = 'healthy';
-                            console.log(t('serverConsole.tokenRefreshedSuccessfully'));
+                            console.log('Token refreshed successfully');
 
                             // Clear any pending health check timeout
                             if (healthCheckTimeout.value) {
@@ -293,15 +299,18 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                         } else if (data.event === 'auth_error') {
                             connectionStatus.value = 'disconnected';
                             wingsStatus.value = 'error';
-                            toast.error(t('serverConsole.authenticationFailedAfterRefresh'));
+                            if (!isNavigatingAway?.value) {
+                                toast.error(t('serverConsole.authenticationFailedAfterRefresh'));
+                            }
                             websocket.value?.close();
                         } else if (data.event === 'token expired' || data.event === 'jwt error') {
-                            // Token expired - reload page immediately
+                            // Token expired during refresh - this shouldn't happen, but handle gracefully
                             if (!isNavigatingAway?.value) {
+                                console.error('Token expired during refresh, reloading page...');
                                 toast.error(t('serverConsole.sessionExpiredReloading'));
                                 setTimeout(() => {
                                     window.location.reload();
-                                }, 1000);
+                                }, 2000);
                             }
                         } else if (data.event === 'daemon error') {
                             wingsStatus.value = 'error';
@@ -311,7 +320,7 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                             }
                         }
                     } catch {
-                        // Ignore parsing errors for auth messages
+                        // Ignore parsing errors for non-JSON messages
                     }
                 };
 
@@ -369,51 +378,53 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
         const timeUntilExpiration = (expiresAt - now) * 1000; // Convert to milliseconds
 
         // Only set timer if token expires in the future
-        if (timeUntilExpiration > 0) {
-            // Refresh token 30 seconds before it expires (9 minutes 30 seconds for a 10-minute token)
-            const refreshTime = timeUntilExpiration - 30000; // 30 seconds before expiration
+        if (timeUntilExpiration > 60000) {
+            // Only set timer if more than 1 minute remaining
+            // Refresh token 1 minute before it expires
+            const refreshTime = timeUntilExpiration - 60000; // 1 minute before expiration
             const refreshTimeInMinutes = Math.floor(refreshTime / 1000 / 60);
-            const refreshTimeInSeconds = Math.floor((refreshTime / 1000) % 60);
 
             console.log(
-                t('serverConsole.tokenExpiresIn', {
-                    minutes: Math.floor(timeUntilExpiration / 1000 / 60),
-                    refreshMinutes: refreshTimeInMinutes,
-                    refreshSeconds: refreshTimeInSeconds,
-                }),
+                `Token expires in ${Math.floor(timeUntilExpiration / 1000 / 60)} minutes. Will refresh in ${refreshTimeInMinutes} minutes.`,
             );
 
             // Set timer to refresh token before it expires
             tokenExpirationTimer.value = setTimeout(
                 async () => {
-                    if (!isNavigatingAway?.value) {
+                    if (!isNavigatingAway?.value && connectionStatus.value === 'connected') {
+                        console.log('Refreshing token before expiration...');
                         await refreshToken();
                     }
                 },
-                Math.max(refreshTime, 1000),
-            ); // Minimum 1 second to avoid immediate refresh
+                Math.max(refreshTime, 5000), // Minimum 5 seconds
+            );
         }
     }
 
     function scheduleReconnect(): void {
         if (reconnectAttempts.value >= maxReconnectAttempts) {
-            toast.error(t('serverConsole.maxReconnectionAttempts'));
+            if (!isNavigatingAway?.value) {
+                toast.error(t('serverConsole.maxReconnectionAttempts'));
+            }
             return;
         }
 
         isReconnecting.value = true;
         reconnectAttempts.value++;
 
-        toast.info(
-            t('serverConsole.connectionLostRetrying', {
-                current: reconnectAttempts.value,
-                max: maxReconnectAttempts,
-            }),
-        );
+        // Only show toast for first few attempts to avoid spam
+        if (reconnectAttempts.value <= 2 && !isNavigatingAway?.value) {
+            toast.info(
+                t('serverConsole.connectionLostRetrying', {
+                    current: reconnectAttempts.value,
+                    max: maxReconnectAttempts,
+                }),
+            );
+        }
 
         reconnectTimeout.value = setTimeout(() => {
             connect();
-        }, reconnectDelay);
+        }, reconnectDelay * reconnectAttempts.value); // Exponential backoff
     }
 
     function disconnect(): void {

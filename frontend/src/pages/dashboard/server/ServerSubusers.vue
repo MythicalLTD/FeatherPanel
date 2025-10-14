@@ -1,111 +1,160 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6">
-            <!-- Header -->
-            <div class="space-y-4">
-                <div>
-                    <h1 class="text-xl sm:text-2xl font-bold">{{ t('serverSubusers.title') }}</h1>
-                    <p class="text-sm sm:text-base text-muted-foreground">{{ t('serverSubusers.description') }}</p>
+        <div class="space-y-6 pb-8">
+            <!-- Header Section -->
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div class="space-y-1">
+                        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">{{ t('serverSubusers.title') }}</h1>
+                        <p class="text-sm text-muted-foreground">{{ t('serverSubusers.description') }}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="loading"
+                            class="flex items-center gap-2"
+                            @click="refresh"
+                        >
+                            <RefreshCw :class="['h-4 w-4', loading && 'animate-spin']" />
+                            <span>{{ t('serverSubusers.refresh') }}</span>
+                        </Button>
+                        <Button size="sm" :disabled="loading" class="flex items-center gap-2" @click="openAddDialog">
+                            <Plus class="h-4 w-4" />
+                            <span>{{ t('serverSubusers.addSubuser') }}</span>
+                        </Button>
+                    </div>
                 </div>
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <Button variant="outline" :disabled="loading" class="flex-1 sm:flex-none" @click="refresh">
-                        <RefreshCw class="h-4 w-4 sm:mr-2" />
-                        <span class="hidden sm:inline">{{ t('serverSubusers.refresh') }}</span>
-                    </Button>
-                    <Button :disabled="loading" class="flex-1 sm:flex-none" @click="openAddDialog">
-                        <Plus class="h-4 w-4 sm:mr-2" />
-                        <span class="hidden sm:inline">{{ t('serverSubusers.addSubuser') }}</span>
+            </div>
+
+            <!-- Loading State -->
+            <div v-if="loading && subusers.length === 0" class="flex flex-col items-center justify-center py-16">
+                <div class="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full"></div>
+                <span class="mt-4 text-muted-foreground">{{ t('common.loading') }}</span>
+            </div>
+
+            <!-- Empty State -->
+            <div
+                v-else-if="!loading && subusers.length === 0 && !searchQuery"
+                class="flex flex-col items-center justify-center py-16 px-4"
+            >
+                <div class="text-center max-w-md space-y-6">
+                    <div class="flex justify-center">
+                        <div class="relative">
+                            <div class="absolute inset-0 animate-ping opacity-20">
+                                <div class="w-32 h-32 rounded-full bg-primary/20"></div>
+                            </div>
+                            <div class="relative p-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5">
+                                <Users class="h-16 w-16 text-primary" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <h3 class="text-2xl sm:text-3xl font-bold text-foreground">
+                            {{ t('serverSubusers.noSubusers') }}
+                        </h3>
+                        <p class="text-sm sm:text-base text-muted-foreground">
+                            {{ t('serverSubusers.noSubusersDescription') }}
+                        </p>
+                    </div>
+                    <Button size="lg" class="gap-2 shadow-lg" :disabled="loading" @click="openAddDialog">
+                        <Plus class="h-5 w-5" />
+                        {{ t('serverSubusers.addSubuser') }}
                     </Button>
                 </div>
             </div>
 
-            <!-- Subusers Table -->
-            <Card>
+            <!-- Subusers List -->
+            <Card v-else class="border-2 hover:border-primary/50 transition-colors">
                 <CardHeader>
-                    <CardTitle>{{ t('serverSubusers.subusers') }}</CardTitle>
-                    <CardDescription>{{ t('serverSubusers.subusersDescription') }}</CardDescription>
-                    <div class="mt-4 flex flex-col sm:flex-row gap-2">
-                        <div class="relative w-full">
-                            <Search class="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Users class="h-5 w-5 text-primary" />
+                        </div>
+                        <div class="flex-1">
+                            <CardTitle class="text-lg">{{ t('serverSubusers.subusers') }}</CardTitle>
+                            <CardDescription class="text-sm">{{
+                                t('serverSubusers.subusersDescription')
+                            }}</CardDescription>
+                        </div>
+                        <Badge variant="secondary" class="text-xs">
+                            {{ subusers.length }} {{ subusers.length === 1 ? 'user' : 'users' }}
+                        </Badge>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <div class="relative flex-1">
+                            <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <input
                                 v-model="searchQuery"
                                 type="text"
                                 :placeholder="t('serverSubusers.searchPlaceholder')"
-                                class="w-full pl-8 pr-3 py-2 border rounded-md bg-background"
+                                class="w-full pl-9 pr-3 py-2 border-2 rounded-lg bg-background transition-colors focus:border-primary focus:outline-none"
                                 @keyup.enter="onRunSearch"
                             />
                         </div>
-                        <Button variant="outline" :disabled="loading" class="w-full sm:w-auto" @click="onRunSearch">
-                            {{ t('serverSubusers.search') }}
+                        <Button variant="outline" size="sm" :disabled="loading" @click="onRunSearch">
+                            <Search class="h-4 w-4 sm:mr-2" />
+                            <span class="hidden sm:inline">{{ t('serverSubusers.search') }}</span>
                         </Button>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div v-if="loading" class="flex items-center justify-center py-8">
-                        <Loader2 class="h-8 w-8 animate-spin" />
-                    </div>
-
-                    <div v-else-if="subusers.length === 0" class="flex flex-col items-center justify-center py-12">
-                        <div class="text-center max-w-md space-y-6">
-                            <div class="flex justify-center">
-                                <div class="relative">
-                                    <div class="absolute inset-0 animate-ping opacity-20">
-                                        <div class="w-32 h-32 rounded-full bg-primary/20"></div>
-                                    </div>
-                                    <div
-                                        class="relative p-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5"
-                                    >
-                                        <Users class="h-16 w-16 text-primary" />
-                                    </div>
-                                </div>
+                    <!-- Empty Search Result -->
+                    <div v-if="!loading && subusers.length === 0 && searchQuery" class="text-center py-12">
+                        <div class="flex justify-center mb-4">
+                            <div class="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center">
+                                <Search class="h-8 w-8 text-muted-foreground" />
                             </div>
-                            <div class="space-y-3">
-                                <h3 class="text-2xl sm:text-3xl font-bold text-foreground">
-                                    {{ t('serverSubusers.noSubusers') }}
-                                </h3>
-                                <p class="text-sm sm:text-base text-muted-foreground">
-                                    {{ t('serverSubusers.noSubusersDescription') }}
-                                </p>
-                            </div>
-                            <Button size="lg" class="gap-2 shadow-lg" :disabled="loading" @click="openAddDialog">
-                                <Plus class="h-5 w-5" />
-                                {{ t('serverSubusers.addSubuser') }}
-                            </Button>
                         </div>
+                        <h3 class="text-lg font-semibold mb-2">{{ t('serverSubusers.noResults') }}</h3>
+                        <p class="text-sm text-muted-foreground mb-4">{{ t('serverSubusers.noResultsDescription') }}</p>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            @click="
+                                searchQuery = '';
+                                onRunSearch();
+                            "
+                        >
+                            {{ t('serverSubusers.clearSearch') }}
+                        </Button>
                     </div>
 
+                    <!-- Subusers List -->
                     <div v-else class="space-y-3">
                         <div
                             v-for="sub in subusers"
                             :key="sub.id"
-                            class="flex items-center justify-between p-3 sm:p-4 border rounded-lg"
+                            class="group relative rounded-lg border-2 bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
                         >
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2 sm:gap-3">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-start gap-3 flex-1 min-w-0">
                                     <div
-                                        class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0"
+                                        class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0"
                                     >
-                                        <Users class="h-3 w-3 sm:h-4 sm:w-4" />
+                                        <Users class="h-5 w-5 text-primary" />
                                     </div>
-                                    <div class="min-w-0 flex-1">
-                                        <div class="font-medium text-sm sm:text-base truncate">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-semibold text-sm mb-1 truncate">
                                             {{ sub.username || sub.email }}
                                         </div>
-                                        <div class="text-xs sm:text-sm text-muted-foreground truncate">
-                                            {{ sub.email }}
+                                        <div class="flex items-center gap-1 text-xs text-muted-foreground">
+                                            <Mail class="h-3 w-3" />
+                                            <span class="truncate">{{ sub.email }}</span>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="flex items-center gap-2 flex-shrink-0">
+
+                                <!-- Action Button -->
                                 <Button
-                                    variant="outline"
+                                    variant="destructive"
                                     size="sm"
-                                    :disabled="deletingId === sub.id"
-                                    class="h-8 w-8 p-0"
+                                    :disabled="deletingId === sub.id || loading"
+                                    class="flex items-center gap-2"
                                     @click="confirmDelete(sub)"
                                 >
-                                    <Trash2 class="h-3 w-3 sm:h-4 sm:w-4" />
+                                    <Trash2 class="h-3.5 w-3.5" />
+                                    <span class="hidden sm:inline">{{ t('serverSubusers.delete') }}</span>
                                 </Button>
                             </div>
                         </div>
@@ -113,36 +162,32 @@
                         <!-- Pagination -->
                         <div
                             v-if="pagination.total > pagination.per_page"
-                            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2"
+                            class="flex items-center justify-between gap-3 pt-4 border-t"
                         >
-                            <div class="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
+                            <div class="text-xs text-muted-foreground">
                                 {{ t('serverSubusers.showing') }} {{ pagination.from }}-{{ pagination.to }}
                                 {{ t('serverSubusers.of') }}
                                 {{ pagination.total }}
                             </div>
-                            <div class="flex items-center justify-center gap-2">
+                            <div class="flex items-center gap-2">
                                 <Button
                                     variant="outline"
                                     size="sm"
                                     :disabled="pagination.current_page <= 1 || loading"
-                                    class="flex-1 sm:flex-none"
                                     @click="goToPage(pagination.current_page - 1)"
                                 >
-                                    <span class="hidden sm:inline">{{ t('common.prev') }}</span>
-                                    <span class="sm:hidden">‹</span>
+                                    <ChevronLeft class="h-4 w-4" />
                                 </Button>
-                                <div class="text-xs sm:text-sm px-2">
+                                <div class="text-sm px-2">
                                     {{ pagination.current_page }} / {{ pagination.last_page }}
                                 </div>
                                 <Button
                                     variant="outline"
                                     size="sm"
                                     :disabled="pagination.current_page >= pagination.last_page || loading"
-                                    class="flex-1 sm:flex-none"
                                     @click="goToPage(pagination.current_page + 1)"
                                 >
-                                    <span class="hidden sm:inline">{{ t('common.next') }}</span>
-                                    <span class="sm:hidden">›</span>
+                                    <ChevronRight class="h-4 w-4" />
                                 </Button>
                             </div>
                         </div>
@@ -153,35 +198,38 @@
 
         <!-- Add Subuser Dialog -->
         <Dialog v-model:open="showAddDialog">
-            <DialogContent class="mx-4 sm:mx-0">
+            <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{{ t('serverSubusers.addSubuser') }}</DialogTitle>
-                    <DialogDescription>{{ t('serverSubusers.addSubuserDialogDescription') }}</DialogDescription>
+                    <DialogTitle class="flex items-center gap-2">
+                        <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Plus class="h-5 w-5 text-primary" />
+                        </div>
+                        <span>{{ t('serverSubusers.addSubuser') }}</span>
+                    </DialogTitle>
+                    <DialogDescription class="text-sm">
+                        {{ t('serverSubusers.addSubuserDialogDescription') }}
+                    </DialogDescription>
                 </DialogHeader>
-                <div class="space-y-3">
-                    <label class="block text-sm font-medium">{{ t('serverSubusers.emailLabel') }}</label>
-                    <input
-                        v-model="addEmail"
-                        type="email"
-                        :placeholder="t('serverSubusers.emailPlaceholder')"
-                        class="w-full px-3 py-2 border rounded-md bg-background"
-                        @keyup.enter="createSubuser"
-                    />
+                <div class="space-y-3 py-4">
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">{{ t('serverSubusers.emailLabel') }}</label>
+                        <div class="relative">
+                            <Mail class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <input
+                                v-model="addEmail"
+                                type="email"
+                                :placeholder="t('serverSubusers.emailPlaceholder')"
+                                class="w-full pl-9 pr-3 py-2 border-2 rounded-lg bg-background transition-colors focus:border-primary focus:outline-none"
+                                @keyup.enter="createSubuser"
+                            />
+                        </div>
+                    </div>
                 </div>
-                <DialogFooter class="flex flex-col sm:flex-row gap-3">
-                    <Button
-                        variant="outline"
-                        :disabled="addLoading"
-                        class="w-full sm:w-auto"
-                        @click="showAddDialog = false"
-                    >
+                <DialogFooter class="gap-2">
+                    <Button variant="outline" size="sm" :disabled="addLoading" @click="showAddDialog = false">
                         {{ t('common.cancel') }}
                     </Button>
-                    <Button
-                        :disabled="addLoading || !isValidEmail(addEmail)"
-                        class="w-full sm:w-auto"
-                        @click="createSubuser"
-                    >
+                    <Button size="sm" :disabled="addLoading || !isValidEmail(addEmail)" @click="createSubuser">
                         <Loader2 v-if="addLoading" class="h-4 w-4 mr-2 animate-spin" />
                         {{ t('serverSubusers.add') }}
                     </Button>
@@ -191,26 +239,33 @@
 
         <!-- Confirmation Dialog -->
         <Dialog v-model:open="showConfirmDialog">
-            <DialogContent class="mx-4 sm:mx-0">
+            <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{{ confirmDialog.title }}</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle class="flex items-center gap-2">
+                        <div
+                            class="h-10 w-10 rounded-lg flex items-center justify-center"
+                            :class="[confirmDialog.variant === 'destructive' ? 'bg-destructive/10' : 'bg-primary/10']"
+                        >
+                            <AlertTriangle
+                                v-if="confirmDialog.variant === 'destructive'"
+                                class="h-5 w-5 text-destructive"
+                            />
+                            <Info v-else class="h-5 w-5 text-primary" />
+                        </div>
+                        <span>{{ confirmDialog.title }}</span>
+                    </DialogTitle>
+                    <DialogDescription class="text-sm">
                         {{ confirmDialog.description }}
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter class="flex flex-col sm:flex-row gap-3">
-                    <Button
-                        variant="outline"
-                        :disabled="confirmLoading"
-                        class="w-full sm:w-auto"
-                        @click="showConfirmDialog = false"
-                    >
+                <DialogFooter class="gap-2">
+                    <Button variant="outline" size="sm" :disabled="confirmLoading" @click="showConfirmDialog = false">
                         {{ t('common.cancel') }}
                     </Button>
                     <Button
                         :variant="confirmDialog.variant"
+                        size="sm"
                         :disabled="confirmLoading"
-                        class="w-full sm:w-auto"
                         @click="onConfirmDialog"
                     >
                         <Loader2 v-if="confirmLoading" class="h-4 w-4 mr-2 animate-spin" />
@@ -252,6 +307,7 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Dialog,
@@ -261,7 +317,19 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { RefreshCw, Users, Plus, Trash2, Search, Loader2 } from 'lucide-vue-next';
+import {
+    RefreshCw,
+    Users,
+    Plus,
+    Trash2,
+    Search,
+    Loader2,
+    Mail,
+    ChevronLeft,
+    ChevronRight,
+    AlertTriangle,
+    Info,
+} from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 

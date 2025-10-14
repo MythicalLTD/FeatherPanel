@@ -1,29 +1,69 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6">
-            <!-- Backup Limit Warning -->
-            <div
-                v-if="serverInfo && backups.length >= serverInfo.backup_limit"
-                class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 dark:bg-yellow-950/30 dark:border-yellow-800"
-            >
-                <div class="flex items-center gap-3">
-                    <div class="w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
-                        <span class="text-white text-xs font-bold">!</span>
+        <div class="space-y-6 pb-8">
+            <!-- Header Section -->
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div class="space-y-1">
+                        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">{{ t('serverBackups.title') }}</h1>
+                        <p class="text-sm text-muted-foreground">
+                            {{ t('serverBackups.description') }}
+                            <span v-if="serverInfo" class="font-medium">
+                                ({{ backups.length }}/{{ serverInfo.backup_limit }})
+                            </span>
+                        </p>
                     </div>
-                    <div>
-                        <h3 class="text-yellow-800 dark:text-yellow-200 font-medium">
+                    <div class="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="loading"
+                            class="flex items-center gap-2"
+                            @click="refresh"
+                        >
+                            <RefreshCw :class="['h-4 w-4', loading && 'animate-spin']" />
+                            <span>{{ t('serverBackups.refresh') }}</span>
+                        </Button>
+                        <Button
+                            size="sm"
+                            :disabled="loading || (serverInfo && backups.length >= serverInfo.backup_limit)"
+                            class="flex items-center gap-2"
+                            @click="openCreateBackupDrawer"
+                        >
+                            <Plus class="h-4 w-4" />
+                            <span>{{ t('serverBackups.createBackup') }}</span>
+                        </Button>
+                    </div>
+                </div>
+
+                <!-- Backup Limit Warning -->
+                <div
+                    v-if="serverInfo && backups.length >= serverInfo.backup_limit"
+                    class="flex items-start gap-3 p-4 rounded-lg bg-yellow-50 border-2 border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800"
+                >
+                    <div class="h-10 w-10 rounded-lg bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                        <AlertTriangle class="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
                             {{ t('serverBackups.backupLimitReached') }}
                         </h3>
-                        <p class="text-yellow-700 dark:text-yellow-300 text-sm">
+                        <p class="text-sm text-yellow-700 dark:text-yellow-300">
                             {{ t('serverBackups.backupLimitReachedDescription', { limit: serverInfo.backup_limit }) }}
                         </p>
                     </div>
                 </div>
             </div>
 
+            <!-- Loading State -->
+            <div v-if="loading && backups.length === 0" class="flex flex-col items-center justify-center py-16">
+                <div class="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full"></div>
+                <span class="mt-4 text-muted-foreground">{{ t('common.loading') }}</span>
+            </div>
+
             <!-- Empty State -->
             <div
-                v-if="!loading && backups.length === 0 && !searchQuery"
+                v-else-if="!loading && backups.length === 0 && !searchQuery"
                 class="flex flex-col items-center justify-center py-16 px-4"
             >
                 <div class="text-center max-w-md space-y-6">
@@ -53,7 +93,7 @@
                         v-if="serverInfo && serverInfo.backup_limit > 0"
                         size="lg"
                         class="gap-2 shadow-lg"
-                        @click="showCreateBackupDrawer = true"
+                        @click="openCreateBackupDrawer"
                     >
                         <Plus class="h-5 w-5" />
                         {{ t('serverBackups.createBackup') }}
@@ -61,146 +101,188 @@
                 </div>
             </div>
 
-            <!-- Table Component -->
-            <TableComponent
-                v-else
-                :title="t('serverBackups.title')"
-                :description="
-                    t('serverBackups.description') +
-                    (serverInfo ? ` (${backups.length}/${serverInfo.backup_limit})` : '')
-                "
-                :columns="tableColumns"
-                :data="backups"
-                :search-placeholder="t('serverBackups.searchPlaceholder')"
-                :server-side-pagination="false"
-                :total-records="pagination.total_records"
-                :total-pages="pagination.total_pages"
-                :current-page="pagination.current_page"
-                :has-next="pagination.has_next"
-                :has-prev="pagination.has_prev"
-                :from="pagination.from"
-                :to="pagination.to"
-                local-storage-key="featherpanel-server-backups-columns"
-                @search="handleSearch"
-                @page-change="changePage"
-            >
-                <template #header-actions>
-                    <Button
-                        variant="default"
-                        size="sm"
-                        :disabled="loading || (serverInfo && backups.length >= serverInfo.backup_limit)"
-                        @click="showCreateBackupDrawer = true"
-                    >
-                        <Plus class="h-4 w-4 mr-2" />
-                        {{ t('serverBackups.createBackup') }}
-                    </Button>
-                </template>
-
-                <template #cell-name="{ item }">
-                    <div class="font-medium">{{ (item as BackupItem).name }}</div>
-                </template>
-
-                <template #cell-status="{ item }">
-                    <div class="flex items-center gap-2">
-                        <Badge
-                            :variant="
-                                getStatusVariant(
-                                    (item as BackupItem).is_successful,
-                                    (item as BackupItem).is_locked,
-                                ) as any
-                            "
-                        >
-                            {{ getStatusText((item as BackupItem).is_successful, (item as BackupItem).is_locked) }}
-                        </Badge>
-                        <Button
-                            v-if="(item as BackupItem).is_locked"
-                            variant="ghost"
-                            size="sm"
-                            class="h-6 w-6 p-0"
-                            :disabled="loading"
-                            title="Unlock backup"
-                            @click="unlockBackup(item as BackupItem)"
-                        >
-                            <Lock class="h-3 w-3" />
-                        </Button>
-                        <Button
-                            v-else
-                            variant="ghost"
-                            size="sm"
-                            class="h-6 w-6 p-0"
-                            :disabled="loading"
-                            title="Lock backup"
-                            @click="lockBackup(item as BackupItem)"
-                        >
-                            <Unlock class="h-3 w-3" />
-                        </Button>
-                    </div>
-                </template>
-
-                <template #cell-size="{ item }">
-                    <span class="text-sm text-muted-foreground">
-                        {{ formatBytes((item as BackupItem).bytes) }}
-                    </span>
-                </template>
-
-                <template #cell-created_at="{ item }">
-                    <span class="text-sm">{{ formatDate((item as BackupItem).created_at) }}</span>
-                </template>
-
-                <template #cell-actions="{ item }">
-                    <div class="flex items-center space-x-2">
-                        <Button
-                            v-if="(item as BackupItem).is_successful && !(item as BackupItem).is_locked"
-                            variant="outline"
-                            size="sm"
-                            :disabled="loading"
-                            @click="openRestoreBackupDrawer(item as BackupItem)"
-                        >
-                            <RotateCcw class="h-4 w-4 mr-2" />
-                            {{ t('serverBackups.restore') }}
-                        </Button>
-                        <Button
-                            v-if="(item as BackupItem).is_successful"
-                            variant="outline"
-                            size="sm"
-                            :disabled="loading"
-                            @click="downloadBackup(item as BackupItem)"
-                        >
-                            <Download class="h-4 w-4 mr-2" />
-                            {{ t('serverBackups.download') }}
-                        </Button>
-                        <Button
-                            v-if="!(item as BackupItem).is_locked"
-                            variant="destructive"
-                            size="sm"
-                            :disabled="loading"
-                            @click="deleteBackup(item as BackupItem)"
-                        >
-                            <Trash2 class="h-4 w-4 mr-2" />
-                            {{ t('serverBackups.delete') }}
-                        </Button>
-                        <div v-if="(item as BackupItem).is_locked" class="text-xs text-muted-foreground px-2 py-1">
-                            {{ t('serverBackups.backupLocked') }}
+            <!-- Backups List -->
+            <Card v-else class="border-2 hover:border-primary/50 transition-colors">
+                <CardHeader>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <Archive class="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                                <CardTitle class="text-lg">{{ t('serverBackups.backups') }}</CardTitle>
+                                <CardDescription class="text-sm">
+                                    {{ t('serverBackups.backupsDescription') }}
+                                </CardDescription>
+                            </div>
                         </div>
                     </div>
-                </template>
-            </TableComponent>
+                </CardHeader>
+                <CardContent>
+                    <div class="space-y-3">
+                        <div
+                            v-for="backup in backups"
+                            :key="backup.id"
+                            class="group relative rounded-lg border-2 bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md flex flex-col gap-3"
+                        >
+                            <!-- Backup Header and Actions (Stacked on mobile, side by side on sm+) -->
+                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+                                <div class="flex items-start gap-3 flex-1 min-w-0">
+                                    <div
+                                        class="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                                        :class="[backup.is_successful ? 'bg-green-500/10' : 'bg-red-500/10']"
+                                    >
+                                        <Archive
+                                            class="h-5 w-5"
+                                            :class="[backup.is_successful ? 'text-green-500' : 'text-red-500']"
+                                        />
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                                            <h3 class="font-semibold text-sm truncate max-w-[12rem] sm:max-w-none">
+                                                {{ backup.name }}
+                                            </h3>
+                                            <Badge
+                                                :variant="
+                                                    getStatusVariant(backup.is_successful, backup.is_locked) as any
+                                                "
+                                                class="text-xs flex-shrink-0"
+                                            >
+                                                {{ getStatusText(backup.is_successful, backup.is_locked) }}
+                                            </Badge>
+                                        </div>
+                                        <div
+                                            class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground"
+                                        >
+                                            <span class="flex items-center gap-1">
+                                                <HardDrive class="h-3 w-3" />
+                                                {{ formatBytes(backup.bytes) }}
+                                            </span>
+                                            <span class="flex items-center gap-1">
+                                                <Database class="h-3 w-3" />
+                                                {{ backup.disk }}
+                                            </span>
+                                            <span class="flex items-center gap-1">
+                                                <Calendar class="h-3 w-3" />
+                                                {{ formatDate(backup.created_at) }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Lock/Unlock Button (float right on desktop, below on mobile) -->
+                                <div
+                                    class="flex flex-row sm:flex-col items-center gap-1 mt-2 sm:mt-0 self-end sm:self-start"
+                                >
+                                    <Button
+                                        v-if="backup.is_locked"
+                                        variant="ghost"
+                                        size="sm"
+                                        class="h-8 w-8 p-0"
+                                        :disabled="loading"
+                                        @click="unlockBackup(backup)"
+                                    >
+                                        <Lock class="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        v-else
+                                        variant="ghost"
+                                        size="sm"
+                                        class="h-8 w-8 p-0"
+                                        :disabled="loading"
+                                        @click="lockBackup(backup)"
+                                    >
+                                        <Unlock class="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <!-- Backup Actions: Responsive grid for mobile friendliness -->
+                            <div class="flex flex-wrap gap-2 justify-start sm:justify-between">
+                                <div class="flex flex-wrap gap-2 flex-1">
+                                    <Button
+                                        v-if="backup.is_successful && !backup.is_locked"
+                                        variant="outline"
+                                        size="sm"
+                                        :disabled="loading"
+                                        class="flex items-center gap-2"
+                                        @click="openRestoreBackupDrawer(backup)"
+                                    >
+                                        <RotateCcw class="h-3.5 w-3.5" />
+                                        <span class="hidden xs:inline">{{ t('serverBackups.restore') }}</span>
+                                    </Button>
+                                    <Button
+                                        v-if="backup.is_successful"
+                                        variant="outline"
+                                        size="sm"
+                                        :disabled="loading"
+                                        class="flex items-center gap-2"
+                                        @click="downloadBackup(backup)"
+                                    >
+                                        <Download class="h-3.5 w-3.5" />
+                                        <span class="hidden xs:inline">{{ t('serverBackups.download') }}</span>
+                                    </Button>
+                                    <Button
+                                        v-if="!backup.is_locked"
+                                        variant="destructive"
+                                        size="sm"
+                                        :disabled="loading"
+                                        class="flex items-center gap-2"
+                                        @click="deleteBackup(backup)"
+                                    >
+                                        <Trash2 class="h-3.5 w-3.5" />
+                                        <span class="hidden xs:inline">{{ t('serverBackups.delete') }}</span>
+                                    </Button>
+                                </div>
+                                <div
+                                    v-if="backup.is_locked"
+                                    class="flex items-center gap-1.5 text-xs text-muted-foreground px-2 py-1 mt-1 sm:mt-0"
+                                >
+                                    <Lock class="h-3 w-3" />
+                                    <span>{{ t('serverBackups.backupLocked') }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Empty Search Result -->
+                        <div v-if="backups.length === 0 && searchQuery" class="text-center py-8 text-muted-foreground">
+                            <p class="text-sm">{{ t('serverBackups.noResultsFound') }}</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
 
         <!-- Confirm Dialog -->
         <Dialog v-model:open="showConfirmDialog">
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{{ confirmDialog.title }}</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle class="flex items-center gap-2">
+                        <div
+                            class="h-10 w-10 rounded-lg flex items-center justify-center"
+                            :class="[confirmDialog.variant === 'destructive' ? 'bg-destructive/10' : 'bg-primary/10']"
+                        >
+                            <AlertTriangle
+                                v-if="confirmDialog.variant === 'destructive'"
+                                class="h-5 w-5 text-destructive"
+                            />
+                            <Info v-else class="h-5 w-5 text-primary" />
+                        </div>
+                        <span>{{ confirmDialog.title }}</span>
+                    </DialogTitle>
+                    <DialogDescription class="text-sm">
                         {{ confirmDialog.description }}
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter>
-                    <Button variant="outline" :disabled="confirmLoading" @click="showConfirmDialog = false">
+                <DialogFooter class="gap-2">
+                    <Button variant="outline" size="sm" :disabled="confirmLoading" @click="showConfirmDialog = false">
                         {{ t('common.cancel') }}
                     </Button>
-                    <Button :variant="confirmDialog.variant" :disabled="confirmLoading" @click="onConfirmDialog">
+                    <Button
+                        :variant="confirmDialog.variant"
+                        size="sm"
+                        :disabled="confirmLoading"
+                        @click="onConfirmDialog"
+                    >
                         <Loader2 v-if="confirmLoading" class="h-4 w-4 mr-2 animate-spin" />
                         {{ confirmDialog.confirmText || t('common.confirm') }}
                     </Button>
@@ -219,50 +301,68 @@
         >
             <DrawerContent>
                 <DrawerHeader>
-                    <DrawerTitle>{{ t('serverBackups.createBackup') }}</DrawerTitle>
-                    <DrawerDescription>
-                        {{ t('serverBackups.createBackupDescription') }}
-                    </DrawerDescription>
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Plus class="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                            <DrawerTitle>{{ t('serverBackups.createBackup') }}</DrawerTitle>
+                            <DrawerDescription>
+                                {{ t('serverBackups.createBackupDescription') }}
+                            </DrawerDescription>
+                        </div>
+                    </div>
                 </DrawerHeader>
-                <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="createBackup">
-                    <label for="backup-name" class="block mb-1 font-medium">{{ t('serverBackups.name') }}</label>
-                    <Input
-                        id="backup-name"
-                        v-model="newBackup.name"
-                        :placeholder="t('serverBackups.namePlaceholder')"
-                        required
-                    />
+                <form class="space-y-5 px-6 pb-6 pt-2" @submit.prevent="createBackup">
+                    <div class="space-y-2">
+                        <Label for="backup-name" class="text-sm font-medium">{{ t('serverBackups.name') }}</Label>
+                        <Input
+                            id="backup-name"
+                            v-model="newBackup.name"
+                            :placeholder="t('serverBackups.namePlaceholder')"
+                            required
+                            class="text-sm"
+                        />
+                    </div>
 
-                    <label for="backup-ignore" class="block mb-1 font-medium">{{
-                        t('serverBackups.ignoreFiles')
-                    }}</label>
                     <div class="space-y-3">
+                        <Label class="text-sm font-medium">{{ t('serverBackups.ignoreFiles') }}</Label>
                         <div class="flex gap-2">
                             <Input
                                 v-model="newIgnoreFile"
                                 :placeholder="t('serverBackups.addIgnoreFile')"
-                                class="flex-1"
+                                class="flex-1 text-sm font-mono"
                                 @keyup.enter="addIgnoreFile"
                             />
-                            <Button type="button" variant="outline" size="sm" @click="addIgnoreFile">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                class="flex items-center gap-2"
+                                @click="addIgnoreFile"
+                            >
                                 <Plus class="h-4 w-4" />
+                                <span>Add</span>
                             </Button>
                         </div>
 
                         <div v-if="ignoreFilesList.length > 0" class="space-y-2">
-                            <div class="text-sm text-muted-foreground">{{ t('serverBackups.ignoreFilesList') }}</div>
-                            <div class="space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
+                            <div class="text-xs text-muted-foreground flex items-center gap-1.5">
+                                <FileX class="h-3 w-3" />
+                                {{ t('serverBackups.ignoreFilesList') }}
+                            </div>
+                            <div class="space-y-2 max-h-40 overflow-y-auto border-2 rounded-lg p-2">
                                 <div
                                     v-for="(file, index) in ignoreFilesList"
                                     :key="index"
-                                    class="flex items-center justify-between bg-muted/50 px-3 py-2 rounded-md"
+                                    class="flex items-center justify-between bg-muted/50 px-3 py-2 rounded-md hover:bg-muted transition-colors"
                                 >
-                                    <span class="text-sm font-mono">{{ file }}</span>
+                                    <span class="text-sm font-mono flex-1 truncate">{{ file }}</span>
                                     <Button
                                         type="button"
                                         variant="ghost"
                                         size="sm"
-                                        class="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                                        class="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                                         @click="removeIgnoreFile(index)"
                                     >
                                         <Trash2 class="h-3 w-3" />
@@ -271,18 +371,21 @@
                             </div>
                         </div>
 
-                        <p class="text-xs text-muted-foreground">
-                            {{ t('serverBackups.ignoreFilesHelp') }}
-                        </p>
+                        <div class="flex items-start gap-2 p-3 bg-muted/30 rounded-lg border">
+                            <Info class="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                            <p class="text-xs text-muted-foreground">
+                                {{ t('serverBackups.ignoreFilesHelp') }}
+                            </p>
+                        </div>
                     </div>
 
-                    <div class="flex justify-end gap-2 mt-4">
-                        <Button type="button" variant="outline" @click="showCreateBackupDrawer = false">
+                    <div class="flex justify-end gap-2 pt-2">
+                        <Button type="button" variant="outline" size="sm" @click="showCreateBackupDrawer = false">
                             {{ t('common.cancel') }}
                         </Button>
-                        <Button type="submit" :disabled="creatingBackup">
-                            <Loader2 v-if="creatingBackup" class="h-4 w-4 mr-2 animate-spin" />
-                            {{ t('serverBackups.create') }}
+                        <Button type="submit" size="sm" :disabled="creatingBackup" class="flex items-center gap-2">
+                            <Loader2 v-if="creatingBackup" class="h-4 w-4 animate-spin" />
+                            <span>{{ t('serverBackups.create') }}</span>
                         </Button>
                     </div>
                 </form>
@@ -300,29 +403,53 @@
         >
             <DrawerContent>
                 <DrawerHeader>
-                    <DrawerTitle>{{ t('serverBackups.restoreBackup') }}</DrawerTitle>
-                    <DrawerDescription>
-                        {{ t('serverBackups.restoreBackupDescription') }}
-                    </DrawerDescription>
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                            <RotateCcw class="h-5 w-5 text-orange-500" />
+                        </div>
+                        <div>
+                            <DrawerTitle>{{ t('serverBackups.restoreBackup') }}</DrawerTitle>
+                            <DrawerDescription>
+                                {{ t('serverBackups.restoreBackupDescription') }}
+                            </DrawerDescription>
+                        </div>
+                    </div>
                 </DrawerHeader>
-                <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="confirmRestoreBackup">
-                    <div class="flex items-center space-x-2">
+                <form class="space-y-5 px-6 pb-6 pt-2" @submit.prevent="confirmRestoreBackup">
+                    <div
+                        class="p-4 bg-orange-50 dark:bg-orange-950/20 border-2 border-orange-200 dark:border-orange-800 rounded-lg"
+                    >
+                        <div class="flex items-start gap-3">
+                            <AlertTriangle class="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
+                            <div>
+                                <p class="font-semibold text-orange-800 dark:text-orange-200 mb-1 text-sm">Warning</p>
+                                <p class="text-sm text-orange-700 dark:text-orange-300">
+                                    {{ t('serverBackups.truncateDirectoryHelp') }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-3 p-3 bg-muted/30 rounded-lg border">
                         <Checkbox id="truncate-directory" v-model:checked="restoreBackup.truncate_directory" />
-                        <label for="truncate-directory" class="text-sm font-medium">
+                        <label for="truncate-directory" class="text-sm font-medium cursor-pointer">
                             {{ t('serverBackups.truncateDirectory') }}
                         </label>
                     </div>
-                    <p class="text-sm text-muted-foreground">
-                        {{ t('serverBackups.truncateDirectoryHelp') }}
-                    </p>
 
-                    <div class="flex justify-end gap-2 mt-4">
-                        <Button type="button" variant="outline" @click="showRestoreBackupDrawer = false">
+                    <div class="flex justify-end gap-2 pt-2">
+                        <Button type="button" variant="outline" size="sm" @click="showRestoreBackupDrawer = false">
                             {{ t('common.cancel') }}
                         </Button>
-                        <Button type="submit" variant="destructive" :disabled="restoringBackup">
-                            <Loader2 v-if="restoringBackup" class="h-4 w-4 mr-2 animate-spin" />
-                            {{ t('serverBackups.confirmRestore') }}
+                        <Button
+                            type="submit"
+                            variant="destructive"
+                            size="sm"
+                            :disabled="restoringBackup"
+                            class="flex items-center gap-2"
+                        >
+                            <Loader2 v-if="restoringBackup" class="h-4 w-4 animate-spin" />
+                            <span>{{ t('serverBackups.confirmRestore') }}</span>
                         </Button>
                     </div>
                 </form>
@@ -363,7 +490,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import {
     Dialog,
@@ -374,11 +503,25 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 
-import { Plus, RotateCcw, Download, Trash2, Loader2, Lock, Unlock, Archive } from 'lucide-vue-next';
+import {
+    Plus,
+    RotateCcw,
+    Download,
+    Trash2,
+    Loader2,
+    Lock,
+    Unlock,
+    Archive,
+    AlertTriangle,
+    Info,
+    HardDrive,
+    Database,
+    Calendar,
+    FileX,
+    RefreshCw,
+} from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
-import TableComponent from '@/kit/TableComponent.vue';
-import type { TableColumn } from '@/kit/types';
 
 type BackupItem = {
     id: number;
@@ -457,14 +600,9 @@ onMounted(async () => {
     await fetchBackups();
 });
 
-const tableColumns: TableColumn[] = [
-    { key: 'name', label: t('serverBackups.name'), searchable: true },
-    { key: 'status', label: t('serverBackups.status') },
-    { key: 'size', label: t('serverBackups.size') },
-    { key: 'disk', label: t('serverBackups.disk') },
-    { key: 'created_at', label: t('serverBackups.createdAt') },
-    { key: 'actions', label: t('common.actions') },
-];
+function refresh() {
+    fetchBackups(pagination.value.current_page || 1);
+}
 
 async function fetchBackups(page = pagination.value.current_page) {
     try {
@@ -508,6 +646,15 @@ async function fetchBackups(page = pagination.value.current_page) {
     } finally {
         loading.value = false;
     }
+}
+
+function openCreateBackupDrawer() {
+    // Generate a new backup name with timestamp
+    newBackup.value.name = generateBackupName();
+    newBackup.value.ignore = '';
+    newIgnoreFile.value = '';
+    ignoreFilesList.value = [];
+    showCreateBackupDrawer.value = true;
 }
 
 async function createBackup() {
@@ -609,6 +756,16 @@ async function downloadBackup(backup: BackupItem) {
     } catch {
         toast.error(t('serverBackups.downloadFailed'));
     }
+}
+
+function generateBackupName(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `Backup-${year}-${month}-${day}-${hours}${minutes}`;
 }
 
 async function deleteBackup(backup: BackupItem) {
@@ -713,17 +870,6 @@ async function unlockBackup(backup: BackupItem) {
             loading.value = false;
         }
     };
-}
-
-function changePage(page: number) {
-    if (page < 1) return;
-    fetchBackups(page);
-}
-
-function handleSearch(query: string) {
-    searchQuery.value = query;
-    pagination.value.current_page = 1;
-    fetchBackups(1);
 }
 
 function formatDate(value?: string) {

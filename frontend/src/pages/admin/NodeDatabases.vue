@@ -34,7 +34,7 @@
             <!-- Databases Table -->
             <div v-else class="p-6">
                 <TableComponent
-                    title="Node Databases"
+                    title="Server Databases"
                     :description="`Managing databases for node: ${node?.name}`"
                     :columns="tableColumns"
                     :data="databases"

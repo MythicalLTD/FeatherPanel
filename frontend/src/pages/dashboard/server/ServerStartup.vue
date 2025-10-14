@@ -1,124 +1,220 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6">
-            <div class="space-y-4">
-                <div>
-                    <h1 class="text-xl sm:text-2xl font-bold tracking-tight">{{ t('serverStartup.title') }}</h1>
-                    <p class="text-sm sm:text-base text-muted-foreground">
-                        {{ t('serverStartup.description') }}
-                    </p>
+        <div class="space-y-6 pb-8">
+            <!-- Header Section with Actions -->
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div class="space-y-1">
+                        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">{{ t('serverStartup.title') }}</h1>
+                        <p class="text-sm text-muted-foreground">
+                            {{ t('serverStartup.description') }}
+                        </p>
+                    </div>
+                    <div class="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="loading"
+                            class="flex items-center gap-2"
+                            @click="fetchServer"
+                        >
+                            <RefreshCw :class="['h-4 w-4', loading && 'animate-spin']" />
+                            <span>{{ t('common.refresh') }}</span>
+                        </Button>
+                        <Button
+                            size="sm"
+                            :disabled="saving || !hasChanges || hasErrors"
+                            class="flex items-center gap-2"
+                            @click="saveChanges"
+                        >
+                            <Save :class="['h-4 w-4', saving && 'animate-pulse']" />
+                            <span>{{ saving ? t('common.saving') : t('common.saveChanges') }}</span>
+                        </Button>
+                    </div>
                 </div>
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <Button variant="outline" :disabled="loading" class="flex-1 sm:flex-none" @click="fetchServer">
-                        <RefreshCw class="h-4 w-4 sm:mr-2" />
-                        <span class="hidden sm:inline">{{ t('common.refresh') }}</span>
-                    </Button>
-                    <Button
-                        :disabled="saving || !hasChanges || hasErrors"
-                        class="flex-1 sm:flex-none"
-                        @click="saveChanges"
-                    >
-                        <Save class="h-4 w-4 sm:mr-2" />
-                        <span class="hidden sm:inline">{{
-                            saving ? t('common.saving') : t('common.saveChanges')
-                        }}</span>
-                    </Button>
+
+                <!-- Status Indicator -->
+                <div v-if="hasChanges && !loading" class="flex items-center gap-2 text-sm">
+                    <div class="h-2 w-2 rounded-full bg-yellow-500 animate-pulse"></div>
+                    <span class="text-muted-foreground">Unsaved changes</span>
                 </div>
             </div>
 
-            <div v-if="loading" class="flex items-center justify-center py-8">
-                <div class="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
-                <span class="ml-2">{{ t('common.loading') }}</span>
+            <!-- Loading State -->
+            <div v-if="loading" class="flex flex-col items-center justify-center py-16">
+                <div class="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full"></div>
+                <span class="mt-4 text-muted-foreground">{{ t('common.loading') }}</span>
             </div>
 
+            <!-- Content -->
             <div v-else-if="server" class="space-y-6">
-                <Card>
-                    <CardHeader class="pb-3 sm:pb-6">
-                        <CardTitle class="text-base sm:text-lg">{{ t('serverStartup.startupCommand') }}</CardTitle>
-                        <CardDescription class="text-xs sm:text-sm">
-                            {{ t('serverStartup.startupHelp') }}
-                        </CardDescription>
+                <!-- Startup Command Section -->
+                <Card class="border-2 hover:border-primary/50 transition-colors">
+                    <CardHeader>
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <Terminal class="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                                <CardTitle class="text-lg">{{ t('serverStartup.startupCommand') }}</CardTitle>
+                                <CardDescription class="text-sm">
+                                    {{ t('serverStartup.startupHelp') }}
+                                </CardDescription>
+                            </div>
+                        </div>
                     </CardHeader>
-                    <CardContent class="space-y-3">
-                        <Textarea v-model="form.startup" rows="4" class="font-mono text-xs sm:text-sm" />
+                    <CardContent>
+                        <Textarea
+                            v-model="form.startup"
+                            rows="5"
+                            class="font-mono text-sm resize-none"
+                            placeholder="Enter startup command..."
+                        />
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader class="pb-3 sm:pb-6">
-                        <CardTitle class="text-base sm:text-lg">{{ t('serverStartup.dockerImage') }}</CardTitle>
-                        <CardDescription class="text-xs sm:text-sm">
-                            {{ t('serverStartup.dockerHelp') }}
-                        </CardDescription>
+                <!-- Docker Image Section -->
+                <Card class="border-2 hover:border-primary/50 transition-colors">
+                    <CardHeader>
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                                <Container class="h-5 w-5 text-blue-500" />
+                            </div>
+                            <div>
+                                <CardTitle class="text-lg">{{ t('serverStartup.dockerImage') }}</CardTitle>
+                                <CardDescription class="text-sm">
+                                    {{ t('serverStartup.dockerHelp') }}
+                                </CardDescription>
+                            </div>
+                        </div>
                     </CardHeader>
-                    <CardContent class="space-y-3">
+                    <CardContent class="space-y-4">
                         <Input
                             v-model="form.image"
                             placeholder="ghcr.io/pterodactyl/yolks:java_21"
-                            class="text-xs sm:text-sm"
+                            class="text-sm font-mono"
                         />
-                        <div v-if="availableDockerImages.length" class="text-xs text-muted-foreground">
-                            <span class="font-medium mr-2">{{ t('serverStartup.availableImages') }}</span>
-                            <div class="flex flex-wrap gap-1 sm:gap-2 mt-2">
+                        <div v-if="availableDockerImages.length" class="space-y-3">
+                            <div class="flex items-center gap-2 text-sm font-medium">
+                                <Boxes class="h-4 w-4 text-muted-foreground" />
+                                <span>{{ t('serverStartup.availableImages') }}</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                                 <Button
-                                    v-for="img in availableDockerImages"
-                                    :key="img"
+                                    v-for="(img, idx) in availableDockerImages"
+                                    :key="idx"
                                     type="button"
-                                    variant="outline"
+                                    :variant="form.image === img ? 'default' : 'outline'"
                                     size="sm"
-                                    class="text-xs h-7 px-2"
+                                    class="text-xs font-mono justify-start h-auto py-2 px-3"
                                     @click="form.image = img"
                                 >
-                                    <span class="truncate max-w-[200px] sm:max-w-none">{{ img }}</span>
+                                    <div class="flex items-center gap-2 w-full">
+                                        <Container class="h-3 w-3 flex-shrink-0" />
+                                        <span class="truncate text-left">{{ img }}</span>
+                                    </div>
                                 </Button>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader class="pb-3 sm:pb-6">
-                        <CardTitle class="text-base sm:text-lg">{{ t('serverStartup.variables') }}</CardTitle>
-                        <CardDescription class="text-xs sm:text-sm">
-                            {{ t('serverStartup.variablesHelp') }}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent class="space-y-3 sm:space-y-4">
-                        <div v-for="v in variables" :key="v.variable_id" class="border rounded-lg p-3 sm:p-4 space-y-2">
-                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                <div class="font-medium text-sm sm:text-base">{{ v.name }}</div>
-                                <Badge variant="secondary" class="text-xs w-fit">{{ v.env_variable }}</Badge>
+                <!-- Variables Section -->
+                <Card class="border-2 hover:border-primary/50 transition-colors">
+                    <CardHeader>
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                                <Settings class="h-5 w-5 text-purple-500" />
                             </div>
-                            <div class="text-xs text-muted-foreground">{{ v.description }}</div>
-                            <Input
-                                v-model="variableValues[v.variable_id]"
-                                :placeholder="v.default_value || ''"
-                                :disabled="!v.user_editable"
-                                class="text-xs sm:text-sm"
-                                @input="validateOneVariable(v)"
-                                @keyup="validateOneVariable(v)"
-                                @change="validateOneVariable(v)"
-                            />
-                            <p
-                                v-if="variableErrors[v.variable_id]"
-                                :key="`error-${v.variable_id}`"
-                                class="text-xs text-red-500"
-                            >
-                                {{ variableErrors[v.variable_id] }}
-                            </p>
+                            <div class="flex-1">
+                                <CardTitle class="text-lg">{{ t('serverStartup.variables') }}</CardTitle>
+                                <CardDescription class="text-sm">
+                                    {{ t('serverStartup.variablesHelp') }}
+                                </CardDescription>
+                            </div>
+                            <Badge variant="secondary" class="text-xs">
+                                {{ viewableVariables.length }}
+                                {{ viewableVariables.length === 1 ? 'variable' : 'variables' }}
+                            </Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div v-if="viewableVariables.length === 0" class="text-center py-8 text-muted-foreground">
+                            <Settings class="h-12 w-12 mx-auto mb-3 opacity-20" />
+                            <p class="text-sm">No variables configured for this server</p>
+                        </div>
+                        <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                             <div
-                                class="text-[10px] sm:text-[11px] text-muted-foreground flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2"
+                                v-for="v in viewableVariables"
+                                :key="v.variable_id"
+                                class="group relative rounded-lg border-2 bg-card p-4 space-y-3 transition-all hover:border-primary/50 hover:shadow-md"
                             >
-                                <span>{{ t('serverStartup.rules') }}:</span>
-                                <code class="bg-muted px-2 py-0.5 rounded text-xs break-all">{{ v.rules }}</code>
+                                <!-- Variable Header -->
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <h3 class="font-semibold text-sm truncate">{{ v.name }}</h3>
+                                            <Badge
+                                                v-if="!v.user_editable"
+                                                variant="outline"
+                                                class="text-[10px] px-1.5 py-0"
+                                            >
+                                                Read-only
+                                            </Badge>
+                                        </div>
+                                        <p class="text-xs text-muted-foreground line-clamp-2">{{ v.description }}</p>
+                                    </div>
+                                    <Badge variant="secondary" class="text-[10px] px-2 py-0.5 font-mono flex-shrink-0">
+                                        {{ v.env_variable }}
+                                    </Badge>
+                                </div>
+
+                                <!-- Variable Input -->
+                                <div class="space-y-2">
+                                    <Input
+                                        v-model="variableValues[v.variable_id]"
+                                        :placeholder="v.default_value || 'Enter value...'"
+                                        :disabled="!v.user_editable"
+                                        class="text-sm"
+                                        :class="[
+                                            variableErrors[v.variable_id] &&
+                                                'border-red-500 focus-visible:ring-red-500',
+                                            !v.user_editable && 'cursor-not-allowed opacity-60',
+                                        ]"
+                                        @input="validateOneVariable(v)"
+                                        @keyup="validateOneVariable(v)"
+                                        @change="validateOneVariable(v)"
+                                    />
+                                    <div
+                                        v-if="variableErrors[v.variable_id]"
+                                        class="flex items-center gap-1.5 text-xs text-red-500"
+                                    >
+                                        <AlertCircle class="h-3 w-3 flex-shrink-0" />
+                                        <span>{{ variableErrors[v.variable_id] }}</span>
+                                    </div>
+                                    <div
+                                        v-if="v.rules"
+                                        class="flex items-start gap-1.5 text-[11px] text-muted-foreground"
+                                    >
+                                        <Info class="h-3 w-3 flex-shrink-0 mt-0.5" />
+                                        <code class="bg-muted px-2 py-0.5 rounded flex-1 break-all">{{ v.rules }}</code>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
-            <div v-else class="text-center py-8 text-muted-foreground">
-                {{ error || t('serverStartup.notFound') }}
+            <!-- Error State -->
+            <div v-else class="flex flex-col items-center justify-center py-16 text-center">
+                <AlertCircle class="h-16 w-16 text-muted-foreground/50 mb-4" />
+                <h3 class="text-lg font-semibold text-foreground mb-2">{{ t('serverStartup.notFound') }}</h3>
+                <p class="text-sm text-muted-foreground max-w-md">{{ error }}</p>
+                <Button variant="outline" size="sm" class="mt-4" @click="fetchServer">
+                    <RefreshCw class="h-4 w-4 mr-2" />
+                    Try Again
+                </Button>
             </div>
         </div>
     </DashboardLayout>
@@ -159,7 +255,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Save } from 'lucide-vue-next';
+import { RefreshCw, Save, Terminal, Container, Boxes, Settings, AlertCircle, Info } from 'lucide-vue-next';
 import { useToast } from 'vue-toastification';
 
 type Variable = {
@@ -194,7 +290,7 @@ interface ServerResponse {
     startup?: string;
     image?: string;
     variables?: Variable[];
-    spell?: { docker_images?: string } | null;
+    spell?: { docker_images?: string | Record<string, string> } | null;
 }
 
 const server = ref<ServerResponse | null>(null);
@@ -216,11 +312,15 @@ const breadcrumbs = computed(() => [
     { text: t('serverStartup.title'), isCurrent: true, href: `/server/${route.params.uuidShort}/startup` },
 ]);
 
+const viewableVariables = computed(() => variables.value.filter((v) => v.user_viewable === 1));
+
+const editableVariables = computed(() => variables.value.filter((v) => v.user_editable === 1));
+
 const hasChanges = computed(() => {
     if (!server.value) return false;
     const startupChanged = form.value.startup !== (server.value.startup || '');
     const imageChanged = form.value.image !== (server.value.image || '');
-    const variableChanged = variables.value.some(
+    const variableChanged = editableVariables.value.some(
         (v) => variableValues.value[v.variable_id] !== (v.variable_value || ''),
     );
     return startupChanged || imageChanged || variableChanged;
@@ -244,9 +344,19 @@ async function fetchServer() {
         });
         // parse available docker images from spell
         try {
-            const dockerImages = server.value?.spell?.docker_images ?? '';
-            const dockerObj = dockerImages ? (JSON.parse(dockerImages) as Record<string, string>) : {};
-            availableDockerImages.value = Object.values(dockerObj);
+            const dockerImages = server.value?.spell?.docker_images;
+            if (!dockerImages) {
+                availableDockerImages.value = [];
+            } else if (typeof dockerImages === 'string') {
+                // If it's a string, parse it
+                const dockerObj = JSON.parse(dockerImages) as Record<string, string>;
+                availableDockerImages.value = Object.values(dockerObj);
+            } else if (typeof dockerImages === 'object') {
+                // If it's already an object, use it directly
+                availableDockerImages.value = Object.values(dockerImages as Record<string, string>);
+            } else {
+                availableDockerImages.value = [];
+            }
         } catch {
             availableDockerImages.value = [];
         }
@@ -269,7 +379,8 @@ async function saveChanges() {
             saving.value = false;
             return;
         }
-        const variablesPayload = variables.value.map((v) => ({
+        // Only send variables that are user_editable
+        const variablesPayload = editableVariables.value.map((v) => ({
             variable_id: v.variable_id,
             variable_value: variableValues.value[v.variable_id] ?? '',
         }));
@@ -404,7 +515,8 @@ function validateAllVariables(): boolean {
     let ok = true;
     const newErrors: Record<number, string> = {};
 
-    for (const v of variables.value) {
+    // Only validate viewable and editable variables
+    for (const v of viewableVariables.value) {
         const val = variableValues.value[v.variable_id] ?? '';
         const message = validateVariableAgainstRules(val, v.rules || '');
         if (message) {
@@ -422,9 +534,9 @@ function validateAllVariables(): boolean {
 watch(
     variableValues,
     (newVals, oldVals) => {
-        // Only validate variables that actually changed
+        // Only validate viewable variables that actually changed
         if (oldVals) {
-            for (const v of variables.value) {
+            for (const v of viewableVariables.value) {
                 if (newVals[v.variable_id] !== oldVals[v.variable_id]) {
                     validateOneVariable(v);
                 }
