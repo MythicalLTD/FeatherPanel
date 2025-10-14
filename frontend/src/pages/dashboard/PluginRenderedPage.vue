@@ -7,6 +7,31 @@
             <div class="text-red-500">{{ error }}</div>
         </div>
         <div v-else-if="iframeSrc" class="relative w-full h-[calc(100vh-120px)] overflow-hidden">
+            <!-- Developer Mode: Floating Reload Button -->
+            <div v-if="settingsStore.appDeveloperMode" class="absolute bottom-6 right-6 z-30">
+                <button
+                    class="flex items-center justify-center w-12 h-12 sm:w-auto sm:h-auto sm:px-4 sm:py-2 sm:gap-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-full sm:rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-110 font-medium text-sm"
+                    :title="t('plugins.reloadIframe')"
+                    @click="retryLoad"
+                >
+                    <svg
+                        class="w-5 h-5"
+                        :class="{ 'animate-spin': iframeLoading }"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        ></path>
+                    </svg>
+                    <span class="hidden sm:inline sm:ml-2">{{ t('plugins.reloadIframe') }}</span>
+                </button>
+            </div>
+
             <!-- Loading overlay -->
             <div v-if="iframeLoading" class="absolute inset-0 flex items-center justify-center z-20">
                 <div class="flex flex-col items-center space-y-6">
@@ -114,17 +139,20 @@
 
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { useRoute } from 'vue-router';
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+import { useSettingsStore } from '@/stores/settings';
 
 const route = useRoute();
 const { t } = useI18n();
+const settingsStore = useSettingsStore();
 
 const loading = ref(true);
 const error = ref<string | null>(null);
 const iframeError = ref<string | null>(null);
 const iframeLoading = ref(true);
+const serverName = ref<string | null>(null);
 const pluginData = ref<{
     name: string;
     plugin: string;
@@ -165,7 +193,7 @@ const breadcrumbs = computed(() => {
         crumbs.push(
             { text: t('common.dashboard'), href: '/dashboard' },
             { text: t('common.servers'), href: '/dashboard' },
-            { text: t('common.server'), href: `/server/${route.params.uuidShort}` },
+            { text: serverName.value || t('common.server'), href: `/server/${route.params.uuidShort}` },
             { text: pageName, isCurrent: true },
         );
     } else {
@@ -175,6 +203,24 @@ const breadcrumbs = computed(() => {
 
     return crumbs;
 });
+
+const fetchServerName = async () => {
+    // Only fetch server name if we're in server context
+    if (context.value !== 'server' || !route.params.uuidShort) {
+        return;
+    }
+
+    try {
+        const response = await axios.get(`/api/user/servers/${route.params.uuidShort}`);
+        if (response.data?.success && response.data?.data) {
+            serverName.value = response.data.data.name;
+            console.log('Fetched server name:', serverName.value);
+        }
+    } catch (error) {
+        console.error('Failed to fetch server name:', error);
+        // Non-blocking error, just use fallback in breadcrumbs
+    }
+};
 
 const fetchPluginSidebar = async () => {
     try {
@@ -325,10 +371,33 @@ const retryLoad = () => {
     }
 };
 
-onMounted(() => {
+onMounted(async () => {
     console.log('PluginRenderedPage mounted');
     console.log('Route path:', route.path);
     console.log('Route params:', route.params);
-    fetchPluginSidebar();
+
+    // Fetch settings for debug mode and other configuration
+    await settingsStore.fetchSettings();
+
+    // Fetch server name if in server context
+    await fetchServerName();
+
+    // Fetch plugin data
+    await fetchPluginSidebar();
 });
+
+// Watch for route changes to reload plugin data when navigating between plugin pages
+watch(
+    () => route.path,
+    async () => {
+        console.log('Route changed to:', route.path);
+        // Reset iframe loading state
+        iframeLoading.value = true;
+        iframeError.value = null;
+        // Fetch server name if in server context
+        await fetchServerName();
+        // Fetch new plugin data
+        await fetchPluginSidebar();
+    },
+);
 </script>

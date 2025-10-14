@@ -67,11 +67,19 @@ const handleItemClick = (item: NavigationItem, event: Event) => {
                     class="text-sm sm:text-base px-2 py-2 sm:py-2.5"
                     @click="handleItemClick(item, $event)"
                 >
-                    <component :is="item.icon" v-if="item.icon" class="h-4 w-4 sm:h-5 sm:w-5" />
+                    <!-- Render emoji if icon is a string, otherwise render Lucide icon component -->
+                    <span
+                        v-if="typeof item.icon === 'string'"
+                        class="text-base sm:text-lg flex items-center justify-center"
+                        style="width: 1.25rem; height: 1.25rem"
+                    >
+                        {{ item.icon }}
+                    </span>
+                    <component :is="item.icon" v-else class="h-4 w-4 sm:h-5 sm:w-5" />
                     <div class="flex items-center justify-between w-full min-w-0">
                         <span class="truncate">{{ item.title }}</span>
                         <span
-                            v-if="item.pluginTag"
+                            v-if="item.pluginTag && item.showBadge"
                             class="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full font-medium flex-shrink-0 ml-2"
                         >
                             {{ item.pluginTag }}

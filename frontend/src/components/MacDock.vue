@@ -63,7 +63,11 @@ const handleItemLeave = () => {
                     @mouseleave="handleItemLeave"
                 >
                     <div class="dock-item-icon">
-                        <component :is="item.icon" class="icon" />
+                        <!-- Render emoji if icon is a string, otherwise render Lucide icon component -->
+                        <span v-if="typeof item.icon === 'string'" class="text-2xl">
+                            {{ item.icon }}
+                        </span>
+                        <component :is="item.icon" v-else class="icon" />
                     </div>
                     <div v-if="hoveredItem === item.id" class="dock-item-label">
                         {{ item.title }}
