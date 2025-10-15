@@ -49,6 +49,7 @@ import {
     Link,
     BookAlert,
     TerminalIcon,
+    BarChart3,
 } from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
 import Permissions from '@/lib/permissions';
@@ -239,6 +240,17 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith('/admin') && currentPath.value === '/admin',
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_DASHBOARD_VIEW,
+                group: 'overview',
+            },
+            {
+                id: 'admin-kpi-analytics',
+                name: 'Analytics (KPIs)',
+                title: 'Analytics (KPIs)',
+                url: '/admin/kpi/analytics',
+                icon: BarChart3,
+                isActive: currentPath.value.startsWith('/admin/kpi'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_USERS_VIEW,
                 group: 'overview',
             },
             // User Management

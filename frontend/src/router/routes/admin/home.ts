@@ -123,6 +123,41 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/ApiKeys.vue'),
     },
     {
+        path: '/admin/kpi/analytics',
+        name: 'AdminKPIAnalytics',
+        component: () => import('@/pages/admin/kpi/Analytics.vue'),
+    },
+    {
+        path: '/admin/kpi/users',
+        name: 'AdminKPIUsers',
+        component: () => import('@/pages/admin/kpi/Users.vue'),
+    },
+    {
+        path: '/admin/kpi/activity',
+        name: 'AdminKPIActivity',
+        component: () => import('@/pages/admin/kpi/Activity.vue'),
+    },
+    {
+        path: '/admin/kpi/infrastructure',
+        name: 'AdminKPIInfrastructure',
+        component: () => import('@/pages/admin/kpi/Infrastructure.vue'),
+    },
+    {
+        path: '/admin/kpi/servers',
+        name: 'AdminKPIServers',
+        component: () => import('@/pages/admin/kpi/Servers.vue'),
+    },
+    {
+        path: '/admin/kpi/content',
+        name: 'AdminKPIContent',
+        component: () => import('@/pages/admin/kpi/Content.vue'),
+    },
+    {
+        path: '/admin/kpi/system',
+        name: 'AdminKPISystem',
+        component: () => import('@/pages/admin/kpi/System.vue'),
+    },
+    {
         path: '/admin/dev/logs',
         name: 'AdminLogViewer',
         component: () => import('@/pages/admin/dev/LogViewer.vue'),

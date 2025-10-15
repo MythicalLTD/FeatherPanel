@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added admin analytics dashboard (KPI) for detailed user statistics and insights.
+
 ### Fixed
 
 - Resolved an issue that prevented updating a user's password via the admin UI—admins can now seamlessly modify user passwords from the frontend interface.

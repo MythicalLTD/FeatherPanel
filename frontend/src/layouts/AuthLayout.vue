@@ -51,9 +51,9 @@
             <div
                 class="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4 transition-all duration-200"
             >
-                {{ $t('auth.runningOn', { version: '1.0.0' }) }} <br />
+                {{ $t('auth.runningOn', { version: 'v0.0.8' }) }} <br />
                 <a
-                    href="https://mythical.systems"
+                    href="https://featherpanel.com"
                     class="text-primary transition-colors duration-200 hover:text-primary/80"
                     >{{ $t('auth.mythicalSystems') }}</a
                 >
