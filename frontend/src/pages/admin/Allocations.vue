@@ -9,28 +9,6 @@
                 </div>
             </div>
 
-            <!-- Error State -->
-            <div
-                v-else-if="message?.type === 'error'"
-                class="flex flex-col items-center justify-center py-12 text-center"
-            >
-                <div class="text-red-500 mb-4">
-                    <svg class="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                        />
-                    </svg>
-                </div>
-                <h3 class="text-lg font-medium text-muted-foreground mb-2">Failed to load allocations</h3>
-                <p class="text-sm text-muted-foreground max-w-sm">
-                    {{ message.text }}
-                </p>
-                <Button class="mt-4" @click="fetchAllocations">Try Again</Button>
-            </div>
-
             <!-- Allocations Table -->
             <div v-else class="p-6">
                 <TableComponent
@@ -284,13 +262,6 @@
                     }}</DrawerDescription
                 >
             </DrawerHeader>
-            <Alert
-                v-if="drawerMessage"
-                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                class="mb-4 whitespace-nowrap overflow-x-auto"
-            >
-                <span>{{ drawerMessage.text }}</span>
-            </Alert>
             <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitEdit">
                 <label for="edit-ip" class="block mb-1 font-medium">IP Address</label>
                 <Input id="edit-ip" v-model="editForm.ip" placeholder="192.168.1.1" required />
@@ -330,13 +301,6 @@
                 <DrawerTitle>Create Allocation</DrawerTitle>
                 <DrawerDescription>Fill in the details to create a new allocation.</DrawerDescription>
             </DrawerHeader>
-            <Alert
-                v-if="drawerMessage"
-                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                class="mb-4 whitespace-nowrap overflow-x-auto"
-            >
-                <span>{{ drawerMessage.text }}</span>
-            </Alert>
             <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreate">
                 <div>
                     <label for="create-ip" class="block mb-1 font-medium">IP Address</label>
@@ -432,7 +396,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Plus, Eye, Edit, Trash2, Network, MapPin, Gamepad2, Shield } from 'lucide-vue-next';
 import axios from 'axios';
-import { Alert } from '@/components/ui/alert';
 import {
     Drawer,
     DrawerContent,
@@ -445,9 +408,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { Allocation, Node, TableColumn } from '@/kit/types';
+import { useToast } from 'vue-toastification';
 
 const route = useRoute();
 const router = useRouter();
+const toast = useToast();
+
 const nodeIdParam = computed(() => (route.params.nodeId ? Number(route.params.nodeId) : null));
 const currentNode = ref<Node | null>(null);
 const nodeHealthStatus = ref<'healthy' | 'unhealthy' | 'unknown'>('unknown');
@@ -458,8 +424,6 @@ const allocations = ref<Allocation[]>([]);
 const searchQuery = ref('');
 const loading = ref(false);
 const deleting = ref(false);
-const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
-const drawerMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<number | null>(null);
 
 // Pagination
@@ -630,12 +594,10 @@ async function fetchAllocations() {
             to.value = pagination.to;
         }
     } catch (e: unknown) {
-        message.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to fetch allocations',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to fetch allocations';
+        toast.error(errorMessage);
         allocations.value = [];
     } finally {
         loading.value = false;
@@ -657,10 +619,7 @@ function changePage(page: number) {
 async function onView(allocation: Allocation) {
     // Check health before allowing view
     if (nodeHealthStatus.value !== 'healthy') {
-        message.value = {
-            type: 'error',
-            text: 'Cannot view allocation details while node is unhealthy. Please check the node status first.',
-        };
+        toast.error('Cannot view allocation details while node is unhealthy. Please check the node status first.');
         return;
     }
 
@@ -670,17 +629,14 @@ async function onView(allocation: Allocation) {
         selectedAllocation.value = data.data.allocation;
     } catch {
         selectedAllocation.value = null;
-        message.value = { type: 'error', text: 'Failed to fetch allocation details' };
+        toast.error('Failed to fetch allocation details');
     }
 }
 
 async function onEdit(allocation: Allocation) {
     // Check health before allowing edit
     if (nodeHealthStatus.value !== 'healthy') {
-        message.value = {
-            type: 'error',
-            text: 'Cannot edit allocations while node is unhealthy. Please check the node status first.',
-        };
+        toast.error('Cannot edit allocations while node is unhealthy. Please check the node status first.');
         return;
     }
 
@@ -690,10 +646,7 @@ async function onEdit(allocation: Allocation) {
 async function onDelete(allocation: Allocation) {
     // Check health before allowing delete
     if (nodeHealthStatus.value !== 'healthy') {
-        message.value = {
-            type: 'error',
-            text: 'Cannot delete allocations while node is unhealthy. Please check the node status first.',
-        };
+        toast.error('Cannot delete allocations while node is unhealthy. Please check the node status first.');
         return;
     }
 
@@ -709,24 +662,19 @@ async function confirmDelete(allocation: Allocation) {
     try {
         const response = await axios.delete(`/api/admin/allocations/${allocation.id}`);
         if (response.data && response.data.success) {
-            message.value = { type: 'success', text: 'Allocation deleted successfully' };
+            toast.success('Allocation deleted successfully');
             await fetchAllocations();
         } else {
-            message.value = { type: 'error', text: response.data?.message || 'Failed to delete allocation' };
+            toast.error(response.data?.message || 'Failed to delete allocation');
         }
     } catch (e: unknown) {
-        message.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to delete allocation',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to delete allocation';
+        toast.error(errorMessage);
     } finally {
         deleting.value = false;
         confirmDeleteRow.value = null;
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
     }
 }
 
@@ -748,14 +696,13 @@ async function openEditDrawer(allocation: Allocation) {
         };
         editDrawerOpen.value = true;
     } catch {
-        message.value = { type: 'error', text: 'Failed to fetch allocation details for editing' };
+        toast.error('Failed to fetch allocation details for editing');
     }
 }
 
 function closeEditDrawer() {
     editDrawerOpen.value = false;
     editingAllocation.value = null;
-    drawerMessage.value = null;
 }
 
 async function submitEdit() {
@@ -764,32 +711,24 @@ async function submitEdit() {
         const patchData = { ...editForm.value };
         const { data } = await axios.patch(`/api/admin/allocations/${editingAllocation.value.id}`, patchData);
         if (data && data.success) {
-            drawerMessage.value = { type: 'success', text: 'Allocation updated successfully' };
-            setTimeout(() => {
-                drawerMessage.value = null;
-            }, 2000);
+            toast.success('Allocation updated successfully');
             await fetchAllocations();
             closeEditDrawer();
         } else {
-            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to update allocation' };
+            toast.error(data?.message || 'Failed to update allocation');
         }
     } catch (e: unknown) {
-        drawerMessage.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to update allocation',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to update allocation';
+        toast.error(errorMessage);
     }
 }
 
 async function openCreateDrawer() {
     // Check health before allowing creation
     if (nodeHealthStatus.value !== 'healthy') {
-        message.value = {
-            type: 'error',
-            text: 'Cannot create allocations while node is unhealthy. Please check the node status first.',
-        };
+        toast.error('Cannot create allocations while node is unhealthy. Please check the node status first.');
         return;
     }
 
@@ -799,7 +738,6 @@ async function openCreateDrawer() {
 
 function closeCreateDrawer() {
     createDrawerOpen.value = false;
-    drawerMessage.value = null;
 }
 
 async function submitCreate() {
@@ -818,22 +756,17 @@ async function submitCreate() {
                 message += ` (skipped ${skippedCount} existing)`;
             }
 
-            drawerMessage.value = { type: 'success', text: message };
-            setTimeout(() => {
-                drawerMessage.value = null;
-            }, 3000);
+            toast.success(message);
             await fetchAllocations();
             closeCreateDrawer();
         } else {
-            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to create allocation' };
+            toast.error(data?.message || 'Failed to create allocation');
         }
     } catch (e: unknown) {
-        drawerMessage.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to create allocation',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to create allocation';
+        toast.error(errorMessage);
     }
 }
 
@@ -843,10 +776,9 @@ onMounted(async () => {
     // Check node health before allowing any operations
     const isHealthy = await checkNodeHealth();
     if (!isHealthy) {
-        message.value = {
-            type: 'error',
-            text: 'Node is currently unhealthy. Wings daemon is not responding. Please check the node status before managing allocations.',
-        };
+        toast.error(
+            'Node is currently unhealthy. Wings daemon is not responding. Please check the node status before managing allocations.',
+        );
         return;
     }
 

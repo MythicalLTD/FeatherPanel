@@ -104,93 +104,93 @@
                             <Card
                                 v-for="plugin in plugins"
                                 :key="plugin.identifier"
-                                class="group hover:shadow-lg transition-all duration-200 cursor-pointer"
+                                class="group hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col"
                                 @click="openPluginConfig(plugin)"
                             >
-                                <div class="p-4 sm:p-6">
-                                    <div class="flex items-start justify-between mb-4">
-                                        <div class="flex items-center gap-3 min-w-0 flex-1">
-                                            <div
-                                                class="h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0"
-                                            >
-                                                <img
-                                                    v-if="plugin.icon"
-                                                    :src="plugin.icon"
-                                                    :alt="plugin.name || plugin.identifier"
-                                                    class="h-6 w-6 sm:h-8 sm:w-8 object-contain"
-                                                />
-                                                <component
-                                                    :is="getPluginIcon(plugin)"
-                                                    v-else
-                                                    class="h-5 w-5 sm:h-6 sm:w-6 text-primary"
-                                                />
-                                            </div>
-                                            <div class="min-w-0 flex-1">
-                                                <h3 class="font-semibold text-base sm:text-lg truncate">
-                                                    {{ plugin.name || plugin.identifier }}
-                                                </h3>
-                                                <p class="text-xs sm:text-sm text-muted-foreground truncate">
-                                                    {{ plugin.identifier }}
-                                                </p>
-                                            </div>
+                                <div class="p-4 sm:p-6 flex flex-col flex-1">
+                                    <!-- Header Section -->
+                                    <div class="flex items-start gap-3 mb-3">
+                                        <div
+                                            class="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden flex-shrink-0 border border-primary/10"
+                                        >
+                                            <img
+                                                v-if="plugin.icon"
+                                                :src="plugin.icon"
+                                                :alt="plugin.name || plugin.identifier"
+                                                class="h-8 w-8 object-contain"
+                                            />
+                                            <component
+                                                :is="getPluginIcon(plugin)"
+                                                v-else
+                                                class="h-6 w-6 text-primary"
+                                            />
                                         </div>
-                                        <Badge variant="secondary" class="ml-2 flex-shrink-0 text-xs">
-                                            {{ plugin.version || 'Unknown' }}
-                                        </Badge>
+                                        <div class="min-w-0 flex-1">
+                                            <h3 class="font-semibold text-base sm:text-lg truncate mb-0.5">
+                                                {{ plugin.name || plugin.identifier }}
+                                            </h3>
+                                            <p class="text-xs text-muted-foreground truncate mb-1">
+                                                {{ plugin.identifier }}
+                                            </p>
+                                            <Badge variant="secondary" class="text-xs">
+                                                v{{ plugin.version || 'Unknown' }}
+                                            </Badge>
+                                        </div>
                                     </div>
 
-                                    <p class="text-sm text-muted-foreground mb-4 line-clamp-2">
+                                    <!-- Description -->
+                                    <p class="text-sm text-muted-foreground mb-4 line-clamp-2 min-h-[2.5rem]">
                                         {{ plugin.description || 'No description available' }}
                                     </p>
 
-                                    <div class="space-y-2 mb-4">
+                                    <!-- Metadata Section -->
+                                    <div class="space-y-2.5 mb-4 flex-1">
                                         <div v-if="plugin.author" class="flex items-center gap-2 text-sm">
-                                            <User class="h-4 w-4 text-muted-foreground" />
-                                            <span>{{ plugin.author }}</span>
+                                            <User class="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                                            <span class="truncate text-muted-foreground">{{ plugin.author }}</span>
                                         </div>
-                                        <div v-if="plugin.target" class="flex items-center gap-2 text-sm">
-                                            <Badge variant="outline" class="text-xs">
-                                                Target: {{ plugin.target }}
+
+                                        <!-- Flags and Target in same row -->
+                                        <div class="flex flex-wrap items-center gap-1.5">
+                                            <Badge v-if="plugin.target" variant="outline" class="text-xs">
+                                                {{ plugin.target }}
+                                            </Badge>
+                                            <Badge
+                                                v-for="flag in plugin.flags"
+                                                :key="flag"
+                                                variant="secondary"
+                                                class="text-xs"
+                                            >
+                                                {{ flag }}
                                             </Badge>
                                         </div>
-                                        <div
-                                            v-if="plugin.flags && plugin.flags.length > 0"
-                                            class="flex items-center gap-2 text-sm"
-                                        >
-                                            <div class="flex gap-1">
-                                                <Badge
-                                                    v-for="flag in plugin.flags"
-                                                    :key="flag"
-                                                    variant="secondary"
-                                                    class="text-xs"
-                                                >
-                                                    {{ flag }}
-                                                </Badge>
-                                            </div>
-                                        </div>
+
                                         <div v-if="plugin.website" class="flex items-center gap-2 text-sm">
-                                            <Globe class="h-4 w-4 text-muted-foreground" />
+                                            <Globe class="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                                             <a
                                                 :href="plugin.website"
                                                 target="_blank"
-                                                class="text-primary hover:underline"
+                                                class="text-primary hover:underline text-xs truncate"
                                                 @click.stop
                                             >
-                                                Website
+                                                Visit Website
                                             </a>
                                         </div>
-                                        <!-- Requirements state -->
+
+                                        <!-- Status Alerts -->
                                         <div
                                             v-if="plugin.unmetDependencies && plugin.unmetDependencies.length > 0"
-                                            class="rounded border p-2 text-xs border-yellow-500/30 bg-yellow-500/10 text-yellow-800"
+                                            class="rounded-md border p-2.5 text-xs border-yellow-500/30 bg-yellow-500/10 dark:bg-yellow-500/5"
                                         >
-                                            <div class="font-medium">Needs packages to run</div>
-                                            <div class="mt-1 flex flex-wrap gap-1">
+                                            <div class="font-medium text-yellow-800 dark:text-yellow-600 mb-1.5">
+                                                Missing Dependencies
+                                            </div>
+                                            <div class="flex flex-wrap gap-1">
                                                 <Badge
                                                     v-for="dep in plugin.unmetDependencies"
                                                     :key="dep"
                                                     variant="outline"
-                                                    class="text-[10px]"
+                                                    class="text-[10px] border-yellow-600/30 bg-yellow-100/50 dark:bg-yellow-900/20"
                                                 >
                                                     {{ dep }}
                                                 </Badge>
@@ -198,15 +198,17 @@
                                         </div>
                                         <div
                                             v-else-if="plugin.missingConfigs && plugin.missingConfigs.length > 0"
-                                            class="rounded border p-2 text-xs border-blue-500/30 bg-blue-500/10 text-blue-800"
+                                            class="rounded-md border p-2.5 text-xs border-blue-500/30 bg-blue-500/10 dark:bg-blue-500/5"
                                         >
-                                            <div class="font-medium">Needs configuration</div>
-                                            <div class="mt-1 flex flex-wrap gap-1">
+                                            <div class="font-medium text-blue-800 dark:text-blue-600 mb-1.5">
+                                                Needs Configuration
+                                            </div>
+                                            <div class="flex flex-wrap gap-1">
                                                 <Badge
                                                     v-for="cfg in plugin.missingConfigs"
                                                     :key="String(cfg)"
                                                     variant="outline"
-                                                    class="text-[10px]"
+                                                    class="text-[10px] border-blue-600/30 bg-blue-100/50 dark:bg-blue-900/20"
                                                 >
                                                     {{ String(cfg) }}
                                                 </Badge>
@@ -214,49 +216,47 @@
                                         </div>
                                         <div
                                             v-else-if="plugin.loaded === false"
-                                            class="rounded border p-2 text-xs text-muted-foreground"
+                                            class="rounded-md border border-muted bg-muted/30 p-2.5 text-xs text-muted-foreground"
                                         >
-                                            Not loaded
+                                            <span class="font-medium">Not loaded</span>
                                         </div>
                                     </div>
 
-                                    <div class="flex flex-col sm:flex-row gap-2">
+                                    <!-- Actions Section -->
+                                    <div class="flex flex-col gap-2 mt-auto pt-4 border-t border-border/50">
                                         <Button
                                             size="sm"
-                                            variant="outline"
-                                            class="flex-1"
+                                            variant="default"
+                                            class="w-full justify-center"
                                             @click.stop="openPluginConfig(plugin)"
                                         >
                                             <Settings class="h-4 w-4 mr-2" />
                                             Configure
                                         </Button>
-                                        <div class="flex gap-2">
+                                        <div class="grid grid-cols-3 gap-2">
                                             <Button
                                                 size="sm"
-                                                variant="secondary"
-                                                class="flex-1 sm:flex-none"
+                                                variant="outline"
+                                                class="w-full justify-center"
                                                 @click.stop="viewPluginInfo(plugin)"
                                             >
-                                                <Info class="h-4 w-4 sm:mr-0" />
-                                                <span class="sm:hidden ml-2">Info</span>
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="destructive"
-                                                class="flex-1 sm:flex-none"
-                                                @click.stop="requestUninstall(plugin)"
-                                            >
-                                                <Trash2 class="h-4 w-4 sm:mr-0" />
-                                                <span class="sm:hidden ml-2">Delete</span>
+                                                <Info class="h-4 w-4" />
                                             </Button>
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                class="flex-1 sm:flex-none"
+                                                class="w-full justify-center"
                                                 @click.stop="onExport(plugin)"
                                             >
-                                                <Download class="h-4 w-4 sm:mr-0" />
-                                                <span class="sm:hidden ml-2">Export</span>
+                                                <Download class="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="destructive"
+                                                class="w-full justify-center"
+                                                @click.stop="requestUninstall(plugin)"
+                                            >
+                                                <Trash2 class="h-4 w-4" />
                                             </Button>
                                         </div>
                                     </div>
@@ -360,83 +360,133 @@
                             >
                         </div>
                         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <Card v-for="addon in onlineAddons" :key="addon.identifier">
-                                <div class="p-4">
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div class="flex items-center gap-3 min-w-0 flex-1">
-                                            <div
-                                                class="h-8 w-8 sm:h-10 sm:w-10 rounded bg-muted flex items-center justify-center overflow-hidden flex-shrink-0"
-                                            >
-                                                <img
-                                                    v-if="addon.icon"
-                                                    :src="addon.icon"
-                                                    :alt="addon.name"
-                                                    class="h-6 w-6 sm:h-8 sm:w-8 object-contain"
-                                                />
-                                                <Puzzle v-else class="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-                                            </div>
-                                            <div class="min-w-0 flex-1">
-                                                <div class="font-semibold text-sm sm:text-base">
-                                                    <div class="truncate">{{ addon.name }}</div>
-                                                    <span class="text-xs text-muted-foreground"
-                                                        >({{ addon.identifier }})</span
-                                                    >
-                                                </div>
-                                                <div class="text-xs text-muted-foreground">
-                                                    <template v-if="addon.latest_version?.version"
-                                                        >v{{ addon.latest_version.version }} •
-                                                    </template>
-                                                    <template v-if="addon.author">by {{ addon.author }}</template>
-                                                </div>
-                                            </div>
+                            <Card
+                                v-for="addon in onlineAddons"
+                                :key="addon.identifier"
+                                class="hover:shadow-lg transition-all duration-200 flex flex-col"
+                            >
+                                <div class="p-4 sm:p-5 flex flex-col flex-1">
+                                    <!-- Header Section -->
+                                    <div class="flex items-start gap-3 mb-3">
+                                        <div
+                                            class="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden flex-shrink-0 border border-primary/10"
+                                        >
+                                            <img
+                                                v-if="addon.icon"
+                                                :src="addon.icon"
+                                                :alt="addon.name"
+                                                class="h-8 w-8 object-contain"
+                                            />
+                                            <Puzzle v-else class="h-5 w-5 text-muted-foreground" />
                                         </div>
-                                        <div class="flex flex-col gap-1 flex-shrink-0">
-                                            <Badge v-if="addon.verified" variant="secondary" class="text-xs"
-                                                >Verified</Badge
-                                            >
-                                            <Badge v-else variant="outline" class="text-xs">Unverified</Badge>
-                                            <Badge
-                                                v-if="addon.premium === 1"
-                                                class="text-xs bg-gradient-to-r from-yellow-500 to-amber-600 text-white border-0"
-                                            >
-                                                Premium
-                                            </Badge>
+                                        <div class="min-w-0 flex-1">
+                                            <h3 class="font-semibold text-base truncate mb-0.5">{{ addon.name }}</h3>
+                                            <p class="text-xs text-muted-foreground truncate mb-1">
+                                                {{ addon.identifier }}
+                                            </p>
+                                            <div class="flex items-center gap-1.5 flex-wrap">
+                                                <Badge
+                                                    v-if="addon.latest_version?.version"
+                                                    variant="secondary"
+                                                    class="text-xs"
+                                                >
+                                                    v{{ addon.latest_version.version }}
+                                                </Badge>
+                                                <Badge
+                                                    v-if="addon.verified"
+                                                    variant="secondary"
+                                                    class="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700"
+                                                >
+                                                    ✓ Verified
+                                                </Badge>
+                                                <Badge
+                                                    v-else
+                                                    variant="outline"
+                                                    class="text-xs border-yellow-500/50 text-yellow-700 dark:text-yellow-500"
+                                                >
+                                                    Unverified
+                                                </Badge>
+                                                <Badge
+                                                    v-if="addon.premium === 1"
+                                                    class="text-xs bg-gradient-to-r from-yellow-500 to-amber-600 text-white border-0"
+                                                >
+                                                    Premium
+                                                </Badge>
+                                            </div>
                                         </div>
                                     </div>
-                                    <p class="text-sm text-muted-foreground mt-2 line-clamp-3">
-                                        {{ addon.description }}
+
+                                    <!-- Description -->
+                                    <p class="text-sm text-muted-foreground mb-3 line-clamp-2 min-h-[2.5rem]">
+                                        {{ addon.description || 'No description available' }}
                                     </p>
-                                    <p v-if="!addon.verified" class="mt-1 text-xs text-yellow-700">
-                                        This addon is not verified. Review the source before installing.
-                                    </p>
-                                    <div v-if="addon.premium === 1 && addon.premium_price" class="mt-2">
+
+                                    <!-- Warning for unverified -->
+                                    <div
+                                        v-if="!addon.verified"
+                                        class="mb-3 text-xs text-yellow-700 dark:text-yellow-600 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 rounded-md p-2"
+                                    >
+                                        ⚠️ Unverified addon - review source before installing
+                                    </div>
+
+                                    <!-- Premium Price -->
+                                    <div v-if="addon.premium === 1 && addon.premium_price" class="mb-3">
                                         <div
-                                            class="inline-flex items-center gap-1 px-2 py-1 rounded bg-gradient-to-r from-yellow-500/10 to-amber-600/10 border border-yellow-500/30"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-gradient-to-r from-yellow-500/10 to-amber-600/10 border border-yellow-500/30"
                                         >
-                                            <span class="text-sm font-semibold text-yellow-700 dark:text-yellow-500"
+                                            <span class="text-base font-bold text-yellow-700 dark:text-yellow-500"
                                                 >€{{ addon.premium_price }}</span
                                             >
                                             <span class="text-xs text-muted-foreground">EUR</span>
                                         </div>
                                     </div>
-                                    <div class="mt-2 text-xs text-muted-foreground flex flex-wrap gap-1">
-                                        <span v-for="tag in addon.tags" :key="tag" class="px-2 py-0.5 rounded bg-muted"
-                                            >#{{ tag }}</span
-                                        >
+
+                                    <!-- Metadata Section -->
+                                    <div class="space-y-2 mb-3 flex-1">
+                                        <div v-if="addon.author" class="flex items-center gap-2 text-sm">
+                                            <User class="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                                            <span class="truncate text-muted-foreground">{{ addon.author }}</span>
+                                        </div>
+
+                                        <!-- Tags -->
+                                        <div v-if="addon.tags && addon.tags.length > 0" class="flex flex-wrap gap-1">
+                                            <Badge
+                                                v-for="tag in addon.tags.slice(0, 3)"
+                                                :key="tag"
+                                                variant="outline"
+                                                class="text-xs"
+                                            >
+                                                #{{ tag }}
+                                            </Badge>
+                                            <Badge v-if="addon.tags.length > 3" variant="outline" class="text-xs">
+                                                +{{ addon.tags.length - 3 }}
+                                            </Badge>
+                                        </div>
+
+                                        <!-- Stats -->
+                                        <div class="flex items-center justify-between text-xs text-muted-foreground">
+                                            <span v-if="addon.downloads">
+                                                <CloudDownload class="h-3 w-3 inline mr-1" />{{ addon.downloads }}
+                                                downloads
+                                            </span>
+                                            <a
+                                                v-if="addon.website"
+                                                :href="addon.website"
+                                                target="_blank"
+                                                class="text-primary hover:underline flex items-center gap-1"
+                                            >
+                                                <Globe class="h-3 w-3" />
+                                                Website
+                                            </a>
+                                        </div>
                                     </div>
-                                    <div class="mt-2 text-xs text-muted-foreground flex items-center justify-between">
-                                        <span v-if="addon.downloads">{{ addon.downloads }} downloads</span>
-                                        <a
-                                            v-if="addon.website"
-                                            :href="addon.website"
-                                            target="_blank"
-                                            class="hover:underline"
-                                            >Website</a
-                                        >
-                                    </div>
-                                    <div class="mt-3 flex justify-end">
+
+                                    <!-- Actions Section -->
+                                    <div class="mt-auto pt-3 border-t border-border/50">
                                         <template v-if="installedIds.has(addon.identifier)">
-                                            <Button size="sm" variant="outline" disabled>Installed</Button>
+                                            <Button size="sm" variant="outline" disabled class="w-full">
+                                                ✓ Installed
+                                            </Button>
                                         </template>
                                         <template v-else-if="addon.premium === 1">
                                             <Button
@@ -445,14 +495,15 @@
                                                 :href="addon.premium_link || '#'"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                class="bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white"
+                                                class="w-full bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white"
                                             >
-                                                Purchase
+                                                Purchase Plugin
                                             </Button>
                                         </template>
                                         <template v-else>
                                             <Button
                                                 size="sm"
+                                                class="w-full"
                                                 :disabled="installingOnlineId === addon.identifier"
                                                 @click="openOnlineInstallDialog(addon)"
                                             >
@@ -460,7 +511,11 @@
                                                     v-if="installingOnlineId === addon.identifier"
                                                     class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
                                                 ></div>
-                                                Install
+                                                {{
+                                                    installingOnlineId === addon.identifier
+                                                        ? 'Installing...'
+                                                        : 'Install Plugin'
+                                                }}
                                             </Button>
                                         </template>
                                     </div>
@@ -474,11 +529,11 @@
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <Card>
                         <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Globe class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <Globe class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">Online Repository</div>
                                 <p>
-                                    Like spells, there’s an online repo with community plugins and even paid options.
+                                    Like spells, there's an online repo with community plugins and even paid options.
                                     Browse and install directly from the Online tab.
                                 </p>
                             </div>
@@ -486,7 +541,7 @@
                     </Card>
                     <Card>
                         <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Upload class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <Upload class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">Install & Upload</div>
                                 <p>
@@ -498,7 +553,7 @@
                     </Card>
                     <Card class="md:col-span-2 lg:col-span-1">
                         <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <AlertCircle class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <AlertCircle class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">Security & Liability</div>
                                 <p>
@@ -511,7 +566,7 @@
                     </Card>
                     <Card class="md:col-span-2 lg:col-span-3">
                         <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Puzzle class="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <Puzzle class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">A careful reminder</div>
                                 <p>
@@ -1542,6 +1597,14 @@ onMounted(async () => {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }

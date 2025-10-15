@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.0.0-Beta
+
+### Added
+
+### Fixed
+
+- Resolved an issue that prevented updating a user's password via the admin UI—admins can now seamlessly modify user passwords from the frontend interface.
+- Fixed problems with JWT authentication when connecting to the server console, ensuring reliable and secure access.
+- Fixed an issue where redirect links were sometimes broken or incomplete, ensuring full and correct links are now generated.
+
+### Improved
+
+- Redesigned admin pages to deliver a more modern, visually cohesive experience—replaced old error messages with clean toast notifications for clearer and more user-friendly feedback throughout the admin interface!
+- The plugins page has been redesigned to offer a more visually appealing and modern user experience.
+- Sidebar navigation now groups admin sections for improved organization and clarity, making it easier to find settings, content, plugins, and system options.
+
+### Updated
+
 ## v0.0.8-Alpha
 
 ### Added

@@ -35,29 +35,6 @@ use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\User\Server\ServerActivityController;
 
 return function (RouteCollection $routes): void {
-
-    // User server activities (paginated across all user's servers)
-    App::getInstance(true)->registerAuthRoute(
-        $routes,
-        'session-server-activities-user',
-        '/api/user/server-activities',
-        function (Request $request) {
-            return (new ServerActivityController())->getUserServerActivities($request);
-        },
-        ['GET']
-    );
-
-    // User recent server activities (last 10)
-    App::getInstance(true)->registerAuthRoute(
-        $routes,
-        'session-server-activities-recent',
-        '/api/user/server-activities/recent',
-        function (Request $request) {
-            return (new ServerActivityController())->getRecentServerActivities($request);
-        },
-        ['GET']
-    );
-
     // Activities for a specific server owned by the user
     App::getInstance(true)->registerServerRoute(
         $routes,

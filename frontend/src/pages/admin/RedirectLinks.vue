@@ -363,20 +363,6 @@
                             v-model="newRedirectLink.name"
                             placeholder="Redirect link name"
                             required
-                            @input="
-                                () => {
-                                    if (!manualSlugEdit) {
-                                        // Generate slug: lowercase, replace spaces with -, only a-z, 0-9, -
-                                        const slug = newRedirectLink.name
-                                            .toLowerCase()
-                                            .replace(/[^a-z0-9\s-]/g, '') // remove invalid chars
-                                            .replace(/\s+/g, '-') // spaces to -
-                                            .replace(/-+/g, '-') // collapse multiple -
-                                            .replace(/^-+|-+$/g, ''); // trim leading/trailing -
-                                        newRedirectLink.slug = slug;
-                                    }
-                                }
-                            "
                         />
                     </div>
 
@@ -745,6 +731,24 @@ async function testRedirectApi() {
         }
     }
 }
+
+// Watch for changes in the name field and auto-generate slug
+watch(
+    () => newRedirectLink.value.name,
+    (newName) => {
+        if (newName && !manualSlugEdit.value) {
+            // Generate slug: lowercase, replace spaces with -, only a-z, 0-9, -
+            const slug = newName
+                .toLowerCase()
+                .replace(/[^a-z0-9\s-]/g, '') // remove invalid chars
+                .replace(/\s+/g, '-') // spaces to -
+                .replace(/-+/g, '-') // collapse multiple -
+                .replace(/^-+|-+$/g, ''); // trim leading/trailing -
+            newRedirectLink.value.slug = slug;
+        }
+    },
+    { immediate: false },
+);
 
 onMounted(() => {
     fetchRedirectLinks();

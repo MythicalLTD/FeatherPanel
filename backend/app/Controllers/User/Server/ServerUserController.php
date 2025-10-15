@@ -33,14 +33,15 @@ namespace App\Controllers\User\Server;
 use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
+use App\Permissions;
 use App\Chat\Subuser;
 use App\Chat\SpellVariable;
 use App\Chat\ServerActivity;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
-use App\Helpers\ServerGateway;
 use App\Config\ConfigInterface;
+use App\Helpers\PermissionHelper;
 use App\Services\Wings\Services\Wings;
 use App\Plugins\Events\Events\ServerEvent;
 use App\Services\Wings\Services\JwtService;
@@ -416,9 +417,6 @@ class ServerUserController
             return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
-        }
         $server['node'] = Node::getNodeById($server['node_id']);
         $server['realm'] = \App\Chat\Realm::getById($server['realms_id']);
         $server['spell'] = \App\Chat\Spell::getSpellById($server['spell_id']);
@@ -567,10 +565,6 @@ class ServerUserController
             return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
-        }
-
         // Get node information
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
@@ -590,8 +584,8 @@ class ServerUserController
                 $scheme . '://' . $host . ':' . $port // Wings URL
             );
 
-            // Get user permissions (you'll need to implement this based on your permission system)
-            $permissions = $this->getUserServerPermissions($user['id'], $server['id']);
+            // Get user permissions
+            $permissions = $this->getUserServerPermissions($user['id'], $server['id'], $user['uuid']);
 
             // Generate JWT token
             $token = $jwtService->generateApiToken(
@@ -672,10 +666,6 @@ class ServerUserController
         $server = Server::getServerByUuidShort($uuidShort);
         if (!$server) {
             return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
-        }
-
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
         }
 
         // Get request data
@@ -945,10 +935,6 @@ class ServerUserController
             return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
-        }
-
         // Get node information
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
@@ -1066,10 +1052,6 @@ class ServerUserController
         $server = Server::getServerByUuidShort($uuidShort);
         if (!$server) {
             return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
-        }
-
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
         }
 
         // Get node information
@@ -1191,12 +1173,8 @@ class ServerUserController
             return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
         }
 
-        if (!$this->userCanAccessServer($request, $server)) {
-            return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
-        }
-
         // Check if user has console permission
-        $permissions = $this->getUserServerPermissions((int) $user['id'], (int) $server['id']);
+        $permissions = $this->getUserServerPermissions((int) $user['id'], (int) $server['id'], $user['uuid']);
         if (!in_array('control.console', $permissions, true)) {
             return ApiResponse::error('You do not have permission to send console commands', 'INSUFFICIENT_PERMISSIONS', 403);
         }
@@ -1273,19 +1251,6 @@ class ServerUserController
 
             return ApiResponse::error('Failed to send command: ' . $e->getMessage(), 'COMMAND_SEND_FAILED', 500);
         }
-    }
-
-    /**
-     * Centralized check using ServerGateway with current request user.
-     */
-    private function userCanAccessServer(Request $request, array $server): bool
-    {
-        $currentUser = $request->get('user');
-        if (!$currentUser || !isset($currentUser['uuid'])) {
-            return false;
-        }
-
-        return ServerGateway::canUserAccessServer($currentUser['uuid'], $server['uuid']);
     }
 
     /**
@@ -1375,7 +1340,7 @@ class ServerUserController
      *
      * @return array The user's permissions
      */
-    private function getUserServerPermissions(int $userId, int $serverId): array
+    private function getUserServerPermissions(int $userId, int $serverId, string $userUuid): array
     {
         // Get server to check ownership
         $server = Server::getServerById($serverId);
@@ -1428,6 +1393,11 @@ class ServerUserController
         $subuser = Subuser::getSubuserByUserAndServer($userId, $serverId);
         if ($subuser) {
             // Subusers now have full access as well
+            return $fullPermissions;
+        }
+
+        // Admin check required
+        if (PermissionHelper::hasPermission($userUuid, Permissions::ADMIN_SERVERS_EDIT)) {
             return $fullPermissions;
         }
 

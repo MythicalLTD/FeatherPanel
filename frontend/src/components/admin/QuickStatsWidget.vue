@@ -1,21 +1,44 @@
 <template>
     <div class="p-6 space-y-4">
-        <h2 class="text-xl font-semibold">Quick Statistics</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <h2 class="text-xl font-semibold text-foreground">Quick Statistics</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card
-                v-for="stat in quickStatsArr"
+                v-for="(stat, index) in quickStatsArr"
                 :key="stat.label"
-                class="flex flex-col items-center justify-center p-6 rounded-xl hover:shadow-md transition-shadow"
+                class="relative overflow-hidden group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-border/50"
                 :class="{ 'opacity-50': isLoading }"
             >
-                <div class="text-3xl font-bold text-foreground mb-2">
-                    <span v-if="isLoading" class="animate-pulse">...</span>
-                    <span v-else-if="hasError" class="text-destructive">Error</span>
-                    <span v-else>{{ stat.value }}</span>
-                </div>
-                <div class="text-muted-foreground text-sm mb-3">{{ stat.label }}</div>
-                <div class="bg-primary/10 rounded-full p-3 flex items-center justify-center">
-                    <component :is="stat.icon" :size="28" class="text-primary" />
+                <!-- Gradient Background Accent -->
+                <div
+                    class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    :class="getGradientClass(index)"
+                ></div>
+
+                <!-- Content -->
+                <div class="relative p-5 flex items-center gap-4">
+                    <!-- Icon Section -->
+                    <div
+                        class="flex-shrink-0 rounded-xl p-3.5 transition-transform duration-300 group-hover:scale-110"
+                        :class="getIconBgClass(index)"
+                    >
+                        <component :is="stat.icon" :size="26" :class="getIconColorClass(index)" />
+                    </div>
+
+                    <!-- Stats Section -->
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm text-muted-foreground mb-1 font-medium">{{ stat.label }}</div>
+                        <div class="text-3xl font-bold text-foreground tracking-tight">
+                            <span v-if="isLoading" class="animate-pulse text-muted-foreground">...</span>
+                            <span v-else-if="hasError" class="text-destructive">—</span>
+                            <span v-else :class="getValueColorClass(index)">{{ stat.value }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Decorative Element -->
+                    <div
+                        class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-5 group-hover:opacity-10 transition-opacity duration-300"
+                        :class="getDecorationClass(index)"
+                    ></div>
                 </div>
             </Card>
         </div>
@@ -75,4 +98,55 @@ const quickStatsArr = computed(() => {
         { label: 'Server Spells', value: stats.spells, icon: Sparkles },
     ];
 });
+
+// Color scheme helpers for each stat
+const getIconBgClass = (index: number): string => {
+    const classes: string[] = [
+        'bg-gradient-to-br from-blue-500/10 to-blue-600/5 dark:from-blue-500/20 dark:to-blue-600/10',
+        'bg-gradient-to-br from-purple-500/10 to-purple-600/5 dark:from-purple-500/20 dark:to-purple-600/10',
+        'bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 dark:from-emerald-500/20 dark:to-emerald-600/10',
+        'bg-gradient-to-br from-amber-500/10 to-amber-600/5 dark:from-amber-500/20 dark:to-amber-600/10',
+    ];
+    const normalizedIndex = index % classes.length;
+    return classes[normalizedIndex] ?? classes[0] ?? '';
+};
+
+const getIconColorClass = (index: number): string => {
+    const classes: string[] = [
+        'text-blue-600 dark:text-blue-400',
+        'text-purple-600 dark:text-purple-400',
+        'text-emerald-600 dark:text-emerald-400',
+        'text-amber-600 dark:text-amber-400',
+    ];
+    const normalizedIndex = index % classes.length;
+    return classes[normalizedIndex] ?? classes[0] ?? '';
+};
+
+const getValueColorClass = (index: number): string => {
+    const classes: string[] = [
+        'group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300',
+        'group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors duration-300',
+        'group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-300',
+        'group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors duration-300',
+    ];
+    const normalizedIndex = index % classes.length;
+    return classes[normalizedIndex] ?? classes[0] ?? '';
+};
+
+const getGradientClass = (index: number): string => {
+    const classes: string[] = [
+        'bg-gradient-to-br from-blue-500/5 to-transparent',
+        'bg-gradient-to-br from-purple-500/5 to-transparent',
+        'bg-gradient-to-br from-emerald-500/5 to-transparent',
+        'bg-gradient-to-br from-amber-500/5 to-transparent',
+    ];
+    const normalizedIndex = index % classes.length;
+    return classes[normalizedIndex] ?? classes[0] ?? '';
+};
+
+const getDecorationClass = (index: number): string => {
+    const classes: string[] = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500'];
+    const normalizedIndex = index % classes.length;
+    return classes[normalizedIndex] ?? classes[0] ?? '';
+};
 </script>

@@ -9,28 +9,6 @@
                 </div>
             </div>
 
-            <!-- Error State -->
-            <div
-                v-else-if="message?.type === 'error'"
-                class="flex flex-col items-center justify-center py-12 text-center"
-            >
-                <div class="text-red-500 mb-4">
-                    <svg class="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                        />
-                    </svg>
-                </div>
-                <h3 class="text-lg font-medium text-muted-foreground mb-2">Failed to load locations</h3>
-                <p class="text-sm text-muted-foreground max-w-sm">
-                    {{ message.text }}
-                </p>
-                <Button class="mt-4" @click="fetchLocations">Try Again</Button>
-            </div>
-
             <!-- Locations Table -->
             <div v-else class="p-6">
                 <TableComponent
@@ -189,13 +167,6 @@
                 <DrawerTitle>Edit Location</DrawerTitle>
                 <DrawerDescription>Edit details for location: {{ editingLocation.name }}</DrawerDescription>
             </DrawerHeader>
-            <Alert
-                v-if="drawerMessage"
-                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                class="mb-4 whitespace-nowrap overflow-x-auto"
-            >
-                <span>{{ drawerMessage.text }}</span>
-            </Alert>
             <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitEdit">
                 <label for="edit-name" class="block mb-1 font-medium">Name</label>
                 <Input id="edit-name" v-model="editForm.name" label="Name" placeholder="Name" required />
@@ -228,13 +199,6 @@
                 <DrawerTitle>Create Location</DrawerTitle>
                 <DrawerDescription>Fill in the details to create a new location.</DrawerDescription>
             </DrawerHeader>
-            <Alert
-                v-if="drawerMessage"
-                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                class="mb-4 whitespace-nowrap overflow-x-auto"
-            >
-                <span>{{ drawerMessage.text }}</span>
-            </Alert>
             <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreate">
                 <label for="create-name" class="block mb-1 font-medium">Name</label>
                 <Input id="create-name" v-model="createForm.name" label="Name" placeholder="Name" required />
@@ -267,13 +231,6 @@
                 <DrawerTitle>Create Node</DrawerTitle>
                 <DrawerDescription>Fill in the details to create a new node for this location.</DrawerDescription>
             </DrawerHeader>
-            <Alert
-                v-if="drawerMessage"
-                :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                class="mb-4 whitespace-nowrap overflow-x-auto"
-            >
-                <span>{{ drawerMessage.text }}</span>
-            </Alert>
             <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreateNode">
                 <label for="create-node-name" class="block mb-1 font-medium">Name</label>
                 <Input id="create-node-name" v-model="createNodeForm.name" label="Name" placeholder="Name" required />
@@ -327,7 +284,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Eye, Pencil, Trash2, Server, Plus, MapPin, Flag, Rocket } from 'lucide-vue-next';
 import axios from 'axios';
-import { Alert } from '@/components/ui/alert';
 import {
     Drawer,
     DrawerContent,
@@ -340,6 +296,7 @@ import { useRouter } from 'vue-router';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
 import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from 'vue-toastification';
 
 type Location = {
     id: number;
@@ -348,6 +305,9 @@ type Location = {
     created_at: string;
     updated_at: string;
 };
+
+const toast = useToast();
+const router = useRouter();
 
 const locations = ref<Location[]>([]);
 const searchQuery = ref('');
@@ -363,8 +323,6 @@ const pagination = ref({
 });
 const loading = ref(false);
 const deleting = ref(false);
-const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
-const drawerMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<number | null>(null);
 const selectedLocation = ref<Location | null>(null);
 const viewing = ref(false);
@@ -379,7 +337,6 @@ const createForm = ref({
     name: '',
     description: '',
 });
-const router = useRouter();
 const createNodeDrawerOpen = ref(false);
 const createNodeLocationId = ref<number | null>(null);
 const createNodeForm = ref({
@@ -445,7 +402,7 @@ async function onView(location: Location) {
         selectedLocation.value = data.data.location;
     } catch {
         selectedLocation.value = null;
-        message.value = { type: 'error', text: 'Failed to fetch location details' };
+        toast.error('Failed to fetch location details');
     }
 }
 
@@ -459,25 +416,20 @@ async function confirmDelete(location: Location) {
     try {
         const response = await axios.delete(`/api/admin/locations/${location.id}`);
         if (response.data && response.data.success) {
-            message.value = { type: 'success', text: 'Location deleted successfully' };
+            toast.success('Location deleted successfully');
             await fetchLocations();
             success = true;
         } else {
-            message.value = { type: 'error', text: response.data?.message || 'Failed to delete location' };
+            toast.error(response.data?.message || 'Failed to delete location');
         }
     } catch (e: unknown) {
-        message.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to delete location',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to delete location';
+        toast.error(errorMessage);
     } finally {
         deleting.value = false;
         if (success) confirmDeleteRow.value = null;
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
     }
 }
 
@@ -505,14 +457,13 @@ async function openEditDrawer(location: Location) {
         };
         editDrawerOpen.value = true;
     } catch {
-        message.value = { type: 'error', text: 'Failed to fetch location details for editing' };
+        toast.error('Failed to fetch location details for editing');
     }
 }
 
 function closeEditDrawer() {
     editDrawerOpen.value = false;
     editingLocation.value = null;
-    drawerMessage.value = null;
 }
 
 async function submitEdit() {
@@ -521,22 +472,17 @@ async function submitEdit() {
         const patchData = { ...editForm.value };
         const { data } = await axios.patch(`/api/admin/locations/${editingLocation.value.id}`, patchData);
         if (data && data.success) {
-            drawerMessage.value = { type: 'success', text: 'Location updated successfully' };
-            setTimeout(() => {
-                drawerMessage.value = null;
-            }, 2000);
+            toast.success('Location updated successfully');
             await fetchLocations();
             closeEditDrawer();
         } else {
-            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to update location' };
+            toast.error(data?.message || 'Failed to update location');
         }
     } catch (e: unknown) {
-        drawerMessage.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to update location',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to update location';
+        toast.error(errorMessage);
     }
 }
 
@@ -547,29 +493,23 @@ function openCreateDrawer() {
 
 function closeCreateDrawer() {
     createDrawerOpen.value = false;
-    drawerMessage.value = null;
 }
 
 async function submitCreate() {
     try {
         const { data } = await axios.put('/api/admin/locations', createForm.value);
         if (data && data.success) {
-            drawerMessage.value = { type: 'success', text: 'Location created successfully' };
-            setTimeout(() => {
-                drawerMessage.value = null;
-            }, 2000);
+            toast.success('Location created successfully');
             await fetchLocations();
             closeCreateDrawer();
         } else {
-            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to create location' };
+            toast.error(data?.message || 'Failed to create location');
         }
     } catch (e: unknown) {
-        drawerMessage.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to create location',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to create location';
+        toast.error(errorMessage);
     }
 }
 
@@ -590,28 +530,21 @@ async function submitCreateNode() {
             location_id: createNodeLocationId.value,
         });
         if (data && data.success) {
-            drawerMessage.value = { type: 'success', text: 'Node created successfully' };
-            setTimeout(() => {
-                drawerMessage.value = null;
-            }, 2000);
+            toast.success('Node created successfully');
             closeCreateNodeDrawer();
             await fetchLocations(); // Refresh locations to show new node
         } else {
-            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to create node' };
+            toast.error(data?.message || 'Failed to create node');
         }
     } catch (e: unknown) {
-        drawerMessage.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to create node',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to create node';
+        toast.error(errorMessage);
     }
 }
 
 function closeCreateNodeDrawer() {
     createNodeDrawerOpen.value = false;
     createNodeForm.value = { name: '', fqdn: '', token: '' };
-    drawerMessage.value = null;
 }
 </script>

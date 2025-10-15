@@ -9,28 +9,6 @@
                 </div>
             </div>
 
-            <!-- Error State -->
-            <div
-                v-else-if="message?.type === 'error'"
-                class="flex flex-col items-center justify-center py-12 text-center"
-            >
-                <div class="text-red-500 mb-4">
-                    <svg class="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                        />
-                    </svg>
-                </div>
-                <h3 class="text-lg font-medium text-muted-foreground mb-2">Failed to load users</h3>
-                <p class="text-sm text-muted-foreground max-w-sm">
-                    {{ message.text }}
-                </p>
-                <Button class="mt-4" @click="fetchUsers">Try Again</Button>
-            </div>
-
             <!-- Users Table -->
             <div v-else class="p-6">
                 <TableComponent
@@ -332,13 +310,6 @@
                     <DrawerTitle>Edit User</DrawerTitle>
                     <DrawerDescription>Edit details for user: {{ editingUser.username }}</DrawerDescription>
                 </DrawerHeader>
-                <Alert
-                    v-if="drawerMessage"
-                    :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                    class="mb-4 whitespace-nowrap overflow-x-auto"
-                >
-                    <span>{{ drawerMessage.text }}</span>
-                </Alert>
                 <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitEdit">
                     <label for="edit-username" class="block mb-1 font-medium">Username</label>
                     <Input
@@ -438,13 +409,6 @@
                     <DrawerTitle>Create User</DrawerTitle>
                     <DrawerDescription>Fill in the details to create a new user.</DrawerDescription>
                 </DrawerHeader>
-                <Alert
-                    v-if="drawerMessage"
-                    :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                    class="mb-4 whitespace-nowrap overflow-x-auto"
-                >
-                    <span>{{ drawerMessage.text }}</span>
-                </Alert>
                 <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreate">
                     <label for="create-username" class="block mb-1 font-medium">Username</label>
                     <Input
@@ -532,7 +496,6 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
 import { Eye, Pencil, Trash2, Plus, Users as UsersIcon, Shield, KeyRound, Search } from 'lucide-vue-next';
 import axios from 'axios';
-import { Alert } from '@/components/ui/alert';
 import {
     Drawer,
     DrawerContent,
@@ -555,6 +518,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
 import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from 'vue-toastification';
 
 type UserRole = {
     name: string;
@@ -597,8 +561,10 @@ type EditForm = {
     email: string;
     role_id: string;
     external_id?: number;
-    password: string;
+    password?: string;
 };
+
+const toast = useToast();
 
 const users = ref<ApiUser[]>([]);
 const searchQuery = ref('');
@@ -613,8 +579,6 @@ const pagination = ref({
 });
 const loading = ref(false);
 const deleting = ref(false);
-const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
-const drawerMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<string | null>(null);
 const selectedUser = ref<ApiUser | null>(null);
 const viewing = ref(false);
@@ -701,7 +665,7 @@ async function onView(user: ApiUser) {
         ownedServers.value = serversRes.data?.data?.servers || [];
     } catch {
         selectedUser.value = null;
-        message.value = { type: 'error', text: 'Failed to fetch user details' };
+        toast.error('Failed to fetch user details');
     }
 }
 
@@ -715,25 +679,19 @@ async function confirmDelete(user: ApiUser) {
     try {
         const response = await axios.delete(`/api/admin/users/${user.uuid}`);
         if (response.data && response.data.success) {
-            message.value = { type: 'success', text: 'User deleted successfully' };
+            toast.success('User deleted successfully');
             await fetchUsers();
             success = true;
         } else {
-            message.value = { type: 'error', text: response.data?.message || 'Failed to delete user' };
+            toast.error(response.data?.message || 'Failed to delete user');
         }
     } catch (e: unknown) {
-        message.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to delete user',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to delete user';
+        toast.error(errorMessage);
     } finally {
         deleting.value = false;
         if (success) confirmDeleteRow.value = null;
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
     }
 }
 
@@ -778,39 +736,36 @@ async function openEditDrawer(user: ApiUser) {
         };
         editDrawerOpen.value = true;
     } catch {
-        message.value = { type: 'error', text: 'Failed to fetch user details for editing' };
+        toast.error('Failed to fetch user details for editing');
     }
 }
 
 function closeEditDrawer() {
     editDrawerOpen.value = false;
     editingUser.value = null;
-    drawerMessage.value = null;
 }
 
 async function submitEdit() {
     if (!editingUser.value) return;
     try {
-        // Send booleans directly
+        // Create patch data and remove password if it's empty
         const patchData = { ...editForm.value };
+        if (!patchData.password || patchData.password.trim() === '') {
+            delete patchData.password;
+        }
+
         const { data } = await axios.patch(`/api/admin/users/${editingUser.value.uuid}`, patchData);
         if (data && data.success) {
-            drawerMessage.value = { type: 'success', text: 'User updated successfully' };
-            setTimeout(() => {
-                drawerMessage.value = null;
-            }, 2000);
+            toast.success('User updated successfully');
             await fetchUsers();
             closeEditDrawer();
         } else {
-            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to update user' };
+            toast.error(data?.message || 'Failed to update user');
         }
     } catch (e: unknown) {
-        drawerMessage.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to update user',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to update user';
+        toast.error(errorMessage);
     }
 }
 
@@ -822,25 +777,16 @@ async function toggleBanUser() {
             banned: currentlyBanned ? 'false' : 'true',
         });
         if (data && data.success) {
-            message.value = {
-                type: 'success',
-                text: currentlyBanned ? 'User unbanned successfully' : 'User banned successfully',
-            };
+            toast.success(currentlyBanned ? 'User unbanned successfully' : 'User banned successfully');
             await openEditDrawer(editingUser.value); // refresh user data
         } else {
-            message.value = { type: 'error', text: data?.message || 'Failed to update ban status' };
+            toast.error(data?.message || 'Failed to update ban status');
         }
     } catch (e: unknown) {
-        message.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to update ban status',
-        };
-    } finally {
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to update ban status';
+        toast.error(errorMessage);
     }
 }
 
@@ -849,22 +795,15 @@ async function removeTwoFactorAuth() {
     try {
         const { data } = await axios.patch(`/api/admin/users/${editingUser.value.uuid}`, { two_fa_enabled: 'false' });
         if (data && data.success) {
-            message.value = { type: 'success', text: 'Two-factor authentication removed' };
+            toast.success('Two-factor authentication removed');
             await openEditDrawer(editingUser.value); // refresh user data
         } else {
-            message.value = { type: 'error', text: data?.message || 'Failed to remove 2FA' };
+            toast.error(data?.message || 'Failed to remove 2FA');
         }
     } catch (e: unknown) {
-        message.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to remove 2FA',
-        };
-    } finally {
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to remove 2FA';
+        toast.error(errorMessage);
     }
 }
 
@@ -884,7 +823,6 @@ function openCreateDrawer() {
 
 function closeCreateDrawer() {
     createDrawerOpen.value = false;
-    drawerMessage.value = null;
 }
 
 function goToServerEdit(id: number) {
@@ -899,22 +837,16 @@ async function submitCreate() {
     try {
         const { data } = await axios.put('/api/admin/users', createForm.value);
         if (data && data.success) {
-            drawerMessage.value = { type: 'success', text: 'User created successfully' };
-            setTimeout(() => {
-                drawerMessage.value = null;
-            }, 2000);
+            toast.success('User created successfully');
             await fetchUsers();
             closeCreateDrawer();
         } else {
-            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to create user' };
+            toast.error(data?.message || 'Failed to create user');
         }
     } catch (e: unknown) {
-        drawerMessage.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to create user',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to create user';
+        toast.error(errorMessage);
     }
 }
 

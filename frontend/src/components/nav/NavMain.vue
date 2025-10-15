@@ -52,11 +52,11 @@ const handleItemClick = (item: NavigationItem, event: Event) => {
 </script>
 
 <template>
-    <SidebarGroup>
-        <SidebarGroupLabel class="text-xs sm:text-sm font-medium text-muted-foreground px-2 py-1.5">
+    <SidebarGroup class="py-1">
+        <SidebarGroupLabel class="text-xs font-medium text-muted-foreground/70 px-2 py-1 mb-0.5">
             {{ name }}
         </SidebarGroupLabel>
-        <SidebarMenu class="space-y-1">
+        <SidebarMenu class="space-y-0.5">
             <SidebarMenuItem v-for="item in items" :key="item.title">
                 <SidebarMenuButton
                     :tooltip="item.title"
@@ -64,23 +64,23 @@ const handleItemClick = (item: NavigationItem, event: Event) => {
                     :href="item.isPlugin ? '#' : undefined"
                     goto
                     :is-active="item.isActive"
-                    class="text-sm sm:text-base px-2 py-2 sm:py-2.5"
+                    class="text-sm px-2 py-1.5 hover:bg-accent/50 transition-colors"
                     @click="handleItemClick(item, $event)"
                 >
                     <!-- Render emoji if icon is a string, otherwise render Lucide icon component -->
                     <span
                         v-if="typeof item.icon === 'string'"
-                        class="text-base sm:text-lg flex items-center justify-center"
-                        style="width: 1.25rem; height: 1.25rem"
+                        class="text-base flex items-center justify-center flex-shrink-0"
+                        style="width: 1.125rem; height: 1.125rem"
                     >
                         {{ item.icon }}
                     </span>
-                    <component :is="item.icon" v-else class="h-4 w-4 sm:h-5 sm:w-5" />
-                    <div class="flex items-center justify-between w-full min-w-0">
-                        <span class="truncate">{{ item.title }}</span>
+                    <component :is="item.icon" v-else class="h-4 w-4 flex-shrink-0" />
+                    <div class="flex items-center justify-between w-full min-w-0 ml-2">
+                        <span class="truncate text-sm">{{ item.title }}</span>
                         <span
                             v-if="item.pluginTag && item.showBadge"
-                            class="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full font-medium flex-shrink-0 ml-2"
+                            class="text-[9px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full font-medium flex-shrink-0 ml-2"
                         >
                             {{ item.pluginTag }}
                         </span>

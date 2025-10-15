@@ -307,7 +307,7 @@ const dismissAppUrlWarning = () => {
 
 const goToSettings = () => {
     showAppUrlWarning.value = false;
-    router.push('/admin/setting');
+    router.push('/admin/settings');
 };
 
 // Widgets management

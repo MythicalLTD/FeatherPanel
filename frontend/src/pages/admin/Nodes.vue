@@ -9,28 +9,6 @@
                 </div>
             </div>
 
-            <!-- Error State -->
-            <div
-                v-else-if="message?.type === 'error'"
-                class="flex flex-col items-center justify-center py-12 text-center"
-            >
-                <div class="text-red-500 mb-4">
-                    <svg class="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                        />
-                    </svg>
-                </div>
-                <h3 class="text-lg font-medium text-muted-foreground mb-2">Failed to load nodes</h3>
-                <p class="text-sm text-muted-foreground max-w-sm">
-                    {{ message.text }}
-                </p>
-                <Button class="mt-4" @click="fetchNodes">Try Again</Button>
-            </div>
-
             <!-- Nodes Table -->
             <div v-else class="p-6">
                 <TableComponent
@@ -1436,12 +1414,12 @@ import {
     DrawerDescription,
     DrawerFooter,
 } from '@/components/ui/drawer';
-
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
+import { useToast } from 'vue-toastification';
 
 // Extend Node type and form default
 
@@ -1562,6 +1540,8 @@ type FormData = {
     daemonBase: string;
 };
 
+const toast = useToast();
+
 const nodes = ref<Node[]>([]);
 const searchQuery = ref('');
 const pagination = ref({
@@ -1575,7 +1555,6 @@ const pagination = ref({
 });
 const loading = ref(false);
 const deleting = ref(false);
-const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<number | null>(null);
 const confirmResetKeyRow = ref<number | null>(null);
 
@@ -1712,12 +1691,9 @@ async function fetchNodes() {
         // Auto-check health status for all nodes
         await checkAllNodesHealth();
     } catch (e: unknown) {
-        message.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to fetch nodes',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to fetch nodes';
+        toast.error(errorMessage);
         nodes.value = [];
         pagination.value.total = 0;
     } finally {
@@ -1966,22 +1942,19 @@ async function submitForm() {
 
         if (drawerMode.value === 'create') {
             await axios.put('/api/admin/nodes', submitData);
-            message.value = { type: 'success', text: 'Node created successfully' };
+            toast.success('Node created successfully');
         } else if (drawerMode.value === 'edit' && editingNodeId.value) {
             await axios.patch(`/api/admin/nodes/${editingNodeId.value}`, submitData);
-            message.value = { type: 'success', text: 'Node updated successfully' };
+            toast.success('Node updated successfully');
         }
         await fetchNodes();
         showDrawer.value = false;
         editingNodeId.value = null;
     } catch (e) {
         const err = e as { response?: { data?: { message?: string } } };
-        message.value = { type: 'error', text: err?.response?.data?.message || 'Failed to save node' };
+        toast.error(err?.response?.data?.message || 'Failed to save node');
     } finally {
         formLoading.value = false;
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
     }
 }
 
@@ -1991,15 +1964,9 @@ function copyWingsConfig() {
         textarea.select();
         textarea.setSelectionRange(0, 99999); // For mobile devices
         document.execCommand('copy');
-        message.value = { type: 'success', text: 'Wings configuration copied to clipboard' };
-        setTimeout(() => {
-            message.value = null;
-        }, 3000);
+        toast.success('Wings configuration copied to clipboard');
     } else {
-        message.value = { type: 'error', text: 'Failed to copy configuration' };
-        setTimeout(() => {
-            message.value = null;
-        }, 3000);
+        toast.error('Failed to copy configuration');
     }
 }
 
@@ -2013,27 +1980,23 @@ async function requestResetKey() {
     try {
         const node = nodes.value.find((n) => n.id === editingNodeId.value);
         if (!node) {
-            message.value = { type: 'error', text: 'Node not found' };
+            toast.error('Node not found');
             return;
         }
 
         const response = await axios.post(`/api/admin/nodes/${node.id}/reset-key`);
         if (response.data.success) {
-            message.value = { type: 'success', text: 'Master daemon reset key requested successfully' };
+            toast.success('Master daemon reset key requested successfully');
             // Refresh the node data to get updated tokens
             await fetchNodes();
             confirmResetKeyRow.value = null; // Clear confirmation state
         } else {
-            message.value = { type: 'error', text: response.data.message || 'Failed to request reset key' };
+            toast.error(response.data.message || 'Failed to request reset key');
         }
     } catch (e) {
         const err = e as { response?: { data?: { message?: string } } };
-        message.value = { type: 'error', text: err?.response?.data?.message || 'Failed to request reset key' };
+        toast.error(err?.response?.data?.message || 'Failed to request reset key');
     }
-
-    setTimeout(() => {
-        message.value = null;
-    }, 4000);
 }
 
 function onCancelResetKey() {
@@ -2081,25 +2044,19 @@ async function confirmDelete(node: Node) {
     try {
         const response = await axios.delete(`/api/admin/nodes/${node.id}`);
         if (response.data && response.data.success) {
-            message.value = { type: 'success', text: 'Node deleted successfully' };
+            toast.success('Node deleted successfully');
             await fetchNodes();
             success = true;
         } else {
-            message.value = { type: 'error', text: response.data?.message || 'Failed to delete node' };
+            toast.error(response.data?.message || 'Failed to delete node');
         }
     } catch (e: unknown) {
-        message.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to delete node',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to delete node';
+        toast.error(errorMessage);
     } finally {
         deleting.value = false;
         if (success) confirmDeleteRow.value = null;
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
     }
 }
 function onDelete(node: Node) {
@@ -2190,25 +2147,20 @@ async function pruneDockerImages() {
             const spaceReclaimed = response.data.data.dockerPrune.SpaceReclaimed || 0;
             const imagesDeleted = response.data.data.dockerPrune.ImagesDeleted || [];
 
-            message.value = {
-                type: 'success',
-                text: `Docker prune completed. Space reclaimed: ${formatBytes(spaceReclaimed)}. Images deleted: ${imagesDeleted ? imagesDeleted.length : 0}`,
-            };
+            toast.success(
+                `Docker prune completed. Space reclaimed: ${formatBytes(spaceReclaimed)}. Images deleted: ${imagesDeleted ? imagesDeleted.length : 0}`,
+            );
 
             // Refresh Docker data
             await fetchDockerInfo(drawerNode.value);
         } else {
-            message.value = { type: 'error', text: response.data.message || 'Failed to prune Docker images' };
+            toast.error(response.data.message || 'Failed to prune Docker images');
         }
     } catch (e: unknown) {
         const error = e as { response?: { data?: { message?: string } } };
-        message.value = { type: 'error', text: error?.response?.data?.message || 'Failed to prune Docker images' };
+        toast.error(error?.response?.data?.message || 'Failed to prune Docker images');
     } finally {
         dockerPruning.value = false;
-
-        setTimeout(() => {
-            message.value = null;
-        }, 5000);
     }
 }
 
@@ -2274,16 +2226,10 @@ function copyToClipboard(text: string) {
     navigator.clipboard
         .writeText(text)
         .then(() => {
-            message.value = { type: 'success', text: `IP address ${text} copied to clipboard` };
-            setTimeout(() => {
-                message.value = null;
-            }, 3000);
+            toast.success(`IP address ${text} copied to clipboard`);
         })
         .catch(() => {
-            message.value = { type: 'error', text: 'Failed to copy to clipboard' };
-            setTimeout(() => {
-                message.value = null;
-            }, 3000);
+            toast.error('Failed to copy to clipboard');
         });
 }
 

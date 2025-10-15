@@ -344,6 +344,8 @@ class UsersController
             'color' => $rolesMap[$roleId]['color'] ?? '#666666',
         ];
 
+        unset($user['password']);
+
         $user['activities'] = array_map(function ($activity) {
             unset($activity['user_uuid'], $activity['id'], $activity['updated_at']);
 

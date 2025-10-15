@@ -208,6 +208,10 @@ class Permissions
     /** Manage plugins */
     public const ADMIN_PLUGINS_MANAGE = 'admin.plugins.manage';
 
+    // Admin Statistics Permissions
+    /** View statistics */
+    public const ADMIN_STATISTICS_VIEW = 'admin.statistics.view';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -603,6 +607,12 @@ class Permissions
                 'value' => self::ADMIN_DATABASES_MANAGE,
                 'category' => 'Admin Databases',
                 'description' => 'Manage database',
+            ],
+            [
+                'constant' => 'ADMIN_STATISTICS_VIEW',
+                'value' => self::ADMIN_STATISTICS_VIEW,
+                'category' => 'Admin Statistics',
+                'description' => 'View statistics',
             ],
         ];
     }

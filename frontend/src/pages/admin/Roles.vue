@@ -9,28 +9,6 @@
                 </div>
             </div>
 
-            <!-- Error State -->
-            <div
-                v-else-if="message?.type === 'error'"
-                class="flex flex-col items-center justify-center py-12 text-center"
-            >
-                <div class="text-red-500 mb-4">
-                    <svg class="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                        />
-                    </svg>
-                </div>
-                <h3 class="text-lg font-medium text-muted-foreground mb-2">Failed to load roles</h3>
-                <p class="text-sm text-muted-foreground max-w-sm">
-                    {{ message.text }}
-                </p>
-                <Button class="mt-4" @click="fetchRoles">Try Again</Button>
-            </div>
-
             <!-- Roles Table -->
             <div v-else class="p-6">
                 <TableComponent
@@ -227,13 +205,6 @@
                     <DrawerTitle>Edit Role</DrawerTitle>
                     <DrawerDescription>Edit details for role: {{ editingRole.name }}</DrawerDescription>
                 </DrawerHeader>
-                <Alert
-                    v-if="drawerMessage"
-                    :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                    class="mb-4 whitespace-nowrap overflow-x-auto"
-                >
-                    <span>{{ drawerMessage.text }}</span>
-                </Alert>
                 <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitEdit">
                     <label for="edit-name" class="block mb-1 font-medium">Name</label>
                     <Input id="edit-name" v-model="editForm.name" label="Name" placeholder="Name" required />
@@ -283,13 +254,6 @@
                     <DrawerTitle>Create Role</DrawerTitle>
                     <DrawerDescription>Fill in the details to create a new role.</DrawerDescription>
                 </DrawerHeader>
-                <Alert
-                    v-if="drawerMessage"
-                    :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                    class="mb-4 whitespace-nowrap overflow-x-auto"
-                >
-                    <span>{{ drawerMessage.text }}</span>
-                </Alert>
                 <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreate">
                     <label for="create-name" class="block mb-1 font-medium">Name</label>
                     <Input id="create-name" v-model="createForm.name" label="Name" placeholder="Name" required />
@@ -449,7 +413,6 @@ import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
 import { Eye, Pencil, Trash2, Shield, Plus, Users as UsersIcon, KeyRound, Palette, HelpCircle } from 'lucide-vue-next';
 import axios from 'axios';
-import { Alert } from '@/components/ui/alert';
 import {
     Drawer,
     DrawerContent,
@@ -462,6 +425,7 @@ import { type Ref } from 'vue';
 import Permissions from '@/lib/permissions';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
+import { useToast } from 'vue-toastification';
 
 type Role = {
     id: number;
@@ -471,6 +435,8 @@ type Role = {
     created_at: string;
     updated_at: string;
 };
+
+const toast = useToast();
 
 const roles = ref<Role[]>([]);
 const searchQuery = ref('');
@@ -485,8 +451,6 @@ const pagination = ref({
 });
 const loading = ref(false);
 const deleting = ref(false);
-const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
-const drawerMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<number | null>(null);
 const selectedRole = ref<Role | null>(null);
 const viewing = ref(false);
@@ -589,22 +553,17 @@ async function addPermission(event?: Event, val?: string) {
         if (data && data.success) {
             newPermission.value = '';
             await fetchPermissionsForRole(permissionsRole.value.id);
-            message.value = { type: 'success', text: 'Permission added successfully' };
+            toast.success('Permission added successfully');
         } else {
-            message.value = { type: 'error', text: data?.message || 'Failed to add permission' };
+            toast.error(data?.message || 'Failed to add permission');
         }
     } catch (e: unknown) {
-        message.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to add permission',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to add permission';
+        toast.error(errorMessage);
     } finally {
         newPermission.value = '';
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
     }
 }
 
@@ -614,21 +573,15 @@ async function deletePermission(permissionId: number) {
         const { data } = await axios.delete(`/api/admin/permissions/${permissionId}`);
         if (data && data.success) {
             await fetchPermissionsForRole(permissionsRole.value.id);
-            message.value = { type: 'success', text: 'Permission deleted successfully' };
+            toast.success('Permission deleted successfully');
         } else {
-            message.value = { type: 'error', text: data?.message || 'Failed to delete permission' };
+            toast.error(data?.message || 'Failed to delete permission');
         }
     } catch (e: unknown) {
-        message.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to delete permission',
-        };
-    } finally {
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to delete permission';
+        toast.error(errorMessage);
     }
 }
 
@@ -654,7 +607,7 @@ async function onView(role: Role) {
         selectedRole.value = data.data.role;
     } catch {
         selectedRole.value = null;
-        message.value = { type: 'error', text: 'Failed to fetch role details' };
+        toast.error('Failed to fetch role details');
     }
 }
 
@@ -668,25 +621,19 @@ async function confirmDelete(role: Role) {
     try {
         const response = await axios.delete(`/api/admin/roles/${role.id}`);
         if (response.data && response.data.success) {
-            message.value = { type: 'success', text: 'Role deleted successfully' };
+            toast.success('Role deleted successfully');
             await fetchRoles();
             success = true;
         } else {
-            message.value = { type: 'error', text: response.data?.message || 'Failed to delete role' };
+            toast.error(response.data?.message || 'Failed to delete role');
         }
     } catch (e: unknown) {
-        message.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to delete role',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to delete role';
+        toast.error(errorMessage);
     } finally {
         deleting.value = false;
         if (success) confirmDeleteRow.value = null;
-        setTimeout(() => {
-            message.value = null;
-        }, 4000);
     }
 }
 
@@ -716,14 +663,13 @@ async function openEditDrawer(role: Role) {
         // Removed permissions fetch from here as it's now in a separate drawer
         editDrawerOpen.value = true;
     } catch {
-        message.value = { type: 'error', text: 'Failed to fetch role details for editing' };
+        toast.error('Failed to fetch role details for editing');
     }
 }
 
 function closeEditDrawer() {
     editDrawerOpen.value = false;
     editingRole.value = null;
-    drawerMessage.value = null;
 }
 
 async function submitEdit() {
@@ -732,22 +678,16 @@ async function submitEdit() {
         const patchData = { ...editForm.value };
         const { data } = await axios.patch(`/api/admin/roles/${editingRole.value.id}`, patchData);
         if (data && data.success) {
-            drawerMessage.value = { type: 'success', text: 'Role updated successfully' };
-            setTimeout(() => {
-                drawerMessage.value = null;
-            }, 2000);
+            toast.success('Role updated successfully');
             await fetchRoles();
             closeEditDrawer();
         } else {
-            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to update role' };
+            toast.error(data?.message || 'Failed to update role');
         }
     } catch (e: unknown) {
-        drawerMessage.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to update role',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to update role';
+        toast.error(errorMessage);
     }
 }
 
@@ -758,29 +698,22 @@ function openCreateDrawer() {
 
 function closeCreateDrawer() {
     createDrawerOpen.value = false;
-    drawerMessage.value = null;
 }
 
 async function submitCreate() {
     try {
         const { data } = await axios.put('/api/admin/roles', createForm.value);
         if (data && data.success) {
-            drawerMessage.value = { type: 'success', text: 'Role created successfully' };
-            setTimeout(() => {
-                drawerMessage.value = null;
-            }, 2000);
+            toast.success('Role created successfully');
             await fetchRoles();
             closeCreateDrawer();
         } else {
-            drawerMessage.value = { type: 'error', text: data?.message || 'Failed to create role' };
+            toast.error(data?.message || 'Failed to create role');
         }
     } catch (e: unknown) {
-        drawerMessage.value = {
-            type: 'error',
-            text:
-                (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                'Failed to create role',
-        };
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to create role';
+        toast.error(errorMessage);
     }
 }
 

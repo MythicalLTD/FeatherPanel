@@ -69,6 +69,12 @@ export interface NavigationItem {
     pluginTag?: string;
     showBadge?: boolean;
     description?: string;
+    group?: string; // For organizing admin items into groups
+}
+
+export interface NavigationGroup {
+    name: string;
+    items: NavigationItem[];
 }
 
 interface PluginSidebarItem {
@@ -223,6 +229,7 @@ export function useNavigation() {
     // Admin navigation items
     const adminItems = computed((): NavigationItem[] => {
         const items = [
+            // Overview
             {
                 id: 'admin-dashboard',
                 name: 'Dashboard',
@@ -232,7 +239,9 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith('/admin') && currentPath.value === '/admin',
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_DASHBOARD_VIEW,
+                group: 'overview',
             },
+            // User Management
             {
                 id: 'admin-users',
                 name: 'Users',
@@ -242,36 +251,7 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith('/admin/users'),
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_USERS_VIEW,
-            },
-            {
-                id: 'admin-api-keys',
-                name: 'API Keys',
-                title: t('nav.apiKeys'),
-                url: '/admin/api-keys',
-                icon: Key,
-                isActive: currentPath.value.startsWith('/admin/api-keys'),
-                category: 'admin' as const,
-                permission: Permissions.ADMIN_DASHBOARD_VIEW,
-            },
-            {
-                id: 'admin-locations',
-                name: 'Locations',
-                title: t('nav.locations'),
-                url: '/admin/locations',
-                icon: Globe,
-                isActive: currentPath.value.startsWith('/admin/locations'),
-                category: 'admin' as const,
-                permission: Permissions.ADMIN_LOCATIONS_VIEW,
-            },
-            {
-                id: 'admin-realms',
-                name: 'Realms',
-                title: t('nav.realms'),
-                url: '/admin/realms',
-                icon: Newspaper,
-                isActive: currentPath.value.startsWith('/admin/realms'),
-                category: 'admin' as const,
-                permission: Permissions.ADMIN_REALMS_VIEW,
+                group: 'users',
             },
             {
                 id: 'admin-roles',
@@ -282,7 +262,20 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith('/admin/roles'),
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_ROLES_VIEW,
+                group: 'users',
             },
+            {
+                id: 'admin-api-keys',
+                name: 'API Keys',
+                title: t('nav.apiKeys'),
+                url: '/admin/api-keys',
+                icon: Key,
+                isActive: currentPath.value.startsWith('/admin/api-keys'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_DASHBOARD_VIEW,
+                group: 'system',
+            },
+            // Infrastructure
             {
                 id: 'admin-servers',
                 name: 'Servers',
@@ -292,16 +285,30 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith('/admin/servers'),
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_SERVERS_VIEW,
+                group: 'infrastructure',
             },
             {
-                id: 'admin-mail-templates',
-                name: 'Mail Templates',
-                title: t('nav.mailTemplates'),
-                url: '/admin/mail-templates',
-                icon: FileText,
-                isActive: currentPath.value.startsWith('/admin/mail-templates'),
+                id: 'admin-locations',
+                name: 'Locations',
+                title: t('nav.locations'),
+                url: '/admin/locations',
+                icon: Globe,
+                isActive: currentPath.value.startsWith('/admin/locations'),
                 category: 'admin' as const,
-                permission: Permissions.ADMIN_TEMPLATE_EMAIL_VIEW,
+                permission: Permissions.ADMIN_LOCATIONS_VIEW,
+                group: 'infrastructure',
+            },
+            // Content
+            {
+                id: 'admin-realms',
+                name: 'Realms',
+                title: t('nav.realms'),
+                url: '/admin/realms',
+                icon: Newspaper,
+                isActive: currentPath.value.startsWith('/admin/realms'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_REALMS_VIEW,
+                group: 'infrastructure',
             },
             {
                 id: 'admin-images',
@@ -312,17 +319,20 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith('/admin/images'),
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_IMAGES_VIEW,
+                group: 'content',
             },
             {
-                id: 'admin-redirect-links',
-                name: 'Redirect Links',
-                title: t('nav.redirectLinks'),
-                url: '/admin/redirect-links',
-                icon: Link,
-                isActive: currentPath.value.startsWith('/admin/redirect-links'),
+                id: 'admin-mail-templates',
+                name: 'Mail Templates',
+                title: t('nav.mailTemplates'),
+                url: '/admin/mail-templates',
+                icon: FileText,
+                isActive: currentPath.value.startsWith('/admin/mail-templates'),
                 category: 'admin' as const,
-                permission: Permissions.ADMIN_REDIRECT_LINKS_VIEW,
+                permission: Permissions.ADMIN_TEMPLATE_EMAIL_VIEW,
+                group: 'content',
             },
+            // System
             {
                 id: 'admin-settings',
                 name: 'Settings',
@@ -332,6 +342,7 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith('/admin/settings'),
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_SETTINGS_VIEW,
+                group: 'system',
             },
             {
                 id: 'admin-plugins',
@@ -342,6 +353,7 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith('/admin/plugins'),
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_PLUGINS_VIEW,
+                group: 'system',
             },
             {
                 id: 'admin-database-management',
@@ -352,12 +364,28 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith('/admin/databases/management'),
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_DATABASES_VIEW,
+                group: 'system',
+            },
+            {
+                id: 'admin-redirect-links',
+                name: 'Redirect Links',
+                title: t('nav.redirectLinks'),
+                url: '/admin/redirect-links',
+                icon: Link,
+                isActive: currentPath.value.startsWith('/admin/redirect-links'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_REDIRECT_LINKS_VIEW,
+                group: 'content',
             },
         ];
 
         // Add plugin admin items (no permission checks for plugins)
         if (pluginRoutes.value?.admin) {
             const pluginItems = convertPluginItems(pluginRoutes.value.admin, 'admin') as typeof items;
+            // Assign plugins to a 'plugins' group
+            pluginItems.forEach((item) => {
+                item.group = 'plugins';
+            });
             items.push(...pluginItems);
         }
 
@@ -534,6 +562,42 @@ export function useNavigation() {
         adminItems.value.filter((item) => !item.permission || sessionStore.hasPermission(item.permission)),
     );
 
+    // Group admin items by their group field
+    const groupedAdminItems = computed((): NavigationGroup[] => {
+        const groups: Record<string, NavigationItem[]> = {};
+
+        filteredAdminItems.value.forEach((item) => {
+            const groupKey = item.group || 'other';
+            if (!groups[groupKey]) {
+                groups[groupKey] = [];
+            }
+            groups[groupKey].push(item);
+        });
+
+        // Define group order and labels
+        const groupConfig: Record<string, string> = {
+            overview: 'Overview',
+            users: 'User Management',
+            infrastructure: 'Infrastructure',
+            content: 'Content',
+            system: 'System',
+            plugins: 'Plugins',
+        };
+
+        // Return groups in specific order
+        return Object.keys(groupConfig)
+            .filter((key) => groups[key] && groups[key].length > 0)
+            .map((key) => {
+                const name = groupConfig[key];
+                const items = groups[key];
+                if (!name || !items) {
+                    return { name: '', items: [] };
+                }
+                return { name, items };
+            })
+            .filter((group) => group.name && group.items.length > 0);
+    });
+
     // Get all navigation items based on current route
     const allNavigationItems = computed(() => {
         const items: NavigationItem[] = [];
@@ -558,6 +622,7 @@ export function useNavigation() {
     const sidebarNavigation = computed(() => ({
         navMain: mainItems.value,
         navAdmin: filteredAdminItems.value,
+        navAdminGrouped: groupedAdminItems.value,
         navServer: serverItems.value,
         navDebug: filteredDebugItems.value,
     }));

@@ -36,6 +36,7 @@ import {
     SidebarFooter,
     SidebarHeader,
     SidebarRail,
+    SidebarSeparator,
     useSidebar,
 } from '@/components/ui/sidebar';
 import { useSessionStore } from '@/stores/session';
@@ -74,6 +75,7 @@ const data = computed(() => ({
     },
     navMain: sidebarNavigation.value.navMain,
     navAdmin: sidebarNavigation.value.navAdmin,
+    navAdminGrouped: sidebarNavigation.value.navAdminGrouped,
     navServer: sidebarNavigation.value.navServer,
     navDebug: sidebarNavigation.value.navDebug,
 }));
@@ -110,33 +112,49 @@ const isSidebarVisible = computed(() => {
 </script>
 
 <template>
-    <Sidebar v-if="isSidebarVisible" v-bind="props">
-        <SidebarHeader class="flex-shrink-0">
-            <div class="flex items-center justify-center px-3 py-3 sm:px-4">
-                <div class="flex items-center gap-2 min-w-0 cursor-pointer flex-shrink-0" @click="router.push('/')">
-                    <img
-                        v-if="settingsStore.appLogo && currentTheme === 'dark'"
-                        :src="String(settingsStore.appLogo || '')"
-                        :alt="String(settingsStore.appName || '')"
-                        class="h-6 w-6 sm:h-8 sm:w-8 object-contain flex-shrink-0"
-                    />
-                    <img
-                        v-else-if="settingsStore.appLogoWhite && currentTheme === 'light'"
-                        :src="String(settingsStore.appLogoWhite || '')"
-                        :alt="String(settingsStore.appName || '')"
-                        class="h-6 w-6 sm:h-8 sm:w-8 object-contain flex-shrink-0"
-                    />
+    <Sidebar v-if="isSidebarVisible" v-bind="props" class="overflow-hidden">
+        <SidebarHeader class="flex-shrink-0 border-b border-border/50">
+            <div
+                class="flex items-center px-2 py-2.5 sm:py-3"
+                :class="state === 'collapsed' ? 'justify-center' : 'px-3'"
+            >
+                <div
+                    class="flex items-center gap-2.5 min-w-0 cursor-pointer flex-shrink-0 transition-all"
+                    :class="state === 'collapsed' ? 'justify-center' : ''"
+                    @click="router.push('/')"
+                >
+                    <div
+                        class="flex items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex-shrink-0 border border-primary/10"
+                        :class="state === 'collapsed' ? 'p-2' : 'p-1.5'"
+                    >
+                        <img
+                            v-if="settingsStore.appLogo && currentTheme === 'dark'"
+                            :src="String(settingsStore.appLogo || '')"
+                            :alt="String(settingsStore.appName || '')"
+                            :class="state === 'collapsed' ? 'h-6 w-6' : 'h-5 w-5 sm:h-6 sm:w-6'"
+                            class="object-contain"
+                        />
+                        <img
+                            v-else-if="settingsStore.appLogoWhite && currentTheme === 'light'"
+                            :src="String(settingsStore.appLogoWhite || '')"
+                            :alt="String(settingsStore.appName || '')"
+                            :class="state === 'collapsed' ? 'h-6 w-6' : 'h-5 w-5 sm:h-6 sm:w-6'"
+                            class="object-contain"
+                        />
+                    </div>
 
                     <span
                         v-if="settingsStore.appName && state !== 'collapsed'"
-                        class="ml-2 font-semibold text-base truncate"
+                        class="font-semibold text-base truncate transition-opacity"
                     >
                         {{ settingsStore.appName }}
                     </span>
                 </div>
             </div>
         </SidebarHeader>
-        <SidebarContent class="px-2 sm:px-0">
+        <SidebarContent
+            class="px-2 sm:px-0 !overflow-y-auto !overflow-x-hidden group-data-[collapsible=icon]:!overflow-y-auto"
+        >
             <NavMain
                 v-if="router.currentRoute.value.path.startsWith('/dashboard')"
                 :name="t('nav.dashboard')"
@@ -147,21 +165,19 @@ const isSidebarVisible = computed(() => {
                 :name="t('nav.serverManagement')"
                 :items="data.navServer"
             />
-            <NavMain
-                v-if="
-                    router.currentRoute.value.path.startsWith('/admin') ||
-                    (router.currentRoute.value.path.startsWith('/dashboard') && user.hasAdminPanel)
-                "
-                :name="t('nav.adminPanel')"
-                :items="data.navAdmin"
-            />
-            <NavMain
-                v-if="user.hasAdminPanel && settingsStore.appDeveloperMode"
-                name="Developer Mode (Debug)"
-                :items="data.navDebug"
-            />
+            <!-- Grouped Admin Navigation -->
+            <template v-if="router.currentRoute.value.path.startsWith('/admin') && user.hasAdminPanel">
+                <template v-for="(group, index) in data.navAdminGrouped" :key="group.name">
+                    <SidebarSeparator v-if="index > 0" class="my-0.5" />
+                    <NavMain :name="group.name" :items="group.items" />
+                </template>
+            </template>
+            <template v-if="user.hasAdminPanel && settingsStore.appDeveloperMode">
+                <SidebarSeparator class="my-0.5" />
+                <NavMain name="Developer Mode (Debug)" :items="data.navDebug" />
+            </template>
         </SidebarContent>
-        <SidebarFooter class="px-2">
+        <SidebarFooter class="px-2 py-2 flex-shrink-0 border-t border-border/50">
             <NavUser :user="user" />
         </SidebarFooter>
         <SidebarRail />

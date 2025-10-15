@@ -9,28 +9,6 @@
                 </div>
             </div>
 
-            <!-- Error State -->
-            <div
-                v-else-if="message?.type === 'error'"
-                class="flex flex-col items-center justify-center py-12 text-center"
-            >
-                <div class="text-red-500 mb-4">
-                    <svg class="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                        />
-                    </svg>
-                </div>
-                <h3 class="text-lg font-medium text-muted-foreground mb-2">Failed to load databases</h3>
-                <p class="text-sm text-muted-foreground max-w-sm">
-                    {{ message.text }}
-                </p>
-                <Button class="mt-4" @click="fetchDatabases">Try Again</Button>
-            </div>
-
             <!-- Databases Table -->
             <div v-else class="p-6">
                 <TableComponent
@@ -157,13 +135,6 @@
                         }}
                     </DrawerDescription>
                 </DrawerHeader>
-                <Alert
-                    v-if="drawerMessage"
-                    :variant="drawerMessage.type === 'error' ? 'destructive' : 'default'"
-                    class="mb-4 whitespace-nowrap overflow-x-auto"
-                >
-                    <span>{{ drawerMessage.text }}</span>
-                </Alert>
                 <form
                     v-if="drawerMode !== 'view'"
                     class="space-y-4 p-4 overflow-y-auto max-h-[calc(100vh-200px)]"
@@ -326,13 +297,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Eye, Pencil, Trash2, Activity, Database, Plus } from 'lucide-vue-next';
 import axios from 'axios';
-import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
+import {
+    Drawer,
+    DrawerContent,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerDescription,
+    DrawerFooter,
+} from '@/components/ui/drawer';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
+import { useToast } from 'vue-toastification';
 
 // Helper function to get default port based on database type
 function getDefaultPort(databaseType: string): number {
@@ -369,13 +346,13 @@ interface Node {
 }
 
 const route = useRoute();
+const toast = useToast();
+
 const nodeId = computed(() => Number(route.params.nodeId));
 
 // Reactive data
 const databases = ref<Database[]>([]);
 const node = ref<Node | null>(null);
-const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
-const drawerMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const searchQuery = ref('');
 const showDrawer = ref(false);
 const drawerMode = ref<'create' | 'edit' | 'view'>('create');
@@ -455,7 +432,7 @@ async function fetchDatabases() {
         };
     } catch (e) {
         const err = e as { response?: { data?: { message?: string } } };
-        message.value = { type: 'error', text: err?.response?.data?.message || 'Failed to fetch databases' };
+        toast.error(err?.response?.data?.message || 'Failed to fetch databases');
     } finally {
         loading.value = false;
     }
@@ -467,7 +444,7 @@ async function fetchNode() {
         node.value = response.data.data.node;
     } catch (e) {
         const err = e as { response?: { data?: { message?: string } } };
-        message.value = { type: 'error', text: err?.response?.data?.message || 'Failed to fetch node' };
+        toast.error(err?.response?.data?.message || 'Failed to fetch node');
     }
 }
 
@@ -529,13 +506,11 @@ function onEdit(database: Database) {
 
 async function onHealthCheck(database: Database) {
     await checkDatabaseHealth(database);
-    message.value = {
-        type: database.healthy ? 'success' : 'error',
-        text: database.healthy ? 'Database is healthy' : 'Database is unhealthy',
-    };
-    setTimeout(() => {
-        message.value = null;
-    }, 3000);
+    if (database.healthy) {
+        toast.success('Database is healthy');
+    } else {
+        toast.error('Database is unhealthy');
+    }
 }
 
 function onDelete(database: Database) {
@@ -550,12 +525,12 @@ async function confirmDelete(database: Database) {
     deleting.value = true;
     try {
         await axios.delete(`/api/admin/databases/${database.id}`);
-        message.value = { type: 'success', text: 'Database deleted successfully' };
+        toast.success('Database deleted successfully');
         await fetchDatabases();
         confirmDeleteRow.value = null;
     } catch (e) {
         const err = e as { response?: { data?: { message?: string } } };
-        message.value = { type: 'error', text: err?.response?.data?.message || 'Failed to delete database' };
+        toast.error(err?.response?.data?.message || 'Failed to delete database');
     } finally {
         deleting.value = false;
     }
@@ -565,7 +540,6 @@ function closeDrawer() {
     showDrawer.value = false;
     editingDatabaseId.value = null;
     viewDatabase.value = null;
-    drawerMessage.value = null;
     resetForm();
 }
 
@@ -617,26 +591,20 @@ async function submitForm() {
 
         if (drawerMode.value === 'create') {
             await axios.put('/api/admin/databases', data);
-            drawerMessage.value = { type: 'success', text: 'Database created successfully' };
-            setTimeout(() => {
-                drawerMessage.value = null;
-            }, 2000);
+            toast.success('Database created successfully');
             await fetchDatabases();
             showDrawer.value = false;
             editingDatabaseId.value = null;
         } else if (drawerMode.value === 'edit' && editingDatabaseId.value) {
             await axios.patch(`/api/admin/databases/${editingDatabaseId.value}`, data);
-            drawerMessage.value = { type: 'success', text: 'Database updated successfully' };
-            setTimeout(() => {
-                drawerMessage.value = null;
-            }, 2000);
+            toast.success('Database updated successfully');
             await fetchDatabases();
             showDrawer.value = false;
             editingDatabaseId.value = null;
         }
     } catch (e) {
         const err = e as { response?: { data?: { message?: string } } };
-        drawerMessage.value = { type: 'error', text: err?.response?.data?.message || 'Failed to save database' };
+        toast.error(err?.response?.data?.message || 'Failed to save database');
     } finally {
         formLoading.value = false;
     }
