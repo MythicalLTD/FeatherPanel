@@ -418,6 +418,7 @@ export function useNavigation() {
                 icon: SquareTerminal,
                 isActive: currentPath.value === `/server/${uuidShort}`,
                 category: 'server' as const,
+                group: 'management',
             },
             {
                 id: 'server-logs',
@@ -427,6 +428,7 @@ export function useNavigation() {
                 icon: FileText,
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/logs`),
                 category: 'server' as const,
+                group: 'management',
             },
             {
                 id: 'server-activities',
@@ -436,6 +438,7 @@ export function useNavigation() {
                 icon: Clock,
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/activities`),
                 category: 'server' as const,
+                group: 'management',
             },
             {
                 id: 'server-files',
@@ -445,6 +448,7 @@ export function useNavigation() {
                 icon: Folder,
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/files`),
                 category: 'server' as const,
+                group: 'files',
             },
             {
                 id: 'server-databases',
@@ -454,6 +458,7 @@ export function useNavigation() {
                 icon: Database,
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/databases`),
                 category: 'server' as const,
+                group: 'files',
             },
             {
                 id: 'server-schedules',
@@ -463,6 +468,7 @@ export function useNavigation() {
                 icon: Calendar,
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/schedules`),
                 category: 'server' as const,
+                group: 'automation',
             },
             {
                 id: 'server-users',
@@ -472,6 +478,7 @@ export function useNavigation() {
                 icon: Users,
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/users`),
                 category: 'server' as const,
+                group: 'configuration',
             },
             {
                 id: 'server-backups',
@@ -481,6 +488,7 @@ export function useNavigation() {
                 icon: Archive,
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/backups`),
                 category: 'server' as const,
+                group: 'files',
             },
             {
                 id: 'server-allocations',
@@ -490,6 +498,7 @@ export function useNavigation() {
                 icon: Network,
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/allocations`),
                 category: 'server' as const,
+                group: 'configuration',
             },
             {
                 id: 'server-startup',
@@ -499,6 +508,7 @@ export function useNavigation() {
                 icon: PlayCircle,
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/startup`),
                 category: 'server' as const,
+                group: 'configuration',
             },
             {
                 id: 'server-settings',
@@ -508,6 +518,7 @@ export function useNavigation() {
                 icon: Settings,
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/settings`),
                 category: 'server' as const,
+                group: 'configuration',
             },
         ];
 
@@ -610,6 +621,41 @@ export function useNavigation() {
             .filter((group) => group.name && group.items.length > 0);
     });
 
+    // Grouped server navigation items
+    const groupedServerItems = computed((): NavigationGroup[] => {
+        const groups: Record<string, NavigationItem[]> = {};
+
+        serverItems.value.forEach((item) => {
+            const groupKey = item.group || 'other';
+            if (!groups[groupKey]) {
+                groups[groupKey] = [];
+            }
+            groups[groupKey].push(item);
+        });
+
+        // Define group order and labels
+        const groupConfig: Record<string, string> = {
+            management: 'Management',
+            files: 'Files & Data',
+            automation: 'Automation',
+            configuration: 'Configuration',
+            plugins: 'Plugins',
+        };
+
+        // Return groups in specific order
+        return Object.keys(groupConfig)
+            .filter((key) => groups[key] && groups[key].length > 0)
+            .map((key) => {
+                const name = groupConfig[key];
+                const items = groups[key];
+                if (!name || !items) {
+                    return { name: '', items: [] };
+                }
+                return { name, items };
+            })
+            .filter((group) => group.name && group.items.length > 0);
+    });
+
     // Get all navigation items based on current route
     const allNavigationItems = computed(() => {
         const items: NavigationItem[] = [];
@@ -636,6 +682,7 @@ export function useNavigation() {
         navAdmin: filteredAdminItems.value,
         navAdminGrouped: groupedAdminItems.value,
         navServer: serverItems.value,
+        navServerGrouped: groupedServerItems.value,
         navDebug: filteredDebugItems.value,
     }));
 

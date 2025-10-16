@@ -1256,8 +1256,8 @@ function validateForm(): boolean {
         // 1TB in MB
         validationErrors.value.swap = 'Swap cannot exceed 1TB (1048576 MB)';
     }
-    if (form.value.disk !== 0 && form.value.disk < 1024) {
-        validationErrors.value.disk = 'Disk must be 0 (unlimited) or at least 1024 MB';
+    if (form.value.disk !== 0 && form.value.disk < 128) {
+        validationErrors.value.disk = 'Disk must be at least 128 MB or 0 (unlimited)';
     } else if (form.value.disk > 10485760) {
         // 10TB in MB
         validationErrors.value.disk = 'Disk cannot exceed 10TB (10485760 MB)';

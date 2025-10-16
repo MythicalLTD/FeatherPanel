@@ -90,10 +90,16 @@ class SystemAnalytics
 
         // Recent queued emails
         $stmt = $pdo->query("
-            SELECT id, email, subject, status, created_at
-            FROM featherpanel_mail_queue
-            WHERE deleted = 'false'
-            ORDER BY created_at DESC
+            SELECT 
+                mq.id, 
+                u.email, 
+                mq.subject, 
+                mq.status, 
+                mq.created_at
+            FROM featherpanel_mail_queue mq
+            LEFT JOIN featherpanel_users u ON mq.user_uuid = u.uuid
+            WHERE mq.deleted = 'false'
+            ORDER BY mq.created_at DESC
             LIMIT 10
         ");
         $recentQueued = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];

@@ -77,6 +77,7 @@ const data = computed(() => ({
     navAdmin: sidebarNavigation.value.navAdmin,
     navAdminGrouped: sidebarNavigation.value.navAdminGrouped,
     navServer: sidebarNavigation.value.navServer,
+    navServerGrouped: sidebarNavigation.value.navServerGrouped,
     navDebug: sidebarNavigation.value.navDebug,
 }));
 
@@ -160,11 +161,13 @@ const isSidebarVisible = computed(() => {
                 :name="t('nav.dashboard')"
                 :items="data.navMain"
             />
-            <NavMain
-                v-if="router.currentRoute.value.path.startsWith('/server')"
-                :name="t('nav.serverManagement')"
-                :items="data.navServer"
-            />
+            <!-- Grouped Server Navigation -->
+            <template v-if="router.currentRoute.value.path.startsWith('/server')">
+                <template v-for="(group, index) in data.navServerGrouped" :key="group.name">
+                    <SidebarSeparator v-if="index > 0" class="my-0.5" />
+                    <NavMain :name="group.name" :items="group.items" />
+                </template>
+            </template>
             <!-- Grouped Admin Navigation -->
             <template v-if="router.currentRoute.value.path.startsWith('/admin') && user.hasAdminPanel">
                 <template v-for="(group, index) in data.navAdminGrouped" :key="group.name">
