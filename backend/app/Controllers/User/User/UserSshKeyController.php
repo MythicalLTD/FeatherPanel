@@ -348,6 +348,15 @@ class UserSshKeyController
         // Add user_id to the data
         $data['user_id'] = $user['id'];
 
+        // Validate SSH public key format early to return a clear 400 instead of 500
+        if (!\App\Chat\UserSshKey::isValidSshPublicKey($data['public_key'])) {
+            return ApiResponse::error(
+                'Invalid SSH public key format. Please paste a full public key such as ssh-ed25519/ssh-rsa one-line or a PEM public key.',
+                'INVALID_SSH_PUBLIC_KEY',
+                400
+            );
+        }
+
         // Create the SSH key
         $sshKeyId = UserSshKey::createUserSshKey($data);
         if ($sshKeyId === false) {

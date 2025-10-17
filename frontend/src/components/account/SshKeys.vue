@@ -244,7 +244,7 @@
 
         <!-- Delete Confirmation Modal -->
         <AlertDialog :open="showDeleteModal" @update:open="showDeleteModal = false">
-            <AlertDialogContent>
+            <AlertDialogContent class="bg-background text-foreground">
                 <AlertDialogHeader>
                     <AlertDialogTitle>{{ $t('account.sshKeys.confirmDelete') }}</AlertDialogTitle>
                     <AlertDialogDescription>
@@ -252,12 +252,13 @@
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>{{ $t('account.sshKeys.cancel') }}</AlertDialogCancel>
-                    <AlertDialogAction
-                        class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        @click="confirmDelete"
-                    >
-                        {{ $t('account.sshKeys.confirmDelete') }}
+                    <AlertDialogCancel as-child>
+                        <Button variant="outline">{{ $t('account.sshKeys.cancel') }}</Button>
+                    </AlertDialogCancel>
+                    <AlertDialogAction as-child>
+                        <Button variant="destructive" @click="confirmDelete">
+                            {{ $t('account.sshKeys.confirmDelete') }}
+                        </Button>
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

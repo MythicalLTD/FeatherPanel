@@ -36,6 +36,7 @@ use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\Admin\AllocationsController;
 
 return function (RouteCollection $routes): void {
+    // LIST - GET /api/admin/allocations
     App::getInstance(true)->registerAdminRoute(
         $routes,
         'admin-allocations',
@@ -46,6 +47,56 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_ALLOCATIONS_VIEW,
     );
 
+    // CREATE - PUT /api/admin/allocations
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-allocations-create',
+        '/api/admin/allocations',
+        function (Request $request) {
+            return (new AllocationsController())->create($request);
+        },
+        Permissions::ADMIN_ALLOCATIONS_CREATE,
+        ['PUT']
+    );
+
+    // SPECIFIC ROUTES (must come BEFORE parameterized routes)
+    // Available allocations - GET /api/admin/allocations/available
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-allocations-available',
+        '/api/admin/allocations/available',
+        function (Request $request) {
+            return (new AllocationsController())->getAvailable($request);
+        },
+        Permissions::ADMIN_ALLOCATIONS_VIEW,
+    );
+
+    // Bulk delete - DELETE /api/admin/allocations/bulk-delete
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-allocations-bulk-delete',
+        '/api/admin/allocations/bulk-delete',
+        function (Request $request) {
+            return (new AllocationsController())->bulkDelete($request);
+        },
+        Permissions::ADMIN_ALLOCATIONS_DELETE,
+        ['DELETE']
+    );
+
+    // Delete unused - DELETE /api/admin/allocations/delete-unused
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-allocations-delete-unused',
+        '/api/admin/allocations/delete-unused',
+        function (Request $request) {
+            return (new AllocationsController())->deleteUnused($request);
+        },
+        Permissions::ADMIN_ALLOCATIONS_DELETE,
+        ['DELETE']
+    );
+
+    // PARAMETERIZED ROUTES (must come AFTER specific routes)
+    // Show single - GET /api/admin/allocations/{id}
     App::getInstance(true)->registerAdminRoute(
         $routes,
         'admin-allocations-show',
@@ -61,6 +112,7 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_ALLOCATIONS_VIEW,
     );
 
+    // Update - PATCH /api/admin/allocations/{id}
     App::getInstance(true)->registerAdminRoute(
         $routes,
         'admin-allocations-update',
@@ -77,6 +129,7 @@ return function (RouteCollection $routes): void {
         ['PATCH']
     );
 
+    // Delete - DELETE /api/admin/allocations/{id}
     App::getInstance(true)->registerAdminRoute(
         $routes,
         'admin-allocations-delete',
@@ -93,17 +146,7 @@ return function (RouteCollection $routes): void {
         ['DELETE']
     );
 
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-allocations-create',
-        '/api/admin/allocations',
-        function (Request $request) {
-            return (new AllocationsController())->create($request);
-        },
-        Permissions::ADMIN_ALLOCATIONS_CREATE,
-        ['PUT']
-    );
-
+    // Assign to server - POST /api/admin/allocations/{id}/assign
     App::getInstance(true)->registerAdminRoute(
         $routes,
         'admin-allocations-assign',
@@ -120,6 +163,7 @@ return function (RouteCollection $routes): void {
         ['POST']
     );
 
+    // Unassign from server - POST /api/admin/allocations/{id}/unassign
     App::getInstance(true)->registerAdminRoute(
         $routes,
         'admin-allocations-unassign',
@@ -134,15 +178,5 @@ return function (RouteCollection $routes): void {
         },
         Permissions::ADMIN_ALLOCATIONS_EDIT,
         ['POST']
-    );
-
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-allocations-available',
-        '/api/admin/allocations/available',
-        function (Request $request) {
-            return (new AllocationsController())->getAvailable($request);
-        },
-        Permissions::ADMIN_ALLOCATIONS_VIEW,
     );
 };

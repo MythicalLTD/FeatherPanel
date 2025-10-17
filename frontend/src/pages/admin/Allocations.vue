@@ -39,6 +39,32 @@
                                 <div class="h-2 w-2 bg-blue-500 rounded-full animate-pulse"></div>
                                 Checking health...
                             </div>
+                            <div v-if="selectedIds.length > 0" class="flex items-center gap-2">
+                                <span class="text-sm text-muted-foreground">{{ selectedIds.length }} selected</span>
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    :disabled="isBulkDeleting || nodeHealthStatus !== 'healthy'"
+                                    @click="handleBulkDelete"
+                                >
+                                    <Trash2 class="h-4 w-4 mr-2" />
+                                    Delete Selected
+                                </Button>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                :disabled="isDeleteUnusedInProgress || nodeHealthStatus !== 'healthy'"
+                                :title="
+                                    nodeHealthStatus !== 'healthy'
+                                        ? 'Node is unhealthy'
+                                        : 'Delete all unused allocations for this node'
+                                "
+                                @click="handleDeleteUnused"
+                            >
+                                <Trash2 class="h-4 w-4 mr-2" />
+                                Delete Unused
+                            </Button>
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -57,6 +83,15 @@
                     </template>
 
                     <!-- Custom cell templates -->
+                    <template #cell-select="{ item }">
+                        <input
+                            type="checkbox"
+                            :checked="selectedIds.includes((item as unknown as Allocation).id)"
+                            class="w-4 h-4 rounded border-gray-300 dark:border-gray-700"
+                            @change="toggleSelection((item as unknown as Allocation).id)"
+                        />
+                    </template>
+
                     <template #cell-id="{ item }">
                         <span
                             class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-sm font-semibold"
@@ -361,6 +396,48 @@
             </form>
         </DrawerContent>
     </Drawer>
+
+    <!-- Bulk Delete Alert Dialog -->
+    <AlertDialog :open="showBulkDeleteAlert" @update:open="showBulkDeleteAlert = $event">
+        <AlertDialogContent class="bg-background text-foreground">
+            <AlertDialogHeader>
+                <AlertDialogTitle>Delete Selected Allocations?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Are you sure you want to delete {{ selectedIds.length }} allocation(s)? Allocations that are
+                    assigned to servers will be skipped. This action cannot be undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel as-child>
+                    <Button variant="outline">Cancel</Button>
+                </AlertDialogCancel>
+                <AlertDialogAction as-child>
+                    <Button variant="destructive" @click="confirmBulkDelete">Delete</Button>
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+
+    <!-- Delete Unused Alert Dialog -->
+    <AlertDialog :open="showDeleteUnusedAlert" @update:open="showDeleteUnusedAlert = $event">
+        <AlertDialogContent class="bg-background text-foreground">
+            <AlertDialogHeader>
+                <AlertDialogTitle>Delete All Unused Allocations?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Are you sure you want to delete ALL unused allocations for this node? Only allocations that are not
+                    assigned to any server will be deleted. This action cannot be undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel as-child>
+                    <Button variant="outline">Cancel</Button>
+                </AlertDialogCancel>
+                <AlertDialogAction as-child>
+                    <Button variant="destructive" @click="confirmDeleteUnused">Delete Unused</Button>
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
 </template>
 
 <script setup lang="ts">
@@ -406,6 +483,16 @@ import {
 } from '@/components/ui/drawer';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { Allocation, Node, TableColumn } from '@/kit/types';
 import { useToast } from 'vue-toastification';
@@ -425,6 +512,13 @@ const searchQuery = ref('');
 const loading = ref(false);
 const deleting = ref(false);
 const confirmDeleteRow = ref<number | null>(null);
+const selectedIds = ref<number[]>([]);
+const isBulkDeleting = ref(false);
+const isDeleteUnusedInProgress = ref(false);
+
+// Alert dialog state
+const showBulkDeleteAlert = ref(false);
+const showDeleteUnusedAlert = ref(false);
 
 // Pagination
 const currentPage = ref(1);
@@ -457,6 +551,7 @@ const createForm = ref({
 
 // Table columns configuration
 const tableColumns: TableColumn[] = [
+    { key: 'select', label: '', headerClass: 'w-[50px]' },
     { key: 'id', label: 'ID', headerClass: 'w-[80px] font-semibold' },
     { key: 'ip', label: 'IP Address', searchable: true },
     { key: 'port', label: 'Port', searchable: true },
@@ -668,10 +763,15 @@ async function confirmDelete(allocation: Allocation) {
             toast.error(response.data?.message || 'Failed to delete allocation');
         }
     } catch (e: unknown) {
-        const errorMessage =
-            (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-            'Failed to delete allocation';
-        toast.error(errorMessage);
+        const error = e as { response?: { data?: { message?: string; error_code?: string } } };
+        const errorMessage = error?.response?.data?.message || 'Failed to delete allocation';
+        const errorCode = error?.response?.data?.error_code;
+
+        if (errorCode === 'ALLOCATION_IN_USE') {
+            toast.error('Cannot delete allocation that is assigned to a server. Please unassign it first.');
+        } else {
+            toast.error(errorMessage);
+        }
     } finally {
         deleting.value = false;
         confirmDeleteRow.value = null;
@@ -767,6 +867,94 @@ async function submitCreate() {
             (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
             'Failed to create allocation';
         toast.error(errorMessage);
+    }
+}
+
+// Selection functions
+function toggleSelection(id: number) {
+    const index = selectedIds.value.indexOf(id);
+    if (index === -1) {
+        selectedIds.value.push(id);
+    } else {
+        selectedIds.value.splice(index, 1);
+    }
+}
+
+// Bulk delete selected allocations
+function handleBulkDelete() {
+    if (selectedIds.value.length === 0) {
+        toast.warning('No allocations selected');
+        return;
+    }
+
+    showBulkDeleteAlert.value = true;
+}
+
+async function confirmBulkDelete() {
+    showBulkDeleteAlert.value = false;
+    isBulkDeleting.value = true;
+
+    try {
+        const { data } = await axios.delete('/api/admin/allocations/bulk-delete', {
+            data: { ids: selectedIds.value },
+        });
+
+        if (data && data.success) {
+            const deletedCount = data.data.deleted_count || 0;
+            const skippedCount = data.data.skipped_count || 0;
+
+            if (skippedCount > 0) {
+                toast.warning(
+                    `Deleted ${deletedCount} allocation(s). Skipped ${skippedCount} allocation(s) that are assigned to servers.`,
+                );
+            } else {
+                toast.success(`Successfully deleted ${deletedCount} allocation(s)`);
+            }
+
+            selectedIds.value = [];
+            await fetchAllocations();
+        } else {
+            toast.error(data?.message || 'Failed to delete allocations');
+        }
+    } catch (e: unknown) {
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to delete allocations';
+        toast.error(errorMessage);
+    } finally {
+        isBulkDeleting.value = false;
+    }
+}
+
+// Delete all unused allocations for this node
+function handleDeleteUnused() {
+    showDeleteUnusedAlert.value = true;
+}
+
+async function confirmDeleteUnused() {
+    showDeleteUnusedAlert.value = false;
+    isDeleteUnusedInProgress.value = true;
+
+    try {
+        const { data } = await axios.delete('/api/admin/allocations/delete-unused', {
+            data: { node_id: nodeIdParam.value },
+        });
+
+        if (data && data.success) {
+            const deletedCount = data.data.deleted_count || 0;
+            toast.success(`Successfully deleted ${deletedCount} unused allocation(s)`);
+            selectedIds.value = [];
+            await fetchAllocations();
+        } else {
+            toast.error(data?.message || 'Failed to delete unused allocations');
+        }
+    } catch (e: unknown) {
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to delete unused allocations';
+        toast.error(errorMessage);
+    } finally {
+        isDeleteUnusedInProgress.value = false;
     }
 }
 

@@ -613,7 +613,7 @@ class AllocationsController
     #[OA\Delete(
         path: '/api/admin/allocations/{id}',
         summary: 'Delete allocation',
-        description: 'Permanently delete an allocation. This action cannot be undone.',
+        description: 'Permanently delete an allocation. This action cannot be undone. Only unassigned allocations can be deleted.',
         tags: ['Admin - Allocations'],
         parameters: [
             new OA\Parameter(
@@ -638,6 +638,7 @@ class AllocationsController
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
             new OA\Response(response: 404, description: 'Allocation not found'),
+            new OA\Response(response: 409, description: 'Conflict - Allocation is assigned to a server'),
         ]
     )]
     public function delete(Request $request, int $id): Response
@@ -648,6 +649,15 @@ class AllocationsController
         $allocation = Allocation::getById($id);
         if (!$allocation) {
             return ApiResponse::error('Allocation not found', 'ALLOCATION_NOT_FOUND', 404);
+        }
+
+        // Check if allocation is assigned to a server
+        if ($allocation['server_id'] !== null) {
+            return ApiResponse::error(
+                'Cannot delete allocation that is assigned to a server. Please unassign it first.',
+                'ALLOCATION_IN_USE',
+                409
+            );
         }
 
         $success = Allocation::delete($id);
@@ -888,5 +898,185 @@ class AllocationsController
                 'total' => $total,
             ],
         ], 'Available allocations fetched successfully', 200);
+    }
+
+    #[OA\Delete(
+        path: '/api/admin/allocations/bulk-delete',
+        summary: 'Bulk delete allocations',
+        description: 'Delete multiple allocations at once by providing an array of allocation IDs. Only unassigned allocations will be deleted. Allocations assigned to servers will be skipped.',
+        tags: ['Admin - Allocations'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['ids'],
+                properties: [
+                    new OA\Property(property: 'ids', type: 'array', items: new OA\Items(type: 'integer'), description: 'Array of allocation IDs to delete', minItems: 1),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Allocations deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'deleted_count', type: 'integer', description: 'Number of allocations deleted'),
+                        new OA\Property(property: 'skipped_count', type: 'integer', description: 'Number of allocations skipped (assigned to servers)'),
+                        new OA\Property(property: 'skipped_ids', type: 'array', items: new OA\Items(type: 'integer'), description: 'IDs of allocations that were skipped'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid or missing IDs'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+        ]
+    )]
+    public function bulkDelete(Request $request): Response
+    {
+        $logger = App::getInstance(true)->getLogger();
+        $admin = $request->get('user');
+        $data = json_decode($request->getContent(), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
+        }
+
+        if (!isset($data['ids']) || !is_array($data['ids']) || empty($data['ids'])) {
+            return ApiResponse::error('IDs array is required and must not be empty', 'MISSING_IDS', 400);
+        }
+
+        // Validate that all IDs are numeric
+        foreach ($data['ids'] as $id) {
+            if (!is_numeric($id) || (int) $id <= 0) {
+                return ApiResponse::error('All IDs must be positive integers', 'INVALID_IDS', 400);
+            }
+        }
+
+        $result = Allocation::deleteBulk($data['ids']);
+        $deletedCount = $result['deleted'];
+        $skippedCount = $result['skipped'];
+        $skippedIds = $result['skipped_ids'];
+
+        // Prepare message
+        $message = "Successfully deleted {$deletedCount} allocation(s)";
+        if ($skippedCount > 0) {
+            $message .= ". Skipped {$skippedCount} allocation(s) that are assigned to servers";
+        }
+
+        // Log activity
+        $context = "Bulk deleted {$deletedCount} allocation(s)";
+        if ($skippedCount > 0) {
+            $context .= " (skipped {$skippedCount} in use)";
+        }
+
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'allocations_bulk_deleted',
+            'context' => $context,
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                AllocationsEvent::onAllocationDeleted(),
+                [
+                    'deleted_count' => $deletedCount,
+                    'skipped_count' => $skippedCount,
+                    'ids' => $data['ids'],
+                    'deleted_by' => $admin,
+                ]
+            );
+        }
+
+        return ApiResponse::success([
+            'deleted_count' => $deletedCount,
+            'skipped_count' => $skippedCount,
+            'skipped_ids' => $skippedIds,
+        ], $message, 200);
+    }
+
+    #[OA\Delete(
+        path: '/api/admin/allocations/delete-unused',
+        summary: 'Delete unused allocations',
+        description: 'Delete all allocations that are not assigned to any server. Optionally filter by node ID.',
+        tags: ['Admin - Allocations'],
+        requestBody: new OA\RequestBody(
+            required: false,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'node_id', type: 'integer', nullable: true, description: 'Optional node ID to filter deletions', minimum: 1),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Unused allocations deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'deleted_count', type: 'integer', description: 'Number of allocations deleted'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid node ID'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+        ]
+    )]
+    public function deleteUnused(Request $request): Response
+    {
+        $logger = App::getInstance(true)->getLogger();
+        $admin = $request->get('user');
+        $data = json_decode($request->getContent(), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE && $request->getContent() !== '') {
+            return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
+        }
+
+        $nodeId = null;
+        if (isset($data['node_id'])) {
+            if (!is_numeric($data['node_id']) || (int) $data['node_id'] <= 0) {
+                return ApiResponse::error('Node ID must be a positive integer', 'INVALID_NODE_ID', 400);
+            }
+            $nodeId = (int) $data['node_id'];
+
+            // Verify node exists
+            if (!Node::getNodeById($nodeId)) {
+                return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+            }
+        }
+
+        $deletedCount = Allocation::deleteUnused($nodeId);
+
+        // Log activity
+        $context = $nodeId
+            ? "Deleted {$deletedCount} unused allocation(s) from node ID {$nodeId}"
+            : "Deleted {$deletedCount} unused allocation(s) from all nodes";
+
+        Activity::createActivity([
+            'user_uuid' => $admin['uuid'] ?? null,
+            'name' => 'allocations_unused_deleted',
+            'context' => $context,
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                AllocationsEvent::onAllocationDeleted(),
+                [
+                    'deleted_count' => $deletedCount,
+                    'node_id' => $nodeId,
+                    'deleted_by' => $admin,
+                ]
+            );
+        }
+
+        return ApiResponse::success([
+            'deleted_count' => $deletedCount,
+        ], "Successfully deleted {$deletedCount} unused allocation(s)", 200);
     }
 }

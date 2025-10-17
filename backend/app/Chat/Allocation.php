@@ -48,34 +48,36 @@ class Allocation
         bool $notUsed = false,
     ): array {
         $pdo = Database::getPdoConnection();
-        $sql = 'SELECT * FROM ' . self::$table;
+        $sql = 'SELECT a.*, s.name as server_name, s.uuid as server_uuid 
+                FROM ' . self::$table . ' a 
+                LEFT JOIN featherpanel_servers s ON a.server_id = s.id';
         $params = [];
         $conditions = [];
 
         if ($search !== null) {
-            $conditions[] = '(ip LIKE :search OR ip_alias LIKE :search OR notes LIKE :search)';
+            $conditions[] = '(a.ip LIKE :search OR a.ip_alias LIKE :search OR a.notes LIKE :search OR CAST(a.port AS CHAR) LIKE :search)';
             $params['search'] = '%' . $search . '%';
         }
 
         if ($nodeId !== null) {
-            $conditions[] = 'node_id = :node_id';
+            $conditions[] = 'a.node_id = :node_id';
             $params['node_id'] = $nodeId;
         }
 
         if ($serverId !== null) {
-            $conditions[] = 'server_id = :server_id';
+            $conditions[] = 'a.server_id = :server_id';
             $params['server_id'] = $serverId;
         }
 
         if ($notUsed) {
-            $conditions[] = 'server_id IS NULL';
+            $conditions[] = 'a.server_id IS NULL';
         }
 
         if (!empty($conditions)) {
             $sql .= ' WHERE ' . implode(' AND ', $conditions);
         }
 
-        $sql .= ' ORDER BY created_at DESC LIMIT :limit OFFSET :offset';
+        $sql .= ' ORDER BY a.created_at DESC LIMIT :limit OFFSET :offset';
         $stmt = $pdo->prepare($sql);
 
         foreach ($params as $key => $value) {
@@ -160,27 +162,27 @@ class Allocation
         bool $notUsed = false,
     ): int {
         $pdo = Database::getPdoConnection();
-        $sql = 'SELECT COUNT(*) FROM ' . self::$table;
+        $sql = 'SELECT COUNT(*) FROM ' . self::$table . ' a';
         $params = [];
         $conditions = [];
 
         if ($search !== null) {
-            $conditions[] = '(ip LIKE :search OR ip_alias LIKE :search OR notes LIKE :search)';
+            $conditions[] = '(a.ip LIKE :search OR a.ip_alias LIKE :search OR a.notes LIKE :search OR CAST(a.port AS CHAR) LIKE :search)';
             $params['search'] = '%' . $search . '%';
         }
 
         if ($nodeId !== null) {
-            $conditions[] = 'node_id = :node_id';
+            $conditions[] = 'a.node_id = :node_id';
             $params['node_id'] = $nodeId;
         }
 
         if ($serverId !== null) {
-            $conditions[] = 'server_id = :server_id';
+            $conditions[] = 'a.server_id = :server_id';
             $params['server_id'] = $serverId;
         }
 
         if ($notUsed) {
-            $conditions[] = 'server_id IS NULL';
+            $conditions[] = 'a.server_id IS NULL';
         }
 
         if (!empty($conditions)) {
@@ -356,13 +358,103 @@ class Allocation
 
     /**
      * Delete an allocation.
+     * Only allows deletion if the allocation is not assigned to a server.
      */
     public static function delete(int $id): bool
     {
+        // Check if allocation can be deleted
+        if (!self::canDelete($id)) {
+            return false;
+        }
+
         $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
+        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id AND server_id IS NULL');
 
         return $stmt->execute(['id' => $id]);
+    }
+
+    /**
+     * Check if an allocation can be safely deleted.
+     * An allocation can only be deleted if it's not assigned to any server.
+     *
+     * @param int $id Allocation ID
+     *
+     * @return bool True if allocation can be deleted
+     */
+    public static function canDelete(int $id): bool
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT server_id FROM ' . self::$table . ' WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $id]);
+        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$result) {
+            return false; // Allocation doesn't exist
+        }
+
+        // Can only delete if not assigned to a server
+        return $result['server_id'] === null;
+    }
+
+    /**
+     * Delete multiple allocations by their IDs.
+     * Only deletes allocations that are not assigned to servers.
+     *
+     * @param array $ids Array of allocation IDs to delete
+     *
+     * @return array ['deleted' => count, 'skipped' => count, 'skipped_ids' => []]
+     */
+    public static function deleteBulk(array $ids): array
+    {
+        if (empty($ids)) {
+            return ['deleted' => 0, 'skipped' => 0, 'skipped_ids' => []];
+        }
+
+        $pdo = Database::getPdoConnection();
+
+        // Ensure all IDs are integers
+        $ids = array_map('intval', $ids);
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+        // Find which allocations are assigned to servers (cannot be deleted)
+        $checkStmt = $pdo->prepare("SELECT id FROM " . self::$table . " WHERE id IN ($placeholders) AND server_id IS NOT NULL");
+        $checkStmt->execute($ids);
+        $assignedIds = $checkStmt->fetchAll(\PDO::FETCH_COLUMN);
+
+        // Only delete allocations that are NOT assigned
+        $stmt = $pdo->prepare("DELETE FROM " . self::$table . " WHERE id IN ($placeholders) AND server_id IS NULL");
+        $stmt->execute($ids);
+        $deletedCount = $stmt->rowCount();
+
+        return [
+            'deleted' => $deletedCount,
+            'skipped' => count($assignedIds),
+            'skipped_ids' => $assignedIds,
+        ];
+    }
+
+    /**
+     * Delete all unused allocations (where server_id IS NULL).
+     *
+     * @param int|null $nodeId Optional node ID to filter deletions
+     *
+     * @return int Number of allocations deleted
+     */
+    public static function deleteUnused(?int $nodeId = null): int
+    {
+        $pdo = Database::getPdoConnection();
+        $sql = 'DELETE FROM ' . self::$table . ' WHERE server_id IS NULL';
+        $params = [];
+
+        if ($nodeId !== null) {
+            $sql .= ' AND node_id = :node_id';
+            $params['node_id'] = $nodeId;
+        }
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->rowCount();
     }
 
     /**

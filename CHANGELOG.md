@@ -5,18 +5,24 @@
 ### Added
 
 - Added admin analytics dashboard (KPI) for detailed user statistics and insights.
+- Added the ability to bulk delete allocations directly from the admin interface for faster cleanup and management.
+- Introduced an option to quickly remove all unused allocations in one action, streamlining server resource management.
 
 ### Fixed
 
 - Resolved an issue that prevented updating a user's password via the admin UI—admins can now seamlessly modify user passwords from the frontend interface.
 - Fixed problems with JWT authentication when connecting to the server console, ensuring reliable and secure access.
 - Fixed an issue where redirect links were sometimes broken or incomplete, ensuring full and correct links are now generated.
+- Fixed an issue where server allocations would not display as expected in the admin UI; allocations are now properly visible.
+- Fixed an issue where destructive action confirmation dialogs (e.g., "Delete Selected", "Delete Unused") were difficult to read in light mode due to poor contrast—these dialogs are now fully legible in both dark and light themes.
 
 ### Improved
 
 - Redesigned admin pages to deliver a more modern, visually cohesive experience—replaced old error messages with clean toast notifications for clearer and more user-friendly feedback throughout the admin interface!
 - The plugins page has been redesigned to offer a more visually appealing and modern user experience.
 - Sidebar navigation now groups admin sections for improved organization and clarity, making it easier to find settings, content, plugins, and system options.
+- Introduced a brand new sidebar design for the server client interface, providing a modern look and improved usability.
+- Added strict SSH public key validation when creating user SSH keys to prevent invalid key submissions.
 
 ### Updated
 
