@@ -130,7 +130,10 @@
                         <div v-for="column in visibleColumnDefinitions" :key="column.key" class="flex flex-col gap-1">
                             <!-- Skip actions column in main content -->
                             <template v-if="column.key !== 'actions'">
-                                <div class="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                <div
+                                  v-if="!column.hideLabelOnLayout"
+                                  class="text-xs font-medium text-muted-foreground uppercase tracking-wide"
+                                >
                                     {{ column.label }}
                                 </div>
                                 <div class="text-sm">
@@ -216,7 +219,10 @@
                                     :key="column.key"
                                     :class="column.headerClass || ''"
                                 >
-                                    {{ column.label }}
+                                    <!-- Only show label if hideLabelOnLayout is not true -->
+                                    <template v-if="!column.hideLabelOnLayout">
+                                      {{ column.label }}
+                                    </template>
                                 </TableHead>
                             </TableRow>
                         </TableHeader>

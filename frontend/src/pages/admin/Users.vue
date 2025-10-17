@@ -604,7 +604,7 @@ const ownedServers = ref<
 
 // Table columns configuration
 const tableColumns: TableColumn[] = [
-    { key: 'avatar', label: '', headerClass: 'w-[50px]' },
+    { key: 'avatar', label: 'Avatar', headerClass: 'w-[50px]', hideLabelOnLayout: true },
     { key: 'username', label: 'Username', searchable: true },
     { key: 'email', label: 'Email', searchable: true },
     { key: 'role', label: 'Role', searchable: true },

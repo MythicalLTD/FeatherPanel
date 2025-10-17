@@ -314,7 +314,7 @@ export function useNavigation() {
             {
                 id: 'admin-realms',
                 name: 'Realms',
-                title: t('nav.realms'),
+                title: t('nav.realms') + ' (Nests)',
                 url: '/admin/realms',
                 icon: Newspaper,
                 isActive: currentPath.value.startsWith('/admin/realms'),

@@ -85,8 +85,8 @@
             </div>
         </div>
 
-        <!-- Servers Grid -->
-        <div v-else-if="servers.length > 0" class="space-y-4">
+        <!-- Servers Grid (also show folders even if servers list is empty) -->
+        <div v-else-if="serverFolders.length > 0 || servers.length > 0" class="space-y-4">
             <!-- Folder View -->
             <div v-if="viewMode === 'folders'" class="space-y-6">
                 <div v-for="folder in serverFolders" :key="folder.id" class="space-y-3">

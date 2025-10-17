@@ -15,6 +15,8 @@
 - Fixed an issue where redirect links were sometimes broken or incomplete, ensuring full and correct links are now generated.
 - Fixed an issue where server allocations would not display as expected in the admin UI; allocations are now properly visible.
 - Fixed an issue where destructive action confirmation dialogs (e.g., "Delete Selected", "Delete Unused") were difficult to read in light mode due to poor contrast—these dialogs are now fully legible in both dark and light themes.
+- Resolved an issue where avatars and images were not displayed correctly in select column dropdowns, ensuring consistent visuals throughout the UI.
+- Fixed a problem where the "empty folder" layout was not shown when a user had no available servers, providing clearer feedback in such cases.
 
 ### Improved
 
@@ -23,6 +25,7 @@
 - Sidebar navigation now groups admin sections for improved organization and clarity, making it easier to find settings, content, plugins, and system options.
 - Introduced a brand new sidebar design for the server client interface, providing a modern look and improved usability.
 - Added strict SSH public key validation when creating user SSH keys to prevent invalid key submissions.
+- Tables now have a new flag `hideLabelOnLayout` to hide the hide the label from the table but still show in columns!
 
 ### Updated
 

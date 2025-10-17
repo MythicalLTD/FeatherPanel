@@ -206,27 +206,53 @@
                     <DrawerDescription>Edit details for role: {{ editingRole.name }}</DrawerDescription>
                 </DrawerHeader>
                 <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitEdit">
-                    <label for="edit-name" class="block mb-1 font-medium">Name</label>
-                    <Input id="edit-name" v-model="editForm.name" label="Name" placeholder="Name" required />
-                    <label for="edit-display-name" class="block mb-1 font-medium">Display Name</label>
-                    <Input
-                        id="edit-display-name"
-                        v-model="editForm.display_name"
-                        label="Display Name"
-                        placeholder="Display Name"
-                        required
-                    />
-                    <label for="edit-color" class="block mb-1 font-medium">Color</label>
-                    <input
-                        id="edit-color"
-                        v-model="editForm.color"
-                        type="color"
-                        class="h-10 w-20 rounded border border-input"
-                        required
-                    />
+                    <div>
+                        <label for="edit-name" class="block mb-1 font-medium">Name</label>
+                        <Input id="edit-name" v-model="editForm.name" placeholder="e.g. admin" required />
+                        <p class="text-xs text-muted-foreground mt-1">Unique identifier (used internally).</p>
+                    </div>
+
+                    <div>
+                        <label for="edit-display-name" class="block mb-1 font-medium">Display Name</label>
+                        <Input
+                            id="edit-display-name"
+                            v-model="editForm.display_name"
+                            placeholder="e.g. Administrator"
+                            required
+                        />
+                        <p class="text-xs text-muted-foreground mt-1">Human-friendly name shown in the UI.</p>
+                    </div>
+
+                    <div>
+                        <label for="edit-color" class="block mb-1 font-medium">Color</label>
+                        <div class="flex items-center gap-3">
+                            <input
+                                id="edit-color"
+                                v-model="editForm.color"
+                                type="color"
+                                class="h-10 w-10 rounded border border-input"
+                                @input="syncHexFromPicker('edit')"
+                            />
+                            <Input v-model="editColorHex" placeholder="#3366FF" @input="syncPickerFromHex('edit')" />
+                            <span
+                                class="inline-flex items-center rounded px-2 py-1 text-xs border"
+                                :style="{
+                                    backgroundColor: editForm.color,
+                                    color: '#fff',
+                                    borderColor: 'rgba(0,0,0,0.1)',
+                                }"
+                                >Preview</span
+                            >
+                        </div>
+                        <p class="text-xs text-muted-foreground mt-1">Use any HEX color. Example: #5B8DEF</p>
+                        <p v-if="colorErrors.edit" class="text-xs text-destructive mt-1">{{ colorErrors.edit }}</p>
+                    </div>
+
                     <div class="flex justify-end gap-2 mt-4">
                         <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
-                        <Button type="submit" variant="default">Save</Button>
+                        <Button type="submit" variant="default" :disabled="isSubmittingEdit">{{
+                            isSubmittingEdit ? 'Saving...' : 'Save'
+                        }}</Button>
                         <Button
                             type="button"
                             variant="ghost"
@@ -255,27 +281,57 @@
                     <DrawerDescription>Fill in the details to create a new role.</DrawerDescription>
                 </DrawerHeader>
                 <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreate">
-                    <label for="create-name" class="block mb-1 font-medium">Name</label>
-                    <Input id="create-name" v-model="createForm.name" label="Name" placeholder="Name" required />
-                    <label for="create-display-name" class="block mb-1 font-medium">Display Name</label>
-                    <Input
-                        id="create-display-name"
-                        v-model="createForm.display_name"
-                        label="Display Name"
-                        placeholder="Display Name"
-                        required
-                    />
-                    <label for="create-color" class="block mb-1 font-medium">Color</label>
-                    <input
-                        id="create-color"
-                        v-model="createForm.color"
-                        type="color"
-                        class="h-10 w-20 rounded border border-input"
-                        required
-                    />
+                    <div>
+                        <label for="create-name" class="block mb-1 font-medium">Name</label>
+                        <Input id="create-name" v-model="createForm.name" placeholder="e.g. support" required />
+                        <p class="text-xs text-muted-foreground mt-1">Unique identifier (used internally).</p>
+                    </div>
+
+                    <div>
+                        <label for="create-display-name" class="block mb-1 font-medium">Display Name</label>
+                        <Input
+                            id="create-display-name"
+                            v-model="createForm.display_name"
+                            placeholder="e.g. Support"
+                            required
+                        />
+                        <p class="text-xs text-muted-foreground mt-1">Human-friendly name shown in the UI.</p>
+                    </div>
+
+                    <div>
+                        <label for="create-color" class="block mb-1 font-medium">Color</label>
+                        <div class="flex items-center gap-3">
+                            <input
+                                id="create-color"
+                                v-model="createForm.color"
+                                type="color"
+                                class="h-10 w-10 rounded border border-input"
+                                @input="syncHexFromPicker('create')"
+                            />
+                            <Input
+                                v-model="createColorHex"
+                                placeholder="#5B8DEF"
+                                @input="syncPickerFromHex('create')"
+                            />
+                            <span
+                                class="inline-flex items-center rounded px-2 py-1 text-xs border"
+                                :style="{
+                                    backgroundColor: createForm.color,
+                                    color: '#fff',
+                                    borderColor: 'rgba(0,0,0,0.1)',
+                                }"
+                                >Preview</span
+                            >
+                        </div>
+                        <p class="text-xs text-muted-foreground mt-1">Use any HEX color. Example: #5B8DEF</p>
+                        <p v-if="colorErrors.create" class="text-xs text-destructive mt-1">{{ colorErrors.create }}</p>
+                    </div>
+
                     <div class="flex justify-end gap-2 mt-4">
                         <Button type="button" variant="outline" @click="closeCreateDrawer">Cancel</Button>
-                        <Button type="submit" variant="default">Create</Button>
+                        <Button type="submit" variant="default" :disabled="isSubmittingCreate">{{
+                            isSubmittingCreate ? 'Creating...' : 'Create'
+                        }}</Button>
                     </div>
                 </form>
             </DrawerContent>
@@ -461,12 +517,17 @@ const editForm = ref({
     display_name: '',
     color: '',
 });
+const editColorHex = ref('');
+const isSubmittingEdit = ref(false);
 const createDrawerOpen = ref(false);
 const createForm = ref({
     name: '',
     display_name: '',
     color: '',
 });
+const createColorHex = ref('');
+const isSubmittingCreate = ref(false);
+const colorErrors = ref<{ create?: string; edit?: string }>({});
 
 // Permission type
 interface Permission {
@@ -675,6 +736,7 @@ function closeEditDrawer() {
 async function submitEdit() {
     if (!editingRole.value) return;
     try {
+        isSubmittingEdit.value = true;
         const patchData = { ...editForm.value };
         const { data } = await axios.patch(`/api/admin/roles/${editingRole.value.id}`, patchData);
         if (data && data.success) {
@@ -688,12 +750,15 @@ async function submitEdit() {
         const errorMessage =
             (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to update role';
         toast.error(errorMessage);
+    } finally {
+        isSubmittingEdit.value = false;
     }
 }
 
 function openCreateDrawer() {
     createDrawerOpen.value = true;
-    createForm.value = { name: '', display_name: '', color: '' };
+    createForm.value = { name: '', display_name: '', color: '#5B8DEF' };
+    createColorHex.value = '#5B8DEF';
 }
 
 function closeCreateDrawer() {
@@ -702,6 +767,7 @@ function closeCreateDrawer() {
 
 async function submitCreate() {
     try {
+        isSubmittingCreate.value = true;
         const { data } = await axios.put('/api/admin/roles', createForm.value);
         if (data && data.success) {
             toast.success('Role created successfully');
@@ -714,6 +780,8 @@ async function submitCreate() {
         const errorMessage =
             (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to create role';
         toast.error(errorMessage);
+    } finally {
+        isSubmittingCreate.value = false;
     }
 }
 
@@ -734,5 +802,32 @@ async function addPermissionFromOption(val: string) {
     newPermission.value = '';
     // Add permission immediately
     await addPermission(undefined, val);
+}
+
+// Color sync helpers
+function isValidHexColor(value: string): boolean {
+    return /^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/.test(value.trim());
+}
+
+function syncHexFromPicker(source: 'create' | 'edit') {
+    const color = source === 'create' ? createForm.value.color : editForm.value.color;
+    const normalized = color?.toString() || '';
+    if (isValidHexColor(normalized)) {
+        if (source === 'create') createColorHex.value = normalized.toUpperCase();
+        else editColorHex.value = normalized.toUpperCase();
+        colorErrors.value[source] = undefined;
+    }
+}
+
+function syncPickerFromHex(source: 'create' | 'edit') {
+    const hex = (source === 'create' ? createColorHex.value : editColorHex.value).trim();
+    if (!hex) return;
+    if (isValidHexColor(hex)) {
+        if (source === 'create') createForm.value.color = hex;
+        else editForm.value.color = hex;
+        colorErrors.value[source] = undefined;
+    } else {
+        colorErrors.value[source] = 'Invalid HEX color. Use format #RRGGBB.';
+    }
 }
 </script>

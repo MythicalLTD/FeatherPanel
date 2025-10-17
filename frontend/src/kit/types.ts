@@ -33,6 +33,7 @@ export interface TableColumn {
     cellClass?: string;
     sortable?: boolean;
     searchable?: boolean;
+    hideLabelOnLayout?: boolean;
 }
 
 export interface TableProps<T = Record<string, unknown>> {
