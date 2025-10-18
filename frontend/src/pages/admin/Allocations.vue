@@ -126,7 +126,7 @@
                                 size="sm"
                                 :disabled="nodeHealthStatus !== 'healthy'"
                                 :title="nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'View allocation details'"
-                                @click="onView(item as Allocation)"
+                                @click="onView(item as unknown as Allocation)"
                             >
                                 <Eye :size="16" />
                             </Button>
