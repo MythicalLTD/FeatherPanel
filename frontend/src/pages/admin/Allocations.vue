@@ -122,35 +122,33 @@
                     <template #cell-actions="{ item }">
                         <div class="flex items-center gap-2">
                             <Button
-                                variant="ghost"
+                                variant="outline"
                                 size="sm"
                                 :disabled="nodeHealthStatus !== 'healthy'"
-                                :title="
-                                    nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'View allocation details'
-                                "
+                                :title="nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'View allocation details'"
                                 @click="onView(item as unknown as Allocation)"
                             >
-                                <Eye class="h-4 w-4 mr-1" />
-                                View
+                                <Eye :size="16" />
                             </Button>
                             <Button
-                                variant="ghost"
+                                variant="secondary"
                                 size="sm"
                                 :disabled="nodeHealthStatus !== 'healthy'"
                                 :title="nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'Edit allocation'"
                                 @click="onEdit(item as unknown as Allocation)"
                             >
-                                <Edit class="h-4 w-4 mr-1" />
-                                Edit
+                                <Edit :size="16" />
                             </Button>
                             <template v-if="confirmDeleteRow === (item as unknown as Allocation).id">
                                 <Button
                                     size="sm"
                                     variant="destructive"
                                     :loading="deleting"
+                                    :disabled="nodeHealthStatus !== 'healthy'"
+                                    :title="nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'Confirm delete allocation'"
                                     @click="confirmDelete(item as unknown as Allocation)"
                                 >
-                                    Confirm
+                                    Confirm Delete
                                 </Button>
                                 <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
                                     Cancel
@@ -158,14 +156,13 @@
                             </template>
                             <template v-else>
                                 <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    :disabled="nodeHealthStatus !== 'healthy'"
-                                    :title="nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'Delete allocation'"
-                                    @click="onDelete(item as unknown as Allocation)"
+                                  variant="destructive"
+                                  size="sm"
+                                  :disabled="nodeHealthStatus !== 'healthy'"
+                                  :title="nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'Delete allocation'"
+                                  @click="onDelete(item as unknown as Allocation)"
                                 >
-                                    <Trash2 class="h-4 w-4 mr-1" />
-                                    Delete
+                                    <Trash2 :size="16" />
                                 </Button>
                             </template>
                         </div>
