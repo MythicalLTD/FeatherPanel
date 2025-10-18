@@ -9,6 +9,8 @@
 - Introduced an option to quickly remove all unused allocations in one action, streamlining server resource management.
 - Removed the empty content validation for file writes—now only requests with a truly missing (null) body are rejected, allowing writing empty files or clearing content.
 - Added an error message when there are no database hosts configured—users will now see a clear notice instead of an unexpected error.
+- Added power controls (start, stop, restart, kill) and detailed server resource info to the sidebar when viewing server routes, enabling direct server management and status visibility from the sidebar.
+- Added display of the current app version in the admin UI for easier version awareness and debugging.
 
 ### Fixed
 
@@ -30,8 +32,14 @@
 - Introduced a brand new sidebar design for the server client interface, providing a modern look and improved usability.
 - Added strict SSH public key validation when creating user SSH keys to prevent invalid key submissions.
 - Tables now have a new flag `hideLabelOnLayout` to hide the hide the label from the table but still show in columns!
+- Brand new footer design for mobile and pc users (More compact and small)
+- Admin and profile page links are now hidden from the user sidebar while you are actively viewing them.
 
 ### Updated
+
+- Upgraded `lucide-vue-next` to v0.546.0 for improved icons and SVG optimizations.
+- Updated `@eslint/js`, `eslint`, and `@types/node` to latest for enhanced lint coverage and better compatibility.
+- Bumped `ace-builds`, `vite-plugin-vue-devtools`, and `vue-router` to their latest versions for improved editor reliability, Vue devtools integration, and routing stability.
 
 ## v0.0.8-Alpha
 

@@ -354,13 +354,13 @@ class ServerEvent implements PluginEvent
         return 'featherpanel:server:unsuspended';
     }
 
-	/**
-	 * Callback: array server data, array transferred by.
-	 */
-	public static function onServerTransferred(): string
-	{
-		return 'featherpanel:server:transferred';
-	}
+    /**
+     * Callback: array server data, array transferred by.
+     */
+    public static function onServerTransferred(): string
+    {
+        return 'featherpanel:server:transferred';
+    }
 
     /**
      * Callback: array server data, bool successful, int|null destination_node_id.
@@ -394,4 +394,3 @@ class ServerEvent implements PluginEvent
         return 'featherpanel:server:transfer:cancelled';
     }
 }
-

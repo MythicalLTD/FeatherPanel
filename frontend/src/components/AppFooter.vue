@@ -24,98 +24,127 @@
 // SOFTWARE.
 
 import { computed, onMounted } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { useSettingsStore } from '@/stores/settings';
+import { Heart, ExternalLink } from 'lucide-vue-next';
+import { Separator } from '@/components/ui/separator';
 
-const { t } = useI18n();
 const settingsStore = useSettingsStore();
+
 onMounted(async () => {
     await settingsStore.fetchSettings();
 });
+
 const currentYear = computed(() => new Date().getFullYear());
 const appName = computed(() => String(settingsStore.appName || 'FeatherPanel'));
 const privacyPolicyUrl = computed(() => String(settingsStore.legalPrivacy || ''));
 const termsOfServiceUrl = computed(() => String(settingsStore.legalTos || ''));
+const appVersion = computed(() => String(settingsStore.appVersion || '1.0.0'));
 </script>
 
 <template>
-    <footer class="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div class="container mx-auto px-4 py-3 sm:py-6">
-            <div class="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
-                <!-- Main content - simplified for mobile -->
-                <div
-                    class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground"
-                >
-                    <!-- Mobile: Single line with heart and copyright -->
-                    <div class="flex items-center gap-2 sm:hidden">
-                        <span class="text-red-500 animate-pulse">❤️</span>
-                        <span>&copy; {{ currentYear }} {{ appName }}</span>
-                    </div>
+    <footer class="border-t border-border/40 bg-background/95 backdrop-blur-sm">
+        <div class="container mx-auto px-3 sm:px-4">
+            <!-- Mobile: Centered minimal layout -->
+            <div class="flex sm:hidden flex-col items-center justify-center py-3 text-xs text-muted-foreground gap-2">
+                <div class="flex items-center gap-2.5">
+                    <a
+                        v-if="privacyPolicyUrl"
+                        :href="privacyPolicyUrl"
+                        class="hover:text-foreground transition-colors"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Privacy
+                    </a>
+                    <span v-if="privacyPolicyUrl && termsOfServiceUrl" class="text-muted-foreground/40">•</span>
+                    <a
+                        v-if="termsOfServiceUrl"
+                        :href="termsOfServiceUrl"
+                        class="hover:text-foreground transition-colors"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Terms
+                    </a>
+                </div>
+                <div class="text-[10px] text-muted-foreground/70">&copy; {{ currentYear }} {{ appName }}</div>
+            </div>
 
-                    <!-- Desktop: Full attribution -->
-                    <div class="hidden sm:flex items-center gap-2">
-                        <span class="text-red-500 animate-pulse">❤️</span>
-                        <span>{{ t('footer.madeWith', 'Made with') }}</span>
-                        <span class="font-medium text-primary">{{ t('footer.love', 'love') }}</span>
-                        <span>{{ t('footer.by', 'by') }}</span>
+            <!-- Tablet & Desktop: Full layout -->
+            <div class="hidden sm:flex items-center justify-between py-2.5 text-xs">
+                <!-- Left: Copyright & Attribution -->
+                <div class="flex items-center gap-2 text-muted-foreground">
+                    <span>&copy; {{ currentYear }}</span>
+                    <span>{{ appName }}</span>
+                    <span class="hidden md:inline text-muted-foreground/60">v{{ appVersion }}</span>
+                    <Separator orientation="vertical" class="h-3 hidden md:block" />
+                    <div class="hidden lg:flex items-center gap-1">
+                        <Heart :size="10" class="text-red-500 dark:text-red-400 fill-current heart-beat" />
                         <a
                             href="https://mythical.systems"
-                            class="font-semibold text-primary hover:text-primary/80 transition-colors duration-200 underline underline-offset-2"
+                            class="hover:text-foreground transition-colors"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
                             MythicalSystems
                         </a>
                     </div>
-
-                    <!-- Copyright for desktop -->
-                    <div class="hidden sm:flex items-center gap-2">
-                        <span class="text-muted-foreground/60">•</span>
-                        <span>&copy; {{ currentYear }} {{ appName }}</span>
-                        <span class="text-muted-foreground/60">•</span>
-                        <span>{{ t('footer.allRightsReserved', 'All rights reserved.') }}</span>
-                    </div>
                 </div>
 
-                <!-- Links - compact on mobile -->
-                <div class="flex items-center justify-center sm:justify-end gap-4 sm:gap-6 text-xs sm:text-sm">
+                <!-- Right: Links -->
+                <div class="flex items-center gap-3">
                     <a
+                        v-if="privacyPolicyUrl"
                         :href="privacyPolicyUrl"
-                        class="text-muted-foreground hover:text-primary transition-colors duration-200"
+                        class="text-muted-foreground hover:text-foreground transition-colors"
+                        target="_blank"
+                        rel="noopener noreferrer"
                     >
-                        {{ t('footer.privacy', 'Privacy') }}
+                        Privacy
                     </a>
+                    <Separator v-if="privacyPolicyUrl && termsOfServiceUrl" orientation="vertical" class="h-3" />
                     <a
+                        v-if="termsOfServiceUrl"
                         :href="termsOfServiceUrl"
-                        class="text-muted-foreground hover:text-primary transition-colors duration-200"
+                        class="text-muted-foreground hover:text-foreground transition-colors"
+                        target="_blank"
+                        rel="noopener noreferrer"
                     >
-                        {{ t('footer.terms', 'Terms') }}
+                        Terms
+                    </a>
+                    <Separator orientation="vertical" class="h-3" />
+                    <a
+                        href="https://github.com/MythicalLTD/FeatherPanel"
+                        class="text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Docs
+                        <ExternalLink :size="10" class="opacity-60" />
                     </a>
                 </div>
             </div>
         </div>
     </footer>
 </template>
+
 <style scoped>
-/* Status indicator animation */
-@keyframes pulse {
+@keyframes heart-beat {
     0%,
     100% {
-        opacity: 1;
+        transform: scale(1);
     }
-    50% {
-        opacity: 0.5;
+    10%,
+    30% {
+        transform: scale(1.1);
+    }
+    20%,
+    40% {
+        transform: scale(0.95);
     }
 }
 
-.animate-pulse {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Backdrop blur support */
-@supports (backdrop-filter: blur(8px)) {
-    footer {
-        backdrop-filter: blur(8px);
-    }
+.heart-beat {
+    animation: heart-beat 2s ease-in-out infinite;
 }
 </style>

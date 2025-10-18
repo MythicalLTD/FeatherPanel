@@ -131,8 +131,8 @@
                             <!-- Skip actions column in main content -->
                             <template v-if="column.key !== 'actions'">
                                 <div
-                                  v-if="!column.hideLabelOnLayout"
-                                  class="text-xs font-medium text-muted-foreground uppercase tracking-wide"
+                                    v-if="!column.hideLabelOnLayout"
+                                    class="text-xs font-medium text-muted-foreground uppercase tracking-wide"
                                 >
                                     {{ column.label }}
                                 </div>
@@ -221,7 +221,7 @@
                                 >
                                     <!-- Only show label if hideLabelOnLayout is not true -->
                                     <template v-if="!column.hideLabelOnLayout">
-                                      {{ column.label }}
+                                        {{ column.label }}
                                     </template>
                                 </TableHead>
                             </TableRow>

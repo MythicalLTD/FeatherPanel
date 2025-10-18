@@ -51,7 +51,7 @@
             <div
                 class="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4 transition-all duration-200"
             >
-                {{ $t('auth.runningOn', { version: 'v0.0.8' }) }} <br />
+                {{ $t('auth.runningOn', { version: 'v' + settingsStore.appVersion }) }} <br />
                 <a
                     href="https://featherpanel.com"
                     class="text-primary transition-colors duration-200 hover:text-primary/80"

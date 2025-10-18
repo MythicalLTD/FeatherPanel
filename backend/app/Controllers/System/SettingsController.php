@@ -71,6 +71,7 @@ class SettingsController
                 $settings[$key] = $defaultValue;
             }
         }
+        $settings['app_version'] = str_replace('v', '', APP_VERSION);
         $core = [
             'version' => APP_VERSION,
             'upstream' => APP_UPSTREAM,

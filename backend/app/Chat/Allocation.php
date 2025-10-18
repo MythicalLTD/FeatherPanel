@@ -417,12 +417,12 @@ class Allocation
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
 
         // Find which allocations are assigned to servers (cannot be deleted)
-        $checkStmt = $pdo->prepare("SELECT id FROM " . self::$table . " WHERE id IN ($placeholders) AND server_id IS NOT NULL");
+        $checkStmt = $pdo->prepare('SELECT id FROM ' . self::$table . " WHERE id IN ($placeholders) AND server_id IS NOT NULL");
         $checkStmt->execute($ids);
         $assignedIds = $checkStmt->fetchAll(\PDO::FETCH_COLUMN);
 
         // Only delete allocations that are NOT assigned
-        $stmt = $pdo->prepare("DELETE FROM " . self::$table . " WHERE id IN ($placeholders) AND server_id IS NULL");
+        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . " WHERE id IN ($placeholders) AND server_id IS NULL");
         $stmt->execute($ids);
         $deletedCount = $stmt->rowCount();
 

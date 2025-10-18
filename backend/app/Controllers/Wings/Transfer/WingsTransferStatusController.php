@@ -34,7 +34,6 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\Activity;
-use App\Chat\Allocation;
 use App\Helpers\ApiResponse;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\ServerEvent;
@@ -133,35 +132,35 @@ class WingsTransferStatusController
             $logger->info('Server transfer completed successfully: ' . $server['name'] . ' (UUID: ' . $uuid . ')');
 
             return ApiResponse::success([], 'Transfer status recorded: success', 200);
-        } else {
-            // Transfer failed - revert server status
-            Server::updateServerById($server['id'], ['status' => 'offline']);
-
-            // Log activity
-            Activity::createActivity([
-                'user_uuid' => 'system',
-                'name' => 'server_transfer_failed',
-                'context' => 'Server transfer failed for ' . $server['name'] . ($error ? ': ' . $error : ''),
-                'ip_address' => CloudFlareRealIP::getRealIP(),
-            ]);
-
-            // Emit event
-            global $eventManager;
-            if (isset($eventManager) && $eventManager !== null) {
-                $eventManager->emit(
-                    ServerEvent::onServerTransferFailed(),
-                    [
-                        'server' => $server,
-                        'successful' => false,
-                        'error' => $error,
-                    ]
-                );
-            }
-
-            $logger->error('Server transfer failed: ' . $server['name'] . ' (UUID: ' . $uuid . ')' . ($error ? ' - ' . $error : ''));
-
-            return ApiResponse::success([], 'Transfer status recorded: failed', 200);
         }
+        // Transfer failed - revert server status
+        Server::updateServerById($server['id'], ['status' => 'offline']);
+
+        // Log activity
+        Activity::createActivity([
+            'user_uuid' => 'system',
+            'name' => 'server_transfer_failed',
+            'context' => 'Server transfer failed for ' . $server['name'] . ($error ? ': ' . $error : ''),
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerTransferFailed(),
+                [
+                    'server' => $server,
+                    'successful' => false,
+                    'error' => $error,
+                ]
+            );
+        }
+
+        $logger->error('Server transfer failed: ' . $server['name'] . ' (UUID: ' . $uuid . ')' . ($error ? ' - ' . $error : ''));
+
+        return ApiResponse::success([], 'Transfer status recorded: failed', 200);
+
     }
 
     /**
@@ -191,4 +190,3 @@ class WingsTransferStatusController
         return ApiResponse::success([], 'Archive receipt acknowledged', 200);
     }
 }
-

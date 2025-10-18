@@ -125,7 +125,9 @@
                                 variant="outline"
                                 size="sm"
                                 :disabled="nodeHealthStatus !== 'healthy'"
-                                :title="nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'View allocation details'"
+                                :title="
+                                    nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'View allocation details'
+                                "
                                 @click="onView(item as unknown as Allocation)"
                             >
                                 <Eye :size="16" />
@@ -145,7 +147,11 @@
                                     variant="destructive"
                                     :loading="deleting"
                                     :disabled="nodeHealthStatus !== 'healthy'"
-                                    :title="nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'Confirm delete allocation'"
+                                    :title="
+                                        nodeHealthStatus !== 'healthy'
+                                            ? 'Node is unhealthy'
+                                            : 'Confirm delete allocation'
+                                    "
                                     @click="confirmDelete(item as unknown as Allocation)"
                                 >
                                     Confirm Delete
@@ -156,11 +162,11 @@
                             </template>
                             <template v-else>
                                 <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  :disabled="nodeHealthStatus !== 'healthy'"
-                                  :title="nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'Delete allocation'"
-                                  @click="onDelete(item as unknown as Allocation)"
+                                    variant="destructive"
+                                    size="sm"
+                                    :disabled="nodeHealthStatus !== 'healthy'"
+                                    :title="nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'Delete allocation'"
+                                    @click="onDelete(item as unknown as Allocation)"
                                 >
                                     <Trash2 :size="16" />
                                 </Button>

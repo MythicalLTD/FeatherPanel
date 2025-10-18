@@ -43,8 +43,11 @@ import { useSessionStore } from '@/stores/session';
 import { useRouter } from 'vue-router';
 import { computed, onMounted, ref } from 'vue';
 import { useSettingsStore } from '@/stores/settings';
+import axios from 'axios';
 import { useNavigation } from '@/composables/useNavigation';
 import { useSidebarState } from '@/composables/useSidebarState';
+import { useServerContext } from '@/composables/useServerContext';
+import { Copy, Check, Play, Square, RotateCw, Skull } from 'lucide-vue-next';
 
 const { t } = useI18n();
 
@@ -64,6 +67,10 @@ const props = withDefaults(defineProps<SidebarProps>(), {
 const { state } = useSidebar();
 const { sidebarNavigation } = useNavigation();
 const { sidebarVisibility } = useSidebarState();
+const { currentServer } = useServerContext();
+
+// Server IP copy state
+const ipCopied = ref(false);
 
 // Use shared navigation data
 const data = computed(() => ({
@@ -110,6 +117,46 @@ onMounted(() => {
 const isSidebarVisible = computed(() => {
     return sidebarVisibility.value !== 'hidden';
 });
+
+// Server address for display
+const serverAddress = computed(() => {
+    if (!currentServer.value?.allocation) return '';
+    const ip = currentServer.value.allocation.ip_alias || currentServer.value.allocation.ip;
+    const port = currentServer.value.allocation.port;
+    return `${ip}:${port}`;
+});
+
+// Copy server IP to clipboard
+const copyServerAddress = async (): Promise<void> => {
+    if (!serverAddress.value) return;
+    try {
+        await navigator.clipboard.writeText(serverAddress.value);
+        ipCopied.value = true;
+        setTimeout(() => {
+            ipCopied.value = false;
+        }, 2000);
+    } catch (error) {
+        console.error('Failed to copy server address:', error);
+    }
+};
+
+// Server control functions
+const serverActionLoading = ref<string | null>(null);
+
+const sendServerCommand = async (command: 'start' | 'stop' | 'restart' | 'kill'): Promise<void> => {
+    if (!currentServer.value || serverActionLoading.value) return;
+
+    serverActionLoading.value = command;
+    try {
+        await axios.post(`/api/user/servers/${currentServer.value.uuidShort}/power/${command}`);
+    } catch (error) {
+        console.error(`Failed to ${command} server:`, error);
+    } finally {
+        setTimeout(() => {
+            serverActionLoading.value = null;
+        }, 1000);
+    }
+};
 </script>
 
 <template>
@@ -144,12 +191,97 @@ const isSidebarVisible = computed(() => {
                         />
                     </div>
 
-                    <span
-                        v-if="settingsStore.appName && state !== 'collapsed'"
-                        class="font-semibold text-base truncate transition-opacity"
-                    >
-                        {{ settingsStore.appName }}
-                    </span>
+                    <div v-if="state !== 'collapsed'" class="flex flex-col gap-1 min-w-0">
+                        <span v-if="settingsStore.appName" class="font-semibold text-base truncate transition-opacity">
+                            {{ settingsStore.appName }}
+                        </span>
+                        <div
+                            v-if="router.currentRoute.value.path.startsWith('/admin')"
+                            class="inline-flex items-center gap-1.5"
+                        >
+                            <span
+                                class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-primary/10 text-primary border border-primary/20"
+                            >
+                                v{{ settingsStore.appVersion }}
+                            </span>
+                            <span
+                                class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+                            >
+                                Admin Panel
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Server Info (Only on server routes) -->
+            <div v-if="router.currentRoute.value.path.startsWith('/server') && currentServer && state !== 'collapsed'">
+                <div class="px-3 py-2.5 space-y-2.5">
+                    <!-- Server Name & Address -->
+                    <div class="min-w-0">
+                        <h3 class="text-xs font-semibold text-foreground truncate mb-1" :title="currentServer.name">
+                            {{ currentServer.name }}
+                        </h3>
+                        <div class="flex items-center gap-1.5">
+                            <code
+                                class="text-[10px] font-mono text-muted-foreground/80 truncate flex-1"
+                                :title="serverAddress"
+                            >
+                                {{ serverAddress }}
+                            </code>
+                            <button
+                                class="text-muted-foreground/50 hover:text-muted-foreground transition-colors p-0.5 rounded hover:bg-accent/50"
+                                :title="t('common.copy')"
+                                @click="copyServerAddress"
+                            >
+                                <Check v-if="ipCopied" :size="11" class="text-green-600 dark:text-green-400" />
+                                <Copy v-else :size="11" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Control Buttons -->
+                    <div class="flex gap-1.5">
+                        <button
+                            class="flex-1 h-8 rounded-md flex items-center justify-center bg-green-500/10 hover:bg-green-500/15 text-green-600 dark:text-green-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                            :title="t('serverConsole.start')"
+                            :disabled="serverActionLoading !== null"
+                            @click="sendServerCommand('start')"
+                        >
+                            <Play
+                                :size="13"
+                                :class="serverActionLoading === 'start' ? 'animate-pulse' : ''"
+                                fill="currentColor"
+                            />
+                        </button>
+                        <button
+                            class="flex-1 h-8 rounded-md flex items-center justify-center bg-red-500/10 hover:bg-red-500/15 text-red-600 dark:text-red-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                            :title="t('serverConsole.stop')"
+                            :disabled="serverActionLoading !== null"
+                            @click="sendServerCommand('stop')"
+                        >
+                            <Square
+                                :size="13"
+                                :class="serverActionLoading === 'stop' ? 'animate-pulse' : ''"
+                                fill="currentColor"
+                            />
+                        </button>
+                        <button
+                            class="flex-1 h-8 rounded-md flex items-center justify-center bg-blue-500/10 hover:bg-blue-500/15 text-blue-600 dark:text-blue-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                            :title="t('serverConsole.restart')"
+                            :disabled="serverActionLoading !== null"
+                            @click="sendServerCommand('restart')"
+                        >
+                            <RotateCw :size="13" :class="serverActionLoading === 'restart' ? 'animate-spin' : ''" />
+                        </button>
+                        <button
+                            class="flex-1 h-8 rounded-md flex items-center justify-center bg-orange-500/10 hover:bg-orange-500/15 text-orange-600 dark:text-orange-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                            :title="t('serverConsole.kill')"
+                            :disabled="serverActionLoading !== null"
+                            @click="sendServerCommand('kill')"
+                        >
+                            <Skull :size="13" :class="serverActionLoading === 'kill' ? 'animate-pulse' : ''" />
+                        </button>
+                    </div>
                 </div>
             </div>
         </SidebarHeader>

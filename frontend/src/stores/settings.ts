@@ -83,6 +83,7 @@ export const useSettingsStore = defineStore('settings', {
         },
     },
     getters: {
+        appVersion: (state) => state.settings?.app_version || '0.0.8',
         appName: (state) => state.settings?.app_name || 'FeatherPanel',
         appLogo: (state) => state.settings?.app_logo || 'https://github.com/mythicalltd.png',
         appLogoWhite: (state) => state.settings?.app_logo_white || 'https://github.com/mythicalltd.png',
