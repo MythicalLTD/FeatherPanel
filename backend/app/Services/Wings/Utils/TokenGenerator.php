@@ -262,6 +262,7 @@ class TokenGenerator
             // Standard JWT claims
             'iss' => $panelUrl, // Issuer (panel URL)
             'aud' => $wingsUrl, // Audience (Wings node URL)
+            'sub' => $serverUuid, // Subject (server UUID) - standard JWT claim
             'iat' => $currentTime, // Issued at
             'nbf' => $currentTime - 300, // Not valid before (5 minutes ago)
             'exp' => $currentTime + $this->expiration, // Expiration

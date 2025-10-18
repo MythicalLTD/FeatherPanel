@@ -51,6 +51,7 @@ import {
     TerminalIcon,
     BarChart3,
     Crown,
+    Activity,
 } from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
 import Permissions from '@/lib/permissions';
@@ -299,6 +300,17 @@ export function useNavigation() {
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_SERVERS_VIEW,
                 group: 'infrastructure',
+            },
+            {
+                id: 'admin-nodes-status',
+                name: 'Node Status',
+                title: 'Node Status Dashboard',
+                url: '/admin/nodes/status',
+                icon: Activity,
+                isActive: currentPath.value === '/admin/nodes/status',
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_NODES_VIEW,
+                group: 'overview',
             },
             {
                 id: 'admin-locations',

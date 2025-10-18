@@ -554,7 +554,7 @@ const createForm = ref({
 
 // Table columns configuration
 const tableColumns: TableColumn[] = [
-    { key: 'select', label: '', headerClass: 'w-[50px]' },
+    { key: 'select', label: 'Select Action', headerClass: 'w-[50px]', searchable: false, hideLabelOnLayout: true },
     { key: 'id', label: 'ID', headerClass: 'w-[80px] font-semibold' },
     { key: 'ip', label: 'IP Address', searchable: true },
     { key: 'port', label: 'Port', searchable: true },

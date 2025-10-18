@@ -34,8 +34,20 @@ use App\Helpers\ApiResponse;
 use App\Controllers\Admin\NodesController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Admin\NodeStatusController;
 
 return function (RouteCollection $routes): void {
+    // Global node status dashboard
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-nodes-status-global',
+        '/api/admin/nodes/status/global',
+        function (Request $request) {
+            return (new NodeStatusController())->getGlobalStatus($request);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+    );
+
     App::getInstance(true)->registerAdminRoute(
         $routes,
         'admin-nodes',

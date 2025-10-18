@@ -219,4 +219,19 @@ return function (RouteCollection $routes): void {
         },
         ['POST']
     );
+
+    App::getInstance(true)->registerWingsRoute(
+        $routes,
+        'wings-transfer-failure',
+        '/api/remote/servers/{uuid}/transfer/failure',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid) {
+                return ApiResponse::error('Missing server UUID', 'MISSING_SERVER_UUID', 400);
+            }
+
+            return (new WingsTransferStatusController())->transferFailure($request, $uuid);
+        },
+        ['POST']
+    );
 };

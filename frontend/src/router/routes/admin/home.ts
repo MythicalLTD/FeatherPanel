@@ -63,6 +63,11 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/Nodes.vue'),
     },
     {
+        path: '/admin/nodes/status',
+        name: 'AdminNodesStatus',
+        component: () => import('@/pages/admin/NodesStatus.vue'),
+    },
+    {
         path: '/admin/nodes/:nodeId/databases',
         name: 'AdminNodeDatabases',
         component: () => import('@/pages/admin/NodeDatabases.vue'),
