@@ -49,7 +49,8 @@ import {
     Link,
     BookAlert,
     TerminalIcon,
-    BarChart3, Crown,
+    BarChart3,
+    Crown,
 } from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
 import Permissions from '@/lib/permissions';

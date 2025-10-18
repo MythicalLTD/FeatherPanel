@@ -72,6 +72,7 @@
                             :title="widget.name"
                             :enabled="widget.enabled"
                             :is-customizing="widgetsStore.isCustomizing"
+                            :with-borders="widget.withBorders"
                             @toggle-enabled="widgetsStore.toggleWidget(widget.id)"
                         >
                             <component :is="getWidgetComponent(widget.component)" />

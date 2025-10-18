@@ -1,10 +1,11 @@
 <template>
     <div
-        class="widget-container relative rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-200"
+        class="widget-container relative rounded-xl"
         :class="{
             'opacity-50': !enabled && !isCustomizing,
             'ring-2 ring-primary': isCustomizing,
-            'hover:shadow-lg': !isCustomizing,
+            'hover:shadow-lg': !isCustomizing && withBorders,
+            'border bg-card text-card-foreground shadow-sm transition-all duration-200': withBorders
         }"
     >
         <!-- Widget Header (only shown in customization mode) -->
@@ -69,11 +70,13 @@ interface Props {
     title: string;
     enabled?: boolean;
     isCustomizing?: boolean;
+    withBorders?: boolean;
 }
 
 withDefaults(defineProps<Props>(), {
     enabled: true,
     isCustomizing: false,
+    withBorders: true,
 });
 
 const emit = defineEmits<{
