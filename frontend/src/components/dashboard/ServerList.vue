@@ -114,155 +114,209 @@
 
                     <!-- Servers in Folder -->
                     <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                        <div
-                            v-for="server in folder.servers"
-                            :key="server.id"
-                            class="group bg-card border-2 border-border rounded-lg transition-all duration-200 overflow-hidden"
-                            :class="{
-                                'cursor-pointer hover:shadow-lg hover:border-primary/20 hover:scale-[1.02]':
-                                    isServerAccessible(server),
-                                'cursor-not-allowed opacity-75': !isServerAccessible(server),
-                            }"
-                            @click="openServerDetails(server)"
-                            @contextmenu.prevent="showContextMenu($event, server, folder.id)"
-                        >
-                            <!-- Spell Banner - Full Width, No Padding -->
-                            <div class="relative w-full h-24 sm:h-32">
-                                <!-- Spell Banner Background -->
+                        <ContextMenu v-for="server in folder.servers" :key="server.id">
+                            <ContextMenuTrigger as-child>
                                 <div
-                                    v-if="server.spell?.banner"
-                                    class="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                                    :style="{ backgroundImage: `url(${server.spell.banner})` }"
-                                />
-
-                                <!-- Dark overlay for better text readability -->
-                                <div
-                                    class="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300"
-                                />
-
-                                <!-- Access Restriction Overlay -->
-                                <div
-                                    v-if="!isServerAccessible(server)"
-                                    class="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20"
+                                    class="group bg-card border-2 border-border rounded-lg transition-all duration-200 overflow-hidden"
+                                    :class="{
+                                        'cursor-pointer hover:shadow-lg hover:border-primary/20 hover:scale-[1.02]':
+                                            isServerAccessible(server),
+                                        'cursor-not-allowed opacity-75': !isServerAccessible(server),
+                                    }"
+                                    @click="openServerDetails(server)"
                                 >
-                                    <div class="text-center text-white p-4">
-                                        <div class="text-sm font-semibold mb-2">
-                                            {{
-                                                server.node?.maintenance_mode
-                                                    ? $t('servers.nodeMaintenance')
-                                                    : getAccessRestrictionReason(server)
-                                            }}
+                                    <!-- Spell Banner - Full Width, No Padding -->
+                                    <div class="relative w-full h-24 sm:h-32">
+                                        <!-- Spell Banner Background -->
+                                        <div
+                                            v-if="server.spell?.banner"
+                                            class="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                                            :style="{ backgroundImage: `url(${server.spell.banner})` }"
+                                        />
+
+                                        <!-- Dark overlay for better text readability -->
+                                        <div
+                                            class="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300"
+                                        />
+
+                                        <!-- Access Restriction Overlay -->
+                                        <div
+                                            v-if="!isServerAccessible(server)"
+                                            class="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20"
+                                        >
+                                            <div class="text-center text-white p-4">
+                                                <div class="text-sm font-semibold mb-2">
+                                                    {{
+                                                        server.node?.maintenance_mode
+                                                            ? $t('servers.nodeMaintenance')
+                                                            : getAccessRestrictionReason(server)
+                                                    }}
+                                                </div>
+                                                <div class="text-xs opacity-90 leading-relaxed">
+                                                    {{
+                                                        server.node?.maintenance_mode
+                                                            ? $t('servers.nodeMaintenanceLong')
+                                                            : $t('servers.accessRestrictedDescription')
+                                                    }}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="text-xs opacity-90 leading-relaxed">
-                                            {{
-                                                server.node?.maintenance_mode
-                                                    ? $t('servers.nodeMaintenanceLong')
-                                                    : $t('servers.accessRestrictedDescription')
-                                            }}
+
+                                        <!-- Content overlaid on banner -->
+                                        <div class="relative z-10 p-3 sm:p-4 h-full flex flex-col justify-between">
+                                            <div class="flex items-start justify-between">
+                                                <div class="flex-1 min-w-0">
+                                                    <h3
+                                                        class="text-base sm:text-lg font-bold text-white drop-shadow-sm truncate"
+                                                    >
+                                                        {{ server.name }}
+                                                    </h3>
+                                                    <p
+                                                        class="text-xs sm:text-sm text-white/80 drop-shadow-sm truncate mt-1"
+                                                    >
+                                                        {{ server.description || $t('servers.noDescription') }}
+                                                    </p>
+                                                </div>
+                                                <div class="flex flex-col gap-1">
+                                                    <Badge
+                                                        :variant="getStatusVariant(displayStatus(server))"
+                                                        class="bg-white/20 text-white border-white/30 hover:bg-white/30 text-xs"
+                                                    >
+                                                        {{ $t(`servers.status.${displayStatus(server)}`) }}
+                                                    </Badge>
+                                                    <!-- Subuser Access Badge -->
+                                                    <Badge
+                                                        v-if="server.is_subuser"
+                                                        variant="outline"
+                                                        class="bg-blue-500/20 text-blue-100 border-blue-300/30 text-xs"
+                                                    >
+                                                        {{ $t('servers.subuserAccess') }}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+
+                                            <!-- Spell name at bottom of header -->
+                                            <div class="flex items-center gap-2 text-xs sm:text-sm">
+                                                <Sparkles class="h-3 w-3 sm:h-4 sm:w-4 text-white drop-shadow-sm" />
+                                                <span class="text-white/90 font-medium drop-shadow-sm"
+                                                    >{{ $t('servers.spell') }}:</span
+                                                >
+                                                <span class="font-bold text-white truncate drop-shadow-sm">{{
+                                                    server.spell?.name || 'N/A'
+                                                }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Card Content -->
+                                    <div class="p-3 sm:p-4 bg-card">
+                                        <div class="space-y-2 sm:space-y-3">
+                                            <!-- Server Info -->
+                                            <div
+                                                class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm"
+                                            >
+                                                <div class="flex items-center gap-2">
+                                                    <Server
+                                                        class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0"
+                                                    />
+                                                    <span class="text-muted-foreground">{{ $t('servers.node') }}:</span>
+                                                    <span class="font-medium truncate">{{
+                                                        server.node?.name || 'N/A'
+                                                    }}</span>
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    <Hash
+                                                        class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0"
+                                                    />
+                                                    <span class="text-muted-foreground"
+                                                        >{{ $t('servers.realm') }}:</span
+                                                    >
+                                                    <span class="font-medium truncate">{{
+                                                        server.realm?.name || 'N/A'
+                                                    }}</span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Resources -->
+                                            <div class="grid grid-cols-3 gap-1 sm:gap-2 text-xs">
+                                                <div
+                                                    class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                >
+                                                    <div class="font-semibold text-primary text-xs sm:text-sm">
+                                                        {{ formatMemory(server.memory) }}
+                                                    </div>
+                                                    <div class="text-muted-foreground text-xs">
+                                                        {{ $t('servers.memory') }}
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                >
+                                                    <div class="font-semibold text-primary text-xs sm:text-sm">
+                                                        {{ formatDisk(server.disk) }}
+                                                    </div>
+                                                    <div class="text-muted-foreground text-xs">
+                                                        {{ $t('servers.disk') }}
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                >
+                                                    <div class="font-semibold text-primary text-xs sm:text-sm">
+                                                        {{ server.cpu }}%
+                                                    </div>
+                                                    <div class="text-muted-foreground text-xs">
+                                                        {{ $t('servers.cpu') }}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Click indicator -->
+                                            <div class="flex items-center justify-end pt-1 sm:pt-2">
+                                                <div
+                                                    class="text-xs text-muted-foreground group-hover:text-primary transition-colors"
+                                                >
+                                                    {{ $t('servers.clickToView') }} →
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- Content overlaid on banner -->
-                                <div class="relative z-10 p-3 sm:p-4 h-full flex flex-col justify-between">
-                                    <div class="flex items-start justify-between">
-                                        <div class="flex-1 min-w-0">
-                                            <h3
-                                                class="text-base sm:text-lg font-bold text-white drop-shadow-sm truncate"
-                                            >
-                                                {{ server.name }}
-                                            </h3>
-                                            <p class="text-xs sm:text-sm text-white/80 drop-shadow-sm truncate mt-1">
-                                                {{ server.description || $t('servers.noDescription') }}
-                                            </p>
-                                        </div>
-                                        <div class="flex flex-col gap-1">
-                                            <Badge
-                                                :variant="getStatusVariant(displayStatus(server))"
-                                                class="bg-white/20 text-white border-white/30 hover:bg-white/30 text-xs"
-                                            >
-                                                {{ $t(`servers.status.${displayStatus(server)}`) }}
-                                            </Badge>
-                                            <!-- Subuser Access Badge -->
-                                            <Badge
-                                                v-if="server.is_subuser"
-                                                variant="outline"
-                                                class="bg-blue-500/20 text-blue-100 border-blue-300/30 text-xs"
-                                            >
-                                                {{ $t('servers.subuserAccess') }}
-                                            </Badge>
-                                        </div>
-                                    </div>
-
-                                    <!-- Spell name at bottom of header -->
-                                    <div class="flex items-center gap-2 text-xs sm:text-sm">
-                                        <Sparkles class="h-3 w-3 sm:h-4 sm:w-4 text-white drop-shadow-sm" />
-                                        <span class="text-white/90 font-medium drop-shadow-sm"
-                                            >{{ $t('servers.spell') }}:</span
+                            </ContextMenuTrigger>
+                            <ContextMenuContent>
+                                <ContextMenuLabel>{{ server.name }}</ContextMenuLabel>
+                                <ContextMenuSeparator />
+                                <ContextMenuSub>
+                                    <ContextMenuSubTrigger>
+                                        <FolderOpen class="h-4 w-4 mr-2" />
+                                        {{ $t('servers.moveToFolder') }}
+                                    </ContextMenuSubTrigger>
+                                    <ContextMenuSubContent>
+                                        <ContextMenuItem
+                                            v-for="folderItem in serverFolders"
+                                            :key="folderItem.id"
+                                            :class="{ 'text-primary': folder.id === folderItem.id }"
+                                            @click="moveServerToFolder(server, folderItem.id)"
                                         >
-                                        <span class="font-bold text-white truncate drop-shadow-sm">{{
-                                            server.spell?.name || 'N/A'
-                                        }}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Card Content -->
-                            <div class="p-3 sm:p-4 bg-card">
-                                <div class="space-y-2 sm:space-y-3">
-                                    <!-- Server Info -->
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
-                                        <div class="flex items-center gap-2">
-                                            <Server class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                                            <span class="text-muted-foreground">{{ $t('servers.node') }}:</span>
-                                            <span class="font-medium truncate">{{ server.node?.name || 'N/A' }}</span>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <Hash class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                                            <span class="text-muted-foreground">{{ $t('servers.realm') }}:</span>
-                                            <span class="font-medium truncate">{{ server.realm?.name || 'N/A' }}</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Resources -->
-                                    <div class="grid grid-cols-3 gap-1 sm:gap-2 text-xs">
-                                        <div
-                                            class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
-                                        >
-                                            <div class="font-semibold text-primary text-xs sm:text-sm">
-                                                {{ formatMemory(server.memory) }}
-                                            </div>
-                                            <div class="text-muted-foreground text-xs">{{ $t('servers.memory') }}</div>
-                                        </div>
-                                        <div
-                                            class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
-                                        >
-                                            <div class="font-semibold text-primary text-xs sm:text-sm">
-                                                {{ formatDisk(server.disk) }}
-                                            </div>
-                                            <div class="text-muted-foreground text-xs">{{ $t('servers.disk') }}</div>
-                                        </div>
-                                        <div
-                                            class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
-                                        >
-                                            <div class="font-semibold text-primary text-xs sm:text-sm">
-                                                {{ server.cpu }}%
-                                            </div>
-                                            <div class="text-muted-foreground text-xs">{{ $t('servers.cpu') }}</div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Click indicator -->
-                                    <div class="flex items-center justify-end pt-1 sm:pt-2">
-                                        <div
-                                            class="text-xs text-muted-foreground group-hover:text-primary transition-colors"
-                                        >
-                                            {{ $t('servers.clickToView') }} →
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                                            <FolderOpen class="h-4 w-4 mr-2" />
+                                            {{ folderItem.name }}
+                                            <span v-if="folder.id === folderItem.id" class="ml-auto text-xs">{{
+                                                $t('servers.current')
+                                            }}</span>
+                                        </ContextMenuItem>
+                                        <ContextMenuItem @click="moveServerToFolder(server, null)">
+                                            <Server class="h-4 w-4 mr-2" />
+                                            {{ $t('servers.unassigned') }}
+                                        </ContextMenuItem>
+                                    </ContextMenuSubContent>
+                                </ContextMenuSub>
+                                <ContextMenuSeparator />
+                                <ContextMenuItem @click="createFolderForServer(server)">
+                                    <FolderPlus class="h-4 w-4 mr-2" />
+                                    {{ $t('servers.createNewFolder') }}
+                                </ContextMenuItem>
+                            </ContextMenuContent>
+                        </ContextMenu>
                     </div>
                 </div>
 
@@ -279,9 +333,215 @@
                     </div>
 
                     <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                        <ContextMenu v-for="server in unassignedServers" :key="server.id">
+                            <ContextMenuTrigger as-child>
+                                <div
+                                    class="group bg-card border-2 border-border rounded-lg transition-all duration-200 overflow-hidden"
+                                    :class="{
+                                        'cursor-pointer hover:shadow-lg hover:border-primary/20 hover:scale-[1.02]':
+                                            isServerAccessible(server),
+                                        'cursor-not-allowed opacity-75': !isServerAccessible(server),
+                                    }"
+                                    @click="openServerDetails(server)"
+                                >
+                                    <!-- Spell Banner - Full Width, No Padding -->
+                                    <div class="relative w-full h-24 sm:h-32">
+                                        <!-- Spell Banner Background -->
+                                        <div
+                                            v-if="server.spell?.banner"
+                                            class="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                                            :style="{ backgroundImage: `url(${server.spell.banner})` }"
+                                        />
+
+                                        <!-- Dark overlay for better text readability -->
+                                        <div
+                                            class="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300"
+                                        />
+
+                                        <!-- Access Restriction Overlay -->
+                                        <div
+                                            v-if="!isServerAccessible(server)"
+                                            class="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20"
+                                        >
+                                            <div class="text-center text-white p-4">
+                                                <div class="text-sm font-semibold mb-2">
+                                                    {{
+                                                        server.node?.maintenance_mode
+                                                            ? $t('servers.nodeMaintenance')
+                                                            : getAccessRestrictionReason(server)
+                                                    }}
+                                                </div>
+                                                <div class="text-xs opacity-90 leading-relaxed">
+                                                    {{
+                                                        server.node?.maintenance_mode
+                                                            ? $t('servers.nodeMaintenanceLong')
+                                                            : $t('servers.accessRestrictedDescription')
+                                                    }}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Content overlaid on banner -->
+                                        <div class="relative z-10 p-3 sm:p-4 h-full flex flex-col justify-between">
+                                            <div class="flex items-start justify-between">
+                                                <div class="flex-1 min-w-0">
+                                                    <h3
+                                                        class="text-base sm:text-lg font-bold text-white drop-shadow-sm truncate"
+                                                    >
+                                                        {{ server.name }}
+                                                    </h3>
+                                                    <p
+                                                        class="text-xs sm:text-sm text-white/80 drop-shadow-sm truncate mt-1"
+                                                    >
+                                                        {{ server.description || $t('servers.noDescription') }}
+                                                    </p>
+                                                </div>
+                                                <div class="flex flex-col gap-1">
+                                                    <Badge
+                                                        :variant="getStatusVariant(displayStatus(server))"
+                                                        class="bg-white/20 text-white border-white/30 hover:bg-white/30 text-xs"
+                                                    >
+                                                        {{ $t(`servers.status.${displayStatus(server)}`) }}
+                                                    </Badge>
+                                                    <!-- Subuser Access Badge -->
+                                                    <Badge
+                                                        v-if="server.is_subuser"
+                                                        variant="outline"
+                                                        class="bg-blue-500/20 text-blue-100 border-blue-300/30 text-xs"
+                                                    >
+                                                        {{ $t('servers.subuserAccess') }}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+
+                                            <!-- Spell name at bottom of header -->
+                                            <div class="flex items-center gap-2 text-xs sm:text-sm">
+                                                <Sparkles class="h-3 w-3 sm:h-4 sm:w-4 text-white drop-shadow-sm" />
+                                                <span class="text-white/90 font-medium drop-shadow-sm"
+                                                    >{{ $t('servers.spell') }}:</span
+                                                >
+                                                <span class="font-bold text-white truncate drop-shadow-sm">{{
+                                                    server.spell?.name || 'N/A'
+                                                }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Card Content -->
+                                    <div class="p-3 sm:p-4 bg-card">
+                                        <div class="space-y-2 sm:space-y-3">
+                                            <!-- Server Info -->
+                                            <div
+                                                class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm"
+                                            >
+                                                <div class="flex items-center gap-2">
+                                                    <Server
+                                                        class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0"
+                                                    />
+                                                    <span class="text-muted-foreground">{{ $t('servers.node') }}:</span>
+                                                    <span class="font-medium truncate">{{
+                                                        server.node?.name || 'N/A'
+                                                    }}</span>
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    <Hash
+                                                        class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0"
+                                                    />
+                                                    <span class="text-muted-foreground"
+                                                        >{{ $t('servers.realm') }}:</span
+                                                    >
+                                                    <span class="font-medium truncate">{{
+                                                        server.realm?.name || 'N/A'
+                                                    }}</span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Resources -->
+                                            <div class="grid grid-cols-3 gap-1 sm:gap-2 text-xs">
+                                                <div
+                                                    class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                >
+                                                    <div class="font-semibold text-primary text-xs sm:text-sm">
+                                                        {{ formatMemory(server.memory) }}
+                                                    </div>
+                                                    <div class="text-muted-foreground text-xs">
+                                                        {{ $t('servers.memory') }}
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                >
+                                                    <div class="font-semibold text-primary text-xs sm:text-sm">
+                                                        {{ formatDisk(server.disk) }}
+                                                    </div>
+                                                    <div class="text-muted-foreground text-xs">
+                                                        {{ $t('servers.disk') }}
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                >
+                                                    <div class="font-semibold text-primary text-xs sm:text-sm">
+                                                        {{ server.cpu }}%
+                                                    </div>
+                                                    <div class="text-muted-foreground text-xs">
+                                                        {{ $t('servers.cpu') }}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Click indicator -->
+                                            <div class="flex items-center justify-end pt-1 sm:pt-2">
+                                                <div
+                                                    class="text-xs text-muted-foreground group-hover:text-primary transition-colors"
+                                                >
+                                                    {{ $t('servers.clickToView') }} →
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </ContextMenuTrigger>
+                            <ContextMenuContent>
+                                <ContextMenuLabel>{{ server.name }}</ContextMenuLabel>
+                                <ContextMenuSeparator />
+                                <ContextMenuSub>
+                                    <ContextMenuSubTrigger>
+                                        <FolderOpen class="h-4 w-4 mr-2" />
+                                        {{ $t('servers.moveToFolder') }}
+                                    </ContextMenuSubTrigger>
+                                    <ContextMenuSubContent>
+                                        <ContextMenuItem
+                                            v-for="folder in serverFolders"
+                                            :key="folder.id"
+                                            @click="moveServerToFolder(server, folder.id)"
+                                        >
+                                            <FolderOpen class="h-4 w-4 mr-2" />
+                                            {{ folder.name }}
+                                        </ContextMenuItem>
+                                        <ContextMenuItem class="text-primary" @click="moveServerToFolder(server, null)">
+                                            <Server class="h-4 w-4 mr-2" />
+                                            {{ $t('servers.unassigned') }}
+                                            <span class="ml-auto text-xs">{{ $t('servers.current') }}</span>
+                                        </ContextMenuItem>
+                                    </ContextMenuSubContent>
+                                </ContextMenuSub>
+                                <ContextMenuSeparator />
+                                <ContextMenuItem @click="createFolderForServer(server)">
+                                    <FolderPlus class="h-4 w-4 mr-2" />
+                                    {{ $t('servers.createNewFolder') }}
+                                </ContextMenuItem>
+                            </ContextMenuContent>
+                        </ContextMenu>
+                    </div>
+                </div>
+            </div>
+
+            <!-- List View (Original) -->
+            <div v-else class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                <ContextMenu v-for="server in servers" :key="server.id">
+                    <ContextMenuTrigger as-child>
                         <div
-                            v-for="server in unassignedServers"
-                            :key="server.id"
                             class="group bg-card border-2 border-border rounded-lg transition-all duration-200 overflow-hidden"
                             :class="{
                                 'cursor-pointer hover:shadow-lg hover:border-primary/20 hover:scale-[1.02]':
@@ -289,10 +549,9 @@
                                 'cursor-not-allowed opacity-75': !isServerAccessible(server),
                             }"
                             @click="openServerDetails(server)"
-                            @contextmenu.prevent="showContextMenu($event, server, null)"
                         >
                             <!-- Spell Banner - Full Width, No Padding -->
-                            <div class="relative w-full h-24 sm:h-32">
+                            <div class="relative w-full h-32">
                                 <!-- Spell Banner Background -->
                                 <div
                                     v-if="server.spell?.banner"
@@ -308,43 +567,33 @@
                                 <!-- Access Restriction Overlay -->
                                 <div
                                     v-if="!isServerAccessible(server)"
-                                    class="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20"
+                                    class="absolute inset-0 bg-red-500/20 flex items-center justify-center z-20"
                                 >
-                                    <div class="text-center text-white p-4">
-                                        <div class="text-sm font-semibold mb-2">
-                                            {{
-                                                server.node?.maintenance_mode
-                                                    ? $t('servers.nodeMaintenance')
-                                                    : getAccessRestrictionReason(server)
-                                            }}
+                                    <div class="text-center text-white">
+                                        <div class="text-sm font-semibold">
+                                            {{ getAccessRestrictionReason(server) }}
                                         </div>
-                                        <div class="text-xs opacity-90 leading-relaxed">
-                                            {{
-                                                server.node?.maintenance_mode
-                                                    ? $t('servers.nodeMaintenanceLong')
-                                                    : $t('servers.accessRestrictedDescription')
-                                            }}
+                                        <div class="text-xs opacity-80">
+                                            {{ $t('servers.accessRestrictedDescription') }}
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Content overlaid on banner -->
-                                <div class="relative z-10 p-3 sm:p-4 h-full flex flex-col justify-between">
+                                <div class="relative z-10 p-4 h-full flex flex-col justify-between">
                                     <div class="flex items-start justify-between">
                                         <div class="flex-1 min-w-0">
-                                            <h3
-                                                class="text-base sm:text-lg font-bold text-white drop-shadow-sm truncate"
-                                            >
+                                            <h3 class="text-lg font-bold text-white drop-shadow-sm truncate">
                                                 {{ server.name }}
                                             </h3>
-                                            <p class="text-xs sm:text-sm text-white/80 drop-shadow-sm truncate mt-1">
+                                            <p class="text-sm text-white/80 drop-shadow-sm truncate mt-1">
                                                 {{ server.description || $t('servers.noDescription') }}
                                             </p>
                                         </div>
                                         <div class="flex flex-col gap-1">
                                             <Badge
                                                 :variant="getStatusVariant(displayStatus(server))"
-                                                class="bg-white/20 text-white border-white/30 hover:bg-white/30 text-xs"
+                                                class="bg-white/20 text-white border-white/30 hover:bg-white/30"
                                             >
                                                 {{ $t(`servers.status.${displayStatus(server)}`) }}
                                             </Badge>
@@ -360,8 +609,8 @@
                                     </div>
 
                                     <!-- Spell name at bottom of header -->
-                                    <div class="flex items-center gap-2 text-xs sm:text-sm">
-                                        <Sparkles class="h-3 w-3 sm:h-4 sm:w-4 text-white drop-shadow-sm" />
+                                    <div class="flex items-center gap-2 text-sm">
+                                        <Sparkles class="h-4 w-4 text-white drop-shadow-sm" />
                                         <span class="text-white/90 font-medium drop-shadow-sm"
                                             >{{ $t('servers.spell') }}:</span
                                         >
@@ -373,52 +622,48 @@
                             </div>
 
                             <!-- Card Content -->
-                            <div class="p-3 sm:p-4 bg-card">
-                                <div class="space-y-2 sm:space-y-3">
+                            <div class="p-4 bg-card">
+                                <div class="space-y-3">
                                     <!-- Server Info -->
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
+                                    <div class="grid grid-cols-2 gap-3 text-sm">
                                         <div class="flex items-center gap-2">
-                                            <Server class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                                            <Server class="h-4 w-4 text-muted-foreground" />
                                             <span class="text-muted-foreground">{{ $t('servers.node') }}:</span>
                                             <span class="font-medium truncate">{{ server.node?.name || 'N/A' }}</span>
                                         </div>
                                         <div class="flex items-center gap-2">
-                                            <Hash class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                                            <Hash class="h-4 w-4 text-muted-foreground" />
                                             <span class="text-muted-foreground">{{ $t('servers.realm') }}:</span>
                                             <span class="font-medium truncate">{{ server.realm?.name || 'N/A' }}</span>
                                         </div>
                                     </div>
 
                                     <!-- Resources -->
-                                    <div class="grid grid-cols-3 gap-1 sm:gap-2 text-xs">
+                                    <div class="grid grid-cols-3 gap-2 text-xs">
                                         <div
-                                            class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div class="font-semibold text-primary text-xs sm:text-sm">
+                                            <div class="font-semibold text-primary">
                                                 {{ formatMemory(server.memory) }}
                                             </div>
-                                            <div class="text-muted-foreground text-xs">{{ $t('servers.memory') }}</div>
+                                            <div class="text-muted-foreground">{{ $t('servers.memory') }}</div>
                                         </div>
                                         <div
-                                            class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div class="font-semibold text-primary text-xs sm:text-sm">
-                                                {{ formatDisk(server.disk) }}
-                                            </div>
-                                            <div class="text-muted-foreground text-xs">{{ $t('servers.disk') }}</div>
+                                            <div class="font-semibold text-primary">{{ formatDisk(server.disk) }}</div>
+                                            <div class="text-muted-foreground">{{ $t('servers.disk') }}</div>
                                         </div>
                                         <div
-                                            class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div class="font-semibold text-primary text-xs sm:text-sm">
-                                                {{ server.cpu }}%
-                                            </div>
-                                            <div class="text-muted-foreground text-xs">{{ $t('servers.cpu') }}</div>
+                                            <div class="font-semibold text-primary">{{ server.cpu }}%</div>
+                                            <div class="text-muted-foreground">{{ $t('servers.cpu') }}</div>
                                         </div>
                                     </div>
 
                                     <!-- Click indicator -->
-                                    <div class="flex items-center justify-end pt-1 sm:pt-2">
+                                    <div class="flex items-center justify-end pt-2">
                                         <div
                                             class="text-xs text-muted-foreground group-hover:text-primary transition-colors"
                                         >
@@ -428,137 +673,37 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- List View (Original) -->
-            <div v-else class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                <div
-                    v-for="server in servers"
-                    :key="server.id"
-                    class="group bg-card border-2 border-border rounded-lg transition-all duration-200 overflow-hidden"
-                    :class="{
-                        'cursor-pointer hover:shadow-lg hover:border-primary/20 hover:scale-[1.02]':
-                            isServerAccessible(server),
-                        'cursor-not-allowed opacity-75': !isServerAccessible(server),
-                    }"
-                    @click="openServerDetails(server)"
-                    @contextmenu.prevent="showContextMenu($event, server, null)"
-                >
-                    <!-- Spell Banner - Full Width, No Padding -->
-                    <div class="relative w-full h-32">
-                        <!-- Spell Banner Background -->
-                        <div
-                            v-if="server.spell?.banner"
-                            class="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                            :style="{ backgroundImage: `url(${server.spell.banner})` }"
-                        />
-
-                        <!-- Dark overlay for better text readability -->
-                        <div
-                            class="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300"
-                        />
-
-                        <!-- Access Restriction Overlay -->
-                        <div
-                            v-if="!isServerAccessible(server)"
-                            class="absolute inset-0 bg-red-500/20 flex items-center justify-center z-20"
-                        >
-                            <div class="text-center text-white">
-                                <div class="text-sm font-semibold">{{ getAccessRestrictionReason(server) }}</div>
-                                <div class="text-xs opacity-80">{{ $t('servers.accessRestrictedDescription') }}</div>
-                            </div>
-                        </div>
-
-                        <!-- Content overlaid on banner -->
-                        <div class="relative z-10 p-4 h-full flex flex-col justify-between">
-                            <div class="flex items-start justify-between">
-                                <div class="flex-1 min-w-0">
-                                    <h3 class="text-lg font-bold text-white drop-shadow-sm truncate">
-                                        {{ server.name }}
-                                    </h3>
-                                    <p class="text-sm text-white/80 drop-shadow-sm truncate mt-1">
-                                        {{ server.description || $t('servers.noDescription') }}
-                                    </p>
-                                </div>
-                                <div class="flex flex-col gap-1">
-                                    <Badge
-                                        :variant="getStatusVariant(displayStatus(server))"
-                                        class="bg-white/20 text-white border-white/30 hover:bg-white/30"
-                                    >
-                                        {{ $t(`servers.status.${displayStatus(server)}`) }}
-                                    </Badge>
-                                    <!-- Subuser Access Badge -->
-                                    <Badge
-                                        v-if="server.is_subuser"
-                                        variant="outline"
-                                        class="bg-blue-500/20 text-blue-100 border-blue-300/30 text-xs"
-                                    >
-                                        {{ $t('servers.subuserAccess') }}
-                                    </Badge>
-                                </div>
-                            </div>
-
-                            <!-- Spell name at bottom of header -->
-                            <div class="flex items-center gap-2 text-sm">
-                                <Sparkles class="h-4 w-4 text-white drop-shadow-sm" />
-                                <span class="text-white/90 font-medium drop-shadow-sm">{{ $t('servers.spell') }}:</span>
-                                <span class="font-bold text-white truncate drop-shadow-sm">{{
-                                    server.spell?.name || 'N/A'
-                                }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card Content -->
-                    <div class="p-4 bg-card">
-                        <div class="space-y-3">
-                            <!-- Server Info -->
-                            <div class="grid grid-cols-2 gap-3 text-sm">
-                                <div class="flex items-center gap-2">
-                                    <Server class="h-4 w-4 text-muted-foreground" />
-                                    <span class="text-muted-foreground">{{ $t('servers.node') }}:</span>
-                                    <span class="font-medium truncate">{{ server.node?.name || 'N/A' }}</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <Hash class="h-4 w-4 text-muted-foreground" />
-                                    <span class="text-muted-foreground">{{ $t('servers.realm') }}:</span>
-                                    <span class="font-medium truncate">{{ server.realm?.name || 'N/A' }}</span>
-                                </div>
-                            </div>
-
-                            <!-- Resources -->
-                            <div class="grid grid-cols-3 gap-2 text-xs">
-                                <div
-                                    class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                    </ContextMenuTrigger>
+                    <ContextMenuContent>
+                        <ContextMenuLabel>{{ server.name }}</ContextMenuLabel>
+                        <ContextMenuSeparator />
+                        <ContextMenuSub>
+                            <ContextMenuSubTrigger>
+                                <FolderOpen class="h-4 w-4 mr-2" />
+                                {{ $t('servers.moveToFolder') }}
+                            </ContextMenuSubTrigger>
+                            <ContextMenuSubContent>
+                                <ContextMenuItem
+                                    v-for="folder in serverFolders"
+                                    :key="folder.id"
+                                    @click="moveServerToFolder(server, folder.id)"
                                 >
-                                    <div class="font-semibold text-primary">{{ formatMemory(server.memory) }}</div>
-                                    <div class="text-muted-foreground">{{ $t('servers.memory') }}</div>
-                                </div>
-                                <div
-                                    class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
-                                >
-                                    <div class="font-semibold text-primary">{{ formatDisk(server.disk) }}</div>
-                                    <div class="text-muted-foreground">{{ $t('servers.disk') }}</div>
-                                </div>
-                                <div
-                                    class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
-                                >
-                                    <div class="font-semibold text-primary">{{ server.cpu }}%</div>
-                                    <div class="text-muted-foreground">{{ $t('servers.cpu') }}</div>
-                                </div>
-                            </div>
-
-                            <!-- Click indicator -->
-                            <div class="flex items-center justify-end pt-2">
-                                <div class="text-xs text-muted-foreground group-hover:text-primary transition-colors">
-                                    {{ $t('servers.clickToView') }} →
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                                    <FolderOpen class="h-4 w-4 mr-2" />
+                                    {{ folder.name }}
+                                </ContextMenuItem>
+                                <ContextMenuItem @click="moveServerToFolder(server, null)">
+                                    <Server class="h-4 w-4 mr-2" />
+                                    {{ $t('servers.unassigned') }}
+                                </ContextMenuItem>
+                            </ContextMenuSubContent>
+                        </ContextMenuSub>
+                        <ContextMenuSeparator />
+                        <ContextMenuItem @click="createFolderForServer(server)">
+                            <FolderPlus class="h-4 w-4 mr-2" />
+                            {{ $t('servers.createNewFolder') }}
+                        </ContextMenuItem>
+                    </ContextMenuContent>
+                </ContextMenu>
             </div>
 
             <!-- Pagination -->
@@ -624,62 +769,6 @@
                 <h3 class="text-lg font-semibold mb-2">{{ $t('servers.noSearchResults') }}</h3>
                 <p class="text-sm text-muted-foreground">{{ $t('servers.tryDifferentSearch') }}</p>
             </div>
-        </div>
-    </div>
-
-    <!-- Context Menu for Server Actions -->
-    <div
-        v-if="contextMenu.show"
-        class="fixed z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[200px] max-w-[90vw] context-menu"
-        :style="contextMenuStyle"
-        @click.stop
-    >
-        <div class="px-3 py-2 text-sm font-medium border-b border-border">
-            {{ contextMenu.server?.name }}
-        </div>
-
-        <!-- Move to Folder Section -->
-        <div class="px-3 py-2">
-            <div class="text-xs text-muted-foreground mb-2">{{ $t('servers.moveToFolder') }}</div>
-            <div class="space-y-1">
-                <button
-                    v-for="folder in serverFolders"
-                    :key="folder.id"
-                    class="w-full text-left px-2 py-1 text-sm hover:bg-accent hover:text-accent-foreground rounded-sm flex items-center gap-2"
-                    :class="{ 'text-primary': contextMenu.currentFolderId === folder.id }"
-                    @click="moveServerToFolder(contextMenu.server!, folder.id)"
-                >
-                    <FolderOpen class="h-4 w-4" />
-                    {{ folder.name }}
-                    <span v-if="contextMenu.currentFolderId === folder.id" class="ml-auto text-xs">{{
-                        $t('servers.current')
-                    }}</span>
-                </button>
-
-                <!-- Move to Unassigned -->
-                <button
-                    class="w-full text-left px-2 py-1 text-sm hover:bg-accent hover:text-accent-foreground rounded-sm flex items-center gap-2"
-                    :class="{ 'text-primary': contextMenu.currentFolderId === null }"
-                    @click="moveServerToFolder(contextMenu.server!, null)"
-                >
-                    <Server class="h-4 w-4" />
-                    {{ $t('servers.unassigned') }}
-                    <span v-if="contextMenu.currentFolderId === null" class="ml-auto text-xs">{{
-                        $t('servers.current')
-                    }}</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Create New Folder Option -->
-        <div class="px-3 py-2 border-t border-border">
-            <button
-                class="w-full text-left px-2 py-1 text-sm hover:bg-accent hover:text-accent-foreground rounded-sm flex items-center gap-2"
-                @click="createFolderForServer(contextMenu.server!)"
-            >
-                <FolderPlus class="h-4 w-4" />
-                {{ $t('servers.createNewFolder') }}
-            </button>
         </div>
     </div>
 
@@ -791,6 +880,17 @@ import {
 } from 'lucide-vue-next';
 import axios from 'axios';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuLabel,
+    ContextMenuSeparator,
+    ContextMenuSub,
+    ContextMenuSubContent,
+    ContextMenuSubTrigger,
+    ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 import { useToast } from 'vue-toastification';
 
 const sessionStore = useSessionStore();
@@ -928,18 +1028,6 @@ const filteredServers = computed(() => {
     );
 });
 
-const contextMenuStyle = computed(() => {
-    if (!contextMenu.value.show) return {};
-
-    const maxX = typeof window !== 'undefined' ? window.innerWidth - 220 : contextMenu.value.x;
-    const maxY = typeof window !== 'undefined' ? window.innerHeight - 200 : contextMenu.value.y;
-
-    return {
-        left: Math.min(contextMenu.value.x, maxX) + 'px',
-        top: Math.min(contextMenu.value.y, maxY) + 'px',
-    };
-});
-
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect();
 
@@ -961,10 +1049,6 @@ onMounted(async () => {
 
     // Organize servers into folders (but preserve existing assignments)
     await organizeServersIntoFolders();
-
-    // Add click outside handler for context menu
-    document.addEventListener('click', handleClickOutside);
-    document.addEventListener('keydown', handleEscapeKey);
 
     // Set up periodic server validation (every 5 minutes)
     validationInterval = setInterval(
@@ -1008,10 +1092,8 @@ onMounted(async () => {
     ); // 5 minutes
 });
 
-// Clean up event listener
+// Clean up interval
 onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside);
-    document.removeEventListener('keydown', handleEscapeKey);
     clearInterval(validationInterval);
 });
 
@@ -1359,23 +1441,6 @@ async function organizeServersIntoFolders() {
     }
 }
 
-// Context Menu State
-const contextMenu = ref({
-    show: false,
-    x: 0,
-    y: 0,
-    server: null as Server | null,
-    currentFolderId: null as number | null,
-});
-
-function showContextMenu(event: MouseEvent, server: Server, folderId: number | null) {
-    contextMenu.value.show = true;
-    contextMenu.value.x = event.clientX;
-    contextMenu.value.y = event.clientY;
-    contextMenu.value.server = server;
-    contextMenu.value.currentFolderId = folderId;
-}
-
 function moveServerToFolder(server: Server, targetFolderId: number | null) {
     if (!server) return;
 
@@ -1394,7 +1459,6 @@ function moveServerToFolder(server: Server, targetFolderId: number | null) {
 
     // Don't move if it's the same location
     if (currentFolderId === targetFolderId) {
-        contextMenu.value.show = false;
         return;
     }
 
@@ -1422,7 +1486,6 @@ function moveServerToFolder(server: Server, targetFolderId: number | null) {
 
     // Save to local storage
     saveFoldersToStorage();
-    contextMenu.value.show = false;
 }
 
 function createFolderForServer(server: Server) {
@@ -1458,20 +1521,5 @@ function createFolderForServer(server: Server) {
 
     serverFolders.value.push(newFolder);
     saveFoldersToStorage();
-    contextMenu.value.show = false;
-}
-
-function handleClickOutside(event: MouseEvent) {
-    // Check if the click is outside the context menu
-    const target = event.target as Element;
-    if (target && !target.closest('.context-menu')) {
-        contextMenu.value.show = false;
-    }
-}
-
-function handleEscapeKey(event: KeyboardEvent) {
-    if (event.key === 'Escape' && contextMenu.value.show) {
-        contextMenu.value.show = false;
-    }
 }
 </script>

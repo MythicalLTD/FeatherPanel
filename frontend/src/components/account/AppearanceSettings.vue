@@ -7,7 +7,7 @@
 
         <!-- Theme Settings -->
         <div class="space-y-4">
-            <h4 class="text-sm font-medium">{{ $t('account.theme') }}</h4>
+            <h4 class="text-base font-semibold">{{ $t('account.themeSettings') }}</h4>
 
             <!-- Theme Toggle -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -26,26 +26,11 @@
                     {{ isDark ? $t('account.lightMode') : $t('account.darkMode') }}
                 </Button>
             </div>
-
-            <!-- Theme Color -->
-            <div class="space-y-3">
-                <label class="text-sm font-medium">{{ $t('account.themeColor') }}</label>
-                <div class="grid grid-cols-4 gap-3 sm:flex sm:gap-2">
-                    <button
-                        v-for="color in themeColors"
-                        :key="color.name"
-                        class="w-10 h-10 sm:w-8 sm:h-8 rounded-full border-2 transition-all duration-200 hover:scale-110 touch-manipulation"
-                        :class="[currentThemeColor === color.value ? 'border-primary' : 'border-border', color.bgClass]"
-                        :title="color.name"
-                        @click="setThemeColor(color.value)"
-                    />
-                </div>
-            </div>
         </div>
 
         <!-- Background Settings -->
         <div class="space-y-4">
-            <h4 class="text-sm font-medium">{{ $t('background.customize') }}</h4>
+            <h4 class="text-base font-semibold">{{ $t('account.backgroundSettings') }}</h4>
 
             <!-- Preset Backgrounds -->
             <div class="space-y-3">
@@ -125,7 +110,7 @@
 
         <!-- Language Settings -->
         <div class="space-y-4">
-            <h4 class="text-sm font-medium">{{ $t('account.language') }}</h4>
+            <h4 class="text-base font-semibold">{{ $t('account.languageSettings') }}</h4>
 
             <div class="space-y-3">
                 <div class="space-y-2">
@@ -155,7 +140,7 @@
 
         <!-- Sidebar Settings -->
         <div class="space-y-4">
-            <h4 class="text-sm font-medium">{{ $t('account.sidebarSettings') }}</h4>
+            <h4 class="text-base font-semibold">{{ $t('account.sidebarSettings') }}</h4>
 
             <div class="space-y-3">
                 <div class="space-y-2">
@@ -193,18 +178,37 @@
 
         <!-- Dock Settings -->
         <div class="space-y-4">
-            <h4 class="text-sm font-medium">{{ $t('account.dockSettings') }}</h4>
+            <h4 class="text-base font-semibold">{{ $t('account.dockSettings') }}</h4>
 
             <div class="space-y-3">
-                <div class="flex items-center justify-between">
-                    <div class="space-y-1">
-                        <p class="text-sm font-medium">{{ $t('account.showDock') }}</p>
-                        <p class="text-xs text-muted-foreground">{{ $t('account.showDockDescription') }}</p>
-                    </div>
-                    <Switch v-model="showDock" @update:model-value="updateDockVisibility" />
+                <div class="space-y-2">
+                    <Label for="dock-visible">{{ $t('account.showDock') }}</Label>
+                    <Select
+                        :model-value="showDock ? 'enabled' : 'disabled'"
+                        @update:model-value="handleDockVisibilityChange"
+                    >
+                        <SelectTrigger id="dock-visible">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="enabled">
+                                <div class="flex items-center gap-2">
+                                    <Eye class="h-4 w-4" />
+                                    {{ $t('common.enable') }}
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="disabled">
+                                <div class="flex items-center gap-2">
+                                    <EyeOff class="h-4 w-4" />
+                                    {{ $t('common.disable') }}
+                                </div>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <p class="text-xs text-muted-foreground">{{ $t('account.showDockDescription') }}</p>
                 </div>
 
-                <div class="space-y-2">
+                <div v-if="showDock" class="space-y-2">
                     <label class="text-sm font-medium">{{ $t('account.dockSize') }}</label>
                     <div class="flex items-center gap-3">
                         <input
@@ -220,7 +224,7 @@
                     </div>
                 </div>
 
-                <div class="space-y-2">
+                <div v-if="showDock" class="space-y-2">
                     <label class="text-sm font-medium">{{ $t('account.dockOpacity') }}</label>
                     <div class="flex items-center gap-3">
                         <input
@@ -233,6 +237,128 @@
                             @input="updateDockOpacity"
                         />
                         <span class="text-sm text-muted-foreground w-12">{{ dockOpacity }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Context Menu Settings -->
+        <div class="space-y-4">
+            <h4 class="text-base font-semibold">{{ $t('account.customContextMenuSettings') }}</h4>
+
+            <div class="space-y-4">
+                <!-- Enable/Disable Context Menu -->
+                <div class="space-y-2">
+                    <Label for="context-menu-enabled">{{ $t('account.enableCustomContextMenu') }}</Label>
+                    <Select
+                        :model-value="customContextMenuEnabled ? 'enabled' : 'disabled'"
+                        @update:model-value="handleContextMenuChange"
+                    >
+                        <SelectTrigger id="context-menu-enabled">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="enabled">
+                                <div class="flex items-center gap-2">
+                                    <Eye class="h-4 w-4" />
+                                    {{ $t('common.enable') }}
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="disabled">
+                                <div class="flex items-center gap-2">
+                                    <EyeOff class="h-4 w-4" />
+                                    {{ $t('common.disable') }}
+                                </div>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <p class="text-xs text-muted-foreground">{{ $t('account.customContextMenuDescription') }}</p>
+                </div>
+
+                <!-- Context Menu Options (only show when enabled) -->
+                <div v-if="customContextMenuEnabled" class="space-y-3 p-4 bg-muted/30 rounded-lg border border-border">
+                    <!-- Show Navigation Actions -->
+                    <div class="space-y-2">
+                        <Label for="context-menu-nav">{{ $t('account.showNavigationActions') }}</Label>
+                        <Select
+                            :model-value="contextMenuShowNavigation ? 'show' : 'hide'"
+                            @update:model-value="handleContextMenuNavigationChange"
+                        >
+                            <SelectTrigger id="context-menu-nav">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="show">
+                                    <div class="flex items-center gap-2">
+                                        <Eye class="h-4 w-4" />
+                                        {{ $t('common.show') }}
+                                    </div>
+                                </SelectItem>
+                                <SelectItem value="hide">
+                                    <div class="flex items-center gap-2">
+                                        <EyeOff class="h-4 w-4" />
+                                        {{ $t('common.hide') }}
+                                    </div>
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p class="text-xs text-muted-foreground">{{ $t('account.navigationActionsDescription') }}</p>
+                    </div>
+
+                    <!-- Show Clipboard Actions -->
+                    <div class="space-y-2">
+                        <Label for="context-menu-clipboard">{{ $t('account.showClipboardActions') }}</Label>
+                        <Select
+                            :model-value="contextMenuShowClipboard ? 'show' : 'hide'"
+                            @update:model-value="handleContextMenuClipboardChange"
+                        >
+                            <SelectTrigger id="context-menu-clipboard">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="show">
+                                    <div class="flex items-center gap-2">
+                                        <Eye class="h-4 w-4" />
+                                        {{ $t('common.show') }}
+                                    </div>
+                                </SelectItem>
+                                <SelectItem value="hide">
+                                    <div class="flex items-center gap-2">
+                                        <EyeOff class="h-4 w-4" />
+                                        {{ $t('common.hide') }}
+                                    </div>
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p class="text-xs text-muted-foreground">{{ $t('account.clipboardActionsDescription') }}</p>
+                    </div>
+
+                    <!-- Show Quick Actions -->
+                    <div class="space-y-2">
+                        <Label for="context-menu-quick">{{ $t('account.showQuickActions') }}</Label>
+                        <Select
+                            :model-value="contextMenuShowQuickActions ? 'show' : 'hide'"
+                            @update:model-value="handleContextMenuQuickActionsChange"
+                        >
+                            <SelectTrigger id="context-menu-quick">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="show">
+                                    <div class="flex items-center gap-2">
+                                        <Eye class="h-4 w-4" />
+                                        {{ $t('common.show') }}
+                                    </div>
+                                </SelectItem>
+                                <SelectItem value="hide">
+                                    <div class="flex items-center gap-2">
+                                        <EyeOff class="h-4 w-4" />
+                                        {{ $t('common.hide') }}
+                                    </div>
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p class="text-xs text-muted-foreground">{{ $t('account.quickActionsDescription') }}</p>
                     </div>
                 </div>
             </div>
@@ -276,7 +402,8 @@
 import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { Sun, Moon, Upload, RotateCcw, Eye, EyeOff, PanelLeft } from 'lucide-vue-next';
 import { useTheme } from '@/composables/useTheme';
 import { useLanguage } from '@/composables/useLanguage';
@@ -309,20 +436,6 @@ const updateSidebarVisibility = (visibility: SidebarVisibility) => {
     originalUpdateSidebarVisibility(visibility);
 };
 
-// Theme colors
-const themeColors = [
-    { name: 'Blue', value: 'blue', bgClass: 'bg-blue-500' },
-    { name: 'Green', value: 'green', bgClass: 'bg-green-500' },
-    { name: 'Purple', value: 'purple', bgClass: 'bg-purple-500' },
-    { name: 'Orange', value: 'orange', bgClass: 'bg-orange-500' },
-    { name: 'Pink', value: 'pink', bgClass: 'bg-pink-500' },
-    { name: 'Red', value: 'red', bgClass: 'bg-red-500' },
-    { name: 'Indigo', value: 'indigo', bgClass: 'bg-indigo-500' },
-    { name: 'Teal', value: 'teal', bgClass: 'bg-teal-500' },
-];
-
-const currentThemeColor = ref('blue');
-
 // File input ref
 const fileInput = ref<HTMLInputElement | null>(null);
 
@@ -330,6 +443,12 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const showDock = ref(false);
 const dockSize = ref(48);
 const dockOpacity = ref(80);
+
+// Custom context menu state
+const customContextMenuEnabled = ref(true);
+const contextMenuShowNavigation = ref(true);
+const contextMenuShowClipboard = ref(true);
+const contextMenuShowQuickActions = ref(true);
 
 // Loading state for sidebar changes
 const isReloading = ref(false);
@@ -386,13 +505,6 @@ const presetBackgrounds = [
 
 // Load settings from localStorage
 const loadSettings = () => {
-    // Theme color settings
-    const savedThemeColor = localStorage.getItem('theme-color');
-    if (savedThemeColor) {
-        currentThemeColor.value = savedThemeColor;
-        applyThemeColor(savedThemeColor);
-    }
-
     // Dock settings
     const savedShowDock = localStorage.getItem('dock-visible');
     const savedDockSize = localStorage.getItem('dock-size');
@@ -415,19 +527,104 @@ const loadSettings = () => {
         dockOpacity.value = parseInt(savedDockOpacity);
         updateDockOpacity();
     }
+
+    // Custom context menu settings
+    const savedCustomContextMenu = localStorage.getItem('custom-context-menu-enabled');
+    if (savedCustomContextMenu !== null) {
+        customContextMenuEnabled.value = savedCustomContextMenu === 'true';
+    }
+
+    const savedShowNavigation = localStorage.getItem('context-menu-show-navigation');
+    if (savedShowNavigation !== null) {
+        contextMenuShowNavigation.value = savedShowNavigation === 'true';
+    }
+
+    const savedShowClipboard = localStorage.getItem('context-menu-show-clipboard');
+    if (savedShowClipboard !== null) {
+        contextMenuShowClipboard.value = savedShowClipboard === 'true';
+    }
+
+    const savedShowQuickActions = localStorage.getItem('context-menu-show-quick-actions');
+    if (savedShowQuickActions !== null) {
+        contextMenuShowQuickActions.value = savedShowQuickActions === 'true';
+    }
+};
+
+// Handle dock visibility change from select
+const handleDockVisibilityChange = (value: string | number | boolean | bigint | Record<string, unknown> | null) => {
+    if (typeof value === 'string') {
+        const enabled = value === 'enabled';
+        showDock.value = enabled;
+        updateDockVisibility(enabled);
+    }
+};
+
+// Handle context menu change from select
+const handleContextMenuChange = (value: string | number | boolean | bigint | Record<string, unknown> | null) => {
+    if (typeof value === 'string') {
+        updateCustomContextMenuEnabled(value === 'enabled');
+    }
+};
+
+// Handle context menu navigation visibility
+const handleContextMenuNavigationChange = (
+    value: string | number | boolean | bigint | Record<string, unknown> | null,
+) => {
+    if (typeof value === 'string') {
+        contextMenuShowNavigation.value = value === 'show';
+        localStorage.setItem('context-menu-show-navigation', (value === 'show').toString());
+        window.dispatchEvent(
+            new CustomEvent('context-menu-options-change', {
+                detail: {
+                    showNavigation: value === 'show',
+                    showClipboard: contextMenuShowClipboard.value,
+                    showQuickActions: contextMenuShowQuickActions.value,
+                },
+            }),
+        );
+    }
+};
+
+// Handle context menu clipboard visibility
+const handleContextMenuClipboardChange = (
+    value: string | number | boolean | bigint | Record<string, unknown> | null,
+) => {
+    if (typeof value === 'string') {
+        contextMenuShowClipboard.value = value === 'show';
+        localStorage.setItem('context-menu-show-clipboard', (value === 'show').toString());
+        window.dispatchEvent(
+            new CustomEvent('context-menu-options-change', {
+                detail: {
+                    showNavigation: contextMenuShowNavigation.value,
+                    showClipboard: value === 'show',
+                    showQuickActions: contextMenuShowQuickActions.value,
+                },
+            }),
+        );
+    }
+};
+
+// Handle context menu quick actions visibility
+const handleContextMenuQuickActionsChange = (
+    value: string | number | boolean | bigint | Record<string, unknown> | null,
+) => {
+    if (typeof value === 'string') {
+        contextMenuShowQuickActions.value = value === 'show';
+        localStorage.setItem('context-menu-show-quick-actions', (value === 'show').toString());
+        window.dispatchEvent(
+            new CustomEvent('context-menu-options-change', {
+                detail: {
+                    showNavigation: contextMenuShowNavigation.value,
+                    showClipboard: contextMenuShowClipboard.value,
+                    showQuickActions: value === 'show',
+                },
+            }),
+        );
+    }
 };
 
 // Theme functions (using shared theme composable)
-
-const setThemeColor = (color: string) => {
-    currentThemeColor.value = color;
-    applyThemeColor(color);
-    localStorage.setItem('theme-color', color);
-};
-
-const applyThemeColor = (color: string) => {
-    document.documentElement.setAttribute('data-theme-color', color);
-};
+const { applyTheme } = useTheme();
 
 // Background functions
 const selectPreset = (preset: { id: string; name: string; url: string; placeholder?: string }) => {
@@ -456,6 +653,7 @@ const handleFileUpload = (event: Event) => {
 
 // Dock functions
 const updateDockVisibility = (visible: boolean) => {
+    showDock.value = visible;
     document.documentElement.style.setProperty('--dock-display', visible ? 'flex' : 'none');
     localStorage.setItem('dock-visible', visible.toString());
 };
@@ -470,15 +668,20 @@ const updateDockOpacity = () => {
     localStorage.setItem('dock-opacity', dockOpacity.value.toString());
 };
 
+// Custom context menu functions
+const updateCustomContextMenuEnabled = (enabled: boolean) => {
+    customContextMenuEnabled.value = enabled;
+    localStorage.setItem('custom-context-menu-enabled', enabled.toString());
+    window.dispatchEvent(new CustomEvent('custom-context-menu-toggle', { detail: { enabled } }));
+};
+
 // Reset all settings
 const resetAllSettings = () => {
     // Reset theme
     setTheme(false);
 
     // Reset theme color
-    currentThemeColor.value = 'blue';
-    applyThemeColor('blue');
-    localStorage.setItem('theme-color', 'blue');
+    applyTheme(false);
 
     // Reset background
     resetBackground();
@@ -493,15 +696,22 @@ const resetAllSettings = () => {
     updateSidebarVisibility('visible');
 
     // Reset dock
-    showDock.value = false;
+    updateDockVisibility(false);
     dockSize.value = 48;
     dockOpacity.value = 80;
-    localStorage.setItem('dock-visible', 'false');
     localStorage.setItem('dock-size', '48');
     localStorage.setItem('dock-opacity', '80');
-    updateDockVisibility(false);
     updateDockSize();
     updateDockOpacity();
+
+    // Reset custom context menu
+    updateCustomContextMenuEnabled(true);
+    contextMenuShowNavigation.value = true;
+    contextMenuShowClipboard.value = true;
+    contextMenuShowQuickActions.value = true;
+    localStorage.setItem('context-menu-show-navigation', 'true');
+    localStorage.setItem('context-menu-show-clipboard', 'true');
+    localStorage.setItem('context-menu-show-quick-actions', 'true');
 };
 
 onMounted(() => {

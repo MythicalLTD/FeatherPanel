@@ -90,6 +90,7 @@ export const useSettingsStore = defineStore('settings', {
         appDeveloperMode: (state) => getBooleanSetting(state, 'app_developer_mode'),
         appLang: (state) => state.settings?.app_lang || 'en_US',
         appUrl: (state) => state.settings?.app_url || 'https://featherpanel.mythical.systems',
+        appSupport: (state) => state.settings?.app_support_url || 'https://discord.mythical.systems',
         appTimezone: (state) => state.settings?.app_timezone || 'UTC',
         turnstile_enabled: (state) => getBooleanSetting(state, 'turnstile_enabled'),
         turnstile_key_pub: (state) => state.settings?.turnstile_key_pub || '',

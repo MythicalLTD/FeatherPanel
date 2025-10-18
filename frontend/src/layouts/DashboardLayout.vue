@@ -74,6 +74,29 @@ onMounted(async () => {
         }
     }
     document.title = String(title);
+
+    // Initialize MacDock settings from localStorage
+    const savedShowDock = localStorage.getItem('dock-visible');
+    const savedDockSize = localStorage.getItem('dock-size');
+    const savedDockOpacity = localStorage.getItem('dock-opacity');
+
+    // Apply dock visibility
+    if (savedShowDock !== null) {
+        document.documentElement.style.setProperty('--dock-display', savedShowDock === 'true' ? 'flex' : 'none');
+    } else {
+        // Default to hidden
+        document.documentElement.style.setProperty('--dock-display', 'none');
+    }
+
+    // Apply dock size
+    if (savedDockSize) {
+        document.documentElement.style.setProperty('--dock-item-size', `${savedDockSize}px`);
+    }
+
+    // Apply dock opacity
+    if (savedDockOpacity) {
+        document.documentElement.style.setProperty('--dock-opacity', `${parseInt(savedDockOpacity) / 100}`);
+    }
 });
 
 // Update page title and always use fresh settingsStore.appName

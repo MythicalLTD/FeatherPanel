@@ -23,23 +23,72 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, onMounted, onUnmounted } from 'vue';
 import DebugPanel from './components/DebugPanel.vue';
-import KernXWebExecutor from './components/KernXWebExecutor.vue';
+import GlobalContextMenu from './components/GlobalContextMenu.vue';
 
 export default defineComponent({
     name: 'App',
     components: {
         DebugPanel,
-        KernXWebExecutor,
+        GlobalContextMenu,
     },
     setup() {
         const debugPanel = ref<InstanceType<typeof DebugPanel> | null>(null);
-        const kernXExecutor = ref<InstanceType<typeof KernXWebExecutor> | null>(null);
+        const globalContextMenu = ref<InstanceType<typeof GlobalContextMenu> | null>(null);
+        const customContextMenuEnabled = ref(true);
+
+        const handleGlobalContextMenu = (event: MouseEvent) => {
+            // Check if custom context menu is disabled
+            if (!customContextMenuEnabled.value) {
+                return;
+            }
+
+            // Check if the click is on an element that has its own context menu
+            const target = event.target as HTMLElement;
+
+            // Don't prevent context menu on input fields, textareas, or elements with contenteditable
+            if (
+                target.tagName === 'INPUT' ||
+                target.tagName === 'TEXTAREA' ||
+                target.isContentEditable ||
+                target.closest('[data-radix-context-menu-trigger]') // Don't interfere with shadcn context menus
+            ) {
+                return;
+            }
+
+            // Prevent default browser context menu
+            event.preventDefault();
+
+            // Show our custom global context menu
+            if (globalContextMenu.value) {
+                globalContextMenu.value.show(event.clientX, event.clientY);
+            }
+        };
+
+        const handleContextMenuToggle = (event: CustomEvent) => {
+            customContextMenuEnabled.value = event.detail.enabled;
+        };
+
+        onMounted(() => {
+            // Load custom context menu setting from localStorage
+            const savedSetting = localStorage.getItem('custom-context-menu-enabled');
+            if (savedSetting !== null) {
+                customContextMenuEnabled.value = savedSetting === 'true';
+            }
+
+            document.addEventListener('contextmenu', handleGlobalContextMenu);
+            window.addEventListener('custom-context-menu-toggle', handleContextMenuToggle as EventListener);
+        });
+
+        onUnmounted(() => {
+            document.removeEventListener('contextmenu', handleGlobalContextMenu);
+            window.removeEventListener('custom-context-menu-toggle', handleContextMenuToggle as EventListener);
+        });
 
         return {
             debugPanel,
-            kernXExecutor,
+            globalContextMenu,
         };
     },
 });
@@ -54,7 +103,7 @@ export default defineComponent({
         <!-- Debug Panel -->
         <DebugPanel ref="debugPanel" />
 
-        <!-- KernX WebExecutor -->
-        <KernXWebExecutor ref="kernXExecutor" />
+        <!-- Global Context Menu -->
+        <GlobalContextMenu ref="globalContextMenu" />
     </div>
 </template>

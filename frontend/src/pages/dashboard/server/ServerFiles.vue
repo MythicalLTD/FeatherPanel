@@ -471,7 +471,6 @@
                                 <div
                                     class="sm:hidden px-4 py-3 cursor-pointer"
                                     @click.stop="handleRowClick($event, file)"
-                                    @contextmenu.prevent="handleRightClick($event, file)"
                                 >
                                     <div class="flex items-start gap-3">
                                         <div class="flex items-center gap-3 flex-1 min-w-0">
@@ -591,124 +590,168 @@
                                 </div>
 
                                 <!-- Desktop Layout -->
-                                <div
-                                    class="hidden sm:flex items-center px-4 py-3 cursor-pointer gap-6"
-                                    @click.stop="handleRowClick($event, file)"
-                                    @contextmenu.prevent="handleRightClick($event, file)"
-                                >
-                                    <div class="flex items-center gap-3 flex-1 min-w-0">
-                                        <!-- Custom File Checkbox -->
+                                <ContextMenu>
+                                    <ContextMenuTrigger as-child>
                                         <div
-                                            class="relative flex items-center justify-center w-5 h-5 border-2 rounded-md cursor-pointer transition-all duration-200 shadow-sm"
-                                            :class="{
-                                                'border-primary bg-primary': selectedFiles.includes(file.name),
-                                                'border-input bg-background hover:border-primary hover:bg-primary/5':
-                                                    !selectedFiles.includes(file.name),
-                                            }"
-                                            @click.stop="toggleFileSelection(file.name)"
+                                            class="hidden sm:flex items-center px-4 py-3 cursor-pointer gap-6"
+                                            @click.stop="handleRowClick($event, file)"
                                         >
-                                            <svg
-                                                v-if="selectedFiles.includes(file.name)"
-                                                class="w-3.5 h-3.5 text-primary-foreground"
-                                                fill="currentColor"
-                                                viewBox="0 0 20 20"
-                                            >
-                                                <path
-                                                    fill-rule="evenodd"
-                                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                                    clip-rule="evenodd"
-                                                />
-                                            </svg>
+                                            <div class="flex items-center gap-3 flex-1 min-w-0">
+                                                <!-- Custom File Checkbox -->
+                                                <div
+                                                    class="relative flex items-center justify-center w-5 h-5 border-2 rounded-md cursor-pointer transition-all duration-200 shadow-sm"
+                                                    :class="{
+                                                        'border-primary bg-primary': selectedFiles.includes(file.name),
+                                                        'border-input bg-background hover:border-primary hover:bg-primary/5':
+                                                            !selectedFiles.includes(file.name),
+                                                    }"
+                                                    @click.stop="toggleFileSelection(file.name)"
+                                                >
+                                                    <svg
+                                                        v-if="selectedFiles.includes(file.name)"
+                                                        class="w-3.5 h-3.5 text-primary-foreground"
+                                                        fill="currentColor"
+                                                        viewBox="0 0 20 20"
+                                                    >
+                                                        <path
+                                                            fill-rule="evenodd"
+                                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                            clip-rule="evenodd"
+                                                        />
+                                                    </svg>
+                                                </div>
+                                                <div
+                                                    class="p-1.5 rounded-md transition-all"
+                                                    :class="
+                                                        file.file
+                                                            ? 'bg-blue-500/10 group-hover:bg-blue-500/20'
+                                                            : 'bg-yellow-500/10 group-hover:bg-yellow-500/20'
+                                                    "
+                                                >
+                                                    <component
+                                                        :is="getFileIcon(file)"
+                                                        class="h-5 w-5 flex-shrink-0"
+                                                        :class="
+                                                            file.file
+                                                                ? 'text-blue-600 dark:text-blue-400'
+                                                                : 'text-yellow-600 dark:text-yellow-400'
+                                                        "
+                                                    />
+                                                </div>
+                                                <span class="text-sm font-medium truncate">
+                                                    <template
+                                                        v-for="(seg, i) in getHighlightSegments(file.name)"
+                                                        :key="i"
+                                                    >
+                                                        <mark
+                                                            v-if="seg.match"
+                                                            class="bg-yellow-200 dark:bg-yellow-900/50 px-0.5 rounded"
+                                                            >{{ seg.text }}</mark
+                                                        >
+                                                        <span v-else>{{ seg.text }}</span>
+                                                    </template>
+                                                </span>
+                                            </div>
+                                            <div class="w-24 text-sm text-muted-foreground text-right">
+                                                {{ file.file ? formatFileSize(file.size) : '-' }}
+                                            </div>
+                                            <div class="w-32 text-sm text-muted-foreground text-right">
+                                                {{ formatDate(file.modified) }}
+                                            </div>
+                                            <div class="w-20 flex justify-center" @click.stop>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger as-child>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            class="h-9 w-9 p-0 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:text-primary transition-all"
+                                                        >
+                                                            <MoreVertical class="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" class="w-48">
+                                                        <DropdownMenuItem
+                                                            v-if="
+                                                                file.file &&
+                                                                isFileEditable(file) &&
+                                                                isFileSizeValid(file)
+                                                            "
+                                                            @click="openMonacoEditor(file)"
+                                                        >
+                                                            <Code class="h-4 w-4 mr-2" />
+                                                            {{ t('serverFiles.edit') }}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem @click="renameFile(file)">
+                                                            <FileEdit class="h-4 w-4 mr-2" />
+                                                            {{ t('serverFiles.rename') }}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem v-if="file.file" @click="downloadFile(file)">
+                                                            <Download class="h-4 w-4 mr-2" />
+                                                            {{ t('serverFiles.download') }}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem @click="copySingle(file.name)">
+                                                            <Copy class="h-4 w-4 mr-2" />
+                                                            {{ t('serverFiles.copy') }}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            v-if="file.file && isArchive(file)"
+                                                            @click="extractFile(file)"
+                                                        >
+                                                            <Archive class="h-4 w-4 mr-2" />
+                                                            {{ t('serverFiles.extract') }}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem @click="changePermissions(file)">
+                                                            <Settings class="h-4 w-4 mr-2" />
+                                                            {{ t('serverFiles.permissions') }}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            class="text-destructive focus:text-destructive"
+                                                            @click="deleteFile(file)"
+                                                        >
+                                                            <Trash2 class="h-4 w-4 mr-2" />
+                                                            {{ t('serverFiles.delete') }}
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
                                         </div>
-                                        <div
-                                            class="p-1.5 rounded-md transition-all"
-                                            :class="
-                                                file.file
-                                                    ? 'bg-blue-500/10 group-hover:bg-blue-500/20'
-                                                    : 'bg-yellow-500/10 group-hover:bg-yellow-500/20'
-                                            "
+                                    </ContextMenuTrigger>
+                                    <ContextMenuContent>
+                                        <ContextMenuItem
+                                            v-if="file.file && isFileEditable(file) && isFileSizeValid(file)"
+                                            @click="openMonacoEditor(file)"
                                         >
-                                            <component
-                                                :is="getFileIcon(file)"
-                                                class="h-5 w-5 flex-shrink-0"
-                                                :class="
-                                                    file.file
-                                                        ? 'text-blue-600 dark:text-blue-400'
-                                                        : 'text-yellow-600 dark:text-yellow-400'
-                                                "
-                                            />
-                                        </div>
-                                        <span class="text-sm font-medium truncate">
-                                            <template v-for="(seg, i) in getHighlightSegments(file.name)" :key="i">
-                                                <mark
-                                                    v-if="seg.match"
-                                                    class="bg-yellow-200 dark:bg-yellow-900/50 px-0.5 rounded"
-                                                    >{{ seg.text }}</mark
-                                                >
-                                                <span v-else>{{ seg.text }}</span>
-                                            </template>
-                                        </span>
-                                    </div>
-                                    <div class="w-24 text-sm text-muted-foreground text-right">
-                                        {{ file.file ? formatFileSize(file.size) : '-' }}
-                                    </div>
-                                    <div class="w-32 text-sm text-muted-foreground text-right">
-                                        {{ formatDate(file.modified) }}
-                                    </div>
-                                    <div class="w-20 flex justify-center" @click.stop>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger as-child>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    class="h-9 w-9 p-0 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:text-primary transition-all"
-                                                >
-                                                    <MoreVertical class="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" class="w-48">
-                                                <DropdownMenuItem
-                                                    v-if="file.file && isFileEditable(file) && isFileSizeValid(file)"
-                                                    @click="openMonacoEditor(file)"
-                                                >
-                                                    <Code class="h-4 w-4 mr-2" />
-                                                    {{ t('serverFiles.edit') }}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem @click="renameFile(file)">
-                                                    <FileEdit class="h-4 w-4 mr-2" />
-                                                    {{ t('serverFiles.rename') }}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem v-if="file.file" @click="downloadFile(file)">
-                                                    <Download class="h-4 w-4 mr-2" />
-                                                    {{ t('serverFiles.download') }}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem @click="copySingle(file.name)">
-                                                    <Copy class="h-4 w-4 mr-2" />
-                                                    {{ t('serverFiles.copy') }}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    v-if="file.file && isArchive(file)"
-                                                    @click="extractFile(file)"
-                                                >
-                                                    <Archive class="h-4 w-4 mr-2" />
-                                                    {{ t('serverFiles.extract') }}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem @click="changePermissions(file)">
-                                                    <Settings class="h-4 w-4 mr-2" />
-                                                    {{ t('serverFiles.permissions') }}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem
-                                                    class="text-destructive focus:text-destructive"
-                                                    @click="deleteFile(file)"
-                                                >
-                                                    <Trash2 class="h-4 w-4 mr-2" />
-                                                    {{ t('serverFiles.delete') }}
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                </div>
+                                            <Code class="h-4 w-4 mr-2" />
+                                            {{ t('serverFiles.edit') }}
+                                        </ContextMenuItem>
+                                        <ContextMenuItem @click="renameFile(file)">
+                                            <FileEdit class="h-4 w-4 mr-2" />
+                                            {{ t('serverFiles.rename') }}
+                                        </ContextMenuItem>
+                                        <ContextMenuItem v-if="file.file" @click="downloadFile(file)">
+                                            <Download class="h-4 w-4 mr-2" />
+                                            {{ t('serverFiles.download') }}
+                                        </ContextMenuItem>
+                                        <ContextMenuItem @click="copySingle(file.name)">
+                                            <Copy class="h-4 w-4 mr-2" />
+                                            {{ t('serverFiles.copy') }}
+                                        </ContextMenuItem>
+                                        <ContextMenuItem v-if="file.file && isArchive(file)" @click="extractFile(file)">
+                                            <Archive class="h-4 w-4 mr-2" />
+                                            {{ t('serverFiles.extract') }}
+                                        </ContextMenuItem>
+                                        <ContextMenuItem @click="changePermissions(file)">
+                                            <Settings class="h-4 w-4 mr-2" />
+                                            {{ t('serverFiles.permissions') }}
+                                        </ContextMenuItem>
+                                        <ContextMenuSeparator />
+                                        <ContextMenuItem class="text-destructive" @click="deleteFile(file)">
+                                            <Trash2 class="h-4 w-4 mr-2" />
+                                            {{ t('serverFiles.delete') }}
+                                        </ContextMenuItem>
+                                    </ContextMenuContent>
+                                </ContextMenu>
                             </div>
                         </div>
                     </div>
@@ -1107,91 +1150,6 @@
             </DialogContent>
         </Dialog>
 
-        <!-- Context Menu -->
-        <Teleport to="body">
-            <div
-                v-if="showContextMenu && contextMenuFile"
-                class="fixed z-50 min-w-[200px] rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
-                :style="{ top: `${contextMenuPosition.y}px`, left: `${contextMenuPosition.x}px` }"
-                @click.stop
-            >
-                <div
-                    v-if="contextMenuFile.file && isFileEditable(contextMenuFile) && isFileSizeValid(contextMenuFile)"
-                    class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-                    @click="
-                        openMonacoEditor(contextMenuFile);
-                        closeContextMenu();
-                    "
-                >
-                    <Code class="h-4 w-4 mr-2" />
-                    {{ t('serverFiles.edit') }}
-                </div>
-                <div
-                    class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-                    @click="
-                        renameFile(contextMenuFile);
-                        closeContextMenu();
-                    "
-                >
-                    <FileEdit class="h-4 w-4 mr-2" />
-                    {{ t('serverFiles.rename') }}
-                </div>
-                <div
-                    v-if="contextMenuFile.file"
-                    class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-                    @click="
-                        downloadFile(contextMenuFile);
-                        closeContextMenu();
-                    "
-                >
-                    <Download class="h-4 w-4 mr-2" />
-                    {{ t('serverFiles.download') }}
-                </div>
-                <div
-                    class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-                    @click="
-                        copySingle(contextMenuFile.name);
-                        closeContextMenu();
-                    "
-                >
-                    <Copy class="h-4 w-4 mr-2" />
-                    {{ t('serverFiles.copy') }}
-                </div>
-                <div
-                    v-if="contextMenuFile.file && isArchive(contextMenuFile)"
-                    class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-                    @click="
-                        extractFile(contextMenuFile);
-                        closeContextMenu();
-                    "
-                >
-                    <Archive class="h-4 w-4 mr-2" />
-                    {{ t('serverFiles.extract') }}
-                </div>
-                <div
-                    class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-                    @click="
-                        changePermissions(contextMenuFile);
-                        closeContextMenu();
-                    "
-                >
-                    <Settings class="h-4 w-4 mr-2" />
-                    {{ t('serverFiles.permissions') }}
-                </div>
-                <div class="my-1 h-px bg-border"></div>
-                <div
-                    class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                    @click="
-                        deleteFile(contextMenuFile);
-                        closeContextMenu();
-                    "
-                >
-                    <Trash2 class="h-4 w-4 mr-2" />
-                    {{ t('serverFiles.delete') }}
-                </div>
-            </div>
-        </Teleport>
-
         <!-- Keyboard Shortcuts Help Panel (Desktop Only) -->
         <div class="hidden lg:block fixed bottom-4 right-4 z-40">
             <Transition
@@ -1433,6 +1391,13 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuSeparator,
+    ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import {
     RefreshCw,
     Upload,
     FolderPlus,
@@ -1501,11 +1466,6 @@ const showMoveDialog = ref(false);
 
 // Drag and drop state
 const isDraggingOver = ref(false);
-
-// Context menu state
-const contextMenuFile = ref<FileItem | null>(null);
-const contextMenuPosition = ref({ x: 0, y: 0 });
-const showContextMenu = ref(false);
 
 // Form data
 const selectedFile = ref<File | null>(null);
@@ -1603,19 +1563,6 @@ const handleRowClick = (event: MouseEvent, file: FileItem) => {
     }
 };
 
-// Right-click handler (context menu)
-const handleRightClick = (event: MouseEvent, file: FileItem) => {
-    contextMenuFile.value = file;
-    contextMenuPosition.value = { x: event.clientX, y: event.clientY };
-    showContextMenu.value = true;
-};
-
-// Close context menu
-const closeContextMenu = () => {
-    showContextMenu.value = false;
-    contextMenuFile.value = null;
-};
-
 // Helper function to get the actual input element from the ref
 const getSearchInputElement = (): HTMLInputElement | null => {
     if (!searchInput.value) return null;
@@ -1652,13 +1599,10 @@ const handleKeyboard = (e: KeyboardEvent) => {
         showMoveDialog.value ||
         showDeleteDialog.value;
 
-    // ESC key to close drag overlay or context menu
+    // ESC key to close drag overlay
     if (e.key === 'Escape') {
         if (isDraggingOver.value) {
             closeDragOverlay();
-        }
-        if (showContextMenu.value) {
-            closeContextMenu();
         }
     }
 
@@ -1812,20 +1756,16 @@ onMounted(async () => {
     // Start polling for downloads
     startDownloadsPolling();
 
-    // Add keyboard shortcuts (ESC to close drag overlay/context menu, / to focus search)
+    // Add keyboard shortcuts (ESC to close drag overlay, / to focus search)
     window.addEventListener('keydown', handleKeyboard);
 
     // Add global drag over handler to keep overlay visible while dragging
     window.addEventListener('dragover', handleGlobalDragOver);
-
-    // Close context menu on any click
-    window.addEventListener('click', closeContextMenu);
 });
 
 onUnmounted(() => {
     window.removeEventListener('keydown', handleKeyboard);
     window.removeEventListener('dragover', handleGlobalDragOver);
-    window.removeEventListener('click', closeContextMenu);
 
     // Stop downloads polling
     stopDownloadsPolling();

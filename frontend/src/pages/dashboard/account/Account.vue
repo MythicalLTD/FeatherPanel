@@ -109,8 +109,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
 import { useSessionStore } from '@/stores/session';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Card } from '@/components/ui/card';
@@ -126,16 +127,38 @@ import ApiKeys from '@/components/account/ApiKeys.vue';
 import type { UserInfo } from '@/stores/session';
 
 const { t: $t } = useI18n();
+const route = useRoute();
+const router = useRouter();
 const sessionStore = useSessionStore();
 
-// Active tab state
-const activeTab = ref('profile');
+// Valid tab values
+const validTabs = ['profile', 'settings', 'appearance', 'ssh-keys', 'api-keys', 'activity', 'mail'];
+
+// Active tab state - initialize from URL query parameter or default to 'profile'
+const activeTab = ref(validTabs.includes(route.query.tab as string) ? (route.query.tab as string) : 'profile');
 
 // Computed user data with proper typing
 const user = computed<UserInfo | null>(() => sessionStore.user);
 
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect();
+});
+
+// Watch for URL query parameter changes and update active tab
+watch(
+    () => route.query.tab,
+    (newTab) => {
+        if (newTab && validTabs.includes(newTab as string)) {
+            activeTab.value = newTab as string;
+        }
+    },
+);
+
+// Watch for active tab changes and update URL query parameter
+watch(activeTab, (newTab) => {
+    if (route.query.tab !== newTab) {
+        router.replace({ query: { tab: newTab } });
+    }
 });
 
 // Format date helper

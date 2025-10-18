@@ -13,6 +13,7 @@
 - Added display of the current app version in the admin UI for easier version awareness and debugging.
 - Introduced Server Transfers—now available for beta testing! Move servers between nodes seamlessly; feedback welcome as we refine this powerful new feature.
 - Added detection and support for classic Minecraft 1.19 "requires running the server with Java 17 or above. Download Java 17 (or above) from https://adoptium.net/" messages to provide users with clear Java requirements.
+- Introduced a modern and intuitive Global Context Menu UI, providing convenient right-click actions and a more seamless app-wide user experience.
 
 ### Fixed
 
@@ -29,6 +30,8 @@
 - The installer now properly stops and frees port 80 before launching a standalone server, preventing conflicts and ensuring successful SSL certificate generation.
 - File manager URL not updating when navigating directories—browser history (back/forward) support is now enabled.
 - File manager Ctrl + F was not properly focusing the search input—it now works as expected.
+- Fixed an issue where the MacDock would disappear after refreshing the page or navigating to a different route—it now stays visible and persistent across navigation.
+- Fixed an issue where it was not possible to directly navigate to a specific tab within the account settings page.
 
 ### Improved
 
@@ -52,6 +55,7 @@
 - Updated the FeatherPanel version display format in the authentication message to remove the "v" prefix from the version number.
 - Added widget border customization. Each widget can independently toggle borders on or off. Borders are enabled by default, providing flexible control over your widget appearance and workspace personalization.
 - The search filter is now reset/cleared when changing directories, preventing stale filters for file manager.
+- Migrated multiple context menus across the application to a new library for improved consistency and reliability.
 
 ### Updated
 
@@ -62,6 +66,10 @@
 - Installed `phpstan/phpdoc-parser` v2.3.0 to enhance PHPDoc support and static analysis.
 - Upgraded `zircote/swagger-php` to v5.5.1 for the latest OpenAPI annotation features and bugfixes.
 
+### Removed
+
+- KernXWebExecutor was removed as no one used it or needed it hence plugins have a better way to inject code!
+- Removed theme color selection from the appearance page, as it was unused and no longer necessary.
 
 ## v0.0.8-Alpha
 
