@@ -39,8 +39,8 @@ interface ConfigInterface
     public const APP_URL = 'app_url';
     public const APP_DEVELOPER_MODE = 'app_developer_mode';
     public const APP_TIMEZONE = 'app_timezone';
-    public const APP_LOGO = 'app_logo';
     public const APP_LOGO_WHITE = 'app_logo_white';
+    public const APP_LOGO_DARK = 'app_logo_dark';
     public const APP_SUPPORT_URL = 'app_support_url';
     /**
      * Turnstile.

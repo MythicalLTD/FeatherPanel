@@ -195,7 +195,7 @@
         </div>
 
         <!-- No Update Available -->
-        <div v-else-if="versionInfo.current" class="text-center py-8">
+        <div v-else-if="versionInfo.current" class="text-center pt-8">
             <Card
                 class="p-8 bg-gradient-to-r from-emerald-50/50 to-green-50/50 dark:from-emerald-950/20 dark:to-green-950/20 border-l-4 border-l-emerald-500"
             >
