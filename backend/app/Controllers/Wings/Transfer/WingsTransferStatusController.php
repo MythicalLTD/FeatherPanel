@@ -33,9 +33,8 @@ namespace App\Controllers\Wings\Transfer;
 use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
-use App\Chat\Activity;
+use App\Chat\ServerTransfer;
 use App\Helpers\ApiResponse;
-use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -108,12 +107,11 @@ class WingsTransferStatusController
             // Update server status to offline (waiting for it to be started on new node)
             Server::updateServerById($server['id'], $updateData);
 
-            // Log activity
-            Activity::createActivity([
-                'user_uuid' => 'system',
-                'name' => 'server_transfer_completed',
-                'context' => 'Server transfer completed successfully for ' . $server['name'] . (isset($updateData['node_id']) ? ' to node ID ' . $updateData['node_id'] : ''),
-                'ip_address' => CloudFlareRealIP::getRealIP(),
+            // Update transfer record in database
+            ServerTransfer::updateByServerId($server['id'], [
+                'status' => 'completed',
+                'progress' => 100.0,
+                'completed_at' => date('Y-m-d H:i:s'),
             ]);
 
             // Emit event
@@ -133,15 +131,20 @@ class WingsTransferStatusController
 
             return ApiResponse::success([], 'Transfer status recorded: success', 200);
         }
-        // Transfer failed - revert server status
-        Server::updateServerById($server['id'], ['status' => 'offline']);
+        // Transfer failed - revert server status and node_id to source
+        $transfer = ServerTransfer::getByServerId($server['id']);
+        $sourceNodeId = $transfer ? $transfer['source_node_id'] : $server['node_id'];
 
-        // Log activity
-        Activity::createActivity([
-            'user_uuid' => 'system',
-            'name' => 'server_transfer_failed',
-            'context' => 'Server transfer failed for ' . $server['name'] . ($error ? ': ' . $error : ''),
-            'ip_address' => CloudFlareRealIP::getRealIP(),
+        Server::updateServerById($server['id'], [
+            'status' => 'offline',
+            'node_id' => $sourceNodeId, // Revert to source node
+        ]);
+
+        // Update transfer record in database
+        ServerTransfer::updateByServerId($server['id'], [
+            'status' => 'failed',
+            'completed_at' => date('Y-m-d H:i:s'),
+            'error' => $error ?? 'Unknown error',
         ]);
 
         // Emit event
@@ -179,14 +182,60 @@ class WingsTransferStatusController
         $logger = App::getInstance(true)->getLogger();
         $logger->info('Transfer archive received for server ' . $uuid);
 
-        // Log activity
-        Activity::createActivity([
-            'user_uuid' => 'system',
-            'name' => 'server_transfer_archive_received',
-            'context' => 'Server transfer archive received for ' . $server['name'],
-            'ip_address' => CloudFlareRealIP::getRealIP(),
+        return ApiResponse::success([], 'Archive receipt acknowledged', 200);
+    }
+
+    /**
+     * Transfer failure - called when transfer fails on source or destination node.
+     *
+     * This endpoint handles failure reports from Wings nodes during transfer.
+     */
+    public function transferFailure(Request $request, string $uuid): Response
+    {
+        $server = Server::getServerByUuid($uuid);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
+        }
+
+        $error = $data['error'] ?? 'Unknown transfer failure';
+        $logger = App::getInstance(true)->getLogger();
+        $logger->error('Transfer failure reported for server ' . $uuid . ': ' . $error);
+
+        // Get transfer record to find source node
+        $transfer = ServerTransfer::getByServerId($server['id']);
+        $sourceNodeId = $transfer ? $transfer['source_node_id'] : $server['node_id'];
+
+        // Update server status to offline and revert node_id to source
+        Server::updateServerById($server['id'], [
+            'status' => 'offline',
+            'node_id' => $sourceNodeId,
         ]);
 
-        return ApiResponse::success([], 'Archive receipt acknowledged', 200);
+        // Update transfer record in database
+        ServerTransfer::updateByServerId($server['id'], [
+            'status' => 'failed',
+            'completed_at' => date('Y-m-d H:i:s'),
+            'error' => $error,
+        ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerTransferFailed(),
+                [
+                    'server' => $server,
+                    'successful' => false,
+                    'error' => $error,
+                ]
+            );
+        }
+
+        return ApiResponse::success([], 'Transfer failure recorded', 200);
     }
 }

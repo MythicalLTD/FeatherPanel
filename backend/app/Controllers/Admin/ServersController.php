@@ -41,6 +41,7 @@ use App\Chat\Allocation;
 use App\Helpers\UUIDUtils;
 use App\Chat\SpellVariable;
 use App\Chat\ServerActivity;
+use App\Chat\ServerTransfer;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
@@ -1973,8 +1974,15 @@ class ServersController
             return ApiResponse::error('Source node not found', 'SOURCE_NODE_NOT_FOUND', 404);
         }
 
-        // Update server status to transferring
-        $updated = Server::updateServerById($id, ['status' => 'transferring']);
+        // Store original node_id in case we need to revert
+        $originalNodeId = $server['node_id'];
+
+        // Update server status to transferring AND update node_id to destination
+        // This allows destination Wings to query Panel for server configuration
+        $updated = Server::updateServerById($id, [
+            'status' => 'transferring',
+            'node_id' => $destinationNodeId,
+        ]);
         if (!$updated) {
             return ApiResponse::error('Failed to update server status', 'UPDATE_FAILED', 500);
         }
@@ -2007,16 +2015,8 @@ class ServersController
                 ['*'] // Full permissions for transfer
             );
 
-            // Prepare transfer request data for source node
-            $transferData = [
-                'url' => $destinationUrl . '/api/transfers',
-                'token' => 'Bearer ' . $transferToken,
-                'server' => [
-                    'uuid' => $server['uuid'],
-                ],
-            ];
-
-            // Optional: include destination allocation if provided
+            // Get destination allocation
+            $destinationAllocation = null;
             if (isset($data['destination_allocation_id'])) {
                 $destinationAllocation = Allocation::getAllocationById($data['destination_allocation_id']);
                 if (!$destinationAllocation) {
@@ -2025,11 +2025,36 @@ class ServersController
                 if ($destinationAllocation['node_id'] !== $destinationNodeId) {
                     return ApiResponse::error('Destination allocation does not belong to destination node', 'ALLOCATION_NODE_MISMATCH', 400);
                 }
-                $transferData['allocation_id'] = $data['destination_allocation_id'];
+            } else {
+                // If no specific allocation provided, use the server's current allocation
+                $destinationAllocation = Allocation::getAllocationById($server['allocation_id']);
             }
+
+            // Prepare transfer request data for source node
+            // Wings will extract server UUID from JWT's 'sub' claim
+            $transferData = [
+                'url' => $destinationUrl . '/api/transfers',
+                'token' => 'Bearer ' . $transferToken,
+            ];
 
             // Initiate transfer on source node
             $response = $wings->getTransfer()->startTransfer($server['uuid'], $transferData);
+
+            // Create transfer record in database
+            $transferId = ServerTransfer::create([
+                'server_id' => $id,
+                'source_node_id' => $server['node_id'],
+                'destination_node_id' => $destinationNodeId,
+                'destination_allocation_id' => $data['destination_allocation_id'] ?? null,
+                'status' => 'in_progress',
+                'progress' => 0.0,
+                'started_at' => date('Y-m-d H:i:s'),
+            ]);
+
+            if (!$transferId) {
+                App::getInstance(true)->getLogger()->error('Failed to create server transfer record');
+                // Don't fail the transfer if database insert fails, but log it
+            }
 
             // Log activity
             Activity::createActivity([
@@ -2058,103 +2083,15 @@ class ServersController
                 'transfer_token' => $transferToken,
             ], 'Server transfer initiated', 200);
         } catch (\Exception $e) {
-            // Revert server status if transfer initiation fails
-            Server::updateServerById($id, ['status' => $server['status']]);
+            // Revert server status AND node_id if transfer initiation fails
+            Server::updateServerById($id, [
+                'status' => $server['status'],
+                'node_id' => $originalNodeId,
+            ]);
 
             App::getInstance(true)->getLogger()->error('Failed to initiate server transfer: ' . $e->getMessage());
 
             return ApiResponse::error('Failed to initiate server transfer: ' . $e->getMessage(), 'TRANSFER_INITIATION_FAILED', 500);
-        }
-    }
-
-    #[OA\Delete(
-        path: '/api/admin/servers/{id}/transfer',
-        summary: 'Cancel server transfer',
-        description: 'Cancel an ongoing server transfer. Instructs both source and destination nodes to abort the transfer process.',
-        tags: ['Admin - Servers'],
-        parameters: [
-            new OA\Parameter(
-                name: 'id',
-                in: 'path',
-                description: 'Server ID',
-                required: true,
-                schema: new OA\Schema(type: 'integer')
-            ),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Server transfer cancelled successfully',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
-                    ]
-                )
-            ),
-            new OA\Response(response: 400, description: 'Bad request - Server is not being transferred'),
-            new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
-            new OA\Response(response: 404, description: 'Server not found'),
-            new OA\Response(response: 500, description: 'Internal server error - Failed to cancel transfer'),
-        ]
-    )]
-    public function cancelTransfer(Request $request, int $id): Response
-    {
-        $server = Server::getServerById($id);
-        if (!$server) {
-            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-        }
-
-        if ($server['status'] !== 'transferring') {
-            return ApiResponse::error('Server is not being transferred', 'NOT_TRANSFERRING', 400);
-        }
-
-        // Get source node
-        $sourceNode = Node::getNodeById($server['node_id']);
-        if (!$sourceNode) {
-            return ApiResponse::error('Source node not found', 'SOURCE_NODE_NOT_FOUND', 404);
-        }
-
-        try {
-            $wings = new Wings(
-                $sourceNode['fqdn'],
-                $sourceNode['daemonListen'],
-                $sourceNode['scheme'],
-                $sourceNode['daemon_token'],
-                30
-            );
-
-            // Cancel transfer on source node
-            $wings->getTransfer()->cancelTransfer($server['uuid']);
-
-            // Update server status back to previous state (assume 'offline' as safe default)
-            Server::updateServerById($id, ['status' => 'offline']);
-
-            // Log activity
-            Activity::createActivity([
-                'user_uuid' => $request->get('user')['uuid'],
-                'name' => 'cancel_server_transfer',
-                'context' => 'Cancelled transfer of server ' . $server['name'],
-                'ip_address' => CloudFlareRealIP::getRealIP(),
-            ]);
-
-            // Emit event
-            global $eventManager;
-            if (isset($eventManager) && $eventManager !== null) {
-                $eventManager->emit(
-                    ServerEvent::onServerTransferCancelled(),
-                    [
-                        'server' => $server,
-                        'cancelled_by' => $request->get('user'),
-                    ]
-                );
-            }
-
-            return ApiResponse::success([], 'Server transfer cancelled successfully', 200);
-        } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Failed to cancel server transfer: ' . $e->getMessage());
-
-            return ApiResponse::error('Failed to cancel server transfer: ' . $e->getMessage(), 'TRANSFER_CANCELLATION_FAILED', 500);
         }
     }
 
@@ -2204,29 +2141,21 @@ class ServersController
             return ApiResponse::error('Server is not being transferred', 'NOT_TRANSFERRING', 400);
         }
 
-        // Get source node
-        $sourceNode = Node::getNodeById($server['node_id']);
-        if (!$sourceNode) {
-            return ApiResponse::error('Source node not found', 'SOURCE_NODE_NOT_FOUND', 404);
+        // Get transfer status from database
+        $transfer = ServerTransfer::getByServerId($id);
+        if (!$transfer) {
+            return ApiResponse::error('Transfer record not found', 'TRANSFER_NOT_FOUND', 404);
         }
 
-        try {
-            $wings = new Wings(
-                $sourceNode['fqdn'],
-                $sourceNode['daemonListen'],
-                $sourceNode['scheme'],
-                $sourceNode['daemon_token'],
-                30
-            );
+        // Format response to match expected frontend structure
+        $response = [
+            'status' => $transfer['status'],
+            'progress' => $transfer['progress'] ? (float) $transfer['progress'] : 0.0,
+            'started_at' => $transfer['started_at'],
+            'completed_at' => $transfer['completed_at'],
+            'error' => $transfer['error'],
+        ];
 
-            // Get transfer status from source node
-            $status = $wings->getTransfer()->getTransferStatus($server['uuid']);
-
-            return ApiResponse::success($status, 'Transfer status retrieved successfully', 200);
-        } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Failed to get transfer status: ' . $e->getMessage());
-
-            return ApiResponse::error('Failed to get transfer status: ' . $e->getMessage(), 'TRANSFER_STATUS_FAILED', 500);
-        }
+        return ApiResponse::success($response, 'Transfer status retrieved successfully', 200);
     }
 }

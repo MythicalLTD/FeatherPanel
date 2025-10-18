@@ -103,9 +103,9 @@
                             </div>
                         </div>
 
-                        <!-- Allocation Management -->
+                        <!-- Node & Location Information -->
                         <div class="bg-card border rounded-lg p-6">
-                            <h2 class="text-xl font-semibold mb-4">Allocation Management</h2>
+                            <h2 class="text-xl font-semibold mb-4">Node & Location</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label class="block mb-2 font-medium">Location</label>
@@ -127,30 +127,6 @@
                                         </p>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="mt-6">
-                                <label for="allocation" class="block mb-2 font-medium">Default Allocation</label>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    :disabled="!form.node_id"
-                                    :class="
-                                        cn(
-                                            'w-full justify-between',
-                                            validationErrors.allocation_id ? 'border-red-500' : '',
-                                        )
-                                    "
-                                    @click="allocationModal.openModal()"
-                                >
-                                    {{ getSelectedAllocationName() || 'Select allocation...' }}
-                                    <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                                <p v-if="validationErrors.allocation_id" class="text-xs text-red-500 mt-1">
-                                    {{ validationErrors.allocation_id }}
-                                </p>
-                                <p v-else class="text-xs text-muted-foreground mt-1">
-                                    The main allocation that will be assigned to this server.
-                                </p>
                             </div>
                         </div>
 
@@ -557,9 +533,9 @@
                         <div class="bg-card border rounded-lg p-6">
                             <div class="flex items-center justify-between mb-4">
                                 <div>
-                                    <h2 class="text-xl font-semibold">Allocation Management</h2>
+                                    <h2 class="text-xl font-semibold">Network Allocations</h2>
                                     <p class="text-sm text-muted-foreground mt-1">
-                                        Manage additional network allocations for this server
+                                        Manage network allocations (IP:Port) for this server
                                     </p>
                                 </div>
                                 <Button
@@ -594,21 +570,54 @@
                                 </Button>
                             </div>
 
-                            <!-- Allocation Status -->
-                            <div
-                                v-if="serverAllocations.server"
-                                class="mb-4 p-3 bg-muted rounded-lg flex items-center justify-between"
-                            >
-                                <div class="text-sm">
-                                    Using
-                                    <span class="font-bold">{{ serverAllocations.server.current_allocations }}</span>
-                                    of
-                                    <span class="font-bold">{{ serverAllocations.server.allocation_limit }}</span>
-                                    allowed allocations
+                            <!-- Default Allocation Selector -->
+                            <div class="mb-6">
+                                <label for="allocation" class="block mb-2 font-medium">Default Allocation</label>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    :disabled="!form.node_id"
+                                    :class="
+                                        cn(
+                                            'w-full justify-between',
+                                            validationErrors.allocation_id ? 'border-red-500' : '',
+                                        )
+                                    "
+                                    @click="allocationModal.openModal()"
+                                >
+                                    {{ getSelectedAllocationName() || 'Select allocation...' }}
+                                    <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                                <p v-if="validationErrors.allocation_id" class="text-xs text-red-500 mt-1">
+                                    {{ validationErrors.allocation_id }}
+                                </p>
+                                <p v-else class="text-xs text-muted-foreground mt-1">
+                                    The primary allocation that will be assigned to this server.
+                                </p>
+                            </div>
+
+                            <!-- Additional Allocations Section -->
+                            <div class="border-t pt-6 mt-6">
+                                <h3 class="text-lg font-semibold mb-3">Additional Allocations</h3>
+
+                                <!-- Allocation Status -->
+                                <div
+                                    v-if="serverAllocations.server"
+                                    class="mb-4 p-3 bg-muted rounded-lg flex items-center justify-between"
+                                >
+                                    <div class="text-sm">
+                                        Using
+                                        <span class="font-bold">{{
+                                            serverAllocations.server.current_allocations
+                                        }}</span>
+                                        of
+                                        <span class="font-bold">{{ serverAllocations.server.allocation_limit }}</span>
+                                        allowed allocations
+                                    </div>
+                                    <Badge :variant="serverAllocations.server.can_add_more ? 'default' : 'destructive'">
+                                        {{ serverAllocations.server.can_add_more ? 'Can add more' : 'Limit reached' }}
+                                    </Badge>
                                 </div>
-                                <Badge :variant="serverAllocations.server.can_add_more ? 'default' : 'destructive'">
-                                    {{ serverAllocations.server.can_add_more ? 'Can add more' : 'Limit reached' }}
-                                </Badge>
                             </div>
 
                             <!-- Allocations List -->
@@ -672,9 +681,12 @@
                         <div class="bg-card border rounded-lg p-6">
                             <div class="flex items-center justify-between mb-4">
                                 <div>
-                                    <h2 class="text-xl font-semibold">Server Transfer</h2>
+                                    <div class="flex items-center gap-3">
+                                        <h2 class="text-xl font-semibold">Server Transfer</h2>
+                                        <Badge variant="destructive" class="text-xs">BETA</Badge>
+                                    </div>
                                     <p class="text-sm text-muted-foreground mt-1">
-                                        Transfer this server to a different node
+                                        Transfer this server to a different node (experimental feature)
                                     </p>
                                 </div>
                             </div>
@@ -712,20 +724,63 @@
                                             Started: {{ new Date(transferStatus.started_at).toLocaleString() }}
                                         </p>
                                     </div>
-                                    <Button
-                                        type="button"
-                                        variant="destructive"
-                                        size="sm"
-                                        class="mt-3"
-                                        :loading="cancellingTransfer"
-                                        @click="cancelServerTransfer"
-                                    >
-                                        Cancel Transfer
-                                    </Button>
+                                    <p class="text-xs text-muted-foreground mt-3">
+                                        Transfer cannot be cancelled once started. Please wait for completion or
+                                        failure.
+                                    </p>
                                 </div>
                             </div>
 
                             <div v-else class="space-y-4">
+                                <!-- Beta Warning -->
+                                <div
+                                    class="p-4 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-300 dark:border-orange-700 rounded-lg"
+                                >
+                                    <div class="flex items-start gap-3">
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            class="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                            />
+                                        </svg>
+                                        <div class="flex-1">
+                                            <h4 class="font-semibold text-orange-900 dark:text-orange-100 mb-2">
+                                                ⚠️ BETA Feature - Use with Caution
+                                            </h4>
+                                            <ul
+                                                class="text-sm text-orange-800 dark:text-orange-200 space-y-1 list-disc list-inside"
+                                            >
+                                                <li>
+                                                    Server transfers are an <strong>experimental feature</strong> and
+                                                    may have bugs
+                                                </li>
+                                                <li>Transfer <strong>cannot be cancelled</strong> once started</li>
+                                                <li>
+                                                    Server will be <strong>unavailable</strong> during the entire
+                                                    transfer process
+                                                </li>
+                                                <li>
+                                                    If <strong>checksum validation fails</strong>, the transfer will
+                                                    fail and server reverts to source node
+                                                </li>
+                                                <li>Network issues between nodes can cause transfer failures</li>
+                                                <li>
+                                                    <strong>Always backup your server</strong> before initiating a
+                                                    transfer
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <p class="text-sm text-muted-foreground">
                                     Transferring a server will move it to a different node. The server will be stopped
                                     during the transfer and automatically started on the destination node once complete.
@@ -974,13 +1029,39 @@
                         </p>
                     </div>
 
+                    <!-- Beta Warning -->
                     <div
-                        class="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg"
+                        class="p-4 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-300 dark:border-orange-700 rounded-lg"
                     >
-                        <p class="text-sm text-yellow-900 dark:text-yellow-100">
-                            <strong>Warning:</strong> The server will be stopped during transfer and may be unavailable
-                            for several minutes.
-                        </p>
+                        <div class="flex items-start gap-2 mb-2">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                />
+                            </svg>
+                            <div>
+                                <p class="font-semibold text-orange-900 dark:text-orange-100">
+                                    BETA / Experimental Feature
+                                </p>
+                            </div>
+                        </div>
+                        <ul class="text-xs text-orange-800 dark:text-orange-200 space-y-1 ml-7 list-disc">
+                            <li>This feature is experimental and may have bugs</li>
+                            <li>Transfer cannot be cancelled once started</li>
+                            <li>Server will be stopped and unavailable during transfer</li>
+                            <li>Checksum validation failures will cause transfer to fail</li>
+                            <li>On failure, server automatically reverts to source node</li>
+                            <li><strong>Create a backup before transferring!</strong></li>
+                        </ul>
                     </div>
                 </div>
 
@@ -989,9 +1070,10 @@
                     <Button
                         :disabled="!transferDestinationNodeId"
                         :loading="initiatingTransfer"
+                        variant="destructive"
                         @click="initiateServerTransfer"
                     >
-                        Start Transfer
+                        I Understand - Start Transfer
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -1441,7 +1523,6 @@ const transferDialogOpen = ref(false);
 const transferDestinationNodeId = ref<string>('');
 const transferDestinationNode = ref<ApiNode | null>(null);
 const initiatingTransfer = ref(false);
-const cancellingTransfer = ref(false);
 const transferStatus = ref<TransferStatus | null>(null);
 const isTransferring = computed(() => form.value.status === 'transferring');
 const transferStatusInterval = ref<number | null>(null);
@@ -1963,36 +2044,6 @@ async function initiateServerTransfer() {
         toast.error('Failed to initiate server transfer');
     } finally {
         initiatingTransfer.value = false;
-    }
-}
-
-async function cancelServerTransfer() {
-    const serverId = route.params.id;
-    if (!serverId) return;
-
-    cancellingTransfer.value = true;
-    try {
-        const { data } = await axios.delete(`/api/admin/servers/${serverId}/transfer`);
-
-        if (data && data.success) {
-            toast.success('Server transfer cancelled successfully!');
-
-            // Update server status
-            form.value.status = 'offline';
-
-            // Stop polling
-            stopTransferStatusPolling();
-
-            // Clear transfer status
-            transferStatus.value = null;
-        } else {
-            toast.error(data?.message || 'Failed to cancel server transfer');
-        }
-    } catch (error) {
-        console.error('Failed to cancel transfer:', error);
-        toast.error('Failed to cancel server transfer');
-    } finally {
-        cancellingTransfer.value = false;
     }
 }
 

@@ -11,6 +11,7 @@
 - Added an error message when there are no database hosts configured—users will now see a clear notice instead of an unexpected error.
 - Added power controls (start, stop, restart, kill) and detailed server resource info to the sidebar when viewing server routes, enabling direct server management and status visibility from the sidebar.
 - Added display of the current app version in the admin UI for easier version awareness and debugging.
+- Introduced Server Transfers—now available for beta testing! Move servers between nodes seamlessly; feedback welcome as we refine this powerful new feature.
 
 ### Fixed
 
@@ -34,12 +35,19 @@
 - Tables now have a new flag `hideLabelOnLayout` to hide the hide the label from the table but still show in columns!
 - Brand new footer design for mobile and pc users (More compact and small)
 - Admin and profile page links are now hidden from the user sidebar while you are actively viewing them.
+- Added new modals for streamlined allocation and spell selection when editing servers. Selections are now managed via a modern, searchable modal interface rather than older dropdowns.
+- Improved Docker Images for Spells: When editing a server, available Docker images are now correctly shown and selectable—images update live with the selected spell.
+
 
 ### Updated
 
 - Upgraded `lucide-vue-next` to v0.546.0 for improved icons and SVG optimizations.
 - Updated `@eslint/js`, `eslint`, and `@types/node` to latest for enhanced lint coverage and better compatibility.
 - Bumped `ace-builds`, `vite-plugin-vue-devtools`, and `vue-router` to their latest versions for improved editor reliability, Vue devtools integration, and routing stability.
+- Upgraded `friendsofphp/php-cs-fixer` to v3.89.0 for improved code formatting and PHP CS fixes.
+- Installed `phpstan/phpdoc-parser` v2.3.0 to enhance PHPDoc support and static analysis.
+- Upgraded `zircote/swagger-php` to v5.5.1 for the latest OpenAPI annotation features and bugfixes.
+
 
 ## v0.0.8-Alpha
 
