@@ -468,7 +468,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Plus, Eye, Edit, Trash2, Network, MapPin, Gamepad2, Shield, Pencil, Server } from 'lucide-vue-next';
+import { Plus, Eye, Edit, Trash2, Network, MapPin, Gamepad2, Shield } from 'lucide-vue-next';
 import axios from 'axios';
 import {
     Drawer,
