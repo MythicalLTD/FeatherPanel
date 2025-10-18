@@ -24,6 +24,8 @@
 - Fixed a problem where the "empty folder" layout was not shown when a user had no available servers, providing clearer feedback in such cases.
 - Resolved an issue with the Quick Links widget, ensuring only valid and functional links are displayed.
 - Fixed a bug that prevented files from being completely cleared; empty files can now be saved without issue.
+- Fixed an issue where the installer did not automatically install Docker as required for Wings, ensuring a smoother and more reliable Wings installation process.
+- The installer now properly stops and frees port 80 before launching a standalone server, preventing conflicts and ensuring successful SSL certificate generation.
 
 ### Improved
 

@@ -374,6 +374,18 @@ setup_cloudflare_tunnel_client() {
 install_wings() {
     log_step "Installing FeatherWings daemon..."
     
+    # Check and install Docker first (Wings requires Docker)
+    if command -v docker &> /dev/null
+    then
+        log_info "Docker is already installed."
+    else
+        log_step "Installing Docker engine (required for Wings, this may take a minute)..."
+        curl -sSL https://get.docker.com/ | CHANNEL=stable bash >> "$LOG_FILE" 2>&1
+        sudo systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
+        sudo usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
+        log_success "Docker installed. You may need to re-login for group changes to take effect."
+    fi
+    
     # Check kernel version for swap support
     KERNEL_VERSION=$(uname -r | cut -d. -f1-2)
     KERNEL_MAJOR=$(echo "$KERNEL_VERSION" | cut -d. -f1)
@@ -644,11 +656,15 @@ create_ssl_certificate_http() {
                 }
             else
                 log_warn "Nginx plugin not installed. Falling back to standalone method."
-                log_warn "Make sure port 80 is not in use by other services."
+                log_info "Stopping Nginx temporarily to free port 80..."
+                sudo systemctl stop nginx
                 certbot certonly --standalone -d "$domain" --non-interactive --agree-tos --email admin@"$domain" || {
                     log_error "Failed to create certificate with standalone method";
+                    sudo systemctl start nginx
                     return 1;
                 }
+                log_info "Restarting Nginx..."
+                sudo systemctl start nginx
             fi
             ;;
         apache)
@@ -661,11 +677,15 @@ create_ssl_certificate_http() {
                 }
             else
                 log_warn "Apache plugin not installed. Falling back to standalone method."
-                log_warn "Make sure port 80 is not in use by other services."
+                log_info "Stopping Apache temporarily to free port 80..."
+                sudo systemctl stop apache2
                 certbot certonly --standalone -d "$domain" --non-interactive --agree-tos --email admin@"$domain" || {
                     log_error "Failed to create certificate with standalone method";
+                    sudo systemctl start apache2
                     return 1;
                 }
+                log_info "Restarting Apache..."
+                sudo systemctl start apache2
             fi
             ;;
         standalone)
@@ -851,11 +871,34 @@ create_wings_ssl_certificate() {
     case $challenge_method in
         1)
             log_info "Using HTTP challenge (standalone mode)..."
-            log_warn "Make sure port 80 is not in use by other services."
+            
+            # Check if any web server is running on port 80 and stop it temporarily
+            local stopped_service=""
+            if systemctl is-active --quiet nginx; then
+                log_info "Stopping Nginx temporarily to free port 80..."
+                sudo systemctl stop nginx
+                stopped_service="nginx"
+            elif systemctl is-active --quiet apache2; then
+                log_info "Stopping Apache temporarily to free port 80..."
+                sudo systemctl stop apache2
+                stopped_service="apache2"
+            fi
+            
             certbot certonly --standalone -d "$domain" --non-interactive --agree-tos --email admin@"$domain" || {
                 log_error "Failed to create certificate with HTTP challenge";
+                # Restart the web server if we stopped it
+                if [ -n "$stopped_service" ]; then
+                    log_info "Restarting $stopped_service..."
+                    sudo systemctl start "$stopped_service"
+                fi
                 return 1;
             }
+            
+            # Restart the web server if we stopped it
+            if [ -n "$stopped_service" ]; then
+                log_info "Restarting $stopped_service..."
+                sudo systemctl start "$stopped_service"
+            fi
             ;;
         2)
             log_info "Using DNS challenge method..."
