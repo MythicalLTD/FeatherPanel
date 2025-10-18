@@ -1,6 +1,9 @@
 <template>
     <div class="p-6 space-y-4">
-        <h2 class="text-xl font-semibold text-foreground">Quick Statistics</h2>
+        <h2 class="text-xl font-semibold flex items-center gap-2">
+            <ChartSpline :size="20" class="text-primary" />
+            Quick Statistics
+        </h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card
                 v-for="(stat, index) in quickStatsArr"
@@ -72,7 +75,7 @@
 
 import { computed } from 'vue';
 import { Card } from '@/components/ui/card';
-import { Users, Server, Network, Sparkles } from 'lucide-vue-next';
+import { Users, Server, Network, Sparkles, ChartSpline } from 'lucide-vue-next';
 import { useDashboardStore } from '@/stores/dashboard';
 
 const dashboardStore = useDashboardStore();
