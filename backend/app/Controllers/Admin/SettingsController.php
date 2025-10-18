@@ -96,8 +96,8 @@ class SettingsController
             'settings' => [
                 ConfigInterface::APP_NAME,
                 ConfigInterface::APP_URL,
-                ConfigInterface::APP_LOGO,
                 ConfigInterface::APP_LOGO_WHITE,
+                ConfigInterface::APP_LOGO_DARK,
                 ConfigInterface::APP_TIMEZONE,
                 ConfigInterface::APP_SUPPORT_URL,
             ],
@@ -165,9 +165,9 @@ class SettingsController
                 'options' => [],
                 'category' => 'app',
             ],
-            ConfigInterface::APP_LOGO => [
-                'name' => ConfigInterface::APP_LOGO . ' Dark',
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_LOGO, 'https://cdn.mythical.systems/featherpanel/logo.png'),
+            ConfigInterface::APP_LOGO_DARK => [
+                'name' => ConfigInterface::APP_LOGO_DARK,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::APP_LOGO_DARK, 'https://cdn.mythical.systems/featherpanel/logo.png'),
                 'description' => 'The logo of the application (For dark mode)',
                 'type' => 'text',
                 'required' => true,
