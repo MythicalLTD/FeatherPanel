@@ -1,7 +1,10 @@
 <template>
     <div v-if="versionInfo" class="p-6 space-y-4">
         <div class="flex items-center justify-between">
-            <h2 class="text-xl font-semibold">Version Information</h2>
+            <h2 class="text-xl font-semibold flex items-center gap-2">
+                <Rocket :size="20" class="text-primary" />
+                Version Information
+            </h2>
             <div class="text-xs text-muted-foreground">Last checked {{ formatAgo(versionInfo.last_checked) }}</div>
         </div>
 
@@ -238,7 +241,7 @@
 
 import { computed, ref } from 'vue';
 import { Card } from '@/components/ui/card';
-import { Sparkles, AlertTriangle, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-vue-next';
+import { Sparkles, AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Rocket } from 'lucide-vue-next';
 import { useDashboardStore } from '@/stores/dashboard';
 import ChangelogSection from './ChangelogSection.vue';
 
