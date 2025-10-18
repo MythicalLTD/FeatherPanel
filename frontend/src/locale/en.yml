@@ -47,7 +47,7 @@ common:
     next: 'Next'
 auth:
     welcome: 'Welcome to {appName},'
-    runningOn: 'Running on FeatherPanel v{version} - {appName}'
+    runningOn: 'Running on FeatherPanel {version} - {appName}'
     mythicalSystems: 'mythical.systems'
     login: 'Login'
     register: 'Register'
