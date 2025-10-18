@@ -42,11 +42,11 @@
                             <Button size="sm" variant="outline" @click="onView(item as Realm)">
                                 <Eye :size="16" />
                             </Button>
-                            <Button size="sm" variant="secondary" @click="onViewSpells(item as Realm)">
-                                <Sparkles :size="16" />
-                            </Button>
                             <Button size="sm" variant="secondary" @click="onEdit(item as Realm)">
                                 <Pencil :size="16" />
+                            </Button>
+                            <Button size="sm" variant="secondary" @click="onViewSpells(item as Realm)">
+                                <Sparkles :size="16" />
                             </Button>
                             <template v-if="confirmDeleteRow === (item as Realm).id">
                                 <Button
