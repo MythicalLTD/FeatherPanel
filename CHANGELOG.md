@@ -37,7 +37,14 @@
 - Admin and profile page links are now hidden from the user sidebar while you are actively viewing them.
 - Added new modals for streamlined allocation and spell selection when editing servers. Selections are now managed via a modern, searchable modal interface rather than older dropdowns.
 - Improved Docker Images for Spells: When editing a server, available Docker images are now correctly shown and selectable—images update live with the selected spell.
-
+- Updated the admin UI to feature a more appropriate and visually fitting icon for Roles
+- Reordered action buttons in the Realm administration interface for improved visual layout.
+- Adjusted spacing in admin widgets to refine vertical and grid gaps for a cleaner UI.
+- Introduced a separate dark-mode application logo setting and updated default/public settings and admin configuration accordingly.
+- Updated action button styles in the allocations interface to outline, secondary, and destructive variants for clearer visual hierarchy.
+- Standardized icon sizing across actions for consistent appearance.
+- Adjusted button labels and tooltips (including "Confirm Delete") and preserved health/loading-disabled behaviors for gated actions.
+- Updated the FeatherPanel version display format in the authentication message to remove the "v" prefix from the version number.
 
 ### Updated
 
