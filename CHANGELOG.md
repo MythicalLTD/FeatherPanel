@@ -47,6 +47,7 @@
 - Standardized icon sizing across actions for consistent appearance.
 - Adjusted button labels and tooltips (including "Confirm Delete") and preserved health/loading-disabled behaviors for gated actions.
 - Updated the FeatherPanel version display format in the authentication message to remove the "v" prefix from the version number.
+- Added widget border customization. Each widget can independently toggle borders on or off. Borders are enabled by default, providing flexible control over your widget appearance and workspace personalization.
 
 ### Updated
 

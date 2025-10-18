@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2025 MythicalSystems
+Copyright (c) 2025 MythicalSystems and Contributors
 Copyright (c) 2025 Cassian Gherman (NaysKutzu)
 Copyright (c) 2018 - 2021 Dane Everitt <dane@daneeveritt.com> and Contributors
 
