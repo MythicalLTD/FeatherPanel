@@ -1407,7 +1407,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
@@ -1417,7 +1417,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-// Removed shadcn-vue Checkbox import - using custom implementation
 import {
     Dialog,
     DialogContent,
@@ -1484,7 +1483,7 @@ const currentPath = ref('/');
 const selectedFiles = ref<string[]>([]);
 const activeDownloads = ref<DownloadProcess[]>([]);
 const searchQuery = ref('');
-const searchInput = ref<HTMLInputElement>();
+const searchInput = ref<{ $el?: HTMLElement } | HTMLInputElement>();
 const showCreateFileDialog = ref(false);
 const newFileNameForCreate = ref('');
 const newFileContent = ref('');
@@ -1617,6 +1616,20 @@ const closeContextMenu = () => {
     contextMenuFile.value = null;
 };
 
+// Helper function to get the actual input element from the ref
+const getSearchInputElement = (): HTMLInputElement | null => {
+    if (!searchInput.value) return null;
+
+    // Check if it's a component with $el
+    if ('$el' in searchInput.value && searchInput.value.$el) {
+        const input = searchInput.value.$el.querySelector('input');
+        return input as HTMLInputElement | null;
+    }
+
+    // Otherwise it's already an HTMLInputElement
+    return searchInput.value as HTMLInputElement;
+};
+
 // Event handlers for drag and drop
 const handleKeyboard = (e: KeyboardEvent) => {
     // Check if the active element is an input, textarea, or contenteditable
@@ -1626,6 +1639,18 @@ const handleKeyboard = (e: KeyboardEvent) => {
         target.tagName === 'TEXTAREA' ||
         target.isContentEditable ||
         target.getAttribute('contenteditable') === 'true';
+
+    // Check if any dialog is open (don't handle shortcuts if dialogs are open)
+    const isDialogOpen =
+        showUploadDialog.value ||
+        showCreateFolderDialog.value ||
+        showCreateFileDialog.value ||
+        showRenameDialog.value ||
+        showPermissionsDialog.value ||
+        showPullDialog.value ||
+        showCopyDialog.value ||
+        showMoveDialog.value ||
+        showDeleteDialog.value;
 
     // ESC key to close drag overlay or context menu
     if (e.key === 'Escape') {
@@ -1637,16 +1662,23 @@ const handleKeyboard = (e: KeyboardEvent) => {
         }
     }
 
-    // Forward slash (/) to focus search (only if not in an input field)
-    if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && !isInputField) {
+    // Forward slash (/) to focus search (only if not in an input field and no dialogs open)
+    if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && !isInputField && !isDialogOpen) {
         e.preventDefault();
-        searchInput.value?.focus();
+        nextTick(() => {
+            const input = getSearchInputElement();
+            input?.focus();
+        });
     }
 
-    // Ctrl+F - Focus search (only if not already in search input)
-    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+    // Ctrl+F - Focus search (prevent browser's default find and focus our search, unless dialog is open)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f' && !isDialogOpen) {
         e.preventDefault();
-        searchInput.value?.focus();
+        e.stopPropagation();
+        nextTick(() => {
+            const input = getSearchInputElement();
+            input?.focus();
+        });
     }
 
     // Ctrl+A - Toggle select all files (only if not in an input field)
@@ -1751,11 +1783,30 @@ const stopDownloadsPolling = () => {
     }
 };
 
+// Watch for route changes (browser back/forward navigation)
+watch(
+    () => route.query.path,
+    (newPath) => {
+        const targetPath = (newPath as string | undefined) || '/';
+        if (targetPath !== currentPath.value) {
+            // Navigate without updating URL (already changed by browser)
+            navigateToPath(targetPath, false);
+        }
+    },
+);
+
 // Lifecycle
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect(router);
     await settingsStore.fetchSettings();
     await fetchServer();
+
+    // Initialize path from URL query parameter
+    const pathFromUrl = route.query.path as string | undefined;
+    if (pathFromUrl) {
+        currentPath.value = pathFromUrl;
+    }
+
     await refreshFiles();
 
     // Start polling for downloads
@@ -1819,8 +1870,19 @@ const refreshFiles = async () => {
     }
 };
 
-const navigateToPath = (path: string) => {
+const navigateToPath = (path: string, updateUrl: boolean = true) => {
     currentPath.value = path;
+    searchQuery.value = ''; // Clear search filter when changing directories
+
+    // Update URL for browser history (back/forward buttons)
+    if (updateUrl) {
+        router.push({
+            name: 'ServerFiles',
+            params: { uuidShort: route.params.uuidShort },
+            query: { path: path === '/' ? undefined : path },
+        });
+    }
+
     refreshFiles();
 };
 
@@ -1865,9 +1927,10 @@ const handleEmptySpaceClick = () => {
 
 const clearSearch = () => {
     searchQuery.value = '';
-    if (searchInput.value) {
-        searchInput.value.focus();
-    }
+    nextTick(() => {
+        const input = getSearchInputElement();
+        input?.focus();
+    });
 };
 const copySingle = async (fileName: string) => {
     try {

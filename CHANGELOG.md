@@ -12,6 +12,7 @@
 - Added power controls (start, stop, restart, kill) and detailed server resource info to the sidebar when viewing server routes, enabling direct server management and status visibility from the sidebar.
 - Added display of the current app version in the admin UI for easier version awareness and debugging.
 - Introduced Server Transfers—now available for beta testing! Move servers between nodes seamlessly; feedback welcome as we refine this powerful new feature.
+- Added detection and support for classic Minecraft 1.19 "requires running the server with Java 17 or above. Download Java 17 (or above) from https://adoptium.net/" messages to provide users with clear Java requirements.
 
 ### Fixed
 
@@ -26,6 +27,8 @@
 - Fixed a bug that prevented files from being completely cleared; empty files can now be saved without issue.
 - Fixed an issue where the installer did not automatically install Docker as required for Wings, ensuring a smoother and more reliable Wings installation process.
 - The installer now properly stops and frees port 80 before launching a standalone server, preventing conflicts and ensuring successful SSL certificate generation.
+- File manager URL not updating when navigating directories—browser history (back/forward) support is now enabled.
+- File manager Ctrl + F was not properly focusing the search input—it now works as expected.
 
 ### Improved
 
@@ -48,6 +51,7 @@
 - Adjusted button labels and tooltips (including "Confirm Delete") and preserved health/loading-disabled behaviors for gated actions.
 - Updated the FeatherPanel version display format in the authentication message to remove the "v" prefix from the version number.
 - Added widget border customization. Each widget can independently toggle borders on or off. Borders are enabled by default, providing flexible control over your widget appearance and workspace personalization.
+- The search filter is now reset/cleared when changing directories, preventing stale filters for file manager.
 
 ### Updated
 
