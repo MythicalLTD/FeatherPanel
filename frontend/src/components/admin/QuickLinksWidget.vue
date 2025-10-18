@@ -5,7 +5,7 @@
             Quick Links
         </h2>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card
                 v-for="link in quickLinks"
                 :key="link.name"
