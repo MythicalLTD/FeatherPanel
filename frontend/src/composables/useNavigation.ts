@@ -49,7 +49,7 @@ import {
     Link,
     BookAlert,
     TerminalIcon,
-    BarChart3,
+    BarChart3, Crown,
 } from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
 import Permissions from '@/lib/permissions';
@@ -196,7 +196,7 @@ export function useNavigation() {
 
     // Main navigation items
     const mainItems = computed((): NavigationItem[] => {
-        const items: NavigationItem[] = [
+        const items = [
             {
                 id: 'dashboard',
                 name: 'Main',
@@ -220,11 +220,7 @@ export function useNavigation() {
 
         // Add plugin dashboard items
         if (pluginRoutes.value?.dashboard) {
-            const pluginItems = convertPluginItems(pluginRoutes.value.dashboard, 'main');
-            // Assign plugins to a 'plugins' group
-            pluginItems.forEach((item) => {
-                item.group = 'plugins';
-            });
+            const pluginItems = convertPluginItems(pluginRoutes.value.dashboard, 'main') as typeof items;
             items.push(...pluginItems);
         }
 
@@ -233,7 +229,7 @@ export function useNavigation() {
 
     // Admin navigation items
     const adminItems = computed((): NavigationItem[] => {
-        const items: NavigationItem[] = [
+        const items = [
             // Overview
             {
                 id: 'admin-dashboard',
@@ -274,7 +270,7 @@ export function useNavigation() {
                 name: 'Roles',
                 title: t('nav.roles'),
                 url: '/admin/roles',
-                icon: Users,
+                icon: Crown,
                 isActive: currentPath.value.startsWith('/admin/roles'),
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_ROLES_VIEW,
@@ -397,7 +393,7 @@ export function useNavigation() {
 
         // Add plugin admin items (no permission checks for plugins)
         if (pluginRoutes.value?.admin) {
-            const pluginItems = convertPluginItems(pluginRoutes.value.admin, 'admin');
+            const pluginItems = convertPluginItems(pluginRoutes.value.admin, 'admin') as typeof items;
             // Assign plugins to a 'plugins' group
             pluginItems.forEach((item) => {
                 item.group = 'plugins';
@@ -413,7 +409,7 @@ export function useNavigation() {
         const uuidShort = route.params.uuidShort;
         if (!uuidShort || !currentPath.value.startsWith('/server')) return [];
 
-        const items: NavigationItem[] = [
+        const items = [
             {
                 id: 'server-console',
                 name: 'Console',
@@ -528,11 +524,11 @@ export function useNavigation() {
 
         // Add plugin server items
         if (pluginRoutes.value?.server) {
-            const pluginItems = convertPluginItems(pluginRoutes.value.server, 'server', uuidShort as string);
-            // Assign plugins to a 'plugins' group
-            pluginItems.forEach((item) => {
-                item.group = 'plugins';
-            });
+            const pluginItems = convertPluginItems(
+                pluginRoutes.value.server,
+                'server',
+                uuidShort as string,
+            ) as typeof items;
             items.push(...pluginItems);
         }
 

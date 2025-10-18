@@ -1,7 +1,10 @@
 <template>
     <div v-if="cronRecent || cronSummary" class="p-6 space-y-4">
         <div class="flex items-center justify-between">
-            <h2 class="text-xl font-semibold">Automation Tasks Status</h2>
+            <h2 class="text-xl font-semibold flex items-center gap-2">
+                <CalendarSync :size="20" />
+                Automation Tasks Status
+            </h2>
             <div v-if="cronRecent" class="text-xs text-muted-foreground">Updated just now</div>
         </div>
         <div v-if="cronSummary" class="text-sm text-muted-foreground bg-muted/50 border rounded-md p-4">
@@ -88,7 +91,7 @@
 
 import { computed } from 'vue';
 import { Card } from '@/components/ui/card';
-import { CheckCircle2, AlertTriangle } from 'lucide-vue-next';
+import { CheckCircle2, AlertTriangle, CalendarSync } from 'lucide-vue-next';
 import { useDashboardStore } from '@/stores/dashboard';
 
 const dashboardStore = useDashboardStore();
