@@ -7,6 +7,8 @@
 - Added admin analytics dashboard (KPI) for detailed user statistics and insights.
 - Added the ability to bulk delete allocations directly from the admin interface for faster cleanup and management.
 - Introduced an option to quickly remove all unused allocations in one action, streamlining server resource management.
+- Removed the empty content validation for file writes—now only requests with a truly missing (null) body are rejected, allowing writing empty files or clearing content.
+- Added an error message when there are no database hosts configured—users will now see a clear notice instead of an unexpected error.
 
 ### Fixed
 
@@ -17,6 +19,8 @@
 - Fixed an issue where destructive action confirmation dialogs (e.g., "Delete Selected", "Delete Unused") were difficult to read in light mode due to poor contrast—these dialogs are now fully legible in both dark and light themes.
 - Resolved an issue where avatars and images were not displayed correctly in select column dropdowns, ensuring consistent visuals throughout the UI.
 - Fixed a problem where the "empty folder" layout was not shown when a user had no available servers, providing clearer feedback in such cases.
+- Resolved an issue with the Quick Links widget, ensuring only valid and functional links are displayed.
+- Fixed a bug that prevented files from being completely cleared; empty files can now be saved without issue.
 
 ### Improved
 

@@ -108,51 +108,24 @@
                             <h2 class="text-xl font-semibold mb-4">Allocation Management</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label for="location" class="block mb-2 font-medium">Location</label>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        :class="
-                                            cn(
-                                                'w-full justify-between',
-                                                validationErrors.location_id ? 'border-red-500' : '',
-                                            )
-                                        "
-                                        @click="locationModal.openModal()"
-                                    >
-                                        {{ getSelectedLocationName() || 'Select location...' }}
-                                        <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                    <p v-if="validationErrors.location_id" class="text-xs text-red-500 mt-1">
-                                        {{ validationErrors.location_id }}
-                                    </p>
-                                    <p v-else class="text-xs text-muted-foreground mt-1">
-                                        The location where this server will be deployed.
-                                    </p>
+                                    <label class="block mb-2 font-medium">Location</label>
+                                    <div class="p-3 bg-muted rounded-lg">
+                                        <p class="font-medium">{{ getSelectedLocationName() || 'Unknown Location' }}</p>
+                                        <p class="text-xs text-muted-foreground mt-1">
+                                            Location cannot be changed directly. Use the "Server Transfer" feature below
+                                            to move this server.
+                                        </p>
+                                    </div>
                                 </div>
                                 <div>
-                                    <label for="node" class="block mb-2 font-medium">Node</label>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        :disabled="!form.location_id"
-                                        :class="
-                                            cn(
-                                                'w-full justify-between',
-                                                validationErrors.node_id ? 'border-red-500' : '',
-                                            )
-                                        "
-                                        @click="nodeModal.openModal()"
-                                    >
-                                        {{ getSelectedNodeName() || 'Select node...' }}
-                                        <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                    <p v-if="validationErrors.node_id" class="text-xs text-red-500 mt-1">
-                                        {{ validationErrors.node_id }}
-                                    </p>
-                                    <p v-else class="text-xs text-muted-foreground mt-1">
-                                        The node which this server will be deployed to.
-                                    </p>
+                                    <label class="block mb-2 font-medium">Node</label>
+                                    <div class="p-3 bg-muted rounded-lg">
+                                        <p class="font-medium">{{ getSelectedNodeName() || 'Unknown Node' }}</p>
+                                        <p class="text-xs text-muted-foreground mt-1">
+                                            Node cannot be changed directly. Use the "Server Transfer" feature below to
+                                            move this server.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                             <div class="mt-6">
@@ -695,6 +668,88 @@
                             </div>
                         </div>
 
+                        <!-- Server Transfer Section -->
+                        <div class="bg-card border rounded-lg p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h2 class="text-xl font-semibold">Server Transfer</h2>
+                                    <p class="text-sm text-muted-foreground mt-1">
+                                        Transfer this server to a different node
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div v-if="isTransferring" class="space-y-4">
+                                <div
+                                    class="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg"
+                                >
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <div
+                                            class="animate-spin rounded-full h-5 w-5 border-2 border-yellow-500 border-t-transparent"
+                                        ></div>
+                                        <span class="font-medium text-yellow-900 dark:text-yellow-100"
+                                            >Transfer in Progress</span
+                                        >
+                                    </div>
+                                    <p class="text-sm text-yellow-800 dark:text-yellow-200 mb-3">
+                                        This server is currently being transferred. This may take several minutes
+                                        depending on server size.
+                                    </p>
+                                    <div v-if="transferStatus" class="space-y-2">
+                                        <div class="flex justify-between text-sm">
+                                            <span>Progress:</span>
+                                            <span class="font-medium"
+                                                >{{ transferStatus.progress?.toFixed(1) || 0 }}%</span
+                                            >
+                                        </div>
+                                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                            <div
+                                                class="bg-yellow-500 h-2 rounded-full transition-all duration-300"
+                                                :style="{ width: `${transferStatus.progress || 0}%` }"
+                                            ></div>
+                                        </div>
+                                        <p v-if="transferStatus.started_at" class="text-xs text-muted-foreground">
+                                            Started: {{ new Date(transferStatus.started_at).toLocaleString() }}
+                                        </p>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="sm"
+                                        class="mt-3"
+                                        :loading="cancellingTransfer"
+                                        @click="cancelServerTransfer"
+                                    >
+                                        Cancel Transfer
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div v-else class="space-y-4">
+                                <p class="text-sm text-muted-foreground">
+                                    Transferring a server will move it to a different node. The server will be stopped
+                                    during the transfer and automatically started on the destination node once complete.
+                                </p>
+                                <Button type="button" variant="outline" @click="openTransferDialog">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="h-4 w-4 mr-2"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                                        />
+                                    </svg>
+                                    Transfer Server
+                                </Button>
+                            </div>
+                        </div>
+
                         <!-- Form Actions -->
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <div class="flex items-center gap-3">
@@ -745,42 +800,6 @@
 
         <!-- Selection Modals -->
         <SelectionModal
-            :is-open="locationModal.state.value.isOpen"
-            title="Select Location"
-            description="Choose a location for this server"
-            item-type="location"
-            search-placeholder="Search locations by name or description..."
-            :items="locationModal.state.value.items"
-            :loading="locationModal.state.value.loading"
-            :current-page="locationModal.state.value.currentPage"
-            :total-pages="locationModal.state.value.totalPages"
-            :total-items="locationModal.state.value.totalItems"
-            :page-size="20"
-            :selected-item="locationModal.state.value.selectedItem"
-            :search-query="locationModal.state.value.searchQuery"
-            @update:open="locationModal.closeModal"
-            @search="locationModal.handleSearch"
-            @search-query-update="locationModal.handleSearchQueryUpdate"
-            @page-change="locationModal.handlePageChange"
-            @select="locationModal.selectItem"
-            @confirm="selectLocation(locationModal.confirmSelection())"
-        >
-            <template #default="{ item, isSelected }">
-                <div class="flex items-center justify-between">
-                    <div class="flex-1 min-w-0">
-                        <h4 class="font-medium truncate text-sm sm:text-base">{{ item.name }}</h4>
-                        <p class="text-xs sm:text-sm text-muted-foreground truncate">
-                            {{ item.description || 'No description available' }}
-                        </p>
-                    </div>
-                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
-                        <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                    </div>
-                </div>
-            </template>
-        </SelectionModal>
-
-        <SelectionModal
             :is-open="userModal.state.value.isOpen"
             title="Select Server Owner"
             description="Choose a user to own this server"
@@ -806,40 +825,6 @@
                     <div class="flex-1 min-w-0">
                         <h4 class="font-medium truncate text-sm sm:text-base">{{ item.username }}</h4>
                         <p class="text-xs sm:text-sm text-muted-foreground truncate">{{ item.email }}</p>
-                    </div>
-                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
-                        <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                    </div>
-                </div>
-            </template>
-        </SelectionModal>
-
-        <SelectionModal
-            :is-open="nodeModal.state.value.isOpen"
-            title="Select Node"
-            description="Choose a node for this server"
-            item-type="node"
-            search-placeholder="Search nodes by name or FQDN..."
-            :items="nodeModal.state.value.items"
-            :loading="nodeModal.state.value.loading"
-            :current-page="nodeModal.state.value.currentPage"
-            :total-pages="nodeModal.state.value.totalPages"
-            :total-items="nodeModal.state.value.totalItems"
-            :page-size="20"
-            :selected-item="nodeModal.state.value.selectedItem"
-            :search-query="nodeModal.state.value.searchQuery"
-            @update:open="nodeModal.closeModal"
-            @search="nodeModal.handleSearch"
-            @search-query-update="nodeModal.handleSearchQueryUpdate"
-            @page-change="nodeModal.handlePageChange"
-            @select="nodeModal.selectItem"
-            @confirm="selectNode(nodeModal.confirmSelection())"
-        >
-            <template #default="{ item, isSelected }">
-                <div class="flex items-center justify-between">
-                    <div class="flex-1 min-w-0">
-                        <h4 class="font-medium truncate text-sm sm:text-base">{{ item.name }}</h4>
-                        <p class="text-xs sm:text-sm text-muted-foreground truncate">{{ item.fqdn || 'No FQDN' }}</p>
                     </div>
                     <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
                         <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
@@ -953,6 +938,99 @@
                 </div>
             </template>
         </SelectionModal>
+
+        <!-- Transfer Dialog -->
+        <Dialog v-model:open="transferDialogOpen">
+            <DialogContent class="sm:max-w-[500px]">
+                <DialogHeader>
+                    <DialogTitle>Transfer Server</DialogTitle>
+                    <DialogDescription>
+                        Select the destination node for this server transfer. The server will be stopped, transferred,
+                        and restarted on the new node.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div class="space-y-4 py-4">
+                    <div>
+                        <label class="block mb-2 font-medium">Current Node</label>
+                        <div class="p-3 bg-muted rounded-lg">
+                            <p class="font-medium">{{ getSelectedNodeName() }}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block mb-2 font-medium">Destination Node</label>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            class="w-full justify-between"
+                            @click="transferNodeModal.openModal()"
+                        >
+                            {{ getTransferDestinationNodeName() || 'Select destination node...' }}
+                            <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                        <p class="text-xs text-muted-foreground mt-1">
+                            Choose a different node to transfer this server to.
+                        </p>
+                    </div>
+
+                    <div
+                        class="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg"
+                    >
+                        <p class="text-sm text-yellow-900 dark:text-yellow-100">
+                            <strong>Warning:</strong> The server will be stopped during transfer and may be unavailable
+                            for several minutes.
+                        </p>
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button variant="outline" @click="transferDialogOpen = false">Cancel</Button>
+                    <Button
+                        :disabled="!transferDestinationNodeId"
+                        :loading="initiatingTransfer"
+                        @click="initiateServerTransfer"
+                    >
+                        Start Transfer
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <!-- Transfer Node Selection Modal -->
+        <SelectionModal
+            :is-open="transferNodeModal.state.value.isOpen"
+            title="Select Destination Node"
+            description="Choose a node to transfer this server to"
+            item-type="node"
+            search-placeholder="Search nodes by name or FQDN..."
+            :items="transferNodeModal.state.value.items"
+            :loading="transferNodeModal.state.value.loading"
+            :current-page="transferNodeModal.state.value.currentPage"
+            :total-pages="transferNodeModal.state.value.totalPages"
+            :total-items="transferNodeModal.state.value.totalItems"
+            :page-size="20"
+            :selected-item="transferNodeModal.state.value.selectedItem"
+            :search-query="transferNodeModal.state.value.searchQuery"
+            @update:open="transferNodeModal.closeModal"
+            @search="transferNodeModal.handleSearch"
+            @search-query-update="transferNodeModal.handleSearchQueryUpdate"
+            @page-change="transferNodeModal.handlePageChange"
+            @select="transferNodeModal.selectItem"
+            @confirm="selectTransferDestinationNode(transferNodeModal.confirmSelection())"
+        >
+            <template #default="{ item, isSelected }">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-medium truncate text-sm sm:text-base">{{ item.name }}</h4>
+                        <p class="text-xs sm:text-sm text-muted-foreground truncate">{{ item.fqdn || 'No FQDN' }}</p>
+                    </div>
+                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
+                        <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    </div>
+                </div>
+            </template>
+        </SelectionModal>
     </DashboardLayout>
 </template>
 
@@ -981,7 +1059,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
@@ -994,6 +1072,14 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '
 import { SelectionModal } from '@/components/ui/selection-modal';
 import { useSelectionModal } from '@/composables/useSelectionModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { useToast } from 'vue-toastification';
 import { cn } from '@/lib/utils';
 import type {
@@ -1008,6 +1094,7 @@ import type {
     EditForm,
     SubmitData,
     AxiosError,
+    TransferStatus,
 } from '@/types/admin/server';
 
 const router = useRouter();
@@ -1036,14 +1123,7 @@ const suspending = ref(false);
 const dockerImagePopoverOpen = ref(false);
 
 // Selection modals
-const locationModal = useSelectionModal('/api/admin/locations', 20, 'search', 'page');
 const userModal = useSelectionModal('/api/admin/users', 20, 'search', 'page');
-
-// Node modal with reactive location_id filter
-const nodeAdditionalParams = computed(() => ({
-    location_id: form.value.location_id || null,
-}));
-const nodeModal = useSelectionModal('/api/admin/nodes', 20, 'search', 'page', nodeAdditionalParams);
 
 // Allocation modal with reactive node_id filter
 const allocationAdditionalParams = computed(() => ({
@@ -1139,22 +1219,13 @@ function getSelectedOwnerName() {
 }
 
 function getSelectedLocationName() {
-    // First check if there's a selected item in the modal
-    if (locationModal.state.value.selectedItem) {
-        return locationModal.state.value.selectedItem.name;
-    }
-    // Fallback to locations list
+    // Location is read-only, just display from current data
     const selected = locations.value.find((location) => String(location.id) === form.value.location_id);
     return selected ? selected.name : '';
 }
 
 function getSelectedNodeName() {
-    // First check if there's a selected item in the modal
-    if (nodeModal.state.value.selectedItem) {
-        const selected = nodeModal.state.value.selectedItem;
-        return `${selected.name} (${selected.fqdn})`;
-    }
-    // Fallback to filtered nodes
+    // Node is read-only, just display from current data
     const selected = filteredNodes.value.find((node) => String(node.id) === form.value.node_id);
     return selected ? `${selected.name} (${selected.fqdn})` : '';
 }
@@ -1202,23 +1273,6 @@ function getSelectedSpellName() {
 }
 
 // Selection functions
-function selectLocation(item: ApiLocation) {
-    if (item && item.id) {
-        form.value.location_id = String(item.id);
-        form.value.node_id = '';
-        form.value.allocation_id = '';
-        locationModal.closeModal();
-    }
-}
-
-function selectNode(item: ApiNode) {
-    if (item && item.id) {
-        form.value.node_id = String(item.id);
-        form.value.allocation_id = '';
-        nodeModal.closeModal();
-    }
-}
-
 function selectOwner(item: ApiUser) {
     if (item && item.id && item.id > 0) {
         form.value.owner_id = String(item.id);
@@ -1381,6 +1435,22 @@ const serverAllocations = ref<{
 const loadingAllocations = ref(false);
 const settingPrimary = ref<number | null>(null);
 const deletingAllocation = ref<number | null>(null);
+
+// Server transfer state
+const transferDialogOpen = ref(false);
+const transferDestinationNodeId = ref<string>('');
+const transferDestinationNode = ref<ApiNode | null>(null);
+const initiatingTransfer = ref(false);
+const cancellingTransfer = ref(false);
+const transferStatus = ref<TransferStatus | null>(null);
+const isTransferring = computed(() => form.value.status === 'transferring');
+const transferStatusInterval = ref<number | null>(null);
+
+// Transfer node modal - exclude current node
+const transferNodeAdditionalParams = computed(() => ({
+    exclude_node_id: form.value.node_id || null,
+}));
+const transferNodeModal = useSelectionModal('/api/admin/nodes', 20, 'search', 'page', transferNodeAdditionalParams);
 
 // Load server data for editing
 async function loadServerData() {
@@ -1840,8 +1910,151 @@ async function setPrimaryAllocation(allocationId: number) {
     }
 }
 
+// Transfer functions
+function openTransferDialog() {
+    transferDestinationNodeId.value = '';
+    transferDestinationNode.value = null;
+    transferDialogOpen.value = true;
+}
+
+function selectTransferDestinationNode(node: ApiNode) {
+    if (node && node.id) {
+        transferDestinationNodeId.value = String(node.id);
+        transferDestinationNode.value = node;
+        transferNodeModal.closeModal();
+    }
+}
+
+function getTransferDestinationNodeName() {
+    if (transferNodeModal.state.value.selectedItem) {
+        const node = transferNodeModal.state.value.selectedItem;
+        return `${node.name} (${node.fqdn})`;
+    }
+    if (transferDestinationNode.value) {
+        return `${transferDestinationNode.value.name} (${transferDestinationNode.value.fqdn})`;
+    }
+    return '';
+}
+
+async function initiateServerTransfer() {
+    const serverId = route.params.id;
+    if (!serverId || !transferDestinationNodeId.value) return;
+
+    initiatingTransfer.value = true;
+    try {
+        const { data } = await axios.post(`/api/admin/servers/${serverId}/transfer`, {
+            destination_node_id: Number(transferDestinationNodeId.value),
+        });
+
+        if (data && data.success) {
+            toast.success('Server transfer initiated successfully!');
+            transferDialogOpen.value = false;
+
+            // Update server status to transferring
+            form.value.status = 'transferring';
+
+            // Start polling for transfer status
+            startTransferStatusPolling();
+        } else {
+            toast.error(data?.message || 'Failed to initiate server transfer');
+        }
+    } catch (error) {
+        console.error('Failed to initiate transfer:', error);
+        toast.error('Failed to initiate server transfer');
+    } finally {
+        initiatingTransfer.value = false;
+    }
+}
+
+async function cancelServerTransfer() {
+    const serverId = route.params.id;
+    if (!serverId) return;
+
+    cancellingTransfer.value = true;
+    try {
+        const { data } = await axios.delete(`/api/admin/servers/${serverId}/transfer`);
+
+        if (data && data.success) {
+            toast.success('Server transfer cancelled successfully!');
+
+            // Update server status
+            form.value.status = 'offline';
+
+            // Stop polling
+            stopTransferStatusPolling();
+
+            // Clear transfer status
+            transferStatus.value = null;
+        } else {
+            toast.error(data?.message || 'Failed to cancel server transfer');
+        }
+    } catch (error) {
+        console.error('Failed to cancel transfer:', error);
+        toast.error('Failed to cancel server transfer');
+    } finally {
+        cancellingTransfer.value = false;
+    }
+}
+
+async function fetchTransferStatus() {
+    const serverId = route.params.id;
+    if (!serverId) return;
+
+    try {
+        const { data } = await axios.get(`/api/admin/servers/${serverId}/transfer`);
+
+        if (data && data.success) {
+            transferStatus.value = data.data;
+
+            // If transfer is complete, stop polling and reload server data
+            if (data.data.status === 'completed') {
+                stopTransferStatusPolling();
+                toast.success('Server transfer completed successfully!');
+                await loadServerData();
+            } else if (data.data.status === 'failed') {
+                stopTransferStatusPolling();
+                toast.error('Server transfer failed: ' + (data.data.error || 'Unknown error'));
+                form.value.status = 'offline';
+            }
+        }
+    } catch (error) {
+        // Silently fail - transfer might not be in progress
+        console.debug('Transfer status fetch error:', error);
+    }
+}
+
+function startTransferStatusPolling() {
+    // Clear any existing interval
+    stopTransferStatusPolling();
+
+    // Fetch immediately
+    fetchTransferStatus();
+
+    // Poll every 5 seconds
+    transferStatusInterval.value = window.setInterval(() => {
+        fetchTransferStatus();
+    }, 5000);
+}
+
+function stopTransferStatusPolling() {
+    if (transferStatusInterval.value !== null) {
+        clearInterval(transferStatusInterval.value);
+        transferStatusInterval.value = null;
+    }
+}
+
 onMounted(async () => {
     await loadServerData();
     await fetchAllocations();
+
+    // If server is transferring, start polling for status
+    if (isTransferring.value) {
+        startTransferStatusPolling();
+    }
+});
+
+// Cleanup interval on unmount
+onUnmounted(() => {
+    stopTransferStatusPolling();
 });
 </script>

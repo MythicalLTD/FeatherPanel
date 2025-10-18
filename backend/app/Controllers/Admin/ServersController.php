@@ -896,6 +896,11 @@ class ServersController
         // Prevent updating primary keys
         unset($data['id'], $data['uuid'], $data['uuidShort']);
 
+        // Prevent direct modification of node_id - use server transfer instead
+        if (isset($data['node_id'])) {
+            return ApiResponse::error('Cannot change node_id directly. Use the server transfer feature to move servers between nodes.', 'NODE_CHANGE_NOT_ALLOWED', 400);
+        }
+
         // Validate data types for numeric fields
         $numericFields = ['node_id', 'owner_id', 'memory', 'swap', 'disk', 'io', 'cpu', 'allocation_id', 'realms_id', 'spell_id', 'allocation_limit', 'database_limit', 'backup_limit', 'threads'];
         foreach ($data as $field => $value) {
@@ -1884,5 +1889,344 @@ class ServersController
         }
 
         return ApiResponse::success([], 'Server unsuspended', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/servers/{id}/transfer',
+        summary: 'Initiate server transfer',
+        description: 'Start a transfer of a server from its current node to a destination node. Generates a transfer JWT token and instructs the source node to begin the transfer process.',
+        tags: ['Admin - Servers'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Server ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['destination_node_id'],
+                properties: [
+                    new OA\Property(property: 'destination_node_id', type: 'integer', description: 'Destination node ID', minimum: 1),
+                    new OA\Property(property: 'destination_allocation_id', type: 'integer', description: 'Destination allocation ID (optional)', minimum: 1),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server transfer initiated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                        new OA\Property(property: 'transfer_token', type: 'string', description: 'Transfer JWT token'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid destination node, server already transferring, or same source and destination'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'Server not found or destination node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to initiate transfer or Wings error'),
+        ]
+    )]
+    public function initiateTransfer(Request $request, int $id): Response
+    {
+        $server = Server::getServerById($id);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
+        }
+
+        if (!isset($data['destination_node_id']) || !is_numeric($data['destination_node_id'])) {
+            return ApiResponse::error('Invalid or missing destination_node_id', 'INVALID_DESTINATION_NODE', 400);
+        }
+
+        $destinationNodeId = (int) $data['destination_node_id'];
+
+        // Prevent transferring to the same node
+        if ($server['node_id'] === $destinationNodeId) {
+            return ApiResponse::error('Cannot transfer server to the same node', 'SAME_SOURCE_DESTINATION', 400);
+        }
+
+        // Check if server is already transferring
+        if ($server['status'] === 'transferring') {
+            return ApiResponse::error('Server is already being transferred', 'ALREADY_TRANSFERRING', 400);
+        }
+
+        // Get destination node
+        $destinationNode = Node::getNodeById($destinationNodeId);
+        if (!$destinationNode) {
+            return ApiResponse::error('Destination node not found', 'DESTINATION_NODE_NOT_FOUND', 404);
+        }
+
+        // Get source node for Wings connection
+        $sourceNode = Node::getNodeById($server['node_id']);
+        if (!$sourceNode) {
+            return ApiResponse::error('Source node not found', 'SOURCE_NODE_NOT_FOUND', 404);
+        }
+
+        // Update server status to transferring
+        $updated = Server::updateServerById($id, ['status' => 'transferring']);
+        if (!$updated) {
+            return ApiResponse::error('Failed to update server status', 'UPDATE_FAILED', 500);
+        }
+
+        // Generate transfer JWT token (subject is the destination server UUID)
+        $config = App::getInstance(true)->getConfig();
+        $panelUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
+        $destinationUrl = $destinationNode['scheme'] . '://' . $destinationNode['fqdn'] . ':' . $destinationNode['daemonListen'];
+
+        try {
+            $wings = new Wings(
+                $sourceNode['fqdn'],
+                $sourceNode['daemonListen'],
+                $sourceNode['scheme'],
+                $sourceNode['daemon_token'],
+                30
+            );
+
+            // Get JWT service and generate transfer token
+            $jwtService = new \App\Services\Wings\Services\JwtService(
+                $destinationNode['daemon_token'],
+                $panelUrl,
+                $destinationUrl,
+                3600 // 1 hour expiration for transfers
+            );
+
+            $transferToken = $jwtService->generateTransferToken(
+                $server['uuid'],
+                $request->get('user')['uuid'],
+                ['*'] // Full permissions for transfer
+            );
+
+            // Prepare transfer request data for source node
+            $transferData = [
+                'url' => $destinationUrl . '/api/transfers',
+                'token' => 'Bearer ' . $transferToken,
+                'server' => [
+                    'uuid' => $server['uuid'],
+                ],
+            ];
+
+            // Optional: include destination allocation if provided
+            if (isset($data['destination_allocation_id'])) {
+                $destinationAllocation = Allocation::getAllocationById($data['destination_allocation_id']);
+                if (!$destinationAllocation) {
+                    return ApiResponse::error('Destination allocation not found', 'DESTINATION_ALLOCATION_NOT_FOUND', 404);
+                }
+                if ($destinationAllocation['node_id'] !== $destinationNodeId) {
+                    return ApiResponse::error('Destination allocation does not belong to destination node', 'ALLOCATION_NODE_MISMATCH', 400);
+                }
+                $transferData['allocation_id'] = $data['destination_allocation_id'];
+            }
+
+            // Initiate transfer on source node
+            $response = $wings->getTransfer()->startTransfer($server['uuid'], $transferData);
+
+            // Log activity
+            Activity::createActivity([
+                'user_uuid' => $request->get('user')['uuid'],
+                'name' => 'initiate_server_transfer',
+                'context' => 'Initiated transfer of server ' . $server['name'] . ' from node ' . $sourceNode['name'] . ' to node ' . $destinationNode['name'],
+                'ip_address' => CloudFlareRealIP::getRealIP(),
+            ]);
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerEvent::onServerTransferInitiated(),
+                    [
+                        'server' => $server,
+                        'source_node' => $sourceNode,
+                        'destination_node' => $destinationNode,
+                        'initiated_by' => $request->get('user'),
+                    ]
+                );
+            }
+
+            return ApiResponse::success([
+                'message' => 'Server transfer initiated successfully',
+                'transfer_token' => $transferToken,
+            ], 'Server transfer initiated', 200);
+        } catch (\Exception $e) {
+            // Revert server status if transfer initiation fails
+            Server::updateServerById($id, ['status' => $server['status']]);
+
+            App::getInstance(true)->getLogger()->error('Failed to initiate server transfer: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to initiate server transfer: ' . $e->getMessage(), 'TRANSFER_INITIATION_FAILED', 500);
+        }
+    }
+
+    #[OA\Delete(
+        path: '/api/admin/servers/{id}/transfer',
+        summary: 'Cancel server transfer',
+        description: 'Cancel an ongoing server transfer. Instructs both source and destination nodes to abort the transfer process.',
+        tags: ['Admin - Servers'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Server ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server transfer cancelled successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Server is not being transferred'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to cancel transfer'),
+        ]
+    )]
+    public function cancelTransfer(Request $request, int $id): Response
+    {
+        $server = Server::getServerById($id);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        if ($server['status'] !== 'transferring') {
+            return ApiResponse::error('Server is not being transferred', 'NOT_TRANSFERRING', 400);
+        }
+
+        // Get source node
+        $sourceNode = Node::getNodeById($server['node_id']);
+        if (!$sourceNode) {
+            return ApiResponse::error('Source node not found', 'SOURCE_NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $wings = new Wings(
+                $sourceNode['fqdn'],
+                $sourceNode['daemonListen'],
+                $sourceNode['scheme'],
+                $sourceNode['daemon_token'],
+                30
+            );
+
+            // Cancel transfer on source node
+            $wings->getTransfer()->cancelTransfer($server['uuid']);
+
+            // Update server status back to previous state (assume 'offline' as safe default)
+            Server::updateServerById($id, ['status' => 'offline']);
+
+            // Log activity
+            Activity::createActivity([
+                'user_uuid' => $request->get('user')['uuid'],
+                'name' => 'cancel_server_transfer',
+                'context' => 'Cancelled transfer of server ' . $server['name'],
+                'ip_address' => CloudFlareRealIP::getRealIP(),
+            ]);
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerEvent::onServerTransferCancelled(),
+                    [
+                        'server' => $server,
+                        'cancelled_by' => $request->get('user'),
+                    ]
+                );
+            }
+
+            return ApiResponse::success([], 'Server transfer cancelled successfully', 200);
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to cancel server transfer: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to cancel server transfer: ' . $e->getMessage(), 'TRANSFER_CANCELLATION_FAILED', 500);
+        }
+    }
+
+    #[OA\Get(
+        path: '/api/admin/servers/{id}/transfer',
+        summary: 'Get server transfer status',
+        description: 'Retrieve the current status of a server transfer including progress, start time, and any error messages.',
+        tags: ['Admin - Servers'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Server ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Transfer status retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'status', type: 'string', description: 'Transfer status'),
+                        new OA\Property(property: 'progress', type: 'number', format: 'float', description: 'Transfer progress percentage'),
+                        new OA\Property(property: 'started_at', type: 'string', description: 'Transfer start time'),
+                        new OA\Property(property: 'completed_at', type: 'string', description: 'Transfer completion time'),
+                        new OA\Property(property: 'error', type: 'string', description: 'Error message if transfer failed'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Server is not being transferred'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'Server not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to get transfer status'),
+        ]
+    )]
+    public function getTransferStatus(Request $request, int $id): Response
+    {
+        $server = Server::getServerById($id);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        if ($server['status'] !== 'transferring') {
+            return ApiResponse::error('Server is not being transferred', 'NOT_TRANSFERRING', 400);
+        }
+
+        // Get source node
+        $sourceNode = Node::getNodeById($server['node_id']);
+        if (!$sourceNode) {
+            return ApiResponse::error('Source node not found', 'SOURCE_NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $wings = new Wings(
+                $sourceNode['fqdn'],
+                $sourceNode['daemonListen'],
+                $sourceNode['scheme'],
+                $sourceNode['daemon_token'],
+                30
+            );
+
+            // Get transfer status from source node
+            $status = $wings->getTransfer()->getTransferStatus($server['uuid']);
+
+            return ApiResponse::success($status, 'Transfer status retrieved successfully', 200);
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to get transfer status: ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to get transfer status: ' . $e->getMessage(), 'TRANSFER_STATUS_FAILED', 500);
+        }
     }
 }

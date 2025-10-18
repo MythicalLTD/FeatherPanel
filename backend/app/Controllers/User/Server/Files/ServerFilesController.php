@@ -289,7 +289,7 @@ class ServerFilesController
     #[OA\Post(
         path: '/api/user/servers/{uuidShort}/write-file',
         summary: 'Write file content',
-        description: 'Write raw content to a file on the server. Content-Type must not be application/json.',
+        description: 'Write raw content to a file on the server. Content-Type must not be application/json. Send empty body to clear file contents.',
         tags: ['User - Server Files'],
         parameters: [
             new OA\Parameter(
@@ -324,7 +324,7 @@ class ServerFilesController
                     ]
                 )
             ),
-            new OA\Response(response: 400, description: 'Bad request - Missing UUID, empty content, or invalid content type'),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID or invalid content type'),
             new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
             new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
             new OA\Response(response: 404, description: 'Not found - Server or node not found'),
@@ -348,8 +348,9 @@ class ServerFilesController
             }
 
             $content = $request->getContent();
-            if (empty($content)) {
-                return ApiResponse::error('Request body is empty', 'EMPTY_CONTENT', 400);
+            // Allow empty content to clear files
+            if ($content === null) {
+                return ApiResponse::error('Request body is missing', 'MISSING_CONTENT', 400);
             }
 
             $wings = $this->createWingsConnection($node);

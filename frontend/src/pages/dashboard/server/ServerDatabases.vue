@@ -215,9 +215,15 @@
                         <Label for="database-host" class="text-sm font-medium">
                             {{ t('serverDatabases.databaseHost') }}
                         </Label>
-                        <Select v-model="createForm.database_host_id" required>
+                        <Select v-model="createForm.database_host_id" required :disabled="availableHosts.length === 0">
                             <SelectTrigger class="w-full">
-                                <SelectValue :placeholder="t('serverDatabases.selectDatabaseHost')" />
+                                <SelectValue
+                                    :placeholder="
+                                        availableHosts.length === 0
+                                            ? t('serverDatabases.noDatabaseHosts')
+                                            : t('serverDatabases.selectDatabaseHost')
+                                    "
+                                />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem v-for="host in availableHosts" :key="host.id" :value="host.id">
@@ -225,7 +231,14 @@
                                 </SelectItem>
                             </SelectContent>
                         </Select>
-                        <p class="text-xs text-muted-foreground">
+                        <p
+                            v-if="availableHosts.length === 0"
+                            class="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1"
+                        >
+                            <AlertTriangle class="h-3 w-3" />
+                            {{ t('serverDatabases.noDatabaseHostsDescription') }}
+                        </p>
+                        <p v-else class="text-xs text-muted-foreground">
                             {{ t('serverDatabases.databaseHostHelp') }}
                         </p>
                     </div>
@@ -285,7 +298,12 @@
                         <Button type="button" variant="outline" size="sm" @click="closeCreateDrawer">
                             {{ t('common.cancel') }}
                         </Button>
-                        <Button type="submit" size="sm" :disabled="creating" class="flex items-center gap-2">
+                        <Button
+                            type="submit"
+                            size="sm"
+                            :disabled="creating || availableHosts.length === 0"
+                            class="flex items-center gap-2"
+                        >
                             <Loader2 v-if="creating" class="h-4 w-4 animate-spin" />
                             <span>{{ t('serverDatabases.create') }}</span>
                         </Button>

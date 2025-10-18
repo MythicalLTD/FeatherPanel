@@ -79,6 +79,28 @@ return function (RouteCollection $routes): void {
         ['POST']
     );
 
+    // Get available database hosts for a server (MUST be before {databaseId} routes)
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-databases-hosts',
+        '/api/user/servers/{uuidShort}/databases/hosts',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new ServerDatabaseController())->getAvailableDatabaseHosts($request, $server['uuid']);
+        },
+        'uuidShort',
+        ['GET']
+    );
+
     // Get a specific database for a server
     App::getInstance(true)->registerServerRoute(
         $routes,
@@ -158,28 +180,6 @@ return function (RouteCollection $routes): void {
         },
         'uuidShort',
         ['DELETE']
-    );
-
-    // Get available database hosts for a server
-    App::getInstance(true)->registerServerRoute(
-        $routes,
-        'session-server-databases-hosts',
-        '/api/user/servers/{uuidShort}/databases/hosts',
-        function (Request $request, array $args) {
-            $uuidShort = $args['uuidShort'] ?? null;
-            if (!$uuidShort) {
-                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
-            }
-
-            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
-            if (!$server) {
-                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-            }
-
-            return (new ServerDatabaseController())->getAvailableDatabaseHosts($request, $server['uuid']);
-        },
-        'uuidShort',
-        ['GET']
     );
 
     // Test connection to a database host

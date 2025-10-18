@@ -1409,6 +1409,8 @@ serverDatabases:
     confirmDelete: 'Delete Database'
     databaseNameRequired: 'Database name is required'
     database: 'Database'
+    noDatabaseHosts: 'No database hosts available'
+    noDatabaseHostsDescription: 'No database hosts are configured. Please contact an administrator to set up database hosts.'
 
 # Navigation
 nav:

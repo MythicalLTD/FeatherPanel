@@ -149,6 +149,7 @@ export interface EditForm {
     node_id: string;
     name: string;
     description: string;
+    status?: string;
     suspended?: number;
     owner_id: string;
     memory: number;
@@ -208,3 +209,12 @@ export const SKIP_SCRIPTS_OPTIONS: SkipScriptsOption[] = [
     { value: false, label: 'No - Run scripts normally' },
     { value: true, label: 'Yes - Skip startup scripts' },
 ];
+
+// Server transfer status
+export interface TransferStatus {
+    status: string;
+    progress?: number;
+    started_at?: string;
+    completed_at?: string;
+    error?: string;
+}

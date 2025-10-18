@@ -40,6 +40,7 @@ use App\Controllers\Wings\Server\WingsServerListController;
 use App\Controllers\Wings\Server\WingsServersResetController;
 use App\Controllers\Wings\Server\WingsServerStatusController;
 use App\Controllers\Wings\Server\WingsServerInstallController;
+use App\Controllers\Wings\Transfer\WingsTransferStatusController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerWingsRoute(
@@ -184,6 +185,37 @@ return function (RouteCollection $routes): void {
             }
 
             return (new WingsBackupController())->reportBackupRestoration($request, $backupUuid);
+        },
+        ['POST']
+    );
+
+    // Transfer-related remote API routes
+    App::getInstance(true)->registerWingsRoute(
+        $routes,
+        'wings-transfer-status',
+        '/api/remote/servers/{uuid}/transfer',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid) {
+                return ApiResponse::error('Missing server UUID', 'MISSING_SERVER_UUID', 400);
+            }
+
+            return (new WingsTransferStatusController())->setTransferStatus($request, $uuid);
+        },
+        ['POST']
+    );
+
+    App::getInstance(true)->registerWingsRoute(
+        $routes,
+        'wings-transfer-archive',
+        '/api/remote/servers/{uuid}/transfer/archive',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid) {
+                return ApiResponse::error('Missing server UUID', 'MISSING_SERVER_UUID', 400);
+            }
+
+            return (new WingsTransferStatusController())->archiveReceived($request, $uuid);
         },
         ['POST']
     );

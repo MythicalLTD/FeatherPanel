@@ -457,11 +457,28 @@ async function createSubuser() {
         showAddDialog.value = false;
         await fetchSubusers(1);
     } catch (error) {
-        toast.error(t('serverSubusers.failedToCreate'));
+        const errorMessage = getErrorMessage(error);
+        toast.error(errorMessage);
         console.error('Error creating subuser:', error);
     } finally {
         addLoading.value = false;
     }
+}
+
+function getErrorMessage(err: unknown, fallback?: string): string {
+    if (typeof err === 'object' && err !== null) {
+        const e = err as {
+            response?: { data?: { message?: string; error_message?: string; error_code?: string } };
+            message?: string;
+        };
+
+        // Return the error message from API response
+        return (
+            e.response?.data?.message || e.response?.data?.error_message || e.message || fallback || t('common.error')
+        );
+    }
+
+    return fallback || t('common.error');
 }
 
 function confirmDelete(sub: { id: number; username?: string; email: string }) {
@@ -488,7 +505,8 @@ async function deleteSubuser(id: number) {
         await fetchSubusers(pagination.value.current_page || 1);
         showConfirmDialog.value = false;
     } catch (error) {
-        toast.error(t('serverSubusers.failedToDelete'));
+        const errorMessage = getErrorMessage(error);
+        toast.error(errorMessage);
         console.error('Error deleting subuser:', error);
     } finally {
         deletingId.value = null;

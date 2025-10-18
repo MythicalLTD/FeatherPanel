@@ -354,6 +354,7 @@ class Node
         string $sortBy = 'name',
         string $sortOrder = 'ASC',
         ?int $locationId = null,
+        ?int $excludeNodeId = null,
     ): array {
         $pdo = Database::getPdoConnection();
         $offset = ($page - 1) * $limit;
@@ -371,6 +372,11 @@ class Node
         if ($locationId !== null) {
             $sql .= ' AND n.location_id = :location_id';
             $params['location_id'] = $locationId;
+        }
+
+        if ($excludeNodeId !== null) {
+            $sql .= ' AND n.id != :exclude_node_id';
+            $params['exclude_node_id'] = $excludeNodeId;
         }
 
         $sql .= ' ORDER BY n.' . $sortBy . ' ' . $sortOrder;
@@ -398,6 +404,7 @@ class Node
     public static function getNodesCount(
         string $search = '',
         ?int $locationId = null,
+        ?int $excludeNodeId = null,
     ): int {
         $pdo = Database::getPdoConnection();
         $params = [];
@@ -412,6 +419,11 @@ class Node
         if ($locationId !== null) {
             $sql .= ' AND location_id = :location_id';
             $params['location_id'] = $locationId;
+        }
+
+        if ($excludeNodeId !== null) {
+            $sql .= ' AND id != :exclude_node_id';
+            $params['exclude_node_id'] = $excludeNodeId;
         }
 
         $stmt = $pdo->prepare($sql);

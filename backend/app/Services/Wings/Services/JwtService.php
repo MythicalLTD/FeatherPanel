@@ -383,4 +383,35 @@ class JwtService
     {
         return $this->tokenGenerator->getTokenExpiration($token);
     }
+
+    /**
+     * Generate a JWT token for server transfer operations.
+     *
+     * @param string $serverUuid The destination server UUID (used as subject)
+     * @param string $userUuid The user UUID initiating the transfer
+     * @param array $permissions The user's permissions
+     *
+     * @throws \Exception
+     *
+     * @return string The JWT token
+     */
+    public function generateTransferToken(
+        string $serverUuid,
+        string $userUuid,
+        array $permissions,
+    ): string {
+        $additionalClaims = [
+            'type' => 'transfer',
+            'server_uuid' => $serverUuid,
+        ];
+
+        return $this->tokenGenerator->generateWingsApiToken(
+            $serverUuid,
+            $userUuid,
+            $permissions,
+            $this->panelUrl,
+            $this->wingsUrl,
+            $additionalClaims
+        );
+    }
 }

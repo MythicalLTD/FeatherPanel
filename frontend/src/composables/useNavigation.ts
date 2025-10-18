@@ -196,7 +196,7 @@ export function useNavigation() {
 
     // Main navigation items
     const mainItems = computed((): NavigationItem[] => {
-        const items = [
+        const items: NavigationItem[] = [
             {
                 id: 'dashboard',
                 name: 'Main',
@@ -220,7 +220,11 @@ export function useNavigation() {
 
         // Add plugin dashboard items
         if (pluginRoutes.value?.dashboard) {
-            const pluginItems = convertPluginItems(pluginRoutes.value.dashboard, 'main') as typeof items;
+            const pluginItems = convertPluginItems(pluginRoutes.value.dashboard, 'main');
+            // Assign plugins to a 'plugins' group
+            pluginItems.forEach((item) => {
+                item.group = 'plugins';
+            });
             items.push(...pluginItems);
         }
 
@@ -229,7 +233,7 @@ export function useNavigation() {
 
     // Admin navigation items
     const adminItems = computed((): NavigationItem[] => {
-        const items = [
+        const items: NavigationItem[] = [
             // Overview
             {
                 id: 'admin-dashboard',
@@ -393,7 +397,7 @@ export function useNavigation() {
 
         // Add plugin admin items (no permission checks for plugins)
         if (pluginRoutes.value?.admin) {
-            const pluginItems = convertPluginItems(pluginRoutes.value.admin, 'admin') as typeof items;
+            const pluginItems = convertPluginItems(pluginRoutes.value.admin, 'admin');
             // Assign plugins to a 'plugins' group
             pluginItems.forEach((item) => {
                 item.group = 'plugins';
@@ -409,7 +413,7 @@ export function useNavigation() {
         const uuidShort = route.params.uuidShort;
         if (!uuidShort || !currentPath.value.startsWith('/server')) return [];
 
-        const items = [
+        const items: NavigationItem[] = [
             {
                 id: 'server-console',
                 name: 'Console',
@@ -524,11 +528,11 @@ export function useNavigation() {
 
         // Add plugin server items
         if (pluginRoutes.value?.server) {
-            const pluginItems = convertPluginItems(
-                pluginRoutes.value.server,
-                'server',
-                uuidShort as string,
-            ) as typeof items;
+            const pluginItems = convertPluginItems(pluginRoutes.value.server, 'server', uuidShort as string);
+            // Assign plugins to a 'plugins' group
+            pluginItems.forEach((item) => {
+                item.group = 'plugins';
+            });
             items.push(...pluginItems);
         }
 

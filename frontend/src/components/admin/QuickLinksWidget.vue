@@ -51,7 +51,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Server, Users, Network, Settings, Database, FileText, Sparkles, Zap } from 'lucide-vue-next';
+import { Server, Users, Settings, Sparkles, Zap } from 'lucide-vue-next';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'vue-router';
 import type { Component } from 'vue';
@@ -68,10 +68,7 @@ interface QuickLink {
 const quickLinks: QuickLink[] = [
     { name: 'Servers', path: '/admin/servers', icon: Server, color: 'blue' },
     { name: 'Users', path: '/admin/users', icon: Users, color: 'green' },
-    { name: 'Nodes', path: '/admin/nodes', icon: Network, color: 'purple' },
     { name: 'Settings', path: '/admin/settings', icon: Settings, color: 'gray' },
-    { name: 'Database', path: '/admin/database', icon: Database, color: 'indigo' },
-    { name: 'Logs', path: '/admin/logs', icon: FileText, color: 'amber' },
     { name: 'Spells', path: '/admin/spells', icon: Sparkles, color: 'pink' },
 ];
 

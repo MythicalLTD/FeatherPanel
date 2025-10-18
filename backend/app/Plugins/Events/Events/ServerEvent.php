@@ -353,4 +353,45 @@ class ServerEvent implements PluginEvent
     {
         return 'featherpanel:server:unsuspended';
     }
+
+	/**
+	 * Callback: array server data, array transferred by.
+	 */
+	public static function onServerTransferred(): string
+	{
+		return 'featherpanel:server:transferred';
+	}
+
+    /**
+     * Callback: array server data, bool successful, int|null destination_node_id.
+     */
+    public static function onServerTransferCompleted(): string
+    {
+        return 'featherpanel:server:transfer:completed';
+    }
+
+    /**
+     * Callback: array server data, bool successful, string|null error.
+     */
+    public static function onServerTransferFailed(): string
+    {
+        return 'featherpanel:server:transfer:failed';
+    }
+
+    /**
+     * Callback: array server data, array source_node, array destination_node, array initiated_by.
+     */
+    public static function onServerTransferInitiated(): string
+    {
+        return 'featherpanel:server:transfer:initiated';
+    }
+
+    /**
+     * Callback: array server data, array cancelled_by.
+     */
+    public static function onServerTransferCancelled(): string
+    {
+        return 'featherpanel:server:transfer:cancelled';
+    }
 }
+

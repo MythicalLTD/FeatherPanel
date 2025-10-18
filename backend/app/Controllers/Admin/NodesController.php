@@ -126,6 +126,13 @@ class NodesController
                 required: false,
                 schema: new OA\Schema(type: 'integer')
             ),
+            new OA\Parameter(
+                name: 'exclude_node_id',
+                in: 'query',
+                description: 'Node ID to exclude from results (useful for transfer destinations)',
+                required: false,
+                schema: new OA\Schema(type: 'integer')
+            ),
         ],
         responses: [
             new OA\Response(
@@ -153,6 +160,9 @@ class NodesController
         $search = $request->query->get('search', '');
         $locationId = $request->query->get('location_id', null);
         $locationId = $locationId ? (int) $locationId : null;
+        $excludeNodeId = $request->query->get('exclude_node_id', null);
+        $excludeNodeId = $excludeNodeId ? (int) $excludeNodeId : null;
+
         if ($page < 1) {
             $page = 1;
         }
@@ -164,8 +174,8 @@ class NodesController
         }
 
         $offset = ($page - 1) * $limit;
-        $nodes = Node::searchNodes(page: $page, limit: $limit, search: $search, locationId: $locationId);
-        $total = Node::getNodesCount(search: $search, locationId: $locationId);
+        $nodes = Node::searchNodes(page: $page, limit: $limit, search: $search, locationId: $locationId, excludeNodeId: $excludeNodeId);
+        $total = Node::getNodesCount(search: $search, locationId: $locationId, excludeNodeId: $excludeNodeId);
 
         $totalPages = ceil($total / $limit);
         $from = ($page - 1) * $limit + 1;
