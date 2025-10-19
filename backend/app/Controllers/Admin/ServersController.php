@@ -590,8 +590,8 @@ class ServersController
         if ($data['memory'] !== 0 && $data['memory'] < 128) {
             return ApiResponse::error('Memory must be at least 128 MB or 0 (unlimited)', 'INVALID_MEMORY_LIMIT', 400);
         }
-        if ($data['disk'] !== 0 && $data['disk'] < 1024) {
-            return ApiResponse::error('Disk must be at least 1024 MB or 0 (unlimited)', 'INVALID_DISK_LIMIT', 400);
+        if ($data['disk'] !== 0 && $data['disk'] < 128) {
+            return ApiResponse::error('Disk must be at least 128 MB or 0 (unlimited)', 'INVALID_DISK_LIMIT', 400);
         }
         if ($data['io'] !== 0 && $data['io'] < 10) {
             return ApiResponse::error('IO must be at least 10 or 0 (unlimited)', 'INVALID_IO_LIMIT', 400);
