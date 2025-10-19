@@ -545,7 +545,7 @@ class ServersController
 
         // Validate data types
         // Fields that must be positive integers (> 0)
-        $strictPositiveFields = ['node_id', 'owner_id', 'allocation_id', 'realms_id', 'spell_id'];
+        $strictPositiveFields = ['node_id', 'owner_id', 'allocation_id', 'realms_id', 'spell_id', 'io'];
         foreach ($strictPositiveFields as $field) {
             if (!is_numeric($data[$field]) || (int) $data[$field] <= 0) {
                 return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a positive integer', 'INVALID_DATA_TYPE', 400);
@@ -553,7 +553,7 @@ class ServersController
         }
 
         // Fields that can be 0 (for unlimited) or positive integers
-        $nonNegativeFields = ['memory', 'swap', 'disk', 'io', 'cpu'];
+        $nonNegativeFields = ['memory', 'swap', 'disk', 'cpu'];
         foreach ($nonNegativeFields as $field) {
             if (!is_numeric($data[$field]) || (int) $data[$field] < 0) {
                 return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a non-negative integer (0 for unlimited)', 'INVALID_DATA_TYPE', 400);
@@ -587,17 +587,20 @@ class ServersController
         }
 
         // Validate resource limits - also allow 0 since its unlimited
-        if ($data['memory'] !== 0 && $data['memory'] < 128) {
-            return ApiResponse::error('Memory must be at least 128 MB or 0 (unlimited)', 'INVALID_MEMORY_LIMIT', 400);
+        if ($data['memory'] !== 0 && ($data['memory'] < 128 || $data['memory'] > 1048576)) {
+            return ApiResponse::error('Memory must be between 128 MB and 1TB', 'INVALID_MEMORY_LIMIT', 400);
         }
-        if ($data['disk'] !== 0 && $data['disk'] < 1024) {
-            return ApiResponse::error('Disk must be at least 1024 MB or 0 (unlimited)', 'INVALID_DISK_LIMIT', 400);
+        if ($data['swap'] !== 0 && $data['swap'] > 1048576) {
+            return ApiResponse::error('Swap must be between 0 MB and 1TB', 'INVALID_SWAP_LIMIT', 400);
         }
-        if ($data['io'] !== 0 && $data['io'] < 10) {
-            return ApiResponse::error('IO must be at least 10 or 0 (unlimited)', 'INVALID_IO_LIMIT', 400);
+        if ($data['disk'] !== 0 && ($data['disk'] < 128 || $data['disk'] > 10485760) {
+            return ApiResponse::error('Disk must be between 128 MB and 10TB', 'INVALID_DISK_LIMIT', 400);
         }
-        if ($data['cpu'] !== 0 && $data['cpu'] < 10) {
-            return ApiResponse::error('CPU must be at least 10% or 0 (unlimited)', 'INVALID_CPU_LIMIT', 400);
+        if ($data['io'] < 10 || $data['io'] > 1000) {
+            return ApiResponse::error('IO must be between 10 and 1000', 'INVALID_IO_LIMIT', 400);
+        }
+        if ($data['cpu'] !== 0 && $data['cpu'] > 1000000) {
+            return ApiResponse::error('CPU must be between 0 and 1,000,000', 'INVALID_CPU_LIMIT', 400);
         }
 
         // Validate foreign key relationships
@@ -966,17 +969,20 @@ class ServersController
         }
 
         // Validate resource limits (also allow 0 for unlimited)
-        if (isset($data['memory']) && $data['memory'] !== 0 && $data['memory'] < 128) {
-            return ApiResponse::error('Memory must be at least 128 MB or 0 (unlimited)', 'INVALID_MEMORY_LIMIT', 400);
+        if (isset($data['memory']) && $data['memory'] !== 0 && ($data['memory'] < 128 || $data['memory'] > 1048576)) {
+            return ApiResponse::error('Memory must be between 128 MB and 1TB', 'INVALID_MEMORY_LIMIT', 400);
         }
-        if (isset($data['disk']) && $data['disk'] !== 0 && $data['disk'] < 1024) {
-            return ApiResponse::error('Disk must be at least 1024 MB or 0 (unlimited)', 'INVALID_DISK_LIMIT', 400);
+        if (isset($data['swap']) && $data['swap'] !== 0 && $data['swap'] > 1048576) {
+            return ApiResponse::error('Swap must be between 0 MB and 1TB', 'INVALID_SWAP_LIMIT', 400);
         }
-        if (isset($data['io']) && $data['io'] !== 0 && $data['io'] < 10) {
-            return ApiResponse::error('IO must be at least 10 or 0 (unlimited)', 'INVALID_IO_LIMIT', 400);
+        if (isset($data['disk']) && $data['disk'] !== 0 && ($data['disk'] < 128 || $data['disk'] > 10485760) {
+            return ApiResponse::error('Disk must be between 128 MB and 10TB', 'INVALID_DISK_LIMIT', 400);
         }
-        if (isset($data['cpu']) && $data['cpu'] !== 0 && $data['cpu'] < 10) {
-            return ApiResponse::error('CPU must be at least 10% or 0 (unlimited)', 'INVALID_CPU_LIMIT', 400);
+        if (isset($data['io']) && $data['io'] < 10 || $data['io'] > 1000) {
+            return ApiResponse::error('IO must be between 10 and 1000', 'INVALID_IO_LIMIT', 400);
+        }
+        if (isset($data['cpu']) && $data['cpu'] !== 0 && $data['cpu'] > 1000000) {
+            return ApiResponse::error('CPU must be between 0 and 1,000,000', 'INVALID_CPU_LIMIT', 400);
         }
 
         // Validate foreign key relationships if being updated
