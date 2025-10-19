@@ -105,7 +105,7 @@ const registerPlugins = async () => {
         app.use(router);
         app.use(Toast, {
             // Toast configuration options
-            position: 'top-right',
+            position: 'bottom-right',
             timeout: 5000,
             closeOnClick: true,
             pauseOnFocusLoss: true,

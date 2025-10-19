@@ -63,6 +63,7 @@
 - Expanded selection of background images, offering users more ways to personalize their interface.
 - Server memory, CPU, or disk values of "0" are now displayed as "Unlimited" throughout the UI for improved clarity.
 - Redesigned the spells variable editor for a more intuitive and flexible editing experience.
+- Moved toast notifications to the bottom right of the screen for improved visibility and consistent user feedback.
 
 ### Updated
 
