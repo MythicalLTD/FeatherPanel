@@ -13,6 +13,11 @@
     - [ ] Kill server
     - [ ] Attach to server
     - [ ] Open server console
+- [ ] File Manager: Support `.featherpanel-filemanager-ignore` to hide files/folders (like .gitignore)
+    - [ ] Ignore files/folders matching patterns in `.featherpanel-filemanager-ignore`
+    - [ ] Add "Show ignored files" toggle button in file manager UI to reveal hidden files/folders if desired
+    - [ ] Show indicator/banner when some files are currently being hidden due to ignore rules
+    - [ ] Persist "show ignored files" preference per user/session
 - [ ] Discord OAuth
     - [ ] Link account with Discord
     - [ ] Login with Discord account
