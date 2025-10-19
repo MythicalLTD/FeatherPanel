@@ -1125,8 +1125,33 @@ if [ -f /etc/os-release ]; then
     # shellcheck source=/dev/null
     . /etc/os-release
     OS=$ID
-    if [ "$OS" = "ubuntu" ] || [ "$OS" = "ubuntu-server" ] || [ "$OS" = "debian" ]; then
-        echo "Supported OS: $OS"
+    OS_VERSION=$VERSION_ID
+    
+    # Check if OS and version are supported
+    SUPPORTED=false
+    if [ "$OS" = "debian" ]; then
+        if [ "$OS_VERSION" = "12" ] || [ "$OS_VERSION" = "13" ]; then
+            SUPPORTED=true
+        fi
+    elif [ "$OS" = "ubuntu" ] || [ "$OS" = "ubuntu-server" ]; then
+        # Support Ubuntu 22.04 LTS (Jammy) and 24.04 LTS (Noble)
+        if [ "$OS_VERSION" = "22.04" ] || [ "$OS_VERSION" = "24.04" ]; then
+            SUPPORTED=true
+        fi
+    fi
+    
+    if [ "$SUPPORTED" = false ]; then
+        log_error "Unsupported OS or version: $OS $OS_VERSION"
+        echo -e "${RED}${BOLD}This installer only supports:${NC}"
+        echo -e "  ${GREEN}•${NC} Debian 12 or 13"
+        echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS or 24.04 LTS"
+        echo -e ""
+        echo -e "${YELLOW}Your system: $OS $OS_VERSION${NC}"
+        support_hint
+        exit 1
+    fi
+    
+    log_success "Supported OS detected: $OS $OS_VERSION"
         
         # Environment overrides for non-interactive mode
         case "${FP_COMPONENT:-}" in
@@ -1526,12 +1551,11 @@ CF_HOSTNAME=""
             log_error "Invalid component or operation selected."
             exit 1
         fi
-        
-    else
-        echo "Unsupported OS: $OS"
-        exit 1
-    fi
 else
-    echo "Cannot determine OS"
+    log_error "Cannot determine OS - /etc/os-release not found"
+    echo -e "${RED}${BOLD}This installer only supports:${NC}"
+    echo -e "  ${GREEN}•${NC} Debian 12 or 13"
+    echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS or 24.04 LTS"
+    support_hint
     exit 1
 fi
