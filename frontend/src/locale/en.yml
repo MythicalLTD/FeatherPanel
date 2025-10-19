@@ -123,6 +123,8 @@ account:
     reloading: 'Reloading...'
     themeSettings: 'Theme Settings'
     backgroundSettings: 'Background Settings'
+    backgroundDisabledInLightMode: 'Background Images Disabled in Light Mode'
+    backgroundDisabledDescription: 'Background images are only available in dark mode for better visibility and aesthetics. Switch to dark mode above to customize backgrounds.'
     languageSettings: 'Language Settings'
     dockSettings: 'Dock Settings'
     showDock: 'Show Dock'

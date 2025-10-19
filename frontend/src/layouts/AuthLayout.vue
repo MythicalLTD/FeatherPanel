@@ -2,7 +2,6 @@
     <div class="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
         <!-- Theme Toggle Button - Top Right -->
         <div class="absolute top-4 right-4 flex gap-2">
-            <BackgroundPicker />
             <button
                 class="flex items-center justify-center w-10 h-10 rounded-lg bg-muted hover:bg-muted/80 transition-all duration-200 hover:scale-105"
                 :title="isDarkTheme ? $t('user.switchToLight') : $t('user.switchToDark')"
@@ -90,7 +89,6 @@
 import { onMounted, ref } from 'vue';
 import { useSettingsStore } from '@/stores/settings';
 import { Sun, Moon } from 'lucide-vue-next';
-import BackgroundPicker from '@/components/BackgroundPicker.vue';
 
 const settingsStore = useSettingsStore();
 

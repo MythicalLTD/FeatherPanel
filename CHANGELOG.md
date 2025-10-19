@@ -73,6 +73,7 @@
 
 - KernXWebExecutor was removed as no one used it or needed it hence plugins have a better way to inject code!
 - Removed theme color selection from the appearance page, as it was unused and no longer necessary.
+- Ability to change the background if you are using white mode (Breaks the point of white mode!)
 
 ## v0.0.8-Alpha
 

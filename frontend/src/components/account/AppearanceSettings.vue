@@ -32,20 +32,37 @@
         <div class="space-y-4">
             <h4 class="text-base font-semibold">{{ $t('account.backgroundSettings') }}</h4>
 
+            <!-- Light Mode Warning -->
+            <div v-if="!isDark" class="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                <div class="flex items-start gap-3">
+                    <Sun class="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                    <div class="space-y-1">
+                        <p class="text-sm font-medium text-orange-600 dark:text-orange-400">
+                            {{ $t('account.backgroundDisabledInLightMode') }}
+                        </p>
+                        <p class="text-xs text-muted-foreground">
+                            {{ $t('account.backgroundDisabledDescription') }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Preset Backgrounds -->
-            <div class="space-y-3">
+            <div class="space-y-3" :class="{ 'opacity-50 pointer-events-none': !isDark }">
                 <label class="text-sm font-medium">{{ $t('background.presets') }}</label>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <button
                         v-for="preset in presetBackgrounds"
                         :key="preset.id"
+                        :disabled="!isDark"
                         class="relative group aspect-video rounded-md overflow-hidden border-2 transition-all duration-200 hover:scale-105 touch-manipulation"
-                        :class="
+                        :class="[
                             currentBackground === preset.url
                                 ? 'border-primary'
-                                : 'border-border hover:border-primary/50'
-                        "
-                        @click="selectPreset(preset)"
+                                : 'border-border hover:border-primary/50',
+                            !isDark && 'cursor-not-allowed',
+                        ]"
+                        @click="isDark && selectPreset(preset)"
                     >
                         <img
                             :src="preset.id === 'none' ? preset.placeholder : preset.url"
@@ -63,17 +80,24 @@
             </div>
 
             <!-- Custom Background Upload -->
-            <div class="space-y-2">
+            <div class="space-y-2" :class="{ 'opacity-50 pointer-events-none': !isDark }">
                 <label class="text-sm font-medium">{{ $t('background.custom') }}</label>
-                <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="handleFileUpload" />
-                <Button variant="outline" size="sm" class="w-full" @click="fileInput?.click()">
+                <input
+                    ref="fileInput"
+                    type="file"
+                    accept="image/*"
+                    class="hidden"
+                    :disabled="!isDark"
+                    @change="handleFileUpload"
+                />
+                <Button variant="outline" size="sm" class="w-full" :disabled="!isDark" @click="fileInput?.click()">
                     <Upload class="h-4 w-4 mr-2" />
                     {{ $t('background.uploadImage') }}
                 </Button>
             </div>
 
             <!-- Background Settings -->
-            <div class="space-y-4">
+            <div class="space-y-4" :class="{ 'opacity-50 pointer-events-none': !isDark }">
                 <div class="space-y-2">
                     <label class="text-sm font-medium">{{ $t('background.opacity') }}</label>
                     <div class="flex items-center gap-3">
@@ -84,6 +108,7 @@
                             max="100"
                             step="5"
                             class="flex-1"
+                            :disabled="!isDark"
                             @input="setBackgroundOpacity(backgroundOpacity)"
                         />
                         <span class="text-sm text-muted-foreground w-12">{{ backgroundOpacity }}%</span>
@@ -100,6 +125,7 @@
                             max="20"
                             step="1"
                             class="flex-1"
+                            :disabled="!isDark"
                             @input="setBackgroundBlur(backgroundBlur)"
                         />
                         <span class="text-sm text-muted-foreground w-12">{{ backgroundBlur }}px</span>
@@ -399,7 +425,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -715,6 +741,16 @@ const resetAllSettings = () => {
     localStorage.setItem('context-menu-show-clipboard', 'true');
     localStorage.setItem('context-menu-show-quick-actions', 'true');
 };
+
+// Watch for theme changes and clear background when switching to light mode
+watch(isDark, (newIsDark, oldIsDark) => {
+    // If switching from dark to light mode, clear the background
+    if (oldIsDark === true && newIsDark === false) {
+        if (currentBackground.value) {
+            setBackground('');
+        }
+    }
+});
 
 onMounted(() => {
     loadSettings();
