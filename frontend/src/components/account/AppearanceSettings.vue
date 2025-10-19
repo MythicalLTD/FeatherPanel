@@ -445,7 +445,7 @@ const dockSize = ref(48);
 const dockOpacity = ref(80);
 
 // Custom context menu state
-const customContextMenuEnabled = ref(true);
+const customContextMenuEnabled = ref(false);
 const contextMenuShowNavigation = ref(true);
 const contextMenuShowClipboard = ref(true);
 const contextMenuShowQuickActions = ref(true);
@@ -528,10 +528,12 @@ const loadSettings = () => {
         updateDockOpacity();
     }
 
-    // Custom context menu settings
+    // Custom context menu settings (default: disabled)
     const savedCustomContextMenu = localStorage.getItem('custom-context-menu-enabled');
     if (savedCustomContextMenu !== null) {
         customContextMenuEnabled.value = savedCustomContextMenu === 'true';
+    } else {
+        customContextMenuEnabled.value = false;
     }
 
     const savedShowNavigation = localStorage.getItem('context-menu-show-navigation');
@@ -705,7 +707,7 @@ const resetAllSettings = () => {
     updateDockOpacity();
 
     // Reset custom context menu
-    updateCustomContextMenuEnabled(true);
+    updateCustomContextMenuEnabled(false);
     contextMenuShowNavigation.value = true;
     contextMenuShowClipboard.value = true;
     contextMenuShowQuickActions.value = true;

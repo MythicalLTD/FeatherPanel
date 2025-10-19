@@ -36,7 +36,7 @@ export default defineComponent({
     setup() {
         const debugPanel = ref<InstanceType<typeof DebugPanel> | null>(null);
         const globalContextMenu = ref<InstanceType<typeof GlobalContextMenu> | null>(null);
-        const customContextMenuEnabled = ref(true);
+        const customContextMenuEnabled = ref(false);
 
         const handleGlobalContextMenu = (event: MouseEvent) => {
             // Check if custom context menu is disabled
@@ -71,7 +71,7 @@ export default defineComponent({
         };
 
         onMounted(() => {
-            // Load custom context menu setting from localStorage
+            // Load custom context menu setting from localStorage (default: disabled)
             const savedSetting = localStorage.getItem('custom-context-menu-enabled');
             if (savedSetting !== null) {
                 customContextMenuEnabled.value = savedSetting === 'true';
