@@ -593,7 +593,7 @@ class ServersController
         if ($data['swap'] !== 0 && $data['swap'] > 1048576) {
             return ApiResponse::error('Swap must be between 0 MB and 1TB', 'INVALID_SWAP_LIMIT', 400);
         }
-        if ($data['disk'] !== 0 && ($data['disk'] < 128 || $data['disk'] > 10485760) {
+        if ($data['disk'] !== 0 && ($data['disk'] < 128 || $data['disk'] > 10485760)) {
             return ApiResponse::error('Disk must be between 128 MB and 10TB', 'INVALID_DISK_LIMIT', 400);
         }
         if ($data['io'] < 10 || $data['io'] > 1000) {
@@ -975,10 +975,10 @@ class ServersController
         if (isset($data['swap']) && $data['swap'] !== 0 && $data['swap'] > 1048576) {
             return ApiResponse::error('Swap must be between 0 MB and 1TB', 'INVALID_SWAP_LIMIT', 400);
         }
-        if (isset($data['disk']) && $data['disk'] !== 0 && ($data['disk'] < 128 || $data['disk'] > 10485760) {
+        if (isset($data['disk']) && $data['disk'] !== 0 && ($data['disk'] < 128 || $data['disk'] > 10485760)) {
             return ApiResponse::error('Disk must be between 128 MB and 10TB', 'INVALID_DISK_LIMIT', 400);
         }
-        if (isset($data['io']) && $data['io'] < 10 || $data['io'] > 1000) {
+        if (isset($data['io']) && ($data['io'] < 10 || $data['io'] > 1000)) {
             return ApiResponse::error('IO must be between 10 and 1000', 'INVALID_IO_LIMIT', 400);
         }
         if (isset($data['cpu']) && $data['cpu'] !== 0 && $data['cpu'] > 1000000) {
