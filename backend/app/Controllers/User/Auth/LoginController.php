@@ -33,6 +33,7 @@ namespace App\Controllers\User\Auth;
 use App\App;
 use App\Chat\User;
 use App\Chat\Activity;
+use App\Chat\UserPreference;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
@@ -57,6 +58,7 @@ use Symfony\Component\HttpFoundation\Response;
     type: 'object',
     properties: [
         new OA\Property(property: 'user', type: 'object', description: 'User information'),
+        new OA\Property(property: 'preferences', type: 'object', description: 'User preferences'),
         new OA\Property(property: 'message', type: 'string', description: 'Success message'),
     ]
 )]
@@ -238,7 +240,13 @@ class LoginController
                 );
             }
 
-            return ApiResponse::success($userInfo, 'User logged in successfully', 200);
+            // Load user preferences
+            $preferences = UserPreference::getPreferences($userInfo['uuid']);
+
+            return ApiResponse::success([
+                'user' => $userInfo,
+                'preferences' => $preferences,
+            ], 'User logged in successfully', 200);
         }
 
         return ApiResponse::error('Remember token not set', 'REMEMBER_TOKEN_NOT_SET');

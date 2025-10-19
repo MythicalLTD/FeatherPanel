@@ -1870,7 +1870,7 @@ async function submitUpdate() {
             variables: [],
         };
 
-		// Remove node_id from submit data
+        // Remove node_id from submit data
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         delete submitData.node_id;

@@ -36,6 +36,7 @@ use App\Chat\Activity;
 use App\Chat\MailList;
 use App\Chat\MailQueue;
 use App\Chat\Permission;
+use App\Chat\UserPreference;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
@@ -73,6 +74,7 @@ use Symfony\Component\HttpFoundation\Response;
     properties: [
         new OA\Property(property: 'user_info', type: 'object', description: 'User information'),
         new OA\Property(property: 'permissions', type: 'array', items: new OA\Items(type: 'string'), description: 'User permissions'),
+        new OA\Property(property: 'preferences', ref: '#/components/schemas/UserPreferences', description: 'User preferences'),
         new OA\Property(property: 'activity', type: 'object', properties: [
             new OA\Property(property: 'count', type: 'integer', description: 'Number of activities'),
             new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'), description: 'Activity data'),
@@ -81,6 +83,19 @@ use Symfony\Component\HttpFoundation\Response;
             new OA\Property(property: 'count', type: 'integer', description: 'Number of mails'),
             new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'), description: 'Mail data'),
         ]),
+    ]
+)]
+#[OA\Schema(
+    schema: 'UserPreferences',
+    type: 'object',
+    description: 'User preferences stored as localStorage key-value pairs',
+    additionalProperties: true
+)]
+#[OA\Schema(
+    schema: 'PreferencesResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'preferences', ref: '#/components/schemas/UserPreferences', description: 'User preferences object'),
     ]
 )]
 class SessionController
@@ -276,9 +291,13 @@ class SessionController
             }
         }
 
+        // Load user preferences
+        $preferences = UserPreference::getPreferences($user['uuid']);
+
         return ApiResponse::success([
             'user_info' => $user,
             'permissions' => $permissions,
+            'preferences' => $preferences,
             'activity' => [
                 'count' => count($activity),
                 'data' => $activity,
@@ -374,5 +393,86 @@ class SessionController
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to save avatar', 'SAVE_FAILED', 500);
         }
+    }
+
+    #[OA\Get(
+        path: '/api/user/preferences',
+        summary: 'Get user preferences',
+        description: 'Retrieve current user UI/UX preferences including theme, language, sidebar state, and other settings.',
+        tags: ['User - Session'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Preferences retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/PreferencesResponse')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+        ]
+    )]
+    public function getPreferences(Request $request): Response
+    {
+        $user = AuthMiddleware::getCurrentUser($request);
+        if ($user == null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
+        $preferences = UserPreference::getPreferences($user['uuid']);
+
+        return ApiResponse::success([
+            'preferences' => $preferences,
+        ], 'Preferences retrieved successfully', 200);
+    }
+
+    #[OA\Patch(
+        path: '/api/user/preferences',
+        summary: 'Update user preferences',
+        description: 'Update current user UI/UX preferences. Any preference fields can be provided and will be merged with existing preferences.',
+        tags: ['User - Session'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/UserPreferences')
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Preferences updated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'preferences', ref: '#/components/schemas/UserPreferences'),
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token or request data'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to update preferences'),
+        ]
+    )]
+    public function updatePreferences(Request $request): Response
+    {
+        $user = AuthMiddleware::getCurrentUser($request);
+        if ($user == null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if ($data == null || !is_array($data)) {
+            return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400, []);
+        }
+
+        // Update preferences (merges with existing)
+        $success = UserPreference::updatePreferences($user['uuid'], $data);
+
+        if (!$success) {
+            return ApiResponse::error('Failed to update preferences', 'FAILED_TO_UPDATE_PREFERENCES', 500);
+        }
+
+        // Get updated preferences to return
+        $updatedPreferences = UserPreference::getPreferences($user['uuid']);
+
+        return ApiResponse::success([
+            'preferences' => $updatedPreferences,
+        ], 'Preferences updated successfully', 200);
     }
 }

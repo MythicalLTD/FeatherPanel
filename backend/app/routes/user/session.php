@@ -65,4 +65,24 @@ return function (RouteCollection $routes): void {
         ['POST']
     );
 
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'preferences-get',
+        '/api/user/preferences',
+        function (Request $request) {
+            return (new SessionController())->getPreferences($request);
+        },
+        ['GET']
+    );
+
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'preferences-update',
+        '/api/user/preferences',
+        function (Request $request) {
+            return (new SessionController())->updatePreferences($request);
+        },
+        ['PATCH']
+    );
+
 };

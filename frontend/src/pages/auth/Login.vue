@@ -32,9 +32,12 @@ import { Label } from '@/components/ui/label';
 import { useI18n } from 'vue-i18n';
 import Turnstile from 'vue-turnstile';
 import { useSettingsStore } from '@/stores/settings';
+import { usePreferencesStore } from '@/stores/preferences';
 import { useRouter } from 'vue-router';
 
 const settingsStore = useSettingsStore();
+const preferencesStore = usePreferencesStore();
+
 onMounted(async () => {
     await settingsStore.fetchSettings();
 });
@@ -136,6 +139,28 @@ async function onSubmit(e: Event) {
         });
         if (res.data && res.data.success) {
             success.value = res.data.message || 'Login successful! Redirecting...';
+
+            // Load and sync user preferences after successful login
+            try {
+                // Check if user has preferences in localStorage that need to be synced
+                const hasLocalStorage = preferencesStore.hasLocalStorage();
+
+                if (hasLocalStorage) {
+                    // User has local preferences - sync them to backend first
+                    await preferencesStore.migrateLocalStorage();
+                } else {
+                    // No local preferences - load from backend
+                    await preferencesStore.loadPreferences();
+                }
+
+                // Start auto-sync (saves entire localStorage every 5 minutes)
+                preferencesStore.startAutoSync();
+                console.log('[Login] Auto-sync enabled for user preferences');
+            } catch (prefError) {
+                console.error('Failed to sync user preferences:', prefError);
+                // Don't block login if preferences fail to sync
+            }
+
             // Optionally redirect after a short delay
             const redirect = router.currentRoute.value.query.redirect as string;
             setTimeout(() => {

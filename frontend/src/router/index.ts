@@ -70,4 +70,36 @@ const router = createRouter({
     routes,
 });
 
+// Global navigation guard to load user preferences for authenticated users
+router.beforeEach(async (to, from, next) => {
+    // Check if user is authenticated
+    const isAuthenticated = document.cookie.includes('remember_token');
+
+    if (isAuthenticated && from.path === '/' && to.path !== from.path) {
+        // User is authenticated and navigating from the initial route
+        // This means it's likely the first page load after authentication
+        try {
+            // Dynamically import the preferences store to avoid circular dependencies
+            const { usePreferencesStore } = await import('@/stores/preferences');
+            const preferencesStore = usePreferencesStore();
+
+            // Only load if not already synced recently (within last 5 minutes)
+            const lastSync = preferencesStore.lastSyncTime;
+            const fiveMinutes = 5 * 60 * 1000;
+            if (!lastSync || Date.now() - lastSync > fiveMinutes) {
+                await preferencesStore.loadPreferences();
+
+                // Start auto-sync if not already running
+                preferencesStore.startAutoSync();
+                console.log('[Router] Auto-sync enabled for user preferences');
+            }
+        } catch (error) {
+            console.error('Failed to load user preferences on navigation:', error);
+            // Don't block navigation if preferences fail to load
+        }
+    }
+
+    next();
+});
+
 export default router;

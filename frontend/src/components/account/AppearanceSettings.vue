@@ -19,7 +19,7 @@
                     variant="outline"
                     size="sm"
                     class="w-full sm:w-auto flex items-center justify-center gap-2"
-                    @click="toggleTheme"
+                    @click="handleToggleTheme"
                 >
                     <Sun v-if="isDark" class="h-4 w-4" />
                     <Moon v-else class="h-4 w-4" />
@@ -109,7 +109,7 @@
                             step="5"
                             class="flex-1"
                             :disabled="!isDark"
-                            @input="setBackgroundOpacity(backgroundOpacity)"
+                            @input="handleBackgroundOpacityChange"
                         />
                         <span class="text-sm text-muted-foreground w-12">{{ backgroundOpacity }}%</span>
                     </div>
@@ -126,7 +126,7 @@
                             step="1"
                             class="flex-1"
                             :disabled="!isDark"
-                            @input="setBackgroundBlur(backgroundBlur)"
+                            @input="handleBackgroundBlurChange"
                         />
                         <span class="text-sm text-muted-foreground w-12">{{ backgroundBlur }}px</span>
                     </div>
@@ -151,7 +151,7 @@
                                     ? 'border-primary bg-primary/5'
                                     : 'border-border hover:border-primary/50',
                             ]"
-                            @click="changeLanguage(language)"
+                            @click="handleLanguageChange(language)"
                         >
                             <span class="text-2xl flex-shrink-0">{{ language.flag }}</span>
                             <div class="text-left flex-1">
@@ -460,6 +460,7 @@ const updateSidebarVisibility = (visibility: SidebarVisibility) => {
     }
 
     originalUpdateSidebarVisibility(visibility);
+    // Auto-sync will handle backend update every 5 minutes
 };
 
 // File input ref
@@ -527,21 +528,21 @@ const presetBackgrounds = [
         name: 'Space',
         url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&h=600&fit=crop',
     },
-	{
-		id: 'minecraft',
-		name: 'Minecraft',
-		url: 'https://cdn.mythical.systems/mc.jpg'
-	},
-		{
-		id: 'mountains',
-		name: 'Mountains',
-		url: 'https://cdn.mythical.systems/background.jpg'
-	},
-	{
-		id: 'animated',
-		name: 'Animated',
-		url: 'https://cdn.mythical.systems/background.gif'
-	}
+    {
+        id: 'minecraft',
+        name: 'Minecraft',
+        url: 'https://cdn.mythical.systems/mc.jpg',
+    },
+    {
+        id: 'mountains',
+        name: 'Mountains',
+        url: 'https://cdn.mythical.systems/background.jpg',
+    },
+    {
+        id: 'animated',
+        name: 'Animated',
+        url: 'https://cdn.mythical.systems/background.gif',
+    },
 ];
 
 // Load settings from localStorage
@@ -669,13 +670,23 @@ const handleContextMenuQuickActionsChange = (
 // Theme functions (using shared theme composable)
 const { applyTheme } = useTheme();
 
+// Wrapped theme toggle
+const handleToggleTheme = () => {
+    toggleTheme();
+    // Auto-sync will handle backend update every 5 minutes
+};
+
+// Wrapped language change
+const handleLanguageChange = (language: { code: string; name: string; flag: string }) => {
+    changeLanguage(language);
+    // Auto-sync will handle backend update every 5 minutes
+};
+
 // Background functions
 const selectPreset = (preset: { id: string; name: string; url: string; placeholder?: string }) => {
-    if (preset.id === 'none') {
-        setBackground('');
-    } else {
-        setBackground(preset.url);
-    }
+    const url = preset.id === 'none' ? '' : preset.url;
+    setBackground(url);
+    // Auto-sync will handle backend update every 5 minutes
 };
 
 const handleFileUpload = (event: Event) => {
@@ -687,6 +698,7 @@ const handleFileUpload = (event: Event) => {
         reader.onload = (e) => {
             const result = e.target?.result as string;
             setBackground(result);
+            // Auto-sync will handle backend update every 5 minutes
         };
         reader.readAsDataURL(file);
     }
@@ -694,21 +706,34 @@ const handleFileUpload = (event: Event) => {
     if (target) target.value = '';
 };
 
+const handleBackgroundOpacityChange = () => {
+    setBackgroundOpacity(backgroundOpacity.value);
+    // Auto-sync will handle backend update every 5 minutes
+};
+
+const handleBackgroundBlurChange = () => {
+    setBackgroundBlur(backgroundBlur.value);
+    // Auto-sync will handle backend update every 5 minutes
+};
+
 // Dock functions
 const updateDockVisibility = (visible: boolean) => {
     showDock.value = visible;
     document.documentElement.style.setProperty('--dock-display', visible ? 'flex' : 'none');
     localStorage.setItem('dock-visible', visible.toString());
+    // Auto-sync will handle backend update every 5 minutes
 };
 
 const updateDockSize = () => {
     document.documentElement.style.setProperty('--dock-item-size', `${dockSize.value}px`);
     localStorage.setItem('dock-size', dockSize.value.toString());
+    // Auto-sync will handle backend update every 5 minutes
 };
 
 const updateDockOpacity = () => {
     document.documentElement.style.setProperty('--dock-opacity', `${dockOpacity.value / 100}`);
     localStorage.setItem('dock-opacity', dockOpacity.value.toString());
+    // Auto-sync will handle backend update every 5 minutes
 };
 
 // Custom context menu functions
@@ -716,6 +741,7 @@ const updateCustomContextMenuEnabled = (enabled: boolean) => {
     customContextMenuEnabled.value = enabled;
     localStorage.setItem('custom-context-menu-enabled', enabled.toString());
     window.dispatchEvent(new CustomEvent('custom-context-menu-toggle', { detail: { enabled } }));
+    // Auto-sync will handle backend update every 5 minutes
 };
 
 // Reset all settings

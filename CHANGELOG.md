@@ -14,6 +14,7 @@
 - Introduced Server Transfers—now available for beta testing! Move servers between nodes seamlessly; feedback welcome as we refine this powerful new feature.
 - Added detection and support for classic Minecraft 1.19 "requires running the server with Java 17 or above. Download Java 17 (or above) from https://adoptium.net/" messages to provide users with clear Java requirements.
 - Introduced a modern and intuitive Global Context Menu UI, providing convenient right-click actions and a more seamless app-wide user experience.
+- User preferences are now saved and synced with the database every 5 minutes!
 
 ### Fixed
 

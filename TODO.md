@@ -1,7 +1,5 @@
 # BETA-1
 
-- [ ] Plugins: Widget rendering system (support plugin UI widgets)
-- [ ] Plugins: Smarter server UUID preloading for plugins
 - [ ] Command Line Interface
   - [ ] Start server
   - [ ] Stop server
@@ -9,11 +7,6 @@
   - [ ] Kill server
   - [ ] Attach to server
   - [ ] Open server console
-- [x] File Manager: Support `.featherpanel-filemanager-ignore` to hide files/folders (like .gitignore)
-  - [x] Ignore files/folders matching patterns in `.featherpanel-filemanager-ignore`
-  - [x] Add "Show ignored files" toggle button in file manager UI to reveal hidden files/folders if desired
-  - [x] Show indicator/banner when some files are currently being hidden due to ignore rules
-  - [x] Persist "show ignored files" preference per user/session
 - [ ] Discord OAuth
   - [ ] Link account with Discord
   - [ ] Login with Discord account
@@ -25,14 +18,19 @@
   - [ ] Make telemetry fully disable-able at runtime (config)
   - [ ] Surface telemetry version info in admin UI
   - [ ] Add backend event processing for received telemetry (aggregation, insights)
-- [ ] User Preferences
-  - [ ] API: Save user preferences (theme, language, sidebar/dock state, context menu, etc.) to user profile in the database.
-  - [ ] Load preferences from backend database on login, fall back to defaults if not set.
-  - [ ] Sync local changes: When user changes appearance/settings, update DB (not just localStorage).
-  - [ ] Provide migration from localStorage for existing users (on first login after upgrade).
-  - [ ] Secure preferences fields (no PII in preferences, only purely UI/UX config).
-  - [ ] Allow admin to reset or override user preferences if necessary.
-  - [ ] Show in admin settings: Option to reset all user preferences or force update default preferences.
+- [x] File Manager: Support `.featherpanel-filemanager-ignore` to hide files/folders (like .gitignore)
+  - [x] Ignore files/folders matching patterns in `.featherpanel-filemanager-ignore`
+  - [x] Add "Show ignored files" toggle button in file manager UI to reveal hidden files/folders if desired
+  - [x] Show indicator/banner when some files are currently being hidden due to ignore rules
+  - [x] Persist "show ignored files" preference per user/session
+- [x] User Preferences
+  - [x] API: Save user preferences (theme, language, sidebar/dock state, context menu, etc.) to user profile in the database.
+  - [x] Load preferences from backend database on login, fall back to defaults if not set.
+  - [x] Sync local changes: When user changes appearance/settings, update DB (not just localStorage).
+  - [x] Provide migration from localStorage for existing users (on first login after upgrade).
+  - [x] Secure preferences fields (no PII in preferences, only purely UI/UX config).
+  - [x] Allow admin to reset or override user preferences if necessary.
+  - [x] Show in admin settings: Option to reset all user preferences or force update default preferences.
 - [x] Server List View
   - [x] Force mobile users to only use list view (disable folder/grid/tile view on mobile)
   - [x] Automatically switch to list view on mobile devices when opening the server list
