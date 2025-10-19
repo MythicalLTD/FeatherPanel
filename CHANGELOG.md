@@ -34,6 +34,7 @@
 - Fixed an issue where it was not possible to directly navigate to a specific tab within the account settings page.
 - Enhanced the Server List page for mobile devices: simplified the layout, removed folder views (which were impractical on smaller screens), and optimized usability for mobile users.
 - Added support for customizable ignored files and folders in the file manager, allowing you to effortlessly hide files or directories you don't want to see.
+- Fixed an issue where it was not possible to edit a spell's full set of variables, including rules and field types, from the UI.
 
 ### Improved
 
@@ -61,6 +62,7 @@
 - Updated scrollbar styling across the application for a more refined visual appearance.
 - Expanded selection of background images, offering users more ways to personalize their interface.
 - Server memory, CPU, or disk values of "0" are now displayed as "Unlimited" throughout the UI for improved clarity.
+- Redesigned the spells variable editor for a more intuitive and flexible editing experience.
 
 ### Updated
 

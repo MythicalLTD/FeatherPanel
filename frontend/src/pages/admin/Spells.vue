@@ -681,7 +681,7 @@
                         </div>
                     </form>
                     <TabsContent value="variables">
-                        <div class="flex justify-between items-center mb-1">
+                        <div class="flex justify-between items-center mb-3">
                             <div class="font-semibold text-lg">Variables</div>
                             <Button
                                 size="sm"
@@ -691,173 +691,247 @@
                                 >Add Variable</Button
                             >
                         </div>
-                        <Table class="mt-0 mb-0">
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>Env Variable</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead>Default</TableHead>
-                                    <TableHead>User Viewable</TableHead>
-                                    <TableHead>User Editable</TableHead>
-                                    <TableHead>Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                <!-- Inline Add Row -->
-                                <TableRow v-if="addingVariable">
-                                    <TableCell
-                                        ><Input v-model="variableForm.name" placeholder="Name" class="w-full"
-                                    /></TableCell>
-                                    <TableCell
-                                        ><Input
-                                            v-model="variableForm.env_variable"
-                                            placeholder="ENV_VARIABLE"
-                                            class="w-full"
-                                    /></TableCell>
-                                    <TableCell
-                                        ><Textarea
+                        <div
+                            class="mb-3 p-3 bg-muted/50 rounded-lg border border-border/50 text-xs text-muted-foreground"
+                        >
+                            <div class="font-semibold text-foreground mb-1">Variable Field Types & Rules:</div>
+                            <ul class="space-y-0.5 list-disc list-inside">
+                                <li><b>Field Type:</b> text, number, boolean, select, textarea</li>
+                                <li>
+                                    <b>Rules:</b> Validation like
+                                    <code class="text-xs bg-background px-1 py-0.5 rounded"
+                                        >required|string|max:255</code
+                                    >
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Add Variable Card -->
+                        <Card v-if="addingVariable" class="mb-4 border-2 border-primary">
+                            <CardContent class="pt-4">
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h4 class="font-semibold">New Variable</h4>
+                                        <Badge variant="secondary">Adding</Badge>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block mb-1 text-sm font-medium">Name *</label>
+                                            <Input v-model="variableForm.name" placeholder="Server Port" />
+                                        </div>
+                                        <div>
+                                            <label class="block mb-1 text-sm font-medium">Env Variable *</label>
+                                            <Input v-model="variableForm.env_variable" placeholder="SERVER_PORT" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-1 text-sm font-medium">Description *</label>
+                                        <Textarea
                                             v-model="variableForm.description"
-                                            placeholder="Description"
-                                            class="w-full"
-                                    /></TableCell>
-                                    <TableCell
-                                        ><Input
-                                            v-model="variableForm.default_value"
-                                            placeholder="Default Value"
-                                            class="w-full"
-                                    /></TableCell>
-                                    <TableCell class="text-center"
-                                        ><Select v-model="variableForm.user_viewable">
-                                            <SelectTrigger>
-                                                <span>{{
-                                                    variableForm.user_viewable === 'true'
-                                                        ? 'Visible to users'
-                                                        : 'Hidden from users'
-                                                }}</span>
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="true">Visible to users</SelectItem>
-                                                <SelectItem value="false">Hidden from users</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </TableCell>
-                                    <TableCell class="text-center"
-                                        ><Select v-model="variableForm.user_editable">
-                                            <SelectTrigger>
-                                                <span>{{
-                                                    variableForm.user_editable === 'true'
-                                                        ? 'Allow users to edit'
-                                                        : "Don't allow users to edit"
-                                                }}</span>
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="true">Allow users to edit</SelectItem>
-                                                <SelectItem value="false">Don't allow users to edit</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div class="flex gap-2">
-                                            <Button size="sm" variant="secondary" @click="submitVariable">Save</Button>
+                                            placeholder="The port that the server will run on"
+                                            rows="2"
+                                        />
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block mb-1 text-sm font-medium">Default Value *</label>
+                                            <Input v-model="variableForm.default_value" placeholder="25565" />
+                                        </div>
+                                        <div>
+                                            <label class="block mb-1 text-sm font-medium">Field Type</label>
+                                            <Select v-model="variableForm.field_type">
+                                                <SelectTrigger>
+                                                    <SelectValue :placeholder="variableForm.field_type || 'text'" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="text">Text</SelectItem>
+                                                    <SelectItem value="number">Number</SelectItem>
+                                                    <SelectItem value="boolean">Boolean</SelectItem>
+                                                    <SelectItem value="select">Select</SelectItem>
+                                                    <SelectItem value="textarea">Textarea</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-1 text-sm font-medium">Validation Rules</label>
+                                        <Input
+                                            v-model="variableForm.rules"
+                                            placeholder="required|numeric|min:1|max:65535"
+                                        />
+                                    </div>
+                                    <div class="flex items-center gap-6">
+                                        <div class="flex items-center space-x-2">
+                                            <Checkbox
+                                                id="add-viewable"
+                                                :checked="variableForm.user_viewable === 'true'"
+                                                @update:checked="
+                                                    (val: boolean) =>
+                                                        (variableForm.user_viewable = val ? 'true' : 'false')
+                                                "
+                                            />
+                                            <label for="add-viewable" class="text-sm font-medium cursor-pointer"
+                                                >User Viewable</label
+                                            >
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <Checkbox
+                                                id="add-editable"
+                                                :checked="variableForm.user_editable === 'true'"
+                                                @update:checked="
+                                                    (val: boolean) =>
+                                                        (variableForm.user_editable = val ? 'true' : 'false')
+                                                "
+                                            />
+                                            <label for="add-editable" class="text-sm font-medium cursor-pointer"
+                                                >User Editable</label
+                                            >
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-end gap-2 pt-2 border-t border-border/50">
+                                        <Button size="sm" variant="outline" @click="cancelVariableEdit">Cancel</Button>
+                                        <Button size="sm" variant="default" @click="submitVariable">
+                                            <Plus class="h-4 w-4 mr-2" />
+                                            Create Variable
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <!-- Variables List -->
+                        <div class="space-y-3">
+                            <Card v-for="variable in spellVariables" :key="variable.id">
+                                <CardContent class="pt-4">
+                                    <!-- Edit Mode -->
+                                    <div v-if="editingVariable && editingVariable.id === variable.id" class="space-y-4">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <h4 class="font-semibold">Editing Variable</h4>
+                                            <Badge variant="secondary">Editing</Badge>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block mb-1 text-sm font-medium">Name *</label>
+                                                <Input v-model="variableForm.name" />
+                                            </div>
+                                            <div>
+                                                <label class="block mb-1 text-sm font-medium">Env Variable *</label>
+                                                <Input v-model="variableForm.env_variable" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block mb-1 text-sm font-medium">Description *</label>
+                                            <Textarea v-model="variableForm.description" rows="2" />
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block mb-1 text-sm font-medium">Default Value *</label>
+                                                <Input v-model="variableForm.default_value" />
+                                            </div>
+                                            <div>
+                                                <label class="block mb-1 text-sm font-medium">Field Type</label>
+                                                <Select v-model="variableForm.field_type">
+                                                    <SelectTrigger>
+                                                        <SelectValue :placeholder="variableForm.field_type || 'text'" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="text">Text</SelectItem>
+                                                        <SelectItem value="number">Number</SelectItem>
+                                                        <SelectItem value="boolean">Boolean</SelectItem>
+                                                        <SelectItem value="select">Select</SelectItem>
+                                                        <SelectItem value="textarea">Textarea</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block mb-1 text-sm font-medium">Validation Rules</label>
+                                            <Input
+                                                v-model="variableForm.rules"
+                                                placeholder="required|numeric|min:1|max:65535"
+                                            />
+                                        </div>
+                                        <div class="flex items-center gap-6">
+                                            <div class="flex items-center space-x-2">
+                                                <Checkbox
+                                                    :id="`edit-viewable-${variable.id}`"
+                                                    :checked="variableForm.user_viewable === 'true'"
+                                                    @update:checked="
+                                                        (val: boolean) =>
+                                                            (variableForm.user_viewable = val ? 'true' : 'false')
+                                                    "
+                                                />
+                                                <label
+                                                    :for="`edit-viewable-${variable.id}`"
+                                                    class="text-sm font-medium cursor-pointer"
+                                                    >User Viewable</label
+                                                >
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <Checkbox
+                                                    :id="`edit-editable-${variable.id}`"
+                                                    :checked="variableForm.user_editable === 'true'"
+                                                    @update:checked="
+                                                        (val: boolean) =>
+                                                            (variableForm.user_editable = val ? 'true' : 'false')
+                                                    "
+                                                />
+                                                <label
+                                                    :for="`edit-editable-${variable.id}`"
+                                                    class="text-sm font-medium cursor-pointer"
+                                                    >User Editable</label
+                                                >
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-end gap-2 pt-2 border-t border-border/50">
                                             <Button size="sm" variant="outline" @click="cancelVariableEdit"
                                                 >Cancel</Button
                                             >
+                                            <Button size="sm" variant="default" @click="submitVariable">
+                                                <Pencil class="h-4 w-4 mr-2" />
+                                                Save Changes
+                                            </Button>
                                         </div>
-                                    </TableCell>
-                                </TableRow>
-                                <!-- Inline Edit Row -->
-                                <TableRow v-for="variable in spellVariables" :key="variable.id">
-                                    <template v-if="editingVariable && editingVariable.id === variable.id">
-                                        <TableCell><Input v-model="variableForm.name" class="w-full" /></TableCell>
-                                        <TableCell
-                                            ><Input v-model="variableForm.env_variable" class="w-full"
-                                        /></TableCell>
-                                        <TableCell
-                                            ><Textarea v-model="variableForm.description" class="w-full"
-                                        /></TableCell>
-                                        <TableCell
-                                            ><Input v-model="variableForm.default_value" class="w-full"
-                                        /></TableCell>
-                                        <TableCell class="text-center"
-                                            ><Select v-model="variableForm.user_viewable">
-                                                <SelectTrigger>
-                                                    <span>{{
-                                                        variableForm.user_viewable === 'true'
-                                                            ? 'Visible to users'
-                                                            : 'Hidden from users'
-                                                    }}</span>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="true">Visible to users</SelectItem>
-                                                    <SelectItem value="false">Hidden from users</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </TableCell>
-                                        <TableCell class="text-center"
-                                            ><Select v-model="variableForm.user_editable">
-                                                <SelectTrigger>
-                                                    <span>{{
-                                                        variableForm.user_editable === 'true'
-                                                            ? 'Allow users to edit'
-                                                            : "Don't allow users to edit"
-                                                    }}</span>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="true">Allow users to edit</SelectItem>
-                                                    <SelectItem value="false">Don't allow users to edit</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div class="flex gap-2">
-                                                <Button size="sm" variant="secondary" @click="submitVariable"
-                                                    >Save</Button
-                                                >
-                                                <Button size="sm" variant="outline" @click="cancelVariableEdit"
-                                                    >Cancel</Button
-                                                >
+                                    </div>
+
+                                    <!-- View Mode -->
+                                    <div v-else class="space-y-3">
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <h4 class="font-semibold text-base">{{ variable.name }}</h4>
+                                                    <Badge variant="outline" class="text-xs font-mono">{{
+                                                        variable.env_variable
+                                                    }}</Badge>
+                                                </div>
+                                                <p class="text-sm text-muted-foreground">{{ variable.description }}</p>
                                             </div>
-                                        </TableCell>
-                                    </template>
-                                    <template v-else>
-                                        <TableCell>{{ variable.name }}</TableCell>
-                                        <TableCell>{{ variable.env_variable }}</TableCell>
-                                        <TableCell>{{ variable.description }}</TableCell>
-                                        <TableCell>{{ variable.default_value }}</TableCell>
-                                        <TableCell class="text-center">
-                                            {{ variable.user_viewable === 'true' ? 'Visible' : 'Hidden' }}
-                                        </TableCell>
-                                        <TableCell class="text-center">
-                                            {{ variable.user_editable === 'true' ? 'Allowed' : 'Not allowed' }}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div class="flex gap-2">
+                                            <div class="flex gap-2 ml-4 flex-shrink-0">
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    :disabled="
-                                                        addingVariable ||
-                                                        (editingVariable && editingVariable.id !== variable.id)
-                                                    "
+                                                    :disabled="addingVariable || editingVariable !== null"
                                                     @click="startEditVariable(variable)"
-                                                    ><Pencil :size="16"
-                                                /></Button>
+                                                >
+                                                    <Pencil :size="16" />
+                                                </Button>
                                                 <template v-if="confirmDeleteVariableRow === variable.id">
                                                     <Button
                                                         size="sm"
                                                         variant="destructive"
                                                         :loading="deleting"
                                                         @click="confirmDeleteVariable(variable)"
-                                                        >Confirm Delete</Button
                                                     >
+                                                        Confirm
+                                                    </Button>
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
                                                         :disabled="deleting"
                                                         @click="onCancelDeleteVariable"
-                                                        >Cancel</Button
                                                     >
+                                                        Cancel
+                                                    </Button>
                                                 </template>
                                                 <template v-else>
                                                     <Button
@@ -865,15 +939,70 @@
                                                         variant="destructive"
                                                         :disabled="addingVariable || editingVariable !== null"
                                                         @click="onDeleteVariable(variable)"
-                                                        ><Trash2 :size="16"
-                                                    /></Button>
+                                                    >
+                                                        <Trash2 :size="16" />
+                                                    </Button>
                                                 </template>
                                             </div>
-                                        </TableCell>
-                                    </template>
-                                </TableRow>
-                            </TableBody>
-                        </Table>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-4 text-sm">
+                                            <div class="space-y-2">
+                                                <div class="flex justify-between">
+                                                    <span class="text-muted-foreground">Default Value:</span>
+                                                    <span class="font-mono text-xs">{{
+                                                        variable.default_value || '-'
+                                                    }}</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-muted-foreground">Field Type:</span>
+                                                    <Badge variant="outline" class="text-xs">{{
+                                                        variable.field_type || 'text'
+                                                    }}</Badge>
+                                                </div>
+                                            </div>
+                                            <div class="space-y-2">
+                                                <div class="flex justify-between">
+                                                    <span class="text-muted-foreground">User Viewable:</span>
+                                                    <Badge
+                                                        :variant="
+                                                            variable.user_viewable === 'true' ? 'default' : 'secondary'
+                                                        "
+                                                        class="text-xs"
+                                                    >
+                                                        {{ variable.user_viewable === 'true' ? 'Yes' : 'No' }}
+                                                    </Badge>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-muted-foreground">User Editable:</span>
+                                                    <Badge
+                                                        :variant="
+                                                            variable.user_editable === 'true' ? 'default' : 'secondary'
+                                                        "
+                                                        class="text-xs"
+                                                    >
+                                                        {{ variable.user_editable === 'true' ? 'Yes' : 'No' }}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div v-if="variable.rules" class="text-sm pt-2 border-t border-border/50">
+                                            <span class="text-muted-foreground">Validation Rules:</span>
+                                            <code
+                                                class="ml-2 text-xs bg-muted px-2 py-1 rounded font-mono text-foreground"
+                                                >{{ variable.rules }}</code
+                                            >
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div v-if="!addingVariable && spellVariables.length === 0" class="text-center py-8">
+                            <Settings class="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                            <p class="text-sm text-muted-foreground">No variables defined yet.</p>
+                            <p class="text-xs text-muted-foreground mt-1">Click "Add Variable" to create one.</p>
+                        </div>
                     </TabsContent>
                 </Tabs>
             </DrawerContent>
@@ -1197,7 +1326,6 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
 import {
     Eye,
     Pencil,
@@ -1294,6 +1422,7 @@ type SpellVariable = {
     user_viewable: 'true' | 'false';
     user_editable: 'true' | 'false';
     rules?: string;
+    field_type?: 'text' | 'number' | 'boolean' | 'select' | 'textarea';
     created_at?: string;
     updated_at?: string;
 };
@@ -1404,6 +1533,7 @@ const variableForm = ref<SpellVariable>({
     user_viewable: 'true',
     user_editable: 'true',
     rules: '',
+    field_type: 'text',
 });
 const activeEditTab = ref('general');
 const addingVariable = ref(false);
@@ -1856,6 +1986,8 @@ async function fetchSpellVariables() {
             ...v,
             user_viewable: v.user_viewable ? 'true' : 'false',
             user_editable: v.user_editable ? 'true' : 'false',
+            field_type: v.field_type || 'text',
+            rules: v.rules || '',
         }));
     } catch {
         spellVariables.value = [];
@@ -1873,6 +2005,7 @@ function startAddVariable() {
         user_viewable: 'true',
         user_editable: 'true',
         rules: '',
+        field_type: 'text',
     };
     addingVariable.value = true;
 }
@@ -1883,6 +2016,8 @@ function startEditVariable(variable: SpellVariable) {
         ...variable,
         user_viewable: variable.user_viewable,
         user_editable: variable.user_editable,
+        field_type: variable.field_type || 'text',
+        rules: variable.rules || '',
     };
     addingVariable.value = false;
 }
