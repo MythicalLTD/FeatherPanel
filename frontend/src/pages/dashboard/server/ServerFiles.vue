@@ -90,6 +90,16 @@
                         size="sm"
                         :disabled="loading"
                         class="flex items-center gap-2"
+                        @click="showIgnoredContentDialog = true"
+                    >
+                        <Settings class="h-4 w-4" />
+                        <span>{{ t('serverFiles.ignoredContent') }}</span>
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="loading"
+                        class="flex items-center gap-2"
                         @click="showCreateFileDialog = true"
                     >
                         <FileText class="h-4 w-4" />
@@ -178,6 +188,54 @@
                             >
                                 <X class="h-4 w-4" />
                             </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <!-- Hidden Search Results Warning -->
+            <Card
+                v-if="filteredFiles.length === 0 && searchQuery && hiddenMatchesExist"
+                class="border-2 border-orange-500/30 bg-gradient-to-r from-orange-500/5 to-orange-500/10 shadow-sm"
+            >
+                <CardContent class="p-4">
+                    <div class="flex items-start gap-4">
+                        <div class="p-2 rounded-full bg-orange-500/20 flex-shrink-0">
+                            <Search class="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <div class="flex-1 space-y-3">
+                            <div>
+                                <h3 class="text-sm font-semibold text-orange-600 dark:text-orange-400">
+                                    {{ t('serverFiles.noResultsButHidden') }}
+                                </h3>
+                                <p class="text-sm text-muted-foreground mt-1">
+                                    {{
+                                        t('serverFiles.noResultsButHiddenDescription', {
+                                            query: searchQuery,
+                                        })
+                                    }}
+                                </p>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="border-orange-500/30 hover:bg-orange-500/10"
+                                    @click="showIgnoredContentDialog = true"
+                                >
+                                    <Settings class="h-4 w-4 mr-2" />
+                                    {{ t('serverFiles.manageIgnoredContent') }}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="border-orange-500/30 hover:bg-orange-500/10"
+                                    @click="clearSearch"
+                                >
+                                    <X class="h-4 w-4 mr-2" />
+                                    {{ t('serverFiles.clearSearch') }}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </CardContent>
@@ -1150,6 +1208,80 @@
             </DialogContent>
         </Dialog>
 
+        <!-- Ignored Content Dialog -->
+        <Dialog v-model:open="showIgnoredContentDialog">
+            <DialogContent class="mx-4 sm:mx-0 sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle class="flex items-center gap-2">
+                        <Settings class="h-5 w-5 text-primary" />
+                        {{ t('serverFiles.ignoredContent') }}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {{ t('serverFiles.ignoredContentDescription') }}
+                    </DialogDescription>
+                </DialogHeader>
+                <div class="space-y-4">
+                    <div class="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                        <p class="text-sm text-blue-600 dark:text-blue-400">
+                            {{ t('serverFiles.ignoredContentHint') }}
+                        </p>
+                    </div>
+                    <div class="space-y-2">
+                        <Label for="newIgnoredPattern">{{ t('serverFiles.addIgnoredPattern') }}</Label>
+                        <div class="flex gap-2">
+                            <Input
+                                id="newIgnoredPattern"
+                                v-model="newIgnoredPattern"
+                                :placeholder="t('serverFiles.ignoredPatternPlaceholder')"
+                                @keyup.enter="addIgnoredPattern"
+                            />
+                            <Button :disabled="!newIgnoredPattern.trim()" @click="addIgnoredPattern">
+                                <Plus class="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('serverFiles.ignoredPatternExamples') }}
+                        </p>
+                    </div>
+                    <div class="space-y-2">
+                        <Label>{{ t('serverFiles.ignoredPatterns') }} ({{ ignoredPatterns.length }})</Label>
+                        <div v-if="ignoredPatterns.length === 0" class="text-center py-8 text-sm text-muted-foreground">
+                            {{ t('serverFiles.noIgnoredPatterns') }}
+                        </div>
+                        <div v-else class="max-h-64 overflow-y-auto space-y-2 p-2 rounded-md bg-muted/30">
+                            <div
+                                v-for="(pattern, index) in ignoredPatterns"
+                                :key="index"
+                                class="flex items-center justify-between p-2 rounded-md bg-background border"
+                            >
+                                <code class="text-sm font-mono">{{ pattern }}</code>
+                                <Button variant="ghost" size="sm" @click="removeIgnoredPattern(index)">
+                                    <X class="h-4 w-4 text-destructive" />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                        <div>
+                            <p class="text-sm font-medium">{{ t('serverFiles.hiddenFilesCount') }}</p>
+                            <p class="text-xs text-muted-foreground">
+                                {{ files.length - filteredFiles.length }}
+                                {{ t('serverFiles.filesHidden') }}
+                            </p>
+                        </div>
+                        <Button variant="outline" size="sm" @click="clearAllIgnoredPatterns">
+                            {{ t('serverFiles.clearAll') }}
+                        </Button>
+                    </div>
+                </div>
+                <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <Button variant="outline" class="w-full sm:w-auto" @click="showIgnoredContentDialog = false">
+                        {{ t('common.close') }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
         <!-- Keyboard Shortcuts Help Panel (Desktop Only) -->
         <div class="hidden lg:block fixed bottom-4 right-4 z-40">
             <Transition
@@ -1421,6 +1553,7 @@ import {
     FileEdit,
     Folder,
     Search,
+    Plus,
 } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
@@ -1463,9 +1596,14 @@ const showPermissionsDialog = ref(false);
 const showPullDialog = ref(false);
 const showCopyDialog = ref(false);
 const showMoveDialog = ref(false);
+const showIgnoredContentDialog = ref(false);
 
 // Drag and drop state
 const isDraggingOver = ref(false);
+
+// Ignored content state
+const ignoredPatterns = ref<string[]>([]);
+const newIgnoredPattern = ref('');
 
 // Form data
 const selectedFile = ref<File | null>(null);
@@ -1522,9 +1660,29 @@ const pathSegments = computed(() => {
 });
 
 const filteredFiles = computed(() => {
+    let filtered = files.value || [];
+
+    // Apply ignored patterns filter
+    if (ignoredPatterns.value.length > 0) {
+        filtered = filtered.filter((file) => {
+            return !ignoredPatterns.value.some((pattern) => {
+                // Convert wildcard pattern to regex
+                const regexPattern = pattern
+                    .replace(/[.+?^${}()|[\]\\]/g, '\\$&') // Escape special chars except *
+                    .replace(/\*/g, '.*'); // Convert * to .*
+                const regex = new RegExp(`^${regexPattern}$`, 'i');
+                return regex.test(file.name);
+            });
+        });
+    }
+
+    // Apply search query filter
     const query = searchQuery.value.trim().toLowerCase();
-    if (!query) return files.value;
-    return (files.value || []).filter((f) => f.name.toLowerCase().includes(query));
+    if (query) {
+        filtered = filtered.filter((f) => f.name.toLowerCase().includes(query));
+    }
+
+    return filtered;
 });
 
 const allFilesSelected = computed(() => {
@@ -1533,6 +1691,24 @@ const allFilesSelected = computed(() => {
 
 const someFilesSelected = computed(() => {
     return selectedFiles.value.length > 0 && selectedFiles.value.length < filteredFiles.value.length;
+});
+
+// Check if search query matches any ignored files
+const hiddenMatchesExist = computed(() => {
+    const query = searchQuery.value.trim().toLowerCase();
+    if (!query || ignoredPatterns.value.length === 0) return false;
+
+    // Get files that were filtered out by ignored patterns
+    const ignoredFiles = files.value.filter((file) => {
+        return ignoredPatterns.value.some((pattern) => {
+            const regexPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+            const regex = new RegExp(`^${regexPattern}$`, 'i');
+            return regex.test(file.name);
+        });
+    });
+
+    // Check if any ignored files match the search query
+    return ignoredFiles.some((file) => file.name.toLowerCase().includes(query));
 });
 
 // Row click handler (Ctrl+Click to toggle selection, Shift+Click for range selection, regular click to navigate)
@@ -1597,7 +1773,8 @@ const handleKeyboard = (e: KeyboardEvent) => {
         showPullDialog.value ||
         showCopyDialog.value ||
         showMoveDialog.value ||
-        showDeleteDialog.value;
+        showDeleteDialog.value ||
+        showIgnoredContentDialog.value;
 
     // ESC key to close drag overlay
     if (e.key === 'Escape') {
@@ -1744,6 +1921,9 @@ onMounted(async () => {
     await sessionStore.checkSessionOrRedirect(router);
     await settingsStore.fetchSettings();
     await fetchServer();
+
+    // Load ignored patterns from localStorage
+    loadIgnoredPatterns();
 
     // Initialize path from URL query parameter
     const pathFromUrl = route.query.path as string | undefined;
@@ -2730,5 +2910,72 @@ const downloadSelected = () => {
     });
 
     toast.success(t('serverFiles.downloadStarted', { count: filesToDownload.length }));
+};
+
+// Ignored content management functions
+const getIgnoredPatternsKey = () => {
+    return `featherpanel_server_ignored_files_${server.value?.uuid}`;
+};
+
+const loadIgnoredPatterns = () => {
+    if (!server.value?.uuid) return;
+
+    const key = getIgnoredPatternsKey();
+    const saved = localStorage.getItem(key);
+
+    if (saved) {
+        try {
+            ignoredPatterns.value = JSON.parse(saved);
+        } catch (error) {
+            console.error('Error loading ignored patterns:', error);
+            ignoredPatterns.value = [];
+        }
+    }
+};
+
+const saveIgnoredPatterns = () => {
+    if (!server.value?.uuid) return;
+
+    const key = getIgnoredPatternsKey();
+    localStorage.setItem(key, JSON.stringify(ignoredPatterns.value));
+};
+
+const addIgnoredPattern = () => {
+    const pattern = newIgnoredPattern.value.trim();
+    if (!pattern) return;
+
+    if (ignoredPatterns.value.includes(pattern)) {
+        toast.warning(t('serverFiles.patternAlreadyExists', { defaultValue: 'This pattern already exists' }));
+        return;
+    }
+
+    ignoredPatterns.value.push(pattern);
+    saveIgnoredPatterns();
+    newIgnoredPattern.value = '';
+    toast.success(
+        t('serverFiles.patternAdded', {
+            defaultValue: 'Pattern added successfully',
+        }),
+    );
+};
+
+const removeIgnoredPattern = (index: number) => {
+    ignoredPatterns.value.splice(index, 1);
+    saveIgnoredPatterns();
+    toast.success(
+        t('serverFiles.patternRemoved', {
+            defaultValue: 'Pattern removed successfully',
+        }),
+    );
+};
+
+const clearAllIgnoredPatterns = () => {
+    ignoredPatterns.value = [];
+    saveIgnoredPatterns();
+    toast.success(
+        t('serverFiles.allPatternsCleared', {
+            defaultValue: 'All patterns cleared',
+        }),
+    );
 };
 </script>

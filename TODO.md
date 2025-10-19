@@ -2,42 +2,41 @@
 
 - [ ] Plugins: Widget rendering system (support plugin UI widgets)
 - [ ] Plugins: Smarter server UUID preloading for plugins
-- [ ] Server List View
-    - [ ] Force mobile users to only use list view (disable folder/grid/tile view on mobile)
-    - [ ] Automatically switch to list view on mobile devices when opening the server list
-    - [ ] Disable any controls for changing away from list view when on mobile
 - [ ] Command Line Interface
-    - [ ] Start server
-    - [ ] Stop server
-    - [ ] Restart server
-    - [ ] Kill server
-    - [ ] Attach to server
-    - [ ] Open server console
-- [ ] File Manager: Support `.featherpanel-filemanager-ignore` to hide files/folders (like .gitignore)
-    - [ ] Ignore files/folders matching patterns in `.featherpanel-filemanager-ignore`
-    - [ ] Add "Show ignored files" toggle button in file manager UI to reveal hidden files/folders if desired
-    - [ ] Show indicator/banner when some files are currently being hidden due to ignore rules
-    - [ ] Persist "show ignored files" preference per user/session
+  - [ ] Start server
+  - [ ] Stop server
+  - [ ] Restart server
+  - [ ] Kill server
+  - [ ] Attach to server
+  - [ ] Open server console
+- [x] File Manager: Support `.featherpanel-filemanager-ignore` to hide files/folders (like .gitignore)
+  - [x] Ignore files/folders matching patterns in `.featherpanel-filemanager-ignore`
+  - [x] Add "Show ignored files" toggle button in file manager UI to reveal hidden files/folders if desired
+  - [x] Show indicator/banner when some files are currently being hidden due to ignore rules
+  - [x] Persist "show ignored files" preference per user/session
 - [ ] Discord OAuth
-    - [ ] Link account with Discord
-    - [ ] Login with Discord account
+  - [ ] Link account with Discord
+  - [ ] Login with Discord account
 - [ ] Telemetry
-    - [ ] Anonymize all collected data (no PII)
-    - [ ] Collect basic usage statistics (active users, OS/browser, enabled features)
-    - [ ] Provide UI for users to view and opt-out of telemetry
-    - [ ] Document all telemetry events and collection rationale
-    - [ ] Make telemetry fully disable-able at runtime (config)
-    - [ ] Surface telemetry version info in admin UI
-    - [ ] Add backend event processing for received telemetry (aggregation, insights)
+  - [ ] Anonymize all collected data (no PII)
+  - [ ] Collect basic usage statistics (active users, OS/browser, enabled features)
+  - [ ] Provide UI for users to view and opt-out of telemetry
+  - [ ] Document all telemetry events and collection rationale
+  - [ ] Make telemetry fully disable-able at runtime (config)
+  - [ ] Surface telemetry version info in admin UI
+  - [ ] Add backend event processing for received telemetry (aggregation, insights)
 - [ ] User Preferences
-    - [ ] API: Save user preferences (theme, language, sidebar/dock state, context menu, etc.) to user profile in the database.
-    - [ ] Load preferences from backend database on login, fall back to defaults if not set.
-    - [ ] Sync local changes: When user changes appearance/settings, update DB (not just localStorage).
-    - [ ] Provide migration from localStorage for existing users (on first login after upgrade).
-    - [ ] Secure preferences fields (no PII in preferences, only purely UI/UX config).
-    - [ ] Allow admin to reset or override user preferences if necessary.
-    - [ ] Show in admin settings: Option to reset all user preferences or force update default preferences.
-
+  - [ ] API: Save user preferences (theme, language, sidebar/dock state, context menu, etc.) to user profile in the database.
+  - [ ] Load preferences from backend database on login, fall back to defaults if not set.
+  - [ ] Sync local changes: When user changes appearance/settings, update DB (not just localStorage).
+  - [ ] Provide migration from localStorage for existing users (on first login after upgrade).
+  - [ ] Secure preferences fields (no PII in preferences, only purely UI/UX config).
+  - [ ] Allow admin to reset or override user preferences if necessary.
+  - [ ] Show in admin settings: Option to reset all user preferences or force update default preferences.
+- [x] Server List View
+  - [x] Force mobile users to only use list view (disable folder/grid/tile view on mobile)
+  - [x] Automatically switch to list view on mobile devices when opening the server list
+  - [x] Disable any controls for changing away from list view when on mobile
 - [x] Replace old messages with the toasts
 - [x] Better node allocation ui / more actions!
 - [x] Better sidebar for admin/server
@@ -49,21 +48,21 @@
 - [x] Rewrite JWT for admin (servers)
 - [x] Prevent users from entering wrong ssh keys!
 - [x] Fix the file manager
-	- [x] CTRL+F Broken in FireFox
-	- [x] Navigation button were broken
-	- [x] Reloading the page will break the dir path!
+  - [x] CTRL+F Broken in FireFox
+  - [x] Navigation button were broken
+  - [x] Reloading the page will break the dir path!
 - [x] Transfer system
 - [x] Node Status Dashboard
 - [x] Admin Analytics Dashboard (KPI)
-    - [x] User Analytics  
-        - Comprehensive user statistics including registrations, roles, security, and growth metrics  
-    - [x] Activity Analytics  
-        - Track user activities, trends, peak hours, and activity type distribution across your panel  
-    - [x] Infrastructure Analytics  
-        - Locations, nodes, allocations, and database host distribution and resource usage  
-    - [x] Server Analytics  
-        - Server statistics, database usage per server, allocation patterns, and resource distribution  
-    - [x] Content Analytics  
-        - Realms, spells, images, redirect links, mail templates, and content management insights  
-    - [x] System Analytics  
-        - Mail queue monitoring, email delivery statistics, and queue performance metrics  
+  - [x] User Analytics
+    - Comprehensive user statistics including registrations, roles, security, and growth metrics
+  - [x] Activity Analytics
+    - Track user activities, trends, peak hours, and activity type distribution across your panel
+  - [x] Infrastructure Analytics
+    - Locations, nodes, allocations, and database host distribution and resource usage
+  - [x] Server Analytics
+    - Server statistics, database usage per server, allocation patterns, and resource distribution
+  - [x] Content Analytics
+    - Realms, spells, images, redirect links, mail templates, and content management insights
+  - [x] System Analytics
+    - Mail queue monitoring, email delivery statistics, and queue performance metrics

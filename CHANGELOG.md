@@ -32,6 +32,8 @@
 - File manager Ctrl + F was not properly focusing the search input—it now works as expected.
 - Fixed an issue where the MacDock would disappear after refreshing the page or navigating to a different route—it now stays visible and persistent across navigation.
 - Fixed an issue where it was not possible to directly navigate to a specific tab within the account settings page.
+- Enhanced the Server List page for mobile devices: simplified the layout, removed folder views (which were impractical on smaller screens), and optimized usability for mobile users.
+- Added support for customizable ignored files and folders in the file manager, allowing you to effortlessly hide files or directories you don't want to see.
 
 ### Improved
 
@@ -56,6 +58,7 @@
 - Added widget border customization. Each widget can independently toggle borders on or off. Borders are enabled by default, providing flexible control over your widget appearance and workspace personalization.
 - The search filter is now reset/cleared when changing directories, preventing stale filters for file manager.
 - Migrated multiple context menus across the application to a new library for improved consistency and reliability.
+- Updated scrollbar styling across the application for a more refined visual appearance.
 
 ### Updated
 

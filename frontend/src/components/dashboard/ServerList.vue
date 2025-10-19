@@ -8,7 +8,13 @@
             </div>
             <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
                 <div class="flex flex-wrap gap-2">
-                    <Button variant="outline" size="sm" class="flex-1 sm:flex-none" @click="createFolder">
+                    <Button
+                        v-if="!isMobile"
+                        variant="outline"
+                        size="sm"
+                        class="flex-1 sm:flex-none"
+                        @click="createFolder"
+                    >
                         <FolderPlus class="h-4 w-4 mr-2" />
                         <span class="hidden sm:inline">{{ $t('servers.createFolder') }}</span>
                         <span class="sm:hidden">{{ $t('servers.createFolder') }}</span>
@@ -43,7 +49,7 @@
                     @input="handleSearch"
                 />
             </div>
-            <div class="flex items-center gap-2">
+            <div v-if="!isMobile" class="flex items-center gap-2">
                 <Button
                     :variant="viewMode === 'folders' ? 'default' : 'outline'"
                     size="sm"
@@ -990,9 +996,16 @@ const folderDialogOpen = ref(false);
 const editingFolder = ref<Folder | null>(null);
 const folderForm = ref({ name: '' });
 
-// Load view mode from localStorage
+// Detect mobile device
+const isMobile = computed(() => {
+    return window.innerWidth < 768; // Tailwind's md breakpoint
+});
+
+// Load view mode from localStorage, but force list view on mobile
 const savedViewMode = localStorage.getItem('featherpanel-server_view_mode');
-if (savedViewMode === 'folders' || savedViewMode === 'list') {
+if (isMobile.value) {
+    viewMode.value = 'list';
+} else if (savedViewMode === 'folders' || savedViewMode === 'list') {
     viewMode.value = savedViewMode;
 }
 
@@ -1030,6 +1043,14 @@ const filteredServers = computed(() => {
 
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect();
+
+    // Add resize event listener to force list view on mobile
+    window.addEventListener('resize', handleResize);
+
+    // Force list view on mobile on initial mount
+    if (isMobile.value) {
+        viewMode.value = 'list';
+    }
 
     // Load folders from local storage FIRST
     loadFoldersFromStorage();
@@ -1092,9 +1113,10 @@ onMounted(async () => {
     ); // 5 minutes
 });
 
-// Clean up interval
+// Clean up interval and event listener
 onUnmounted(() => {
     clearInterval(validationInterval);
+    window.removeEventListener('resize', handleResize);
 });
 
 // Watch for servers changes and emit updates
@@ -1106,10 +1128,19 @@ watch(
     { immediate: true },
 );
 
-// Watch for view mode changes and save to localStorage
+// Watch for view mode changes and save to localStorage (but not on mobile)
 watch(viewMode, (newMode) => {
-    localStorage.setItem('featherpanel-server_view_mode', newMode);
+    if (!isMobile.value) {
+        localStorage.setItem('featherpanel-server_view_mode', newMode);
+    }
 });
+
+// Watch for window resize and force list view on mobile
+const handleResize = () => {
+    if (isMobile.value) {
+        viewMode.value = 'list';
+    }
+};
 
 async function fetchServers() {
     loading.value = true;
