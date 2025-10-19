@@ -248,7 +248,14 @@
                                                 <div
                                                     class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div class="font-semibold text-primary text-xs sm:text-sm">
+                                                    <div
+                                                        class="font-semibold text-xs sm:text-sm"
+                                                        :class="
+                                                            server.memory === 0
+                                                                ? 'text-green-600 dark:text-green-400 text-lg'
+                                                                : 'text-primary'
+                                                        "
+                                                    >
                                                         {{ formatMemory(server.memory) }}
                                                     </div>
                                                     <div class="text-muted-foreground text-xs">
@@ -258,7 +265,14 @@
                                                 <div
                                                     class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div class="font-semibold text-primary text-xs sm:text-sm">
+                                                    <div
+                                                        class="font-semibold text-xs sm:text-sm"
+                                                        :class="
+                                                            server.disk === 0
+                                                                ? 'text-green-600 dark:text-green-400 text-lg'
+                                                                : 'text-primary'
+                                                        "
+                                                    >
                                                         {{ formatDisk(server.disk) }}
                                                     </div>
                                                     <div class="text-muted-foreground text-xs">
@@ -268,8 +282,15 @@
                                                 <div
                                                     class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div class="font-semibold text-primary text-xs sm:text-sm">
-                                                        {{ server.cpu }}%
+                                                    <div
+                                                        class="font-semibold text-xs sm:text-sm"
+                                                        :class="
+                                                            server.cpu === 0
+                                                                ? 'text-green-600 dark:text-green-400 text-lg'
+                                                                : 'text-primary'
+                                                        "
+                                                    >
+                                                        {{ formatCpu(server.cpu) }}
                                                     </div>
                                                     <div class="text-muted-foreground text-xs">
                                                         {{ $t('servers.cpu') }}
@@ -467,7 +488,14 @@
                                                 <div
                                                     class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div class="font-semibold text-primary text-xs sm:text-sm">
+                                                    <div
+                                                        class="font-semibold text-xs sm:text-sm"
+                                                        :class="
+                                                            server.memory === 0
+                                                                ? 'text-green-600 dark:text-green-400 text-lg'
+                                                                : 'text-primary'
+                                                        "
+                                                    >
                                                         {{ formatMemory(server.memory) }}
                                                     </div>
                                                     <div class="text-muted-foreground text-xs">
@@ -477,7 +505,14 @@
                                                 <div
                                                     class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div class="font-semibold text-primary text-xs sm:text-sm">
+                                                    <div
+                                                        class="font-semibold text-xs sm:text-sm"
+                                                        :class="
+                                                            server.disk === 0
+                                                                ? 'text-green-600 dark:text-green-400 text-lg'
+                                                                : 'text-primary'
+                                                        "
+                                                    >
                                                         {{ formatDisk(server.disk) }}
                                                     </div>
                                                     <div class="text-muted-foreground text-xs">
@@ -487,8 +522,15 @@
                                                 <div
                                                     class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div class="font-semibold text-primary text-xs sm:text-sm">
-                                                        {{ server.cpu }}%
+                                                    <div
+                                                        class="font-semibold text-xs sm:text-sm"
+                                                        :class="
+                                                            server.cpu === 0
+                                                                ? 'text-green-600 dark:text-green-400 text-lg'
+                                                                : 'text-primary'
+                                                        "
+                                                    >
+                                                        {{ formatCpu(server.cpu) }}
                                                     </div>
                                                     <div class="text-muted-foreground text-xs">
                                                         {{ $t('servers.cpu') }}
@@ -649,7 +691,14 @@
                                         <div
                                             class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div class="font-semibold text-primary">
+                                            <div
+                                                class="font-semibold"
+                                                :class="
+                                                    server.memory === 0
+                                                        ? 'text-green-600 dark:text-green-400 text-lg'
+                                                        : 'text-primary'
+                                                "
+                                            >
                                                 {{ formatMemory(server.memory) }}
                                             </div>
                                             <div class="text-muted-foreground">{{ $t('servers.memory') }}</div>
@@ -657,13 +706,31 @@
                                         <div
                                             class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div class="font-semibold text-primary">{{ formatDisk(server.disk) }}</div>
+                                            <div
+                                                class="font-semibold"
+                                                :class="
+                                                    server.disk === 0
+                                                        ? 'text-green-600 dark:text-green-400 text-lg'
+                                                        : 'text-primary'
+                                                "
+                                            >
+                                                {{ formatDisk(server.disk) }}
+                                            </div>
                                             <div class="text-muted-foreground">{{ $t('servers.disk') }}</div>
                                         </div>
                                         <div
                                             class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div class="font-semibold text-primary">{{ server.cpu }}%</div>
+                                            <div
+                                                class="font-semibold"
+                                                :class="
+                                                    server.cpu === 0
+                                                        ? 'text-green-600 dark:text-green-400 text-lg'
+                                                        : 'text-primary'
+                                                "
+                                            >
+                                                {{ formatCpu(server.cpu) }}
+                                            </div>
                                             <div class="text-muted-foreground">{{ $t('servers.cpu') }}</div>
                                         </div>
                                     </div>
@@ -1204,6 +1271,9 @@ function displayStatus(server: Server): string {
 }
 
 function formatMemory(memory: number): string {
+    if (memory === 0) {
+        return '∞';
+    }
     if (memory >= 1024) {
         return `${(memory / 1024).toFixed(1)} GB`;
     }
@@ -1211,10 +1281,20 @@ function formatMemory(memory: number): string {
 }
 
 function formatDisk(disk: number): string {
+    if (disk === 0) {
+        return '∞';
+    }
     if (disk >= 1024) {
         return `${(disk / 1024).toFixed(1)} GB`;
     }
     return `${disk} MB`;
+}
+
+function formatCpu(cpu: number): string {
+    if (cpu === 0) {
+        return '∞';
+    }
+    return `${cpu}%`;
 }
 
 function isServerAccessible(server: Server): boolean {

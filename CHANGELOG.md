@@ -59,6 +59,8 @@
 - The search filter is now reset/cleared when changing directories, preventing stale filters for file manager.
 - Migrated multiple context menus across the application to a new library for improved consistency and reliability.
 - Updated scrollbar styling across the application for a more refined visual appearance.
+- Expanded selection of background images, offering users more ways to personalize their interface.
+- Server memory, CPU, or disk values of "0" are now displayed as "Unlimited" throughout the UI for improved clarity.
 
 ### Updated
 

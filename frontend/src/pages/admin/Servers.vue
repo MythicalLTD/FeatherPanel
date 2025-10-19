@@ -93,18 +93,51 @@
                     </template>
 
                     <template #cell-resources="{ item }">
-                        <div class="text-xs space-y-1">
-                            <div class="flex justify-between">
-                                <span>RAM:</span>
-                                <span class="font-mono">{{ formatMemory((item as ApiServer).memory) }}</span>
+                        <div class="flex gap-2">
+                            <div
+                                class="flex flex-col items-center justify-center px-2 py-1 bg-muted/50 rounded border border-border/50 min-w-[60px]"
+                            >
+                                <div
+                                    class="font-mono text-xs font-semibold"
+                                    :class="
+                                        (item as ApiServer).memory === 0
+                                            ? 'text-green-600 dark:text-green-400 text-base'
+                                            : 'text-primary'
+                                    "
+                                >
+                                    {{ formatMemory((item as ApiServer).memory) }}
+                                </div>
+                                <div class="text-[10px] text-muted-foreground uppercase">RAM</div>
                             </div>
-                            <div class="flex justify-between">
-                                <span>CPU:</span>
-                                <span class="font-mono">{{ (item as ApiServer).cpu }}%</span>
+                            <div
+                                class="flex flex-col items-center justify-center px-2 py-1 bg-muted/50 rounded border border-border/50 min-w-[60px]"
+                            >
+                                <div
+                                    class="font-mono text-xs font-semibold"
+                                    :class="
+                                        (item as ApiServer).cpu === 0
+                                            ? 'text-green-600 dark:text-green-400 text-base'
+                                            : 'text-primary'
+                                    "
+                                >
+                                    {{ formatCpu((item as ApiServer).cpu) }}
+                                </div>
+                                <div class="text-[10px] text-muted-foreground uppercase">CPU</div>
                             </div>
-                            <div class="flex justify-between">
-                                <span>Disk:</span>
-                                <span class="font-mono">{{ formatDisk((item as ApiServer).disk) }}</span>
+                            <div
+                                class="flex flex-col items-center justify-center px-2 py-1 bg-muted/50 rounded border border-border/50 min-w-[60px]"
+                            >
+                                <div
+                                    class="font-mono text-xs font-semibold"
+                                    :class="
+                                        (item as ApiServer).disk === 0
+                                            ? 'text-green-600 dark:text-green-400 text-base'
+                                            : 'text-primary'
+                                    "
+                                >
+                                    {{ formatDisk((item as ApiServer).disk) }}
+                                </div>
+                                <div class="text-[10px] text-muted-foreground uppercase">Disk</div>
                             </div>
                         </div>
                     </template>
@@ -371,44 +404,110 @@
                         <TabsContent value="resources">
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <h4 class="font-semibold text-sm mb-2">Resource Limits</h4>
-                                    <div class="space-y-2 text-sm">
-                                        <div class="flex justify-between">
+                                    <h4 class="font-semibold text-sm mb-3">Resource Limits</h4>
+                                    <div class="space-y-3 text-sm">
+                                        <div class="flex justify-between items-center">
                                             <span class="text-muted-foreground">Memory:</span>
-                                            <span class="font-mono">{{ formatMemory(selectedServer.memory) }}</span>
+                                            <span
+                                                class="font-mono font-semibold"
+                                                :class="
+                                                    selectedServer.memory === 0
+                                                        ? 'text-green-600 dark:text-green-400 text-base'
+                                                        : 'text-foreground'
+                                                "
+                                            >
+                                                {{ formatMemory(selectedServer.memory) }}
+                                            </span>
                                         </div>
-                                        <div class="flex justify-between">
+                                        <div class="flex justify-between items-center">
                                             <span class="text-muted-foreground">Swap:</span>
-                                            <span class="font-mono">{{ formatMemory(selectedServer.swap) }}</span>
+                                            <span
+                                                class="font-mono font-semibold"
+                                                :class="
+                                                    selectedServer.swap === 0
+                                                        ? 'text-green-600 dark:text-green-400 text-base'
+                                                        : 'text-foreground'
+                                                "
+                                            >
+                                                {{ formatMemory(selectedServer.swap) }}
+                                            </span>
                                         </div>
-                                        <div class="flex justify-between">
+                                        <div class="flex justify-between items-center">
                                             <span class="text-muted-foreground">Disk:</span>
-                                            <span class="font-mono">{{ formatDisk(selectedServer.disk) }}</span>
+                                            <span
+                                                class="font-mono font-semibold"
+                                                :class="
+                                                    selectedServer.disk === 0
+                                                        ? 'text-green-600 dark:text-green-400 text-base'
+                                                        : 'text-foreground'
+                                                "
+                                            >
+                                                {{ formatDisk(selectedServer.disk) }}
+                                            </span>
                                         </div>
-                                        <div class="flex justify-between">
+                                        <div class="flex justify-between items-center">
                                             <span class="text-muted-foreground">CPU:</span>
-                                            <span class="font-mono">{{ selectedServer.cpu }}%</span>
+                                            <span
+                                                class="font-mono font-semibold"
+                                                :class="
+                                                    selectedServer.cpu === 0
+                                                        ? 'text-green-600 dark:text-green-400 text-base'
+                                                        : 'text-foreground'
+                                                "
+                                            >
+                                                {{ formatCpu(selectedServer.cpu) }}
+                                            </span>
                                         </div>
-                                        <div class="flex justify-between">
+                                        <div class="flex justify-between items-center">
                                             <span class="text-muted-foreground">IO:</span>
-                                            <span class="font-mono">{{ selectedServer.io }}</span>
+                                            <span class="font-mono font-semibold text-foreground">{{
+                                                selectedServer.io
+                                            }}</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div>
-                                    <h4 class="font-semibold text-sm mb-2">Limits</h4>
-                                    <div class="space-y-2 text-sm">
-                                        <div class="flex justify-between">
+                                    <h4 class="font-semibold text-sm mb-3">Limits</h4>
+                                    <div class="space-y-3 text-sm">
+                                        <div class="flex justify-between items-center">
                                             <span class="text-muted-foreground">Allocation Limit:</span>
-                                            <span>{{ selectedServer.allocation_limit || 'Unlimited' }}</span>
+                                            <span
+                                                class="font-semibold"
+                                                :class="
+                                                    selectedServer.allocation_limit === 0 ||
+                                                    !selectedServer.allocation_limit
+                                                        ? 'text-green-600 dark:text-green-400'
+                                                        : 'text-foreground'
+                                                "
+                                            >
+                                                {{ selectedServer.allocation_limit || '∞' }}
+                                            </span>
                                         </div>
-                                        <div class="flex justify-between">
+                                        <div class="flex justify-between items-center">
                                             <span class="text-muted-foreground">Database Limit:</span>
-                                            <span>{{ selectedServer.database_limit || 'Unlimited' }}</span>
+                                            <span
+                                                class="font-semibold"
+                                                :class="
+                                                    selectedServer.database_limit === 0
+                                                        ? 'text-green-600 dark:text-green-400'
+                                                        : 'text-foreground'
+                                                "
+                                            >
+                                                {{ selectedServer.database_limit || '∞' }}
+                                            </span>
                                         </div>
-                                        <div class="flex justify-between">
+                                        <div class="flex justify-between items-center">
                                             <span class="text-muted-foreground">Backup Limit:</span>
-                                            <span>{{ selectedServer.backup_limit || 'Unlimited' }}</span>
+                                            <span
+                                                class="font-semibold"
+                                                :class="
+                                                    selectedServer.backup_limit === 0
+                                                        ? 'text-green-600 dark:text-green-400'
+                                                        : 'text-foreground'
+                                                "
+                                            >
+                                                {{ selectedServer.backup_limit || '∞' }}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -633,7 +732,7 @@ const tableColumns: TableColumn[] = [
     { key: 'node', label: 'Node', searchable: true },
     { key: 'realm', label: 'Realm', searchable: true },
     { key: 'spell', label: 'Spell', searchable: true },
-    { key: 'resources', label: 'Resources' },
+    { key: 'resources', label: 'Resources', headerClass: 'w-[220px]' },
     { key: 'created_at', label: 'Created' },
     { key: 'actions', label: 'Actions', headerClass: 'w-[200px] font-semibold' },
 ];
@@ -794,6 +893,9 @@ function displayStatus(server: ApiServer): string {
 }
 
 function formatMemory(mb: number): string {
+    if (mb === 0) {
+        return '∞';
+    }
     if (mb >= 1024) {
         return `${(mb / 1024).toFixed(1)} GB`;
     }
@@ -801,10 +903,20 @@ function formatMemory(mb: number): string {
 }
 
 function formatDisk(mb: number): string {
+    if (mb === 0) {
+        return '∞';
+    }
     if (mb >= 1024) {
         return `${(mb / 1024).toFixed(1)} GB`;
     }
     return `${mb} MB`;
+}
+
+function formatCpu(cpu: number): string {
+    if (cpu === 0) {
+        return '∞';
+    }
+    return `${cpu}%`;
 }
 
 function formatDate(dateString: string): string {

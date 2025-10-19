@@ -1676,14 +1676,6 @@ function validateForm(): boolean {
         validationErrors.value.owner_id = 'Server owner is required';
     }
 
-    if (!form.value.location_id) {
-        validationErrors.value.location_id = 'Location is required';
-    }
-
-    if (!form.value.node_id) {
-        validationErrors.value.node_id = 'Node is required';
-    }
-
     if (!form.value.allocation_id) {
         validationErrors.value.allocation_id = 'Allocation is required';
     }
@@ -1877,6 +1869,11 @@ async function submitUpdate() {
             // Always include variables as an array of { variable_id, variable_value }
             variables: [],
         };
+
+		// Remove node_id from submit data
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        delete submitData.node_id;
 
         // Build variables array from current form values, matching spell variable ids
         submitData.variables = Object.entries(spellVariableValues.value)

@@ -527,6 +527,21 @@ const presetBackgrounds = [
         name: 'Space',
         url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&h=600&fit=crop',
     },
+	{
+		id: 'minecraft',
+		name: 'Minecraft',
+		url: 'https://cdn.mythical.systems/mc.jpg'
+	},
+		{
+		id: 'mountains',
+		name: 'Mountains',
+		url: 'https://cdn.mythical.systems/background.jpg'
+	},
+	{
+		id: 'animated',
+		name: 'Animated',
+		url: 'https://cdn.mythical.systems/background.gif'
+	}
 ];
 
 // Load settings from localStorage
