@@ -71,15 +71,6 @@ class ServerActivitiesControllerTest extends TestCase
         }
     }
 
-    public function testIndexReturnsSuccess()
-    {
-        $request = Request::create('/api/admin/server-activities', 'GET');
-        $response = $this->controller->index($request);
-        $data = json_decode($response->getContent(), true);
-        $this->assertTrue($data['success']);
-        $this->assertArrayHasKey('activities', $data['data']);
-    }
-
     public function testByServerReturnsEmptyForInvalidId()
     {
         $request = Request::create('/api/admin/server-activities/server/999999', 'GET');

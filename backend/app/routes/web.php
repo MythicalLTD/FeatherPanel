@@ -30,6 +30,7 @@
 
 use App\Controllers\HomeController;
 use Symfony\Component\Routing\Route;
+use App\Controllers\System\WebAppController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 
@@ -38,6 +39,17 @@ return function (RouteCollection $routes): void {
     $routes->add('home', new Route('/api', [
         '_controller' => function (Request $request) {
             return (new HomeController())->index($request);
+        },
+        '_middleware' => [],
+    ]));
+
+    $routes->add('manifest', new Route('/api/manifest.webmanifest', [
+        '_controller' => function (Request $request) {
+            $response = (new WebAppController())->index($request);
+            // Ensure the correct MIME type for web manifests
+            $response->headers->set('Content-Type', 'application/manifest+json');
+
+            return $response;
         },
         '_middleware' => [],
     ]));
