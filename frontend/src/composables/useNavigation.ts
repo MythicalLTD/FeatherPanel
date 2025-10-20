@@ -110,19 +110,26 @@ function getPluginIcon(emojiIcon: string): string {
     return emojiIcon;
 }
 
+// Shared (module-scoped) plugin sidebar cache so multiple composable consumers see the same data
+const sharedPluginRoutes = ref<PluginSidebarResponse['data']['sidebar'] | null>(null);
+
 export function useNavigation() {
     const router = useRouter();
     const route = useRoute();
     const { t } = useI18n();
     const sessionStore = useSessionStore();
 
-    const pluginRoutes = ref<PluginSidebarResponse['data']['sidebar'] | null>(null);
+    // Point to the shared cache
+    const pluginRoutes = sharedPluginRoutes;
 
     const currentPath = computed(() => router.currentRoute.value.path);
 
     // Fetch plugin sidebar routes
     const fetchPluginRoutes = async () => {
         try {
+            // Avoid refetching if we already have data
+            if (pluginRoutes.value) return;
+
             const response = await fetch('/api/system/plugin-sidebar');
             const data: PluginSidebarResponse = await response.json();
 
@@ -156,44 +163,53 @@ export function useNavigation() {
         category: 'main' | 'admin' | 'server',
         uuidShort?: string,
     ): NavigationItem[] => {
-        return Object.entries(pluginItems)
-            .filter(([, item]) => item.js || item.redirect)
-            .map(([url, item]) => {
-                const fullUrl = category === 'server' && uuidShort ? `/server/${uuidShort}${url}` : url;
+        return Object.entries(pluginItems).map(([url, item]) => {
+            // Build absolute URLs for each category to ensure correct routing and active state checks
+            let fullUrl = url;
+            if (category === 'server' && uuidShort) {
+                fullUrl = `/server/${uuidShort}${url}`;
+            } else if (category === 'admin') {
+                fullUrl = `/admin${url}`;
+            } else if (category === 'main') {
+                fullUrl = `/dashboard${url}`;
+            }
 
-                let fullRedirect = item.redirect;
-                if (fullRedirect) {
-                    if (category === 'server' && uuidShort) {
-                        fullRedirect = `/server/${uuidShort}${item.redirect}`;
-                    } else if (category === 'admin') {
-                        fullRedirect = `/admin${item.redirect}`;
-                    } else if (category === 'main') {
-                        fullRedirect = `/dashboard${item.redirect}`;
-                    }
+            // Normalize redirect: if plugin provides a redirect, prefix it appropriately; otherwise, default to fullUrl
+            let fullRedirect = item.redirect;
+            if (fullRedirect) {
+                if (category === 'server' && uuidShort) {
+                    fullRedirect = `/server/${uuidShort}${item.redirect}`;
+                } else if (category === 'admin') {
+                    fullRedirect = `/admin${item.redirect}`;
+                } else if (category === 'main') {
+                    fullRedirect = `/dashboard${item.redirect}`;
                 }
+            } else {
+                fullRedirect = fullUrl;
+            }
 
-                return {
-                    id: `plugin-${item.plugin}-${url.replace(/\//g, '-')}`,
-                    name: item.name,
-                    title: item.name,
-                    url: fullUrl,
-                    icon: getPluginIcon(item.icon),
-                    isActive: currentPath.value.startsWith(fullUrl),
-                    category,
-                    isPlugin: true,
-                    pluginJs: item.js,
-                    pluginRedirect: fullRedirect,
-                    pluginName: item.pluginName,
-                    pluginTag: item.pluginName,
-                    showBadge: item.showBadge !== false,
-                    description: item.description,
-                };
-            });
+            return {
+                id: `plugin-${item.plugin}-${url.replace(/\//g, '-')}`,
+                name: item.name,
+                title: item.name,
+                url: fullUrl,
+                icon: getPluginIcon(item.icon),
+                isActive: currentPath.value.startsWith(fullUrl),
+                category,
+                isPlugin: true,
+                pluginJs: item.js,
+                pluginRedirect: fullRedirect,
+                pluginName: item.pluginName,
+                pluginTag: item.pluginName,
+                showBadge: item.showBadge !== false,
+                description: item.description,
+            };
+        });
     };
 
     // Initialize plugin routes on mount
     onMounted(() => {
-        fetchPluginRoutes();
+        void fetchPluginRoutes();
     });
 
     // Main navigation items
@@ -535,13 +551,16 @@ export function useNavigation() {
             },
         ];
 
-        // Add plugin server items
+        // Add plugin server items and ensure they are grouped correctly so they render in the sidebar
         if (pluginRoutes.value?.server) {
             const pluginItems = convertPluginItems(
                 pluginRoutes.value.server,
                 'server',
                 uuidShort as string,
             ) as typeof items;
+            pluginItems.forEach((item) => {
+                item.group = 'plugins';
+            });
             items.push(...pluginItems);
         }
 

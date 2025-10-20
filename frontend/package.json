@@ -87,7 +87,7 @@
         "typescript-eslint": "^8.46.1",
         "vaul-vue": "^0.4.1",
         "vee-validate": "^4.15.1",
-        "vite": "7.1.10",
+        "vite": "7.1.11",
         "vite-plugin-vue-devtools": "^8.0.3",
         "vue": "^3.5.22",
         "vue-chartjs": "^5.3.2",

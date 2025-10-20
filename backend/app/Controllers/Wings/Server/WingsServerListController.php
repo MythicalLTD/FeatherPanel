@@ -244,7 +244,7 @@ class WingsServerListController
                                                 $replaceEntry['if_value'] = $condition;
 
                                                 // Replace placeholders with actual values
-                                                $replacement = $this->replacePlaceholders($replacement, $server, $allocation);
+                                                $replacement = $this->replacePlaceholders($replacement, $server, $allocation, $environment);
 
                                                 $replaceEntry['replace_with'] = $replacement;
                                                 break; // Only use the first condition
@@ -252,7 +252,7 @@ class WingsServerListController
                                         } else {
                                             // Simple string replacement
                                             // Replace placeholders with actual values
-                                            $replaceWith = $this->replacePlaceholders($replaceWith, $server, $allocation);
+                                            $replaceWith = $this->replacePlaceholders($replaceWith, $server, $allocation, $environment);
 
                                             $replaceEntry['replace_with'] = $replaceWith;
                                         }
@@ -461,10 +461,11 @@ class WingsServerListController
      * @param string $value The value containing placeholders
      * @param array<string, mixed> $server Server data
      * @param array<string, mixed> $allocation Allocation data
+     * @param array<string, mixed> $environment Environment variables (from server variables)
      *
      * @return string The value with placeholders replaced
      */
-    private function replacePlaceholders(string $value, array $server, array $allocation): string
+    private function replacePlaceholders(string $value, array $server, array $allocation, array $environment): string
     {
         // Modern placeholders - replace with actual values
         $replacements = [
@@ -487,6 +488,29 @@ class WingsServerListController
         foreach (array_merge($replacements, $legacyReplacements) as $placeholder => $replacement) {
             if (str_contains($value, $placeholder)) {
                 $value = str_replace($placeholder, $replacement, $value);
+            }
+        }
+
+        // Dynamic environment placeholders from server variables
+        // Replace {{server.build.env.KEY}} and {{env.KEY}} with values from $environment
+        foreach ($environment as $envKey => $envValue) {
+            if (!is_string($envKey)) {
+                continue;
+            }
+            if (!is_string($envValue) && !is_numeric($envValue)) {
+                continue;
+            }
+            $envValueStr = (string) $envValue;
+
+            $envPlaceholders = [
+                '{{server.build.env.' . $envKey . '}}',
+                '{{env.' . $envKey . '}}',
+            ];
+
+            foreach ($envPlaceholders as $ph) {
+                if (str_contains($value, $ph)) {
+                    $value = str_replace($ph, $envValueStr, $value);
+                }
             }
         }
 
