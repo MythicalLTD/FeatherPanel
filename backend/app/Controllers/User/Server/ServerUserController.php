@@ -800,7 +800,7 @@ class ServerUserController
                 }
             }
 
-            $ok = ServerVariable::createOrUpdateServerVariables((int) $server['id'], $variablesPayload);
+            $ok = ServerVariable::updateSpecificServerVariables((int) $server['id'], $variablesPayload);
             if (!$ok) {
                 return ApiResponse::error('Failed to update server variables', 'VARIABLES_UPDATE_FAILED', 500);
             }

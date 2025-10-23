@@ -278,6 +278,8 @@ class ServerVariable
 
     /**
      * Create or update multiple server variables for a server.
+     * This method deletes ALL existing variables and recreates them.
+     * Use updateSpecificServerVariables() for selective updates.
      *
      * @param int $serverId The server ID
      * @param array $variables Array of variables with variable_id and variable_value
@@ -332,6 +334,84 @@ class ServerVariable
             $pdo->rollBack();
             App::getInstance(true)->getLogger()->error('Failed to create/update server variables: ' . $e->getMessage());
 
+            return false;
+        }
+    }
+
+    /**
+     * Update only specific server variables without touching others.
+     * This method only updates the variables provided in the payload,
+     * leaving read-only and admin-only variables untouched.
+     *
+     * @param int $serverId The server ID
+     * @param array $variables Array of variables with variable_id and variable_value
+     *
+     * @return bool True on success, false on failure
+     */
+    public static function updateSpecificServerVariables(int $serverId, array $variables): bool
+    {
+        if ($serverId <= 0 || empty($variables)) {
+            return true; // No variables to update is considered success
+        }
+
+        // Validate server exists
+        $server = Server::getServerById($serverId);
+        if (!$server) {
+            return false;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $pdo->beginTransaction();
+
+        try {
+            // Get existing variables for this server
+            $existingVariables = self::getServerVariablesByServerId($serverId);
+            $existingVariableMap = [];
+            foreach ($existingVariables as $existing) {
+                $existingVariableMap[(int) $existing['variable_id']] = $existing;
+            }
+
+            // Process each variable in the payload
+            foreach ($variables as $variable) {
+                if (!isset($variable['variable_id']) || !isset($variable['variable_value'])) {
+                    $pdo->rollBack();
+                    return false;
+                }
+
+                $variableId = (int) $variable['variable_id'];
+                $variableValue = (string) $variable['variable_value'];
+
+                if (isset($existingVariableMap[$variableId])) {
+                    // Update existing variable
+                    $existingVar = $existingVariableMap[$variableId];
+                    $updateData = ['variable_value' => $variableValue];
+                    
+                    $result = self::updateServerVariable((int) $existingVar['id'], $updateData);
+                    if (!$result) {
+                        $pdo->rollBack();
+                        return false;
+                    }
+                } else {
+                    // Create new variable
+                    $data = [
+                        'server_id' => $serverId,
+                        'variable_id' => $variableId,
+                        'variable_value' => $variableValue,
+                    ];
+
+                    $result = self::createServerVariable($data);
+                    if (!$result) {
+                        $pdo->rollBack();
+                        return false;
+                    }
+                }
+            }
+
+            $pdo->commit();
+            return true;
+        } catch (\Exception $e) {
+            $pdo->rollBack();
+            App::getInstance(true)->getLogger()->error('Failed to update specific server variables: ' . $e->getMessage());
             return false;
         }
     }

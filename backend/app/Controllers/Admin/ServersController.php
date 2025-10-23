@@ -43,6 +43,8 @@ use App\Chat\SpellVariable;
 use App\Chat\ServerActivity;
 use App\Chat\ServerTransfer;
 use App\Chat\ServerVariable;
+use App\Chat\ServerDatabase;
+use App\Chat\DatabaseInstance;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
@@ -1247,6 +1249,9 @@ class ServersController
             }
         }
 
+        // Clean up server databases before deleting the server
+        $this->cleanupServerDatabases($id);
+
         $config = App::getInstance(true)->getConfig();
         $user = User::getUserById($server['owner_id']);
 
@@ -1377,6 +1382,9 @@ class ServersController
                 // Continue with deletion even if unclaiming fails
             }
         }
+
+        // Clean up server databases before deleting the server
+        $this->cleanupServerDatabases($id);
 
         $config = App::getInstance(true)->getConfig();
         $user = User::getUserById($server['owner_id']);
@@ -2163,5 +2171,143 @@ class ServersController
         ];
 
         return ApiResponse::success($response, 'Transfer status retrieved successfully', 200);
+    }
+
+    /**
+     * Clean up server databases when deleting a server.
+     * This method handles database cleanup gracefully without breaking the deletion process.
+     *
+     * @param int $serverId The server ID
+     * @return void
+     */
+    private function cleanupServerDatabases(int $serverId): void
+    {
+        try {
+            // Get all databases for this server
+            $databases = ServerDatabase::getServerDatabasesWithDetailsByServerId($serverId);
+            
+            if (empty($databases)) {
+                App::getInstance(true)->getLogger()->info('No databases found for server ID: ' . $serverId);
+                return;
+            }
+
+            App::getInstance(true)->getLogger()->info('Cleaning up ' . count($databases) . ' databases for server ID: ' . $serverId);
+
+            foreach ($databases as $database) {
+                try {
+                    // Get database host info
+                    $databaseHost = DatabaseInstance::getDatabaseById($database['database_host_id']);
+                    if (!$databaseHost) {
+                        App::getInstance(true)->getLogger()->warning('Database host not found for database ID: ' . $database['id']);
+                        continue;
+                    }
+
+                    // Delete database and user from the database host
+                    $this->deleteDatabaseFromHost($databaseHost, $database['database'], $database['username']);
+
+                    // Delete server database record
+                    if (!ServerDatabase::deleteServerDatabase($database['id'])) {
+                        App::getInstance(true)->getLogger()->error('Failed to delete server database record for database ID: ' . $database['id']);
+                    } else {
+                        App::getInstance(true)->getLogger()->info('Successfully deleted database: ' . $database['database'] . ' (ID: ' . $database['id'] . ')');
+                    }
+
+                } catch (\Exception $e) {
+                    // Log the error but continue with other databases
+                    App::getInstance(true)->getLogger()->error('Failed to delete database ID ' . $database['id'] . ': ' . $e->getMessage());
+                }
+            }
+
+        } catch (\Exception $e) {
+            // Log the error but don't break the server deletion process
+            App::getInstance(true)->getLogger()->error('Failed to cleanup databases for server ID ' . $serverId . ': ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete database and user from the database host.
+     * This is a copy of the method from ServerDatabaseController to avoid dependency issues.
+     *
+     * @param array $databaseHost Database host information
+     * @param string $databaseName Database name to delete
+     * @param string $username Username to delete
+     * @throws \Exception If deletion fails
+     */
+    private function deleteDatabaseFromHost(array $databaseHost, string $databaseName, string $username): void
+    {
+        try {
+            // Connect directly to the external database host (not the panel's database)
+            $options = [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_TIMEOUT => 10, // 10 second timeout
+            ];
+
+            // Handle different database types
+            switch ($databaseHost['database_type']) {
+                case 'mysql':
+                case 'mariadb':
+                    $safeDbName = $this->quoteIdentifierMySQL($databaseName);
+                    $safeUser = $this->quoteIdentifierMySQL($username);
+                    $dsn = "mysql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
+                    $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
+
+                    // Revoke privileges from the user
+                    $pdo->exec("REVOKE ALL PRIVILEGES ON {$safeDbName}.* FROM {$safeUser}@'%'");
+
+                    // Drop the user
+                    $pdo->exec("DROP USER IF EXISTS {$safeUser}@'%'");
+
+                    // Drop the database
+                    $pdo->exec("DROP DATABASE IF EXISTS {$safeDbName}");
+
+                    // Flush privileges
+                    $pdo->exec('FLUSH PRIVILEGES');
+                    break;
+
+                case 'postgresql':
+                    $safeDbName = $this->quoteIdentifier($databaseName);
+                    $safeUser = $this->quoteIdentifier($username);
+                    $dsn = "pgsql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
+                    $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
+
+                    // Revoke privileges from the user
+                    $pdo->exec("REVOKE ALL PRIVILEGES ON DATABASE {$safeDbName} FROM {$safeUser}");
+
+                    // Drop the user
+                    $pdo->exec("DROP USER IF EXISTS {$safeUser}");
+
+                    // Drop the database
+                    $pdo->exec("DROP DATABASE IF EXISTS {$safeDbName}");
+                    break;
+
+                default:
+                    throw new \Exception("Unsupported database type: {$databaseHost['database_type']}");
+            }
+
+        } catch (\PDOException $e) {
+            throw new \Exception("Failed to delete database from host {$databaseHost['name']}: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Safely quote a PostgreSQL identifier by escaping double quotes.
+     *
+     * @param string $identifier The identifier to quote
+     * @return string The safely quoted identifier
+     */
+    private function quoteIdentifier(string $identifier): string
+    {
+        return '"' . str_replace('"', '""', $identifier) . '"';
+    }
+
+    /**
+     * Safely quote a MySQL/MariaDB identifier by escaping backticks.
+     *
+     * @param string $identifier The identifier to quote
+     * @return string The safely quoted identifier
+     */
+    private function quoteIdentifierMySQL(string $identifier): string
+    {
+        return '`' . str_replace('`', '``', $identifier) . '`';
     }
 }

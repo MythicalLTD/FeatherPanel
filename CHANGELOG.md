@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.0.0 BETA
+
+### Added
+
+- Added a helpful reminder dialog to discourage the use of Ctrl+R or F5 to refresh, encouraging users to use built-in refresh options for a smoother experience.
+
+### Fixed
+
+- Fixed an issue where plugins were not appearing on the server route—plugins now display correctly as intended.
+- Fixed an issue where wings was unable to parse the right env for file edit!
+- Fixed an issue where databases were not properly removed when deleting a server from the admin interface—server database cleanup now works reliably and automatically.
+- Fixed a critical bug where updating server variables would previously delete ALL variables—including read-only and admin-only variables—instead of only modifying the variables provided in the update request.
+
+### Updated
+
+- Upgraded `@tailwindcss/vite` to v4.1.16 for improved compatibility and build stability.
+- Updated `@types/node` to v24.9.1 for the latest Node.js type definitions.
+- Upgraded `@vueuse/core` to v14.0.0 for enhanced Vue composables and features.
+- Bumped `reka-ui` to v2.6.0 for new UI components and bugfixes.
+- Upgraded `tailwindcss` to v4.1.16 for new utility classes and improved styling engine.
+- Upgraded `typescript-eslint` to v8.46.2 for the latest TypeScript linting rules and improvements.
+- Upgraded `vite` to v7.1.12 for enhanced dev experience and build reliability.
+
 ## v0.0.9-Alpha
 
 ### Added

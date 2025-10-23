@@ -57,8 +57,6 @@ services:
       retries: 10
     volumes:
       - featherpanel_attachments:/var/www/html/public/attachments
-      - featherpanel_addons:/var/www/html/storage/addons
-      - featherpanel_logs:/var/www/html/storage/logs
       - featherpanel_config:/var/www/html/storage/config
     networks:
       - featherpanel_network
@@ -90,10 +88,6 @@ volumes:
   redis_data:
     driver: local
   featherpanel_attachments:
-    driver: local
-  featherpanel_addons:
-    driver: local
-  featherpanel_logs:
     driver: local
   featherpanel_config:
     driver: local
