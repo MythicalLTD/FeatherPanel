@@ -30,7 +30,12 @@
                     @page-change="changePage"
                 >
                     <template #header-actions>
-                        <Button variant="outline" size="sm" @click="openCreateDrawer">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            data-umami-event="Create location"
+                            @click="openCreateDrawer"
+                        >
                             <Plus class="h-4 w-4 mr-2" />
                             Create Location
                         </Button>
@@ -39,13 +44,31 @@
                     <!-- Custom cell templates -->
                     <template #cell-actions="{ item }">
                         <div class="flex gap-2">
-                            <Button size="sm" variant="outline" @click="onView(item as Location)">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                data-umami-event="View location"
+                                :data-umami-event-location="(item as Location).name"
+                                @click="onView(item as Location)"
+                            >
                                 <Eye :size="16" />
                             </Button>
-                            <Button size="sm" variant="secondary" @click="onEdit(item as Location)">
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                data-umami-event="Edit location"
+                                :data-umami-event-location="(item as Location).name"
+                                @click="onEdit(item as Location)"
+                            >
                                 <Pencil :size="16" />
                             </Button>
-                            <Button size="sm" variant="secondary" @click="onViewNodes(item as Location)">
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                data-umami-event="View location nodes"
+                                :data-umami-event-location="(item as Location).name"
+                                @click="onViewNodes(item as Location)"
+                            >
                                 <Server :size="16" />
                             </Button>
                             <template v-if="confirmDeleteRow === (item as Location).id">
@@ -53,6 +76,8 @@
                                     size="sm"
                                     variant="destructive"
                                     :loading="deleting"
+                                    data-umami-event="Confirm delete location"
+                                    :data-umami-event-location="(item as Location).name"
                                     @click="confirmDelete(item as Location)"
                                 >
                                     Confirm Delete
@@ -62,7 +87,13 @@
                                 </Button>
                             </template>
                             <template v-else>
-                                <Button size="sm" variant="destructive" @click="onDelete(item as Location)">
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    data-umami-event="Delete location"
+                                    :data-umami-event-location="(item as Location).name"
+                                    @click="onDelete(item as Location)"
+                                >
                                     <Trash2 :size="16" />
                                 </Button>
                             </template>

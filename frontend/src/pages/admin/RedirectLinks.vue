@@ -53,10 +53,22 @@
                 >
                     <template #header-actions>
                         <div class="flex flex-col sm:flex-row gap-2">
-                            <Button variant="outline" size="sm" class="w-full sm:w-auto" @click="testRedirectApi">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                class="w-full sm:w-auto"
+                                data-umami-event="Test redirect API"
+                                @click="testRedirectApi"
+                            >
                                 Test API
                             </Button>
-                            <Button variant="outline" size="sm" class="w-full sm:w-auto" @click="openCreateDrawer">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                class="w-full sm:w-auto"
+                                data-umami-event="Create redirect link"
+                                @click="openCreateDrawer"
+                            >
                                 <Plus class="h-4 w-4 mr-2" />
                                 <span class="hidden sm:inline">Create Redirect Link</span>
                                 <span class="sm:hidden">Create Link</span>
@@ -115,6 +127,8 @@
                                     size="sm"
                                     variant="outline"
                                     class="flex-1 sm:flex-none"
+                                    data-umami-event="View redirect link"
+                                    :data-umami-event-link="(item as unknown as RedirectLink).name"
                                     @click="onView(item as unknown as RedirectLink)"
                                 >
                                     <Eye :size="16" />
@@ -123,6 +137,8 @@
                                     size="sm"
                                     variant="secondary"
                                     class="flex-1 sm:flex-none"
+                                    data-umami-event="Edit redirect link"
+                                    :data-umami-event-link="(item as unknown as RedirectLink).name"
                                     @click="onEdit(item as unknown as RedirectLink)"
                                 >
                                     <Pencil :size="16" />
@@ -131,6 +147,8 @@
                                     size="sm"
                                     variant="outline"
                                     class="flex-1 sm:flex-none"
+                                    data-umami-event="Copy redirect URL"
+                                    :data-umami-event-link="(item as unknown as RedirectLink).name"
                                     @click="onCopyUrl(item as unknown as RedirectLink)"
                                 >
                                     <Copy :size="16" />
@@ -143,6 +161,8 @@
                                         variant="destructive"
                                         :loading="deleting"
                                         class="flex-1 sm:flex-none"
+                                        data-umami-event="Confirm delete redirect link"
+                                        :data-umami-event-link="(item as unknown as RedirectLink).name"
                                         @click="confirmDelete(item as unknown as RedirectLink)"
                                     >
                                         <span class="hidden sm:inline">Confirm Delete</span>
@@ -164,6 +184,8 @@
                                         variant="destructive"
                                         :disabled="deleting"
                                         class="w-full sm:w-auto"
+                                        data-umami-event="Delete redirect link"
+                                        :data-umami-event-link="(item as unknown as RedirectLink).name"
                                         @click="onDelete(item as unknown as RedirectLink)"
                                     >
                                         <Trash2 :size="16" />

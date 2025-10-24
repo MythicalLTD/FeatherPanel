@@ -719,8 +719,17 @@ onMounted(() => {
                         <p class="text-muted-foreground">Create and manage FeatherPanel plugins</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <Button variant="outline" :disabled="isLoading" @click="fetchPlugins"> Refresh </Button>
-                        <Button @click="showCreateDialog = true"> Create Plugin </Button>
+                        <Button
+                            variant="outline"
+                            :disabled="isLoading"
+                            data-umami-event="Refresh plugins"
+                            @click="fetchPlugins"
+                        >
+                            Refresh
+                        </Button>
+                        <Button data-umami-event="Create plugin" @click="showCreateDialog = true">
+                            Create Plugin
+                        </Button>
                     </div>
                 </div>
 
@@ -801,8 +810,24 @@ onMounted(() => {
                         </div>
 
                         <div class="flex gap-2 flex-wrap">
-                            <Button variant="outline" size="sm" @click="showPluginDetails(plugin)"> Details </Button>
-                            <Button variant="outline" size="sm" @click="editPlugin(plugin)"> Edit </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                data-umami-event="View plugin details"
+                                :data-umami-event-plugin="plugin.name"
+                                @click="showPluginDetails(plugin)"
+                            >
+                                Details
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                data-umami-event="Edit plugin"
+                                :data-umami-event-plugin="plugin.name"
+                                @click="editPlugin(plugin)"
+                            >
+                                Edit
+                            </Button>
 
                             <!-- Plugin-specific Create Action Dropdown -->
                             <DropdownMenu>
@@ -844,7 +869,9 @@ onMounted(() => {
                     </div>
                     <h3 class="text-lg font-semibold mb-2">No plugins found</h3>
                     <p class="text-muted-foreground mb-4">Create your first plugin to get started</p>
-                    <Button @click="showCreateDialog = true"> Create Plugin </Button>
+                    <Button data-umami-event="Create first plugin" @click="showCreateDialog = true">
+                        Create Plugin
+                    </Button>
                 </div>
             </div>
         </div>
@@ -1155,8 +1182,21 @@ onMounted(() => {
                     </div>
 
                     <div class="flex justify-end gap-2 mt-6">
-                        <Button variant="outline" @click="showCreateDialog = false"> Cancel </Button>
-                        <Button :disabled="isLoading" @click="createPlugin"> Create Plugin </Button>
+                        <Button
+                            variant="outline"
+                            data-umami-event="Cancel plugin creation"
+                            @click="showCreateDialog = false"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            :disabled="isLoading"
+                            data-umami-event="Create plugin"
+                            :data-umami-event-name="createForm.name"
+                            @click="createPlugin"
+                        >
+                            Create Plugin
+                        </Button>
                     </div>
                 </div>
             </Card>
@@ -1480,8 +1520,17 @@ onMounted(() => {
                     </div>
 
                     <div class="flex justify-end gap-2 mt-6">
-                        <Button variant="outline" @click="showEditDialog = false"> Cancel </Button>
-                        <Button :disabled="isLoading" @click="updatePlugin"> Update Plugin </Button>
+                        <Button variant="outline" data-umami-event="Cancel plugin edit" @click="showEditDialog = false">
+                            Cancel
+                        </Button>
+                        <Button
+                            :disabled="isLoading"
+                            data-umami-event="Update plugin"
+                            :data-umami-event-plugin="editingPlugin?.name"
+                            @click="updatePlugin"
+                        >
+                            Update Plugin
+                        </Button>
                     </div>
                 </div>
             </Card>
@@ -1728,10 +1777,20 @@ onMounted(() => {
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" :disabled="isCreatingAction" @click="closeCreateActionDialog">
+                    <Button
+                        variant="outline"
+                        :disabled="isCreatingAction"
+                        data-umami-event="Cancel create action"
+                        @click="closeCreateActionDialog"
+                    >
                         Cancel
                     </Button>
-                    <Button :disabled="isCreatingAction" @click="createActionItem">
+                    <Button
+                        :disabled="isCreatingAction"
+                        data-umami-event="Create action item"
+                        :data-umami-event-plugin="selectedPluginForAction?.name"
+                        @click="createActionItem"
+                    >
                         <span v-if="isCreatingAction">Creating...</span>
                         <span v-else>Create</span>
                     </Button>

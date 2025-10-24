@@ -30,7 +30,12 @@
                     @page-change="changePage"
                 >
                     <template #header-actions>
-                        <Button variant="outline" size="sm" @click="openCreateDrawer">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            data-umami-event="Add node database"
+                            @click="openCreateDrawer"
+                        >
                             <Plus class="h-4 w-4 mr-2" />
                             Add Database
                         </Button>
@@ -63,16 +68,30 @@
 
                     <template #cell-actions="{ item }">
                         <div class="flex gap-2">
-                            <Button size="sm" variant="outline" @click="onView(item as unknown as Database)">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                data-umami-event="View node database"
+                                :data-umami-event-database="(item as unknown as Database).name"
+                                @click="onView(item as unknown as Database)"
+                            >
                                 <Eye :size="16" />
                             </Button>
-                            <Button size="sm" variant="secondary" @click="onEdit(item as unknown as Database)">
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                data-umami-event="Edit node database"
+                                :data-umami-event-database="(item as unknown as Database).name"
+                                @click="onEdit(item as unknown as Database)"
+                            >
                                 <Pencil :size="16" />
                             </Button>
                             <Button
                                 size="sm"
                                 variant="outline"
                                 title="Check Health"
+                                data-umami-event="Check database health"
+                                :data-umami-event-database="(item as unknown as Database).name"
                                 @click="onHealthCheck(item as unknown as Database)"
                             >
                                 <Activity :size="16" />
@@ -82,6 +101,8 @@
                                     size="sm"
                                     variant="destructive"
                                     :loading="deleting"
+                                    data-umami-event="Confirm delete node database"
+                                    :data-umami-event-database="(item as unknown as Database).name"
                                     @click="confirmDelete(item as unknown as Database)"
                                 >
                                     Confirm Delete
@@ -91,7 +112,13 @@
                                 </Button>
                             </template>
                             <template v-else>
-                                <Button size="sm" variant="destructive" @click="onDelete(item as unknown as Database)">
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    data-umami-event="Delete node database"
+                                    :data-umami-event-database="(item as unknown as Database).name"
+                                    @click="onDelete(item as unknown as Database)"
+                                >
                                     <Trash2 :size="16" />
                                 </Button>
                             </template>

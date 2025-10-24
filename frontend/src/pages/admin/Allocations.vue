@@ -45,6 +45,8 @@
                                     variant="destructive"
                                     size="sm"
                                     :disabled="isBulkDeleting || nodeHealthStatus !== 'healthy'"
+                                    data-umami-event="Bulk delete allocations"
+                                    :data-umami-event-count="selectedIds.length"
                                     @click="handleBulkDelete"
                                 >
                                     <Trash2 class="h-4 w-4 mr-2" />
@@ -60,6 +62,7 @@
                                         ? 'Node is unhealthy'
                                         : 'Delete all unused allocations for this node'
                                 "
+                                data-umami-event="Delete unused allocations"
                                 @click="handleDeleteUnused"
                             >
                                 <Trash2 class="h-4 w-4 mr-2" />
@@ -74,6 +77,7 @@
                                         ? 'Node is unhealthy - cannot create allocations'
                                         : 'Create new allocation'
                                 "
+                                data-umami-event="Create allocation"
                                 @click="openCreateDrawer"
                             >
                                 <Plus class="h-4 w-4 mr-2" />
@@ -128,6 +132,8 @@
                                 :title="
                                     nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'View allocation details'
                                 "
+                                data-umami-event="View allocation"
+                                :data-umami-event-allocation="`${(item as unknown as Allocation).ip}:${(item as unknown as Allocation).port}`"
                                 @click="onView(item as unknown as Allocation)"
                             >
                                 <Eye :size="16" />
@@ -137,6 +143,8 @@
                                 size="sm"
                                 :disabled="nodeHealthStatus !== 'healthy'"
                                 :title="nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'Edit allocation'"
+                                data-umami-event="Edit allocation"
+                                :data-umami-event-allocation="`${(item as unknown as Allocation).ip}:${(item as unknown as Allocation).port}`"
                                 @click="onEdit(item as unknown as Allocation)"
                             >
                                 <Edit :size="16" />

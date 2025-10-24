@@ -12,12 +12,19 @@
                         <ExternalLink class="h-4 w-4 mr-2" />
                         {{ $t('account.apiKeys.apiDocs') }}
                     </Button>
-                    <Button variant="outline" size="sm" class="flex-1" :disabled="loading" @click="fetchApiClients">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        class="flex-1"
+                        :disabled="loading"
+                        data-umami-event="Refresh API keys"
+                        @click="fetchApiClients"
+                    >
                         <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': loading }" />
                         {{ $t('account.apiKeys.refresh') }}
                     </Button>
                 </div>
-                <Button class="w-full" @click="showCreateModal = true">
+                <Button class="w-full" data-umami-event="Create API key" @click="showCreateModal = true">
                     <Plus class="h-4 w-4 mr-2" />
                     {{ $t('account.apiKeys.addKey') }}
                 </Button>
@@ -98,15 +105,36 @@
 
                     <!-- Action buttons - mobile optimized -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <Button variant="outline" size="sm" class="h-8 px-3 text-xs" @click="viewClientDetails(client)">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class="h-8 px-3 text-xs"
+                            data-umami-event="View API key details"
+                            :data-umami-event-key="client.name"
+                            @click="viewClientDetails(client)"
+                        >
                             <Eye class="h-3 w-3 mr-1" />
                             {{ $t('account.apiKeys.viewDetails') }}
                         </Button>
-                        <Button variant="outline" size="sm" class="h-8 px-3 text-xs" @click="editClient(client)">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class="h-8 px-3 text-xs"
+                            data-umami-event="Edit API key"
+                            :data-umami-event-key="client.name"
+                            @click="editClient(client)"
+                        >
                             <Edit class="h-3 w-3 mr-1" />
                             {{ $t('account.apiKeys.edit') }}
                         </Button>
-                        <Button variant="outline" size="sm" class="h-8 px-3 text-xs" @click="regenerateKeys(client)">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class="h-8 px-3 text-xs"
+                            data-umami-event="Regenerate API keys"
+                            :data-umami-event-key="client.name"
+                            @click="regenerateKeys(client)"
+                        >
                             <RefreshCw class="h-3 w-3 mr-1" />
                             {{ $t('account.apiKeys.regenerateKeys') }}
                         </Button>
@@ -124,6 +152,8 @@
                             variant="destructive"
                             size="sm"
                             class="h-7 px-2 text-xs w-full sm:w-auto"
+                            data-umami-event="Delete API key"
+                            :data-umami-event-key="client.name"
                             @click="deleteClient(client)"
                         >
                             <Trash2 class="h-3 w-3 mr-1" />
@@ -145,7 +175,7 @@
             <p class="text-xs text-muted-foreground">
                 {{ searchQuery ? $t('account.apiKeys.tryDifferentSearch') : $t('account.apiKeys.noKeysDescription') }}
             </p>
-            <Button class="mt-4" @click="showCreateModal = true">
+            <Button class="mt-4" data-umami-event="Create first API key" @click="showCreateModal = true">
                 <Plus class="h-4 w-4 mr-2" />
                 {{ $t('account.apiKeys.addFirstKey') }}
             </Button>
@@ -189,7 +219,13 @@
                     </FormItem>
 
                     <div class="flex flex-col sm:flex-row gap-3 pt-4">
-                        <Button type="submit" :disabled="isSubmitting" class="w-full sm:min-w-[120px] sm:w-auto">
+                        <Button
+                            type="submit"
+                            :disabled="isSubmitting"
+                            class="w-full sm:min-w-[120px] sm:w-auto"
+                            data-umami-event="Save API key"
+                            :data-umami-event-key="formData.name"
+                        >
                             <span v-if="isSubmitting">{{ $t('account.apiKeys.saving') }}</span>
                             <span v-else>{{
                                 showEditModal ? $t('account.apiKeys.updateKey') : $t('account.apiKeys.addKey')
@@ -248,6 +284,8 @@
                                 variant="outline"
                                 size="sm"
                                 class="mt-2 h-7 px-2 text-xs w-full sm:w-auto"
+                                data-umami-event="Copy public key"
+                                :data-umami-event-key="selectedClient?.name"
                                 @click="copyToClipboard(selectedClient.public_key || '')"
                             >
                                 <Copy class="h-3 w-3 mr-1" />
@@ -267,6 +305,8 @@
                                     variant="outline"
                                     size="sm"
                                     class="h-7 px-2 text-xs w-full sm:w-auto"
+                                    data-umami-event="Copy private key"
+                                    :data-umami-event-key="selectedClient?.name"
                                     @click="copyToClipboard(selectedClient.private_key || '')"
                                 >
                                     <Copy class="h-3 w-3 mr-1" />
@@ -296,7 +336,13 @@
                 </AlertDialogHeader>
                 <AlertDialogFooter class="flex-col sm:flex-row gap-2">
                     <AlertDialogCancel class="w-full sm:w-auto">{{ $t('account.apiKeys.cancel') }}</AlertDialogCancel>
-                    <AlertDialogAction variant="destructive" class="w-full sm:w-auto" @click="confirmDelete">
+                    <AlertDialogAction
+                        variant="destructive"
+                        class="w-full sm:w-auto"
+                        data-umami-event="Confirm delete API key"
+                        :data-umami-event-key="clientToDelete?.name"
+                        @click="confirmDelete"
+                    >
                         {{ $t('account.apiKeys.confirmDelete') }}
                     </AlertDialogAction>
                 </AlertDialogFooter>
@@ -314,7 +360,12 @@
                 </AlertDialogHeader>
                 <AlertDialogFooter class="flex-col sm:flex-row gap-2">
                     <AlertDialogCancel class="w-full sm:w-auto">{{ $t('account.apiKeys.cancel') }}</AlertDialogCancel>
-                    <AlertDialogAction class="w-full sm:w-auto" @click="confirmRegenerate">
+                    <AlertDialogAction
+                        class="w-full sm:w-auto"
+                        data-umami-event="Confirm regenerate API keys"
+                        :data-umami-event-key="clientToRegenerate?.name"
+                        @click="confirmRegenerate"
+                    >
                         {{ $t('account.apiKeys.confirmRegenerate') }}
                     </AlertDialogAction>
                 </AlertDialogFooter>

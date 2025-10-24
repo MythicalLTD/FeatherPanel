@@ -146,7 +146,7 @@
                 <AlertCircle class="h-12 w-12 text-destructive mx-auto mb-4" />
                 <h3 class="text-lg font-semibold mb-2">{{ $t('servers.errorTitle') }}</h3>
                 <p class="text-sm text-muted-foreground mb-4">{{ error }}</p>
-                <Button @click="fetchServers">{{ $t('servers.retry') }}</Button>
+                <Button data-umami-event="Retry server fetch" @click="fetchServers">{{ $t('servers.retry') }}</Button>
             </div>
         </div>
 
@@ -163,13 +163,22 @@
                             <Badge variant="secondary">{{ folder.servers.length }} {{ $t('servers.servers') }}</Badge>
                         </div>
                         <div class="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="editFolder(folder)">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                class="h-8 w-8 p-0"
+                                data-umami-event="Edit folder"
+                                :data-umami-event-folder="folder.name"
+                                @click="editFolder(folder)"
+                            >
                                 <Edit class="h-4 w-4" />
                             </Button>
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 class="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                data-umami-event="Delete folder"
+                                :data-umami-event-folder="folder.name"
                                 @click="deleteFolder(folder.id)"
                             >
                                 <Trash2 class="h-4 w-4" />
@@ -1671,10 +1680,15 @@
                     />
                 </div>
                 <div class="flex justify-end gap-2">
-                    <Button variant="outline" @click="folderDialogOpen = false">
+                    <Button variant="outline" data-umami-event="Cancel folder dialog" @click="folderDialogOpen = false">
                         {{ $t('servers.cancel') }}
                     </Button>
-                    <Button :disabled="!folderForm.name.trim()" @click="saveFolder">
+                    <Button
+                        :disabled="!folderForm.name.trim()"
+                        data-umami-event="Save folder"
+                        :data-umami-event-folder="folderForm.name"
+                        @click="saveFolder"
+                    >
                         {{ editingFolder ? $t('servers.update') : $t('servers.create') }}
                     </Button>
                 </div>
@@ -1694,6 +1708,7 @@
             <div class="flex justify-end gap-2">
                 <Button
                     variant="outline"
+                    data-umami-event="Cancel confirmation dialog"
                     @click="
                         showConfirmDialog = false;
                         confirmAction = null;
@@ -1701,7 +1716,12 @@
                 >
                     {{ $t('servers.cancel') }}
                 </Button>
-                <Button :variant="confirmDialog.variant" :disabled="confirmLoading" @click="confirmAction?.()">
+                <Button
+                    :variant="confirmDialog.variant"
+                    :disabled="confirmLoading"
+                    data-umami-event="Confirm action"
+                    @click="confirmAction?.()"
+                >
                     {{ confirmDialog.confirmText }}
                 </Button>
             </div>

@@ -11,15 +11,26 @@
                     <Button
                         :variant="widgetsStore.isCustomizing ? 'default' : 'secondary'"
                         class="flex items-center gap-2"
+                        data-umami-event="Toggle dashboard customization"
                         @click="widgetsStore.toggleCustomizing()"
                     >
                         <Settings :size="16" />
                         {{ widgetsStore.isCustomizing ? 'Done' : 'Customize Dashboard' }}
                     </Button>
-                    <Button variant="secondary" class="flex items-center gap-2" @click="openDocumentation">
+                    <Button
+                        variant="secondary"
+                        class="flex items-center gap-2"
+                        data-umami-event="Open documentation"
+                        @click="openDocumentation"
+                    >
                         <BookOpen :size="16" /> Documentation
                     </Button>
-                    <Button variant="outline" class="flex items-center gap-2" @click="openDiscord">
+                    <Button
+                        variant="outline"
+                        class="flex items-center gap-2"
+                        data-umami-event="Open Discord"
+                        @click="openDiscord"
+                    >
                         <Discord :size="16" /> Discord
                     </Button>
                 </div>
@@ -34,7 +45,13 @@
                     <span class="font-medium">Failed to load dashboard statistics</span>
                 </div>
                 <p class="text-sm text-muted-foreground mt-1">{{ dashboardStore.error }}</p>
-                <Button variant="outline" size="sm" class="mt-2" @click="dashboardStore.fetchDashboardStats()">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="mt-2"
+                    data-umami-event="Retry dashboard stats"
+                    @click="dashboardStore.fetchDashboardStats()"
+                >
                     Retry
                 </Button>
             </div>

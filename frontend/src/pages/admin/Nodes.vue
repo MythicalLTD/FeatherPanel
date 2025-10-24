@@ -43,11 +43,17 @@
                                 size="sm"
                                 :loading="isCheckingHealth"
                                 title="Refresh node health status"
+                                data-umami-event="Refresh node health"
                                 @click="checkAllNodesHealth"
                             >
                                 <RefreshCw :size="16" />
                             </Button>
-                            <Button variant="outline" size="sm" @click="openCreateDrawer">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                data-umami-event="Create node"
+                                @click="openCreateDrawer"
+                            >
                                 <Plus class="h-4 w-4 mr-2" />
                                 Create Node
                             </Button>
@@ -85,16 +91,30 @@
 
                     <template #cell-actions="{ item }">
                         <div class="flex gap-2">
-                            <Button size="sm" variant="outline" @click="onView(item as Node)">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                data-umami-event="View node"
+                                :data-umami-event-node="(item as Node).name"
+                                @click="onView(item as Node)"
+                            >
                                 <Eye :size="16" />
                             </Button>
-                            <Button size="sm" variant="secondary" @click="onEdit(item as Node)">
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                data-umami-event="Edit node"
+                                :data-umami-event-node="(item as Node).name"
+                                @click="onEdit(item as Node)"
+                            >
                                 <Pencil :size="16" />
                             </Button>
                             <Button
                                 size="sm"
                                 variant="outline"
                                 title="Manage Databases"
+                                data-umami-event="Manage node databases"
+                                :data-umami-event-node="(item as Node).name"
                                 @click="onDatabases(item as Node)"
                             >
                                 <Database :size="16" />
@@ -103,6 +123,8 @@
                                 size="sm"
                                 variant="outline"
                                 title="Manage Allocations"
+                                data-umami-event="Manage node allocations"
+                                :data-umami-event-node="(item as Node).name"
                                 @click="onAllocations(item as Node)"
                             >
                                 <Network :size="16" />
@@ -112,6 +134,8 @@
                                     size="sm"
                                     variant="destructive"
                                     :loading="deleting"
+                                    data-umami-event="Confirm delete node"
+                                    :data-umami-event-node="(item as Node).name"
                                     @click="confirmDelete(item as Node)"
                                 >
                                     Confirm Delete
@@ -121,7 +145,13 @@
                                 </Button>
                             </template>
                             <template v-else>
-                                <Button size="sm" variant="destructive" @click="onDelete(item as Node)">
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    data-umami-event="Delete node"
+                                    :data-umami-event-node="(item as Node).name"
+                                    @click="onDelete(item as Node)"
+                                >
                                     <Trash2 :size="16" />
                                 </Button>
                             </template>

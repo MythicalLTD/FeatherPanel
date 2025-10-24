@@ -30,7 +30,7 @@
                     @page-change="changePage"
                 >
                     <template #header-actions>
-                        <Button variant="outline" size="sm" @click="openCreateDrawer">
+                        <Button variant="outline" size="sm" data-umami-event="Create user" @click="openCreateDrawer">
                             <Plus class="h-4 w-4 mr-2" />
                             Create User
                         </Button>
@@ -59,10 +59,22 @@
 
                     <template #cell-actions="{ item }">
                         <div class="flex gap-2">
-                            <Button size="sm" variant="outline" @click="onView(item as ApiUser)">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                data-umami-event="View user"
+                                :data-umami-event-user="(item as ApiUser).username"
+                                @click="onView(item as ApiUser)"
+                            >
                                 <Eye :size="16" />
                             </Button>
-                            <Button size="sm" variant="secondary" @click="onEdit(item as ApiUser)">
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                data-umami-event="Edit user"
+                                :data-umami-event-user="(item as ApiUser).username"
+                                @click="onEdit(item as ApiUser)"
+                            >
                                 <Pencil :size="16" />
                             </Button>
                             <template v-if="confirmDeleteRow === (item as ApiUser).uuid">
@@ -70,6 +82,8 @@
                                     size="sm"
                                     variant="destructive"
                                     :loading="deleting"
+                                    data-umami-event="Confirm delete user"
+                                    :data-umami-event-user="(item as ApiUser).username"
                                     @click="confirmDelete(item as ApiUser)"
                                 >
                                     Confirm Delete
@@ -79,7 +93,13 @@
                                 </Button>
                             </template>
                             <template v-else>
-                                <Button size="sm" variant="destructive" @click="onDelete(item as ApiUser)">
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    data-umami-event="Delete user"
+                                    :data-umami-event-user="(item as ApiUser).username"
+                                    @click="onDelete(item as ApiUser)"
+                                >
                                     <Trash2 :size="16" />
                                 </Button>
                             </template>
@@ -376,6 +396,8 @@
                         <Button
                             type="button"
                             :variant="editingUser && editingUser.banned === 'true' ? 'secondary' : 'destructive'"
+                            data-umami-event="Toggle ban user"
+                            :data-umami-event-user="editingUser?.username"
                             @click="toggleBanUser"
                         >
                             {{ editingUser && editingUser.banned === 'true' ? 'Unban User' : 'Ban User' }}
@@ -384,12 +406,20 @@
                             v-if="editingUser && editingUser.two_fa_enabled === 'true'"
                             type="button"
                             variant="secondary"
+                            data-umami-event="Remove 2FA"
+                            :data-umami-event-user="editingUser?.username"
                             @click="removeTwoFactorAuth"
                         >
                             Remove Two Factor Auth
                         </Button>
                         <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
-                        <Button type="submit" variant="default">Save</Button>
+                        <Button
+                            type="submit"
+                            variant="default"
+                            data-umami-event="Save user"
+                            :data-umami-event-user="editingUser?.username"
+                            >Save</Button
+                        >
                     </div>
                 </form>
             </DrawerContent>

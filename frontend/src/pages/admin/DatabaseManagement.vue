@@ -97,10 +97,20 @@ fetchStatus();
                         </p>
                     </div>
                     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                        <Button variant="outline" :disabled="loading" class="w-full sm:w-auto" @click="fetchStatus"
+                        <Button
+                            variant="outline"
+                            :disabled="loading"
+                            class="w-full sm:w-auto"
+                            data-umami-event="Refresh database status"
+                            @click="fetchStatus"
                             >Refresh</Button
                         >
-                        <Button :disabled="migRunning" class="w-full sm:w-auto" @click="runMigrations">
+                        <Button
+                            :disabled="migRunning"
+                            class="w-full sm:w-auto"
+                            data-umami-event="Run database migrations"
+                            @click="runMigrations"
+                        >
                             <span
                                 v-if="migRunning"
                                 class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
@@ -185,7 +195,12 @@ fetchStatus();
                 <Card class="p-0 overflow-hidden">
                     <div class="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div class="font-semibold">Migrations Output</div>
-                        <Button variant="outline" size="sm" class="w-full sm:w-auto" @click="migOutput = ''"
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class="w-full sm:w-auto"
+                            data-umami-event="Clear migration output"
+                            @click="migOutput = ''"
                             >Clear</Button
                         >
                     </div>

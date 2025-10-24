@@ -397,10 +397,14 @@ onUnmounted(() => {
                         <p class="text-muted-foreground">Browse and edit project files</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <Button variant="outline" :disabled="loading" @click="browseDirectory(currentPath)"
+                        <Button
+                            variant="outline"
+                            :disabled="loading"
+                            data-umami-event="Refresh file manager"
+                            @click="browseDirectory(currentPath)"
                             >Refresh</Button
                         >
-                        <Button @click="showCreateDialog = true">Create File</Button>
+                        <Button data-umami-event="Create file" @click="showCreateDialog = true">Create File</Button>
                     </div>
                 </div>
 

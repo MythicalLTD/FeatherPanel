@@ -52,7 +52,12 @@
                     @page-change="changePage"
                 >
                     <template #header-actions>
-                        <Button variant="outline" size="sm" @click="$router.push('/admin/servers/create')">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            data-umami-event="Create server"
+                            @click="$router.push('/admin/servers/create')"
+                        >
                             <Plus class="h-4 w-4 mr-2" />
                             Create Server
                         </Button>
@@ -144,10 +149,22 @@
 
                     <template #cell-actions="{ item }">
                         <div class="flex gap-2">
-                            <Button size="sm" variant="outline" @click="onView(item as ApiServer)">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                data-umami-event="View server"
+                                :data-umami-event-server="(item as ApiServer).name"
+                                @click="onView(item as ApiServer)"
+                            >
                                 <Eye :size="16" />
                             </Button>
-                            <Button size="sm" variant="secondary" @click="onEdit(item as ApiServer)">
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                data-umami-event="Edit server"
+                                :data-umami-event-server="(item as ApiServer).name"
+                                @click="onEdit(item as ApiServer)"
+                            >
                                 <Pencil :size="16" />
                             </Button>
                             <template v-if="confirmDeleteRow === String((item as ApiServer).id)">
@@ -155,6 +172,8 @@
                                     size="sm"
                                     variant="destructive"
                                     :loading="deleting"
+                                    data-umami-event="Confirm delete server"
+                                    :data-umami-event-server="(item as ApiServer).name"
                                     @click="confirmDelete(item as ApiServer, false)"
                                 >
                                     Confirm Delete
@@ -164,6 +183,8 @@
                                     variant="destructive"
                                     class="bg-red-700 hover:bg-red-800 dark:bg-red-800 dark:hover:bg-red-900"
                                     :loading="deleting"
+                                    data-umami-event="Hard delete server"
+                                    :data-umami-event-server="(item as ApiServer).name"
                                     @click="onHardDelete(item as ApiServer)"
                                 >
                                     Hard Delete
@@ -173,7 +194,13 @@
                                 </Button>
                             </template>
                             <template v-else>
-                                <Button size="sm" variant="destructive" @click="onDelete(item as ApiServer)">
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    data-umami-event="Delete server"
+                                    :data-umami-event-server="(item as ApiServer).name"
+                                    @click="onDelete(item as ApiServer)"
+                                >
                                     <Trash2 :size="16" />
                                 </Button>
                             </template>

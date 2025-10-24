@@ -19,6 +19,7 @@
                     variant="outline"
                     size="sm"
                     class="w-full sm:w-auto flex items-center justify-center gap-2"
+                    data-umami-event="Toggle theme"
                     @click="handleToggleTheme"
                 >
                     <Sun v-if="isDark" class="h-4 w-4" />
@@ -151,6 +152,7 @@
                                     ? 'border-primary bg-primary/5'
                                     : 'border-border hover:border-primary/50',
                             ]"
+                            :data-umami-event="`Change language to ${language.name}`"
                             @click="handleLanguageChange(language)"
                         >
                             <span class="text-2xl shrink-0">{{ language.flag }}</span>
@@ -183,6 +185,7 @@
                                 isReloading ? 'opacity-50 cursor-not-allowed' : '',
                             ]"
                             :disabled="isReloading"
+                            :data-umami-event="`Change sidebar to ${option.label}`"
                             @click="updateSidebarVisibility(option.value)"
                         >
                             <component :is="option.icon" class="h-6 w-6" />
@@ -392,7 +395,12 @@
 
         <!-- Reset Button -->
         <div class="pt-4 border-t border-border">
-            <Button variant="outline" class="w-full" @click="resetAllSettings">
+            <Button
+                variant="outline"
+                class="w-full"
+                data-umami-event="Reset appearance settings"
+                @click="resetAllSettings"
+            >
                 <RotateCcw class="h-4 w-4 mr-2" />
                 {{ $t('account.resetAppearance') }}
             </Button>

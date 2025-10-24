@@ -53,7 +53,12 @@
                 >
                     <template #header-actions>
                         <div class="flex gap-2">
-                            <Button variant="outline" size="sm" @click="openCreateDrawer">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                data-umami-event="Upload image"
+                                @click="openCreateDrawer"
+                            >
                                 <Plus class="h-4 w-4 mr-2" />
                                 Upload Image
                             </Button>
@@ -105,13 +110,31 @@
 
                     <template #cell-actions="{ item }">
                         <div class="flex gap-2">
-                            <Button size="sm" variant="outline" @click="onView(item as unknown as Image)">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                data-umami-event="View image"
+                                :data-umami-event-image="(item as unknown as Image).name"
+                                @click="onView(item as unknown as Image)"
+                            >
                                 <Eye :size="16" />
                             </Button>
-                            <Button size="sm" variant="secondary" @click="onEdit(item as unknown as Image)">
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                data-umami-event="Edit image"
+                                :data-umami-event-image="(item as unknown as Image).name"
+                                @click="onEdit(item as unknown as Image)"
+                            >
                                 <Pencil :size="16" />
                             </Button>
-                            <Button size="sm" variant="outline" @click="onCopyUrl(item as unknown as Image)">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                data-umami-event="Copy image URL"
+                                :data-umami-event-image="(item as unknown as Image).name"
+                                @click="onCopyUrl(item as unknown as Image)"
+                            >
                                 <Copy :size="16" />
                             </Button>
                             <template v-if="confirmDeleteRow === (item as unknown as Image).id">

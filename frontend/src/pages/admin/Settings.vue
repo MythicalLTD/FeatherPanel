@@ -348,7 +348,14 @@
                                 <Button type="button" variant="outline" class="w-full sm:w-auto" @click="resetSettings">
                                     Reset
                                 </Button>
-                                <Button type="submit" :disabled="saving" class="w-full sm:w-auto">
+                                cd
+                                <Button
+                                    type="submit"
+                                    :disabled="saving"
+                                    class="w-full sm:w-auto"
+                                    data-umami-event="Save settings"
+                                    :data-umami-event-category="selectedCategory"
+                                >
                                     <Save v-if="!saving" class="h-4 w-4 mr-2" />
                                     <div
                                         v-else

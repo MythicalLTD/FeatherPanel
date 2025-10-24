@@ -65,7 +65,11 @@
                                     <span>Emails will be queued and sent via your SMTP configuration</span>
                                 </div>
                             </div>
-                            <Button class="bg-blue-600 hover:bg-blue-700 text-white" @click="openMassEmailDrawer">
+                            <Button
+                                class="bg-blue-600 hover:bg-blue-700 text-white"
+                                data-umami-event="Send mass email"
+                                @click="openMassEmailDrawer"
+                            >
                                 <Mail class="h-4 w-4 mr-2" />
                                 Send Mass Email
                             </Button>
@@ -93,7 +97,12 @@
                 >
                     <template #header-actions>
                         <div class="flex gap-2">
-                            <Button variant="outline" size="sm" @click="openCreateDrawer">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                data-umami-event="Create mail template"
+                                @click="openCreateDrawer"
+                            >
                                 <Plus class="h-4 w-4 mr-2" />
                                 Create Template
                             </Button>
@@ -135,10 +144,22 @@
 
                     <template #cell-actions="{ item }">
                         <div class="flex gap-2">
-                            <Button size="sm" variant="outline" @click="onPreview(item as unknown as MailTemplate)">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                data-umami-event="Preview mail template"
+                                :data-umami-event-template="(item as unknown as MailTemplate).name"
+                                @click="onPreview(item as unknown as MailTemplate)"
+                            >
                                 <Eye :size="16" />
                             </Button>
-                            <Button size="sm" variant="secondary" @click="onEdit(item as unknown as MailTemplate)">
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                data-umami-event="Edit mail template"
+                                :data-umami-event-template="(item as unknown as MailTemplate).name"
+                                @click="onEdit(item as unknown as MailTemplate)"
+                            >
                                 <Pencil :size="16" />
                             </Button>
 
@@ -147,6 +168,8 @@
                                     size="sm"
                                     variant="destructive"
                                     :loading="deleting"
+                                    data-umami-event="Confirm delete mail template"
+                                    :data-umami-event-template="(item as unknown as MailTemplate).name"
                                     @click="confirmDelete(item as unknown as MailTemplate)"
                                 >
                                     Confirm Delete
@@ -160,6 +183,8 @@
                                     size="sm"
                                     variant="destructive"
                                     :disabled="deleting"
+                                    data-umami-event="Delete mail template"
+                                    :data-umami-event-template="(item as unknown as MailTemplate).name"
                                     @click="onDelete(item as unknown as MailTemplate)"
                                 >
                                     <Trash2 :size="16" />

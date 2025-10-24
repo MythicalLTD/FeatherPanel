@@ -6,7 +6,14 @@
                 <h3 class="text-lg font-semibold">{{ $t('account.mail.title') }}</h3>
                 <p class="text-sm text-muted-foreground">{{ $t('account.mail.description') }}</p>
             </div>
-            <Button variant="outline" size="sm" class="w-full sm:w-auto" :disabled="loading" @click="fetchMails">
+            <Button
+                variant="outline"
+                size="sm"
+                class="w-full sm:w-auto"
+                :disabled="loading"
+                data-umami-event="Refresh mail list"
+                @click="fetchMails"
+            >
                 <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': loading }" />
                 {{ $t('account.mail.refresh') }}
             </Button>
@@ -36,7 +43,7 @@
             <div class="text-center">
                 <AlertCircle class="h-8 w-8 mx-auto mb-2 text-destructive" />
                 <p class="text-destructive mb-2">{{ $t('account.mail.loadError') }}</p>
-                <Button variant="outline" @click="fetchMails">
+                <Button variant="outline" data-umami-event="Retry mail fetch" @click="fetchMails">
                     {{ $t('account.mail.tryAgain') }}
                 </Button>
             </div>
@@ -58,6 +65,8 @@
                                     variant="outline"
                                     size="sm"
                                     class="h-8 px-3 text-xs"
+                                    data-umami-event="View mail details"
+                                    :data-umami-event-subject="mail.subject"
                                     @click="openMailModal(mail)"
                                 >
                                     <Mail class="h-3 w-3 mr-1" />

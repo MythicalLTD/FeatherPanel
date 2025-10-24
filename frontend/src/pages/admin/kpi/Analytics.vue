@@ -12,6 +12,7 @@
                 <!-- User Analytics -->
                 <Card
                     class="cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all group"
+                    data-umami-event="Navigate to user analytics"
                     @click="navigateTo('/admin/kpi/users')"
                 >
                     <CardHeader>
@@ -41,6 +42,7 @@
                 <!-- Activity Analytics -->
                 <Card
                     class="cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all group"
+                    data-umami-event="Navigate to activity analytics"
                     @click="navigateTo('/admin/kpi/activity')"
                 >
                     <CardHeader>
@@ -70,6 +72,7 @@
                 <!-- Infrastructure Analytics -->
                 <Card
                     class="cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all group"
+                    data-umami-event="Navigate to infrastructure analytics"
                     @click="navigateTo('/admin/kpi/infrastructure')"
                 >
                     <CardHeader>
@@ -99,6 +102,7 @@
                 <!-- Server Analytics -->
                 <Card
                     class="cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all group"
+                    data-umami-event="Navigate to server analytics"
                     @click="navigateTo('/admin/kpi/servers')"
                 >
                     <CardHeader>
@@ -128,6 +132,7 @@
                 <!-- Content Analytics -->
                 <Card
                     class="cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all group"
+                    data-umami-event="Navigate to content analytics"
                     @click="navigateTo('/admin/kpi/content')"
                 >
                     <CardHeader>
@@ -157,6 +162,7 @@
                 <!-- System Analytics -->
                 <Card
                     class="cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all group"
+                    data-umami-event="Navigate to system analytics"
                     @click="navigateTo('/admin/kpi/system')"
                 >
                     <CardHeader>

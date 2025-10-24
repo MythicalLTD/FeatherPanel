@@ -785,7 +785,13 @@
                                     Transferring a server will move it to a different node. The server will be stopped
                                     during the transfer and automatically started on the destination node once complete.
                                 </p>
-                                <Button type="button" variant="outline" @click="openTransferDialog">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    data-umami-event="Transfer server"
+                                    :data-umami-event-server="form.name"
+                                    @click="openTransferDialog"
+                                >
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
                                         class="h-4 w-4 mr-2"
@@ -822,6 +828,8 @@
                                     type="button"
                                     variant="destructive"
                                     :loading="suspending"
+                                    data-umami-event="Suspend server"
+                                    :data-umami-event-server="form.name"
                                     @click="suspendServer"
                                 >
                                     Suspend
@@ -831,11 +839,18 @@
                                     type="button"
                                     variant="outline"
                                     :loading="suspending"
+                                    data-umami-event="Unsuspend server"
+                                    :data-umami-event-server="form.name"
                                     @click="unsuspendServer"
                                 >
                                     Unsuspend
                                 </Button>
-                                <Button type="button" variant="outline" @click="$router.push('/admin/servers')">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    data-umami-event="Cancel server edit"
+                                    @click="$router.push('/admin/servers')"
+                                >
                                     Cancel
                                 </Button>
                                 <Button
@@ -843,6 +858,8 @@
                                     variant="default"
                                     :loading="submitting"
                                     class="bg-blue-600 hover:bg-blue-700"
+                                    data-umami-event="Update server"
+                                    :data-umami-event-server="form.name"
                                 >
                                     Update Server
                                 </Button>

@@ -7,11 +7,18 @@
                 <p class="text-sm text-muted-foreground">{{ $t('account.sshKeys.description') }}</p>
             </div>
             <div class="flex flex-col sm:flex-row gap-2">
-                <Button variant="outline" size="sm" class="w-full sm:w-auto" :disabled="loading" @click="fetchSshKeys">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="w-full sm:w-auto"
+                    :disabled="loading"
+                    data-umami-event="Refresh SSH keys"
+                    @click="fetchSshKeys"
+                >
                     <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': loading }" />
                     {{ $t('account.sshKeys.refresh') }}
                 </Button>
-                <Button class="w-full sm:w-auto" @click="showCreateModal = true">
+                <Button class="w-full sm:w-auto" data-umami-event="Create SSH key" @click="showCreateModal = true">
                     <Plus class="h-4 w-4 mr-2" />
                     {{ $t('account.sshKeys.addKey') }}
                 </Button>
@@ -64,12 +71,21 @@
                                     variant="outline"
                                     size="sm"
                                     class="h-8 px-3 text-xs"
+                                    data-umami-event="View SSH key details"
+                                    :data-umami-event-key="key.name"
                                     @click="viewKeyDetails(key)"
                                 >
                                     <Eye class="h-3 w-3 mr-1" />
                                     {{ $t('account.sshKeys.viewDetails') }}
                                 </Button>
-                                <Button variant="outline" size="sm" class="h-8 px-3 text-xs" @click="editKey(key)">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="h-8 px-3 text-xs"
+                                    data-umami-event="Edit SSH key"
+                                    :data-umami-event-key="key.name"
+                                    @click="editKey(key)"
+                                >
                                     <Edit class="h-3 w-3 mr-1" />
                                     {{ $t('account.sshKeys.edit') }}
                                 </Button>
@@ -100,6 +116,8 @@
                             variant="outline"
                             size="sm"
                             class="h-8 px-3 text-xs w-full sm:w-auto"
+                            data-umami-event="Restore SSH key"
+                            :data-umami-event-key="key.name"
                             @click="restoreKey(key)"
                         >
                             <RotateCcw class="h-3 w-3 mr-1" />
@@ -109,6 +127,8 @@
                             variant="destructive"
                             size="sm"
                             class="h-8 px-3 text-xs w-full sm:w-auto"
+                            data-umami-event="Delete SSH key"
+                            :data-umami-event-key="key.name"
                             @click="deleteKey(key)"
                         >
                             <Trash2 class="h-3 w-3 mr-1" />

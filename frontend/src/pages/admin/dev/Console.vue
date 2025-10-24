@@ -317,11 +317,19 @@ onUnmounted(() => {
                         <p class="text-muted-foreground">Execute commands on the server</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <Button variant="outline" @click="toggleSystemInfo">
+                        <Button variant="outline" data-umami-event="Toggle system info" @click="toggleSystemInfo">
                             {{ showSystemInfo ? 'Hide' : 'Show' }} System Info
                         </Button>
-                        <Button variant="outline" @click="clearTerminal">Clear Terminal</Button>
-                        <Button variant="outline" :disabled="isLoading" @click="fetchSystemInfo">Refresh</Button>
+                        <Button variant="outline" data-umami-event="Clear terminal" @click="clearTerminal"
+                            >Clear Terminal</Button
+                        >
+                        <Button
+                            variant="outline"
+                            :disabled="isLoading"
+                            data-umami-event="Refresh system info"
+                            @click="fetchSystemInfo"
+                            >Refresh</Button
+                        >
                     </div>
                 </div>
 

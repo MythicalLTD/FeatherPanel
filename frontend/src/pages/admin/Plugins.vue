@@ -64,12 +64,22 @@
                     <TabsContent value="installed">
                         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-4">
                             <div class="flex flex-wrap items-center gap-2">
-                                <Button variant="outline" class="w-full sm:w-auto" @click="fetchPlugins">
+                                <Button
+                                    variant="outline"
+                                    class="w-full sm:w-auto"
+                                    data-umami-event="Refresh plugins"
+                                    @click="fetchPlugins"
+                                >
                                     <RefreshCw class="h-4 w-4 mr-2" />
                                     Refresh
                                 </Button>
                                 <label class="inline-block w-full sm:w-auto">
-                                    <Button variant="outline" as="span" class="w-full sm:w-auto">
+                                    <Button
+                                        variant="outline"
+                                        as="span"
+                                        class="w-full sm:w-auto"
+                                        data-umami-event="Upload plugin"
+                                    >
                                         <Upload class="h-4 w-4 mr-2" />
                                         <span class="hidden sm:inline">Upload Plugin (.fpa)</span>
                                         <span class="sm:hidden">Upload (.fpa)</span>
@@ -86,6 +96,8 @@
                                 <Button
                                     :disabled="installingFromUrl || !installUrl"
                                     class="w-full sm:w-auto"
+                                    data-umami-event="Install plugin from URL"
+                                    :data-umami-event-url="installUrl"
                                     @click="openUrlInstallDialog"
                                 >
                                     <CloudDownload class="h-4 w-4 mr-2" />

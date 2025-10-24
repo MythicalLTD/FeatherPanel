@@ -17,7 +17,9 @@
             <!-- Error State -->
             <div v-else-if="error" class="text-center py-12">
                 <p class="text-red-500">{{ error }}</p>
-                <Button class="mt-4" @click="fetchAnalytics">Try Again</Button>
+                <Button class="mt-4" data-umami-event="Retry activity analytics" @click="fetchAnalytics"
+                    >Try Again</Button
+                >
             </div>
 
             <!-- Content -->
@@ -29,7 +31,7 @@
                         <p class="text-muted-foreground">Track and analyze user activities across your panel</p>
                     </div>
                     <div class="flex gap-2">
-                        <Button variant="outline" @click="fetchAnalytics">
+                        <Button variant="outline" data-umami-event="Refresh activity analytics" @click="fetchAnalytics">
                             <RefreshCw :size="16" class="mr-2" />
                             Refresh
                         </Button>

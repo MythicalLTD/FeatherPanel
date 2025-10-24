@@ -30,7 +30,7 @@
                     @page-change="changePage"
                 >
                     <template #header-actions>
-                        <Button variant="outline" size="sm" @click="openCreateDrawer">
+                        <Button variant="outline" size="sm" data-umami-event="Create role" @click="openCreateDrawer">
                             <Plus class="h-4 w-4 mr-2" />
                             Create Role
                         </Button>
@@ -52,16 +52,30 @@
 
                     <template #cell-actions="{ item }">
                         <div class="flex gap-2">
-                            <Button size="sm" variant="outline" @click="onView(item as Role)">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                data-umami-event="View role"
+                                :data-umami-event-role="(item as Role).name"
+                                @click="onView(item as Role)"
+                            >
                                 <Eye :size="16" />
                             </Button>
-                            <Button size="sm" variant="secondary" @click="onEdit(item as Role)">
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                data-umami-event="Edit role"
+                                :data-umami-event-role="(item as Role).name"
+                                @click="onEdit(item as Role)"
+                            >
                                 <Pencil :size="16" />
                             </Button>
                             <Button
                                 size="sm"
                                 variant="outline"
                                 :title="'Manage Permissions'"
+                                data-umami-event="Manage role permissions"
+                                :data-umami-event-role="(item as Role).name"
                                 @click="openPermissionsDrawer(item as Role)"
                             >
                                 <Shield :size="16" />
@@ -71,6 +85,8 @@
                                     size="sm"
                                     variant="destructive"
                                     :loading="deleting"
+                                    data-umami-event="Confirm delete role"
+                                    :data-umami-event-role="(item as Role).name"
                                     @click="confirmDelete(item as Role)"
                                 >
                                     Confirm Delete
@@ -80,7 +96,13 @@
                                 </Button>
                             </template>
                             <template v-else>
-                                <Button size="sm" variant="destructive" @click="onDelete(item as Role)">
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    data-umami-event="Delete role"
+                                    :data-umami-event-role="(item as Role).name"
+                                    @click="onDelete(item as Role)"
+                                >
                                     <Trash2 :size="16" />
                                 </Button>
                             </template>
@@ -250,13 +272,20 @@
 
                     <div class="flex justify-end gap-2 mt-4">
                         <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
-                        <Button type="submit" variant="default" :disabled="isSubmittingEdit">{{
-                            isSubmittingEdit ? 'Saving...' : 'Save'
-                        }}</Button>
+                        <Button
+                            type="submit"
+                            variant="default"
+                            :disabled="isSubmittingEdit"
+                            data-umami-event="Save role"
+                            :data-umami-event-role="editingRole?.name"
+                            >{{ isSubmittingEdit ? 'Saving...' : 'Save' }}</Button
+                        >
                         <Button
                             type="button"
                             variant="ghost"
                             :title="'Manage Permissions'"
+                            data-umami-event="Manage role permissions"
+                            :data-umami-event-role="editingRole?.name"
                             @click="openPermissionsDrawer(editingRole)"
                         >
                             <Shield :size="16" />

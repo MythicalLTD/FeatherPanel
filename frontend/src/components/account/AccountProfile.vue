@@ -88,7 +88,13 @@
                     <span v-else>{{ $t('account.saveChanges') }}</span>
                 </Button>
 
-                <Button type="button" variant="outline" :disabled="isSubmitting" @click="resetForm">
+                <Button
+                    type="button"
+                    variant="outline"
+                    :disabled="isSubmitting"
+                    data-umami-event="Reset profile form"
+                    @click="resetForm"
+                >
                     {{ $t('account.reset') }}
                 </Button>
             </div>

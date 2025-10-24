@@ -560,7 +560,12 @@
 
                         <!-- Form Actions -->
                         <div class="flex justify-end gap-4">
-                            <Button type="button" variant="outline" @click="$router.push('/admin/servers')">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                data-umami-event="Cancel server creation"
+                                @click="$router.push('/admin/servers')"
+                            >
                                 Cancel
                             </Button>
                             <Button
@@ -568,6 +573,9 @@
                                 variant="default"
                                 :loading="submitting"
                                 class="bg-green-600 hover:bg-green-700"
+                                data-umami-event="Create server"
+                                :data-umami-event-name="form.name"
+                                :data-umami-event-spell="selectedSpell?.name"
                             >
                                 Create Server
                             </Button>

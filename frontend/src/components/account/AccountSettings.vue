@@ -58,6 +58,7 @@
                         size="sm"
                         class="w-full sm:w-auto"
                         :disabled="isSubmitting"
+                        data-umami-event="Logout"
                         @click="handleLogout"
                     >
                         {{ $t('account.logout') }}

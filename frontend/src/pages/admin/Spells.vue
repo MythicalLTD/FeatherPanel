@@ -60,12 +60,17 @@
                         >
                             <template #header-actions>
                                 <div class="flex gap-2">
-                                    <Button variant="outline" size="sm" @click="openCreateDrawer">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        data-umami-event="Create spell"
+                                        @click="openCreateDrawer"
+                                    >
                                         <Plus class="h-4 w-4 mr-2" />
                                         Create Spell
                                     </Button>
                                     <label class="inline-block">
-                                        <Button variant="outline" size="sm" as="span">
+                                        <Button variant="outline" size="sm" as="span" data-umami-event="Import spell">
                                             <Upload class="h-4 w-4 mr-2" />
                                             Import Spell
                                         </Button>
@@ -98,13 +103,31 @@
                             </template>
                             <template #cell-actions="{ item }">
                                 <div class="flex gap-2">
-                                    <Button size="sm" variant="outline" @click="onView(item as Spell)">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        data-umami-event="View spell"
+                                        :data-umami-event-spell="(item as Spell).name"
+                                        @click="onView(item as Spell)"
+                                    >
                                         <Eye :size="16" />
                                     </Button>
-                                    <Button size="sm" variant="secondary" @click="onEdit(item as Spell)">
+                                    <Button
+                                        size="sm"
+                                        variant="secondary"
+                                        data-umami-event="Edit spell"
+                                        :data-umami-event-spell="(item as Spell).name"
+                                        @click="onEdit(item as Spell)"
+                                    >
                                         <Pencil :size="16" />
                                     </Button>
-                                    <Button size="sm" variant="outline" @click="onExport(item as Spell)">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        data-umami-event="Export spell"
+                                        :data-umami-event-spell="(item as Spell).name"
+                                        @click="onExport(item as Spell)"
+                                    >
                                         <Download :size="16" />
                                     </Button>
                                     <template v-if="confirmDeleteRow === (item as Spell).id">
@@ -112,6 +135,8 @@
                                             size="sm"
                                             variant="destructive"
                                             :loading="deleting"
+                                            data-umami-event="Confirm delete spell"
+                                            :data-umami-event-spell="(item as Spell).name"
                                             @click="confirmDelete(item as Spell)"
                                         >
                                             Confirm Delete
@@ -126,7 +151,13 @@
                                         </Button>
                                     </template>
                                     <template v-else>
-                                        <Button size="sm" variant="destructive" @click="onDelete(item as Spell)">
+                                        <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            data-umami-event="Delete spell"
+                                            :data-umami-event-spell="(item as Spell).name"
+                                            @click="onDelete(item as Spell)"
+                                        >
                                             <Trash2 :size="16" />
                                         </Button>
                                     </template>
@@ -316,6 +347,8 @@
                                                 <Button
                                                     size="sm"
                                                     :disabled="installingOnlineId === spell.identifier"
+                                                    data-umami-event="Install online spell"
+                                                    :data-umami-event-spell="spell.name"
                                                     @click="openOnlineInstallDialog(spell)"
                                                 >
                                                     <div

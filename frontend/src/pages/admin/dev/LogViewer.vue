@@ -176,10 +176,13 @@ onUnmounted(() => {
                         <p class="text-muted-foreground">View and manage application logs</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <Button variant="outline" :disabled="loading" @click="fetchLogs">Refresh</Button>
+                        <Button variant="outline" :disabled="loading" data-umami-event="Refresh logs" @click="fetchLogs"
+                            >Refresh</Button
+                        >
                         <Button
                             :variant="autoRefresh ? 'default' : 'outline'"
                             :disabled="loading"
+                            data-umami-event="Toggle auto refresh"
                             @click="toggleAutoRefresh"
                         >
                             <span
@@ -188,7 +191,13 @@ onUnmounted(() => {
                             ></span>
                             {{ autoRefresh ? 'Stop Auto' : 'Auto Refresh' }}
                         </Button>
-                        <Button variant="destructive" :disabled="loading" @click="clearLogs">Clear Logs</Button>
+                        <Button
+                            variant="destructive"
+                            :disabled="loading"
+                            data-umami-event="Clear logs"
+                            @click="clearLogs"
+                            >Clear Logs</Button
+                        >
                     </div>
                 </div>
 

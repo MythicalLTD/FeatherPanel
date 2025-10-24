@@ -8,7 +8,13 @@
                         <h1 class="text-3xl font-bold">Node Status Dashboard</h1>
                         <p class="text-muted-foreground mt-2">Real-time monitoring of all infrastructure nodes</p>
                     </div>
-                    <Button variant="outline" size="sm" :loading="loading" @click="refreshData">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        :loading="loading"
+                        data-umami-event="Refresh node status"
+                        @click="refreshData"
+                    >
                         <RefreshCw :size="16" class="mr-2" />
                         Refresh
                     </Button>

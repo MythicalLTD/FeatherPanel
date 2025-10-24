@@ -30,7 +30,7 @@
                     @page-change="changePage"
                 >
                     <template #header-actions>
-                        <Button variant="outline" size="sm" @click="openCreateDrawer">
+                        <Button variant="outline" size="sm" data-umami-event="Create realm" @click="openCreateDrawer">
                             <Plus class="h-4 w-4 mr-2" />
                             Create Realm
                         </Button>
@@ -39,13 +39,31 @@
                     <!-- Custom cell templates -->
                     <template #cell-actions="{ item }">
                         <div class="flex gap-2">
-                            <Button size="sm" variant="outline" @click="onView(item as Realm)">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                data-umami-event="View realm"
+                                :data-umami-event-realm="(item as Realm).name"
+                                @click="onView(item as Realm)"
+                            >
                                 <Eye :size="16" />
                             </Button>
-                            <Button size="sm" variant="secondary" @click="onEdit(item as Realm)">
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                data-umami-event="Edit realm"
+                                :data-umami-event-realm="(item as Realm).name"
+                                @click="onEdit(item as Realm)"
+                            >
                                 <Pencil :size="16" />
                             </Button>
-                            <Button size="sm" variant="secondary" @click="onViewSpells(item as Realm)">
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                data-umami-event="View realm spells"
+                                :data-umami-event-realm="(item as Realm).name"
+                                @click="onViewSpells(item as Realm)"
+                            >
                                 <Sparkles :size="16" />
                             </Button>
                             <template v-if="confirmDeleteRow === (item as Realm).id">
@@ -53,6 +71,8 @@
                                     size="sm"
                                     variant="destructive"
                                     :loading="deleting"
+                                    data-umami-event="Confirm delete realm"
+                                    :data-umami-event-realm="(item as Realm).name"
                                     @click="confirmDelete(item as Realm)"
                                 >
                                     Confirm Delete
@@ -62,7 +82,13 @@
                                 </Button>
                             </template>
                             <template v-else>
-                                <Button size="sm" variant="destructive" @click="onDelete(item as Realm)">
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    data-umami-event="Delete realm"
+                                    :data-umami-event-realm="(item as Realm).name"
+                                    @click="onDelete(item as Realm)"
+                                >
                                     <Trash2 :size="16" />
                                 </Button>
                             </template>

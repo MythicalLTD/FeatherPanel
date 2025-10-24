@@ -50,7 +50,13 @@
                 <p class="text-sm text-muted-foreground text-center sm:text-left">
                     {{ $t('account.activity.totalActivities', { count: totalActivities }) }}
                 </p>
-                <Button variant="outline" size="sm" class="w-full sm:w-auto" @click="fetchActivity">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="w-full sm:w-auto"
+                    data-umami-event="Refresh activity"
+                    @click="fetchActivity"
+                >
                     <RefreshCw class="h-4 w-4 mr-2" />
                     {{ $t('account.activity.refresh') }}
                 </Button>
