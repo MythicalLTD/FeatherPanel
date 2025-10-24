@@ -21,11 +21,12 @@
                         <h4 class="text-sm font-medium">{{ $t('account.twoFactorAuth') }}</h4>
                         <p class="text-sm text-muted-foreground">{{ $t('account.twoFactorHint') }}</p>
                     </div>
-                    <div class="flex items-center space-x-2 flex-shrink-0">
+                    <div class="flex items-center space-x-2 shrink-0">
                         <Checkbox
                             id="two_fa_enabled"
                             :checked="user?.two_fa_enabled === 'true'"
                             :disabled="isSubmitting"
+                            data-umami-event="2FA toggle"
                             @update:checked="handle2FAChange"
                         />
                         <Label for="two_fa_enabled">{{ $t('account.enabled') }}</Label>

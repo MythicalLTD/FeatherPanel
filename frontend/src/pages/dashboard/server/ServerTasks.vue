@@ -4,7 +4,7 @@
             <!-- Header with back button and create task button -->
             <div class="space-y-4">
                 <div class="flex items-center gap-2 sm:gap-4">
-                    <Button variant="outline" size="sm" class="flex-shrink-0" @click="$router.back()">
+                    <Button variant="outline" size="sm" class="shrink-0" @click="$router.back()">
                         <ArrowLeft class="h-4 w-4 sm:mr-2" />
                         <span class="hidden sm:inline">{{ t('common.back') }}</span>
                     </Button>
@@ -16,7 +16,7 @@
                     </div>
                 </div>
                 <div class="flex justify-end">
-                    <Button class="flex-1 sm:flex-none" @click="openCreateTaskDrawer">
+                    <Button class="flex-1 sm:flex-none" data-umami-event="Create task" @click="openCreateTaskDrawer">
                         <Plus class="h-4 w-4 sm:mr-2" />
                         <span class="hidden sm:inline">{{ t('serverTasks.createTask') }}</span>
                     </Button>
@@ -82,6 +82,8 @@
                                         variant="outline"
                                         class="h-8 w-8 p-0"
                                         :disabled="task.sequence_id <= 1"
+                                        data-umami-event="Move task up"
+                                        :data-umami-event-task="`${task.action}:${task.payload || 'no-payload'}`"
                                         @click="moveTaskUp(task)"
                                     >
                                         <ChevronUp class="h-3 w-3" />
@@ -91,6 +93,8 @@
                                         variant="outline"
                                         class="h-8 w-8 p-0"
                                         :disabled="task.sequence_id >= sortedTasks.length"
+                                        data-umami-event="Move task down"
+                                        :data-umami-event-task="`${task.action}:${task.payload || 'no-payload'}`"
                                         @click="moveTaskDown(task)"
                                     >
                                         <ChevronDown class="h-3 w-3" />
@@ -114,6 +118,8 @@
                                         size="sm"
                                         variant="outline"
                                         class="h-8 w-8 p-0"
+                                        data-umami-event="Edit task"
+                                        :data-umami-event-task="`${task.action}:${task.payload || 'no-payload'}`"
                                         @click="openEditTaskDrawer(task)"
                                     >
                                         <Pencil class="h-3 w-3" />
@@ -122,6 +128,8 @@
                                         size="sm"
                                         variant="destructive"
                                         class="h-8 w-8 p-0"
+                                        data-umami-event="Delete task"
+                                        :data-umami-event-task="`${task.action}:${task.payload || 'no-payload'}`"
                                         @click="deleteTask(task)"
                                     >
                                         <Trash2 class="h-3 w-3" />

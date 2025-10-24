@@ -92,7 +92,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <UsersIcon class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <UsersIcon class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Managing Roles</div>
                                     <p>
@@ -106,7 +106,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <KeyRound class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <KeyRound class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Permissions</div>
                                     <p>
@@ -120,7 +120,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Palette class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <Palette class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Role Color & Badges</div>
                                     <p>
@@ -134,7 +134,7 @@
                     <Card class="md:col-span-2 lg:col-span-3">
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <HelpCircle class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <HelpCircle class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Tips & Best Practices</div>
                                     <ul class="list-disc list-inside space-y-1">

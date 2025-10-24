@@ -5,7 +5,7 @@
         <!-- Avatar Display Area -->
         <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
             <!-- Current Avatar -->
-            <div class="relative flex-shrink-0">
+            <div class="relative shrink-0">
                 <div
                     class="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-gray-200 dark:border-gray-700 overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center"
                     :class="{ 'border-primary': hasNewFile }"
@@ -78,7 +78,7 @@
                     <div v-if="selectedFile" class="text-xs sm:text-sm text-muted-foreground">
                         <div class="flex items-center gap-2 flex-wrap">
                             <svg
-                                class="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0"
+                                class="w-3 h-3 sm:w-4 sm:h-4 shrink-0"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"

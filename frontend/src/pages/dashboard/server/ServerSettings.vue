@@ -70,6 +70,7 @@
                                 size="sm"
                                 :disabled="saving || !hasChanges"
                                 class="flex items-center gap-2"
+                                data-umami-event="Save server settings"
                                 @click="saveServerInfo"
                             >
                                 <Save :class="['h-4 w-4', saving && 'animate-pulse']" />
@@ -247,7 +248,7 @@
                         <!-- Info Box -->
                         <div class="p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg">
                             <div class="flex items-start gap-3">
-                                <Info class="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                                <Info class="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
                                 <div class="flex-1 min-w-0">
                                     <h4 class="font-semibold mb-2 text-sm">{{ t('serverSettings.sftpInfoTitle') }}</h4>
                                     <p class="text-sm text-muted-foreground mb-3">
@@ -306,7 +307,7 @@
                         >
                             <div class="flex items-start gap-3">
                                 <div
-                                    class="h-10 w-10 rounded-lg bg-orange-500/20 flex items-center justify-center flex-shrink-0"
+                                    class="h-10 w-10 rounded-lg bg-orange-500/20 flex items-center justify-center shrink-0"
                                 >
                                     <AlertTriangle class="h-5 w-5 text-orange-600 dark:text-orange-400" />
                                 </div>
@@ -362,28 +363,22 @@
                     <div class="space-y-4">
                         <div class="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
                             <div class="flex items-start gap-3">
-                                <AlertTriangle class="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+                                <AlertTriangle class="h-5 w-5 text-destructive mt-0.5 shrink-0" />
                                 <div class="text-sm min-w-0">
                                     <p class="font-semibold text-destructive mb-2">
                                         {{ t('serverSettings.reinstallWarningTitle') }}
                                     </p>
                                     <ul class="space-y-1.5 text-muted-foreground">
                                         <li class="flex items-start gap-2">
-                                            <div
-                                                class="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 flex-shrink-0"
-                                            ></div>
+                                            <div class="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 shrink-0"></div>
                                             {{ t('serverSettings.reinstallWarning1') }}
                                         </li>
                                         <li class="flex items-start gap-2">
-                                            <div
-                                                class="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 flex-shrink-0"
-                                            ></div>
+                                            <div class="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 shrink-0"></div>
                                             {{ t('serverSettings.reinstallWarning2') }}
                                         </li>
                                         <li class="flex items-start gap-2">
-                                            <div
-                                                class="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 flex-shrink-0"
-                                            ></div>
+                                            <div class="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 shrink-0"></div>
                                             {{ t('serverSettings.reinstallWarning3') }}
                                         </li>
                                     </ul>

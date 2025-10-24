@@ -257,7 +257,14 @@ async function onSubmit(e: Event) {
                         v-model="form.turnstile_token"
                         :site-key="settingsStore.turnstile_key_pub as string"
                     />
-                    <Button type="submit" class="w-full" :disabled="loading">
+                    <Button
+                        type="submit"
+                        class="w-full"
+                        :disabled="loading"
+                        data-umami-event="Register attempt"
+                        :data-umami-event-email="form.email"
+                        :data-umami-event-username="form.username"
+                    >
                         <span v-if="loading">{{ $t('auth.registering') }}</span>
                         <span v-else>{{ $t('auth.register') }}</span>
                     </Button>
@@ -265,7 +272,11 @@ async function onSubmit(e: Event) {
                     <div v-if="success" class="text-center text-sm text-green-500">{{ success }}</div>
                     <div class="text-center text-sm">
                         {{ $t('auth.alreadyAccount') }}
-                        <router-link to="/auth/login" class="underline underline-offset-4">
+                        <router-link
+                            to="/auth/login"
+                            class="underline underline-offset-4"
+                            data-umami-event="Login link"
+                        >
                             {{ $t('auth.login') }}
                         </router-link>
                     </div>

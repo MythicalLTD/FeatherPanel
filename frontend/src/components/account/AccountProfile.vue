@@ -83,7 +83,7 @@
             </div>
 
             <div class="flex gap-3 pt-4">
-                <Button type="submit" :disabled="isSubmitting" class="min-w-[120px]">
+                <Button type="submit" :disabled="isSubmitting" class="min-w-[120px]" data-umami-event="Profile update">
                     <span v-if="isSubmitting">{{ $t('account.saving') }}</span>
                     <span v-else>{{ $t('account.saveChanges') }}</span>
                 </Button>

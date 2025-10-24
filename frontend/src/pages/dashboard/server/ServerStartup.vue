@@ -25,6 +25,7 @@
                             size="sm"
                             :disabled="saving || !hasChanges || hasErrors"
                             class="flex items-center gap-2"
+                            data-umami-event="Save startup settings"
                             @click="saveChanges"
                         >
                             <Save :class="['h-4 w-4', saving && 'animate-pulse']" />
@@ -110,7 +111,7 @@
                                     @click="form.image = img"
                                 >
                                     <div class="flex items-center gap-2 w-full">
-                                        <Container class="h-3 w-3 flex-shrink-0" />
+                                        <Container class="h-3 w-3 shrink-0" />
                                         <span class="truncate text-left">{{ img }}</span>
                                     </div>
                                 </Button>
@@ -164,7 +165,7 @@
                                         </div>
                                         <p class="text-xs text-muted-foreground line-clamp-2">{{ v.description }}</p>
                                     </div>
-                                    <Badge variant="secondary" class="text-[10px] px-2 py-0.5 font-mono flex-shrink-0">
+                                    <Badge variant="secondary" class="text-[10px] px-2 py-0.5 font-mono shrink-0">
                                         {{ v.env_variable }}
                                     </Badge>
                                 </div>
@@ -189,14 +190,14 @@
                                         v-if="variableErrors[v.variable_id]"
                                         class="flex items-center gap-1.5 text-xs text-red-500"
                                     >
-                                        <AlertCircle class="h-3 w-3 flex-shrink-0" />
+                                        <AlertCircle class="h-3 w-3 shrink-0" />
                                         <span>{{ variableErrors[v.variable_id] }}</span>
                                     </div>
                                     <div
                                         v-if="v.rules"
                                         class="flex items-start gap-1.5 text-[11px] text-muted-foreground"
                                     >
-                                        <Info class="h-3 w-3 flex-shrink-0 mt-0.5" />
+                                        <Info class="h-3 w-3 shrink-0 mt-0.5" />
                                         <code class="bg-muted px-2 py-0.5 rounded flex-1 break-all">{{ v.rules }}</code>
                                     </div>
                                 </div>

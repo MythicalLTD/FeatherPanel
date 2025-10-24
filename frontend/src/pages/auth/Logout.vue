@@ -50,7 +50,7 @@
             <p class="text-sm text-muted-foreground mb-3">
                 {{ $t('auth.redirectDelay') }}
             </p>
-            <Button variant="outline" size="sm" @click="manualRedirect">
+            <Button variant="outline" size="sm" data-umami-event="Manual logout redirect" @click="manualRedirect">
                 {{ $t('auth.continueToLogin') }}
             </Button>
         </div>

@@ -194,17 +194,17 @@ watchEffect(() => {
                 <div class="flex items-center gap-2 px-3 sm:px-4 w-full">
                     <SidebarTrigger
                         v-if="isSidebarVisible"
-                        class="-ml-1 transition-transform duration-200 hover:scale-105 flex-shrink-0"
+                        class="-ml-1 transition-transform duration-200 hover:scale-105 shrink-0"
                     />
                     <Separator
                         v-if="isSidebarVisible"
                         orientation="vertical"
-                        class="mr-2 h-4 transition-opacity duration-200 flex-shrink-0"
+                        class="mr-2 h-4 transition-opacity duration-200 shrink-0"
                     />
                     <Breadcrumb class="min-w-0 flex-1">
                         <BreadcrumbList class="flex-wrap">
                             <template v-for="(crumb, i) in breadcrumbs" :key="i">
-                                <BreadcrumbItem v-if="!crumb.isCurrent" class="flex-shrink-0">
+                                <BreadcrumbItem v-if="!crumb.isCurrent" class="shrink-0">
                                     <router-link
                                         :to="crumb.href || '#'"
                                         class="transition-colors duration-200 hover:text-primary text-sm sm:text-base truncate"
@@ -212,14 +212,14 @@ watchEffect(() => {
                                         {{ crumb.text }}
                                     </router-link>
                                 </BreadcrumbItem>
-                                <BreadcrumbItem v-else class="flex-shrink-0">
+                                <BreadcrumbItem v-else class="shrink-0">
                                     <BreadcrumbPage
                                         class="transition-colors duration-200 text-sm sm:text-base font-medium truncate"
                                     >
                                         {{ crumb.text }}
                                     </BreadcrumbPage>
                                 </BreadcrumbItem>
-                                <BreadcrumbSeparator v-if="i < (breadcrumbs?.length || 0) - 1" class="flex-shrink-0" />
+                                <BreadcrumbSeparator v-if="i < (breadcrumbs?.length || 0) - 1" class="shrink-0" />
                             </template>
                         </BreadcrumbList>
                     </Breadcrumb>

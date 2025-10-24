@@ -607,7 +607,7 @@
                             {{ item.description || 'No description available' }}
                         </p>
                     </div>
-                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
+                    <div v-if="isSelected" class="shrink-0 ml-2 sm:ml-4">
                         <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
                 </div>
@@ -641,7 +641,7 @@
                         <h4 class="font-medium truncate text-sm sm:text-base">{{ item.username }}</h4>
                         <p class="text-xs sm:text-sm text-muted-foreground truncate">{{ item.email }}</p>
                     </div>
-                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
+                    <div v-if="isSelected" class="shrink-0 ml-2 sm:ml-4">
                         <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
                 </div>
@@ -675,7 +675,7 @@
                         <h4 class="font-medium truncate">{{ item.name }}</h4>
                         <p class="text-sm text-muted-foreground truncate">{{ item.fqdn || 'No FQDN' }}</p>
                     </div>
-                    <div v-if="isSelected" class="flex-shrink-0 ml-4">
+                    <div v-if="isSelected" class="shrink-0 ml-4">
                         <Check class="h-5 w-5 text-primary" />
                     </div>
                 </div>
@@ -711,7 +711,7 @@
                             {{ item.description || 'No description available' }}
                         </p>
                     </div>
-                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
+                    <div v-if="isSelected" class="shrink-0 ml-2 sm:ml-4">
                         <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
                 </div>
@@ -747,7 +747,7 @@
                             {{ item.description || 'No description available' }}
                         </p>
                     </div>
-                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
+                    <div v-if="isSelected" class="shrink-0 ml-2 sm:ml-4">
                         <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
                 </div>
@@ -781,7 +781,7 @@
                         <h4 class="font-medium truncate text-sm sm:text-base">{{ item.ip }}:{{ item.port }}</h4>
                         <p class="text-xs sm:text-sm text-muted-foreground truncate">Node ID: {{ item.node_id }}</p>
                     </div>
-                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
+                    <div v-if="isSelected" class="shrink-0 ml-2 sm:ml-4">
                         <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
                 </div>

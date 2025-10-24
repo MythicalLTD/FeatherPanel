@@ -161,18 +161,18 @@ const sendServerCommand = async (command: 'start' | 'stop' | 'restart' | 'kill')
 
 <template>
     <Sidebar v-if="isSidebarVisible" v-bind="props" class="overflow-hidden">
-        <SidebarHeader class="flex-shrink-0 border-b border-border/50">
+        <SidebarHeader class="shrink-0 border-b border-border/50">
             <div
                 class="flex items-center px-2 py-2.5 sm:py-3"
                 :class="state === 'collapsed' ? 'justify-center' : 'px-3'"
             >
                 <div
-                    class="flex items-center gap-2.5 min-w-0 cursor-pointer flex-shrink-0 transition-all"
+                    class="flex items-center gap-2.5 min-w-0 cursor-pointer shrink-0 transition-all"
                     :class="state === 'collapsed' ? 'justify-center' : ''"
                     @click="router.push('/')"
                 >
                     <div
-                        class="flex items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex-shrink-0 border border-primary/10"
+                        class="flex items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 shrink-0 border border-primary/10"
                         :class="state === 'collapsed' ? 'p-2' : 'p-1.5'"
                     >
                         <img
@@ -312,7 +312,7 @@ const sendServerCommand = async (command: 'start' | 'stop' | 'restart' | 'kill')
                 <NavMain name="Developer Mode (Debug)" :items="data.navDebug" />
             </template>
         </SidebarContent>
-        <SidebarFooter class="px-2 py-2 flex-shrink-0 border-t border-border/50">
+        <SidebarFooter class="px-2 py-2 shrink-0 border-t border-border/50">
             <NavUser :user="user" />
         </SidebarFooter>
         <SidebarRail />

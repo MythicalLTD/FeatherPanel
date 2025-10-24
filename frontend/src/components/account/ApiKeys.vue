@@ -27,7 +27,7 @@
         <!-- API Keys Information -->
         <div class="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <div class="flex items-start gap-3">
-                <Info class="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <Info class="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
                 <div class="space-y-2">
                     <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200">
                         {{ $t('account.apiKeys.importantInfo.title') }}
@@ -89,7 +89,7 @@
                                 }}</span>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 ml-2 flex-shrink-0">
+                        <div class="flex items-center gap-2 ml-2 shrink-0">
                             <Badge variant="default" class="text-xs">
                                 {{ $t('account.apiKeys.statuses.active') }}
                             </Badge>
@@ -164,9 +164,7 @@
                             class="mt-3 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md"
                         >
                             <div class="flex items-start gap-2">
-                                <AlertTriangle
-                                    class="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0"
-                                />
+                                <AlertTriangle class="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
                                 <div class="text-sm text-amber-700 dark:text-amber-300">
                                     <p class="font-medium mb-1">{{ $t('account.apiKeys.modalWarning.title') }}</p>
                                     <p>{{ $t('account.apiKeys.modalWarning.description') }}</p>
@@ -275,7 +273,7 @@
                                     {{ $t('account.apiKeys.copyKey') }}
                                 </Button>
                                 <div class="flex items-center gap-2">
-                                    <AlertTriangle class="h-4 w-4 text-yellow-500 flex-shrink-0" />
+                                    <AlertTriangle class="h-4 w-4 text-yellow-500 shrink-0" />
                                     <span class="text-xs text-yellow-600">{{
                                         $t('account.apiKeys.privateKeyWarning')
                                     }}</span>

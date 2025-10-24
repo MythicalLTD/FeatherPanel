@@ -73,7 +73,7 @@
                                             {{ getItemDescription(item) }}
                                         </p>
                                     </div>
-                                    <div v-if="isSelected(item)" class="flex-shrink-0 ml-2 sm:ml-4">
+                                    <div v-if="isSelected(item)" class="shrink-0 ml-2 sm:ml-4">
                                         <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                                     </div>
                                 </div>
@@ -109,7 +109,7 @@
                                 @click="goToPage(page)"
                                 :variant="page === currentPage ? 'default' : 'outline'"
                                 size="sm"
-                                class="w-8 h-8 p-0 flex-shrink-0"
+                                class="w-8 h-8 p-0 shrink-0"
                             >
                                 {{ page }}
                             </Button>

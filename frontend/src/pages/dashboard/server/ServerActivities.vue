@@ -131,7 +131,7 @@
                         <CardContent class="p-4">
                             <div class="flex items-start gap-4">
                                 <!-- Event Icon -->
-                                <div class="flex-shrink-0">
+                                <div class="shrink-0">
                                     <div
                                         class="w-12 h-12 rounded-lg flex items-center justify-center transition-colors"
                                         :class="getEventIconClass(activity.event)"
@@ -199,7 +199,7 @@
                                         </div>
 
                                         <!-- Action Button -->
-                                        <div class="flex-shrink-0">
+                                        <div class="shrink-0">
                                             <Button
                                                 variant="outline"
                                                 size="sm"

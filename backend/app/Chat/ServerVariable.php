@@ -375,6 +375,7 @@ class ServerVariable
             foreach ($variables as $variable) {
                 if (!isset($variable['variable_id']) || !isset($variable['variable_value'])) {
                     $pdo->rollBack();
+
                     return false;
                 }
 
@@ -385,10 +386,11 @@ class ServerVariable
                     // Update existing variable
                     $existingVar = $existingVariableMap[$variableId];
                     $updateData = ['variable_value' => $variableValue];
-                    
+
                     $result = self::updateServerVariable((int) $existingVar['id'], $updateData);
                     if (!$result) {
                         $pdo->rollBack();
+
                         return false;
                     }
                 } else {
@@ -402,16 +404,19 @@ class ServerVariable
                     $result = self::createServerVariable($data);
                     if (!$result) {
                         $pdo->rollBack();
+
                         return false;
                     }
                 }
             }
 
             $pdo->commit();
+
             return true;
         } catch (\Exception $e) {
             $pdo->rollBack();
             App::getInstance(true)->getLogger()->error('Failed to update specific server variables: ' . $e->getMessage());
+
             return false;
         }
     }

@@ -63,7 +63,40 @@ export const useSettingsStore = defineStore('settings', {
                 if (json.success && json.data?.settings) {
                     this.settings = json.data.settings;
                     this.loaded = true;
-                    // Log what settings yall server (store in state)
+
+                    // Only set localStorage values if they don't exist or if server has different values
+                    // This preserves custom branding that users might have set
+                    const currentAppName = localStorage.getItem('appName');
+                    const currentAppLogoDark = localStorage.getItem('appLogoDark');
+                    const currentAppLogoWhite = localStorage.getItem('appLogoWhite');
+
+                    // Only set telemetry if it doesn't exist (preserve user choice)
+                    const currentTelemetry = localStorage.getItem('telemetry');
+                    if (json.data.settings.telemetry !== undefined && !currentTelemetry) {
+                        localStorage.setItem('telemetry', json.data.settings.telemetry);
+                    }
+
+                    // Only set appName if it doesn't exist or if server has a different value
+                    if (json.data.settings.app_name && (!currentAppName || currentAppName === 'FeatherPanel')) {
+                        localStorage.setItem('appName', json.data.settings.app_name);
+                    }
+
+                    // Only set appLogoDark if it doesn't exist or if server has a different value
+                    if (
+                        json.data.settings.app_logo_dark &&
+                        (!currentAppLogoDark ||
+                            currentAppLogoDark === 'https://cdn.mythical.systems/featherpanel/logo.png')
+                    ) {
+                        localStorage.setItem('appLogoDark', json.data.settings.app_logo_dark);
+                    }
+
+                    // Only set appLogoWhite if it doesn't exist or if server has a different value
+                    if (
+                        json.data.settings.app_logo_white &&
+                        (!currentAppLogoWhite || currentAppLogoWhite === 'https://github.com/mythicalltd.png')
+                    ) {
+                        localStorage.setItem('appLogoWhite', json.data.settings.app_logo_white);
+                    }
                 } else {
                     console.warn('Settings API response invalid:', json);
                     this.settings = null;
@@ -81,11 +114,50 @@ export const useSettingsStore = defineStore('settings', {
             this.settings = settings;
             this.loaded = true;
         },
+
+        /**
+         * Set custom branding that won't be overwritten by server settings
+         *
+         * Usage:
+         * const settingsStore = useSettingsStore();
+         * settingsStore.setCustomBranding('My Custom App', 'https://example.com/logo-dark.png', 'https://example.com/logo-white.png');
+         *
+         * This will persist across page reloads and won't be overwritten by server settings
+         */
+        setCustomBranding(appName: string, appLogoDark: string, appLogoWhite: string) {
+            localStorage.setItem('appName', appName);
+            localStorage.setItem('appLogoDark', appLogoDark);
+            localStorage.setItem('appLogoWhite', appLogoWhite);
+        },
+
+        /**
+         * Clear custom branding and revert to server defaults
+         *
+         * Usage:
+         * const settingsStore = useSettingsStore();
+         * settingsStore.clearCustomBranding();
+         */
+        clearCustomBranding() {
+            localStorage.removeItem('appName');
+            localStorage.removeItem('appLogoDark');
+            localStorage.removeItem('appLogoWhite');
+        },
+
+        /**
+         * Set telemetry preference
+         *
+         * Usage:
+         * const settingsStore = useSettingsStore();
+         * settingsStore.setTelemetry(false); // Disable telemetry
+         */
+        setTelemetry(enabled: boolean) {
+            localStorage.setItem('telemetry', enabled.toString());
+        },
     },
     getters: {
         appVersion: (state) => state.settings?.app_version || '0.0.8',
         appName: (state) => state.settings?.app_name || 'FeatherPanel',
-        appLogo: (state) => state.settings?.app_logo || 'https://github.com/mythicalltd.png',
+        appLogo: (state) => state.settings?.app_logo_dark || 'https://github.com/mythicalltd.png',
         appLogoWhite: (state) => state.settings?.app_logo_white || 'https://github.com/mythicalltd.png',
         appDeveloperMode: (state) => getBooleanSetting(state, 'app_developer_mode'),
         appLang: (state) => state.settings?.app_lang || 'en_US',
@@ -99,5 +171,11 @@ export const useSettingsStore = defineStore('settings', {
         smtpEnabled: (state) => getBooleanSetting(state, 'smtp_enabled'),
         registrationEnabled: (state) => getBooleanSetting(state, 'registration_enabled'),
         requireTwoFaAdmins: (state) => getBooleanSetting(state, 'require_two_fa_admins'),
+
+        // Custom branding getters that check localStorage first
+        customAppName: () => localStorage.getItem('appName') || null,
+        customAppLogoDark: () => localStorage.getItem('appLogoDark') || null,
+        customAppLogoWhite: () => localStorage.getItem('appLogoWhite') || null,
+        customTelemetry: () => localStorage.getItem('telemetry') || null,
     },
 });

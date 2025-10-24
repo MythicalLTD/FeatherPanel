@@ -33,6 +33,17 @@ export default typescriptEslint.config(
         },
         rules: {
             'vue/multi-word-component-names': 'off',
+            // Ignore suggestCanonicalClasses for shrink-0/shrink-0
+            'unocss/suggest-canonical-classes': [
+                'warn',
+                {
+                    ignore: [
+                        // Ignore recommendations to replace shrink-0 with shrink-0 and vice versa
+                        { from: 'shrink-0', to: 'shrink-0' },
+                        { from: 'shrink-0', to: 'shrink-0' },
+                    ],
+                },
+            ],
         },
     },
     // TypeScript files

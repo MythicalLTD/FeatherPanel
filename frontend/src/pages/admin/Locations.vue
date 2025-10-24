@@ -74,7 +74,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <MapPin class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <MapPin class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">What are Locations?</div>
                                     <p>
@@ -88,7 +88,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Flag class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <Flag class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Examples</div>
                                     <ul class="list-disc list-inside space-y-1">
@@ -106,7 +106,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Rocket class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <Rocket class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Getting started</div>
                                     <ol class="list-decimal list-inside space-y-1">

@@ -111,7 +111,7 @@
                                     <!-- Header Section -->
                                     <div class="flex items-start gap-3 mb-3">
                                         <div
-                                            class="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden flex-shrink-0 border border-primary/10"
+                                            class="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden shrink-0 border border-primary/10"
                                         >
                                             <img
                                                 v-if="plugin.icon"
@@ -146,7 +146,7 @@
                                     <!-- Metadata Section -->
                                     <div class="space-y-2.5 mb-4 flex-1">
                                         <div v-if="plugin.author" class="flex items-center gap-2 text-sm">
-                                            <User class="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                                            <User class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                             <span class="truncate text-muted-foreground">{{ plugin.author }}</span>
                                         </div>
 
@@ -166,7 +166,7 @@
                                         </div>
 
                                         <div v-if="plugin.website" class="flex items-center gap-2 text-sm">
-                                            <Globe class="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                                            <Globe class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                             <a
                                                 :href="plugin.website"
                                                 target="_blank"
@@ -369,7 +369,7 @@
                                     <!-- Header Section -->
                                     <div class="flex items-start gap-3 mb-3">
                                         <div
-                                            class="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden flex-shrink-0 border border-primary/10"
+                                            class="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden shrink-0 border border-primary/10"
                                         >
                                             <img
                                                 v-if="addon.icon"
@@ -444,7 +444,7 @@
                                     <!-- Metadata Section -->
                                     <div class="space-y-2 mb-3 flex-1">
                                         <div v-if="addon.author" class="flex items-center gap-2 text-sm">
-                                            <User class="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                                            <User class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                             <span class="truncate text-muted-foreground">{{ addon.author }}</span>
                                         </div>
 
@@ -529,7 +529,7 @@
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <Card>
                         <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Globe class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <Globe class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">Online Repository</div>
                                 <p>
@@ -541,7 +541,7 @@
                     </Card>
                     <Card>
                         <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Upload class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <Upload class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">Install & Upload</div>
                                 <p>
@@ -553,7 +553,7 @@
                     </Card>
                     <Card class="md:col-span-2 lg:col-span-1">
                         <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <AlertCircle class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <AlertCircle class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">Security & Liability</div>
                                 <p>
@@ -566,7 +566,7 @@
                     </Card>
                     <Card class="md:col-span-2 lg:col-span-3">
                         <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Puzzle class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <Puzzle class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">A careful reminder</div>
                                 <p>

@@ -465,7 +465,7 @@
                 <CardContent class="p-4">
                     <div class="flex items-center gap-4">
                         <div
-                            class="h-12 w-12 rounded-lg flex items-center justify-center flex-shrink-0 text-2xl"
+                            class="h-12 w-12 rounded-lg flex items-center justify-center shrink-0 text-2xl"
                             :class="{
                                 'bg-yellow-500/10': wingsConnectionInfo.status === 'error',
                                 'bg-red-500/10': wingsConnectionInfo.status === 'disconnected',
@@ -482,7 +482,7 @@
                                 {{ wingsConnectionInfo.message }}
                             </p>
                         </div>
-                        <div v-if="wingsConnectionInfo.status === 'connecting'" class="flex-shrink-0">
+                        <div v-if="wingsConnectionInfo.status === 'connecting'" class="shrink-0">
                             <div
                                 class="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
                             ></div>
@@ -514,6 +514,7 @@
                                 variant="outline"
                                 size="sm"
                                 class="hidden sm:flex items-center gap-2"
+                                data-umami-event="Console history"
                                 @click="showCommandHistory = true"
                             >
                                 <Clock class="h-3.5 w-3.5" />
@@ -526,12 +527,19 @@
                                 :disabled="
                                     uploading || !(server?.status === 'running' || server?.status === 'starting')
                                 "
+                                data-umami-event="Upload logs"
                                 @click="uploadConsoleLogs"
                             >
                                 <Upload class="h-3.5 w-3.5" />
                                 <span class="text-xs sm:text-sm">{{ t('serverLogs.uploadToMcloGs') }}</span>
                             </Button>
-                            <Button variant="outline" size="sm" class="h-8 w-8 p-0" @click="clearTerminal">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                class="h-8 w-8 p-0"
+                                data-umami-event="Clear console"
+                                @click="clearTerminal"
+                            >
                                 <Trash2 class="h-3.5 w-3.5" />
                             </Button>
                         </div>

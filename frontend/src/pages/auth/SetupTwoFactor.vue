@@ -147,7 +147,7 @@ async function verify2FA(e: Event) {
                                 :site-key="settingsStore.turnstile_key_pub as string"
                             />
                         </div>
-                        <Button type="submit" class="w-full" :disabled="loading">
+                        <Button type="submit" class="w-full" :disabled="loading" data-umami-event="2FA setup attempt">
                             <span v-if="loading">{{ t('api_errors.TWO_FACTOR_LOADING') }}</span>
                             <span v-else>{{ t('api_errors.TWO_FACTOR_VERIFY_BUTTON') }}</span>
                         </Button>

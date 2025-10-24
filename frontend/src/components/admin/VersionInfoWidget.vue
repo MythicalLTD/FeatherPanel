@@ -15,7 +15,7 @@
         >
             <div class="flex items-start gap-4">
                 <div
-                    class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg flex-shrink-0"
+                    class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shrink-0"
                 >
                     <Sparkles :size="24" class="text-white" />
                 </div>
@@ -112,7 +112,7 @@
             >
                 <div class="flex items-start gap-4">
                     <div
-                        class="h-12 w-12 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg flex-shrink-0"
+                        class="h-12 w-12 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shrink-0"
                     >
                         <AlertTriangle :size="24" class="text-white" />
                     </div>

@@ -14,6 +14,7 @@
                 size="sm"
                 class="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                 :disabled="isStartDisabled || loading"
+                data-umami-event="Start server"
                 @click="$emit('start')"
             >
                 <Power class="h-4 w-4 mr-2" />
@@ -25,6 +26,7 @@
                 size="sm"
                 class="w-full sm:w-auto"
                 :disabled="isRestartDisabled || loading"
+                data-umami-event="Restart server"
                 @click="$emit('restart')"
             >
                 <RefreshCw class="h-4 w-4 mr-2" />
@@ -36,6 +38,7 @@
                 size="sm"
                 class="w-full sm:w-auto"
                 :disabled="isStopDisabled || loading"
+                data-umami-event="Stop server"
                 @click="$emit('stop')"
             >
                 <Square class="h-4 w-4 mr-2" />
@@ -47,6 +50,7 @@
                 size="sm"
                 class="bg-red-800 hover:bg-red-900 w-full sm:w-auto"
                 :disabled="isKillDisabled || loading"
+                data-umami-event="Kill server"
                 @click="$emit('kill')"
             >
                 <Zap class="h-4 w-4 mr-2" />

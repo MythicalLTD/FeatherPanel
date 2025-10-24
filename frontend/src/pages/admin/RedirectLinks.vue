@@ -179,7 +179,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Link class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <Link class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">What are Redirect Links?</div>
                                     <p>
@@ -194,7 +194,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Hash class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <Hash class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Nice redirect pages</div>
                                     <p>

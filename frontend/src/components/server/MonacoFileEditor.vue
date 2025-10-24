@@ -5,7 +5,7 @@
             class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border-b bg-muted/30 gap-3 sm:gap-0"
         >
             <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div class="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <div class="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <component :is="getFileIcon()" class="h-4 w-4 text-primary" />
                 </div>
                 <div class="min-w-0 flex-1">
@@ -41,7 +41,13 @@
                 </Button>
 
                 <!-- Save Button -->
-                <Button :disabled="!hasChanges || saving || readonly" size="sm" class="gap-1.5 h-8" @click="saveFile">
+                <Button
+                    :disabled="!hasChanges || saving || readonly"
+                    size="sm"
+                    class="gap-1.5 h-8"
+                    data-umami-event="Save file"
+                    @click="saveFile"
+                >
                     <Loader2 v-if="saving" class="h-3.5 w-3.5 animate-spin" />
                     <Save v-else class="h-3.5 w-3.5" />
                     <span class="hidden sm:inline text-xs">{{

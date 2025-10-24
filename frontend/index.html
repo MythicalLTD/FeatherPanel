@@ -44,6 +44,54 @@
 
         <title>FeatherPanel</title>
 
+        <!-- Telemetry Tracking URL -->
+        <script>
+            // Robust telemetry loading that respects user preferences
+            (function () {
+                let telemetryLoaded = false;
+
+                function loadTelemetry() {
+                    if (telemetryLoaded) return;
+
+                    try {
+                        var telemetrySetting = window.localStorage.getItem('telemetry');
+                        if (telemetrySetting !== 'false') {
+                            var s = document.createElement('script');
+                            s.defer = true;
+                            s.src = 'https://dynhost.mythical.systems/script.js';
+                            s.setAttribute('data-website-id', '71281b01-8c95-4fac-9f58-6d68aac179d7');
+                            document.head.appendChild(s);
+                            telemetryLoaded = true;
+                        }
+                    } catch (e) {
+                        /* Silent fail, block all telemetry on errors */
+                    }
+                }
+
+                // Try to load immediately
+                loadTelemetry();
+
+                // Also listen for localStorage changes (in case preferences are restored later)
+                window.addEventListener('storage', function (e) {
+                    if (e.key === 'telemetry' && e.newValue === 'false') {
+                        // If telemetry is disabled, remove any existing telemetry scripts
+                        var existingScripts = document.querySelectorAll('script[src*="dynhost.mythical.systems"]');
+                        existingScripts.forEach(function (script) {
+                            script.remove();
+                        });
+                        telemetryLoaded = false;
+                    } else if (e.key === 'telemetry' && e.newValue !== 'false' && !telemetryLoaded) {
+                        // If telemetry is enabled and not loaded yet, load it
+                        loadTelemetry();
+                    }
+                });
+
+                // Also check after a short delay in case preferences are restored
+                setTimeout(loadTelemetry, 1000);
+            })();
+        </script>
+        <!-- Telemetry Tracking URL -->
+
         <!-- Custom Scrollbar and Preloader Styles -->
         <style>
             /* Custom Dark Mode Scrollbar */
@@ -169,6 +217,8 @@
                     0 0 0 1px rgba(255, 255, 255, 0.02) inset;
                 transition: all 0.3s ease;
                 min-width: 420px;
+                max-width: 90vw;
+                width: 100%;
             }
 
             .preloader.light .preloader-card {
@@ -224,6 +274,9 @@
                     linear-gradient(#fff 0 0) content-box,
                     linear-gradient(#fff 0 0);
                 -webkit-mask-composite: xor;
+                mask:
+                    linear-gradient(#fff 0 0) content-box,
+                    linear-gradient(#fff 0 0);
                 mask-composite: exclude;
                 opacity: 0.5;
                 animation: logoRotate 8s linear infinite;
@@ -241,6 +294,38 @@
                 filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.1));
             }
 
+            /* Hide emoji when custom logo is present */
+            .preloader-logo.has-custom-logo::after {
+                opacity: 0;
+                transform: scale(0.8);
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            /* Smooth transitions for logo changes */
+            .preloader-logo img {
+                opacity: 0;
+                transform: scale(0.8);
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) scale(0.8);
+                width: 60px;
+                height: 60px;
+                object-fit: contain;
+                border-radius: 8px;
+                z-index: 1;
+            }
+
+            .preloader-logo.has-custom-logo img {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            .preloader-logo::after {
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
             /* Brand name */
             .preloader-brand {
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -250,6 +335,14 @@
                 text-align: center;
                 margin-bottom: 0.5rem;
                 letter-spacing: -0.02em;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            .preloader-brand.updating {
+                opacity: 0;
+                transform: translateY(-10px);
             }
 
             .preloader.light .preloader-brand {
@@ -468,6 +561,7 @@
                     min-width: unset;
                     width: 90%;
                     padding: 2rem 1.5rem;
+                    margin: 0 1rem;
                 }
 
                 .preloader-logo-container {
@@ -482,6 +576,26 @@
                 .system-status {
                     flex-direction: column;
                     gap: 0.75rem;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .preloader-card {
+                    padding: 1.5rem 1rem;
+                    margin: 0 0.5rem;
+                }
+
+                .preloader-logo-container {
+                    width: 70px;
+                    height: 70px;
+                }
+
+                .preloader-brand {
+                    font-size: 1.25rem;
+                }
+
+                .preloader-status {
+                    font-size: 0.75rem;
                 }
             }
         </style>
@@ -553,6 +667,73 @@
                 }
             }
 
+            // Function to update custom branding
+            function updateCustomBranding() {
+                const appName = localStorage.getItem('appName');
+                const appLogoDark = localStorage.getItem('appLogoDark');
+                const appLogoWhite = localStorage.getItem('appLogoWhite');
+
+                console.log('[Preloader] Custom branding:', { appName, appLogoDark, appLogoWhite });
+
+                // Update app name with smooth animation
+                const brandElement = document.querySelector('.preloader-brand');
+                if (brandElement && appName) {
+                    // Add updating class for smooth transition
+                    brandElement.classList.add('updating');
+
+                    setTimeout(() => {
+                        brandElement.textContent = appName;
+                        brandElement.classList.remove('updating');
+                    }, 150);
+                }
+
+                // Update logo based on current theme
+                const logoElement = document.querySelector('.preloader-logo');
+                if (logoElement) {
+                    // Determine which logo to use based on theme
+                    const isDarkTheme =
+                        document.body.classList.contains('dark') ||
+                        (!document.body.classList.contains('light') &&
+                            window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+                    const logoToUse = isDarkTheme ? appLogoDark : appLogoWhite;
+                    console.log('[Preloader] Theme:', isDarkTheme ? 'dark' : 'light', 'Logo to use:', logoToUse);
+
+                    if (logoToUse) {
+                        // Add class to hide the emoji with smooth transition
+                        logoElement.classList.add('has-custom-logo');
+
+                        // Create image element if it doesn't exist
+                        let logoImg = logoElement.querySelector('img');
+                        if (!logoImg) {
+                            logoImg = document.createElement('img');
+                            logoElement.appendChild(logoImg);
+                        }
+
+                        // Set the logo source
+                        logoImg.src = logoToUse;
+                        logoImg.alt = appName || 'App Logo';
+                        console.log('[Preloader] Setting logo src:', logoToUse);
+
+                        // Handle image load errors
+                        logoImg.onerror = function () {
+                            console.log('[Preloader] Logo failed to load, falling back to emoji');
+                            // Fallback to default emoji if image fails to load
+                            logoElement.classList.remove('has-custom-logo');
+                            logoImg.remove();
+                        };
+                    } else {
+                        // Show default emoji if no custom logo
+                        logoElement.classList.remove('has-custom-logo');
+                        const existingImg = logoElement.querySelector('img');
+                        if (existingImg) {
+                            existingImg.remove();
+                        }
+                        console.log('[Preloader] No custom logo found, showing default emoji');
+                    }
+                }
+            }
+
             // Function to get current theme
             function getCurrentTheme() {
                 const savedTheme = localStorage.getItem('theme');
@@ -564,6 +745,11 @@
             function initializePreloaderTheme() {
                 currentTheme = getCurrentTheme();
                 updatePreloaderTheme(currentTheme);
+            }
+
+            // Initialize custom branding immediately
+            function initializeCustomBranding() {
+                updateCustomBranding();
             }
 
             // Apply theme immediately when script runs
@@ -590,12 +776,16 @@
                 if (preloader) {
                     updatePreloaderTheme(theme);
                 }
+
+                // Apply custom branding if it exists
+                initializeCustomBranding();
             })();
 
             // Listen for theme changes
             window.addEventListener('theme-changed', (event) => {
                 currentTheme = event.detail.theme;
                 updatePreloaderTheme(currentTheme);
+                updateCustomBranding(); // Update logo when theme changes
             });
 
             // Listen for system theme changes
@@ -626,7 +816,7 @@
             let isPageFullyLoaded = false;
             let currentProgress = 0;
             let preloaderStartTime = Date.now();
-            const MIN_PRELOADER_DISPLAY_TIME = 3500; // Minimum 3 seconds (1.5s base + 1.5s extra for Vue loading)
+            const MIN_PRELOADER_DISPLAY_TIME = 1500; // Reduced to 1.5 seconds for faster loading
 
             // Function to update progress
             function updateProgress(targetProgress, message) {
@@ -711,13 +901,16 @@
                 // Ensure theme is applied to any newly created elements
                 updatePreloaderTheme(currentTheme);
 
+                // Ensure custom branding is applied
+                updateCustomBranding();
+
                 // Initialize progress with first stage
                 showNextStage();
 
                 // Start showing loading stages
                 messageInterval = setInterval(() => {
                     showNextStage();
-                }, 700); // Show stage every 700ms
+                }, 400); // Show stage every 400ms for faster progression
 
                 // Check if Vue app is ready
                 const checkAppReady = setInterval(() => {

@@ -147,17 +147,17 @@
                                 variant="ghost"
                                 size="sm"
                                 :disabled="loading"
-                                class="flex-shrink-0 hover:bg-primary/10 hover:text-primary transition-all"
+                                class="shrink-0 hover:bg-primary/10 hover:text-primary transition-all"
                                 @click="navigateToPath('/')"
                             >
                                 <Home class="h-4 w-4" />
                             </Button>
                             <template v-for="(segment, index) in pathSegments" :key="index">
-                                <ChevronRight class="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                <ChevronRight class="h-4 w-4 text-muted-foreground shrink-0" />
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    class="text-muted-foreground hover:text-foreground hover:bg-primary/10 whitespace-nowrap flex-shrink-0 transition-all"
+                                    class="text-muted-foreground hover:text-foreground hover:bg-primary/10 whitespace-nowrap shrink-0 transition-all"
                                     :disabled="loading"
                                     @click="navigateToPath(getPathUpTo(index))"
                                 >
@@ -200,7 +200,7 @@
             >
                 <CardContent class="p-4">
                     <div class="flex items-start gap-4">
-                        <div class="p-2 rounded-full bg-orange-500/20 flex-shrink-0">
+                        <div class="p-2 rounded-full bg-orange-500/20 shrink-0">
                             <Search class="h-5 w-5 text-orange-600 dark:text-orange-400" />
                         </div>
                         <div class="flex-1 space-y-3">
@@ -244,7 +244,7 @@
             <!-- Active Downloads Card -->
             <Card
                 v-if="activeDownloads.length > 0"
-                class="border-2 border-blue-500/30 bg-gradient-to-r from-blue-500/5 to-blue-500/10 shadow-sm"
+                class="border-2 border-blue-500/30 bg-linear-to-r from-blue-500/5 to-blue-500/10 shadow-sm"
             >
                 <CardContent class="p-4">
                     <div class="space-y-3">
@@ -271,7 +271,7 @@
                                 class="flex items-center justify-between p-3 rounded-lg bg-background border"
                             >
                                 <div class="flex items-center gap-3 flex-1 min-w-0">
-                                    <Download class="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                                    <Download class="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
                                     <div class="min-w-0 flex-1">
                                         <p class="text-sm font-medium">{{ t('serverFiles.fileDownload') }}</p>
                                         <p class="text-xs text-muted-foreground truncate font-mono">
@@ -332,6 +332,7 @@
                                 size="sm"
                                 :disabled="loading"
                                 class="gap-2 hover:bg-primary/10 hover:text-primary transition-all"
+                                data-umami-event="Download files"
                                 @click="downloadSelected"
                             >
                                 <Download class="h-4 w-4" />
@@ -342,6 +343,7 @@
                                 size="sm"
                                 :disabled="loading"
                                 class="gap-2 hover:bg-primary/10 hover:text-primary transition-all"
+                                data-umami-event="Copy files"
                                 @click="showCopyDialog = true"
                             >
                                 <Copy class="h-4 w-4" />
@@ -352,6 +354,7 @@
                                 size="sm"
                                 :disabled="loading"
                                 class="gap-2 hover:bg-primary/10 hover:text-primary transition-all"
+                                data-umami-event="Move files"
                                 @click="showMoveDialog = true"
                             >
                                 <FileEdit class="h-4 w-4" />
@@ -534,7 +537,7 @@
                                         <div class="flex items-center gap-3 flex-1 min-w-0">
                                             <!-- Custom File Checkbox -->
                                             <div
-                                                class="relative flex items-center justify-center w-5 h-5 border-2 rounded-md cursor-pointer transition-all duration-200 flex-shrink-0 shadow-sm"
+                                                class="relative flex items-center justify-center w-5 h-5 border-2 rounded-md cursor-pointer transition-all duration-200 shrink-0 shadow-sm"
                                                 :class="{
                                                     'border-primary bg-primary': selectedFiles.includes(file.name),
                                                     'border-input bg-background hover:border-primary hover:bg-primary/5':
@@ -561,7 +564,7 @@
                                             >
                                                 <component
                                                     :is="getFileIcon(file)"
-                                                    class="h-5 w-5 flex-shrink-0"
+                                                    class="h-5 w-5 shrink-0"
                                                     :class="
                                                         file.file
                                                             ? 'text-blue-600 dark:text-blue-400'
@@ -597,7 +600,7 @@
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    class="h-9 w-9 p-0 flex-shrink-0 hover:bg-primary/10 hover:text-primary"
+                                                    class="h-9 w-9 p-0 shrink-0 hover:bg-primary/10 hover:text-primary"
                                                     @click.stop
                                                 >
                                                     <MoreVertical class="h-4 w-4" />
@@ -606,6 +609,8 @@
                                             <DropdownMenuContent align="end" class="w-48">
                                                 <DropdownMenuItem
                                                     v-if="file.file && isFileEditable(file) && isFileSizeValid(file)"
+                                                    data-umami-event="Edit file"
+                                                    :data-umami-event-file="file.name"
                                                     @click="openMonacoEditor(file)"
                                                 >
                                                     <Code class="h-4 w-4 mr-2" />
@@ -615,7 +620,12 @@
                                                     <FileEdit class="h-4 w-4 mr-2" />
                                                     {{ t('serverFiles.rename') }}
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem v-if="file.file" @click="downloadFile(file)">
+                                                <DropdownMenuItem
+                                                    v-if="file.file"
+                                                    data-umami-event="Download file"
+                                                    :data-umami-event-file="file.name"
+                                                    @click="downloadFile(file)"
+                                                >
                                                     <Download class="h-4 w-4 mr-2" />
                                                     {{ t('serverFiles.download') }}
                                                 </DropdownMenuItem>
@@ -688,7 +698,7 @@
                                                 >
                                                     <component
                                                         :is="getFileIcon(file)"
-                                                        class="h-5 w-5 flex-shrink-0"
+                                                        class="h-5 w-5 shrink-0"
                                                         :class="
                                                             file.file
                                                                 ? 'text-blue-600 dark:text-blue-400'

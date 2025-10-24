@@ -28,6 +28,7 @@
                             size="sm"
                             :disabled="loading || (serverInfo && databases.length >= serverInfo.database_limit)"
                             class="flex items-center gap-2"
+                            data-umami-event="Create database"
                             @click="openCreateDatabaseDrawer"
                         >
                             <Plus class="h-4 w-4" />
@@ -41,7 +42,7 @@
                     v-if="serverInfo && databases.length >= serverInfo.database_limit"
                     class="flex items-start gap-3 p-4 rounded-lg bg-yellow-50 border-2 border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800"
                 >
-                    <div class="h-10 w-10 rounded-lg bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                    <div class="h-10 w-10 rounded-lg bg-yellow-500/20 flex items-center justify-center shrink-0">
                         <AlertTriangle class="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                     </div>
                     <div class="flex-1 min-w-0">
@@ -133,7 +134,7 @@
                             <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                                 <div class="flex items-start gap-3 flex-1 min-w-0">
                                     <div
-                                        class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0"
+                                        class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"
                                     >
                                         <Database class="h-5 w-5 text-primary" />
                                     </div>
@@ -165,6 +166,8 @@
                                         variant="outline"
                                         size="sm"
                                         class="flex items-center gap-2"
+                                        data-umami-event="View database"
+                                        :data-umami-event-database="db.database"
                                         @click="openViewDatabaseDrawer(db)"
                                     >
                                         <Eye class="h-3.5 w-3.5" />
@@ -174,6 +177,8 @@
                                         variant="destructive"
                                         size="sm"
                                         class="flex items-center gap-2"
+                                        data-umami-event="Delete database"
+                                        :data-umami-event-database="db.database"
                                         @click="deleteDatabase(db)"
                                     >
                                         <Trash2 class="h-3.5 w-3.5" />

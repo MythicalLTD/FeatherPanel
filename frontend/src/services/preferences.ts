@@ -77,18 +77,36 @@ class PreferencesService {
 
     /**
      * Save the entire localStorage to the backend
+     * Excludes branding-related keys to prevent them from being synced
      */
     async saveLocalStorage(): Promise<boolean> {
         const storage = this.getLocalStorage();
-        return await this.updatePreferences(storage);
+
+        // Remove branding and system keys from storage before saving to backend
+        const preferencesToSave = { ...storage };
+        delete preferencesToSave.appName;
+        delete preferencesToSave.appLogoDark;
+        delete preferencesToSave.appLogoWhite;
+        delete preferencesToSave.telemetry;
+
+        return await this.updatePreferences(preferencesToSave);
     }
 
     /**
      * Load preferences from backend and restore to localStorage
+     * Excludes branding-related keys to preserve custom branding
      */
     async loadAndRestoreLocalStorage(): Promise<boolean> {
         try {
             const preferences = await this.getPreferences();
+
+            // Preserve custom branding and telemetry before clearing localStorage
+            const preservedSettings = {
+                appName: localStorage.getItem('appName'),
+                appLogoDark: localStorage.getItem('appLogoDark'),
+                appLogoWhite: localStorage.getItem('appLogoWhite'),
+                telemetry: localStorage.getItem('telemetry'),
+            };
 
             // Clear existing localStorage
             localStorage.clear();
@@ -96,6 +114,20 @@ class PreferencesService {
             // Restore all preferences
             for (const [key, value] of Object.entries(preferences)) {
                 localStorage.setItem(key, value);
+            }
+
+            // Restore preserved settings if they existed
+            if (preservedSettings.appName) {
+                localStorage.setItem('appName', preservedSettings.appName);
+            }
+            if (preservedSettings.appLogoDark) {
+                localStorage.setItem('appLogoDark', preservedSettings.appLogoDark);
+            }
+            if (preservedSettings.appLogoWhite) {
+                localStorage.setItem('appLogoWhite', preservedSettings.appLogoWhite);
+            }
+            if (preservedSettings.telemetry !== null) {
+                localStorage.setItem('telemetry', preservedSettings.telemetry);
             }
 
             // Apply any DOM updates that depend on localStorage
@@ -110,8 +142,14 @@ class PreferencesService {
 
     /**
      * Sync a single localStorage item to backend
+     * Excludes branding-related keys
      */
     async syncItem(key: string, value: string): Promise<boolean> {
+        // Don't sync branding and system keys
+        if (key === 'appName' || key === 'appLogoDark' || key === 'appLogoWhite' || key === 'telemetry') {
+            console.log(`[Preferences] Skipping sync for protected key: ${key}`);
+            return true;
+        }
         return await this.updatePreferences({ [key]: value });
     }
 

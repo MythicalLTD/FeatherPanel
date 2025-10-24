@@ -91,7 +91,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <UsersIcon class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <UsersIcon class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Managing Users</div>
                                     <p>
@@ -105,7 +105,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Shield class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <Shield class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Roles & Permissions</div>
                                     <p>
@@ -119,7 +119,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <KeyRound class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <KeyRound class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Security Actions</div>
                                     <ul class="list-disc list-inside space-y-1">
@@ -134,7 +134,7 @@
                     <Card class="md:col-span-2 lg:col-span-3">
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Search class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <Search class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div class="flex-1">
                                     <div class="font-semibold text-foreground mb-1">Tips</div>
                                     <ul class="list-disc list-inside space-y-1">

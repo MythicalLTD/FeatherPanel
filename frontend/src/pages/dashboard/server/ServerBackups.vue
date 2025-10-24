@@ -28,6 +28,7 @@
                             size="sm"
                             :disabled="loading || (serverInfo && backups.length >= serverInfo.backup_limit)"
                             class="flex items-center gap-2"
+                            data-umami-event="Create backup"
                             @click="openCreateBackupDrawer"
                         >
                             <Plus class="h-4 w-4" />
@@ -41,7 +42,7 @@
                     v-if="serverInfo && backups.length >= serverInfo.backup_limit"
                     class="flex items-start gap-3 p-4 rounded-lg bg-yellow-50 border-2 border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800"
                 >
-                    <div class="h-10 w-10 rounded-lg bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                    <div class="h-10 w-10 rounded-lg bg-yellow-500/20 flex items-center justify-center shrink-0">
                         <AlertTriangle class="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                     </div>
                     <div class="flex-1 min-w-0">
@@ -93,6 +94,7 @@
                         v-if="serverInfo && serverInfo.backup_limit > 0"
                         size="lg"
                         class="gap-2 shadow-lg"
+                        data-umami-event="Create backup"
                         @click="openCreateBackupDrawer"
                     >
                         <Plus class="h-5 w-5" />
@@ -129,7 +131,7 @@
                             <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
                                 <div class="flex items-start gap-3 flex-1 min-w-0">
                                     <div
-                                        class="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                                        class="h-10 w-10 rounded-lg flex items-center justify-center shrink-0"
                                         :class="[backup.is_successful ? 'bg-green-500/10' : 'bg-red-500/10']"
                                     >
                                         <Archive
@@ -146,7 +148,7 @@
                                                 :variant="
                                                     getStatusVariant(backup.is_successful, backup.is_locked) as any
                                                 "
-                                                class="text-xs flex-shrink-0"
+                                                class="text-xs shrink-0"
                                             >
                                                 {{ getStatusText(backup.is_successful, backup.is_locked) }}
                                             </Badge>
@@ -205,6 +207,8 @@
                                         size="sm"
                                         :disabled="loading"
                                         class="flex items-center gap-2"
+                                        data-umami-event="Restore backup"
+                                        :data-umami-event-backup="backup.name"
                                         @click="openRestoreBackupDrawer(backup)"
                                     >
                                         <RotateCcw class="h-3.5 w-3.5" />
@@ -216,6 +220,8 @@
                                         size="sm"
                                         :disabled="loading"
                                         class="flex items-center gap-2"
+                                        data-umami-event="Download backup"
+                                        :data-umami-event-backup="backup.name"
                                         @click="downloadBackup(backup)"
                                     >
                                         <Download class="h-3.5 w-3.5" />
@@ -227,6 +233,8 @@
                                         size="sm"
                                         :disabled="loading"
                                         class="flex items-center gap-2"
+                                        data-umami-event="Delete backup"
+                                        :data-umami-event-backup="backup.name"
                                         @click="deleteBackup(backup)"
                                     >
                                         <Trash2 class="h-3.5 w-3.5" />
@@ -372,7 +380,7 @@
                         </div>
 
                         <div class="flex items-start gap-2 p-3 bg-muted/30 rounded-lg border">
-                            <Info class="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                            <Info class="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                             <p class="text-xs text-muted-foreground">
                                 {{ t('serverBackups.ignoreFilesHelp') }}
                             </p>
@@ -420,7 +428,7 @@
                         class="p-4 bg-orange-50 dark:bg-orange-950/20 border-2 border-orange-200 dark:border-orange-800 rounded-lg"
                     >
                         <div class="flex items-start gap-3">
-                            <AlertTriangle class="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
+                            <AlertTriangle class="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5 shrink-0" />
                             <div>
                                 <p class="font-semibold text-orange-800 dark:text-orange-200 mb-1 text-sm">Warning</p>
                                 <p class="text-sm text-orange-700 dark:text-orange-300">

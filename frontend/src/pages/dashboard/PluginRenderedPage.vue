@@ -12,6 +12,8 @@
                 <button
                     class="flex items-center justify-center w-12 h-12 sm:w-auto sm:h-auto sm:px-4 sm:py-2 sm:gap-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-full sm:rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-110 font-medium text-sm"
                     :title="t('plugins.reloadIframe')"
+                    data-umami-event="Plugin reload"
+                    :data-umami-event-plugin="pluginData?.plugin || 'unknown'"
                     @click="retryLoad"
                 >
                     <svg
@@ -94,6 +96,8 @@
                     <p class="text-slate-400 text-sm mb-6 leading-relaxed">{{ iframeError }}</p>
                     <button
                         class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl font-medium"
+                        data-umami-event="Plugin retry"
+                        :data-umami-event-plugin="pluginData?.plugin || 'unknown'"
                         @click="retryLoad"
                     >
                         <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -34,7 +34,7 @@
                 >
                     <div class="flex items-center gap-3 flex-1 min-w-0">
                         <div
-                            class="h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0"
+                            class="h-5 w-5 rounded-full flex items-center justify-center shrink-0"
                             :class="widget.enabled ? 'bg-primary/10' : 'bg-muted/50'"
                         >
                             <div
@@ -52,7 +52,7 @@
                     <Button
                         variant="ghost"
                         size="sm"
-                        class="h-8 w-8 p-0 flex-shrink-0 transition-colors"
+                        class="h-8 w-8 p-0 shrink-0 transition-colors"
                         :class="widget.enabled ? 'hover:bg-muted-foreground/10' : 'hover:bg-muted'"
                         @click="emit('toggleWidget', widget.id)"
                     >

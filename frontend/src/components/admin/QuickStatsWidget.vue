@@ -21,7 +21,7 @@
                 <div class="relative p-5 flex items-center gap-4">
                     <!-- Icon Section -->
                     <div
-                        class="flex-shrink-0 rounded-xl p-3.5 transition-transform duration-300 group-hover:scale-110"
+                        class="shrink-0 rounded-xl p-3.5 transition-transform duration-300 group-hover:scale-110"
                         :class="getIconBgClass(index)"
                     >
                         <component :is="stat.icon" :size="26" :class="getIconColorClass(index)" />

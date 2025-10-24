@@ -82,7 +82,7 @@
                                             {{ activity.context }}
                                         </p>
                                     </div>
-                                    <div class="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0">
+                                    <div class="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
                                         <Clock class="h-3 w-3" />
                                         {{ formatDate(activity.created_at) }}
                                     </div>

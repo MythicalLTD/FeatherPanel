@@ -204,20 +204,34 @@ async function onSubmit(e: Event) {
                         v-model="form.turnstile_token"
                         :site-key="settingsStore.turnstile_key_pub as string"
                     />
-                    <Button type="submit" class="w-full" :disabled="loading">
+                    <Button
+                        type="submit"
+                        class="w-full"
+                        :disabled="loading"
+                        data-umami-event="Login attempt"
+                        :data-umami-event-email="form.email"
+                    >
                         <span v-if="loading">{{ $t('auth.loggingIn') }}</span>
                         <span v-else>{{ $t('auth.login') }}</span>
                     </Button>
                     <div v-if="error" class="text-center text-sm text-red-500">{{ error }}</div>
                     <div v-if="success" class="text-center text-sm text-green-500">{{ success }}</div>
                     <div v-if="settingsStore.smtpEnabled" class="text-center text-sm">
-                        <router-link to="/auth/forgot-password" class="underline underline-offset-4">
+                        <router-link
+                            to="/auth/forgot-password"
+                            class="underline underline-offset-4"
+                            data-umami-event="Forgot password link"
+                        >
                             {{ $t('auth.forgotPassword') }}
                         </router-link>
                     </div>
                     <div v-if="settingsStore.registrationEnabled" class="text-center text-sm">
                         {{ $t('auth.noAccount') }}
-                        <router-link to="/auth/register" class="underline underline-offset-4">
+                        <router-link
+                            to="/auth/register"
+                            class="underline underline-offset-4"
+                            data-umami-event="Register link"
+                        >
                             {{ $t('auth.register') }}
                         </router-link>
                     </div>

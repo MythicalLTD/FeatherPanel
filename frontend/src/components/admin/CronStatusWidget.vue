@@ -14,7 +14,7 @@
             <Card v-for="item in cronRecent" :key="item.id" class="p-4 border hover:shadow-md transition-shadow">
                 <div class="flex items-start gap-3">
                     <div
-                        class="h-9 w-9 rounded-full flex items-center justify-center flex-shrink-0"
+                        class="h-9 w-9 rounded-full flex items-center justify-center shrink-0"
                         :class="
                             item.last_run_success
                                 ? 'bg-emerald-500/10 text-emerald-600'
@@ -26,7 +26,7 @@
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center justify-between gap-2">
                             <div class="font-medium capitalize truncate">{{ prettyTaskName(item.task_name) }}</div>
-                            <div class="flex items-center gap-2 flex-shrink-0">
+                            <div class="flex items-center gap-2 shrink-0">
                                 <span
                                     class="text-xs px-2 py-0.5 rounded-full"
                                     :class="

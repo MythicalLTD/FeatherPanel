@@ -243,7 +243,7 @@
                         <div class="flex items-center space-x-3 p-4 sm:p-6 border-b">
                             <component
                                 :is="getCategoryIcon(currentCategorySettings.category.icon)"
-                                class="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0"
+                                class="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0"
                             />
                             <div class="min-w-0 flex-1">
                                 <h2 class="text-lg sm:text-xl font-semibold truncate">
@@ -380,7 +380,7 @@
                 <Card>
                     <CardContent>
                         <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Settings class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <Settings class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">What are Settings?</div>
                                 <p>
@@ -394,7 +394,7 @@
                 <Card>
                     <CardContent>
                         <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Globe class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <Globe class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">Categories & Scope</div>
                                 <p>
@@ -408,7 +408,7 @@
                 <Card class="md:col-span-2 lg:col-span-1">
                     <CardContent>
                         <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Lock class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <Lock class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">Tips & Safety</div>
                                 <ul class="list-disc list-inside space-y-1">
@@ -423,7 +423,7 @@
                 <Card class="md:col-span-2 lg:col-span-3">
                     <CardContent>
                         <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <AlertCircle class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <AlertCircle class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">Legal & Audit</div>
                                 <p>

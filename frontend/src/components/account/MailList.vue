@@ -65,7 +65,7 @@
                                 </Button>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 flex-shrink-0">
+                        <div class="flex items-center gap-2 shrink-0">
                             <Badge :variant="getStatusVariant(mail.status)" class="text-xs">
                                 {{ $t(`account.mail.status.${mail.status}`) }}
                             </Badge>

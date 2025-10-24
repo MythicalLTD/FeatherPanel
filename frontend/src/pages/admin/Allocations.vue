@@ -179,7 +179,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Network class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <Network class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-medium text-foreground mb-1">What are Allocations?</div>
                                     <p>
@@ -193,7 +193,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <MapPin class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <MapPin class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-medium text-foreground mb-1">What you’ll need</div>
                                     <ul class="list-disc list-inside space-y-1">
@@ -209,7 +209,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Gamepad2 class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <Gamepad2 class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div class="flex-1">
                                     <div class="font-medium text-foreground mb-1">Popular game ranges (examples)</div>
                                     <ul class="list-disc list-inside space-y-1">
@@ -229,7 +229,7 @@
                     <Card class="md:col-span-2 lg:col-span-3">
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Shield class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <Shield class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-medium text-foreground mb-1">Protocols & Firewall</div>
                                     <p>

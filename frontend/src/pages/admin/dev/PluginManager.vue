@@ -725,7 +725,7 @@ onMounted(() => {
                 </div>
 
                 <div class="rounded-lg bg-blue-50 border border-blue-200 p-4 flex items-center gap-4 mb-6">
-                    <div class="flex-shrink-0">
+                    <div class="shrink-0">
                         <span
                             class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-blue-100 text-blue-600 text-2xl font-bold"
                         >
@@ -820,11 +820,7 @@ onMounted(() => {
                                                 @click="openCreateActionDialog(option, plugin)"
                                             >
                                                 <div class="flex items-start gap-2 w-full">
-                                                    <component
-                                                        :is="option.icon"
-                                                        :size="14"
-                                                        class="mt-0.5 flex-shrink-0"
-                                                    />
+                                                    <component :is="option.icon" :size="14" class="mt-0.5 shrink-0" />
                                                     <div class="flex-1 min-w-0">
                                                         <div class="font-medium text-xs">{{ option.name }}</div>
                                                         <div class="text-xs text-muted-foreground">

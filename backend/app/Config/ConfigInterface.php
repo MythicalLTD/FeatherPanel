@@ -68,4 +68,8 @@ interface ConfigInterface
      */
     public const REGISTRATION_ENABLED = 'registration_enabled';
     public const REQUIRE_TWO_FA_ADMINS = 'require_two_fa_admins';
+    /**
+     * Telemetry.
+     */
+    public const TELEMETRY = 'telemetry';
 }

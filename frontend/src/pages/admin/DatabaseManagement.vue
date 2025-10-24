@@ -200,7 +200,7 @@ fetchStatus();
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <DatabaseIcon class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <DatabaseIcon class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">What is this page?</div>
                                     <p>
@@ -214,7 +214,7 @@ fetchStatus();
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Activity class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <Activity class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Status & Metrics</div>
                                     <p>
@@ -228,7 +228,7 @@ fetchStatus();
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Wrench class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <Wrench class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Migrations</div>
                                     <p>
@@ -242,7 +242,7 @@ fetchStatus();
                     <Card class="md:col-span-2 lg:col-span-3">
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <AlertTriangle class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <AlertTriangle class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Safety & Backups</div>
                                     <p>

@@ -13,6 +13,7 @@
                         variant="outline"
                         size="sm"
                         class="flex-1 sm:flex-none"
+                        data-umami-event="Create folder"
                         @click="createFolder"
                     >
                         <FolderPlus class="h-4 w-4 mr-2" />
@@ -24,6 +25,7 @@
                         size="sm"
                         class="flex-1 sm:flex-none"
                         :disabled="loading"
+                        data-umami-event="Validate servers"
                         @click="validateAndCleanupServers"
                     >
                         <Shield class="h-4 w-4 mr-2" />
@@ -31,7 +33,14 @@
                         <span class="sm:hidden">{{ $t('servers.validate') }}</span>
                     </Button>
                 </div>
-                <Button variant="outline" size="sm" class="w-full sm:w-auto" :disabled="loading" @click="fetchServers">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="w-full sm:w-auto"
+                    :disabled="loading"
+                    data-umami-event="Refresh servers"
+                    @click="fetchServers"
+                >
                     <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': loading }" />
                     {{ $t('servers.refresh') }}
                 </Button>
@@ -49,26 +58,76 @@
                     @input="handleSearch"
                 />
             </div>
-            <div v-if="!isMobile" class="flex items-center gap-2">
+            <div v-if="!isMobile" class="flex items-center gap-2 overflow-x-auto pb-2">
                 <Button
                     :variant="viewMode === 'folders' ? 'default' : 'outline'"
                     size="sm"
-                    class="flex-1 sm:flex-none"
+                    class="shrink-0"
                     @click="viewMode = 'folders'"
                 >
                     <FolderOpen class="h-4 w-4 mr-2" />
-                    <span class="hidden sm:inline">{{ $t('servers.folderView') }}</span>
-                    <span class="sm:hidden">{{ $t('servers.folderView') }}</span>
+                    <span class="hidden lg:inline">{{ $t('servers.folderView') }}</span>
+                    <span class="lg:hidden">{{ $t('servers.folderView') }}</span>
                 </Button>
                 <Button
                     :variant="viewMode === 'list' ? 'default' : 'outline'"
                     size="sm"
-                    class="flex-1 sm:flex-none"
+                    class="shrink-0"
                     @click="viewMode = 'list'"
                 >
                     <List class="h-4 w-4 mr-2" />
-                    <span class="hidden sm:inline">{{ $t('servers.listView') }}</span>
-                    <span class="sm:hidden">{{ $t('servers.listView') }}</span>
+                    <span class="hidden lg:inline">{{ $t('servers.listView') }}</span>
+                    <span class="lg:hidden">{{ $t('servers.listView') }}</span>
+                </Button>
+                <Button
+                    :variant="viewMode === 'table' ? 'default' : 'outline'"
+                    size="sm"
+                    class="shrink-0"
+                    @click="viewMode = 'table'"
+                >
+                    <Table class="h-4 w-4 mr-2" />
+                    <span class="hidden lg:inline">{{ $t('servers.tableView') }}</span>
+                    <span class="lg:hidden">{{ $t('servers.tableView') }}</span>
+                </Button>
+                <Button
+                    :variant="viewMode === 'compact' ? 'default' : 'outline'"
+                    size="sm"
+                    class="shrink-0"
+                    @click="viewMode = 'compact'"
+                >
+                    <Grid3X3 class="h-4 w-4 mr-2" />
+                    <span class="hidden lg:inline">{{ $t('servers.compactView') }}</span>
+                    <span class="lg:hidden">{{ $t('servers.compactView') }}</span>
+                </Button>
+                <Button
+                    :variant="viewMode === 'detailed' ? 'default' : 'outline'"
+                    size="sm"
+                    class="shrink-0"
+                    @click="viewMode = 'detailed'"
+                >
+                    <LayoutGrid class="h-4 w-4 mr-2" />
+                    <span class="hidden lg:inline">{{ $t('servers.detailedView') }}</span>
+                    <span class="lg:hidden">{{ $t('servers.detailedView') }}</span>
+                </Button>
+                <Button
+                    :variant="viewMode === 'status-grouped' ? 'default' : 'outline'"
+                    size="sm"
+                    class="shrink-0"
+                    @click="viewMode = 'status-grouped'"
+                >
+                    <Layers class="h-4 w-4 mr-2" />
+                    <span class="hidden lg:inline">{{ $t('servers.statusGroupedView') }}</span>
+                    <span class="lg:hidden">{{ $t('servers.statusGroupedView') }}</span>
+                </Button>
+                <Button
+                    :variant="viewMode === 'minimal' ? 'default' : 'outline'"
+                    size="sm"
+                    class="shrink-0"
+                    @click="viewMode = 'minimal'"
+                >
+                    <Minimize2 class="h-4 w-4 mr-2" />
+                    <span class="hidden lg:inline">{{ $t('servers.minimalView') }}</span>
+                    <span class="lg:hidden">{{ $t('servers.minimalView') }}</span>
                 </Button>
             </div>
         </div>
@@ -223,7 +282,7 @@
                                             >
                                                 <div class="flex items-center gap-2">
                                                     <Server
-                                                        class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0"
+                                                        class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0"
                                                     />
                                                     <span class="text-muted-foreground">{{ $t('servers.node') }}:</span>
                                                     <span class="font-medium truncate">{{
@@ -232,7 +291,7 @@
                                                 </div>
                                                 <div class="flex items-center gap-2">
                                                     <Hash
-                                                        class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0"
+                                                        class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0"
                                                     />
                                                     <span class="text-muted-foreground"
                                                         >{{ $t('servers.realm') }}:</span
@@ -463,7 +522,7 @@
                                             >
                                                 <div class="flex items-center gap-2">
                                                     <Server
-                                                        class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0"
+                                                        class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0"
                                                     />
                                                     <span class="text-muted-foreground">{{ $t('servers.node') }}:</span>
                                                     <span class="font-medium truncate">{{
@@ -472,7 +531,7 @@
                                                 </div>
                                                 <div class="flex items-center gap-2">
                                                     <Hash
-                                                        class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0"
+                                                        class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0"
                                                     />
                                                     <span class="text-muted-foreground"
                                                         >{{ $t('servers.realm') }}:</span
@@ -586,7 +645,7 @@
             </div>
 
             <!-- List View (Original) -->
-            <div v-else class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            <div v-else-if="viewMode === 'list'" class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 <ContextMenu v-for="server in servers" :key="server.id">
                     <ContextMenuTrigger as-child>
                         <div
@@ -779,6 +838,754 @@
                 </ContextMenu>
             </div>
 
+            <!-- Table View -->
+            <div v-else-if="viewMode === 'table'" class="space-y-4">
+                <div class="rounded-lg border border-border bg-card">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-muted/50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                                        {{ $t('servers.name') }}
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                                        {{ $t('servers.statusColumn') }}
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                                        {{ $t('servers.spell') }}
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                                        {{ $t('servers.node') }}
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                                        {{ $t('servers.realm') }}
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                                        {{ $t('servers.memory') }}
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                                        {{ $t('servers.disk') }}
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                                        {{ $t('servers.cpu') }}
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                                        {{ $t('servers.swap') }}
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                                        {{ $t('servers.allocation') }}
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                                        {{ $t('servers.created') }}
+                                    </th>
+                                    <th class="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
+                                        {{ $t('servers.actions') }}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-border">
+                                <tr
+                                    v-for="server in servers"
+                                    :key="server.id"
+                                    class="hover:bg-muted/50 transition-colors"
+                                    :class="{ 'opacity-50': !isServerAccessible(server) }"
+                                >
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center gap-3">
+                                            <div class="shrink-0">
+                                                <div
+                                                    class="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center"
+                                                >
+                                                    <Server class="h-4 w-4 text-primary" />
+                                                </div>
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="font-medium text-sm truncate">{{ server.name }}</div>
+                                                <div class="text-xs text-muted-foreground truncate">
+                                                    {{ server.description || $t('servers.noDescription') }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center gap-2">
+                                            <Badge :variant="getStatusVariant(displayStatus(server))" class="text-xs">
+                                                {{ $t(`servers.status.${displayStatus(server)}`) }}
+                                            </Badge>
+                                            <Badge
+                                                v-if="server.is_subuser"
+                                                variant="outline"
+                                                class="text-xs bg-blue-500/20 text-blue-600"
+                                            >
+                                                {{ $t('servers.subuserAccess') }}
+                                            </Badge>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center gap-2">
+                                            <Sparkles class="h-3 w-3 text-muted-foreground" />
+                                            <span class="text-sm truncate">{{ server.spell?.name || 'N/A' }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center gap-2">
+                                            <Server class="h-3 w-3 text-muted-foreground" />
+                                            <span class="text-sm truncate">{{ server.node?.name || 'N/A' }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center gap-2">
+                                            <Hash class="h-3 w-3 text-muted-foreground" />
+                                            <span class="text-sm truncate">{{ server.realm?.name || 'N/A' }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span
+                                            class="text-sm font-medium"
+                                            :class="
+                                                server.memory === 0
+                                                    ? 'text-green-600 dark:text-green-400'
+                                                    : 'text-primary'
+                                            "
+                                        >
+                                            {{ formatMemory(server.memory) }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span
+                                            class="text-sm font-medium"
+                                            :class="
+                                                server.disk === 0
+                                                    ? 'text-green-600 dark:text-green-400'
+                                                    : 'text-primary'
+                                            "
+                                        >
+                                            {{ formatDisk(server.disk) }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span
+                                            class="text-sm font-medium"
+                                            :class="
+                                                server.cpu === 0 ? 'text-green-600 dark:text-green-400' : 'text-primary'
+                                            "
+                                        >
+                                            {{ formatCpu(server.cpu) }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span
+                                            class="text-sm font-medium"
+                                            :class="
+                                                server.swap === 0
+                                                    ? 'text-green-600 dark:text-green-400'
+                                                    : 'text-primary'
+                                            "
+                                        >
+                                            {{ formatSwap(server.swap || 0) }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm font-medium">
+                                            {{
+                                                server.allocation
+                                                    ? `${server.allocation.ip}:${server.allocation.port}`
+                                                    : 'N/A'
+                                            }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-muted-foreground">
+                                            {{ formatDate(server.created_at) }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center justify-end">
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                class="h-8 w-8 p-0"
+                                                :disabled="!isServerAccessible(server)"
+                                                data-umami-event="Open server"
+                                                :data-umami-event-server="server.name"
+                                                @click="openServerDetails(server)"
+                                            >
+                                                <Eye class="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compact View -->
+            <div v-else-if="viewMode === 'compact'" class="space-y-4">
+                <div class="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+                    <ContextMenu v-for="server in servers" :key="server.id">
+                        <ContextMenuTrigger as-child>
+                            <div
+                                class="group bg-card border border-border rounded-md transition-all duration-200 overflow-hidden cursor-pointer hover:shadow-md hover:border-primary/20"
+                                :class="{ 'opacity-50': !isServerAccessible(server) }"
+                                @click="openServerDetails(server)"
+                            >
+                                <!-- Compact Header -->
+                                <div class="relative h-16 bg-linear-to-r from-primary/10 to-primary/5 p-2">
+                                    <div class="flex items-center justify-between h-full">
+                                        <div class="flex-1 min-w-0">
+                                            <h4 class="text-sm font-semibold truncate">{{ server.name }}</h4>
+                                            <p class="text-xs text-muted-foreground truncate">
+                                                {{ server.spell?.name || 'N/A' }}
+                                            </p>
+                                        </div>
+                                        <Badge :variant="getStatusVariant(displayStatus(server))" class="text-xs">
+                                            {{ $t(`servers.status.${displayStatus(server)}`) }}
+                                        </Badge>
+                                    </div>
+                                </div>
+
+                                <!-- Compact Content -->
+                                <div class="p-2 space-y-1">
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span class="text-muted-foreground">{{ $t('servers.memory') }}</span>
+                                        <span class="font-medium">{{ formatMemory(server.memory) }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span class="text-muted-foreground">{{ $t('servers.disk') }}</span>
+                                        <span class="font-medium">{{ formatDisk(server.disk) }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span class="text-muted-foreground">{{ $t('servers.cpu') }}</span>
+                                        <span class="font-medium">{{ formatCpu(server.cpu) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent>
+                            <ContextMenuLabel>{{ server.name }}</ContextMenuLabel>
+                            <ContextMenuSeparator />
+                            <ContextMenuSub>
+                                <ContextMenuSubTrigger>
+                                    <FolderOpen class="h-4 w-4 mr-2" />
+                                    {{ $t('servers.moveToFolder') }}
+                                </ContextMenuSubTrigger>
+                                <ContextMenuSubContent>
+                                    <ContextMenuItem
+                                        v-for="folder in serverFolders"
+                                        :key="folder.id"
+                                        @click="moveServerToFolder(server, folder.id)"
+                                    >
+                                        <FolderOpen class="h-4 w-4 mr-2" />
+                                        {{ folder.name }}
+                                    </ContextMenuItem>
+                                    <ContextMenuItem @click="moveServerToFolder(server, null)">
+                                        <Server class="h-4 w-4 mr-2" />
+                                        {{ $t('servers.unassigned') }}
+                                    </ContextMenuItem>
+                                </ContextMenuSubContent>
+                            </ContextMenuSub>
+                            <ContextMenuSeparator />
+                            <ContextMenuItem @click="createFolderForServer(server)">
+                                <FolderPlus class="h-4 w-4 mr-2" />
+                                {{ $t('servers.createNewFolder') }}
+                            </ContextMenuItem>
+                        </ContextMenuContent>
+                    </ContextMenu>
+                </div>
+            </div>
+
+            <!-- Detailed View -->
+            <div v-else-if="viewMode === 'detailed'" class="space-y-4">
+                <div class="grid gap-6 grid-cols-1 lg:grid-cols-2">
+                    <ContextMenu v-for="server in servers" :key="server.id">
+                        <ContextMenuTrigger as-child>
+                            <div
+                                class="group bg-card border-2 border-border rounded-xl transition-all duration-200 overflow-hidden"
+                                :class="{
+                                    'cursor-pointer hover:shadow-xl hover:border-primary/30 hover:scale-[1.02]':
+                                        isServerAccessible(server),
+                                    'cursor-not-allowed opacity-75': !isServerAccessible(server),
+                                }"
+                                data-umami-event="Open server"
+                                :data-umami-event-server="server.name"
+                                @click="openServerDetails(server)"
+                            >
+                                <!-- Detailed Banner -->
+                                <div class="relative h-40">
+                                    <div
+                                        v-if="server.spell?.banner"
+                                        class="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                                        :style="{ backgroundImage: `url(${server.spell.banner})` }"
+                                    />
+                                    <div
+                                        class="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent"
+                                    />
+
+                                    <!-- Detailed Content -->
+                                    <div class="relative z-10 p-6 h-full flex flex-col justify-between">
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex-1 min-w-0">
+                                                <h3 class="text-xl font-bold text-white drop-shadow-lg">
+                                                    {{ server.name }}
+                                                </h3>
+                                                <p class="text-sm text-white/90 drop-shadow-md mt-1">
+                                                    {{ server.description || $t('servers.noDescription') }}
+                                                </p>
+                                            </div>
+                                            <div class="flex flex-col gap-2">
+                                                <Badge
+                                                    :variant="getStatusVariant(displayStatus(server))"
+                                                    class="bg-white/20 text-white border-white/30"
+                                                >
+                                                    {{ $t(`servers.status.${displayStatus(server)}`) }}
+                                                </Badge>
+                                                <Badge
+                                                    v-if="server.is_subuser"
+                                                    variant="outline"
+                                                    class="bg-blue-500/20 text-blue-100 border-blue-300/30"
+                                                >
+                                                    {{ $t('servers.subuserAccess') }}
+                                                </Badge>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center gap-3 text-sm">
+                                            <div class="flex items-center gap-2">
+                                                <Sparkles class="h-4 w-4 text-white drop-shadow-sm" />
+                                                <span class="text-white/90 font-medium"
+                                                    >{{ $t('servers.spell') }}:</span
+                                                >
+                                                <span class="font-bold text-white">{{
+                                                    server.spell?.name || 'N/A'
+                                                }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Detailed Content -->
+                                <div class="p-6 space-y-6">
+                                    <!-- Server Info -->
+                                    <div class="grid grid-cols-2 gap-4 text-sm">
+                                        <div class="flex items-center gap-3">
+                                            <Server class="h-4 w-4 text-muted-foreground" />
+                                            <span class="text-muted-foreground">{{ $t('servers.node') }}:</span>
+                                            <span class="font-medium">{{ server.node?.name || 'N/A' }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <Hash class="h-4 w-4 text-muted-foreground" />
+                                            <span class="text-muted-foreground">{{ $t('servers.realm') }}:</span>
+                                            <span class="font-medium">{{ server.realm?.name || 'N/A' }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <Globe class="h-4 w-4 text-muted-foreground" />
+                                            <span class="text-muted-foreground">{{ $t('servers.allocation') }}:</span>
+                                            <span class="font-medium">{{
+                                                server.allocation
+                                                    ? `${server.allocation.ip}:${server.allocation.port}`
+                                                    : 'N/A'
+                                            }}</span>
+                                        </div>
+                                        <div v-if="server.allocation?.ip_alias" class="flex items-center gap-3">
+                                            <Globe class="h-4 w-4 text-muted-foreground" />
+                                            <span class="text-muted-foreground">{{ $t('servers.ipAlias') }}:</span>
+                                            <span class="font-medium">{{ server.allocation.ip_alias }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <User class="h-4 w-4 text-muted-foreground" />
+                                            <span class="text-muted-foreground">{{ $t('servers.ownerId') }}:</span>
+                                            <span class="font-medium">{{ server.owner_id || 'N/A' }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Resources -->
+                                    <div class="space-y-3">
+                                        <h4 class="text-sm font-semibold text-muted-foreground">
+                                            {{ $t('servers.resources') }}
+                                        </h4>
+                                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                            <div class="text-center p-3 bg-muted/50 rounded-lg border border-border/50">
+                                                <div
+                                                    class="text-lg font-bold"
+                                                    :class="
+                                                        server.memory === 0
+                                                            ? 'text-green-600 dark:text-green-400'
+                                                            : 'text-primary'
+                                                    "
+                                                >
+                                                    {{ formatMemory(server.memory) }}
+                                                </div>
+                                                <div class="text-xs text-muted-foreground">
+                                                    {{ $t('servers.memory') }}
+                                                </div>
+                                            </div>
+                                            <div class="text-center p-3 bg-muted/50 rounded-lg border border-border/50">
+                                                <div
+                                                    class="text-lg font-bold"
+                                                    :class="
+                                                        server.disk === 0
+                                                            ? 'text-green-600 dark:text-green-400'
+                                                            : 'text-primary'
+                                                    "
+                                                >
+                                                    {{ formatDisk(server.disk) }}
+                                                </div>
+                                                <div class="text-xs text-muted-foreground">
+                                                    {{ $t('servers.disk') }}
+                                                </div>
+                                            </div>
+                                            <div class="text-center p-3 bg-muted/50 rounded-lg border border-border/50">
+                                                <div
+                                                    class="text-lg font-bold"
+                                                    :class="
+                                                        server.cpu === 0
+                                                            ? 'text-green-600 dark:text-green-400'
+                                                            : 'text-primary'
+                                                    "
+                                                >
+                                                    {{ formatCpu(server.cpu) }}
+                                                </div>
+                                                <div class="text-xs text-muted-foreground">{{ $t('servers.cpu') }}</div>
+                                            </div>
+                                            <div class="text-center p-3 bg-muted/50 rounded-lg border border-border/50">
+                                                <div
+                                                    class="text-lg font-bold"
+                                                    :class="
+                                                        (server.swap || 0) === 0
+                                                            ? 'text-green-600 dark:text-green-400'
+                                                            : 'text-primary'
+                                                    "
+                                                >
+                                                    {{ formatSwap(server.swap || 0) }}
+                                                </div>
+                                                <div class="text-xs text-muted-foreground">
+                                                    {{ $t('servers.swap') }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                            <div class="text-center p-3 bg-muted/50 rounded-lg border border-border/50">
+                                                <div
+                                                    class="text-lg font-bold"
+                                                    :class="
+                                                        (server.io || 0) === 0
+                                                            ? 'text-green-600 dark:text-green-400'
+                                                            : 'text-primary'
+                                                    "
+                                                >
+                                                    {{ formatIO(server.io || 0) }}
+                                                </div>
+                                                <div class="text-xs text-muted-foreground">{{ $t('servers.io') }}</div>
+                                            </div>
+                                            <div class="text-center p-3 bg-muted/50 rounded-lg border border-border/50">
+                                                <div class="text-lg font-bold text-primary">
+                                                    {{ server.allocation_limit || '∞' }}
+                                                </div>
+                                                <div class="text-xs text-muted-foreground">
+                                                    {{ $t('servers.allocationLimit') }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Limits -->
+                                    <div class="space-y-3">
+                                        <h4 class="text-sm font-semibold text-muted-foreground">
+                                            {{ $t('servers.limits') }}
+                                        </h4>
+                                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                                            <div class="text-center p-3 bg-muted/50 rounded-lg border border-border/50">
+                                                <div class="text-lg font-bold text-primary">
+                                                    {{ server.database_limit || '∞' }}
+                                                </div>
+                                                <div class="text-xs text-muted-foreground">
+                                                    {{ $t('servers.databaseLimit') }}
+                                                </div>
+                                            </div>
+                                            <div class="text-center p-3 bg-muted/50 rounded-lg border border-border/50">
+                                                <div class="text-lg font-bold text-primary">
+                                                    {{ server.backup_limit || '∞' }}
+                                                </div>
+                                                <div class="text-xs text-muted-foreground">
+                                                    {{ $t('servers.backupLimit') }}
+                                                </div>
+                                            </div>
+                                            <div class="text-center p-3 bg-muted/50 rounded-lg border border-border/50">
+                                                <div class="text-lg font-bold text-primary">
+                                                    {{ server.allocation_limit || '∞' }}
+                                                </div>
+                                                <div class="text-xs text-muted-foreground">
+                                                    {{ $t('servers.allocationLimit') }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Server Settings -->
+                                    <div class="space-y-3">
+                                        <h4 class="text-sm font-semibold text-muted-foreground">
+                                            {{ $t('servers.settings') }}
+                                        </h4>
+                                        <div class="flex items-center gap-4 text-sm">
+                                            <div class="flex items-center gap-2">
+                                                <Settings class="h-4 w-4 text-muted-foreground" />
+                                                <span class="text-muted-foreground"
+                                                    >{{ $t('servers.skipScripts') }}:</span
+                                                >
+                                                <Badge
+                                                    :variant="server.skip_scripts ? 'destructive' : 'secondary'"
+                                                    class="text-xs"
+                                                >
+                                                    {{
+                                                        server.skip_scripts
+                                                            ? $t('servers.enabled')
+                                                            : $t('servers.disabled')
+                                                    }}
+                                                </Badge>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <Shield class="h-4 w-4 text-muted-foreground" />
+                                                <span class="text-muted-foreground"
+                                                    >{{ $t('servers.oomDisabled') }}:</span
+                                                >
+                                                <Badge
+                                                    :variant="server.oom_disabled ? 'destructive' : 'secondary'"
+                                                    class="text-xs"
+                                                >
+                                                    {{
+                                                        server.oom_disabled
+                                                            ? $t('servers.enabled')
+                                                            : $t('servers.disabled')
+                                                    }}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                        <div v-if="server.threads" class="flex items-center gap-2 text-sm">
+                                            <Settings class="h-4 w-4 text-muted-foreground" />
+                                            <span class="text-muted-foreground">{{ $t('servers.threads') }}:</span>
+                                            <span class="font-medium">{{ server.threads }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Dates -->
+                                    <div class="space-y-3">
+                                        <h4 class="text-sm font-semibold text-muted-foreground">
+                                            {{ $t('servers.dates') }}
+                                        </h4>
+                                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
+                                            <div class="flex items-center gap-3">
+                                                <Calendar class="h-4 w-4 text-muted-foreground" />
+                                                <span class="text-muted-foreground">{{ $t('servers.created') }}:</span>
+                                                <span class="font-medium">{{ formatDate(server.created_at) }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-3">
+                                                <Clock class="h-4 w-4 text-muted-foreground" />
+                                                <span class="text-muted-foreground">{{ $t('servers.updated') }}:</span>
+                                                <span class="font-medium">{{ formatDate(server.updated_at) }}</span>
+                                            </div>
+                                            <div v-if="server.installed_at" class="flex items-center gap-3">
+                                                <CheckCircle class="h-4 w-4 text-muted-foreground" />
+                                                <span class="text-muted-foreground"
+                                                    >{{ $t('servers.installed') }}:</span
+                                                >
+                                                <span class="font-medium">{{ formatDate(server.installed_at) }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Click indicator -->
+                                    <div class="flex items-center justify-end pt-2">
+                                        <div
+                                            class="text-sm text-muted-foreground group-hover:text-primary transition-colors"
+                                        >
+                                            {{ $t('servers.clickToView') }} →
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent>
+                            <ContextMenuLabel>{{ server.name }}</ContextMenuLabel>
+                            <ContextMenuSeparator />
+                            <ContextMenuSub>
+                                <ContextMenuSubTrigger>
+                                    <FolderOpen class="h-4 w-4 mr-2" />
+                                    {{ $t('servers.moveToFolder') }}
+                                </ContextMenuSubTrigger>
+                                <ContextMenuSubContent>
+                                    <ContextMenuItem
+                                        v-for="folder in serverFolders"
+                                        :key="folder.id"
+                                        @click="moveServerToFolder(server, folder.id)"
+                                    >
+                                        <FolderOpen class="h-4 w-4 mr-2" />
+                                        {{ folder.name }}
+                                    </ContextMenuItem>
+                                    <ContextMenuItem @click="moveServerToFolder(server, null)">
+                                        <Server class="h-4 w-4 mr-2" />
+                                        {{ $t('servers.unassigned') }}
+                                    </ContextMenuItem>
+                                </ContextMenuSubContent>
+                            </ContextMenuSub>
+                            <ContextMenuSeparator />
+                            <ContextMenuItem @click="createFolderForServer(server)">
+                                <FolderPlus class="h-4 w-4 mr-2" />
+                                {{ $t('servers.createNewFolder') }}
+                            </ContextMenuItem>
+                        </ContextMenuContent>
+                    </ContextMenu>
+                </div>
+            </div>
+
+            <!-- Status Grouped View -->
+            <div v-else-if="viewMode === 'status-grouped'" class="space-y-6">
+                <div v-for="statusGroup in statusGroups" :key="statusGroup.status" class="space-y-3">
+                    <!-- Status Group Header -->
+                    <div class="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border/50">
+                        <div class="flex items-center gap-2">
+                            <div class="h-3 w-3 rounded-full" :class="getStatusColor(statusGroup.status)"></div>
+                            <h4 class="font-semibold">{{ $t(`servers.status.${statusGroup.status}`) }}</h4>
+                            <Badge variant="secondary"
+                                >{{ statusGroup.servers.length }} {{ $t('servers.servers') }}</Badge
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Servers in Status Group -->
+                    <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                        <ContextMenu v-for="server in statusGroup.servers" :key="server.id">
+                            <ContextMenuTrigger as-child>
+                                <div
+                                    class="group bg-card border-2 border-border rounded-lg transition-all duration-200 overflow-hidden"
+                                    :class="{
+                                        'cursor-pointer hover:shadow-lg hover:border-primary/20 hover:scale-[1.02]':
+                                            isServerAccessible(server),
+                                        'cursor-not-allowed opacity-75': !isServerAccessible(server),
+                                    }"
+                                    @click="openServerDetails(server)"
+                                >
+                                    <!-- Status Banner -->
+                                    <div class="relative w-full h-20" :class="getStatusBgColor(statusGroup.status)">
+                                        <div class="absolute inset-0 bg-black/20" />
+                                        <div class="relative z-10 p-3 h-full flex flex-col justify-between">
+                                            <div class="flex items-start justify-between">
+                                                <div class="flex-1 min-w-0">
+                                                    <h3 class="text-sm font-bold text-white drop-shadow-sm truncate">
+                                                        {{ server.name }}
+                                                    </h3>
+                                                    <p class="text-xs text-white/80 drop-shadow-sm truncate mt-1">
+                                                        {{ server.spell?.name || 'N/A' }}
+                                                    </p>
+                                                </div>
+                                                <Badge
+                                                    v-if="server.is_subuser"
+                                                    variant="outline"
+                                                    class="bg-blue-500/20 text-blue-100 border-blue-300/30 text-xs"
+                                                >
+                                                    {{ $t('servers.subuserAccess') }}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Card Content -->
+                                    <div class="p-3 bg-card">
+                                        <div class="space-y-2">
+                                            <div class="grid grid-cols-3 gap-1 text-xs">
+                                                <div class="text-center p-1.5 bg-muted/50 rounded border">
+                                                    <div class="font-semibold text-primary">
+                                                        {{ formatMemory(server.memory) }}
+                                                    </div>
+                                                    <div class="text-muted-foreground">{{ $t('servers.memory') }}</div>
+                                                </div>
+                                                <div class="text-center p-1.5 bg-muted/50 rounded border">
+                                                    <div class="font-semibold text-primary">
+                                                        {{ formatDisk(server.disk) }}
+                                                    </div>
+                                                    <div class="text-muted-foreground">{{ $t('servers.disk') }}</div>
+                                                </div>
+                                                <div class="text-center p-1.5 bg-muted/50 rounded border">
+                                                    <div class="font-semibold text-primary">
+                                                        {{ formatCpu(server.cpu) }}
+                                                    </div>
+                                                    <div class="text-muted-foreground">{{ $t('servers.cpu') }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </ContextMenuTrigger>
+                            <ContextMenuContent>
+                                <ContextMenuLabel>{{ server.name }}</ContextMenuLabel>
+                                <ContextMenuSeparator />
+                                <ContextMenuSub>
+                                    <ContextMenuSubTrigger>
+                                        <FolderOpen class="h-4 w-4 mr-2" />
+                                        {{ $t('servers.moveToFolder') }}
+                                    </ContextMenuSubTrigger>
+                                    <ContextMenuSubContent>
+                                        <ContextMenuItem
+                                            v-for="folder in serverFolders"
+                                            :key="folder.id"
+                                            @click="moveServerToFolder(server, folder.id)"
+                                        >
+                                            <FolderOpen class="h-4 w-4 mr-2" />
+                                            {{ folder.name }}
+                                        </ContextMenuItem>
+                                        <ContextMenuItem @click="moveServerToFolder(server, null)">
+                                            <Server class="h-4 w-4 mr-2" />
+                                            {{ $t('servers.unassigned') }}
+                                        </ContextMenuItem>
+                                    </ContextMenuSubContent>
+                                </ContextMenuSub>
+                                <ContextMenuSeparator />
+                                <ContextMenuItem @click="createFolderForServer(server)">
+                                    <FolderPlus class="h-4 w-4 mr-2" />
+                                    {{ $t('servers.createNewFolder') }}
+                                </ContextMenuItem>
+                            </ContextMenuContent>
+                        </ContextMenu>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Minimal View -->
+            <div v-else-if="viewMode === 'minimal'" class="space-y-2">
+                <div class="space-y-1">
+                    <div
+                        v-for="server in servers"
+                        :key="server.id"
+                        class="group flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
+                        :class="{ 'opacity-50': !isServerAccessible(server) }"
+                        @click="openServerDetails(server)"
+                    >
+                        <div class="shrink-0">
+                            <div class="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+                                <Server class="h-4 w-4 text-primary" />
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-medium truncate">{{ server.name }}</span>
+                                <Badge :variant="getStatusVariant(displayStatus(server))" class="text-xs">
+                                    {{ $t(`servers.status.${displayStatus(server)}`) }}
+                                </Badge>
+                                <Badge v-if="server.is_subuser" variant="outline" class="text-xs">
+                                    {{ $t('servers.subuserAccess') }}
+                                </Badge>
+                            </div>
+                            <div class="text-xs text-muted-foreground truncate">{{ server.spell?.name || 'N/A' }}</div>
+                        </div>
+                        <div class="shrink-0 text-xs text-muted-foreground">
+                            {{ formatMemory(server.memory) }} / {{ formatDisk(server.disk) }} /
+                            {{ formatCpu(server.cpu) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Pagination -->
             <div
                 v-if="pagination.total_pages > 1"
@@ -947,9 +1754,21 @@ import {
     FolderPlus,
     FolderOpen,
     List,
+    Table,
     Edit,
     Trash2,
     Shield,
+    Eye,
+    Grid3X3,
+    LayoutGrid,
+    Layers,
+    Minimize2,
+    Globe,
+    User,
+    Settings,
+    Calendar,
+    Clock,
+    CheckCircle,
 } from 'lucide-vue-next';
 import axios from 'axios';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -998,6 +1817,7 @@ interface ServerAllocation {
     id: number;
     ip: string;
     port: number;
+    ip_alias?: string;
 }
 
 interface Server {
@@ -1005,11 +1825,23 @@ interface Server {
     name: string;
     uuidShort: string;
     description: string;
-    status: string;
+    status: string | null;
     suspended?: number;
     memory: number;
     disk: number;
     cpu: number;
+    swap?: number;
+    io?: number;
+    threads?: string | null;
+    startup?: string;
+    image?: string;
+    database_limit?: number;
+    backup_limit?: number;
+    allocation_limit?: number;
+    skip_scripts?: number;
+    oom_disabled?: number;
+    external_id?: string;
+    owner_id: number;
     node_id: number;
     realms_id: number;
     spell_id: number;
@@ -1023,6 +1855,7 @@ interface Server {
     allocation?: ServerAllocation;
     created_at: string;
     updated_at: string;
+    installed_at?: string;
 }
 
 interface Folder {
@@ -1058,7 +1891,7 @@ const pagination = ref<Pagination>({
     to: 0,
 });
 
-const viewMode = ref<'folders' | 'list'>('folders');
+const viewMode = ref<'folders' | 'list' | 'table' | 'compact' | 'detailed' | 'status-grouped' | 'minimal'>('folders');
 const folderDialogOpen = ref(false);
 const editingFolder = ref<Folder | null>(null);
 const folderForm = ref({ name: '' });
@@ -1072,8 +1905,11 @@ const isMobile = computed(() => {
 const savedViewMode = localStorage.getItem('featherpanel-server_view_mode');
 if (isMobile.value) {
     viewMode.value = 'list';
-} else if (savedViewMode === 'folders' || savedViewMode === 'list') {
-    viewMode.value = savedViewMode;
+} else if (
+    savedViewMode &&
+    ['folders', 'list', 'table', 'compact', 'detailed', 'status-grouped', 'minimal'].includes(savedViewMode)
+) {
+    viewMode.value = savedViewMode as typeof viewMode.value;
 }
 
 const serverFolders = ref<Folder[]>([]);
@@ -1106,6 +1942,29 @@ const filteredServers = computed(() => {
             server.realm?.name.toLowerCase().includes(query) ||
             server.spell?.name.toLowerCase().includes(query),
     );
+});
+
+// Status grouped view computed property
+const statusGroups = computed(() => {
+    const groups: { [key: string]: Server[] } = {};
+
+    servers.value.forEach((server) => {
+        const status = displayStatus(server);
+        if (!groups[status]) {
+            groups[status] = [];
+        }
+        groups[status].push(server);
+    });
+
+    // Convert to array and sort by status priority
+    const statusPriority = ['running', 'starting', 'stopped', 'installing', 'suspended', 'error', 'unknown'];
+    return Object.entries(groups)
+        .map(([status, servers]) => ({ status, servers }))
+        .sort((a, b) => {
+            const aIndex = statusPriority.indexOf(a.status);
+            const bIndex = statusPriority.indexOf(b.status);
+            return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+        });
 });
 
 onMounted(async () => {
@@ -1267,7 +2126,13 @@ function getStatusVariant(status: string): 'default' | 'secondary' | 'destructiv
 }
 
 function displayStatus(server: Server): string {
-    return server.suspended ? 'suspended' : server.status || 'unknown';
+    if (server.suspended) {
+        return 'suspended';
+    }
+    if (!server.status) {
+        return 'unknown';
+    }
+    return server.status.toLowerCase();
 }
 
 function formatMemory(memory: number): string {
@@ -1295,6 +2160,34 @@ function formatCpu(cpu: number): string {
         return '∞';
     }
     return `${cpu}%`;
+}
+
+function formatSwap(swap: number): string {
+    if (swap === 0) {
+        return '∞';
+    }
+    if (swap >= 1024) {
+        return `${(swap / 1024).toFixed(1)} GB`;
+    }
+    return `${swap} MB`;
+}
+
+function formatIO(io: number): string {
+    if (io === 0) {
+        return '∞';
+    }
+    return `${io} MB/s`;
+}
+
+function formatDate(dateString: string): string {
+    if (!dateString) return 'N/A';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'N/A';
+        return date.toLocaleDateString();
+    } catch {
+        return 'N/A';
+    }
 }
 
 function isServerAccessible(server: Server): boolean {
@@ -1632,5 +2525,44 @@ function createFolderForServer(server: Server) {
 
     serverFolders.value.push(newFolder);
     saveFoldersToStorage();
+}
+
+// Helper functions for status grouped view
+function getStatusColor(status: string): string {
+    switch (status) {
+        case 'running':
+            return 'bg-green-500';
+        case 'starting':
+            return 'bg-blue-500';
+        case 'stopped':
+            return 'bg-gray-500';
+        case 'installing':
+            return 'bg-yellow-500';
+        case 'suspended':
+            return 'bg-red-500';
+        case 'error':
+            return 'bg-red-600';
+        default:
+            return 'bg-gray-400';
+    }
+}
+
+function getStatusBgColor(status: string): string {
+    switch (status) {
+        case 'running':
+            return 'bg-green-500';
+        case 'starting':
+            return 'bg-blue-500';
+        case 'stopped':
+            return 'bg-gray-500';
+        case 'installing':
+            return 'bg-yellow-500';
+        case 'suspended':
+            return 'bg-red-500';
+        case 'error':
+            return 'bg-red-600';
+        default:
+            return 'bg-gray-400';
+    }
 }
 </script>

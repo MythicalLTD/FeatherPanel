@@ -30,7 +30,7 @@
                 <CardContent>
                     <div class="p-4 sm:p-6 text-sm text-muted-foreground">
                         <div class="flex items-start gap-3 mb-2">
-                            <Layers class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <Layers class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div class="font-semibold text-foreground">Tech Stack</div>
                         </div>
                         <ul class="list-disc list-inside space-y-1">
@@ -48,7 +48,7 @@
                 <CardContent>
                     <div class="p-4 sm:p-6 text-sm text-muted-foreground">
                         <div class="flex items-start gap-3 mb-2">
-                            <Scale class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <Scale class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div class="font-semibold text-foreground">Third‑party Licenses</div>
                         </div>
                         <p>
@@ -63,7 +63,7 @@
                 <CardContent>
                     <div class="p-4 sm:p-6 text-sm text-muted-foreground">
                         <div class="flex items-start gap-3 mb-2">
-                            <Code class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <Code class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div class="font-semibold text-foreground">Your Responsibilities</div>
                         </div>
                         <p>

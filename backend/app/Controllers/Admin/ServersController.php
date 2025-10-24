@@ -41,13 +41,13 @@ use App\Chat\Allocation;
 use App\Helpers\UUIDUtils;
 use App\Chat\SpellVariable;
 use App\Chat\ServerActivity;
+use App\Chat\ServerDatabase;
 use App\Chat\ServerTransfer;
 use App\Chat\ServerVariable;
-use App\Chat\ServerDatabase;
-use App\Chat\DatabaseInstance;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
+use App\Chat\DatabaseInstance;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Mail\templates\ServerBanned;
@@ -2178,16 +2178,16 @@ class ServersController
      * This method handles database cleanup gracefully without breaking the deletion process.
      *
      * @param int $serverId The server ID
-     * @return void
      */
     private function cleanupServerDatabases(int $serverId): void
     {
         try {
             // Get all databases for this server
             $databases = ServerDatabase::getServerDatabasesWithDetailsByServerId($serverId);
-            
+
             if (empty($databases)) {
                 App::getInstance(true)->getLogger()->info('No databases found for server ID: ' . $serverId);
+
                 return;
             }
 
@@ -2231,6 +2231,7 @@ class ServersController
      * @param array $databaseHost Database host information
      * @param string $databaseName Database name to delete
      * @param string $username Username to delete
+     *
      * @throws \Exception If deletion fails
      */
     private function deleteDatabaseFromHost(array $databaseHost, string $databaseName, string $username): void
@@ -2293,6 +2294,7 @@ class ServersController
      * Safely quote a PostgreSQL identifier by escaping double quotes.
      *
      * @param string $identifier The identifier to quote
+     *
      * @return string The safely quoted identifier
      */
     private function quoteIdentifier(string $identifier): string
@@ -2304,6 +2306,7 @@ class ServersController
      * Safely quote a MySQL/MariaDB identifier by escaping backticks.
      *
      * @param string $identifier The identifier to quote
+     *
      * @return string The safely quoted identifier
      */
     private function quoteIdentifierMySQL(string $identifier): string

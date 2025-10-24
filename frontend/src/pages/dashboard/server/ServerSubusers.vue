@@ -19,7 +19,13 @@
                             <RefreshCw :class="['h-4 w-4', loading && 'animate-spin']" />
                             <span>{{ t('serverSubusers.refresh') }}</span>
                         </Button>
-                        <Button size="sm" :disabled="loading" class="flex items-center gap-2" @click="openAddDialog">
+                        <Button
+                            size="sm"
+                            :disabled="loading"
+                            class="flex items-center gap-2"
+                            data-umami-event="Create subuser"
+                            @click="openAddDialog"
+                        >
                             <Plus class="h-4 w-4" />
                             <span>{{ t('serverSubusers.addSubuser') }}</span>
                         </Button>
@@ -130,7 +136,7 @@
                             <div class="flex items-start justify-between gap-3">
                                 <div class="flex items-start gap-3 flex-1 min-w-0">
                                     <div
-                                        class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0"
+                                        class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"
                                     >
                                         <Users class="h-5 w-5 text-primary" />
                                     </div>
@@ -151,6 +157,8 @@
                                     size="sm"
                                     :disabled="deletingId === sub.id || loading"
                                     class="flex items-center gap-2"
+                                    data-umami-event="Delete subuser"
+                                    :data-umami-event-subuser="sub.email"
                                     @click="confirmDelete(sub)"
                                 >
                                     <Trash2 class="h-3.5 w-3.5" />

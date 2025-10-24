@@ -74,7 +74,7 @@
         "eslint": "^9.38.0",
         "eslint-config-prettier": "^10.1.8",
         "js-cookie": "^3.0.5",
-        "lucide-vue-next": "^0.546.0",
+        "lucide-vue-next": "^0.547.0",
         "npm-run-all2": "^8.0.4",
         "pinia": "^3.0.3",
         "prettier": "^3.6.2",

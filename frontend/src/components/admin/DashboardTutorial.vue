@@ -26,7 +26,7 @@
                 <!-- Feature 1 -->
                 <div class="flex gap-4">
                     <div
-                        class="flex-shrink-0 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold"
+                        class="shrink-0 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold"
                     >
                         1
                     </div>
@@ -45,7 +45,7 @@
                 <!-- Feature 2 -->
                 <div class="flex gap-4">
                     <div
-                        class="flex-shrink-0 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold"
+                        class="shrink-0 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold"
                     >
                         2
                     </div>
@@ -64,7 +64,7 @@
                 <!-- Feature 3 -->
                 <div class="flex gap-4">
                     <div
-                        class="flex-shrink-0 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold"
+                        class="shrink-0 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold"
                     >
                         3
                     </div>
@@ -83,7 +83,7 @@
                 <!-- Feature 4 -->
                 <div class="flex gap-4">
                     <div
-                        class="flex-shrink-0 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold"
+                        class="shrink-0 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold"
                     >
                         4
                     </div>

@@ -75,7 +75,7 @@
                                 </Button>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 flex-shrink-0">
+                        <div class="flex items-center gap-2 shrink-0">
                             <Badge :variant="getStatusVariant(key.deleted_at)" class="text-xs">
                                 {{
                                     key.deleted_at

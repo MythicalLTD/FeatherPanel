@@ -81,6 +81,9 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::REGISTRATION_ENABLED => 'true',
             ConfigInterface::REQUIRE_TWO_FA_ADMINS => 'false',
 
+            // Telemetry settings
+            ConfigInterface::TELEMETRY => 'true',
+
         ];
 
     }

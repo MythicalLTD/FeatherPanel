@@ -19,7 +19,12 @@
                             <RefreshCw :class="['h-4 w-4', loading && 'animate-spin']" />
                             <span>{{ t('serverSchedules.refresh') }}</span>
                         </Button>
-                        <Button size="sm" class="flex items-center gap-2" @click="openCreateScheduleDrawer">
+                        <Button
+                            size="sm"
+                            class="flex items-center gap-2"
+                            data-umami-event="Create schedule"
+                            @click="openCreateScheduleDrawer"
+                        >
                             <Plus class="h-4 w-4" />
                             <span>{{ t('serverSchedules.createSchedule') }}</span>
                         </Button>
@@ -92,7 +97,7 @@
                             <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                                 <div class="flex items-start gap-3 flex-1 min-w-0">
                                     <div
-                                        class="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                                        class="h-10 w-10 rounded-lg flex items-center justify-center shrink-0"
                                         :class="[
                                             schedule.is_processing
                                                 ? 'bg-blue-500/10'
@@ -140,6 +145,8 @@
                                         variant="outline"
                                         size="sm"
                                         class="flex items-center gap-2"
+                                        data-umami-event="Edit schedule"
+                                        :data-umami-event-schedule="schedule.name"
                                         @click="openEditScheduleDrawer(schedule)"
                                     >
                                         <Pencil class="h-3.5 w-3.5" />
@@ -158,6 +165,8 @@
                                         :variant="schedule.is_active ? 'secondary' : 'default'"
                                         size="sm"
                                         class="flex items-center gap-2"
+                                        data-umami-event="Toggle schedule"
+                                        :data-umami-event-schedule="schedule.name"
                                         @click="toggleScheduleStatus(schedule)"
                                     >
                                         <Power class="h-3.5 w-3.5" />
@@ -169,6 +178,8 @@
                                         variant="destructive"
                                         size="sm"
                                         class="flex items-center gap-2"
+                                        data-umami-event="Delete schedule"
+                                        :data-umami-event-schedule="schedule.name"
                                         @click="deleteSchedule(schedule)"
                                     >
                                         <Trash2 class="h-3.5 w-3.5" />

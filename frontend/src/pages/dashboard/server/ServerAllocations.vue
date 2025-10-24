@@ -25,6 +25,7 @@
                             size="sm"
                             :disabled="!serverInfo?.can_add_more || loading || autoAllocating"
                             class="flex items-center gap-2"
+                            data-umami-event="Auto allocate"
                             @click="autoAllocate"
                         >
                             <Zap :class="['h-4 w-4', autoAllocating && 'animate-pulse']" />
@@ -44,7 +45,7 @@
                     ]"
                 >
                     <div
-                        class="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                        class="h-10 w-10 rounded-lg flex items-center justify-center shrink-0"
                         :class="[serverInfo.can_add_more ? 'bg-green-500/20' : 'bg-orange-500/20']"
                     >
                         <Network
@@ -83,7 +84,7 @@
                             }}
                         </p>
                     </div>
-                    <div class="text-right flex-shrink-0">
+                    <div class="text-right shrink-0">
                         <div class="text-2xl font-bold text-primary">
                             {{ serverInfo.current_allocations }}/{{ serverInfo.allocation_limit }}
                         </div>
@@ -161,7 +162,7 @@
                     <div
                         class="mt-4 flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg"
                     >
-                        <Info class="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                        <Info class="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
                         <div class="text-xs text-blue-800 dark:text-blue-200">
                             <p class="font-medium mb-1">{{ t('serverAllocations.allocationManagement') }}:</p>
                             <ul class="space-y-1">
@@ -191,7 +192,7 @@
                             <div class="flex items-start justify-between gap-3">
                                 <div class="flex items-start gap-3 flex-1 min-w-0">
                                     <div
-                                        class="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0"
+                                        class="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0"
                                     >
                                         <Network class="h-5 w-5 text-green-500" />
                                     </div>
@@ -220,13 +221,15 @@
                                 </div>
 
                                 <!-- Action Buttons -->
-                                <div class="flex items-center gap-2 flex-shrink-0">
+                                <div class="flex items-center gap-2 shrink-0">
                                     <Button
                                         v-if="!allocation.is_primary"
                                         variant="outline"
                                         size="sm"
                                         :disabled="settingPrimary === allocation.id || loading"
                                         class="flex items-center gap-2"
+                                        data-umami-event="Set primary allocation"
+                                        :data-umami-event-allocation="`${allocation.ip}:${allocation.port}`"
                                         @click="setPrimaryAllocation(allocation.id)"
                                     >
                                         <Star class="h-3.5 w-3.5" />
@@ -238,6 +241,8 @@
                                         size="sm"
                                         :disabled="deletingAllocation === allocation.id || loading"
                                         class="flex items-center gap-2"
+                                        data-umami-event="Delete allocation"
+                                        :data-umami-event-allocation="`${allocation.ip}:${allocation.port}`"
                                         @click="deleteAllocation(allocation.id)"
                                     >
                                         <Trash2 class="h-3.5 w-3.5" />

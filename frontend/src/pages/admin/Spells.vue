@@ -337,7 +337,7 @@
                 <Card class="mb-4">
                     <CardContent>
                         <div class="p-4 text-sm text-muted-foreground flex items-start gap-3">
-                            <Sparkles class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <Sparkles class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">Cross-compatible spells</div>
                                 <p>
@@ -356,7 +356,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <BookOpen class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <BookOpen class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">What are Spells (eggs)?</div>
                                     <p>
@@ -371,7 +371,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Boxes class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <Boxes class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">How you use them</div>
                                     <p>
@@ -386,7 +386,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <Wrench class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <Wrench class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Under the hood</div>
                                     <p>
@@ -400,7 +400,7 @@
                     <Card>
                         <CardContent>
                             <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                                <GitBranch class="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                <GitBranch class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                 <div>
                                     <div class="font-semibold text-foreground mb-1">Sources & compatibility</div>
                                     <p>
@@ -906,7 +906,7 @@
                                                 </div>
                                                 <p class="text-sm text-muted-foreground">{{ variable.description }}</p>
                                             </div>
-                                            <div class="flex gap-2 ml-4 flex-shrink-0">
+                                            <div class="flex gap-2 ml-4 shrink-0">
                                                 <Button
                                                     size="sm"
                                                     variant="outline"

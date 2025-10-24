@@ -53,7 +53,7 @@
                 <nav class="flex space-x-4 sm:space-x-8 overflow-x-auto">
                     <router-link
                         :to="`/server/${route.params.uuidShort}/logs`"
-                        class="border-b-2 border-transparent py-2 px-1 text-xs sm:text-sm font-medium transition-colors hover:text-foreground whitespace-nowrap flex-shrink-0"
+                        class="border-b-2 border-transparent py-2 px-1 text-xs sm:text-sm font-medium transition-colors hover:text-foreground whitespace-nowrap shrink-0"
                         :class="{
                             'border-primary text-foreground': $route.path === `/server/${route.params.uuidShort}/logs`,
                             'text-muted-foreground': $route.path !== `/server/${route.params.uuidShort}/logs`,
@@ -63,7 +63,7 @@
                     </router-link>
                     <router-link
                         :to="`/server/${route.params.uuidShort}/logs/install`"
-                        class="border-b-2 border-transparent py-2 px-1 text-xs sm:text-sm font-medium transition-colors hover:text-foreground whitespace-nowrap flex-shrink-0"
+                        class="border-b-2 border-transparent py-2 px-1 text-xs sm:text-sm font-medium transition-colors hover:text-foreground whitespace-nowrap shrink-0"
                         :class="{
                             'border-primary text-foreground':
                                 $route.path === `/server/${route.params.uuidShort}/logs/install`,

@@ -35,7 +35,7 @@
             <!-- Light Mode Warning -->
             <div v-if="!isDark" class="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
                 <div class="flex items-start gap-3">
-                    <Sun class="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                    <Sun class="h-5 w-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
                     <div class="space-y-1">
                         <p class="text-sm font-medium text-orange-600 dark:text-orange-400">
                             {{ $t('account.backgroundDisabledInLightMode') }}
@@ -153,7 +153,7 @@
                             ]"
                             @click="handleLanguageChange(language)"
                         >
-                            <span class="text-2xl flex-shrink-0">{{ language.flag }}</span>
+                            <span class="text-2xl shrink-0">{{ language.flag }}</span>
                             <div class="text-left flex-1">
                                 <p class="text-sm font-medium">{{ language.name }}</p>
                                 <p class="text-xs text-muted-foreground">{{ language.code.toUpperCase() }}</p>

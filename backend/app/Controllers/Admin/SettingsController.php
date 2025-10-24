@@ -111,6 +111,7 @@ class SettingsController
                 ConfigInterface::TURNSTILE_KEY_PUB,
                 ConfigInterface::TURNSTILE_KEY_PRIV,
                 ConfigInterface::REGISTRATION_ENABLED,
+                ConfigInterface::TELEMETRY,
             ],
         ],
         'email' => [
@@ -164,6 +165,17 @@ class SettingsController
                 'validation' => 'required|string|max:255',
                 'options' => [],
                 'category' => 'app',
+            ],
+            ConfigInterface::TELEMETRY => [
+                'name' => ConfigInterface::TELEMETRY,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::TELEMETRY, 'true'),
+                'description' => 'Should the application send telemetry data to the telemetry service?',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'security',
             ],
             ConfigInterface::APP_LOGO_DARK => [
                 'name' => ConfigInterface::APP_LOGO_DARK,

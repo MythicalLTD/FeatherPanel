@@ -405,7 +405,7 @@ onUnmounted(() => {
                     <!-- Command Input -->
                     <div class="p-4 border-t bg-gray-900">
                         <div class="flex items-center gap-2">
-                            <span class="text-green-400 font-mono text-sm flex-shrink-0">{{ getPrompt() }}</span>
+                            <span class="text-green-400 font-mono text-sm shrink-0">{{ getPrompt() }}</span>
                             <Input
                                 v-model="commandInput"
                                 class="bg-transparent border-none text-green-400 font-mono text-sm focus:ring-0 focus:border-none flex-1"

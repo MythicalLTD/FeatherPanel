@@ -14,13 +14,13 @@
             class="widget-drag-handle absolute -top-4 left-4 right-4 flex items-center justify-between gap-2 bg-muted/80 backdrop-blur-sm border border-border px-4 py-2.5 rounded-lg shadow-lg z-10 cursor-move hover:bg-muted hover:border-primary/40 transition-all"
         >
             <div class="flex items-center gap-3">
-                <GripVertical :size="18" class="flex-shrink-0 text-muted-foreground" />
+                <GripVertical :size="18" class="shrink-0 text-muted-foreground" />
                 <span class="font-semibold text-sm text-foreground">{{ title }}</span>
             </div>
             <Button
                 variant="ghost"
                 size="sm"
-                class="h-8 w-8 p-0 hover:bg-background flex-shrink-0"
+                class="h-8 w-8 p-0 hover:bg-background shrink-0"
                 @click.stop="toggleEnabled"
             >
                 <component

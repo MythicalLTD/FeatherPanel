@@ -739,7 +739,7 @@
                                     <div class="flex items-start gap-3">
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"
-                                            class="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5"
+                                            class="h-5 w-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5"
                                             fill="none"
                                             viewBox="0 0 24 24"
                                             stroke="currentColor"
@@ -881,7 +881,7 @@
                         <h4 class="font-medium truncate text-sm sm:text-base">{{ item.username }}</h4>
                         <p class="text-xs sm:text-sm text-muted-foreground truncate">{{ item.email }}</p>
                     </div>
-                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
+                    <div v-if="isSelected" class="shrink-0 ml-2 sm:ml-4">
                         <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
                 </div>
@@ -917,7 +917,7 @@
                             {{ item.description || 'No description available' }}
                         </p>
                     </div>
-                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
+                    <div v-if="isSelected" class="shrink-0 ml-2 sm:ml-4">
                         <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
                 </div>
@@ -953,7 +953,7 @@
                             {{ item.description || 'No description available' }}
                         </p>
                     </div>
-                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
+                    <div v-if="isSelected" class="shrink-0 ml-2 sm:ml-4">
                         <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
                 </div>
@@ -987,7 +987,7 @@
                         <h4 class="font-medium truncate text-sm sm:text-base">{{ item.ip }}:{{ item.port }}</h4>
                         <p class="text-xs sm:text-sm text-muted-foreground truncate">Node ID: {{ item.node_id }}</p>
                     </div>
-                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
+                    <div v-if="isSelected" class="shrink-0 ml-2 sm:ml-4">
                         <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
                 </div>
@@ -1036,7 +1036,7 @@
                         <div class="flex items-start gap-2 mb-2">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
-                                class="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5"
+                                class="h-5 w-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
@@ -1107,7 +1107,7 @@
                         <h4 class="font-medium truncate text-sm sm:text-base">{{ item.name }}</h4>
                         <p class="text-xs sm:text-sm text-muted-foreground truncate">{{ item.fqdn || 'No FQDN' }}</p>
                     </div>
-                    <div v-if="isSelected" class="flex-shrink-0 ml-2 sm:ml-4">
+                    <div v-if="isSelected" class="shrink-0 ml-2 sm:ml-4">
                         <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
                 </div>
