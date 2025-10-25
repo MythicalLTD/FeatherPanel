@@ -85,4 +85,14 @@ return function (RouteCollection $routes): void {
         ['PATCH']
     );
 
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'discord-unlink',
+        '/api/user/auth/discord/unlink',
+        function (Request $request) {
+            return (new \App\Controllers\User\Auth\DiscordController())->unlink($request);
+        },
+        ['DELETE']
+    );
+
 };

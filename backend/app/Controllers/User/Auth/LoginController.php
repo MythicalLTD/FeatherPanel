@@ -103,6 +103,20 @@ class LoginController
         $config = $app->getConfig();
         $data = json_decode($request->getContent(), true);
 
+        // Handle Discord OAuth login
+        $discordToken = $data['discord_token'] ?? null;
+        if ($discordToken) {
+            $discordController = new DiscordController();
+            $userInfo = $discordController->authenticateWithToken($discordToken);
+
+            if (!$userInfo) {
+                return ApiResponse::error('Invalid or expired Discord token', 'INVALID_DISCORD_TOKEN', 400);
+            }
+
+            // Use existing login flow to set session and return user data
+            return $this->completeLogin($userInfo, $request);
+        }
+
         if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
             $turnstileKeyPublic = $config->getSetting(ConfigInterface::TURNSTILE_KEY_PUB, 'NULL');
             $turnstileKeySecret = $config->getSetting(ConfigInterface::TURNSTILE_KEY_PRIV, 'NULL');
@@ -216,6 +230,16 @@ class LoginController
             ]);
         }
 
+        // Use the common login completion method
+        return $this->completeLogin($userInfo, $request);
+
+    }
+
+    /**
+     * Complete login process - set session, log activity, emit event, and return user data.
+     */
+    private function completeLogin(array $userInfo, Request $request): Response
+    {
         // Set session/cookie and log in
         if (isset($userInfo['remember_token'])) {
             $token = $userInfo['remember_token'];
@@ -250,6 +274,5 @@ class LoginController
         }
 
         return ApiResponse::error('Remember token not set', 'REMEMBER_TOKEN_NOT_SET');
-
     }
 }

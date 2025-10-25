@@ -20,28 +20,81 @@
                     <div class="space-y-1 flex-1">
                         <h4 class="text-sm font-medium">{{ $t('account.twoFactorAuth') }}</h4>
                         <p class="text-sm text-muted-foreground">{{ $t('account.twoFactorHint') }}</p>
+                        <div
+                            v-if="user?.two_fa_enabled === 'true'"
+                            class="mt-2 p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800"
+                        >
+                            <div class="flex items-center space-x-2">
+                                <Check class="h-4 w-4 text-green-600 dark:text-green-400" />
+                                <span class="text-sm text-green-800 dark:text-green-200">{{
+                                    $t('account.twoFactorEnabled')
+                                }}</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex items-center space-x-2 shrink-0">
-                        <Checkbox
-                            id="two_fa_enabled"
-                            :checked="user?.two_fa_enabled === 'true'"
+                    <div class="flex gap-2 shrink-0">
+                        <Button
+                            v-if="user?.two_fa_enabled !== 'true'"
+                            variant="outline"
+                            size="sm"
+                            class="w-full sm:w-auto"
                             :disabled="isSubmitting"
-                            data-umami-event="2FA toggle"
-                            @update:checked="handle2FAChange"
-                        />
-                        <Label for="two_fa_enabled">{{ $t('account.enabled') }}</Label>
+                            data-umami-event="Enable 2FA"
+                            @click="handleEnable2FA"
+                        >
+                            Enable 2FA
+                        </Button>
+                        <Button
+                            v-else
+                            variant="destructive"
+                            size="sm"
+                            class="w-full sm:w-auto"
+                            :disabled="isSubmitting"
+                            data-umami-event="Disable 2FA"
+                            @click="handleDisable2FA"
+                        >
+                            Disable 2FA
+                        </Button>
                     </div>
                 </div>
+            </div>
 
-                <div
-                    v-if="user?.two_fa_enabled === 'true'"
-                    class="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800"
-                >
-                    <div class="flex items-center space-x-2">
-                        <Check class="h-4 w-4 text-green-600 dark:text-green-400" />
-                        <span class="text-sm text-green-800 dark:text-green-200">{{
-                            $t('account.twoFactorEnabled')
-                        }}</span>
+            <!-- Discord OAuth -->
+            <div v-if="settingsStore.discordOAuthEnabled" class="space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div class="space-y-1 flex-1">
+                        <h4 class="text-sm font-medium">Discord Account</h4>
+                        <p class="text-sm text-muted-foreground">Link or unlink your Discord account</p>
+                        <div v-if="user?.discord_oauth2_linked === 'true'" class="mt-2">
+                            <p class="text-sm text-muted-foreground">
+                                <span class="font-medium">Linked as:</span>
+                                {{ user?.discord_oauth2_name || 'Unknown' }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 shrink-0">
+                        <Button
+                            v-if="user?.discord_oauth2_linked !== 'true'"
+                            variant="outline"
+                            size="sm"
+                            class="w-full sm:w-auto"
+                            :disabled="isSubmitting"
+                            data-umami-event="Link Discord"
+                            @click="handleLinkDiscord"
+                        >
+                            Link Discord
+                        </Button>
+                        <Button
+                            v-else
+                            variant="destructive"
+                            size="sm"
+                            class="w-full sm:w-auto"
+                            :disabled="isSubmitting"
+                            data-umami-event="Unlink Discord"
+                            @click="handleUnlinkDiscord"
+                        >
+                            Unlink Discord
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -97,16 +150,17 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSessionStore } from '@/stores/session';
+import { useSettingsStore } from '@/stores/settings';
 import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Check } from 'lucide-vue-next';
 import type { UserInfo } from '@/stores/session';
 
 const { t: $t } = useI18n();
 const sessionStore = useSessionStore();
+const settingsStore = useSettingsStore();
 const router = useRouter();
 const toast = useToast();
 
@@ -117,10 +171,55 @@ const loading = ref(true);
 // Computed user data with proper typing
 const user = computed<UserInfo | null>(() => sessionStore.user);
 
-// Handle 2FA checkbox change
-const handle2FAChange = (checked: boolean) => {
-    if (checked) {
-        router.push('/auth/setup-two-factor');
+// Handle Enable 2FA
+const handleEnable2FA = () => {
+    router.push('/auth/setup-two-factor');
+};
+
+// Handle Disable 2FA
+const handleDisable2FA = async () => {
+    try {
+        isSubmitting.value = true;
+        const response = await axios.patch('/api/user/session', {
+            two_fa_enabled: false,
+        });
+        if (response.data && response.data.success) {
+            toast.success('2FA disabled successfully');
+            // Refresh session to update user data
+            await sessionStore.checkSessionOrRedirect();
+        } else {
+            toast.error('Failed to disable 2FA');
+        }
+    } catch (error) {
+        console.error('Error disabling 2FA:', error);
+        toast.error('Failed to disable 2FA');
+    } finally {
+        isSubmitting.value = false;
+    }
+};
+
+// Handle Discord link
+const handleLinkDiscord = () => {
+    window.location.href = '/api/user/auth/discord/login';
+};
+
+// Handle Discord unlink
+const handleUnlinkDiscord = async () => {
+    try {
+        isSubmitting.value = true;
+        const response = await axios.delete('/api/user/auth/discord/unlink');
+        if (response.data && response.data.success) {
+            toast.success('Discord account unlinked successfully');
+            // Refresh session to update user data
+            await sessionStore.checkSessionOrRedirect();
+        } else {
+            toast.error('Failed to unlink Discord account');
+        }
+    } catch (error) {
+        console.error('Error unlinking Discord:', error);
+        toast.error('Failed to unlink Discord account');
+    } finally {
+        isSubmitting.value = false;
     }
 };
 
@@ -143,6 +242,7 @@ onMounted(async () => {
     try {
         loading.value = true;
         await sessionStore.checkSessionOrRedirect();
+        await settingsStore.fetchSettings();
     } finally {
         loading.value = false;
     }

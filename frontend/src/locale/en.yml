@@ -398,6 +398,7 @@ servers:
         unknown: 'Unknown'
         starting: 'Starting'
         suspended: 'Suspended'
+        stopping: 'Stopping'
         null: 'Offline'
     clickToView: 'Click to view details'
     # Subuser Access

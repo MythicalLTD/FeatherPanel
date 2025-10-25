@@ -88,6 +88,11 @@ class SettingsController
 {
     private $app;
     private $settings;
+    private $sensitiveSettings = [
+        ConfigInterface::SMTP_PASS,
+        ConfigInterface::TURNSTILE_KEY_PRIV,
+        // Add other sensitive settings here
+    ];
     private $settingsCategories = [
         'app' => [
             'name' => 'App',
@@ -136,6 +141,16 @@ class SettingsController
                 ConfigInterface::LEGAL_TOS,
                 ConfigInterface::LEGAL_PRIVACY,
                 ConfigInterface::APP_DEVELOPER_MODE,
+            ],
+        ],
+        'oauth' => [
+            'name' => 'OAuth',
+            'description' => 'OAuth configuration settings',
+            'icon' => 'shield',
+            'settings' => [
+                ConfigInterface::DISCORD_OAUTH_ENABLED,
+                ConfigInterface::DISCORD_OAUTH_CLIENT_ID,
+                ConfigInterface::DISCORD_OAUTH_CLIENT_SECRET,
             ],
         ],
     ];
@@ -267,14 +282,15 @@ class SettingsController
             ],
             ConfigInterface::SMTP_PASS => [
                 'name' => ConfigInterface::SMTP_PASS,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SMTP_PASS, 'password'),
+                'value' => $this->maskSensitiveSetting(ConfigInterface::SMTP_PASS, 'password'),
                 'description' => 'The SMTP password of the application',
-                'type' => 'text',
+                'type' => 'password',
                 'required' => true,
-                'placeholder' => 'password',
-                'validation' => 'required|string|max:255',
+                'placeholder' => 'Enter password to change',
+                'validation' => 'string|max:255',
                 'options' => [],
                 'category' => 'email',
+                'sensitive' => true,
             ],
             ConfigInterface::SMTP_FROM => [
                 'name' => ConfigInterface::SMTP_FROM,
@@ -322,14 +338,15 @@ class SettingsController
             ],
             ConfigInterface::TURNSTILE_KEY_PRIV => [
                 'name' => ConfigInterface::TURNSTILE_KEY_PRIV,
-                'value' => $this->app->getConfig()->getSetting(ConfigInterface::TURNSTILE_KEY_PRIV, ''),
-                'description' => 'The Turnstile key priv of the application',
-                'type' => 'text',
+                'value' => $this->maskSensitiveSetting(ConfigInterface::TURNSTILE_KEY_PRIV, ''),
+                'description' => 'The Turnstile private key of the application',
+                'type' => 'password',
                 'required' => false,
-                'placeholder' => '',
+                'placeholder' => 'Enter private key to change',
                 'validation' => 'string|max:255',
                 'options' => [],
                 'category' => 'security',
+                'sensitive' => true,
             ],
             ConfigInterface::LEGAL_TOS => [
                 'name' => ConfigInterface::LEGAL_TOS,
@@ -374,6 +391,37 @@ class SettingsController
                 'validation' => 'required|string|max:255',
                 'options' => ['true', 'false'],
                 'category' => 'app',
+            ],
+            ConfigInterface::DISCORD_OAUTH_ENABLED => [
+                'name' => ConfigInterface::DISCORD_OAUTH_ENABLED,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::DISCORD_OAUTH_ENABLED, 'false'),
+                'description' => 'The Discord OAuth enabled of the application Callback URL: ' . $this->app->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems') . '/api/user/auth/discord/callback',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'oauth',
+            ],
+            ConfigInterface::DISCORD_OAUTH_CLIENT_ID => [
+                'name' => ConfigInterface::DISCORD_OAUTH_CLIENT_ID,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::DISCORD_OAUTH_CLIENT_ID, ''),
+                'description' => 'The Discord OAuth client ID of the application',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => '',
+                'validation' => 'required|string|max:255',
+                'options' => [],
+                'category' => 'oauth',
+            ],
+            ConfigInterface::DISCORD_OAUTH_CLIENT_SECRET => [
+                'name' => ConfigInterface::DISCORD_OAUTH_CLIENT_SECRET,
+                'value' => $this->maskSensitiveSetting(ConfigInterface::DISCORD_OAUTH_CLIENT_SECRET, ''),
+                'description' => 'The Discord OAuth client secret of the application',
+                'type' => 'password',
+                'required' => false,
+                'placeholder' => 'Enter client secret to change',
+                'sensitive' => true,
             ],
         ];
     }
@@ -640,6 +688,15 @@ class SettingsController
 
             $settingConfig = $this->settings[$setting];
 
+            // Handle sensitive settings - only update if value is not masked
+            if ($this->isSensitiveSetting($setting)) {
+                // If the value is the masked value (••••••••), skip updating
+                if ($value === '••••••••' || empty($value)) {
+                    $app->getLogger()->debug("Skipping sensitive setting update for {$setting} - value not changed");
+                    continue;
+                }
+            }
+
             // Basic validation
             if ($settingConfig['required'] && empty($value)) {
                 return ApiResponse::error("Setting {$setting} is required", 400);
@@ -648,7 +705,9 @@ class SettingsController
             if (!empty($value) && strlen($value) > 255) {
                 return ApiResponse::error("Setting {$setting} value is too long (max 255 characters)", 400);
             }
-            $app->getLogger()->debug("Updating setting: {$setting} with value: {$value}");
+
+            $app->getLogger()->debug("Updating setting: {$setting} with value: " . ($this->isSensitiveSetting($setting) ? '[MASKED]' : $value));
+
             // Update the setting
             if ($app->getConfig()->setSetting($setting, $value)) {
                 $updatedSettings[] = $setting;
@@ -704,5 +763,28 @@ class SettingsController
         }
 
         return $organized;
+    }
+
+    /**
+     * Mask sensitive setting values for frontend display.
+     */
+    private function maskSensitiveSetting(string $settingKey, string $defaultValue = ''): string
+    {
+        $actualValue = $this->app->getConfig()->getSetting($settingKey, $defaultValue);
+
+        // If the setting has a value, mask it
+        if (!empty($actualValue)) {
+            return '••••••••'; // Masked value
+        }
+
+        return ''; // Empty value remains empty
+    }
+
+    /**
+     * Check if a setting is sensitive.
+     */
+    private function isSensitiveSetting(string $settingKey): bool
+    {
+        return in_array($settingKey, $this->sensitiveSettings);
     }
 }

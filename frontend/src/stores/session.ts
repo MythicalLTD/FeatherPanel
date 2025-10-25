@@ -51,6 +51,11 @@ export interface UserInfo {
     locked: string;
     last_seen: string;
     first_seen: string;
+    discord_oauth2_id?: string | null;
+    discord_oauth2_access_token?: string | null;
+    discord_oauth2_linked?: string;
+    discord_oauth2_username?: string | null;
+    discord_oauth2_name?: string | null;
 }
 
 export type Permissions = string[];

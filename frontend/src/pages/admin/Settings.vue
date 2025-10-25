@@ -289,6 +289,19 @@
                                     class="w-full max-w-md"
                                 />
 
+                                <!-- Password Input -->
+                                <Input
+                                    v-else-if="
+                                        'sensitive' in setting && setting.sensitive && setting.type === 'password'
+                                    "
+                                    :id="String(key)"
+                                    v-model="setting.value"
+                                    type="password"
+                                    :placeholder="setting.placeholder"
+                                    :required="setting.required"
+                                    class="w-full max-w-md"
+                                />
+
                                 <!-- Number Input -->
                                 <Input
                                     v-else-if="setting.type === 'number'"
@@ -348,7 +361,6 @@
                                 <Button type="button" variant="outline" class="w-full sm:w-auto" @click="resetSettings">
                                     Reset
                                 </Button>
-                                cd
                                 <Button
                                     type="submit"
                                     :disabled="saving"
@@ -570,25 +582,45 @@ const fetchSettings = async () => {
 };
 
 const saveSettings = async () => {
-    if (!currentCategorySettings.value) return;
+    if (!currentCategorySettings.value || !originalSettings.value) return;
 
     const settingsToUpdate: Record<string, string | number | boolean> = {};
+
     Object.entries(currentCategorySettings.value.settings).forEach(([key, setting]: [string, Setting]) => {
-        if (setting.type === 'toggle') {
-            settingsToUpdate[key] = setting.value;
-        } else {
-            settingsToUpdate[key] = setting.value;
+        const originalSetting = originalSettings.value?.[key];
+
+        // Skip if value hasn't changed
+        if (originalSetting && originalSetting.value === setting.value) {
+            return;
         }
+
+        // For sensitive settings (password type), only update if user actually entered something new
+        if ('sensitive' in setting && setting.sensitive && setting.type === 'password') {
+            // If the value is still masked (••••••••) or empty, don't update
+            if (setting.value === '••••••••' || setting.value === '') {
+                return;
+            }
+        }
+
+        settingsToUpdate[key] = setting.value;
     });
+
+    // If no settings changed, show message and return
+    if (Object.keys(settingsToUpdate).length === 0) {
+        toast.info('No changes detected');
+        return;
+    }
 
     const result = await adminSettingsStore.saveSettings(settingsToUpdate);
 
     if (result.success) {
-        // Update the original settings
-        if (originalSettings.value) {
-            Object.assign(originalSettings.value, settingsToUpdate);
-        }
-        // Show success message (you can add a toast notification here)
+        // Update the original settings with the new values
+        Object.entries(settingsToUpdate).forEach(([key, value]) => {
+            if (originalSettings.value && originalSettings.value[key]) {
+                originalSettings.value[key].value = value;
+            }
+        });
+
         toast.success('Settings saved successfully');
         setTimeout(() => {
             window.location.reload();
@@ -602,7 +634,17 @@ const resetSettings = () => {
     Object.entries(currentCategorySettings.value.settings).forEach(([key, setting]: [string, Setting]) => {
         const originalSetting = originalSettings.value?.[key];
         if (originalSetting) {
-            setting.value = originalSetting.value;
+            // For sensitive settings, reset to masked value if it was originally masked
+            if (
+                'sensitive' in setting &&
+                setting.sensitive &&
+                setting.type === 'password' &&
+                originalSetting.value === '••••••••'
+            ) {
+                setting.value = '••••••••';
+            } else {
+                setting.value = originalSetting.value;
+            }
         }
     });
 };

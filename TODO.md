@@ -7,17 +7,17 @@
   - [ ] Kill server
   - [ ] Attach to server
   - [ ] Open server console
-- [ ] Discord OAuth
-  - [ ] Link account with Discord
-  - [ ] Login with Discord account
-- [ ] Telemetry
-  - [ ] Anonymize all collected data (no PII)
-  - [ ] Collect basic usage statistics (active users, OS/browser, enabled features)
-  - [ ] Provide UI for users to view and opt-out of telemetry
-  - [ ] Document all telemetry events and collection rationale
-  - [ ] Make telemetry fully disable-able at runtime (config)
-  - [ ] Surface telemetry version info in admin UI
-  - [ ] Add backend event processing for received telemetry (aggregation, insights)
+- [x] Discord OAuth
+  - [x] Link account with Discord
+  - [x] Login with Discord account
+- [x] Telemetry
+  - [x] Anonymize all collected data (no PII)
+  - [x] Collect basic usage statistics (active users, OS/browser, enabled features)
+  - [x] Provide UI for users to view and opt-out of telemetry
+  - [x] Document all telemetry events and collection rationale
+  - [x] Make telemetry fully disable-able at runtime (config)
+  - [x] Surface telemetry version info in admin UI
+  - [x] Add backend event processing for received telemetry (aggregation, insights)
 - [x] File Manager: Support `.featherpanel-filemanager-ignore` to hide files/folders (like .gitignore)
   - [x] Ignore files/folders matching patterns in `.featherpanel-filemanager-ignore`
   - [x] Add "Show ignored files" toggle button in file manager UI to reveal hidden files/folders if desired

@@ -84,6 +84,9 @@ class PublicConfig extends ConfigFactory
             // Telemetry settings
             ConfigInterface::TELEMETRY => 'true',
 
+            // Discord OAuth settings
+            ConfigInterface::DISCORD_OAUTH_ENABLED => 'false',
+            ConfigInterface::DISCORD_OAUTH_CLIENT_ID => 'XXXX',
         ];
 
     }

@@ -30,11 +30,12 @@ import axios from 'axios';
 export interface BaseSetting {
     name: string;
     description: string;
-    type: 'text' | 'select' | 'textarea' | 'toggle' | 'number';
+    type: 'text' | 'select' | 'textarea' | 'toggle' | 'number' | 'password';
     required: boolean;
     placeholder: string;
     validation: string;
     category: string;
+    sensitive?: boolean;
 }
 
 export interface TextSetting extends BaseSetting {
@@ -67,7 +68,14 @@ export interface NumberSetting extends BaseSetting {
     options: string[];
 }
 
-export type Setting = TextSetting | SelectSetting | TextareaSetting | ToggleSetting | NumberSetting;
+export interface PasswordSetting extends BaseSetting {
+    type: 'password';
+    value: string;
+    options: string[];
+    sensitive: true;
+}
+
+export type Setting = TextSetting | SelectSetting | TextareaSetting | ToggleSetting | NumberSetting | PasswordSetting;
 
 export interface Category {
     id: string;

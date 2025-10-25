@@ -32,6 +32,7 @@ use App\App;
 use Symfony\Component\HttpFoundation\Request;
 use App\Controllers\User\Auth\LoginController;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\User\Auth\DiscordController;
 use App\Controllers\User\Auth\RegisterController;
 use App\Controllers\User\Auth\TwoFactorController;
 use App\Controllers\User\Auth\AuthLogoutController;
@@ -134,5 +135,46 @@ return function (RouteCollection $routes): void {
             return (new TwoFactorController())->post($request);
         },
         ['POST']
+    );
+
+    // Discord OAuth routes
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'discord-login',
+        '/api/user/auth/discord/login',
+        function (Request $request) {
+            return (new DiscordController())->login($request);
+        },
+        ['GET']
+    );
+
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'discord-callback',
+        '/api/user/auth/discord/callback',
+        function (Request $request) {
+            return (new DiscordController())->callback($request);
+        },
+        ['GET']
+    );
+
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'discord-link',
+        '/api/user/auth/discord/link',
+        function (Request $request) {
+            return (new DiscordController())->link($request);
+        },
+        ['PUT']
+    );
+
+    App::getInstance(true)->registerApiRoute(
+        $routes,
+        'discord-unlink',
+        '/api/user/auth/discord/unlink',
+        function (Request $request) {
+            return (new DiscordController())->unlink($request);
+        },
+        ['DELETE']
     );
 };

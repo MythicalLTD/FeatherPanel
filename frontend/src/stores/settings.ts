@@ -172,6 +172,8 @@ export const useSettingsStore = defineStore('settings', {
         registrationEnabled: (state) => getBooleanSetting(state, 'registration_enabled'),
         requireTwoFaAdmins: (state) => getBooleanSetting(state, 'require_two_fa_admins'),
 
+        discordOAuthEnabled: (state) => getBooleanSetting(state, 'discord_oauth_enabled'),
+
         // Custom branding getters that check localStorage first
         customAppName: () => localStorage.getItem('appName') || null,
         customAppLogoDark: () => localStorage.getItem('appLogoDark') || null,

@@ -72,4 +72,11 @@ interface ConfigInterface
      * Telemetry.
      */
     public const TELEMETRY = 'telemetry';
+
+    /**
+     * Discord OAuth.
+     */
+    public const DISCORD_OAUTH_ENABLED = 'discord_oauth_enabled';
+    public const DISCORD_OAUTH_CLIENT_ID = 'discord_oauth_client_id';
+    public const DISCORD_OAUTH_CLIENT_SECRET = 'discord_oauth_client_secret';
 }

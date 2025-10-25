@@ -196,12 +196,142 @@
                     </div>
                 </div>
                 <section class="px-6 pb-6">
-                    <Tabs default-value="servers">
+                    <Tabs default-value="account">
                         <TabsList class="mb-4">
+                            <TabsTrigger value="account">Account Info</TabsTrigger>
                             <TabsTrigger value="servers">Servers</TabsTrigger>
                             <TabsTrigger value="activities">Activities</TabsTrigger>
                             <TabsTrigger value="mails">Mails</TabsTrigger>
                         </TabsList>
+                        <TabsContent value="account">
+                            <h3 class="font-semibold text-base mb-4">Account Information</h3>
+                            <div class="grid grid-cols-2 gap-4 mb-6">
+                                <div>
+                                    <div class="text-sm text-muted-foreground mb-1">User ID</div>
+                                    <div class="font-medium">{{ selectedUser.id }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-muted-foreground mb-1">UUID</div>
+                                    <div class="font-mono text-xs">{{ selectedUser.uuid }}</div>
+                                </div>
+                                <div v-if="selectedUser.external_id">
+                                    <div class="text-sm text-muted-foreground mb-1">External ID</div>
+                                    <div class="font-medium">{{ selectedUser.external_id }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-muted-foreground mb-1">Role</div>
+                                    <Badge
+                                        :style="
+                                            selectedUser.role?.color
+                                                ? { backgroundColor: selectedUser.role?.color || '', color: '#fff' }
+                                                : {}
+                                        "
+                                        variant="secondary"
+                                    >
+                                        {{ selectedUser.role?.display_name || selectedUser.role?.name || '-' }}
+                                    </Badge>
+                                </div>
+                                <div v-if="selectedUser.first_name || selectedUser.last_name">
+                                    <div class="text-sm text-muted-foreground mb-1">Full Name</div>
+                                    <div class="font-medium">
+                                        {{ selectedUser.first_name }} {{ selectedUser.last_name }}
+                                    </div>
+                                </div>
+                                <div v-if="selectedUser.first_seen">
+                                    <div class="text-sm text-muted-foreground mb-1">First Seen</div>
+                                    <div class="font-medium">{{ selectedUser.first_seen }}</div>
+                                </div>
+                                <div v-if="selectedUser.last_seen">
+                                    <div class="text-sm text-muted-foreground mb-1">Last Seen</div>
+                                    <div class="font-medium">{{ selectedUser.last_seen }}</div>
+                                </div>
+                                <div v-if="selectedUser.created_at">
+                                    <div class="text-sm text-muted-foreground mb-1">Account Created</div>
+                                    <div class="font-medium">{{ selectedUser.created_at }}</div>
+                                </div>
+                            </div>
+                            <h3 class="font-semibold text-base mb-4 mt-6">Security & Status</h3>
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <div class="text-sm text-muted-foreground mb-2">Account Status</div>
+                                    <div class="flex gap-2">
+                                        <Badge :variant="selectedUser.banned === 'true' ? 'destructive' : 'secondary'">
+                                            {{ selectedUser.banned === 'true' ? 'Banned' : 'Active' }}
+                                        </Badge>
+                                        <Badge :variant="selectedUser.locked === 'true' ? 'destructive' : 'secondary'">
+                                            {{ selectedUser.locked === 'true' ? 'Locked' : 'Unlocked' }}
+                                        </Badge>
+                                        <Badge
+                                            :variant="
+                                                selectedUser.deleted === 'true' || selectedUser.deleted === true
+                                                    ? 'destructive'
+                                                    : 'secondary'
+                                            "
+                                        >
+                                            {{
+                                                selectedUser.deleted === 'true' || selectedUser.deleted === true
+                                                    ? 'Deleted'
+                                                    : 'Active'
+                                            }}
+                                        </Badge>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-muted-foreground mb-2">Two-Factor Authentication</div>
+                                    <Badge :variant="selectedUser.two_fa_enabled === 'true' ? 'secondary' : 'outline'">
+                                        {{ selectedUser.two_fa_enabled === 'true' ? 'Enabled' : 'Disabled' }}
+                                    </Badge>
+                                    <Badge
+                                        v-if="selectedUser.two_fa_blocked === 'true'"
+                                        variant="destructive"
+                                        class="ml-2"
+                                    >
+                                        Blocked
+                                    </Badge>
+                                </div>
+                                <div v-if="selectedUser.first_ip">
+                                    <div class="text-sm text-muted-foreground mb-1">First IP</div>
+                                    <div class="font-mono text-sm">{{ selectedUser.first_ip }}</div>
+                                </div>
+                                <div v-if="selectedUser.last_ip">
+                                    <div class="text-sm text-muted-foreground mb-1">Last IP</div>
+                                    <div class="font-mono text-sm">{{ selectedUser.last_ip }}</div>
+                                </div>
+                            </div>
+                            <div v-if="selectedUser.discord_oauth2_linked === 'true'" class="mt-6">
+                                <h3 class="font-semibold text-base mb-4">Discord Integration</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <div class="text-sm text-muted-foreground mb-1">Discord ID</div>
+                                        <div class="font-mono text-sm">
+                                            {{ selectedUser.discord_oauth2_id || 'N/A' }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-muted-foreground mb-1">Discord Username</div>
+                                        <div class="font-medium">
+                                            {{ selectedUser.discord_oauth2_username || 'N/A' }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-muted-foreground mb-1">Discord Name</div>
+                                        <div class="font-medium">{{ selectedUser.discord_oauth2_name || 'N/A' }}</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-muted-foreground mb-1">Status</div>
+                                        <Badge
+                                            :variant="
+                                                selectedUser.discord_oauth2_linked === 'true' ? 'secondary' : 'outline'
+                                            "
+                                        >
+                                            {{
+                                                selectedUser.discord_oauth2_linked === 'true' ? 'Linked' : 'Not Linked'
+                                            }}
+                                        </Badge>
+                                    </div>
+                                </div>
+                            </div>
+                        </TabsContent>
                         <TabsContent value="servers">
                             <h3 class="font-semibold text-base mb-4">Servers</h3>
                             <Table>
@@ -376,14 +506,18 @@
                             </DropdownMenuRadioGroup>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                    <label for="edit-externalid" class="block mb-1 font-medium">External ID</label>
+                    <label for="edit-externalid" class="block mb-1 font-medium">External ID (NULL to clear)</label>
                     <Input
                         id="edit-externalid"
-                        v-model.number="editForm.external_id"
+                        :model-value="editForm.external_id ?? ''"
                         label="External ID"
                         placeholder="External ID"
                         type="number"
+                        @update:model-value="(val) => (editForm.external_id = val === '' ? undefined : Number(val))"
                     />
+                    <p class="text-xs text-muted-foreground">
+                        External ID for integration. Leave empty or set to 0 to clear.
+                    </p>
                     <label for="edit-password" class="block mb-1 font-medium">Password</label>
                     <Input
                         id="edit-password"
@@ -392,7 +526,7 @@
                         placeholder="Password"
                         type="password"
                     />
-                    <div class="flex justify-end gap-2 mt-4">
+                    <div class="flex flex-wrap justify-end gap-2 mt-4">
                         <Button
                             type="button"
                             :variant="editingUser && editingUser.banned === 'true' ? 'secondary' : 'destructive'"
@@ -408,9 +542,19 @@
                             variant="secondary"
                             data-umami-event="Remove 2FA"
                             :data-umami-event-user="editingUser?.username"
-                            @click="removeTwoFactorAuth"
+                            @click="disable2FA"
                         >
-                            Remove Two Factor Auth
+                            Disable 2FA
+                        </Button>
+                        <Button
+                            v-if="editingUser && editingUser.discord_oauth2_linked === 'true'"
+                            type="button"
+                            variant="secondary"
+                            data-umami-event="Unlink Discord"
+                            :data-umami-event-user="editingUser?.username"
+                            @click="unlinkDiscord"
+                        >
+                            Unlink Discord
                         </Button>
                         <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
                         <Button
@@ -557,13 +701,14 @@ type UserRole = {
 };
 
 type ApiUser = {
+    id?: number;
     uuid: string;
     avatar: string;
     username: string;
     first_name?: string;
     last_name?: string;
     email?: string;
-    external_id?: string | null;
+    external_id?: number | null;
     password?: string;
     remember_token?: string;
     mail_verify?: string | null;
@@ -577,9 +722,16 @@ type ApiUser = {
     locked?: boolean | string;
     first_seen?: string;
     last_seen?: string;
+    created_at?: string;
+    updated_at?: string;
     role_id?: number;
     role?: UserRole;
     status?: string;
+    discord_oauth2_id?: string | null;
+    discord_oauth2_access_token?: string | null;
+    discord_oauth2_linked?: string;
+    discord_oauth2_username?: string | null;
+    discord_oauth2_name?: string | null;
     activities?: { name: string; context: string; ip_address: string; created_at: string }[];
     mails?: { subject: string; status: string; created_at: string }[];
 };
@@ -590,7 +742,7 @@ type EditForm = {
     last_name: string;
     email: string;
     role_id: string;
-    external_id?: number;
+    external_id?: number | null;
     password?: string;
 };
 
@@ -739,6 +891,55 @@ function closeView() {
     ownedServers.value = [];
 }
 
+async function disable2FA() {
+    if (!editingUser.value) return;
+    try {
+        const { data } = await axios.patch(`/api/admin/users/${editingUser.value.uuid}`, {
+            two_fa_enabled: 'false',
+            two_fa_key: null,
+        });
+        if (data && data.success) {
+            toast.success('Two-factor authentication disabled successfully');
+            // Refresh user data
+            await openEditDrawer(editingUser.value);
+        } else {
+            toast.error(data?.message || 'Failed to disable 2FA');
+        }
+    } catch (e: unknown) {
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to disable 2FA';
+        toast.error(errorMessage);
+    }
+}
+
+async function unlinkDiscord() {
+    if (!editingUser.value) return;
+    if (!confirm('Are you sure you want to unlink Discord from this user?')) {
+        return;
+    }
+    try {
+        const { data } = await axios.patch(`/api/admin/users/${editingUser.value.uuid}`, {
+            discord_oauth2_linked: 'false',
+            discord_oauth2_id: null,
+            discord_oauth2_access_token: null,
+            discord_oauth2_username: null,
+            discord_oauth2_name: null,
+        });
+        if (data && data.success) {
+            toast.success('Discord unlinked successfully');
+            // Refresh user data
+            await openEditDrawer(editingUser.value);
+        } else {
+            toast.error(data?.message || 'Failed to unlink Discord');
+        }
+    } catch (e: unknown) {
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to unlink Discord';
+        toast.error(errorMessage);
+    }
+}
+
 async function openEditDrawer(user: ApiUser) {
     try {
         const { data } = await axios.get(`/api/admin/users/${user.uuid}`);
@@ -784,6 +985,11 @@ async function submitEdit() {
             delete patchData.password;
         }
 
+        // Handle external_id - convert empty or 0 to null
+        if (patchData.external_id === undefined || patchData.external_id === null || patchData.external_id === 0) {
+            delete patchData.external_id;
+        }
+
         const { data } = await axios.patch(`/api/admin/users/${editingUser.value.uuid}`, patchData);
         if (data && data.success) {
             toast.success('User updated successfully');
@@ -816,23 +1022,6 @@ async function toggleBanUser() {
         const errorMessage =
             (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
             'Failed to update ban status';
-        toast.error(errorMessage);
-    }
-}
-
-async function removeTwoFactorAuth() {
-    if (!editingUser.value) return;
-    try {
-        const { data } = await axios.patch(`/api/admin/users/${editingUser.value.uuid}`, { two_fa_enabled: 'false' });
-        if (data && data.success) {
-            toast.success('Two-factor authentication removed');
-            await openEditDrawer(editingUser.value); // refresh user data
-        } else {
-            toast.error(data?.message || 'Failed to remove 2FA');
-        }
-    } catch (e: unknown) {
-        const errorMessage =
-            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to remove 2FA';
         toast.error(errorMessage);
     }
 }

@@ -6,6 +6,8 @@
 
 - Added a helpful reminder dialog to discourage the use of Ctrl+R or F5 to refresh, encouraging users to use built-in refresh options for a smoother experience.
 - Added telemetry to FeatherPanel to better understand which features are used most and to guide future feature development.
+- Added seamless Discord integration: you can now link your account to Discord and log in using your Discord credentials for a faster, more convenient sign-in experience.
+- Added the ability for users to disable (remove) two-factor authentication (2FA) from their account settings if they have previously enabled it, making recovery and device transitions easier.
 
 ### Fixed
 
@@ -14,12 +16,14 @@
 - Fixed an issue where databases were not properly removed when deleting a server from the admin interface—server database cleanup now works reliably and automatically.
 - Fixed a critical bug where updating server variables would previously delete ALL variables—including read-only and admin-only variables—instead of only modifying the variables provided in the update request.
 - Fixed an issue where the sidebar logo could become stuck in dark mode and not update correctly when themes were changed.
+- Fixed a broken database schema migration that could cause issues when upgrading from older versions.
 
 ### Improved
 
 - Improved loading screen performance; loading experience is now noticeably faster.
 - Loading screen now supports custom logo and text via app settings or custom branding, reflecting your organization's look and feel even before login.
 - Native support for the latest version of TailwindCSS.
+- Sensitive fields are now hidden from the settings page to improve security and privacy.
 
 ### Updated
 

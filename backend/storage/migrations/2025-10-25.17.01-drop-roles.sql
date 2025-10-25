@@ -1,0 +1,1 @@
+ALTER TABLE `featherpanel_users` DROP COLUMN IF EXISTS `role`;

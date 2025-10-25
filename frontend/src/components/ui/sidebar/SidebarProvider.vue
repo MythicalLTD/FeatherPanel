@@ -27,8 +27,27 @@ const openMobile = ref(false);
 // Load saved sidebar state from localStorage
 const getSavedSidebarState = (): boolean => {
     try {
+        // First check sidebar-visibility for persistence across settings
+        const visibility = localStorage.getItem('sidebar-visibility');
+        if (visibility) {
+            if (visibility === 'hidden') {
+                return false;
+            }
+            if (visibility === 'collapsed') {
+                return false;
+            }
+            if (visibility === 'visible') {
+                return true;
+            }
+        }
+
+        // Fallback to featherpanel-sidebar-expanded
         const saved = localStorage.getItem('featherpanel-sidebar-expanded');
-        return saved ? JSON.parse(saved) : (props.defaultOpen ?? true);
+        if (saved !== null) {
+            return JSON.parse(saved);
+        }
+
+        return props.defaultOpen ?? true;
     } catch {
         return props.defaultOpen ?? true;
     }
@@ -45,6 +64,13 @@ function setOpen(value: boolean) {
     // Save sidebar state to localStorage
     try {
         localStorage.setItem('featherpanel-sidebar-expanded', JSON.stringify(value));
+
+        // Also update sidebar-visibility based on current value (only if not hidden)
+        const currentVisibility = localStorage.getItem('sidebar-visibility');
+        if (currentVisibility !== 'hidden') {
+            // Only update sidebar-visibility if not hidden
+            localStorage.setItem('sidebar-visibility', value ? 'visible' : 'collapsed');
+        }
     } catch (error) {
         console.warn('Failed to save sidebar state to localStorage:', error);
     }
