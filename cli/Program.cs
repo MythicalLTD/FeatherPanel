@@ -1,5 +1,12 @@
 ﻿using System.CommandLine;
 using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using FeatherCli.Core.Commands;
+using FeatherCli.Core.Configuration;
+using FeatherCli.Core.Api;
+using FeatherCli.Core.Api.Services;
+using Spectre.Console;
 
 // Check for version flag before parsing
 if (args.Contains("--version") || args.Contains("-v"))
@@ -13,110 +20,84 @@ if (args.Contains("--version") || args.Contains("-v"))
     return 0;
 }
 
-// Root command
-var rootCommand = new RootCommand("FeatherCli - Advanced FeatherPanel CLI tool");
-
-// Server command
-var serverCommand = new Command("server", "Manage game servers");
-rootCommand.AddCommand(serverCommand);
-
-// Server start command
-var startCommand = new Command("start", "Start a game server");
-var startUuidArgument = new Argument<string>(
-    name: "uuid",
-    description: "Server UUID or short UUID");
-startCommand.AddArgument(startUuidArgument);
-startCommand.SetHandler((string uuid) =>
+try
 {
-    Console.WriteLine($"Starting server: {uuid}");
-    // TODO: Implement server start logic
-    Console.WriteLine($"✓ Server {uuid} started successfully!");
-}, startUuidArgument);
-serverCommand.AddCommand(startCommand);
+    // Setup dependency injection
+    var services = new ServiceCollection();
+    
+    // Configure logging based on verbose flag
+    var isVerbose = args.Contains("--verbose");
+    
+    services.AddLogging(builder =>
+    {
+        builder.AddConsole();
+        
+        if (isVerbose)
+        {
+            builder.SetMinimumLevel(LogLevel.Information);
+            // Keep HTTP logging for verbose mode
+        }
+        else
+        {
+            builder.SetMinimumLevel(LogLevel.Warning); // Only show warnings and errors by default
+            
+            // Suppress HTTP client logging
+            builder.AddFilter("System.Net.Http.HttpClient", LogLevel.None);
+            builder.AddFilter("Microsoft.Extensions.Http", LogLevel.None);
+        }
+    });
 
-// Server stop command
-var stopCommand = new Command("stop", "Stop a game server");
-var stopUuidArgument = new Argument<string>(
-    name: "uuid",
-    description: "Server UUID or short UUID");
-stopCommand.AddArgument(stopUuidArgument);
-stopCommand.SetHandler((string uuid) =>
+    // Add HTTP client
+    services.AddHttpClient<FeatherPanelApiClient>(client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(30);
+    });
+    
+    // Add HTTP client for services
+    services.AddHttpClient();
+
+    // Add core services
+    services.AddSingleton<ConfigManager>();
+    services.AddSingleton<CommandRegistry>();
+    
+    // Add API services
+    services.AddSingleton<ServerService>();
+    services.AddSingleton<PowerService>();
+    services.AddSingleton<LogService>();
+
+    // Build service provider
+    var serviceProvider = services.BuildServiceProvider();
+
+    // Create command registry and root command
+    var commandRegistry = serviceProvider.GetRequiredService<CommandRegistry>();
+    var rootCommand = commandRegistry.CreateRootCommand();
+
+    // Add global options
+    var verboseOption = new Option<bool>("--verbose", "Enable verbose output");
+    rootCommand.AddGlobalOption(verboseOption);
+
+    // Add version command
+    var versionCommand = new Command("version", "Show version information");
+    versionCommand.SetHandler(() =>
+    {
+        var version = Assembly.GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion ?? "1.0.0";
+        AnsiConsole.MarkupLine($"[bold blue]FeatherCli v{version}[/]");
+        AnsiConsole.MarkupLine("[dim]Built with .NET 9.0[/]");
+        AnsiConsole.MarkupLine("[dim]https://github.com/MythicalLTD/FeatherPanel[/]");
+    });
+    rootCommand.AddCommand(versionCommand);
+
+    // Run the command
+    return await rootCommand.InvokeAsync(args);
+}
+catch (Exception ex)
 {
-    Console.WriteLine($"Stopping server: {uuid}");
-    // TODO: Implement server stop logic
-    Console.WriteLine($"✓ Server {uuid} stopped successfully!");
-}, stopUuidArgument);
-serverCommand.AddCommand(stopCommand);
-
-// Server restart command
-var restartCommand = new Command("restart", "Restart a game server");
-var restartUuidArgument = new Argument<string>(
-    name: "uuid",
-    description: "Server UUID or short UUID");
-restartCommand.AddArgument(restartUuidArgument);
-restartCommand.SetHandler((string uuid) =>
-{
-    Console.WriteLine($"Restarting server: {uuid}");
-    // TODO: Implement server restart logic
-    Console.WriteLine($"✓ Server {uuid} restarted successfully!");
-}, restartUuidArgument);
-serverCommand.AddCommand(restartCommand);
-
-// Server status command
-var statusCommand = new Command("status", "Get server status");
-var statusUuidArgument = new Argument<string>(
-    name: "uuid",
-    description: "Server UUID or short UUID");
-statusCommand.AddArgument(statusUuidArgument);
-statusCommand.SetHandler((string uuid) =>
-{
-    Console.WriteLine($"Getting status for server: {uuid}");
-    // TODO: Implement server status logic
-    Console.WriteLine($"Server {uuid} is running");
-}, statusUuidArgument);
-serverCommand.AddCommand(statusCommand);
-
-// Server list command
-var listCommand = new Command("list", "List all servers");
-listCommand.SetHandler(() =>
-{
-    Console.WriteLine("Listing all servers:");
-    // TODO: Implement server list logic
-    Console.WriteLine("No servers found.");
-});
-serverCommand.AddCommand(listCommand);
-
-// Config command
-var configCommand = new Command("config", "Manage CLI configuration");
-rootCommand.AddCommand(configCommand);
-
-// Config set command
-var configSetCommand = new Command("set", "Set a configuration value");
-var configKeyArgument = new Argument<string>(
-    name: "key",
-    description: "Configuration key");
-var configValueArgument = new Argument<string>(
-    name: "value",
-    description: "Configuration value");
-configSetCommand.AddArgument(configKeyArgument);
-configSetCommand.AddArgument(configValueArgument);
-configSetCommand.SetHandler((string key, string value) =>
-{
-    Console.WriteLine($"Setting config: {key} = {value}");
-    // TODO: Implement config set logic
-    Console.WriteLine($"✓ Configuration updated!");
-}, configKeyArgument, configValueArgument);
-configCommand.AddCommand(configSetCommand);
-
-// Config show command
-var configShowCommand = new Command("show", "Show current configuration");
-configShowCommand.SetHandler(() =>
-{
-    Console.WriteLine("Current configuration:");
-    // TODO: Implement config show logic
-    Console.WriteLine("No configuration found.");
-});
-configCommand.AddCommand(configShowCommand);
-
-// Run the command
-return await rootCommand.InvokeAsync(args);
+    AnsiConsole.MarkupLine($"[red]✗ Unexpected error: {ex.Message}[/]");
+    if (args.Contains("--verbose"))
+    {
+        AnsiConsole.MarkupLine($"[red]Stack trace: {ex.StackTrace}[/]");
+    }
+    return 1;
+}
