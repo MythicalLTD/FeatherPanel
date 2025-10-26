@@ -1,12 +1,11 @@
 # BETA-1
 
-- [ ] Command Line Interface
-  - [ ] Start server
-  - [ ] Stop server
-  - [ ] Restart server
-  - [ ] Kill server
-  - [ ] Attach to server
-  - [ ] Open server console
+- [x] Command Line Interface
+  - [x] Start server
+  - [x] Stop server
+  - [x] Restart server
+  - [x] Kill server
+  - [x] Attach to server
 - [x] Discord OAuth
   - [x] Link account with Discord
   - [x] Login with Discord account

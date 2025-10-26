@@ -21,6 +21,7 @@ public class ServerCommandModule : ICommandModule
         var infoCommand = new ServerInfoCommand();
         var commandCommand = new ServerCommandCommand();
         var reinstallCommand = new ServerReinstallCommand();
+        var connectCommand = new ServerConnectCommand();
 
         // Add all commands
         serverCommand.AddCommand(listCommand.CreateCommand(serviceProvider));
@@ -33,6 +34,7 @@ public class ServerCommandModule : ICommandModule
         serverCommand.AddCommand(infoCommand.CreateInfoCommand(serviceProvider));
         serverCommand.AddCommand(commandCommand.CreateCommandCommand(serviceProvider));
         serverCommand.AddCommand(reinstallCommand.CreateReinstallCommand(serviceProvider));
+        serverCommand.AddCommand(connectCommand.CreateConnectCommand(serviceProvider));
 
         return serverCommand;
     }

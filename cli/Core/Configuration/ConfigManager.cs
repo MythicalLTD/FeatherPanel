@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace FeatherCli.Core.Configuration;
 
@@ -11,7 +12,35 @@ public class ConfigManager
 
     public ConfigManager()
     {
-        _configPath = "/etc/feathercli";
+        // Use OS-appropriate config path
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            // Windows: Use %LOCALAPPDATA%\FeatherCli
+            _configPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "FeatherCli"
+            );
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            // macOS: Use ~/Library/Application Support/FeatherCli
+            _configPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Library",
+                "Application Support",
+                "FeatherCli"
+            );
+        }
+        else
+        {
+            // Linux: Use ~/.config/feathercli for per-user config
+            _configPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                ".config",
+                "feathercli"
+            );
+        }
+        
         _configFile = Path.Combine(_configPath, ".env");
         
         _configuration = new ConfigurationBuilder()

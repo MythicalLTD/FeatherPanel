@@ -22,7 +22,12 @@ SIGN_TIMESTAMP     ?= http://timestamp.sectigo.com
 ENABLE_SIGNING     ?= false
 
 # === ARCHITECTURES TO BUILD ===
-RIDS := linux-x64 linux-arm linux-arm64
+# For cross-platform builds, uncomment the platforms you want:
+RIDS := linux-x64 linux-arm linux-arm64 win-x64 win-arm64 osx-x64 osx-arm64
+
+# For Linux-only: RIDS := linux-x64 linux-arm linux-arm64
+# For Windows-only: RIDS := win-x64 win-arm64
+# For macOS-only: RIDS := osx-x64 osx-arm64
 
 all: info clean build summary
 
@@ -59,15 +64,20 @@ build: check-dotnet
 		echo "Building for $$rid..."; \
 		echo "======================================"; \
 		case $$rid in \
-			linux-x64)   ARCH_NAME="x64" ;; \
-			linux-arm)   ARCH_NAME="ARMv7" ;; \
-			linux-arm64) ARCH_NAME="ARM64" ;; \
+			linux-x64)   ARCH_NAME="Linux x64" ;; \
+			linux-arm)   ARCH_NAME="Linux ARMv7" ;; \
+			linux-arm64) ARCH_NAME="Linux ARM64" ;; \
+			win-x64)     ARCH_NAME="Windows x64" ;; \
+			win-arm64)   ARCH_NAME="Windows ARM64" ;; \
+			osx-x64)     ARCH_NAME="macOS Intel" ;; \
+			osx-arm64)   ARCH_NAME="macOS ARM64" ;; \
 			*)           ARCH_NAME="$$rid" ;; \
 		esac; \
 		mkdir -p "$(OUTPUT_DIR)/$$rid"; \
 		echo "Building $(APP_NAME) for $$ARCH_NAME..."; \
 		dotnet publish $(PROJECT) -c $(CONFIG) -r $$rid --self-contained true \
 			/p:PublishSingleFile=true \
+			/p:PublishTrimmed=false \
 			/p:EnableCompressionInSingleFile=true \
 			/p:IncludeNativeLibrariesForSelfExtract=true \
 			/p:AssemblyTitle="$(APP_NAME)" \
@@ -82,16 +92,25 @@ build: check-dotnet
 			--output "$(OUTPUT_DIR)/$$rid" \
 			--verbosity quiet ; \
 		status=$$?; \
-		EXEC="$(APP_NAME)"; \
-		NEW_EXEC="$(APP_NAME)-$$rid-v$(VERSION)"; \
 		if [ $$status -ne 0 ]; then \
 			echo "[ERROR] Build failed for $$rid"; \
 			exit 1; \
 		fi; \
+		case $$rid in \
+			win-*) EXEC="$(APP_NAME).exe" ;; \
+			*)     EXEC="$(APP_NAME)" ;; \
+		esac; \
+		if echo $$rid | grep -q "^win-"; then \
+			NEW_EXEC="$(APP_NAME)-$$rid-v$(VERSION).exe"; \
+		else \
+			NEW_EXEC="$(APP_NAME)-$$rid-v$(VERSION)"; \
+		fi; \
 		if [ -f "$(OUTPUT_DIR)/$$rid/$$EXEC" ]; then \
 			echo "[*] Renaming executable: $$NEW_EXEC"; \
 			mv "$(OUTPUT_DIR)/$$rid/$$EXEC" "$(OUTPUT_DIR)/$$rid/$$NEW_EXEC"; \
-			chmod +x "$(OUTPUT_DIR)/$$rid/$$NEW_EXEC"; \
+			if [ ! -z "$$(echo $$rid | grep -v "^win-")" ]; then \
+				chmod +x "$(OUTPUT_DIR)/$$rid/$$NEW_EXEC"; \
+			fi; \
 			SIZE=$$(stat -c%s "$(OUTPUT_DIR)/$$rid/$$NEW_EXEC"); \
 			SIZE_MB=$$(expr $$SIZE / 1024 / 1024); \
 			echo "[OK] Build completed: $$SIZE_MB MB"; \
@@ -117,12 +136,20 @@ summary:
 	echo "Built Architectures:" >> $$BUILD_INFO; \
 	for rid in $(RIDS); do \
 		case $$rid in \
-			linux-x64)   ARCH_NAME="x64" ;; \
-			linux-arm)   ARCH_NAME="ARMv7" ;; \
-			linux-arm64) ARCH_NAME="ARM64" ;; \
+			linux-x64)   ARCH_NAME="Linux x64" ;; \
+			linux-arm)   ARCH_NAME="Linux ARMv7" ;; \
+			linux-arm64) ARCH_NAME="Linux ARM64" ;; \
+			win-x64)     ARCH_NAME="Windows x64" ;; \
+			win-arm64)   ARCH_NAME="Windows ARM64" ;; \
+			osx-x64)     ARCH_NAME="macOS Intel" ;; \
+			osx-arm64)   ARCH_NAME="macOS ARM64" ;; \
 			*)           ARCH_NAME="$$rid" ;; \
 		esac; \
-		EXE="$(OUTPUT_DIR)/$$rid/$(APP_NAME)-$$rid-v$(VERSION)"; \
+		if echo $$rid | grep -q "^win-"; then \
+			EXE="$(OUTPUT_DIR)/$$rid/$(APP_NAME)-$$rid-v$(VERSION).exe"; \
+		else \
+			EXE="$(OUTPUT_DIR)/$$rid/$(APP_NAME)-$$rid-v$(VERSION)"; \
+		fi; \
 		if [ -f "$$EXE" ]; then \
 			SIZE=$$(stat -c%s "$$EXE"); \
 			SIZE_MB=$$(expr $$SIZE / 1024 / 1024); \
@@ -141,7 +168,11 @@ summary:
 	echo "   - linux-x64: For x64 (amd64) Linux systems" >> $$BUILD_INFO; \
 	echo "   - linux-arm: For ARMv7 (32-bit ARM) Linux systems" >> $$BUILD_INFO; \
 	echo "   - linux-arm64: For ARM64 Linux systems" >> $$BUILD_INFO; \
-	echo "2. Mark the binary as executable if needed: chmod +x $(APP_NAME)-RID-v$(VERSION)" >> $$BUILD_INFO; \
+	echo "   - win-x64: For Windows x64 systems" >> $$BUILD_INFO; \
+	echo "   - win-arm64: For Windows ARM64 systems" >> $$BUILD_INFO; \
+	echo "   - osx-x64: For macOS Intel systems" >> $$BUILD_INFO; \
+	echo "   - osx-arm64: For macOS Apple Silicon systems" >> $$BUILD_INFO; \
+	echo "2. For Linux/macOS: Mark the binary as executable: chmod +x $(APP_NAME)-RID-v$(VERSION)" >> $$BUILD_INFO; \
 	echo "3. Run the executable - no installation required!" >> $$BUILD_INFO; \
 	echo "4. The application is portable and self-contained" >> $$BUILD_INFO; \
 	echo ""; \
@@ -160,7 +191,11 @@ summary:
 	echo ""; \
 	echo "Files created:"; \
 	for rid in $(RIDS); do \
-		EXEC="$(OUTPUT_DIR)/$$rid/$(APP_NAME)-$$rid-v$(VERSION)"; \
+		if echo $$rid | grep -q "^win-"; then \
+			EXEC="$(OUTPUT_DIR)/$$rid/$(APP_NAME)-$$rid-v$(VERSION).exe"; \
+		else \
+			EXEC="$(OUTPUT_DIR)/$$rid/$(APP_NAME)-$$rid-v$(VERSION)"; \
+		fi; \
 		if [ -f "$$EXEC" ]; then echo "  [FILE] $$(basename $$EXEC)"; fi; \
 	done; \
 	echo "  [FILE] build-info.txt"; \

@@ -49,8 +49,12 @@ public class ConfigCommandModule : ICommandModule
                 return;
             }
 
-            // Get API Key
-            var apiKey = AnsiConsole.Ask<string>("Enter your FeatherPanel API Key:");
+            // Get API Key (use password prompt to mask input)
+            var apiKey = AnsiConsole.Prompt(
+                new TextPrompt<string>("Enter your FeatherPanel API Key:")
+                    .PromptStyle("green")
+                    .Secret('*')
+            );
             if (string.IsNullOrEmpty(apiKey))
             {
                 AnsiConsole.MarkupLine("[red]✗ API Key is required[/]");
