@@ -8,7 +8,7 @@
             <div class="flex items-start justify-between mb-6">
                 <div class="flex items-center gap-3">
                     <div
-                        class="h-14 w-14 rounded-full bg-gradient-to-br from-primary via-purple-500 to-pink-500 flex items-center justify-center"
+                        class="h-14 w-14 rounded-full bg-linear-to-br from-primary via-purple-500 to-pink-500 flex items-center justify-center"
                     >
                         <Sparkles :size="28" class="text-white" />
                     </div>

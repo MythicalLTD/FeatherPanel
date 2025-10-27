@@ -35,7 +35,7 @@
             <div v-else class="p-6">
                 <div class="mb-6">
                     <div
-                        class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6"
+                        class="bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6"
                     >
                         <div class="flex items-center gap-3 mb-4">
                             <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">

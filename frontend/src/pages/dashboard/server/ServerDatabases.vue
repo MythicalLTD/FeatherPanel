@@ -77,7 +77,7 @@
                             <div class="absolute inset-0 animate-ping opacity-20">
                                 <div class="w-32 h-32 rounded-full bg-primary/20"></div>
                             </div>
-                            <div class="relative p-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5">
+                            <div class="relative p-8 rounded-full bg-linear-to-br from-primary/20 to-primary/5">
                                 <Database class="h-16 w-16 text-primary" />
                             </div>
                         </div>
@@ -346,7 +346,7 @@
                     <!-- Connection Details -->
                     <div class="space-y-6">
                         <div
-                            class="border rounded-xl p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 border-blue-200 dark:border-blue-800"
+                            class="border rounded-xl p-6 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 border-blue-200 dark:border-blue-800"
                         >
                             <h3 class="font-bold text-lg mb-4 flex items-center gap-3 text-blue-800 dark:text-blue-200">
                                 <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
@@ -423,7 +423,7 @@
 
                         <!-- Database Info -->
                         <div
-                            class="border rounded-xl p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/20 border-green-200 dark:border-green-800"
+                            class="border rounded-xl p-6 bg-linear-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/20 border-green-200 dark:border-green-800"
                         >
                             <h3
                                 class="font-bold text-lg mb-4 flex items-center gap-3 text-green-800 dark:text-green-200"
@@ -505,7 +505,7 @@
                     <div class="space-y-4">
                         <!-- Credentials -->
                         <div
-                            class="border rounded-xl p-6 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/30 dark:to-orange-900/20 border-orange-200 dark:border-orange-800"
+                            class="border rounded-xl p-6 bg-linear-to-br from-orange-50 to-orange-100 dark:from-orange-950/30 dark:to-orange-900/20 border-orange-200 dark:border-orange-800"
                         >
                             <h3
                                 class="font-bold text-lg mb-4 flex items-center gap-3 text-orange-800 dark:text-orange-200"
@@ -579,7 +579,7 @@
 
                         <!-- Connection String -->
                         <div
-                            class="border rounded-xl p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 border-blue-200 dark:border-blue-800"
+                            class="border rounded-xl p-6 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 border-blue-200 dark:border-blue-800"
                         >
                             <h3 class="font-bold text-lg mb-4 flex items-center gap-3 text-blue-800 dark:text-blue-200">
                                 <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
@@ -612,7 +612,7 @@
 
                         <!-- Metadata -->
                         <div
-                            class="border rounded-xl p-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950/30 dark:to-gray-900/20 border-gray-200 dark:border-gray-800"
+                            class="border rounded-xl p-6 bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-950/30 dark:to-gray-900/20 border-gray-200 dark:border-gray-800"
                         >
                             <h3 class="font-bold text-lg mb-4 flex items-center gap-3 text-gray-800 dark:text-gray-200">
                                 <span class="w-3 h-3 bg-gray-500 rounded-full"></span>

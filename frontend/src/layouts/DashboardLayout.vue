@@ -189,7 +189,7 @@ watchEffect(() => {
         <AppSidebar />
         <SidebarInset>
             <header
-                class="flex h-14 sm:h-16 shrink-0 items-center gap-2 transition-all duration-300 ease-out group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+                class="flex h-14 sm:h-16 shrink-0 items-center gap-2 transition-all duration-300 ease-out group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60"
             >
                 <div class="flex items-center gap-2 px-3 sm:px-4 w-full">
                     <SidebarTrigger

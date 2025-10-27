@@ -301,7 +301,27 @@
                                     :key="filter.id"
                                     class="flex items-center gap-3 p-3 border rounded-lg bg-card"
                                 >
-                                    <Switch :checked="filter.enabled" @update:checked="() => toggleFilter(filter.id)" />
+                                    <Select
+                                        class="w-32"
+                                        :model-value="filter.enabled ? 'enabled' : 'disabled'"
+                                        @update:model-value="
+                                            (value) => setFilterEnabled(filter.id, value === 'enabled')
+                                        "
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue
+                                                :placeholder="
+                                                    filter.enabled
+                                                        ? t('serverConsole.enabled')
+                                                        : t('serverConsole.disabled')
+                                                "
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="enabled">{{ t('serverConsole.enabled') }}</SelectItem>
+                                            <SelectItem value="disabled">{{ t('serverConsole.disabled') }}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2">
                                             <span class="font-medium text-sm">{{ filter.name }}</span>
@@ -834,7 +854,6 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import EulaFeature from '@/components/server/features/EulaFeature.vue';
 import JavaVersionFeature from '@/components/server/features/JavaVersionFeature.vue';
 import PidLimitFeature from '@/components/server/features/PidLimitFeature.vue';
@@ -1422,10 +1441,10 @@ function deleteFilter(filterId: string): void {
     toast.success(t('serverConsole.filterDeleted'));
 }
 
-function toggleFilter(filterId: string): void {
+function setFilterEnabled(filterId: string, enabled: boolean): void {
     const filter = customization.value.filters.find((f) => f.id === filterId);
     if (filter) {
-        filter.enabled = !filter.enabled;
+        filter.enabled = enabled;
         saveCustomization();
     }
 }

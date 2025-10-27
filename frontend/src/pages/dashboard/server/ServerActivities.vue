@@ -100,7 +100,7 @@
                             <div class="absolute inset-0 animate-ping opacity-20">
                                 <div class="w-32 h-32 rounded-full bg-primary/20"></div>
                             </div>
-                            <div class="relative p-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5">
+                            <div class="relative p-8 rounded-full bg-linear-to-br from-primary/20 to-primary/5">
                                 <Activity class="h-16 w-16 text-primary" />
                             </div>
                         </div>

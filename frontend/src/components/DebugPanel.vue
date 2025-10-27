@@ -499,7 +499,7 @@ defineExpose({
             >
                 <!-- Header -->
                 <div
-                    class="flex items-center justify-between p-4 bg-gradient-to-r from-gray-800 to-gray-900 rounded-t-xl border-b border-gray-700"
+                    class="flex items-center justify-between p-4 bg-linear-to-r from-gray-800 to-gray-900 rounded-t-xl border-b border-gray-700"
                 >
                     <div class="flex items-center gap-3">
                         <div class="relative">

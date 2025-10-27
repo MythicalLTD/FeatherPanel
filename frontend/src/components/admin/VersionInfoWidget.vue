@@ -11,11 +11,11 @@
         <!-- Current Version Card -->
         <Card
             v-if="versionInfo.current"
-            class="p-6 border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20"
+            class="p-6 border-l-4 border-l-blue-500 bg-linear-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20"
         >
             <div class="flex items-start gap-4">
                 <div
-                    class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shrink-0"
+                    class="h-12 w-12 rounded-full bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shrink-0"
                 >
                     <Sparkles :size="24" class="text-white" />
                 </div>
@@ -108,11 +108,11 @@
         <!-- Update Available Notification -->
         <div v-if="versionInfo.update_available && versionInfo.latest" class="space-y-4">
             <Card
-                class="p-6 border-l-4 border-l-emerald-500 bg-gradient-to-r from-emerald-50/50 to-green-50/50 dark:from-emerald-950/20 dark:to-green-950/20 shadow-lg"
+                class="p-6 border-l-4 border-l-emerald-500 bg-linear-to-r from-emerald-50/50 to-green-50/50 dark:from-emerald-950/20 dark:to-green-950/20 shadow-lg"
             >
                 <div class="flex items-start gap-4">
                     <div
-                        class="h-12 w-12 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shrink-0"
+                        class="h-12 w-12 rounded-full bg-linear-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shrink-0"
                     >
                         <AlertTriangle :size="24" class="text-white" />
                     </div>
@@ -200,10 +200,10 @@
         <!-- No Update Available -->
         <div v-else-if="versionInfo.current" class="text-center pt-8">
             <Card
-                class="p-8 bg-gradient-to-r from-emerald-50/50 to-green-50/50 dark:from-emerald-950/20 dark:to-green-950/20 border-l-4 border-l-emerald-500"
+                class="p-8 bg-linear-to-r from-emerald-50/50 to-green-50/50 dark:from-emerald-950/20 dark:to-green-950/20 border-l-4 border-l-emerald-500"
             >
                 <div
-                    class="h-16 w-16 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center mx-auto mb-4 shadow-lg"
+                    class="h-16 w-16 rounded-full bg-linear-to-br from-emerald-500 to-green-600 flex items-center justify-center mx-auto mb-4 shadow-lg"
                 >
                     <CheckCircle2 :size="32" class="text-white" />
                 </div>

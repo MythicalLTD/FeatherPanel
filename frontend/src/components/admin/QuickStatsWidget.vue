@@ -105,10 +105,10 @@ const quickStatsArr = computed(() => {
 // Color scheme helpers for each stat
 const getIconBgClass = (index: number): string => {
     const classes: string[] = [
-        'bg-gradient-to-br from-blue-500/10 to-blue-600/5 dark:from-blue-500/20 dark:to-blue-600/10',
-        'bg-gradient-to-br from-purple-500/10 to-purple-600/5 dark:from-purple-500/20 dark:to-purple-600/10',
-        'bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 dark:from-emerald-500/20 dark:to-emerald-600/10',
-        'bg-gradient-to-br from-amber-500/10 to-amber-600/5 dark:from-amber-500/20 dark:to-amber-600/10',
+        'bg-linear-to-br from-blue-500/10 to-blue-600/5 dark:from-blue-500/20 dark:to-blue-600/10',
+        'bg-linear-to-br from-purple-500/10 to-purple-600/5 dark:from-purple-500/20 dark:to-purple-600/10',
+        'bg-linear-to-br from-emerald-500/10 to-emerald-600/5 dark:from-emerald-500/20 dark:to-emerald-600/10',
+        'bg-linear-to-br from-amber-500/10 to-amber-600/5 dark:from-amber-500/20 dark:to-amber-600/10',
     ];
     const normalizedIndex = index % classes.length;
     return classes[normalizedIndex] ?? classes[0] ?? '';
@@ -138,10 +138,10 @@ const getValueColorClass = (index: number): string => {
 
 const getGradientClass = (index: number): string => {
     const classes: string[] = [
-        'bg-gradient-to-br from-blue-500/5 to-transparent',
-        'bg-gradient-to-br from-purple-500/5 to-transparent',
-        'bg-gradient-to-br from-emerald-500/5 to-transparent',
-        'bg-gradient-to-br from-amber-500/5 to-transparent',
+        'bg-linear-to-br from-blue-500/5 to-transparent',
+        'bg-linear-to-br from-purple-500/5 to-transparent',
+        'bg-linear-to-br from-emerald-500/5 to-transparent',
+        'bg-linear-to-br from-amber-500/5 to-transparent',
     ];
     const normalizedIndex = index % classes.length;
     return classes[normalizedIndex] ?? classes[0] ?? '';

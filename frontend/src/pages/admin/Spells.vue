@@ -170,7 +170,7 @@
                         <!-- Publish Banner -->
                         <div v-if="showOnlinePublishBanner" class="mb-4">
                             <div
-                                class="rounded-xl p-5 bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600 text-white shadow relative"
+                                class="rounded-xl p-5 bg-linear-to-r from-indigo-600 via-purple-600 to-fuchsia-600 text-white shadow relative"
                             >
                                 <button
                                     class="absolute top-3 right-3 text-white/80 hover:text-white text-xs underline"

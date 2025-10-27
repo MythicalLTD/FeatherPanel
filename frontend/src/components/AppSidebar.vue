@@ -172,7 +172,7 @@ const sendServerCommand = async (command: 'start' | 'stop' | 'restart' | 'kill')
                     @click="router.push('/')"
                 >
                     <div
-                        class="flex items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 shrink-0 border border-primary/10"
+                        class="flex items-center justify-center rounded-lg bg-linear-to-br from-primary/10 to-primary/5 shrink-0 border border-primary/10"
                         :class="state === 'collapsed' ? 'p-2' : 'p-1.5'"
                     >
                         <img

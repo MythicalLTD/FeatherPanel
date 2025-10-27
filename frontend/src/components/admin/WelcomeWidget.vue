@@ -1,9 +1,9 @@
 <template>
-    <div class="p-6 bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 rounded-lg">
+    <div class="p-6 bg-linear-to-br from-primary/5 via-purple-500/5 to-pink-500/5 rounded-lg">
         <div class="flex flex-col md:flex-row items-center gap-6">
             <div class="shrink-0">
                 <div
-                    class="h-24 w-24 rounded-full bg-gradient-to-br from-primary via-purple-500 to-pink-500 flex items-center justify-center shadow-xl"
+                    class="h-24 w-24 rounded-full bg-linear-to-br from-primary via-purple-500 to-pink-500 flex items-center justify-center shadow-xl"
                 >
                     <Sparkles :size="48" class="text-white" />
                 </div>
@@ -11,7 +11,7 @@
             <div class="flex-1 text-center md:text-left">
                 <h2 class="text-2xl font-bold mb-2">
                     Welcome to
-                    <span class="bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent"
+                    <span class="bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent"
                         >FeatherPanel</span
                     >
                 </h2>

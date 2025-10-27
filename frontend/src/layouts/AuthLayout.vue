@@ -1,17 +1,5 @@
 <template>
     <div class="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
-        <!-- Theme Toggle Button - Top Right -->
-        <div class="absolute top-4 right-4 flex gap-2">
-            <button
-                class="flex items-center justify-center w-10 h-10 rounded-lg bg-muted hover:bg-muted/80 transition-all duration-200 hover:scale-105"
-                :title="isDarkTheme ? $t('user.switchToLight') : $t('user.switchToDark')"
-                @click="toggleTheme"
-            >
-                <Sun v-if="isDarkTheme" class="size-5 text-foreground" />
-                <Moon v-else class="size-5 text-foreground" />
-            </button>
-        </div>
-
         <div class="w-full max-w-sm">
             <div class="flex flex-col items-center gap-4">
                 <router-link
@@ -88,36 +76,11 @@
 
 import { onMounted, ref } from 'vue';
 import { useSettingsStore } from '@/stores/settings';
-import { Sun, Moon } from 'lucide-vue-next';
 
 const settingsStore = useSettingsStore();
 
 // Theme management
 const isDarkTheme = ref(true);
-
-// Toggle theme function
-const toggleTheme = () => {
-    isDarkTheme.value = !isDarkTheme.value;
-
-    // Update body class
-    if (isDarkTheme.value) {
-        document.body.classList.remove('light');
-        document.body.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-    } else {
-        document.body.classList.remove('dark');
-        document.body.classList.add('light');
-        localStorage.setItem('theme', 'light');
-    }
-
-    // Dispatch custom event for other components to listen to
-    window.dispatchEvent(
-        new CustomEvent('theme-changed', {
-            detail: { theme: isDarkTheme.value ? 'dark' : 'light' },
-        }),
-    );
-    location.reload();
-};
 
 // Initialize theme on mount
 onMounted(async () => {

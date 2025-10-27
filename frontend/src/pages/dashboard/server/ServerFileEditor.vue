@@ -14,7 +14,7 @@
                         <Badge
                             v-if="readonly"
                             variant="outline"
-                            class="text-sm px-3 py-1.5 bg-gradient-to-r from-orange-500/20 to-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30"
+                            class="text-sm px-3 py-1.5 bg-linear-to-r from-orange-500/20 to-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30"
                         >
                             {{ t('common.readonly') }}
                         </Badge>
@@ -47,9 +47,7 @@
                             <div class="absolute inset-0 animate-ping opacity-20">
                                 <div class="w-32 h-32 rounded-full bg-destructive/20"></div>
                             </div>
-                            <div
-                                class="relative p-8 rounded-full bg-gradient-to-br from-destructive/20 to-destructive/5"
-                            >
+                            <div class="relative p-8 rounded-full bg-linear-to-br from-destructive/20 to-destructive/5">
                                 <AlertCircle class="h-16 w-16 text-destructive" />
                             </div>
                         </div>

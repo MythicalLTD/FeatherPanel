@@ -123,7 +123,7 @@
                                     <!-- Header Section -->
                                     <div class="flex items-start gap-3 mb-3">
                                         <div
-                                            class="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden shrink-0 border border-primary/10"
+                                            class="h-12 w-12 rounded-lg bg-linear-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden shrink-0 border border-primary/10"
                                         >
                                             <img
                                                 v-if="plugin.icon"
@@ -151,7 +151,7 @@
                                     </div>
 
                                     <!-- Description -->
-                                    <p class="text-sm text-muted-foreground mb-4 line-clamp-2 min-h-[2.5rem]">
+                                    <p class="text-sm text-muted-foreground mb-4 line-clamp-2 min-h-10">
                                         {{ plugin.description || 'No description available' }}
                                     </p>
 
@@ -293,7 +293,7 @@
                         <!-- Publish Banner (dismissible) -->
                         <div v-if="showPluginsOnlineBanner" class="mb-4">
                             <div
-                                class="rounded-xl p-5 bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600 text-white shadow relative"
+                                class="rounded-xl p-5 bg-linear-to-r from-indigo-600 via-purple-600 to-fuchsia-600 text-white shadow relative"
                             >
                                 <button
                                     class="absolute top-3 right-3 text-white/80 hover:text-white text-xs underline"
@@ -381,7 +381,7 @@
                                     <!-- Header Section -->
                                     <div class="flex items-start gap-3 mb-3">
                                         <div
-                                            class="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden shrink-0 border border-primary/10"
+                                            class="h-12 w-12 rounded-lg bg-linear-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden shrink-0 border border-primary/10"
                                         >
                                             <img
                                                 v-if="addon.icon"
@@ -420,7 +420,7 @@
                                                 </Badge>
                                                 <Badge
                                                     v-if="addon.premium === 1"
-                                                    class="text-xs bg-gradient-to-r from-yellow-500 to-amber-600 text-white border-0"
+                                                    class="text-xs bg-linear-to-r from-yellow-500 to-amber-600 text-white border-0"
                                                 >
                                                     Premium
                                                 </Badge>
@@ -429,7 +429,7 @@
                                     </div>
 
                                     <!-- Description -->
-                                    <p class="text-sm text-muted-foreground mb-3 line-clamp-2 min-h-[2.5rem]">
+                                    <p class="text-sm text-muted-foreground mb-3 line-clamp-2 min-h-10">
                                         {{ addon.description || 'No description available' }}
                                     </p>
 
@@ -444,7 +444,7 @@
                                     <!-- Premium Price -->
                                     <div v-if="addon.premium === 1 && addon.premium_price" class="mb-3">
                                         <div
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-gradient-to-r from-yellow-500/10 to-amber-600/10 border border-yellow-500/30"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-linear-to-r from-yellow-500/10 to-amber-600/10 border border-yellow-500/30"
                                         >
                                             <span class="text-base font-bold text-yellow-700 dark:text-yellow-500"
                                                 >€{{ addon.premium_price }}</span
@@ -507,7 +507,7 @@
                                                 :href="addon.premium_link || '#'"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                class="w-full bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white"
+                                                class="w-full bg-linear-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white"
                                             >
                                                 Purchase Plugin
                                             </Button>

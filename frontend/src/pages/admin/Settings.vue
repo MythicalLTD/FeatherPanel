@@ -36,7 +36,7 @@
 
                 <!-- Upload Logs to Support -->
                 <Card
-                    class="mb-6 border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950"
+                    class="mb-6 border-2 border-blue-200 dark:border-blue-800 bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950"
                 >
                     <CardContent class="p-6">
                         <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">

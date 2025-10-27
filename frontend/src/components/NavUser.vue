@@ -77,7 +77,7 @@ const isAccountRoute = computed(() => router.currentRoute.value?.path === '/dash
                             >
                                 <AvatarImage :src="user.avatar" :alt="user.name" />
                                 <AvatarFallback
-                                    class="rounded-lg bg-gradient-to-br from-primary/80 to-primary text-primary-foreground font-semibold"
+                                    class="rounded-lg bg-linear-to-br from-primary/80 to-primary text-primary-foreground font-semibold"
                                 >
                                     {{ user.avatar_alt }}
                                 </AvatarFallback>
@@ -106,7 +106,7 @@ const isAccountRoute = computed(() => router.currentRoute.value?.path === '/dash
                             <Avatar class="h-10 w-10 rounded-lg ring-2 ring-primary/10">
                                 <AvatarImage :src="user.avatar" :alt="user.name" />
                                 <AvatarFallback
-                                    class="rounded-lg bg-gradient-to-br from-primary/80 to-primary text-primary-foreground font-semibold"
+                                    class="rounded-lg bg-linear-to-br from-primary/80 to-primary text-primary-foreground font-semibold"
                                 >
                                     {{ user.avatar_alt }}
                                 </AvatarFallback>
