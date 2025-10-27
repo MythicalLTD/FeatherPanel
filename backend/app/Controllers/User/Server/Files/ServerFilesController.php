@@ -63,6 +63,17 @@ use App\Plugins\Events\Events\ServerFilesEvent;
     ]
 )]
 #[OA\Schema(
+    schema: 'CompressRequest',
+    type: 'object',
+    required: ['files', 'root'],
+    properties: [
+        new OA\Property(property: 'files', type: 'array', items: new OA\Items(type: 'string'), description: 'Array of file paths'),
+        new OA\Property(property: 'root', type: 'string', description: 'Root directory path'),
+        new OA\Property(property: 'name', type: 'string', nullable: true, description: 'Archive name (optional, auto-generated if not provided)'),
+        new OA\Property(property: 'extension', type: 'string', nullable: true, description: 'Archive type: zip, tar.gz, tgz, tar.bz2, tbz2, tar.xz, txz', default: 'tar.gz'),
+    ]
+)]
+#[OA\Schema(
     schema: 'RenameRequest',
     type: 'object',
     required: ['files', 'root'],
@@ -724,7 +735,7 @@ class ServerFilesController
         ],
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(ref: '#/components/schemas/FileOperationRequest')
+            content: new OA\JsonContent(ref: '#/components/schemas/CompressRequest')
         ),
         responses: [
             new OA\Response(
@@ -752,8 +763,12 @@ class ServerFilesController
 
             $data = $this->validateJsonBody($request, ['files', 'root']);
 
+            // Get optional name and extension (default to generated name and tar.gz)
+            $name = $data['name'] ?? '';
+            $extension = $data['extension'] ?? 'tar.gz';
+
             $wings = $this->createWingsConnection($node);
-            $response = $wings->getServer()->compressFiles($server['uuid'], $data['root'], $data['files']);
+            $response = $wings->getServer()->compressFiles($server['uuid'], $data['root'], $data['files'], $name, $extension);
 
             if (!$response->isSuccessful()) {
                 $error = $response->getError();
@@ -765,7 +780,8 @@ class ServerFilesController
             $this->logActivity($server, $node, 'files_compressed', [
                 'root' => $data['root'],
                 'files' => $data['files'],
-
+                'name' => $name,
+                'extension' => $extension,
                 'file_count' => count($data['files']),
             ], $user);
 

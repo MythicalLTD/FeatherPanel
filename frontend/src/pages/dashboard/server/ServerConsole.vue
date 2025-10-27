@@ -948,6 +948,14 @@ const isNavigatingAway = ref(false);
 // Track if WebSocket handlers are set up
 const handlersSetup = ref(false);
 let messageHandler: ((event: MessageEvent) => void) | null = null;
+let lastJwtErrorTime = 0;
+const JWT_ERROR_THROTTLE_MS = 10000; // Only show error once every 10 seconds
+
+// Auth success callback - defined before onMounted for cleanup access
+function onAuthSuccessCallback(): void {
+    requestServerStats();
+    requestServerLogs();
+}
 
 const server = ref<Server | null>(null);
 const loading = ref(false);
@@ -1550,9 +1558,8 @@ onMounted(async () => {
     // Connect to Wings daemon
     await wingsWebSocket.connect();
 
-    // Request stats and logs
-    requestServerStats();
-    requestServerLogs();
+    // Logs and stats will be requested automatically after authentication succeeds
+    // via the onAuthSuccess callback
 
     // Set up periodic stats requests
     statsInterval = setInterval(() => {
@@ -1581,16 +1588,8 @@ onMounted(async () => {
         { immediate: true },
     );
 
-    watch(
-        () => wingsWebSocket.isConnected.value,
-        (isConnected, wasConnected) => {
-            if (isConnected && wasConnected === false) {
-                if (wingsWebSocket.websocket.value) {
-                    setupWebSocketHandlers();
-                }
-            }
-        },
-    );
+    // Register callback to request logs and stats after successful authentication
+    wingsWebSocket.onAuthSuccess(onAuthSuccessCallback);
 
     watch(
         () => wingsWebSocket.wingsStatus?.value,
@@ -1643,6 +1642,9 @@ onUnmounted(() => {
         terminal = null;
     }
     fitAddon = null;
+
+    // Remove auth success callback
+    wingsWebSocket.removeAuthSuccessCallback(onAuthSuccessCallback);
 
     wingsWebSocket.cleanup();
     if (statsInterval) {
@@ -1731,7 +1733,12 @@ function setupWebSocketHandlers(): void {
                 writeToTerminalImmediate(
                     `\r\n\x1b[31m${t('serverConsole.jwtErrorPrefix', { message: data.args?.[0] ?? '' })}\x1b[0m\r\n`,
                 );
-                toast.error(t('serverConsole.authErrorRefresh'));
+                // Throttle error toasts to avoid spam (show once every 10 seconds max)
+                const now = Date.now();
+                if (now - lastJwtErrorTime > JWT_ERROR_THROTTLE_MS) {
+                    toast.error(t('serverConsole.authErrorRefresh'));
+                    lastJwtErrorTime = now;
+                }
             } else if (data.event === 'install started') {
                 writeToTerminalImmediate('\r\n\x1b[33m📦 Installation started...\x1b[0m\r\n');
             } else if (data.event === 'install output') {

@@ -8,6 +8,9 @@
 - Added telemetry to FeatherPanel to better understand which features are used most and to guide future feature development.
 - Added seamless Discord integration: you can now link your account to Discord and log in using your Discord credentials for a faster, more convenient sign-in experience.
 - Added the ability for users to disable (remove) two-factor authentication (2FA) from their account settings if they have previously enabled it, making recovery and device transitions easier.
+- When opening the console for a running server, you’ll now automatically see the most recent server logs for a smoother and more informative experience!
+- Added support for creating archives in additional formats when compressing files and folders via the file manager. Users can now choose from zip, tar.gz, tgz, tar.bz2, tbz2, tar.xz, and txz formats when creating compressed archives from selected files or directories.
+- Added support for custom archive names when compressing files and folders, so you’re no longer limited to the default name.
 
 ### Fixed
 
@@ -17,6 +20,7 @@
 - Fixed a critical bug where updating server variables would previously delete ALL variables—including read-only and admin-only variables—instead of only modifying the variables provided in the update request.
 - Fixed an issue where the sidebar logo could become stuck in dark mode and not update correctly when themes were changed.
 - Fixed a broken database schema migration that could cause issues when upgrading from older versions.
+- No longer performing JWT renewals over the WebSocket protocol; authentication tokens must now be refreshed via the REST API and re-established by reconnecting the WebSocket when needed.
 
 ### Improved
 

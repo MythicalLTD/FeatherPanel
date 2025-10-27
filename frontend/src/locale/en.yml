@@ -1287,6 +1287,14 @@ serverFiles:
     # Compress
     filesCompressed: '{count} file(s) compressed successfully'
     compressError: 'Failed to compress files'
+    compressFiles: 'Compress Files'
+    compressFilesDescription: 'Compress the selected files into an archive.'
+    compressingFilesFromCurrent: '📦 Compressing {count} file(s) from the current directory'
+    archiveType: 'Archive Type'
+    selectArchiveType: 'Select the archive format'
+    archiveName: 'Archive Name'
+    archiveNamePlaceholder: 'Leave empty for auto-generated name'
+    archiveNameHint: 'Leave empty to auto-generate the archive name'
     # Extract
     fileExtracted: 'Archive extracted successfully'
     extractError: 'Failed to extract archive'

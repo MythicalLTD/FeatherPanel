@@ -397,19 +397,17 @@ class ServerService
      * According to Wings API documentation:
      * - POST /api/servers/:uuid/files/compress
      * - Compresses one or more files into a SINGLE archive
-     * - Body: { "root": "string", "files": ["file1", "file2", ...] }
+     * - Body: { "root": "string", "files": ["file1", "file2", ...], "name": "string", "extension": "string" }
+     * - Supported extensions: zip, tar.gz, tgz, tar.bz2, tbz2, tar.xz, txz
      * - Returns: 200 with the new archive file object
-     *
-     * NOTE: Known Wings Issues (as of v1.11.x):
-     * - Wings may create multiple archives instead of one (Wings bug)
-     * - Wings may return 500 errors even when archives are created
-     * - Hidden files (starting with .) may cause issues
      *
      * @param string $serverUuid The server UUID
      * @param string $root The root directory path
      * @param array $files Array of file names (relative to root)
+     * @param string $name Optional archive name (empty for auto-generated)
+     * @param string $extension Archive extension (zip, tar.gz, tgz, tar.bz2, tbz2, tar.xz, txz)
      */
-    public function compressFiles(string $serverUuid, string $root, array $files): WingsResponse
+    public function compressFiles(string $serverUuid, string $root, array $files, string $name = '', string $extension = 'tar.gz'): WingsResponse
     {
         try {
             // Ensure files is an array and not empty
@@ -438,6 +436,15 @@ class ServerService
                 'root' => $root,
                 'files' => $files,
             ];
+
+            // Add optional name and extension if provided
+            if (!empty($name)) {
+                $data['name'] = $name;
+            }
+
+            if (!empty($extension)) {
+                $data['extension'] = $extension;
+            }
 
             $response = $this->connection->post("/api/servers/{$serverUuid}/files/compress", $data);
 

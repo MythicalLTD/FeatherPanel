@@ -81,6 +81,7 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
     const reconnectTimeout = ref<number | null>(null);
     const isReconnecting = ref(false);
     const healthCheckTimeout = ref<number | null>(null); // Health check timeout
+    const onAuthSuccessCallbacks = ref<Set<() => void>>(new Set()); // Callbacks to run after auth success
 
     const isConnected = computed(() => connectionStatus.value === 'connected');
     const isConnecting = computed(() => connectionStatus.value === 'connecting');
@@ -137,6 +138,9 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                                 clearTimeout(healthCheckTimeout.value);
                                 healthCheckTimeout.value = null;
                             }
+
+                            // Trigger auth success callbacks
+                            triggerAuthSuccess();
                         } else if (data.event === 'auth_error') {
                             connectionStatus.value = 'disconnected';
                             wingsStatus.value = 'error';
@@ -296,6 +300,9 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                                 clearTimeout(healthCheckTimeout.value);
                                 healthCheckTimeout.value = null;
                             }
+
+                            // Trigger auth success callbacks
+                            triggerAuthSuccess();
                         } else if (data.event === 'auth_error') {
                             connectionStatus.value = 'disconnected';
                             wingsStatus.value = 'error';
@@ -470,9 +477,31 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
         return false;
     }
 
+    // Register callback to run after auth success
+    function onAuthSuccess(callback: () => void): void {
+        onAuthSuccessCallbacks.value.add(callback);
+    }
+
+    // Remove callback
+    function removeAuthSuccessCallback(callback: () => void): void {
+        onAuthSuccessCallbacks.value.delete(callback);
+    }
+
+    // Trigger all callbacks
+    function triggerAuthSuccess(): void {
+        onAuthSuccessCallbacks.value.forEach((callback) => {
+            try {
+                callback();
+            } catch (error) {
+                console.error('Error in auth success callback:', error);
+            }
+        });
+    }
+
     // Cleanup function
     function cleanup(): void {
         disconnect();
+        onAuthSuccessCallbacks.value.clear();
     }
 
     return {
@@ -495,5 +524,7 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
         disconnect,
         sendMessage,
         cleanup,
+        onAuthSuccess,
+        removeAuthSuccessCallback,
     };
 }

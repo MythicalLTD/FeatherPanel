@@ -28,7 +28,7 @@
                         </div>
                         <!-- Icon container -->
                         <div
-                            class="relative p-12 rounded-full bg-gradient-to-br from-primary/30 via-primary/20 to-primary/10 border-4 border-dashed border-primary shadow-2xl shadow-primary/20"
+                            class="relative p-12 rounded-full bg-linear-to-br from-primary/30 via-primary/20 to-primary/10 border-4 border-dashed border-primary shadow-2xl shadow-primary/20"
                         >
                             <Upload
                                 class="h-20 w-20 text-primary drop-shadow-lg"
@@ -38,7 +38,7 @@
                     </div>
                     <div class="space-y-3">
                         <h2
-                            class="text-5xl font-black bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent drop-shadow-sm"
+                            class="text-5xl font-black bg-linear-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent drop-shadow-sm"
                             style="line-height: 1.2"
                         >
                             🔥 {{ t('serverFiles.dropItHot') }} 🔥
@@ -62,7 +62,7 @@
                         <Badge
                             v-if="uploading"
                             variant="outline"
-                            class="text-sm px-3 py-1.5 bg-gradient-to-r from-yellow-500/20 to-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30 animate-pulse"
+                            class="text-sm px-3 py-1.5 bg-linear-to-r from-yellow-500/20 to-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30 animate-pulse"
                         >
                             <Upload class="h-3.5 w-3.5 mr-2 animate-bounce" />
                             {{ t('serverFiles.uploadingStatus') }}
@@ -196,7 +196,7 @@
             <!-- Hidden Search Results Warning -->
             <Card
                 v-if="filteredFiles.length === 0 && searchQuery && hiddenMatchesExist"
-                class="border-2 border-orange-500/30 bg-gradient-to-r from-orange-500/5 to-orange-500/10 shadow-sm"
+                class="border-2 border-orange-500/30 bg-linear-to-r from-orange-500/5 to-orange-500/10 shadow-sm"
             >
                 <CardContent class="p-4">
                     <div class="flex items-start gap-4">
@@ -1218,6 +1218,75 @@
             </DialogContent>
         </Dialog>
 
+        <!-- Compress Dialog -->
+        <Dialog v-model:open="showCompressDialog">
+            <DialogContent class="mx-4 sm:mx-0 sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle class="flex items-center gap-2">
+                        <Archive class="h-5 w-5 text-primary" />
+                        {{ t('serverFiles.compressFiles') }}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {{ t('serverFiles.compressFilesDescription') }}
+                    </DialogDescription>
+                </DialogHeader>
+                <div class="space-y-4">
+                    <div class="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                        <p class="text-sm text-orange-600 dark:text-orange-400">
+                            {{ t('serverFiles.compressingFilesFromCurrent', { count: selectedFiles.length }) }}
+                        </p>
+                    </div>
+                    <div class="space-y-2">
+                        <Label for="compressArchiveType">{{ t('serverFiles.archiveType') }} *</Label>
+                        <Select v-model="compressArchiveType">
+                            <SelectTrigger>
+                                <SelectValue :placeholder="compressArchiveType" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="zip">ZIP (.zip)</SelectItem>
+                                <SelectItem value="tar.gz">TAR GZIP (.tar.gz)</SelectItem>
+                                <SelectItem value="tgz">TAR GZIP (.tgz)</SelectItem>
+                                <SelectItem value="tar.bz2">TAR BZIP2 (.tar.bz2)</SelectItem>
+                                <SelectItem value="tbz2">TAR BZIP2 (.tbz2)</SelectItem>
+                                <SelectItem value="tar.xz">TAR XZ (.tar.xz)</SelectItem>
+                                <SelectItem value="txz">TAR XZ (.txz)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p class="text-xs text-muted-foreground">{{ t('serverFiles.selectArchiveType') }}</p>
+                    </div>
+                    <div class="space-y-2">
+                        <Label for="compressArchiveName">
+                            {{ t('serverFiles.archiveName') }}
+                            <span class="text-muted-foreground">({{ t('common.optional') }})</span>
+                        </Label>
+                        <Input
+                            id="compressArchiveName"
+                            v-model="compressArchiveName"
+                            :placeholder="t('serverFiles.archiveNamePlaceholder')"
+                        />
+                        <p class="text-xs text-muted-foreground">{{ t('serverFiles.archiveNameHint') }}</p>
+                    </div>
+                    <div class="space-y-2">
+                        <Label class="text-sm font-medium">{{ t('serverFiles.selectedFilesLabel') }}</Label>
+                        <div class="max-h-32 overflow-y-auto p-2 rounded-md bg-muted text-sm">
+                            <div v-for="file in selectedFiles" :key="file" class="py-1 font-mono text-xs">
+                                {{ file }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <Button variant="outline" class="w-full sm:w-auto" @click="showCompressDialog = false">
+                        {{ t('common.cancel') }}
+                    </Button>
+                    <Button :disabled="loading" class="w-full sm:w-auto" @click="confirmCompress">
+                        <Archive class="h-4 w-4 mr-2" />
+                        {{ t('serverFiles.compress') }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
         <!-- Ignored Content Dialog -->
         <Dialog v-model:open="showIgnoredContentDialog">
             <DialogContent class="mx-4 sm:mx-0 sm:max-w-2xl">
@@ -1517,6 +1586,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
     Dialog,
     DialogContent,
@@ -1606,6 +1676,7 @@ const showPermissionsDialog = ref(false);
 const showPullDialog = ref(false);
 const showCopyDialog = ref(false);
 const showMoveDialog = ref(false);
+const showCompressDialog = ref(false);
 const showIgnoredContentDialog = ref(false);
 
 // Drag and drop state
@@ -1628,6 +1699,8 @@ const pullUrl = ref('');
 const pullFileName = ref('');
 const copyDestination = ref('');
 const moveDestination = ref('');
+const compressArchiveName = ref('');
+const compressArchiveType = ref('tar.gz');
 
 // For range selection with Shift+Click
 const lastSelectedIndex = ref<number>(-1);
@@ -1783,6 +1856,7 @@ const handleKeyboard = (e: KeyboardEvent) => {
         showPullDialog.value ||
         showCopyDialog.value ||
         showMoveDialog.value ||
+        showCompressDialog.value ||
         showDeleteDialog.value ||
         showIgnoredContentDialog.value;
 
@@ -2762,7 +2836,18 @@ const confirmDeleteProceed = async () => {
 
 // Mass copy disabled by design
 
-const compressSelected = async () => {
+const compressSelected = () => {
+    if (selectedFiles.value.length === 0) {
+        toast.error(t('serverFiles.noFilesSelected'));
+        return;
+    }
+    // Reset dialog state
+    compressArchiveName.value = '';
+    compressArchiveType.value = 'tar.gz';
+    showCompressDialog.value = true;
+};
+
+const confirmCompress = async () => {
     if (selectedFiles.value.length === 0) {
         toast.error(t('serverFiles.noFilesSelected'));
         return;
@@ -2773,10 +2858,13 @@ const compressSelected = async () => {
         const response = await axios.post(`/api/user/servers/${route.params.uuidShort}/compress-files`, {
             root: currentPath.value,
             files: selectedFiles.value,
+            name: compressArchiveName.value || undefined,
+            extension: compressArchiveType.value,
         });
 
         if (response.data.success) {
             toast.success(t('serverFiles.filesCompressed', { count: selectedFiles.value.length }));
+            showCompressDialog.value = false;
             clearSelection();
             refreshFiles();
         } else {
