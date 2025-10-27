@@ -32,6 +32,7 @@ namespace App\Controllers\User\Server\Files;
 
 use App\App;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
@@ -40,6 +41,7 @@ use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Plugins\Events\Events\ServerFilesEvent;
+use App\Controllers\User\Server\CheckSubuserPermissionsTrait;
 
 #[OA\Schema(
     schema: 'ServerFileItem',
@@ -137,6 +139,8 @@ use App\Plugins\Events\Events\ServerFilesEvent;
 )]
 class ServerFilesController
 {
+    use CheckSubuserPermissionsTrait;
+
     #[OA\Get(
         path: '/api/user/servers/{uuidShort}/files',
         summary: 'Get server files',
@@ -181,6 +185,12 @@ class ServerFilesController
             $user = $this->validateUser($request);
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
+
+            // Check file.read permission
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
 
             $path = $this->getPathFromQuery();
 
@@ -255,6 +265,12 @@ class ServerFilesController
             $user = $this->validateUser($request);
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
+
+            // Check file.read-content permission
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ_CONTENT);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
 
             $path = $this->getPathFromQuery();
 
@@ -350,6 +366,12 @@ class ServerFilesController
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
 
+            // Check file.update permission
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_UPDATE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
             $path = $this->getPathFromQuery();
 
             // Reject JSON bodies – file saves must be raw text/binary
@@ -442,6 +464,12 @@ class ServerFilesController
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
 
+            // Check file.update permission (renaming is updating)
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_UPDATE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
             $data = $this->validateJsonBody($request, ['files', 'root']);
 
             $wings = $this->createWingsConnection($node);
@@ -522,6 +550,12 @@ class ServerFilesController
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
 
+            // Check file.delete permission
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_DELETE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
             $data = $this->validateJsonBody($request, ['files', 'root']);
 
             $wings = $this->createWingsConnection($node);
@@ -600,6 +634,12 @@ class ServerFilesController
             $user = $this->validateUser($request);
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
+
+            // Check file.create permission (creating copies)
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_CREATE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
 
             $data = $this->validateJsonBody($request, ['files', 'location']);
 
@@ -681,6 +721,12 @@ class ServerFilesController
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
 
+            // Check file.create permission (creating directories)
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_CREATE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
             $data = $this->validateJsonBody($request, ['name', 'path']);
 
             $wings = $this->createWingsConnection($node);
@@ -760,6 +806,12 @@ class ServerFilesController
             $user = $this->validateUser($request);
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
+
+            // Check file.archive permission
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_ARCHIVE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
 
             $data = $this->validateJsonBody($request, ['files', 'root']);
 
@@ -846,6 +898,12 @@ class ServerFilesController
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
 
+            // Check file.archive permission (decompressing archives)
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_ARCHIVE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
             $data = $this->validateJsonBody($request, ['file', 'root']);
 
             $wings = $this->createWingsConnection($node);
@@ -924,6 +982,12 @@ class ServerFilesController
             $user = $this->validateUser($request);
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
+
+            // Check file.update permission (changing permissions is updating)
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_UPDATE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
 
             $data = $this->validateJsonBody($request, ['files', 'root']);
 
@@ -1006,6 +1070,12 @@ class ServerFilesController
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
 
+            // Check file.create permission (pulling files creates them)
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_CREATE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
             $data = $this->validateJsonBody($request, ['url', 'root']);
 
             $fileName = $data['fileName'] ?? null;
@@ -1081,6 +1151,12 @@ class ServerFilesController
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
 
+            // Check file.read permission (viewing downloads list)
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
             $wings = $this->createWingsConnection($node);
             $response = $wings->getServer()->getDownloadsList($server['uuid']);
 
@@ -1145,6 +1221,12 @@ class ServerFilesController
             $user = $this->validateUser($request);
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
+
+            // Check file.read permission (managing downloads)
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
 
             $wings = $this->createWingsConnection($node);
             $response = $wings->getServer()->deletePullProcess($server['uuid'], $pullId);
@@ -1239,6 +1321,12 @@ class ServerFilesController
             $user = $this->validateUser($request);
             $server = $this->validateServer($serverUuid);
             $node = $this->validateNode($server['node_id']);
+
+            // Check file.create permission (uploading creates files)
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_CREATE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
 
             // Get the file path from query parameters
             $path = $this->getPathFromQuery();
@@ -1362,6 +1450,12 @@ class ServerFilesController
         try {
             $user = $this->validateUser($request);
             $server = $this->validateServer($serverUuid);
+
+            // Check file.read-content permission (downloading files)
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_READ_CONTENT);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
 
             // Get the file path from query parameters
             $path = $this->getPathFromQuery();

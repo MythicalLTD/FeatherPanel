@@ -11,6 +11,7 @@
 - When opening the console for a running server, you’ll now automatically see the most recent server logs for a smoother and more informative experience!
 - Added support for creating archives in additional formats when compressing files and folders via the file manager. Users can now choose from zip, tar.gz, tgz, tar.bz2, tbz2, tar.xz, and txz formats when creating compressed archives from selected files or directories.
 - Added support for custom archive names when compressing files and folders, so you’re no longer limited to the default name.
+- Added comprehensive support for subuser permissions, allowing fine-grained control over what each subuser can access or manage.
 
 ### Fixed
 

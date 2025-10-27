@@ -454,6 +454,7 @@ servers:
 serverConsole:
     title: 'Server Console'
     description: 'Server management console'
+    noConsolePermission: 'You do not have permission to access the server console.'
     address: 'Address'
     uptime: 'Uptime'
     serverId: 'Server ID'
@@ -660,6 +661,7 @@ serverStartup:
     saveSuccess: 'Startup command, Docker image, and variables saved successfully'
     saveError: 'Failed to save startup command, Docker image, and variables'
     notFound: 'Server not found'
+    noStartupPermission: 'You do not have permission to manage server startup settings.'
     failedToFetchServer: 'Failed to fetch server'
     valueDoesNotMatchFormat: 'Value does not match required format'
     failed: 'Failed'
@@ -685,6 +687,7 @@ serverLogs:
     noLogsToDownload: 'No logs available to download'
     noLogsToUpload: 'No logs available to upload'
     failedToFetchServer: 'Failed to fetch server details'
+    noActivityPermission: 'You do not have permission to view server logs.'
     failedToFetchLogs: 'Logs are empty... Start the server to see logs.'
     failedToDownload: 'Failed to download logs'
     failedToUpload: 'Failed to upload logs to mclo.gs'
@@ -707,6 +710,7 @@ serverInstallLogs:
     noLogsToDownload: 'No install logs available to download'
     noLogsToUpload: 'No install logs available to upload'
     failedToFetchServer: 'Failed to fetch server details'
+    noActivityPermission: 'You do not have permission to view install logs.'
     failedToFetchLogs: 'Failed to fetch install logs'
     failedToDownload: 'Failed to download install logs'
     failedToUpload: 'Failed to upload install logs to mclo.gs'
@@ -748,6 +752,7 @@ serverSettings:
     failedToUpdateServer: 'Failed to update server information'
     serverRefreshed: 'Server information refreshed'
     failedToFetchServer: 'Failed to fetch server information'
+    noSettingsPermission: 'You do not have permission to manage server settings.'
     sftpDetails: 'SFTP Details'
     sftpDetailsDescription: 'Connection information for SFTP access to your server files.'
     sftpHost: 'SFTP Host'
@@ -809,6 +814,7 @@ serverSettings:
 serverAllocations:
     title: 'Allocations'
     description: "Manage your server's network allocations and ports."
+    noAllocationPermission: 'You do not have permission to manage server allocations.'
     refresh: 'Refresh'
     autoAllocate: 'Auto-Allocate'
     allocationStatus: 'Allocation Status'
@@ -853,6 +859,7 @@ serverAllocations:
 serverActivities:
     title: 'Server Activities'
     description: 'Recent actions and events for this server.'
+    noActivityPermission: 'You do not have permission to view server activities.'
     loading: 'Loading activities...'
     noActivities: 'No activities found'
     noActivitiesDescription: "This server doesn't have any activity logs yet."
@@ -956,6 +963,7 @@ serverActivities:
 serverBackups:
     title: 'Backups'
     description: 'Manage server backups and restorations'
+    noBackupPermission: 'You do not have permission to manage server backups.'
     searchPlaceholder: 'Search backups...'
     refresh: 'Refresh'
     backupLimitReached: 'Backup limit reached'
@@ -1054,6 +1062,7 @@ serverSchedules:
     statusActive: 'Active'
     statusInactive: 'Inactive'
     statusProcessing: 'Processing'
+    noSchedulePermission: 'You do not have permission to manage server schedules.'
     failedToFetch: 'Failed to fetch schedules'
     createFailed: 'Failed to create schedule'
     createSuccess: 'Schedule created successfully'
@@ -1088,6 +1097,7 @@ serverTasks:
     stopOnFailure: 'Stop on Failure'
     queued: 'Queued'
     noPayload: 'No payload'
+    noSchedulePermission: 'You do not have permission to manage tasks.'
     failedToFetch: 'Failed to fetch tasks'
     createFailed: 'Failed to create task'
     createSuccess: 'Task created successfully'
@@ -1147,7 +1157,7 @@ serverSubusers:
     editSubuser: 'Edit Subuser'
     editSubuserDescription: 'Modify subuser permissions'
     managePermissions: 'Manage Permissions'
-    managePermissionsDescription: 'Add or remove specific permissions for this subuser'
+    managePermissionsDescription: 'Select the specific permissions this subuser should have access to. Choose individual permissions or select all to grant full access.'
     permissions: 'Permissions'
     permissionsHelp: 'Full access is granted by default with all permissions enabled.'
     emailHelp: 'Enter the email address of the user you want to add as a subuser'
@@ -1196,6 +1206,188 @@ serverSubusers:
     nA: 'N/A'
     fullAccessGranted: 'Full Access Granted'
     fullAccessDescription: 'New subusers automatically receive full access with all permissions enabled.'
+    selectAll: 'Select All'
+    deselectAll: 'Deselect All'
+    permissionsSelected: 'permission(s) selected'
+    failedToUpdate: 'Failed to update permissions'
+    permissionCategories:
+        websocket:
+            name: 'WebSocket'
+            description: 'Allows a user to connect to the server console via WebSocket.'
+            permissions:
+                connect:
+                    name: 'Connect'
+                    description: 'Allows a user to connect to the server console via WebSocket.'
+        control:
+            name: 'Control'
+            description: "Permissions that control a user's ability to control the power state of a server, or send commands."
+            permissions:
+                console:
+                    name: 'Console'
+                    description: 'Allows a user to send commands to the server instance via the console.'
+                start:
+                    name: 'Start'
+                    description: 'Allows a user to start the server if it is stopped.'
+                stop:
+                    name: 'Stop'
+                    description: 'Allows a user to stop a server if it is running.'
+                restart:
+                    name: 'Restart'
+                    description: 'Allows a user to perform a server restart. This allows them to start the server if it is offline, but not put the server in a completely stopped state.'
+        user:
+            name: 'User'
+            description: 'Permissions that allow a user to manage other subusers on a server. They will never be able to edit their own account, or assign permissions they do not have themselves.'
+            permissions:
+                create:
+                    name: 'Create'
+                    description: 'Allows a user to create new subusers for the server.'
+                read:
+                    name: 'Read'
+                    description: 'Allows the user to view subusers and their permissions for the server.'
+                update:
+                    name: 'Update'
+                    description: 'Allows a user to modify other subusers.'
+                delete:
+                    name: 'Delete'
+                    description: 'Allows a user to delete a subuser from the server.'
+        file:
+            name: 'File'
+            description: "Permissions that control a user's ability to modify the filesystem for this server."
+            permissions:
+                create:
+                    name: 'Create'
+                    description: 'Allows a user to create additional files and folders via the Panel or direct upload.'
+                read:
+                    name: 'Read'
+                    description: 'Allows a user to view the contents of a directory, but not view the contents of or download files.'
+                readContent:
+                    name: 'Read Content'
+                    description: 'Allows a user to view the contents of a given file. This will also allow the user to download files.'
+                update:
+                    name: 'Update'
+                    description: 'Allows a user to update the contents of an existing file or directory.'
+                delete:
+                    name: 'Delete'
+                    description: 'Allows a user to delete files or directories.'
+                archive:
+                    name: 'Archive'
+                    description: 'Allows a user to archive the contents of a directory as well as decompress existing archives on the system.'
+                sftp:
+                    name: 'SFTP'
+                    description: 'Allows a user to connect to SFTP and manage server files using the other assigned file permissions.'
+        backup:
+            name: 'Backup'
+            description: "Permissions that control a user's ability to gen  erate and manage server backups."
+            permissions:
+                create:
+                    name: 'Create'
+                    description: 'Allows a user to create new backups for this server.'
+                read:
+                    name: 'Read'
+                    description: 'Allows a user to view all backups that exist for this server.'
+                delete:
+                    name: 'Delete'
+                    description: 'Allows a user to remove backups from the system.'
+                download:
+                    name: 'Download'
+                    description: 'Allows a user to download a backup for the server. Danger: this allows a user to access all files for the server in the backup.'
+                restore:
+                    name: 'Restore'
+                    description: 'Allows a user to restore a backup for the server. Danger: this allows the user to delete all of the server files in the process.'
+        allocation:
+            name: 'Allocation'
+            description: "Permissions that control a user's ability to modify the port allocations for this server."
+            permissions:
+                read:
+                    name: 'Read'
+                    description: 'Allows a user to view all allocations currently assigned to this server. Users with any level of access to this server can always view the primary allocation.'
+                create:
+                    name: 'Create'
+                    description: 'Allows a user to assign additional allocations to the server.'
+                update:
+                    name: 'Update'
+                    description: 'Allows a user to change the primary server allocation and attach notes to each allocation.'
+                delete:
+                    name: 'Delete'
+                    description: 'Allows a user to delete an allocation from the server.'
+        startup:
+            name: 'Startup'
+            description: "Permissions that control a user's ability to view this server's startup parameters."
+            permissions:
+                read:
+                    name: 'Read'
+                    description: 'Allows a user to view the startup variables for a server.'
+                update:
+                    name: 'Update'
+                    description: 'Allows a user to modify the startup variables for the server.'
+                dockerImage:
+                    name: 'Docker Image'
+                    description: 'Allows a user to modify the Docker image used when running the server.'
+        templates:
+            name: 'Templates'
+            description: "Permissions that control a user's access to the template management for this server."
+            permissions:
+                read:
+                    name: 'Read'
+                    description: 'Allows a user to view available templates.'
+                install:
+                    name: 'Install'
+                    description: 'Allows a user to install templates on the server.'
+        database:
+            name: 'Database'
+            description: "Permissions that control a user's access to the database management for this server."
+            permissions:
+                create:
+                    name: 'Create'
+                    description: 'Allows a user to create a new database for this server.'
+                read:
+                    name: 'Read'
+                    description: 'Allows a user to view the database associated with this server.'
+                update:
+                    name: 'Update'
+                    description: 'Allows a user to rotate the password on a database instance. If the user does not have the View Password permission, they will not see the updated password.'
+                delete:
+                    name: 'Delete'
+                    description: 'Allows a user to remove a database instance from this server.'
+                viewPassword:
+                    name: 'View Password'
+                    description: 'Allows a user to view the password associated with a database instance for this server.'
+        schedule:
+            name: 'Schedule'
+            description: "Permissions that control a user's access to the schedule management for this server."
+            permissions:
+                create:
+                    name: 'Create'
+                    description: 'Allows a user to create new schedules for this server.'
+                read:
+                    name: 'Read'
+                    description: 'Allows a user to view schedules and the tasks associated with them for this server.'
+                update:
+                    name: 'Update'
+                    description: 'Allows a user to update schedules and schedule tasks for this server.'
+                delete:
+                    name: 'Delete'
+                    description: 'Allows a user to delete schedules for this server.'
+        settings:
+            name: 'Settings'
+            description: "Permissions that control a user's access to the settings for this server."
+            permissions:
+                rename:
+                    name: 'Rename'
+                    description: 'Allows a user to rename this server and change the description of it.'
+                changeEgg:
+                    name: 'Change Spell'
+                    description: 'Allows a user to change the spell (egg) configuration for this server.'
+                reinstall:
+                    name: 'Reinstall'
+                    description: 'Allows a user to trigger a reinstall of this server.'
+        activity:
+            name: 'Activity'
+            description: "Permissions that control a user's access to the server activity logs."
+            permissions:
+                read:
+                    name: 'Read'
+                    description: 'Allows a user to view the activity logs for the server.'
 
 # Server Files
 serverFiles:
@@ -1219,7 +1411,6 @@ serverFiles:
     destinationPath: 'Destination Path'
     filesToCopy: 'Files to Copy'
     filesCopied: '{count} file(s) copied successfully'
-    compress: 'Compress'
     delete: 'Delete'
     parentDirectory: '..'
     folder: 'Folder'
@@ -1234,6 +1425,7 @@ serverFiles:
     fileManager: 'File Manager'
     currentPath: 'Current Path'
     failedToFetchServer: 'Failed to fetch server information'
+    noFileReadPermission: 'You do not have permission to read server files.'
     pathCopied: 'File path copied to clipboard'
     pathsCopied: 'File paths copied to clipboard'
     copyError: 'Failed to copy to clipboard'
@@ -1295,6 +1487,7 @@ serverFiles:
     archiveName: 'Archive Name'
     archiveNamePlaceholder: 'Leave empty for auto-generated name'
     archiveNameHint: 'Leave empty to auto-generate the archive name'
+    compress: 'Compress'
     # Extract
     fileExtracted: 'Archive extracted successfully'
     extractError: 'Failed to extract archive'
@@ -1433,6 +1626,8 @@ fileEditor:
 serverDatabases:
     title: 'Databases'
     description: 'Manage databases and database users for this server'
+    noDatabasePermission: 'You do not have permission to manage server databases.'
+    noPasswordPermission: 'You do not have permission to view database passwords.'
     searchPlaceholder: 'Search databases...'
     refresh: 'Refresh'
     databases: 'Databases'

@@ -286,7 +286,7 @@ const sendServerCommand = async (command: 'start' | 'stop' | 'restart' | 'kill')
             </div>
         </SidebarHeader>
         <SidebarContent
-            class="px-2 sm:px-0 !overflow-y-auto !overflow-x-hidden group-data-[collapsible=icon]:!overflow-y-auto"
+            class="px-2 sm:px-0 overflow-y-auto! overflow-x-hidden! group-data-[collapsible=icon]:overflow-y-auto!"
         >
             <NavMain
                 v-if="router.currentRoute.value.path.startsWith('/dashboard')"

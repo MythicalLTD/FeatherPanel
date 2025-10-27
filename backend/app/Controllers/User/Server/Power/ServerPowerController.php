@@ -32,6 +32,7 @@ namespace App\Controllers\User\Server\Power;
 
 use App\App;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
@@ -39,6 +40,7 @@ use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Controllers\User\Server\CheckSubuserPermissionsTrait;
 
 #[OA\Schema(
     schema: 'PowerActionResponse',
@@ -49,6 +51,8 @@ use Symfony\Component\HttpFoundation\Response;
 )]
 class ServerPowerController
 {
+    use CheckSubuserPermissionsTrait;
+
     #[OA\Post(
         path: '/api/user/servers/{uuidShort}/power/{action}',
         summary: 'Send power action to server',
@@ -106,10 +110,26 @@ class ServerPowerController
             return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
         }
 
-        // Send power action
+        // Validate power action
         $allowedActions = ['start', 'stop', 'restart', 'kill'];
         if (!in_array($action, $allowedActions)) {
             return ApiResponse::error('Invalid power action', 'INVALID_POWER_ACTION', 400);
+        }
+
+        // Check appropriate permission based on action
+        $requiredPermission = match ($action) {
+            'start' => SubuserPermissions::CONTROL_START,
+            'stop' => SubuserPermissions::CONTROL_STOP,
+            'restart' => SubuserPermissions::CONTROL_RESTART,
+            'kill' => SubuserPermissions::CONTROL_CONSOLE,
+            default => null,
+        };
+
+        if ($requiredPermission !== null) {
+            $permissionCheck = $this->checkPermission($request, $server, $requiredPermission);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
         }
 
         // Get node information

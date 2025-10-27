@@ -52,7 +52,7 @@
                         </div>
                         <div
                             v-if="item.last_run_message"
-                            class="mt-2 text-xs rounded-md border bg-muted/40 p-2 text-muted-foreground break-words"
+                            class="mt-2 text-xs rounded-md border bg-muted/40 p-2 text-muted-foreground wrap-break-word"
                             :title="item.last_run_message"
                         >
                             {{ truncate(item.last_run_message, 120) }}

@@ -34,6 +34,7 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\Allocation;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -104,6 +105,8 @@ use App\Plugins\Events\Events\ServerAllocationEvent;
 )]
 class ServerAllocationController
 {
+    use CheckSubuserPermissionsTrait;
+
     /**
      * Get server allocations.
      */
@@ -146,6 +149,12 @@ class ServerAllocationController
         $server = Server::getServerById($serverId);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Check allocation.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::ALLOCATION_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Get server allocations
@@ -234,6 +243,12 @@ class ServerAllocationController
         // Verify the allocation belongs to this server
         if ((int) $allocation['server_id'] !== $serverId) {
             return ApiResponse::error('Allocation does not belong to this server', 'ALLOCATION_MISMATCH', 400);
+        }
+
+        // Check allocation.delete permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::ALLOCATION_DELETE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Check if this is the primary allocation (server's main allocation_id)
@@ -376,6 +391,12 @@ class ServerAllocationController
             return ApiResponse::error('Allocation does not belong to this server', 'ALLOCATION_MISMATCH', 400);
         }
 
+        // Check allocation.update permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::ALLOCATION_UPDATE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Update the server's primary allocation
         $success = Server::updateServerById($serverId, ['allocation_id' => $allocationId]);
         if (!$success) {
@@ -491,6 +512,12 @@ class ServerAllocationController
         $server = Server::getServerById($serverId);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Check allocation.create permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::ALLOCATION_CREATE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Check allocation limit

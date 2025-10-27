@@ -33,6 +33,7 @@ namespace App\Controllers\User\Server;
 use App\Chat\Node;
 use App\Chat\Task;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
 use App\Helpers\ApiResponse;
@@ -118,6 +119,8 @@ use Symfony\Component\HttpFoundation\Response;
 )]
 class TaskController
 {
+    use CheckSubuserPermissionsTrait;
+
     #[OA\Get(
         path: '/api/user/servers/{uuidShort}/schedules/{scheduleId}/tasks',
         summary: 'Get schedule tasks',
@@ -184,6 +187,12 @@ class TaskController
         $server = Server::getServerByUuid($serverUuid);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Check schedule.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SCHEDULE_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Get schedule info and verify it belongs to this server
@@ -275,6 +284,12 @@ class TaskController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
+        // Check schedule.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SCHEDULE_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Get schedule info and verify it belongs to this server
         $schedule = ServerSchedule::getScheduleById($scheduleId);
         if (!$schedule) {
@@ -343,6 +358,12 @@ class TaskController
         $server = Server::getServerByUuid($serverUuid);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Check schedule.update permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SCHEDULE_UPDATE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Get schedule info and verify it belongs to this server
@@ -485,6 +506,12 @@ class TaskController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
+        // Check schedule.update permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SCHEDULE_UPDATE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Get schedule info and verify it belongs to this server
         $schedule = ServerSchedule::getScheduleById($scheduleId);
         if (!$schedule) {
@@ -609,6 +636,12 @@ class TaskController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
+        // Check schedule.update permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SCHEDULE_UPDATE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Get schedule info and verify it belongs to this server
         $schedule = ServerSchedule::getScheduleById($scheduleId);
         if (!$schedule) {
@@ -727,6 +760,12 @@ class TaskController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
+        // Check schedule.update permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SCHEDULE_UPDATE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Get schedule info and verify it belongs to this server
         $schedule = ServerSchedule::getScheduleById($scheduleId);
         if (!$schedule) {
@@ -841,6 +880,12 @@ class TaskController
         $server = Server::getServerByUuid($serverUuid);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Check schedule.update permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SCHEDULE_UPDATE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Get schedule info and verify it belongs to this server
@@ -996,6 +1041,12 @@ class TaskController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
+        // Check schedule.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SCHEDULE_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Get schedule info and verify it belongs to this server
         $schedule = ServerSchedule::getScheduleById($scheduleId);
         if (!$schedule) {
@@ -1049,6 +1100,12 @@ class TaskController
         $server = Server::getServerByUuid($serverUuid);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Check schedule.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SCHEDULE_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Get all schedules for this server
@@ -1105,6 +1162,12 @@ class TaskController
         $server = Server::getServerByUuid($serverUuid);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Check schedule.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SCHEDULE_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Get all schedules for this server

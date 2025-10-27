@@ -12,7 +12,7 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <Badge
-                            v-if="readonly"
+                            v-if="!canUpdateFiles"
                             variant="outline"
                             class="text-sm px-3 py-1.5 bg-linear-to-r from-orange-500/20 to-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30"
                         >
@@ -107,6 +107,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertCircle, ArrowLeft } from 'lucide-vue-next';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
+import { useServerPermissions } from '@/composables/useServerPermissions';
 import type { Server } from '@/types/server';
 
 const route = useRoute();
@@ -116,6 +117,13 @@ const toast = useToast();
 const sessionStore = useSessionStore();
 const settingsStore = useSettingsStore();
 
+// Check server permissions
+const { hasPermission: hasServerPermission, isLoading: permissionsLoading } = useServerPermissions();
+
+// Permission checks
+const canReadFiles = computed(() => hasServerPermission('file.read'));
+const canUpdateFiles = computed(() => hasServerPermission('file.update'));
+
 // Server state (following ServerFiles pattern)
 const server = ref<Server | null>(null);
 
@@ -123,7 +131,14 @@ const server = ref<Server | null>(null);
 const serverUuid = route.params.uuidShort as string;
 const fileName = ref<string>((route.query.file as string) || 'unknown.txt');
 const filePath = ref<string>((route.query.path as string) || '/');
-const readonly = ref<boolean>((route.query.readonly as string) === 'true');
+
+// Computed readonly state based on permissions and query param
+const readonly = computed(() => {
+    // If the route explicitly says readonly, make it readonly
+    if ((route.query.readonly as string) === 'true') return true;
+    // Otherwise, check if user has update permission
+    return !canUpdateFiles.value;
+});
 
 // Editor state
 const fileContent = ref<string | null>(null);
@@ -372,6 +387,19 @@ onMounted(async () => {
         await sessionStore.checkSessionOrRedirect(router);
         await settingsStore.fetchSettings();
         await fetchServer();
+
+        // Wait for permission check to complete
+        while (permissionsLoading.value) {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+
+        // Check if user has permission to read files
+        if (!canReadFiles.value) {
+            toast(t('serverFiles.noFileReadPermission'), { type: TYPE.ERROR });
+            router.push(`/server/${serverUuid}/files`);
+            return;
+        }
+
         await loadFileContent();
     } catch (error) {
         console.error('Error in ServerFileEditor onMounted:', error);

@@ -10,6 +10,7 @@
         <!-- Server Control Buttons -->
         <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-3">
             <Button
+                v-if="props.canStart"
                 variant="default"
                 size="sm"
                 class="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
@@ -22,6 +23,7 @@
                 <span class="sm:hidden">Start</span>
             </Button>
             <Button
+                v-if="props.canRestart"
                 variant="outline"
                 size="sm"
                 class="w-full sm:w-auto"
@@ -34,6 +36,7 @@
                 <span class="sm:hidden">Restart</span>
             </Button>
             <Button
+                v-if="props.canStop"
                 variant="destructive"
                 size="sm"
                 class="w-full sm:w-auto"
@@ -46,6 +49,7 @@
                 <span class="sm:hidden">Stop</span>
             </Button>
             <Button
+                v-if="props.canKill"
                 variant="destructive"
                 size="sm"
                 class="bg-red-800 hover:bg-red-900 w-full sm:w-auto"
@@ -92,15 +96,29 @@ import { Power, RefreshCw, Square, Zap } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import type { Server } from '@/types/server';
 
+defineOptions({
+    name: 'ServerHeader',
+});
+
 const { t } = useI18n();
 
-interface Props {
-    server: Server | null;
-    loading: boolean;
-    wingsState?: string;
-}
-
-const props = defineProps<Props>();
+const props = withDefaults(
+    defineProps<{
+        server: Server | null;
+        loading: boolean;
+        wingsState?: string;
+        canStart?: boolean;
+        canStop?: boolean;
+        canRestart?: boolean;
+        canKill?: boolean;
+    }>(),
+    {
+        canStart: true,
+        canStop: true,
+        canRestart: true,
+        canKill: true,
+    },
+);
 
 defineEmits<{
     start: [];

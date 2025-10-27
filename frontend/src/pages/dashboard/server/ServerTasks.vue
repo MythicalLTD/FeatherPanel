@@ -16,7 +16,12 @@
                     </div>
                 </div>
                 <div class="flex justify-end">
-                    <Button class="flex-1 sm:flex-none" data-umami-event="Create task" @click="openCreateTaskDrawer">
+                    <Button
+                        v-if="canUpdateSchedules"
+                        class="flex-1 sm:flex-none"
+                        data-umami-event="Create task"
+                        @click="openCreateTaskDrawer"
+                    >
                         <Plus class="h-4 w-4 sm:mr-2" />
                         <span class="hidden sm:inline">{{ t('serverTasks.createTask') }}</span>
                     </Button>
@@ -49,7 +54,12 @@
                                 {{ t('serverTasks.noTasksDescription') }}
                             </p>
                         </div>
-                        <Button size="lg" class="gap-2 shadow-lg" @click="openCreateTaskDrawer">
+                        <Button
+                            v-if="canUpdateSchedules"
+                            size="lg"
+                            class="gap-2 shadow-lg"
+                            @click="openCreateTaskDrawer"
+                        >
                             <Plus class="h-5 w-5" />
                             {{ t('serverTasks.createTask') }}
                         </Button>
@@ -76,7 +86,7 @@
                                         {{ t('serverTasks.queued') }}
                                     </Badge>
                                 </div>
-                                <div class="flex items-center gap-1">
+                                <div v-if="canUpdateSchedules" class="flex items-center gap-1">
                                     <Button
                                         size="sm"
                                         variant="outline"
@@ -113,8 +123,9 @@
                                         {{ t('serverTasks.continueOnFailure') }}
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-1">
+                                <div v-if="canUpdateSchedules || canDeleteSchedules" class="flex items-center gap-1">
                                     <Button
+                                        v-if="canUpdateSchedules"
                                         size="sm"
                                         variant="outline"
                                         class="h-8 w-8 p-0"
@@ -125,6 +136,7 @@
                                         <Pencil class="h-3 w-3" />
                                     </Button>
                                     <Button
+                                        v-if="canDeleteSchedules"
                                         size="sm"
                                         variant="destructive"
                                         class="h-8 w-8 p-0"
@@ -159,7 +171,7 @@
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <!-- Sequence Controls -->
-                                    <div class="flex items-center gap-1">
+                                    <div v-if="canUpdateSchedules" class="flex items-center gap-1">
                                         <Button
                                             size="sm"
                                             variant="outline"
@@ -179,11 +191,21 @@
                                     </div>
 
                                     <!-- Action Buttons -->
-                                    <Button size="sm" variant="outline" @click="openEditTaskDrawer(task)">
+                                    <Button
+                                        v-if="canUpdateSchedules"
+                                        size="sm"
+                                        variant="outline"
+                                        @click="openEditTaskDrawer(task)"
+                                    >
                                         <Pencil class="h-4 w-4" />
                                     </Button>
 
-                                    <Button size="sm" variant="destructive" @click="deleteTask(task)">
+                                    <Button
+                                        v-if="canDeleteSchedules"
+                                        size="sm"
+                                        variant="destructive"
+                                        @click="deleteTask(task)"
+                                    >
                                         <Trash2 class="h-4 w-4" />
                                     </Button>
                                 </div>
@@ -570,8 +592,9 @@
 // SOFTWARE.
 
 import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { useServerPermissions } from '@/composables/useServerPermissions';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -611,8 +634,17 @@ type ScheduleItem = {
 };
 
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 const toast = useToast();
+
+// Check server permissions
+const { hasPermission: hasServerPermission, isLoading: permissionsLoading } = useServerPermissions();
+
+// Permission checks (tasks use schedule permissions)
+const canReadSchedules = computed(() => hasServerPermission('schedule.read'));
+const canUpdateSchedules = computed(() => hasServerPermission('schedule.update'));
+const canDeleteSchedules = computed(() => hasServerPermission('schedule.delete'));
 
 const tasks = ref<TaskItem[]>([]);
 const schedule = ref<ScheduleItem | null>(null);
@@ -672,6 +704,19 @@ const sortedTasks = computed(() => {
 onMounted(async () => {
     await fetchServer();
     await fetchSchedule();
+
+    // Wait for permission check to complete
+    while (permissionsLoading.value) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // Check if user has permission to read schedules
+    if (!canReadSchedules.value) {
+        toast.error(t('serverTasks.noSchedulePermission'));
+        await router.push(`/server/${route.params.uuidShort}/schedules`);
+        return;
+    }
+
     await fetchTasks();
 });
 

@@ -22,6 +22,7 @@
                             <span>{{ t('common.refresh') }}</span>
                         </Button>
                         <Button
+                            v-if="hasAnyStartupPermission"
                             size="sm"
                             :disabled="saving || !hasChanges || hasErrors"
                             class="flex items-center gap-2"
@@ -68,6 +69,7 @@
                         <Textarea
                             v-model="form.startup"
                             rows="5"
+                            :disabled="!canUpdateStartup"
                             class="font-mono text-sm resize-none"
                             placeholder="Enter startup command..."
                         />
@@ -93,6 +95,7 @@
                         <Input
                             v-model="form.image"
                             placeholder="ghcr.io/pterodactyl/yolks:java_21"
+                            :disabled="!canUpdateDockerImage"
                             class="text-sm font-mono"
                         />
                         <div v-if="availableDockerImages.length" class="space-y-3">
@@ -107,6 +110,7 @@
                                     type="button"
                                     :variant="form.image === img ? 'default' : 'outline'"
                                     size="sm"
+                                    :disabled="!canUpdateDockerImage"
                                     class="text-xs font-mono justify-start h-auto py-2 px-3"
                                     @click="form.image = img"
                                 >
@@ -247,9 +251,10 @@
 // SOFTWARE.
 
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+import { useServerPermissions } from '@/composables/useServerPermissions';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -275,9 +280,17 @@ type Variable = {
 };
 
 const route = useRoute();
-// no router needed here
+const router = useRouter();
 const { t } = useI18n();
 const toast = useToast();
+
+// Check server permissions
+const { hasPermission: hasServerPermission, isLoading: permissionsLoading } = useServerPermissions();
+
+// Permission checks
+const canUpdateStartup = computed(() => hasServerPermission('startup.update'));
+const canUpdateDockerImage = computed(() => hasServerPermission('startup.docker-image'));
+const hasAnyStartupPermission = computed(() => canUpdateStartup.value || canUpdateDockerImage.value);
 
 const loading = ref(false);
 const saving = ref(false);
@@ -403,7 +416,21 @@ async function saveChanges() {
     }
 }
 
-onMounted(fetchServer);
+onMounted(async () => {
+    // Wait for permission check to complete
+    while (permissionsLoading.value) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // Check if user has any startup permissions
+    if (!hasAnyStartupPermission.value) {
+        toast.error(t('serverStartup.noStartupPermission'));
+        await router.push(`/server/${route.params.uuidShort}`);
+        return;
+    }
+
+    await fetchServer();
+});
 
 // Validation logic for variables based on rules string
 function parseRules(rules: string): Array<{ type: string; value?: number | string }> {

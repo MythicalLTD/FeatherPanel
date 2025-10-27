@@ -20,6 +20,7 @@
                             <span>{{ t('serverSchedules.refresh') }}</span>
                         </Button>
                         <Button
+                            v-if="canCreateSchedules"
                             size="sm"
                             class="flex items-center gap-2"
                             data-umami-event="Create schedule"
@@ -62,7 +63,12 @@
                             {{ t('serverSchedules.noSchedulesDescription') }}
                         </p>
                     </div>
-                    <Button size="lg" class="gap-2 shadow-lg" @click="openCreateScheduleDrawer">
+                    <Button
+                        v-if="canCreateSchedules"
+                        size="lg"
+                        class="gap-2 shadow-lg"
+                        @click="openCreateScheduleDrawer"
+                    >
                         <Plus class="h-5 w-5" />
                         {{ t('serverSchedules.createSchedule') }}
                     </Button>
@@ -140,8 +146,12 @@
                                 </div>
 
                                 <!-- Action Buttons -->
-                                <div class="flex flex-wrap items-center gap-2">
+                                <div
+                                    v-if="canUpdateSchedules || canDeleteSchedules || canReadSchedules"
+                                    class="flex flex-wrap items-center gap-2"
+                                >
                                     <Button
+                                        v-if="canUpdateSchedules"
                                         variant="outline"
                                         size="sm"
                                         class="flex items-center gap-2"
@@ -162,6 +172,7 @@
                                         <span class="hidden sm:inline">{{ t('serverSchedules.tasks') }}</span>
                                     </Button>
                                     <Button
+                                        v-if="canUpdateSchedules"
                                         :variant="schedule.is_active ? 'secondary' : 'default'"
                                         size="sm"
                                         class="flex items-center gap-2"
@@ -175,6 +186,7 @@
                                         }}</span>
                                     </Button>
                                     <Button
+                                        v-if="canDeleteSchedules"
                                         variant="destructive"
                                         size="sm"
                                         class="flex items-center gap-2"
@@ -593,6 +605,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { useServerPermissions } from '@/composables/useServerPermissions';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -649,6 +662,15 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const toast = useToast();
+
+// Check server permissions
+const { hasPermission: hasServerPermission, isLoading: permissionsLoading } = useServerPermissions();
+
+// Permission checks
+const canReadSchedules = computed(() => hasServerPermission('schedule.read'));
+const canCreateSchedules = computed(() => hasServerPermission('schedule.create'));
+const canUpdateSchedules = computed(() => hasServerPermission('schedule.update'));
+const canDeleteSchedules = computed(() => hasServerPermission('schedule.delete'));
 
 const schedules = ref<ScheduleItem[]>([]);
 const loading = ref(false);
@@ -713,6 +735,19 @@ const breadcrumbs = computed(() => [
 
 onMounted(async () => {
     await fetchServer();
+
+    // Wait for permission check to complete
+    while (permissionsLoading.value) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // Check if user has permission to read schedules
+    if (!canReadSchedules.value) {
+        toast.error(t('serverSchedules.noSchedulePermission'));
+        await router.push(`/server/${route.params.uuidShort}`);
+        return;
+    }
+
     await fetchSchedules();
 });
 

@@ -264,7 +264,7 @@
                             <span class="font-medium text-muted-foreground"
                                 >{{ $t('account.apiKeys.clientName') }}:</span
                             >
-                            <p class="mt-1 break-words">{{ selectedClient.name }}</p>
+                            <p class="mt-1 wrap-break-word">{{ selectedClient.name }}</p>
                         </div>
                         <div>
                             <span class="font-medium text-muted-foreground"

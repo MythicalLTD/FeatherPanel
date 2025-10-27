@@ -36,6 +36,7 @@ use App\Chat\Server;
 use App\Permissions;
 use App\Chat\Subuser;
 use App\Chat\SpellVariable;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
@@ -186,6 +187,8 @@ use Symfony\Component\HttpFoundation\Response;
 )]
 class ServerUserController
 {
+    use CheckSubuserPermissionsTrait;
+
     #[OA\Get(
         path: '/api/user/servers',
         summary: 'Get user servers',
@@ -565,6 +568,17 @@ class ServerUserController
             return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
         }
 
+        // Check if user is owner (full access)
+        $isOwner = (int) $server['owner_id'] === (int) $user['id'];
+
+        // Check permissions for non-owners (websocket.connect is required for JWT generation)
+        if (!$isOwner) {
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::WEBSOCKET_CONNECT);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+        }
+
         // Get node information
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
@@ -668,10 +682,40 @@ class ServerUserController
             return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
         }
 
+        // Check if user is owner (full access)
+        $isOwner = (int) $server['owner_id'] === (int) $user['id'];
+
         // Get request data
         $data = json_decode($request->getContent(), true);
         if (!$data || !is_array($data)) {
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST', 400);
+        }
+
+        // Check permissions for non-owners
+        if (!$isOwner) {
+            // Check for settings.rename permission if updating name or description
+            if (isset($data['name']) || isset($data['description'])) {
+                $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SETTINGS_RENAME);
+                if ($permissionCheck !== null) {
+                    return $permissionCheck;
+                }
+            }
+
+            // Check for startup.update permission if updating startup
+            if (isset($data['startup'])) {
+                $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::STARTUP_UPDATE);
+                if ($permissionCheck !== null) {
+                    return $permissionCheck;
+                }
+            }
+
+            // Check for startup.docker-image permission if updating image
+            if (isset($data['image'])) {
+                $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::STARTUP_DOCKER_IMAGE);
+                if ($permissionCheck !== null) {
+                    return $permissionCheck;
+                }
+            }
         }
 
         // Validate and sanitize input
@@ -935,6 +979,18 @@ class ServerUserController
             return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
         }
 
+        // Check if user is owner (full access)
+        $isOwner = (int) $server['owner_id'] === (int) $user['id'];
+
+        // Check permissions for non-owners (reinstall is a critical operation)
+        if (!$isOwner) {
+            // Check for settings.reinstall permission
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::SETTINGS_REINSTALL);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+        }
+
         // Get node information
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
@@ -1009,107 +1065,6 @@ class ServerUserController
         ], 'Server reinstalled successfully', 200);
     }
 
-    #[OA\Delete(
-        path: '/api/user/servers/{uuidShort}',
-        summary: 'Delete server',
-        description: 'Permanently delete a server using Wings daemon. This action cannot be undone.',
-        tags: ['User - Server Management'],
-        parameters: [
-            new OA\Parameter(
-                name: 'uuidShort',
-                in: 'path',
-                description: 'Server short UUID',
-                required: true,
-                schema: new OA\Schema(type: 'string')
-            ),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Server deleted successfully',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
-                    ]
-                )
-            ),
-            new OA\Response(response: 400, description: 'Bad request - Missing or invalid UUID short'),
-            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
-            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
-            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
-            new OA\Response(response: 500, description: 'Internal server error - Failed to delete server'),
-        ]
-    )]
-    public function deleteServer(Request $request, string $uuidShort): Response
-    {
-        // Get authenticated user
-        $user = $request->get('user');
-        if (!$user) {
-            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
-        }
-
-        // Get server details
-        $server = Server::getServerByUuidShort($uuidShort);
-        if (!$server) {
-            return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
-        }
-
-        // Get node information
-        $node = Node::getNodeById($server['node_id']);
-        if (!$node) {
-            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
-        }
-
-        $scheme = $node['scheme'];
-        $host = $node['fqdn'];
-        $port = $node['daemonListen'];
-        $token = $node['daemon_token'];
-
-        $timeout = (int) 30;
-        try {
-            $wings = new \App\Services\Wings\Wings(
-                $host,
-                $port,
-                $scheme,
-                $token,
-                $timeout
-            );
-
-            $response = $wings->getServer()->deleteServer($server['uuid']);
-            Server::hardDeleteServer((int) $server['id']);
-
-            if (!$response->isSuccessful()) {
-                $error = $response->getError();
-                App::getInstance(true)->getLogger()->error('Failed to delete server: ' . $error);
-
-                return ApiResponse::error('Failed to delete server: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
-            }
-
-            // Emit event
-            global $eventManager;
-            if (isset($eventManager) && $eventManager !== null) {
-                $eventManager->emit(
-                    ServerUserEvent::onServerUserDeleted(),
-                    [
-                        'user_uuid' => $user['uuid'],
-                        'server_uuid' => $server['uuid'],
-                    ]
-                );
-            }
-
-            // Log activity
-            $this->logActivity($server, $node, 'server_deleted', [
-                'server_uuid' => $server['uuid'],
-            ], $user);
-
-            return ApiResponse::success([], 'Server deleted successfully', 200);
-        } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Failed to send power action to Wings: ' . $e->getMessage());
-
-            return ApiResponse::error('Failed to send power action to Wings: ' . $e->getMessage(), 'FAILED_TO_SEND_POWER_ACTION_TO_WINGS', 500);
-        }
-    }
-
     /**
      * Send a console command to the server via Wings WebSocket.
      *
@@ -1173,10 +1128,15 @@ class ServerUserController
             return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
         }
 
-        // Check if user has console permission
-        $permissions = $this->getUserServerPermissions((int) $user['id'], (int) $server['id'], $user['uuid']);
-        if (!in_array('control.console', $permissions, true)) {
-            return ApiResponse::error('You do not have permission to send console commands', 'INSUFFICIENT_PERMISSIONS', 403);
+        // Check if user is owner (full access)
+        $isOwner = (int) $server['owner_id'] === (int) $user['id'];
+
+        // Check permissions for non-owners (control.console is required for sending commands)
+        if (!$isOwner) {
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::CONTROL_CONSOLE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
         }
 
         // Get request data
@@ -1392,8 +1352,13 @@ class ServerUserController
         // Check if user is a subuser
         $subuser = Subuser::getSubuserByUserAndServer($userId, $serverId);
         if ($subuser) {
-            // Subusers now have full access as well
-            return $fullPermissions;
+            // Get actual subuser permissions from database
+            $subuserPerms = json_decode($subuser['permissions'] ?? '[]', true) ?: [];
+
+            // Always include websocket.connect - it's required for JWT/WebSocket access
+            // The actual permission checks happen in generateServerJwt via checkPermission
+            // Here we just return what they're allowed to do
+            return $subuserPerms;
         }
 
         // Admin check required

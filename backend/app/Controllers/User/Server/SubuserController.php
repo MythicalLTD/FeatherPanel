@@ -34,6 +34,7 @@ use App\Chat\Node;
 use App\Chat\User;
 use App\Chat\Server;
 use App\Chat\Subuser;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -48,7 +49,7 @@ use App\Plugins\Events\Events\ServerSubuserEvent;
         new OA\Property(property: 'id', type: 'integer', description: 'Subuser ID'),
         new OA\Property(property: 'user_id', type: 'integer', description: 'User ID'),
         new OA\Property(property: 'server_id', type: 'integer', description: 'Server ID'),
-        new OA\Property(property: 'permissions', type: 'string', description: 'JSON string of permissions'),
+        new OA\Property(property: 'permissions', type: 'array', items: new OA\Items(type: 'string'), description: 'Array of permission strings'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
     ]
@@ -60,7 +61,7 @@ use App\Plugins\Events\Events\ServerSubuserEvent;
         new OA\Property(property: 'id', type: 'integer', description: 'Subuser ID'),
         new OA\Property(property: 'user_id', type: 'integer', description: 'User ID'),
         new OA\Property(property: 'server_id', type: 'integer', description: 'Server ID'),
-        new OA\Property(property: 'permissions', type: 'string', description: 'JSON string of permissions'),
+        new OA\Property(property: 'permissions', type: 'array', items: new OA\Items(type: 'string'), description: 'Array of permission strings'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
         new OA\Property(property: 'username', type: 'string', description: 'User username'),
@@ -94,7 +95,7 @@ use App\Plugins\Events\Events\ServerSubuserEvent;
     schema: 'SubuserUpdateRequest',
     type: 'object',
     properties: [
-        new OA\Property(property: 'permissions', type: 'string', nullable: true, description: 'JSON string of permissions'),
+        new OA\Property(property: 'permissions', type: 'array', items: new OA\Items(type: 'string'), nullable: true, description: 'Array of permission strings'),
     ]
 )]
 #[OA\Schema(
@@ -208,6 +209,15 @@ class SubuserController
         $total = count($subusers);
         $offset = ($page - 1) * $perPage;
         $subusers = array_slice($subusers, $offset, $perPage);
+
+        // Decode permissions from JSON string to array for each subuser
+        foreach ($subusers as &$subuser) {
+            if (isset($subuser['permissions']) && is_string($subuser['permissions'])) {
+                $decoded = json_decode($subuser['permissions'], true);
+                $subuser['permissions'] = is_array($decoded) ? $decoded : [];
+            }
+        }
+        unset($subuser); // Unset reference
 
         // Log activity
         $node = Node::getNodeById($server['node_id']);
@@ -364,11 +374,11 @@ class SubuserController
             return ApiResponse::error('User is already a subuser for this server', 'SUBUSER_ALREADY_EXISTS', 400);
         }
 
-        // Prepare subuser data
+        // Prepare subuser data - Start with NO permissions by default (user must assign them)
         $subuserData = [
             'user_id' => $user['id'],
             'server_id' => $server['id'],
-            'permissions' => json_encode(['*']),
+            'permissions' => json_encode([]), // Empty permissions - user must assign them manually
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
         ];
@@ -469,6 +479,11 @@ class SubuserController
         $data = json_decode($request->getContent(), true);
         if (!$data) {
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400);
+        }
+
+        // Encode permissions array to JSON string if provided
+        if (isset($data['permissions']) && is_array($data['permissions'])) {
+            $data['permissions'] = json_encode($data['permissions']);
         }
 
         // Add updated_at timestamp
@@ -852,8 +867,9 @@ class SubuserController
         }
 
         return ApiResponse::success([
-            'permissions' => ['*'],
-            'total' => 1,
+            'permissions' => SubuserPermissions::PERMISSIONS,
+            'grouped_permissions' => SubuserPermissions::getGroupedPermissions(),
+            'total' => count(SubuserPermissions::PERMISSIONS),
         ]);
     }
 

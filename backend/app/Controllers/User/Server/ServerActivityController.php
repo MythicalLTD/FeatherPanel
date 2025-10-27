@@ -32,6 +32,7 @@ namespace App\Controllers\User\Server;
 
 use App\Chat\User;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -82,6 +83,8 @@ use Symfony\Component\HttpFoundation\Response;
 )]
 class ServerActivityController
 {
+    use CheckSubuserPermissionsTrait;
+
     /**
      * Get activities for a specific server accessible by the user.
      */
@@ -154,6 +157,12 @@ class ServerActivityController
 
         if (!$this->userCanAccessServer($request, $server)) {
             return ApiResponse::error('Access denied to server', 'FORBIDDEN', 403);
+        }
+
+        // Check activity.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::ACTIVITY_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Get pagination parameters

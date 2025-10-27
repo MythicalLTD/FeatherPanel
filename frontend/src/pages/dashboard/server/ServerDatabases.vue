@@ -25,6 +25,7 @@
                             <span>{{ t('serverDatabases.refresh') }}</span>
                         </Button>
                         <Button
+                            v-if="canCreateDatabases"
                             size="sm"
                             :disabled="loading || (serverInfo && databases.length >= serverInfo.database_limit)"
                             class="flex items-center gap-2"
@@ -95,7 +96,7 @@
                         </p>
                     </div>
                     <Button
-                        v-if="serverInfo && serverInfo.database_limit > 0"
+                        v-if="canCreateDatabases && serverInfo && serverInfo.database_limit > 0"
                         size="lg"
                         class="gap-2 shadow-lg"
                         @click="openCreateDatabaseDrawer"
@@ -161,8 +162,12 @@
                                 </div>
 
                                 <!-- Action Buttons -->
-                                <div class="flex flex-wrap items-center gap-2">
+                                <div
+                                    v-if="canViewPassword || canDeleteDatabases"
+                                    class="flex flex-wrap items-center gap-2"
+                                >
                                     <Button
+                                        v-if="canViewPassword"
                                         variant="outline"
                                         size="sm"
                                         class="flex items-center gap-2"
@@ -174,6 +179,7 @@
                                         <span class="hidden sm:inline">{{ t('serverDatabases.view') }}</span>
                                     </Button>
                                     <Button
+                                        v-if="canDeleteDatabases"
                                         variant="destructive"
                                         size="sm"
                                         class="flex items-center gap-2"
@@ -741,7 +747,7 @@
 // SOFTWARE.
 
 import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
@@ -750,6 +756,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useServerPermissions } from '@/composables/useServerPermissions';
 
 import {
     Drawer,
@@ -814,8 +821,18 @@ type DatabaseHost = {
 };
 
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 const toast = useToast();
+
+// Check server permissions
+const { hasPermission: hasServerPermission, isLoading: permissionsLoading } = useServerPermissions();
+
+// Permission checks
+const canViewDatabases = computed(() => hasServerPermission('database.read'));
+const canCreateDatabases = computed(() => hasServerPermission('database.create'));
+const canDeleteDatabases = computed(() => hasServerPermission('database.delete'));
+const canViewPassword = computed(() => hasServerPermission('database.view_password'));
 
 const databases = ref<DatabaseItem[]>([]);
 const availableHosts = ref<DatabaseHost[]>([]);
@@ -872,6 +889,18 @@ const breadcrumbs = computed(() => [
 
 // Lifecycle
 onMounted(async () => {
+    // Wait for permission check to complete
+    while (permissionsLoading.value) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // Check if user has permission to view databases
+    if (!canViewDatabases.value) {
+        toast.error(t('serverDatabases.noDatabasePermission'));
+        await router.push(`/server/${route.params.uuidShort}`);
+        return;
+    }
+
     await Promise.all([fetchDatabases(), fetchAvailableHosts()]);
 });
 
@@ -1017,6 +1046,12 @@ async function createDatabase() {
 function openViewDatabaseDrawer(database: DatabaseItem) {
     viewingDatabase.value = database;
     showPassword.value = false; // Reset password visibility
+
+    // Check if user has permission to view password
+    if (!canViewPassword.value) {
+        toast.error(t('serverDatabases.noPasswordPermission'));
+        return;
+    }
 
     // Check if user has already chosen to remember their choice
     const hasRememberedChoice = localStorage.getItem('featherpanel-remember-sensitive-info');

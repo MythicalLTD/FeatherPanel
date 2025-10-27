@@ -150,6 +150,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
+import { useServerPermissions } from '@/composables/useServerPermissions';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -166,6 +167,12 @@ const sessionStore = useSessionStore();
 const settingsStore = useSettingsStore();
 const { t } = useI18n();
 const toast = useToast();
+
+// Check server permissions
+const { hasPermission: hasServerPermission, isLoading: permissionsLoading } = useServerPermissions();
+
+// Permission checks
+const canReadActivity = computed(() => hasServerPermission('activity.read'));
 
 const server = ref<Server | null>(null);
 const loading = ref(false);
@@ -193,6 +200,19 @@ onMounted(async () => {
     await sessionStore.checkSessionOrRedirect(router);
     await settingsStore.fetchSettings();
     await fetchServer();
+
+    // Wait for permission check to complete
+    while (permissionsLoading.value) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // Check if user has permission to read activity logs
+    if (!canReadActivity.value) {
+        toast.error(t('serverLogs.noActivityPermission'));
+        await router.push(`/server/${route.params.uuidShort}`);
+        return;
+    }
+
     await fetchLogs();
 });
 

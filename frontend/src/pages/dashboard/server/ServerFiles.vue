@@ -96,6 +96,7 @@
                         <span>{{ t('serverFiles.ignoredContent') }}</span>
                     </Button>
                     <Button
+                        v-if="canCreateFiles"
                         variant="outline"
                         size="sm"
                         :disabled="loading"
@@ -106,6 +107,7 @@
                         <span>{{ t('serverFiles.newFile') }}</span>
                     </Button>
                     <Button
+                        v-if="canCreateFiles"
                         variant="outline"
                         size="sm"
                         :disabled="loading"
@@ -116,6 +118,7 @@
                         <span>{{ t('serverFiles.uploadFile') }}</span>
                     </Button>
                     <Button
+                        v-if="canCreateFiles"
                         variant="outline"
                         size="sm"
                         :disabled="loading"
@@ -126,6 +129,7 @@
                         <span>{{ t('serverFiles.pullFile') }}</span>
                     </Button>
                     <Button
+                        v-if="canCreateFiles"
                         size="sm"
                         :disabled="loading"
                         class="flex items-center gap-2"
@@ -328,6 +332,7 @@
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <Button
+                                v-if="canReadContent"
                                 variant="outline"
                                 size="sm"
                                 :disabled="loading"
@@ -339,6 +344,7 @@
                                 <span>{{ t('serverFiles.download') }}</span>
                             </Button>
                             <Button
+                                v-if="canUpdateFiles"
                                 variant="outline"
                                 size="sm"
                                 :disabled="loading"
@@ -350,6 +356,7 @@
                                 <span>{{ t('serverFiles.copy') }}</span>
                             </Button>
                             <Button
+                                v-if="canUpdateFiles"
                                 variant="outline"
                                 size="sm"
                                 :disabled="loading"
@@ -361,6 +368,7 @@
                                 <span>{{ t('serverFiles.move', { defaultValue: 'Move' }) }}</span>
                             </Button>
                             <Button
+                                v-if="canArchiveFiles"
                                 variant="outline"
                                 size="sm"
                                 :disabled="loading"
@@ -371,6 +379,7 @@
                                 <span>{{ t('serverFiles.compress') }}</span>
                             </Button>
                             <Button
+                                v-if="canDeleteFiles"
                                 variant="destructive"
                                 size="sm"
                                 :disabled="loading"
@@ -608,7 +617,12 @@
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" class="w-48">
                                                 <DropdownMenuItem
-                                                    v-if="file.file && isFileEditable(file) && isFileSizeValid(file)"
+                                                    v-if="
+                                                        canUpdateFiles &&
+                                                        file.file &&
+                                                        isFileEditable(file) &&
+                                                        isFileSizeValid(file)
+                                                    "
                                                     data-umami-event="Edit file"
                                                     :data-umami-event-file="file.name"
                                                     @click="openMonacoEditor(file)"
@@ -616,12 +630,12 @@
                                                     <Code class="h-4 w-4 mr-2" />
                                                     {{ t('serverFiles.edit') }}
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem @click="renameFile(file)">
+                                                <DropdownMenuItem v-if="canUpdateFiles" @click="renameFile(file)">
                                                     <FileEdit class="h-4 w-4 mr-2" />
                                                     {{ t('serverFiles.rename') }}
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
-                                                    v-if="file.file"
+                                                    v-if="canReadContent && file.file"
                                                     data-umami-event="Download file"
                                                     :data-umami-event-file="file.name"
                                                     @click="downloadFile(file)"
@@ -629,23 +643,27 @@
                                                     <Download class="h-4 w-4 mr-2" />
                                                     {{ t('serverFiles.download') }}
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem @click="copySingle(file.name)">
+                                                <DropdownMenuItem v-if="canUpdateFiles" @click="copySingle(file.name)">
                                                     <Copy class="h-4 w-4 mr-2" />
                                                     {{ t('serverFiles.copy') }}
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
-                                                    v-if="file.file && isArchive(file)"
+                                                    v-if="canArchiveFiles && file.file && isArchive(file)"
                                                     @click="extractFile(file)"
                                                 >
                                                     <Archive class="h-4 w-4 mr-2" />
                                                     {{ t('serverFiles.extract') }}
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem @click="changePermissions(file)">
+                                                <DropdownMenuItem
+                                                    v-if="canUpdateFiles"
+                                                    @click="changePermissions(file)"
+                                                >
                                                     <Settings class="h-4 w-4 mr-2" />
                                                     {{ t('serverFiles.permissions') }}
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem
+                                                    v-if="canDeleteFiles"
                                                     class="text-destructive focus:text-destructive"
                                                     @click="deleteFile(file)"
                                                 >
@@ -740,6 +758,7 @@
                                                     <DropdownMenuContent align="end" class="w-48">
                                                         <DropdownMenuItem
                                                             v-if="
+                                                                canUpdateFiles &&
                                                                 file.file &&
                                                                 isFileEditable(file) &&
                                                                 isFileSizeValid(file)
@@ -749,31 +768,44 @@
                                                             <Code class="h-4 w-4 mr-2" />
                                                             {{ t('serverFiles.edit') }}
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem @click="renameFile(file)">
+                                                        <DropdownMenuItem
+                                                            v-if="canUpdateFiles"
+                                                            @click="renameFile(file)"
+                                                        >
                                                             <FileEdit class="h-4 w-4 mr-2" />
                                                             {{ t('serverFiles.rename') }}
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem v-if="file.file" @click="downloadFile(file)">
+                                                        <DropdownMenuItem
+                                                            v-if="canReadContent && file.file"
+                                                            @click="downloadFile(file)"
+                                                        >
                                                             <Download class="h-4 w-4 mr-2" />
                                                             {{ t('serverFiles.download') }}
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem @click="copySingle(file.name)">
+                                                        <DropdownMenuItem
+                                                            v-if="canUpdateFiles"
+                                                            @click="copySingle(file.name)"
+                                                        >
                                                             <Copy class="h-4 w-4 mr-2" />
                                                             {{ t('serverFiles.copy') }}
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
-                                                            v-if="file.file && isArchive(file)"
+                                                            v-if="canArchiveFiles && file.file && isArchive(file)"
                                                             @click="extractFile(file)"
                                                         >
                                                             <Archive class="h-4 w-4 mr-2" />
                                                             {{ t('serverFiles.extract') }}
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem @click="changePermissions(file)">
+                                                        <DropdownMenuItem
+                                                            v-if="canUpdateFiles"
+                                                            @click="changePermissions(file)"
+                                                        >
                                                             <Settings class="h-4 w-4 mr-2" />
                                                             {{ t('serverFiles.permissions') }}
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem
+                                                            v-if="canDeleteFiles"
                                                             class="text-destructive focus:text-destructive"
                                                             @click="deleteFile(file)"
                                                         >
@@ -787,34 +819,46 @@
                                     </ContextMenuTrigger>
                                     <ContextMenuContent>
                                         <ContextMenuItem
-                                            v-if="file.file && isFileEditable(file) && isFileSizeValid(file)"
+                                            v-if="
+                                                canUpdateFiles &&
+                                                file.file &&
+                                                isFileEditable(file) &&
+                                                isFileSizeValid(file)
+                                            "
                                             @click="openMonacoEditor(file)"
                                         >
                                             <Code class="h-4 w-4 mr-2" />
                                             {{ t('serverFiles.edit') }}
                                         </ContextMenuItem>
-                                        <ContextMenuItem @click="renameFile(file)">
+                                        <ContextMenuItem v-if="canUpdateFiles" @click="renameFile(file)">
                                             <FileEdit class="h-4 w-4 mr-2" />
                                             {{ t('serverFiles.rename') }}
                                         </ContextMenuItem>
-                                        <ContextMenuItem v-if="file.file" @click="downloadFile(file)">
+                                        <ContextMenuItem v-if="canReadContent && file.file" @click="downloadFile(file)">
                                             <Download class="h-4 w-4 mr-2" />
                                             {{ t('serverFiles.download') }}
                                         </ContextMenuItem>
-                                        <ContextMenuItem @click="copySingle(file.name)">
+                                        <ContextMenuItem v-if="canUpdateFiles" @click="copySingle(file.name)">
                                             <Copy class="h-4 w-4 mr-2" />
                                             {{ t('serverFiles.copy') }}
                                         </ContextMenuItem>
-                                        <ContextMenuItem v-if="file.file && isArchive(file)" @click="extractFile(file)">
+                                        <ContextMenuItem
+                                            v-if="canArchiveFiles && file.file && isArchive(file)"
+                                            @click="extractFile(file)"
+                                        >
                                             <Archive class="h-4 w-4 mr-2" />
                                             {{ t('serverFiles.extract') }}
                                         </ContextMenuItem>
-                                        <ContextMenuItem @click="changePermissions(file)">
+                                        <ContextMenuItem v-if="canUpdateFiles" @click="changePermissions(file)">
                                             <Settings class="h-4 w-4 mr-2" />
                                             {{ t('serverFiles.permissions') }}
                                         </ContextMenuItem>
                                         <ContextMenuSeparator />
-                                        <ContextMenuItem class="text-destructive" @click="deleteFile(file)">
+                                        <ContextMenuItem
+                                            v-if="canDeleteFiles"
+                                            class="text-destructive"
+                                            @click="deleteFile(file)"
+                                        >
                                             <Trash2 class="h-4 w-4 mr-2" />
                                             {{ t('serverFiles.delete') }}
                                         </ContextMenuItem>
@@ -1580,6 +1624,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
+import { useServerPermissions } from '@/composables/useServerPermissions';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -1646,6 +1691,17 @@ const sessionStore = useSessionStore();
 const settingsStore = useSettingsStore();
 const { t } = useI18n();
 const toast = useToast();
+
+// Check server permissions
+const { hasPermission: hasServerPermission, isLoading: permissionsLoading } = useServerPermissions();
+
+// Permission checks
+const canReadFiles = computed(() => hasServerPermission('file.read'));
+const canReadContent = computed(() => hasServerPermission('file.read-content'));
+const canCreateFiles = computed(() => hasServerPermission('file.create'));
+const canUpdateFiles = computed(() => hasServerPermission('file.update'));
+const canDeleteFiles = computed(() => hasServerPermission('file.delete'));
+const canArchiveFiles = computed(() => hasServerPermission('file.archive'));
 
 // Server and loading state
 const server = ref<Server | null>(null);
@@ -2005,6 +2061,18 @@ onMounted(async () => {
     await sessionStore.checkSessionOrRedirect(router);
     await settingsStore.fetchSettings();
     await fetchServer();
+
+    // Wait for permission check to complete
+    while (permissionsLoading.value) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // Check if user has permission to read files
+    if (!canReadFiles.value) {
+        toast.error(t('serverFiles.noFileReadPermission'));
+        router.push(`/server/${route.params.uuidShort}`);
+        return;
+    }
 
     // Load ignored patterns from localStorage
     loadIgnoredPatterns();

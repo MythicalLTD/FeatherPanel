@@ -151,19 +151,32 @@
                                     </div>
                                 </div>
 
-                                <!-- Action Button -->
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    :disabled="deletingId === sub.id || loading"
-                                    class="flex items-center gap-2"
-                                    data-umami-event="Delete subuser"
-                                    :data-umami-event-subuser="sub.email"
-                                    @click="confirmDelete(sub)"
-                                >
-                                    <Trash2 class="h-3.5 w-3.5" />
-                                    <span class="hidden sm:inline">{{ t('serverSubusers.delete') }}</span>
-                                </Button>
+                                <!-- Action Buttons -->
+                                <div class="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        :disabled="loading"
+                                        class="flex items-center gap-2"
+                                        data-umami-event="Edit subuser permissions"
+                                        @click="openPermissionsDialog(sub)"
+                                    >
+                                        <Shield class="h-3.5 w-3.5" />
+                                        <span class="hidden sm:inline">{{ t('serverSubusers.permissions') }}</span>
+                                    </Button>
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        :disabled="deletingId === sub.id || loading"
+                                        class="flex items-center gap-2"
+                                        data-umami-event="Delete subuser"
+                                        :data-umami-event-subuser="sub.email"
+                                        @click="confirmDelete(sub)"
+                                    >
+                                        <Trash2 class="h-3.5 w-3.5" />
+                                        <span class="hidden sm:inline">{{ t('serverSubusers.delete') }}</span>
+                                    </Button>
+                                </div>
                             </div>
                         </div>
 
@@ -282,6 +295,126 @@
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        <!-- Permissions Dialog -->
+        <Dialog v-model:open="showPermissionsDialog">
+            <DialogContent class="max-w-2xl max-h-[80vh]">
+                <DialogHeader>
+                    <DialogTitle class="flex items-center gap-2">
+                        <Shield class="h-5 w-5 text-primary" />
+                        {{ t('serverSubusers.managePermissions') }}
+                    </DialogTitle>
+                    <DialogDescription class="text-sm">
+                        {{ t('serverSubusers.managePermissionsDescription') }}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div v-if="permissionsLoading" class="flex flex-col items-center justify-center py-12">
+                    <Loader2 class="h-8 w-8 animate-spin text-primary" />
+                    <p class="mt-4 text-sm text-muted-foreground">{{ t('common.loading') }}</p>
+                </div>
+
+                <div v-else class="space-y-4">
+                    <div class="flex items-center justify-between px-4 py-2 bg-muted rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <Mail class="h-4 w-4 text-muted-foreground" />
+                            <span class="text-sm font-medium">{{ currentSubuser?.email }}</span>
+                        </div>
+                        <Button variant="outline" size="sm" @click="selectAllPermissions">
+                            {{
+                                allPermissionsSelected ? t('serverSubusers.deselectAll') : t('serverSubusers.selectAll')
+                            }}
+                        </Button>
+                    </div>
+
+                    <div class="max-h-96 overflow-y-auto border rounded-lg">
+                        <div
+                            v-for="(group, category) in groupedPermissions"
+                            :key="category"
+                            class="p-4 space-y-3 border-b last:border-b-0"
+                        >
+                            <div class="space-y-1">
+                                <h4 class="font-semibold text-sm">
+                                    {{ t(`serverSubusers.permissionCategories.${category}.name`) }}
+                                </h4>
+                                <p class="text-xs text-muted-foreground">
+                                    {{ t(`serverSubusers.permissionCategories.${category}.description`) }}
+                                </p>
+                            </div>
+                            <div class="space-y-1.5">
+                                <label
+                                    v-for="permission in group.permissions"
+                                    :key="permission"
+                                    class="flex items-start gap-3 p-3 rounded-md hover:bg-muted/50 transition-all cursor-pointer group border border-transparent hover:border-border"
+                                >
+                                    <div class="relative mt-0.5 shrink-0">
+                                        <input
+                                            :id="`permission-${permission}`"
+                                            type="checkbox"
+                                            :checked="selectedPermissions.includes(permission)"
+                                            class="peer sr-only"
+                                            @change="togglePermission(permission)"
+                                        />
+                                        <div
+                                            :class="[
+                                                'h-4 w-4 rounded border-2 transition-all relative',
+                                                selectedPermissions.includes(permission)
+                                                    ? 'border-primary bg-primary'
+                                                    : 'border-muted-foreground/40 hover:border-primary/60',
+                                            ]"
+                                        >
+                                            <svg
+                                                v-if="selectedPermissions.includes(permission)"
+                                                class="absolute inset-0 h-full w-full text-white p-0.5"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="3"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    d="M5 13l4 4L19 7"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-medium text-sm text-foreground">
+                                            {{ getPermissionName(permission) }}
+                                        </div>
+                                        <div class="text-xs text-muted-foreground mt-1 leading-relaxed">
+                                            {{ getPermissionDescription(permission) }}
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-muted-foreground flex items-center gap-2 px-4">
+                        <CheckCircle2 class="h-4 w-4" />
+                        {{ selectedPermissions.length }}
+                        {{ t('serverSubusers.permissionsSelected', { count: selectedPermissions.length }) }}
+                    </div>
+                </div>
+
+                <DialogFooter class="gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="permissionsSaving"
+                        @click="showPermissionsDialog = false"
+                    >
+                        {{ t('common.cancel') }}
+                    </Button>
+                    <Button size="sm" :disabled="permissionsSaving" @click="savePermissions">
+                        <Loader2 v-if="permissionsSaving" class="h-4 w-4 mr-2 animate-spin" />
+                        {{ t('common.saveChanges') }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </DashboardLayout>
 </template>
 
@@ -337,6 +470,8 @@ import {
     ChevronRight,
     AlertTriangle,
     Info,
+    Shield,
+    CheckCircle2,
 } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
@@ -348,7 +483,7 @@ const { t } = useI18n();
 // State
 const loading = ref(false);
 const deletingId = ref<number | null>(null);
-const subusers = ref<Array<{ id: number; username?: string; email: string }>>([]);
+const subusers = ref<Array<{ id: number; username?: string; email: string; permissions?: string[] }>>([]);
 const pagination = ref<{
     current_page: number;
     per_page: number;
@@ -382,6 +517,15 @@ const confirmDialog = ref({
 const confirmAction = ref<null | (() => Promise<void> | void)>(null);
 const confirmLoading = ref(false);
 
+// Permissions dialog state
+const showPermissionsDialog = ref(false);
+const currentSubuser = ref<{ id: number; email: string; permissions?: string[] } | null>(null);
+const availablePermissions = ref<string[]>([]);
+const groupedPermissions = ref<Record<string, { permissions: string[] }>>({});
+const selectedPermissions = ref<string[]>([]);
+const permissionsLoading = ref(false);
+const permissionsSaving = ref(false);
+
 // Computed
 const serverBasic = ref<{ name?: string } | null>(null);
 const breadcrumbs = computed(() => [
@@ -390,6 +534,13 @@ const breadcrumbs = computed(() => [
     { text: serverBasic.value?.name || t('common.server'), href: `/server/${route.params.uuidShort}` },
     { text: t('serverSubusers.title'), isCurrent: true, href: `/server/${route.params.uuidShort}/users` },
 ]);
+
+const allPermissionsSelected = computed(() => {
+    return (
+        availablePermissions.value.length > 0 &&
+        availablePermissions.value.every((p) => selectedPermissions.value.includes(p))
+    );
+});
 
 // Methods
 async function fetchSubusers(page = 1) {
@@ -536,6 +687,116 @@ async function fetchServerBasic() {
         }
     } catch {
         // non-blocking
+    }
+}
+
+// Permissions management
+async function openPermissionsDialog(sub: { id: number; email: string; permissions?: string[] }) {
+    currentSubuser.value = sub;
+    selectedPermissions.value = [];
+
+    try {
+        permissionsLoading.value = true;
+
+        // Fetch available permissions from API
+        const permissionsResponse = await axios.get(`/api/user/servers/${route.params.uuidShort}/subusers/permissions`);
+        if (permissionsResponse.data.success) {
+            availablePermissions.value = permissionsResponse.data.data?.permissions || [];
+            groupedPermissions.value = permissionsResponse.data.data?.grouped_permissions || {};
+        }
+
+        // Parse current subuser permissions (now comes as array from backend)
+        if (sub.permissions && Array.isArray(sub.permissions)) {
+            selectedPermissions.value = sub.permissions;
+        } else {
+            // If permissions field doesn't exist or is not an array, start with empty
+            selectedPermissions.value = [];
+        }
+
+        showPermissionsDialog.value = true;
+    } catch (error) {
+        toast.error(t('serverSubusers.failedToFetch'));
+        console.error('Error fetching permissions:', error);
+    } finally {
+        permissionsLoading.value = false;
+    }
+}
+
+function togglePermission(permission: string) {
+    const index = selectedPermissions.value.indexOf(permission);
+    if (index > -1) {
+        selectedPermissions.value.splice(index, 1);
+    } else {
+        selectedPermissions.value.push(permission);
+    }
+}
+
+function selectAllPermissions() {
+    if (allPermissionsSelected.value) {
+        selectedPermissions.value = [];
+    } else {
+        selectedPermissions.value = [...availablePermissions.value];
+    }
+}
+
+function getPermissionName(permission: string): string {
+    const parts = permission.split('.');
+    if (parts.length < 2 || !parts[1]) return permission;
+
+    const category = parts[0];
+    // Convert kebab-case and snake_case to camelCase (e.g., "read-content" -> "readContent", "view_password" -> "viewPassword")
+    let key = parts[1];
+    key = key.replace(/[-_]([a-z])/g, (_, letter) => letter.toUpperCase());
+
+    const translationKey = `serverSubusers.permissionCategories.${category}.permissions.${key}.name`;
+    const translated = t(translationKey);
+    // If translation key doesn't exist, fallback to the permission itself
+    return translated !== translationKey ? translated : permission;
+}
+
+function getPermissionDescription(permission: string): string {
+    const parts = permission.split('.');
+    if (parts.length < 2 || !parts[1]) return '';
+
+    const category = parts[0];
+    // Convert kebab-case and snake_case to camelCase (e.g., "read-content" -> "readContent", "view_password" -> "viewPassword")
+    let key = parts[1];
+    key = key.replace(/[-_]([a-z])/g, (_, letter) => letter.toUpperCase());
+
+    const translationKey = `serverSubusers.permissionCategories.${category}.permissions.${key}.description`;
+    const translated = t(translationKey);
+    // If translation key doesn't exist, fallback to empty string
+    return translated !== translationKey ? translated : '';
+}
+
+async function savePermissions() {
+    if (!currentSubuser.value) return;
+
+    try {
+        permissionsSaving.value = true;
+
+        // Update permissions for the subuser (backend will encode to JSON)
+        const { data } = await axios.patch(
+            `/api/user/servers/${route.params.uuidShort}/subusers/${currentSubuser.value.id}`,
+            {
+                permissions: selectedPermissions.value,
+            },
+        );
+
+        if (!data.success) {
+            toast.error(data.message || t('serverSubusers.failedToUpdate'));
+            return;
+        }
+
+        toast.success(t('serverSubusers.updateSuccess'));
+        showPermissionsDialog.value = false;
+        await fetchSubusers(pagination.value.current_page || 1);
+    } catch (error) {
+        const errorMessage = getErrorMessage(error);
+        toast.error(errorMessage);
+        console.error('Error updating permissions:', error);
+    } finally {
+        permissionsSaving.value = false;
     }
 }
 

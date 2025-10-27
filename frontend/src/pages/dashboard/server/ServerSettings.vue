@@ -48,7 +48,7 @@
                                     id="serverName"
                                     v-model="editForm.name"
                                     :placeholder="t('serverSettings.serverNamePlaceholder')"
-                                    :disabled="saving"
+                                    :disabled="saving || !canRenameServer"
                                     class="text-sm"
                                 />
                             </div>
@@ -60,12 +60,12 @@
                                     id="serverDescription"
                                     v-model="editForm.description"
                                     :placeholder="t('serverSettings.serverDescriptionPlaceholder')"
-                                    :disabled="saving"
+                                    :disabled="saving || !canRenameServer"
                                     class="text-sm"
                                 />
                             </div>
                         </div>
-                        <div class="flex gap-2 pt-2">
+                        <div v-if="canRenameServer" class="flex gap-2 pt-2">
                             <Button
                                 size="sm"
                                 :disabled="saving || !hasChanges"
@@ -285,6 +285,7 @@
 
                 <!-- Server Actions -->
                 <Card
+                    v-if="canReinstallServer"
                     class="border-2 border-orange-200 dark:border-orange-800 hover:border-orange-300 dark:hover:border-orange-700 transition-colors"
                 >
                     <CardHeader>
@@ -319,6 +320,7 @@
                                         {{ t('serverSettings.reinstallWarning') }}
                                     </p>
                                     <Button
+                                        v-if="canReinstallServer"
                                         variant="destructive"
                                         size="sm"
                                         :disabled="reinstalling"
@@ -459,6 +461,7 @@ import { useI18n } from 'vue-i18n';
 import { useToast } from 'vue-toastification';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
+import { useServerPermissions } from '@/composables/useServerPermissions';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -532,6 +535,14 @@ const { t } = useI18n();
 const toast = useToast();
 const sessionStore = useSessionStore();
 const settingsStore = useSettingsStore();
+
+// Check server permissions
+const { hasPermission: hasServerPermission, isLoading: permissionsLoading } = useServerPermissions();
+
+// Permission checks
+const canRenameServer = computed(() => hasServerPermission('settings.rename'));
+const canReinstallServer = computed(() => hasServerPermission('settings.reinstall'));
+const hasAnySettingsPermission = computed(() => canRenameServer.value || canReinstallServer.value);
 
 // State
 const loading = ref(false);
@@ -661,6 +672,19 @@ async function confirmReinstall(): Promise<void> {
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect(router);
     await settingsStore.fetchSettings();
+
+    // Wait for permission check to complete
+    while (permissionsLoading.value) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // Check if user has any settings permissions
+    if (!hasAnySettingsPermission.value) {
+        toast.error(t('serverSettings.noSettingsPermission'));
+        await router.push(`/server/${route.params.uuidShort}`);
+        return;
+    }
+
     await fetchServer();
 });
 </script>

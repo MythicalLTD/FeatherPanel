@@ -22,6 +22,7 @@
                             <span>{{ t('serverAllocations.refresh') }}</span>
                         </Button>
                         <Button
+                            v-if="canCreateAllocations"
                             size="sm"
                             :disabled="!serverInfo?.can_add_more || loading || autoAllocating"
                             class="flex items-center gap-2"
@@ -130,7 +131,7 @@
                         </p>
                     </div>
                     <Button
-                        v-if="serverInfo?.can_add_more"
+                        v-if="canCreateAllocations && serverInfo?.can_add_more"
                         size="lg"
                         class="gap-2 shadow-lg"
                         :disabled="autoAllocating"
@@ -221,9 +222,12 @@
                                 </div>
 
                                 <!-- Action Buttons -->
-                                <div class="flex items-center gap-2 shrink-0">
+                                <div
+                                    v-if="!allocation.is_primary && (canUpdateAllocations || canDeleteAllocations)"
+                                    class="flex items-center gap-2 shrink-0"
+                                >
                                     <Button
-                                        v-if="!allocation.is_primary"
+                                        v-if="canUpdateAllocations"
                                         variant="outline"
                                         size="sm"
                                         :disabled="settingPrimary === allocation.id || loading"
@@ -236,7 +240,7 @@
                                         <span class="hidden sm:inline">{{ t('serverAllocations.setPrimary') }}</span>
                                     </Button>
                                     <Button
-                                        v-if="!allocation.is_primary"
+                                        v-if="canDeleteAllocations"
                                         variant="destructive"
                                         size="sm"
                                         :disabled="deletingAllocation === allocation.id || loading"
@@ -322,7 +326,7 @@
 // SOFTWARE.
 
 import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
@@ -339,10 +343,21 @@ import {
 import { RefreshCw, Network, Trash2, Star, Zap, Info, Loader2, AlertTriangle } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
+import { useServerPermissions } from '@/composables/useServerPermissions';
 
 const route = useRoute();
+const router = useRouter();
 const toast = useToast();
 const { t } = useI18n();
+
+// Check server permissions
+const { hasPermission: hasServerPermission, isLoading: permissionsLoading } = useServerPermissions();
+
+// Permission checks
+const canViewAllocations = computed(() => hasServerPermission('allocation.read'));
+const canCreateAllocations = computed(() => hasServerPermission('allocation.create'));
+const canUpdateAllocations = computed(() => hasServerPermission('allocation.update'));
+const canDeleteAllocations = computed(() => hasServerPermission('allocation.delete'));
 
 // State
 const loading = ref(false);
@@ -513,7 +528,19 @@ function onConfirmDialog() {
 }
 
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
+    // Wait for permission check to complete
+    while (permissionsLoading.value) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // Check if user has permission to view allocations
+    if (!canViewAllocations.value) {
+        toast.error(t('serverAllocations.noAllocationPermission'));
+        await router.push(`/server/${route.params.uuidShort}`);
+        return;
+    }
+
     fetchAllocations();
 });
 </script>

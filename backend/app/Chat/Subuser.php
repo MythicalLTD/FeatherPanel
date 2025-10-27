@@ -31,6 +31,7 @@
 namespace App\Chat;
 
 use App\App;
+use App\SubuserPermissions;
 
 /**
  * Subuser service/model for CRUD operations on the featherpanel_server_subusers table.
@@ -323,9 +324,10 @@ class Subuser
             }
             $columns = self::getColumns();
             $columns = array_map(fn ($c) => $c['Field'], $columns);
-            $missing = array_diff(array_keys($data), $columns);
-            if (!empty($missing)) {
-                App::getInstance(true)->getLogger()->error('Missing fields: ' . implode(', ', $missing));
+            // Check for invalid fields (fields not in the table)
+            $invalid = array_diff(array_keys($data), $columns);
+            if (!empty($invalid)) {
+                App::getInstance(true)->getLogger()->error('Invalid fields: ' . implode(', ', $invalid));
 
                 return false;
             }
@@ -590,25 +592,7 @@ class Subuser
      */
     public static function getValidPermissions(): array
     {
-        return [
-            'control.console',
-            'control.start',
-            'control.stop',
-            'control.restart',
-            'control.kill',
-            'control.settings',
-            'control.startup',
-            'control.sftp',
-            'control.database',
-            'control.backup',
-            'control.allocation',
-            'websocket.connect',
-            'files.read',
-            'files.write',
-            'files.delete',
-            'files.upload',
-            'files.download',
-        ];
+        return SubuserPermissions::PERMISSIONS;
     }
 
     public static function deleteAllSubusersByUserId(int $userId): bool

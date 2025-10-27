@@ -33,12 +33,14 @@ namespace App\Controllers\User\Server\Logs;
 use App\App;
 use App\Chat\Server;
 use App\Helpers\LogHelper;
+use App\SubuserPermissions;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\Helpers\ServerGateway;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Controllers\User\Server\CheckSubuserPermissionsTrait;
 
 #[OA\Schema(
     schema: 'ServerLogsResponse',
@@ -56,6 +58,8 @@ use Symfony\Component\HttpFoundation\Response;
 )]
 class ServerLogsController
 {
+    use CheckSubuserPermissionsTrait;
+
     #[OA\Get(
         path: '/api/user/servers/{uuidShort}/logs',
         summary: 'Get server logs',
@@ -100,6 +104,12 @@ class ServerLogsController
 
         if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
             return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
+        }
+
+        // Check activity.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::ACTIVITY_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Get node information
@@ -192,6 +202,12 @@ class ServerLogsController
 
         if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
             return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
+        }
+
+        // Check activity.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::ACTIVITY_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Get node information
@@ -289,6 +305,12 @@ class ServerLogsController
 
         if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
             return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
+        }
+
+        // Check activity.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::ACTIVITY_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Get node information
@@ -415,6 +437,12 @@ class ServerLogsController
 
         if (!ServerGateway::canUserAccessServer($user['uuid'], $server['uuid'])) {
             return ApiResponse::error('Access denied', 'FORBIDDEN', 403);
+        }
+
+        // Check activity.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::ACTIVITY_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Get node information

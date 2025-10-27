@@ -408,7 +408,7 @@
                                     <h3 class="text-lg font-semibold">{{ t('serverActivities.message') }}</h3>
                                 </div>
                                 <div class="bg-muted/30 rounded-lg p-4 border">
-                                    <p class="text-sm font-medium break-words">{{ baseMessage }}</p>
+                                    <p class="text-sm font-medium wrap-break-word">{{ baseMessage }}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -433,7 +433,7 @@
                                         >
                                             {{ pair.key }}
                                         </div>
-                                        <div class="font-mono text-sm break-words">{{ pair.value }}</div>
+                                        <div class="font-mono text-sm wrap-break-word">{{ pair.value }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -504,7 +504,7 @@
 // SOFTWARE.
 
 import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
@@ -513,6 +513,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useServerPermissions } from '@/composables/useServerPermissions';
 import {
     Activity,
     RefreshCw,
@@ -614,8 +615,15 @@ type ActivityItem = {
 type ApiActivityItem = Omit<ActivityItem, 'metadata'> & { metadata?: unknown };
 
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 const toast = useToast();
+
+// Check server permissions
+const { hasPermission: hasServerPermission, isLoading: permissionsLoading } = useServerPermissions();
+
+// Permission check
+const canViewActivities = computed(() => hasServerPermission('activity.read'));
 
 const activities = ref<ActivityItem[]>([]);
 const loading = ref(false);
@@ -644,6 +652,18 @@ const breadcrumbs = computed(() => [
 ]);
 
 onMounted(async () => {
+    // Wait for permission check to complete
+    while (permissionsLoading.value) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // Check if user has permission to view activities
+    if (!canViewActivities.value) {
+        toast.error(t('serverActivities.noActivityPermission'));
+        await router.push(`/server/${route.params.uuidShort}`);
+        return;
+    }
+
     await fetchServer();
     await fetchActivities();
 });

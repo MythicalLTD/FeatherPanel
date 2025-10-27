@@ -79,6 +79,72 @@ return function (RouteCollection $routes): void {
         ['POST']
     );
 
+    // Get valid permissions (MUST be before parameterized routes)
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-get-valid-permissions',
+        '/api/user/servers/{uuidShort}/subusers/permissions',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_PARAMETERS', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new \App\Controllers\User\Server\SubuserController())->getValidPermissions($request, $server['uuid']);
+        },
+        'uuidShort',
+        ['GET']
+    );
+
+    // Get all subusers with details (MUST be before parameterized routes)
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-get-subusers-details',
+        '/api/user/servers/{uuidShort}/subusers/details',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_PARAMETERS', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new \App\Controllers\User\Server\SubuserController())->getSubusersWithDetails($request, $server['uuid']);
+        },
+        'uuidShort',
+        ['GET']
+    );
+
+    // Search for users to add as subusers (MUST be before parameterized routes)
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-search-users',
+        '/api/user/servers/{uuidShort}/subusers/search-users',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_PARAMETERS', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new \App\Controllers\User\Server\SubuserController())->searchUsers($request, $server['uuid']);
+        },
+        'uuidShort',
+        ['GET']
+    );
+
     // Get a specific subuser
     App::getInstance(true)->registerServerRoute(
         $routes,
@@ -148,15 +214,16 @@ return function (RouteCollection $routes): void {
         ['GET']
     );
 
-    // Get all subusers with details
+    // Update subuser
     App::getInstance(true)->registerServerRoute(
         $routes,
-        'session-server-get-subusers-details',
-        '/api/user/servers/{uuidShort}/subusers/details',
+        'session-server-update-subuser',
+        '/api/user/servers/{uuidShort}/subusers/{subuserId}',
         function (Request $request, array $args) {
             $uuidShort = $args['uuidShort'] ?? null;
-            if (!$uuidShort) {
-                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_PARAMETERS', 400);
+            $subuserId = $args['subuserId'] ?? null;
+            if (!$uuidShort || !$subuserId) {
+                return ApiResponse::error('Missing or invalid parameters', 'INVALID_PARAMETERS', 400);
             }
 
             $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
@@ -164,53 +231,9 @@ return function (RouteCollection $routes): void {
                 return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
             }
 
-            return (new \App\Controllers\User\Server\SubuserController())->getSubusersWithDetails($request, $server['uuid']);
+            return (new \App\Controllers\User\Server\SubuserController())->updateSubuser($request, $server['uuid'], (int) $subuserId);
         },
         'uuidShort',
-        ['GET']
-    );
-
-    // Search for users to add as subusers
-    App::getInstance(true)->registerServerRoute(
-        $routes,
-        'session-server-search-users',
-        '/api/user/servers/{uuidShort}/subusers/search-users',
-        function (Request $request, array $args) {
-            $uuidShort = $args['uuidShort'] ?? null;
-            if (!$uuidShort) {
-                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_PARAMETERS', 400);
-            }
-
-            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
-            if (!$server) {
-                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-            }
-
-            return (new \App\Controllers\User\Server\SubuserController())->searchUsers($request, $server['uuid']);
-        },
-        'uuidShort',
-        ['GET']
-    );
-
-    // Get valid permissions
-    App::getInstance(true)->registerServerRoute(
-        $routes,
-        'session-server-get-valid-permissions',
-        '/api/user/servers/{uuidShort}/subusers/permissions',
-        function (Request $request, array $args) {
-            $uuidShort = $args['uuidShort'] ?? null;
-            if (!$uuidShort) {
-                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_PARAMETERS', 400);
-            }
-
-            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
-            if (!$server) {
-                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
-            }
-
-            return (new \App\Controllers\User\Server\SubuserController())->getValidPermissions($request, $server['uuid']);
-        },
-        'uuidShort',
-        ['GET']
+        ['PATCH']
     );
 };

@@ -24,10 +24,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useSessionStore } from '@/stores/session';
+import axios from 'axios';
 import {
     Home,
     Users,
@@ -124,6 +125,69 @@ export function useNavigation() {
 
     const currentPath = computed(() => router.currentRoute.value.path);
 
+    // Store current server's subuser permissions
+    const serverPermissions = ref<string[]>([]);
+    const isServerOwner = ref(true);
+
+    // Fetch server permissions when on a server page
+    const fetchServerPermissions = async (uuidShort: string) => {
+        try {
+            const response = await axios.get(`/api/user/servers`);
+            const data = response.data;
+
+            if (data.success && data.data?.servers) {
+                // Find the current server in the list
+                const server = data.data.servers.find((s: { uuidShort: string }) => s.uuidShort === uuidShort);
+
+                if (server) {
+                    isServerOwner.value = !server.is_subuser;
+
+                    // If user is a subuser, get their permissions
+                    if (server.is_subuser && server.subuser_permissions) {
+                        serverPermissions.value = server.subuser_permissions;
+                    } else if (isServerOwner.value) {
+                        // Owner has all permissions
+                        serverPermissions.value = ['*'];
+                    } else {
+                        serverPermissions.value = [];
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch server permissions:', error);
+            // Default to showing all items if we can't fetch
+            isServerOwner.value = true;
+            serverPermissions.value = ['*'];
+        }
+    };
+
+    // Check if user has permission for a server action
+    const hasServerPermission = (permission: string): boolean => {
+        // If user has admin.root, they have all permissions
+        if (sessionStore.hasPermission('admin.root')) return true;
+
+        // If server owner, has all permissions
+        if (isServerOwner.value) return true;
+
+        // Check if subuser has the specific permission
+        return serverPermissions.value.includes(permission) || serverPermissions.value.includes('*');
+    };
+
+    // Watch for server page changes
+    watch(
+        () => route.params.uuidShort,
+        (newUuidShort) => {
+            if (newUuidShort && typeof newUuidShort === 'string') {
+                void fetchServerPermissions(newUuidShort);
+            } else {
+                // Reset when leaving server pages
+                serverPermissions.value = [];
+                isServerOwner.value = true;
+            }
+        },
+        { immediate: true },
+    );
+
     // Fetch plugin sidebar routes
     const fetchPluginRoutes = async () => {
         try {
@@ -163,48 +227,64 @@ export function useNavigation() {
         category: 'main' | 'admin' | 'server',
         uuidShort?: string,
     ): NavigationItem[] => {
-        return Object.entries(pluginItems).map(([url, item]) => {
-            // Build absolute URLs for each category to ensure correct routing and active state checks
-            let fullUrl = url;
-            if (category === 'server' && uuidShort) {
-                fullUrl = `/server/${uuidShort}${url}`;
-            } else if (category === 'admin') {
-                fullUrl = `/admin${url}`;
-            } else if (category === 'main') {
-                fullUrl = `/dashboard${url}`;
-            }
-
-            // Normalize redirect: if plugin provides a redirect, prefix it appropriately; otherwise, default to fullUrl
-            let fullRedirect = item.redirect;
-            if (fullRedirect) {
-                if (category === 'server' && uuidShort) {
-                    fullRedirect = `/server/${uuidShort}${item.redirect}`;
-                } else if (category === 'admin') {
-                    fullRedirect = `/admin${item.redirect}`;
-                } else if (category === 'main') {
-                    fullRedirect = `/dashboard${item.redirect}`;
+        return Object.entries(pluginItems)
+            .filter(([, item]) => {
+                // If plugin has a permission requirement, check it
+                if (item.permission) {
+                    if (category === 'server') {
+                        // For server plugins, check subuser permissions
+                        return hasServerPermission(item.permission);
+                    } else {
+                        // For admin/main plugins, check session permissions
+                        return sessionStore.hasPermission(item.permission);
+                    }
                 }
-            } else {
-                fullRedirect = fullUrl;
-            }
+                // If no permission specified, show to everyone (for backwards compatibility)
+                return true;
+            })
+            .map(([url, item]) => {
+                // Build absolute URLs for each category to ensure correct routing and active state checks
+                let fullUrl = url;
+                if (category === 'server' && uuidShort) {
+                    fullUrl = `/server/${uuidShort}${url}`;
+                } else if (category === 'admin') {
+                    fullUrl = `/admin${url}`;
+                } else if (category === 'main') {
+                    fullUrl = `/dashboard${url}`;
+                }
 
-            return {
-                id: `plugin-${item.plugin}-${url.replace(/\//g, '-')}`,
-                name: item.name,
-                title: item.name,
-                url: fullUrl,
-                icon: getPluginIcon(item.icon),
-                isActive: currentPath.value.startsWith(fullUrl),
-                category,
-                isPlugin: true,
-                pluginJs: item.js,
-                pluginRedirect: fullRedirect,
-                pluginName: item.pluginName,
-                pluginTag: item.pluginName,
-                showBadge: item.showBadge !== false,
-                description: item.description,
-            };
-        });
+                // Normalize redirect: if plugin provides a redirect, prefix it appropriately; otherwise, default to fullUrl
+                let fullRedirect = item.redirect;
+                if (fullRedirect) {
+                    if (category === 'server' && uuidShort) {
+                        fullRedirect = `/server/${uuidShort}${item.redirect}`;
+                    } else if (category === 'admin') {
+                        fullRedirect = `/admin${item.redirect}`;
+                    } else if (category === 'main') {
+                        fullRedirect = `/dashboard${item.redirect}`;
+                    }
+                } else {
+                    fullRedirect = fullUrl;
+                }
+
+                return {
+                    id: `plugin-${item.plugin}-${url.replace(/\//g, '-')}`,
+                    name: item.name,
+                    title: item.name,
+                    url: fullUrl,
+                    icon: getPluginIcon(item.icon),
+                    isActive: currentPath.value.startsWith(fullUrl),
+                    category,
+                    isPlugin: true,
+                    pluginJs: item.js,
+                    pluginRedirect: fullRedirect,
+                    pluginName: item.pluginName,
+                    pluginTag: item.pluginName,
+                    showBadge: item.showBadge !== false,
+                    description: item.description,
+                    permission: item.permission, // Include permission for reference
+                };
+            });
     };
 
     // Initialize plugin routes on mount
@@ -214,7 +294,7 @@ export function useNavigation() {
 
     // Main navigation items
     const mainItems = computed((): NavigationItem[] => {
-        const items = [
+        const items: NavigationItem[] = [
             {
                 id: 'dashboard',
                 name: 'Main',
@@ -236,9 +316,9 @@ export function useNavigation() {
             },
         ];
 
-        // Add plugin dashboard items
+        // Add plugin dashboard items (with permission filtering)
         if (pluginRoutes.value?.dashboard) {
-            const pluginItems = convertPluginItems(pluginRoutes.value.dashboard, 'main') as typeof items;
+            const pluginItems = convertPluginItems(pluginRoutes.value.dashboard, 'main');
             items.push(...pluginItems);
         }
 
@@ -247,7 +327,7 @@ export function useNavigation() {
 
     // Admin navigation items
     const adminItems = computed((): NavigationItem[] => {
-        const items = [
+        const items: NavigationItem[] = [
             // Overview
             {
                 id: 'admin-dashboard',
@@ -420,9 +500,9 @@ export function useNavigation() {
             },
         ];
 
-        // Add plugin admin items (no permission checks for plugins)
+        // Add plugin admin items (with permission filtering)
         if (pluginRoutes.value?.admin) {
-            const pluginItems = convertPluginItems(pluginRoutes.value.admin, 'admin') as typeof items;
+            const pluginItems = convertPluginItems(pluginRoutes.value.admin, 'admin');
             // Assign plugins to a 'plugins' group
             pluginItems.forEach((item) => {
                 item.group = 'plugins';
@@ -438,7 +518,7 @@ export function useNavigation() {
         const uuidShort = route.params.uuidShort;
         if (!uuidShort || !currentPath.value.startsWith('/server')) return [];
 
-        const items = [
+        const items: NavigationItem[] = [
             {
                 id: 'server-console',
                 name: 'Console',
@@ -448,6 +528,7 @@ export function useNavigation() {
                 isActive: currentPath.value === `/server/${uuidShort}`,
                 category: 'server' as const,
                 group: 'management',
+                permission: 'websocket.connect',
             },
             {
                 id: 'server-logs',
@@ -458,6 +539,7 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/logs`),
                 category: 'server' as const,
                 group: 'management',
+                permission: 'activity.read',
             },
             {
                 id: 'server-activities',
@@ -468,6 +550,7 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/activities`),
                 category: 'server' as const,
                 group: 'management',
+                permission: 'activity.read',
             },
             {
                 id: 'server-files',
@@ -478,6 +561,7 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/files`),
                 category: 'server' as const,
                 group: 'files',
+                permission: 'file.read',
             },
             {
                 id: 'server-databases',
@@ -488,6 +572,7 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/databases`),
                 category: 'server' as const,
                 group: 'files',
+                permission: 'database.read',
             },
             {
                 id: 'server-schedules',
@@ -498,6 +583,7 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/schedules`),
                 category: 'server' as const,
                 group: 'automation',
+                permission: 'schedule.read',
             },
             {
                 id: 'server-users',
@@ -508,6 +594,7 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/users`),
                 category: 'server' as const,
                 group: 'configuration',
+                permission: 'user.read',
             },
             {
                 id: 'server-backups',
@@ -518,6 +605,7 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/backups`),
                 category: 'server' as const,
                 group: 'files',
+                permission: 'backup.read',
             },
             {
                 id: 'server-allocations',
@@ -528,6 +616,7 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/allocations`),
                 category: 'server' as const,
                 group: 'configuration',
+                permission: 'allocation.read',
             },
             {
                 id: 'server-startup',
@@ -538,6 +627,7 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/startup`),
                 category: 'server' as const,
                 group: 'configuration',
+                permission: 'startup.read',
             },
             {
                 id: 'server-settings',
@@ -548,16 +638,13 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/settings`),
                 category: 'server' as const,
                 group: 'configuration',
+                permission: 'settings.rename',
             },
         ];
 
-        // Add plugin server items and ensure they are grouped correctly so they render in the sidebar
+        // Add plugin server items (with subuser permission filtering)
         if (pluginRoutes.value?.server) {
-            const pluginItems = convertPluginItems(
-                pluginRoutes.value.server,
-                'server',
-                uuidShort as string,
-            ) as typeof items;
+            const pluginItems = convertPluginItems(pluginRoutes.value.server, 'server', uuidShort as string);
             pluginItems.forEach((item) => {
                 item.group = 'plugins';
             });
@@ -617,6 +704,11 @@ export function useNavigation() {
         adminItems.value.filter((item) => !item.permission || sessionStore.hasPermission(item.permission)),
     );
 
+    // Filter server items based on subuser permissions
+    const filteredServerItems = computed(() =>
+        serverItems.value.filter((item) => !item.permission || hasServerPermission(item.permission)),
+    );
+
     // Group admin items by their group field
     const groupedAdminItems = computed((): NavigationGroup[] => {
         const groups: Record<string, NavigationItem[]> = {};
@@ -657,7 +749,7 @@ export function useNavigation() {
     const groupedServerItems = computed((): NavigationGroup[] => {
         const groups: Record<string, NavigationItem[]> = {};
 
-        serverItems.value.forEach((item) => {
+        filteredServerItems.value.forEach((item) => {
             const groupKey = item.group || 'other';
             if (!groups[groupKey]) {
                 groups[groupKey] = [];
@@ -702,7 +794,7 @@ export function useNavigation() {
 
         // Add server items if on server pages
         if (currentPath.value.startsWith('/server')) {
-            items.push(...serverItems.value);
+            items.push(...filteredServerItems.value);
         }
 
         return items;
@@ -713,7 +805,7 @@ export function useNavigation() {
         navMain: mainItems.value,
         navAdmin: filteredAdminItems.value,
         navAdminGrouped: groupedAdminItems.value,
-        navServer: serverItems.value,
+        navServer: filteredServerItems.value,
         navServerGrouped: groupedServerItems.value,
         navDebug: filteredDebugItems.value,
     }));
@@ -725,11 +817,12 @@ export function useNavigation() {
         currentPath,
         mainItems,
         adminItems: filteredAdminItems,
-        serverItems,
+        serverItems: filteredServerItems,
         allNavigationItems,
         sidebarNavigation,
         dockNavigation,
         handlePluginClick,
         fetchPluginRoutes,
+        hasServerPermission,
     };
 }

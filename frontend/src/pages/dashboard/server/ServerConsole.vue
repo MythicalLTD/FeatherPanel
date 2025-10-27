@@ -453,6 +453,10 @@
                 :server="server"
                 :loading="loading"
                 :wings-state="wingsState"
+                :can-start="hasServerPermission('control.start')"
+                :can-stop="hasServerPermission('control.stop')"
+                :can-restart="hasServerPermission('control.restart')"
+                :can-kill="hasServerPermission('control.console')"
                 @start="startServer"
                 @restart="restartServer"
                 @stop="stopServer"
@@ -574,7 +578,7 @@
                     ></div>
 
                     <!-- Command Input Bar -->
-                    <div class="border-t p-3 bg-muted/30">
+                    <div v-if="hasServerPermission('control.console')" class="border-t p-3 bg-muted/30">
                         <div class="flex gap-2">
                             <Input
                                 ref="commandInputRef"
@@ -841,6 +845,7 @@ import { useToast } from 'vue-toastification';
 import { useI18n } from 'vue-i18n';
 import type { Server, NetworkStats } from '@/types/server';
 import { useWingsWebSocket, type WingsStats } from '@/composables/useWingsWebSocket';
+import { useServerPermissions } from '@/composables/useServerPermissions';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -871,6 +876,12 @@ const sessionStore = useSessionStore();
 const settingsStore = useSettingsStore();
 const { t } = useI18n();
 const toast = useToast();
+
+// Check server permissions
+const { hasPermission: hasServerPermission, isLoading: permissionsLoading } = useServerPermissions();
+
+// Permission check
+const hasConsolePermission = computed(() => hasServerPermission('websocket.connect'));
 
 // Terminal container ref
 const terminalContainer = ref<HTMLElement | null>(null);
@@ -1548,6 +1559,18 @@ async function saveAndApplyCustomization(): Promise<void> {
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect(router);
     await settingsStore.fetchSettings();
+
+    // Wait for permission check to complete
+    while (permissionsLoading.value) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // Check if user has permission to access console
+    if (!hasConsolePermission.value) {
+        toast.error(t('serverConsole.noConsolePermission'));
+        await router.push(`/dashboard`);
+        return;
+    }
 
     // Load customization settings
     await loadCustomization();

@@ -33,6 +33,7 @@ namespace App\Controllers\User\Server;
 use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Chat\ServerDatabase;
 use App\Helpers\ApiResponse;
@@ -131,6 +132,8 @@ use App\Plugins\Events\Events\ServerDatabaseEvent;
 )]
 class ServerDatabaseController
 {
+    use CheckSubuserPermissionsTrait;
+
     /**
      * Get all databases for a server.
      *
@@ -198,6 +201,12 @@ class ServerDatabaseController
         $server = Server::getServerByUuid($serverUuid);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Check database.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::DATABASE_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Get page and per_page from query parameters
@@ -286,6 +295,12 @@ class ServerDatabaseController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
+        // Check database.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::DATABASE_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Get database info with details
         $database = ServerDatabase::getServerDatabaseWithDetails($databaseId);
         if (!$database) {
@@ -297,6 +312,17 @@ class ServerDatabaseController
             return ApiResponse::error('Database not found', 'DATABASE_NOT_FOUND', 404);
         }
 
+        // Check if user has permission to view password
+        $user = $request->get('user');
+        $userId = $user['id'] ?? 0;
+        $serverId = $server['id'] ?? 0;
+
+        $canViewPassword = \App\Helpers\SubuserPermissionChecker::hasPermission($userId, $serverId, SubuserPermissions::DATABASE_VIEW_PASSWORD);
+        if (!$canViewPassword) {
+            // User cannot view password, redact it
+            $database['password'] = '[REDACTED]';
+        }
+
         // Get node information
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
@@ -304,7 +330,6 @@ class ServerDatabaseController
         }
 
         // Log activity
-        $user = $request->get('user');
         $this->logActivity($server, $node, 'database_details_retrieved', $database, $user);
 
         return ApiResponse::success($database);
@@ -355,6 +380,12 @@ class ServerDatabaseController
         $server = Server::getServerByUuid($serverUuid);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Check database.create permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::DATABASE_CREATE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Check database limit
@@ -530,6 +561,12 @@ class ServerDatabaseController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
+        // Check database.update permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::DATABASE_UPDATE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Get database info
         $database = ServerDatabase::getServerDatabaseById($databaseId);
         if (!$database) {
@@ -652,6 +689,12 @@ class ServerDatabaseController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
+        // Check database.delete permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::DATABASE_DELETE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Get database info with details
         $database = ServerDatabase::getServerDatabaseWithDetails($databaseId);
         if (!$database) {
@@ -763,6 +806,12 @@ class ServerDatabaseController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
+        // Check database.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::DATABASE_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Get all available database hosts
         $databaseHosts = DatabaseInstance::getAllDatabasesWithNode();
 
@@ -817,6 +866,12 @@ class ServerDatabaseController
         $server = Server::getServerByUuid($serverUuid);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Check database.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::DATABASE_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Get database host info

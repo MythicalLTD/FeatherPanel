@@ -34,6 +34,7 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Backup;
 use App\Chat\Server;
+use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
@@ -108,6 +109,8 @@ use App\Plugins\Events\Events\ServerBackupEvent;
 )]
 class ServerBackupController
 {
+    use CheckSubuserPermissionsTrait;
+
     /**
      * Get all backups for a server.
      *
@@ -168,6 +171,12 @@ class ServerBackupController
         $server = Server::getServerByUuid($serverUuid);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Check backup.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::BACKUP_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Get page and per_page from query parameters
@@ -248,6 +257,12 @@ class ServerBackupController
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
+        // Check backup.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::BACKUP_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Get backup info
         $backup = Backup::getBackupByUuid($backupUuid);
         if (!$backup) {
@@ -307,6 +322,12 @@ class ServerBackupController
         $server = Server::getServerByUuid($serverUuid);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Check backup.create permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::BACKUP_CREATE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Check backup limit
@@ -499,6 +520,12 @@ class ServerBackupController
             return ApiResponse::error('Backup not found', 'BACKUP_NOT_FOUND', 404);
         }
 
+        // Check backup.restore permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::BACKUP_RESTORE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Check if backup is locked
         if ($backup['is_locked'] == 1) {
             return ApiResponse::error('Backup is currently locked. Please unlock it first.', 'BACKUP_LOCKED', 423);
@@ -648,6 +675,12 @@ class ServerBackupController
         // Verify backup belongs to this server
         if ($backup['server_id'] != $server['id']) {
             return ApiResponse::error('Backup not found', 'BACKUP_NOT_FOUND', 404);
+        }
+
+        // Check backup.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::BACKUP_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Update backup to locked status
@@ -855,6 +888,12 @@ class ServerBackupController
             return ApiResponse::error('Backup is currently locked. Please unlock it first.', 'BACKUP_LOCKED', 423);
         }
 
+        // Check backup.delete permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::BACKUP_DELETE);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
         // Get node information
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
@@ -987,6 +1026,12 @@ class ServerBackupController
         // Verify backup belongs to this server
         if ($backup['server_id'] != $server['id']) {
             return ApiResponse::error('Backup not found', 'BACKUP_NOT_FOUND', 404);
+        }
+
+        // Check backup.download permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::BACKUP_DOWNLOAD);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
         }
 
         // Get node info

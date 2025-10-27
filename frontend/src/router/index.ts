@@ -99,6 +99,10 @@ router.beforeEach(async (to, from, next) => {
         }
     }
 
+    // Scroll to top of page
+    window.scrollTo(0, 0);
+
+    // Continue with navigation
     next();
 });
 

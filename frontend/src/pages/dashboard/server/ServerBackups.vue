@@ -25,6 +25,7 @@
                             <span>{{ t('serverBackups.refresh') }}</span>
                         </Button>
                         <Button
+                            v-if="canCreateBackups"
                             size="sm"
                             :disabled="loading || (serverInfo && backups.length >= serverInfo.backup_limit)"
                             class="flex items-center gap-2"
@@ -91,7 +92,7 @@
                         </p>
                     </div>
                     <Button
-                        v-if="serverInfo && serverInfo.backup_limit > 0"
+                        v-if="canCreateBackups && serverInfo && serverInfo.backup_limit > 0"
                         size="lg"
                         class="gap-2 shadow-lg"
                         data-umami-event="Create backup"
@@ -141,7 +142,7 @@
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <div class="flex flex-wrap items-center gap-2 mb-1">
-                                            <h3 class="font-semibold text-sm truncate max-w-[12rem] sm:max-w-none">
+                                            <h3 class="font-semibold text-sm truncate max-w-48 sm:max-w-none">
                                                 {{ backup.name }}
                                             </h3>
                                             <Badge
@@ -173,6 +174,7 @@
                                 </div>
                                 <!-- Lock/Unlock Button (float right on desktop, below on mobile) -->
                                 <div
+                                    v-if="canViewBackups"
                                     class="flex flex-row sm:flex-col items-center gap-1 mt-2 sm:mt-0 self-end sm:self-start"
                                 >
                                     <Button
@@ -199,10 +201,13 @@
                             </div>
 
                             <!-- Backup Actions: Responsive grid for mobile friendliness -->
-                            <div class="flex flex-wrap gap-2 justify-start sm:justify-between">
+                            <div
+                                v-if="canRestoreBackups || canDownloadBackups || canDeleteBackups"
+                                class="flex flex-wrap gap-2 justify-start sm:justify-between"
+                            >
                                 <div class="flex flex-wrap gap-2 flex-1">
                                     <Button
-                                        v-if="backup.is_successful && !backup.is_locked"
+                                        v-if="canRestoreBackups && backup.is_successful && !backup.is_locked"
                                         variant="outline"
                                         size="sm"
                                         :disabled="loading"
@@ -215,7 +220,7 @@
                                         <span class="hidden xs:inline">{{ t('serverBackups.restore') }}</span>
                                     </Button>
                                     <Button
-                                        v-if="backup.is_successful"
+                                        v-if="canDownloadBackups && backup.is_successful"
                                         variant="outline"
                                         size="sm"
                                         :disabled="loading"
@@ -228,7 +233,7 @@
                                         <span class="hidden xs:inline">{{ t('serverBackups.download') }}</span>
                                     </Button>
                                     <Button
-                                        v-if="!backup.is_locked"
+                                        v-if="canDeleteBackups && !backup.is_locked"
                                         variant="destructive"
                                         size="sm"
                                         :disabled="loading"
@@ -492,7 +497,7 @@
 // SOFTWARE.
 
 import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
@@ -510,6 +515,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { useServerPermissions } from '@/composables/useServerPermissions';
 
 import {
     Plus,
@@ -547,8 +553,19 @@ type BackupItem = {
 };
 
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 const toast = useToast();
+
+// Check server permissions
+const { hasPermission: hasServerPermission, isLoading: permissionsLoading } = useServerPermissions();
+
+// Permission checks
+const canViewBackups = computed(() => hasServerPermission('backup.read'));
+const canCreateBackups = computed(() => hasServerPermission('backup.create'));
+const canRestoreBackups = computed(() => hasServerPermission('backup.restore'));
+const canDownloadBackups = computed(() => hasServerPermission('backup.download'));
+const canDeleteBackups = computed(() => hasServerPermission('backup.delete'));
 
 const backups = ref<BackupItem[]>([]);
 const loading = ref(false);
@@ -605,6 +622,18 @@ const breadcrumbs = computed(() => [
 ]);
 
 onMounted(async () => {
+    // Wait for permission check to complete
+    while (permissionsLoading.value) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // Check if user has permission to view backups
+    if (!canViewBackups.value) {
+        toast.error(t('serverBackups.noBackupPermission'));
+        await router.push(`/server/${route.params.uuidShort}`);
+        return;
+    }
+
     await fetchBackups();
 });
 
