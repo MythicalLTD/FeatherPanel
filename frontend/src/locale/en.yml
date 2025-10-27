@@ -1179,6 +1179,7 @@ serverSubusers:
     confirmDeleteTitle: 'Delete Subuser'
     confirmDeleteDescription: 'Are you sure you want to remove {email} from this server? This action cannot be undone.'
     confirmDelete: 'Delete'
+    noSubuserManagementPermission: 'Only the server owner can manage subusers.'
     failedToFetch: 'Failed to fetch subusers'
     createFailed: 'Failed to create subuser'
     createSuccess: 'Subuser created successfully'

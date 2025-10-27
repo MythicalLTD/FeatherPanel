@@ -444,8 +444,9 @@
 // SOFTWARE.
 
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { useServerPermissions } from '@/composables/useServerPermissions';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -477,8 +478,12 @@ import axios from 'axios';
 import { useToast } from 'vue-toastification';
 
 const route = useRoute();
+const router = useRouter();
 const toast = useToast();
 const { t } = useI18n();
+
+// Check server permissions
+const { isOwner: isServerOwner, isLoading: permissionsLoadingCheck } = useServerPermissions();
 
 // State
 const loading = ref(false);
@@ -801,7 +806,19 @@ async function savePermissions() {
 }
 
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
+    // Wait for permission check to complete
+    while (permissionsLoadingCheck.value) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // Check if user is the server owner
+    if (!isServerOwner.value) {
+        toast.error(t('serverSubusers.noSubuserManagementPermission'));
+        await router.push(`/server/${route.params.uuidShort}`);
+        return;
+    }
+
     fetchServerBasic();
     fetchSubusers();
 });
