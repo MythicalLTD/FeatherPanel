@@ -51,8 +51,8 @@ define('APP_DEBUG', false);
 define('SYSTEM_OS_NAME', gethostname() . '/' . PHP_OS_FAMILY);
 define('SYSTEM_KERNEL_NAME', php_uname('s'));
 define('TELEMETRY', true);
-define('APP_VERSION', 'v0.0.9');
-define('APP_UPSTREAM', 'alpha');
+define('APP_VERSION', 'v1.0.0');
+define('APP_UPSTREAM', 'beta');
 define('REQUEST_ID', uniqid());
 
 if (APP_DEBUG) {

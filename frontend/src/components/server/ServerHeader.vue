@@ -19,8 +19,8 @@
                 @click="$emit('start')"
             >
                 <Power class="h-4 w-4 mr-2" />
-                <span class="hidden sm:inline">Start</span>
-                <span class="sm:hidden">Start</span>
+                <span class="hidden sm:inline">{{ t('serverConsole.start') }}</span>
+                <span class="sm:hidden">{{ t('serverConsole.start') }}</span>
             </Button>
             <Button
                 v-if="props.canRestart"
@@ -32,8 +32,8 @@
                 @click="$emit('restart')"
             >
                 <RefreshCw class="h-4 w-4 mr-2" />
-                <span class="hidden sm:inline">Restart</span>
-                <span class="sm:hidden">Restart</span>
+                <span class="hidden sm:inline">{{ t('serverConsole.restart') }}</span>
+                <span class="sm:hidden">{{ t('serverConsole.restart') }}</span>
             </Button>
             <Button
                 v-if="props.canStop"
@@ -45,8 +45,8 @@
                 @click="$emit('stop')"
             >
                 <Square class="h-4 w-4 mr-2" />
-                <span class="hidden sm:inline">Stop</span>
-                <span class="sm:hidden">Stop</span>
+                <span class="hidden sm:inline">{{ t('serverConsole.stop') }}</span>
+                <span class="sm:hidden">{{ t('serverConsole.stop') }}</span>
             </Button>
             <Button
                 v-if="props.canKill"
@@ -58,8 +58,8 @@
                 @click="$emit('kill')"
             >
                 <Zap class="h-4 w-4 mr-2" />
-                <span class="hidden sm:inline">Kill</span>
-                <span class="sm:hidden">Kill</span>
+                <span class="hidden sm:inline">{{ t('serverConsole.kill') }}</span>
+                <span class="sm:hidden">{{ t('serverConsole.kill') }}</span>
             </Button>
         </div>
     </div>
@@ -106,7 +106,7 @@ const props = withDefaults(
     defineProps<{
         server: Server | null;
         loading: boolean;
-        wingsState?: string;
+        wingsState: string;
         canStart?: boolean;
         canStop?: boolean;
         canRestart?: boolean;
@@ -134,22 +134,22 @@ const currentState = computed(() => {
 
 // Button logic based on server state
 const isStartDisabled = computed(() => {
-    const state = currentState.value.toLowerCase();
+    const state = currentState.value?.toLowerCase() || 'unknown';
     return state === 'running' || state === 'starting' || state === 'stopping';
 });
 
 const isRestartDisabled = computed(() => {
-    const state = currentState.value.toLowerCase();
+    const state = currentState.value?.toLowerCase() || 'unknown';
     return state !== 'running';
 });
 
 const isStopDisabled = computed(() => {
-    const state = currentState.value.toLowerCase();
+    const state = currentState.value?.toLowerCase() || 'unknown';
     return state !== 'running';
 });
 
 const isKillDisabled = computed(() => {
-    const state = currentState.value.toLowerCase();
+    const state = currentState.value?.toLowerCase() || 'unknown';
     return state === 'stopped' || state === 'offline';
 });
 </script>
