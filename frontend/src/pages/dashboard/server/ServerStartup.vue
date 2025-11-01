@@ -65,7 +65,7 @@
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent class="space-y-4">
                         <Textarea
                             v-model="form.startup"
                             rows="5"
@@ -73,6 +73,31 @@
                             class="font-mono text-sm resize-none"
                             placeholder="Enter startup command..."
                         />
+                        <div
+                            v-if="defaultStartupCommand && isStartupModified"
+                            class="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-muted"
+                        >
+                            <Info class="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                            <div class="flex-1 min-w-0 space-y-2">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-sm font-medium text-foreground">Default startup command:</span>
+                                    <Button
+                                        v-if="canUpdateStartup"
+                                        variant="outline"
+                                        size="sm"
+                                        class="h-7 text-xs"
+                                        @click="restoreDefaultStartup"
+                                    >
+                                        <RefreshCw class="h-3 w-3 mr-1" />
+                                        Restore Default
+                                    </Button>
+                                </div>
+                                <code
+                                    class="block text-xs font-mono text-muted-foreground bg-background p-2 rounded break-all"
+                                    >{{ defaultStartupCommand }}</code
+                                >
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -304,12 +329,13 @@ interface ServerResponse {
     startup?: string;
     image?: string;
     variables?: Variable[];
-    spell?: { docker_images?: string | Record<string, string> } | null;
+    spell?: { docker_images?: string | Record<string, string>; startup?: string } | null;
 }
 
 const server = ref<ServerResponse | null>(null);
 const variables = ref<Variable[]>([]);
 const availableDockerImages = ref<string[]>([]);
+const defaultStartupCommand = ref<string>('');
 
 const form = ref({
     startup: '',
@@ -340,6 +366,11 @@ const hasChanges = computed(() => {
     return startupChanged || imageChanged || variableChanged;
 });
 
+const isStartupModified = computed(() => {
+    if (!defaultStartupCommand.value) return false;
+    return form.value.startup !== defaultStartupCommand.value;
+});
+
 const hasErrors = computed(() => Object.values(variableErrors.value).some((m) => !!m));
 
 async function fetchServer() {
@@ -351,6 +382,8 @@ async function fetchServer() {
         server.value = data.data as ServerResponse;
         form.value.startup = server.value?.startup || '';
         form.value.image = server.value?.image || '';
+        // Store default startup command from spell
+        defaultStartupCommand.value = server.value?.spell?.startup || '';
         variables.value = server.value?.variables || [];
         variableValues.value = {};
         variables.value.forEach((v) => {
@@ -381,6 +414,13 @@ async function fetchServer() {
         console.error(e);
     } finally {
         loading.value = false;
+    }
+}
+
+function restoreDefaultStartup() {
+    if (defaultStartupCommand.value) {
+        form.value.startup = defaultStartupCommand.value;
+        toast.info(t('serverStartup.defaultRestored'));
     }
 }
 

@@ -668,6 +668,7 @@ serverStartup:
     failedToSave: 'Failed to save'
     fieldRequired: 'This field is required'
     fieldMustBeNumeric: 'This field must be numeric'
+    defaultRestored: 'Default startup command restored'
 
 # Server Logs
 serverLogs:

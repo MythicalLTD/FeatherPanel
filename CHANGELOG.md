@@ -10,6 +10,11 @@
 
 - When editing file, return to original folder (of the edited file)
 
+### Added
+
+- Added the ability to create servers without requiring a description.
+- Users are now reminded of the default startup command after making changes, ensuring an easy way to restore the original if needed.
+
 ## v1.0.0 BETA
 
 ### Added
