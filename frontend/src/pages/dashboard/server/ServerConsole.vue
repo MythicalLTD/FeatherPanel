@@ -2,6 +2,21 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 pb-8">
+            <!-- Customize Layout Button -->
+            <div class="flex justify-end">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="shadow-lg backdrop-blur-sm bg-background/95 flex items-center gap-2"
+                    @click="showCustomization = !showCustomization"
+                >
+                    <Settings :class="['h-3.5 w-3.5 sm:h-4 sm:w-4', showCustomization && 'animate-spin']" />
+                    <span class="text-xs sm:text-sm">{{
+                        showCustomization ? t('serverConsole.hideLayout') : t('serverConsole.customizeLayout')
+                    }}</span>
+                </Button>
+            </div>
+
             <!-- Customization Panel -->
             <Card v-if="showCustomization" class="border-2 p-4 sm:p-6">
                 <CardHeader>
@@ -462,19 +477,6 @@
                 @stop="stopServer"
                 @kill="killServer"
             />
-            <div class="fixed top-20 right-4 sm:top-6 sm:right-6 z-40">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    class="shadow-lg backdrop-blur-sm bg-background/95 flex items-center gap-2"
-                    @click="showCustomization = !showCustomization"
-                >
-                    <Settings :class="['h-3.5 w-3.5 sm:h-4 sm:w-4', showCustomization && 'animate-spin']" />
-                    <span class="text-xs sm:text-sm">{{
-                        showCustomization ? t('serverConsole.hideLayout') : t('serverConsole.customizeLayout')
-                    }}</span>
-                </Button>
-            </div>
 
             <!-- Wings Connection Status (Only show when NOT healthy) -->
             <Card

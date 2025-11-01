@@ -9,6 +9,7 @@
 ### Improved
 
 - When editing file, return to original folder (of the edited file)
+- Changed the Console layout button from using `position: fixed` to being placed at the top of the page for a more consistent and integrated interface.
 
 ### Added
 
