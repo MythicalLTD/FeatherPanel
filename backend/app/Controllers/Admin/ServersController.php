@@ -109,11 +109,11 @@ use Symfony\Component\HttpFoundation\Response;
 #[OA\Schema(
     schema: 'ServerCreate',
     type: 'object',
-    required: ['node_id', 'name', 'description', 'owner_id', 'memory', 'swap', 'disk', 'io', 'cpu', 'allocation_id', 'realms_id', 'spell_id', 'startup', 'image'],
+    required: ['node_id', 'name', 'owner_id', 'memory', 'swap', 'disk', 'io', 'cpu', 'allocation_id', 'realms_id', 'spell_id', 'startup', 'image'],
     properties: [
         new OA\Property(property: 'node_id', type: 'integer', description: 'Node ID', minimum: 1),
         new OA\Property(property: 'name', type: 'string', description: 'Server name', minLength: 1, maxLength: 191),
-        new OA\Property(property: 'description', type: 'string', description: 'Server description', minLength: 1, maxLength: 65535),
+        new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Server description (optional)', maxLength: 65535),
         new OA\Property(property: 'owner_id', type: 'integer', description: 'Owner user ID', minimum: 1),
         new OA\Property(property: 'memory', type: 'integer', description: 'Memory limit in MB', minimum: 128),
         new OA\Property(property: 'swap', type: 'integer', description: 'Swap limit in MB', minimum: 0),
@@ -520,7 +520,6 @@ class ServersController
         $requiredFields = [
             'node_id',
             'name',
-            'description',
             'owner_id',
             'memory',
             'swap',
@@ -562,18 +561,22 @@ class ServersController
             }
         }
 
-        // Validate string fields
-        $stringFields = ['name', 'description', 'startup', 'image'];
-        foreach ($stringFields as $field) {
+        // Validate string fields (description is optional)
+        $requiredStringFields = ['name', 'startup', 'image'];
+        foreach ($requiredStringFields as $field) {
             if (!is_string($data[$field]) || trim($data[$field]) === '') {
                 return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a non-empty string', 'INVALID_DATA_TYPE', 400);
             }
+        }
+        
+        // Description is optional, but if provided must be a string
+        if (isset($data['description']) && !is_string($data['description'])) {
+            return ApiResponse::error('Description must be a string', 'INVALID_DATA_TYPE', 400);
         }
 
         // Validate field lengths
         $lengthRules = [
             'name' => [1, 191],
-            'description' => [1, 65535],
             'startup' => [1, 65535],
             'image' => [1, 191],
         ];
@@ -585,6 +588,14 @@ class ServersController
             }
             if ($len > $max) {
                 return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . " must be less than $max characters long", 'INVALID_DATA_LENGTH', 400);
+            }
+        }
+        
+        // Description is optional, but if provided validate length
+        if (isset($data['description']) && $data['description'] !== null && $data['description'] !== '') {
+            $descLen = strlen($data['description']);
+            if ($descLen > 65535) {
+                return ApiResponse::error('Description must be less than 65535 characters long', 'INVALID_DATA_LENGTH', 400);
             }
         }
 
@@ -634,6 +645,7 @@ class ServersController
         $data['uuidShort'] = substr($data['uuid'], 0, 8);
 
         // Set default values for optional fields
+        $data['description'] = isset($data['description']) && $data['description'] !== '' ? $data['description'] : null;
         $data['status'] = $data['status'] ?? 'installing';
         $data['skip_scripts'] = isset($data['skip_scripts']) ? (int) $data['skip_scripts'] : 0;
         $data['oom_disabled'] = isset($data['oom_disabled']) ? (int) $data['oom_disabled'] : 0;
@@ -921,6 +933,23 @@ class ServersController
         $stringFields = ['name', 'description', 'startup', 'image', 'external_id', 'status'];
         foreach ($data as $field => $value) {
             if (in_array($field, $stringFields) && isset($data[$field])) {
+                // Description can be null or empty string (both are allowed)
+                if ($field === 'description') {
+                    if ($value === null) {
+                        // Null is allowed, skip further validation
+                        continue;
+                    }
+                    if (!is_string($value)) {
+                        return ApiResponse::error('Description must be a string or null', 'INVALID_DATA_TYPE', 400);
+                    }
+                    // Convert empty string to null
+                    if (trim($value) === '') {
+                        $data[$field] = null;
+                    }
+                    continue;
+                }
+                
+                // For other string fields, must be a string
                 if (!is_string($value)) {
                     return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a string', 'INVALID_DATA_TYPE', 400);
                 }
@@ -959,6 +988,10 @@ class ServersController
 
         foreach ($data as $field => $value) {
             if (isset($lengthRules[$field])) {
+                // Skip validation for null values (description can be null)
+                if ($value === null) {
+                    continue;
+                }
                 $len = strlen($value);
                 [$min, $max] = $lengthRules[$field];
                 if ($len < $min) {
@@ -1103,9 +1136,15 @@ class ServersController
                 }
             }
         }
+        
+        // Log the data being sent for debugging
+        App::getInstance(true)->getLogger()->debug('Updating server ID ' . $id . ' with data: ' . json_encode($serverUpdateData));
+        
         $updated = Server::updateServerById($id, $serverUpdateData);
         if (!$updated) {
-            return ApiResponse::error('Failed to update server', 'FAILED_TO_UPDATE_SERVER', 500);
+            // Check backend logs for detailed error message
+            App::getInstance(true)->getLogger()->error('Server update failed for ID: ' . $id);
+            return ApiResponse::error('Failed to update server. Check server logs for details.', 'FAILED_TO_UPDATE_SERVER', 500);
         }
 
         // Handle allocation changes if allocation_id is being updated

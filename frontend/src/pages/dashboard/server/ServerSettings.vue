@@ -118,13 +118,13 @@
                                     class="flex items-center gap-2 p-3 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors"
                                 >
                                     <code class="text-sm font-mono flex-1 truncate">{{
-                                        server?.sftp?.host || 'N/A'
+                                        server?.sftp?.host ? `sftp://${server.sftp.host}` : 'N/A'
                                     }}</code>
                                     <Button
                                         variant="ghost"
                                         size="sm"
                                         class="h-7 w-7 p-0 hover:bg-background"
-                                        @click="copyToClipboard(server?.sftp?.host || '')"
+                                        @click="copyToClipboard(server?.sftp?.host ? `sftp://${server.sftp.host}` : '')"
                                     >
                                         <Copy class="h-3.5 w-3.5" />
                                     </Button>

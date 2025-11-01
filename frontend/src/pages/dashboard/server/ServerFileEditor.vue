@@ -279,7 +279,11 @@ async function fetchServer(): Promise<void> {
 const loadFileContent = async () => {
     if (!serverUuid || !fileName.value) {
         toast(t('fileEditor.loadError'), { type: TYPE.ERROR });
-        router.push(`/server/${serverUuid}/files`);
+        router.push({
+            name: 'ServerFiles',
+            params: { uuidShort: serverUuid },
+            query: { path: (filePath.value || '/').replace(/\/+$/, '') || '/' },
+        });
         return;
     }
 
@@ -291,7 +295,11 @@ const loadFileContent = async () => {
             }),
             { type: TYPE.ERROR },
         );
-        router.push(`/server/${serverUuid}/files`);
+        router.push({
+            name: 'ServerFiles',
+            params: { uuidShort: serverUuid },
+            query: { path: (filePath.value || '/').replace(/\/+$/, '') || '/' },
+        });
         return;
     }
 
@@ -328,14 +336,22 @@ const loadFileContent = async () => {
                 }),
                 { type: TYPE.ERROR },
             );
-            router.push(`/server/${serverUuid}/files`);
+            router.push({
+                name: 'ServerFiles',
+                params: { uuidShort: serverUuid },
+                query: { path: (filePath.value || '/').replace(/\/+$/, '') || '/' },
+            });
             return;
         }
     } catch (error) {
         console.error('Error loading file:', error);
         const err = error as { response?: { data?: { message?: string } } };
         toast(err.response?.data?.message || t('fileEditor.loadError'), { type: TYPE.ERROR });
-        router.push(`/server/${serverUuid}/files`);
+        router.push({
+            name: 'ServerFiles',
+            params: { uuidShort: serverUuid },
+            query: { path: (filePath.value || '/').replace(/\/+$/, '') || '/' },
+        });
     } finally {
         loading.value = false;
     }
@@ -371,7 +387,11 @@ const handleSave = async (content: string) => {
 
 // Close editor
 const handleClose = () => {
-    router.push(`/server/${serverUuid}/files`);
+    router.push({
+        name: 'ServerFiles',
+        params: { uuidShort: serverUuid },
+        query: { path: (filePath.value || '/').replace(/\/+$/, '') || '/' },
+    });
 };
 
 // Lifecycle (following ServerFiles pattern with error handling)
@@ -396,7 +416,11 @@ onMounted(async () => {
         // Check if user has permission to read files
         if (!canReadFiles.value) {
             toast(t('serverFiles.noFileReadPermission'), { type: TYPE.ERROR });
-            router.push(`/server/${serverUuid}/files`);
+            router.push({
+                name: 'ServerFiles',
+                params: { uuidShort: serverUuid },
+                query: { path: (filePath.value || '/').replace(/\/+$/, '') || '/' },
+            });
             return;
         }
 

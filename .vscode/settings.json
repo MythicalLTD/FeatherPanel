@@ -274,5 +274,8 @@
   "editor.formatOnSaveMode": "file",
   "[shellscript]": {
     "editor.defaultFormatter": "mads-hartmann.bash-ide-vscode"
+  },
+  "[sql]": {
+    "editor.defaultFormatter": "inferrinizzard.prettier-sql-vscode"
   } // required to format on save
 }

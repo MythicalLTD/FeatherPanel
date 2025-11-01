@@ -51,13 +51,12 @@ class Server
      */
     public static function createServer(array $data): int|false
     {
-        // Required fields for server creation
+        // Required fields for server creation (description is optional)
         $required = [
             'uuid',
             'uuidShort',
             'node_id',
             'name',
-            'description',
             'owner_id',
             'memory',
             'swap',
@@ -122,6 +121,21 @@ class Server
                     return false;
                 }
             }
+        }
+
+        // Handle optional description field - allow null or empty string
+        if (isset($data['description'])) {
+            if ($data['description'] === null || $data['description'] === '') {
+                $data['description'] = null;
+            } elseif (!is_string($data['description'])) {
+                $sanitizedData = self::sanitizeDataForLogging($data);
+                App::getInstance(true)->getLogger()->error('Invalid description type for server: ' . ($data['name'] ?? '[unknown]') . ' with data: ' . json_encode($sanitizedData));
+
+                return false;
+            }
+        } else {
+            // If description is not provided, set it to null
+            $data['description'] = null;
         }
 
         // UUID validation (basic)
@@ -492,9 +506,17 @@ class Server
             $stmt = $pdo->prepare($sql);
             $data['id'] = $id;
 
-            return $stmt->execute($data);
+            $result = $stmt->execute($data);
+            if (!$result) {
+                $errorInfo = $stmt->errorInfo();
+                App::getInstance(true)->getLogger()->error('Failed to update server: ' . ($errorInfo[2] ?? 'Unknown error') . ' | SQL: ' . $sql . ' | Data: ' . json_encode($data));
+
+                return false;
+            }
+
+            return true;
         } catch (\PDOException $e) {
-            App::getInstance(true)->getLogger()->error('Failed to update server: ' . $e->getMessage());
+            App::getInstance(true)->getLogger()->error('Failed to update server: ' . $e->getMessage() . ' | Code: ' . $e->getCode());
 
             return false;
         }

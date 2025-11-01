@@ -148,7 +148,7 @@ export interface CreateForm {
 export interface EditForm {
     node_id: string;
     name: string;
-    description: string;
+    description: string; // Can be empty string, converted to null on submit
     status?: string;
     suspended?: number;
     owner_id: string;
@@ -172,7 +172,7 @@ export interface EditForm {
 export interface SubmitData {
     node_id: number;
     name: string;
-    description: string;
+    description: string | null;
     owner_id: number;
     memory: number;
     swap: number;

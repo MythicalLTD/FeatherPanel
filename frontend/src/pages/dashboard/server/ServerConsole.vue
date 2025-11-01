@@ -1119,6 +1119,20 @@ function initializeTerminal(): void {
     // Fit terminal to container
     fitAddon.fit();
 
+    // Enable Ctrl/Cmd + C to copy current selection to clipboard
+    terminal.attachCustomKeyEventHandler((e) => {
+        const isCopyKey = (e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C');
+        if (isCopyKey) {
+            const selection = terminal?.getSelection();
+            if (selection && selection.length > 0) {
+                copyToClipboard(selection, false);
+                // Prevent xterm from handling Ctrl+C as input/interrupt
+                return false;
+            }
+        }
+        return true;
+    });
+
     // Prevent scroll propagation from terminal to page
     if (terminalContainer.value) {
         terminalContainer.value.addEventListener(
@@ -1966,14 +1980,18 @@ function clearHistory(): void {
     }
 }
 
-function copyToClipboard(text: string): void {
+function copyToClipboard(text: string, showToast: boolean = true): void {
     navigator.clipboard
         .writeText(text)
         .then(() => {
-            toast.success(t('common.copied'));
+            if (showToast) {
+                toast.success(t('common.copied'));
+            }
         })
         .catch(() => {
-            toast.error(t('serverConsole.failedToCopy'));
+            if (showToast) {
+                toast.error(t('serverConsole.failedToCopy'));
+            }
         });
 }
 

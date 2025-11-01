@@ -43,15 +43,14 @@
                                     <Input
                                         id="description"
                                         v-model="form.description"
-                                        placeholder="A brief description of this server."
+                                        placeholder="A brief description of this server. (Optional)"
                                         :class="{ 'border-red-500': validationErrors.description }"
-                                        required
                                     />
                                     <p v-if="validationErrors.description" class="text-xs text-red-500 mt-1">
                                         {{ validationErrors.description }}
                                     </p>
                                     <p v-else class="text-xs text-muted-foreground mt-1">
-                                        A brief description of this server.
+                                        A brief description of this server. (Optional)
                                     </p>
                                 </div>
                             </div>
@@ -1576,7 +1575,7 @@ async function loadServerData() {
             form.value = {
                 node_id: String(server.node_id),
                 name: server.name,
-                description: server.description,
+                description: server.description || '',
 
                 owner_id: String(server.owner_id),
                 memory: server.memory,
@@ -1683,10 +1682,11 @@ function validateForm(): boolean {
         }
     }
 
-    if (!form.value.description?.trim()) {
-        validationErrors.value.description = 'Server description is required';
-    } else if (form.value.description.length < 1 || form.value.description.length > 65535) {
-        validationErrors.value.description = 'Server description must be between 1 and 65535 characters';
+    // Description is optional, but if provided, validate it
+    if (form.value.description && form.value.description.trim()) {
+        if (form.value.description.length > 65535) {
+            validationErrors.value.description = 'Server description must be less than 65535 characters';
+        }
     }
 
     if (!form.value.owner_id) {
@@ -1864,10 +1864,11 @@ async function submitUpdate() {
     submitting.value = true;
     try {
         const serverId = route.params.id;
+        const descriptionValue: string | null = form.value.description?.trim() || null;
         const submitData: SubmitData = {
             node_id: Number(form.value.node_id),
             name: form.value.name,
-            description: form.value.description,
+            description: descriptionValue,
             owner_id: Number(form.value.owner_id),
             memory: convertToMiB(form.value.memory),
             swap: convertToMiB(form.value.swap),

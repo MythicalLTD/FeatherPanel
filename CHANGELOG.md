@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.0.1 BETA
+
+### Fixed
+
+- Resolved an issue that prevented using Ctrl+C to interrupt processes in the server console—keyboard shortcuts now work as expected.
+
+### Improved
+
+- When editing file, return to original folder (of the edited file)
+
 ## v1.0.0 BETA
 
 ### Added

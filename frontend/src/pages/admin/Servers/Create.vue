@@ -43,15 +43,14 @@
                                     <Input
                                         id="description"
                                         v-model="form.description"
-                                        placeholder="A brief description of this server."
+                                        placeholder="A brief description of this server. (Optional)"
                                         :class="{ 'border-red-500': validationErrors.description }"
-                                        required
                                     />
                                     <p v-if="validationErrors.description" class="text-xs text-red-500 mt-1">
                                         {{ validationErrors.description }}
                                     </p>
                                     <p v-else class="text-xs text-muted-foreground mt-1">
-                                        A brief description of this server.
+                                        A brief description of this server. (Optional)
                                     </p>
                                 </div>
                             </div>
@@ -1196,15 +1195,16 @@ function validateForm(): boolean {
         }
     }
 
-    if (!form.value.description?.trim()) {
-        validationErrors.value.description = 'Server description is required';
-    } else if (form.value.description.length < 1 || form.value.description.length > 65535) {
-        validationErrors.value.description = 'Server description must be between 1 and 65535 characters';
-    } else {
-        // Description regex: Allow letters, numbers, spaces, punctuation, but no special characters that could cause issues
-        const descriptionRegex = /^[a-zA-Z0-9\s\-_.,!?(){}[\]"'`~@#$%^&*+=|\\/:;<>]+$/;
-        if (!descriptionRegex.test(form.value.description)) {
-            validationErrors.value.description = 'Description contains invalid characters';
+    // Description is optional, but if provided, validate it
+    if (form.value.description && form.value.description.trim()) {
+        if (form.value.description.length > 65535) {
+            validationErrors.value.description = 'Server description must be less than 65535 characters';
+        } else {
+            // Description regex: Allow letters, numbers, spaces, punctuation, but no special characters that could cause issues
+            const descriptionRegex = /^[a-zA-Z0-9\s\-_.,!?(){}[\]"'`~@#$%^&*+=|\\/:;<>]+$/;
+            if (!descriptionRegex.test(form.value.description)) {
+                validationErrors.value.description = 'Description contains invalid characters';
+            }
         }
     }
 
@@ -1410,7 +1410,7 @@ async function submitCreate() {
         const submitData = {
             node_id: Number(form.value.node_id),
             name: form.value.name,
-            description: form.value.description,
+            description: form.value.description?.trim() || null,
             owner_id: Number(form.value.owner_id),
             memory: convertToMiB(form.value.memory),
             swap: convertToMiB(form.value.swap),
