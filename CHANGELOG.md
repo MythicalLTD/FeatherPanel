@@ -24,6 +24,7 @@
 - Users can now change their server’s egg (installer template) if permitted by the panel administrator or server policy.
 - Added real-time upload progress indicators to the file manager for a clearer and more responsive file upload experience!
 - Users are now prevented from leaving the file manager while uploads are in progress, ensuring files upload completely without accidental interruption. A prompt will ask you to confirm if you try to leave during uploads.
+- Added support for uploading entire folders, making it easy to transfer complex file structures to your server in one step.
 
 ## v1.0.0 BETA
 

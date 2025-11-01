@@ -15,6 +15,8 @@ const VALID_EXTENSIONS = [
   ".yml",
   ".yaml",
   ".sql",
+  ".cs",
+  '.css'
 ];
 // Directories to exclude
 const EXCLUDED_DIRS = [

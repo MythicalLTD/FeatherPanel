@@ -964,22 +964,122 @@
 
         <!-- Upload File Dialog -->
         <Dialog v-model:open="showUploadDialog">
-            <DialogContent class="mx-4 sm:mx-0 sm:max-w-md">
+            <DialogContent class="mx-4 sm:mx-0 sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>{{ t('serverFiles.uploadFile') }}</DialogTitle>
                     <DialogDescription>{{ t('serverFiles.uploadFileDescription') }}</DialogDescription>
                 </DialogHeader>
                 <div class="space-y-4">
-                    <div class="space-y-2">
-                        <Label for="uploadFile">{{ t('serverFiles.selectFile') }}</Label>
-                        <Input
-                            id="uploadFile"
-                            ref="fileInput"
-                            type="file"
-                            :disabled="uploading"
-                            @change="handleFileSelect"
-                        />
+                    <div class="space-y-3">
+                        <div class="space-y-2">
+                            <Label>{{ t('serverFiles.uploadType') }}</Label>
+                            <div class="flex gap-2">
+                                <Button
+                                    type="button"
+                                    :variant="!isFolderUpload ? 'default' : 'outline'"
+                                    size="sm"
+                                    class="flex-1"
+                                    :disabled="uploading"
+                                    @click="handleUploadModeChange(false)"
+                                >
+                                    <FileText class="h-4 w-4 mr-2" />
+                                    {{ t('serverFiles.uploadFile') }}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    :variant="isFolderUpload ? 'default' : 'outline'"
+                                    size="sm"
+                                    class="flex-1"
+                                    :disabled="uploading"
+                                    @click="handleUploadModeChange(true)"
+                                >
+                                    <Folder class="h-4 w-4 mr-2" />
+                                    {{ t('serverFiles.uploadFolder') }}
+                                </Button>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="uploadFile">
+                                {{ isFolderUpload ? t('serverFiles.selectFolder') : t('serverFiles.selectFile') }}
+                            </Label>
+                            <Input
+                                id="uploadFile"
+                                ref="fileInput"
+                                type="file"
+                                :webkitdirectory="isFolderUpload"
+                                :multiple="isFolderUpload"
+                                :disabled="uploading"
+                                @change="handleFileSelect"
+                            />
+                        </div>
+                        <p v-if="isFolderUpload" class="text-xs text-muted-foreground">
+                            {{ t('serverFiles.folderUploadHint') }}
+                        </p>
+                        <p v-if="selectedFilesFromFolder.length > 0" class="text-xs text-blue-600 dark:text-blue-400">
+                            {{ t('serverFiles.filesSelectedFromFolder', { count: selectedFilesFromFolder.length }) }}
+                        </p>
                     </div>
+
+                    <!-- Upload Preview -->
+                    <div v-if="uploadPreview.filesCount > 0" class="rounded-lg border bg-muted/50 p-4 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <FileText class="h-5 w-5 text-primary" />
+                            <h4 class="font-semibold text-sm">{{ t('serverFiles.uploadPreview') }}</h4>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-muted-foreground">{{ t('serverFiles.filesToUpload') }}</span>
+                                <Badge variant="secondary" class="font-mono">
+                                    {{ uploadPreview.filesCount }}
+                                </Badge>
+                            </div>
+                            <div
+                                v-if="uploadPreview.directoriesCount > 0"
+                                class="flex items-center justify-between text-sm"
+                            >
+                                <span class="text-muted-foreground">{{ t('serverFiles.directoriesToCreate') }}</span>
+                                <Badge variant="secondary" class="font-mono">
+                                    {{ uploadPreview.directoriesCount }}
+                                </Badge>
+                            </div>
+                        </div>
+
+                        <!-- Structure Preview -->
+                        <div v-if="uploadPreview.structure.length > 0" class="space-y-2">
+                            <Label class="text-xs font-medium">{{ t('serverFiles.structurePreview') }}</Label>
+                            <div class="max-h-48 overflow-y-auto rounded-md border bg-background p-3 space-y-1">
+                                <div
+                                    v-for="(item, index) in uploadPreview.structure"
+                                    :key="index"
+                                    class="flex items-center gap-2 text-xs font-mono"
+                                    :class="
+                                        item.type === 'directory'
+                                            ? 'text-blue-600 dark:text-blue-400'
+                                            : 'text-muted-foreground'
+                                    "
+                                >
+                                    <component
+                                        :is="item.type === 'directory' ? Folder : FileText"
+                                        class="h-3 w-3 shrink-0"
+                                    />
+                                    <span class="truncate">{{ item.path }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Confirmation Message -->
+                        <div
+                            v-if="uploadPreview.directoriesCount > 0"
+                            class="rounded-md bg-green-500/10 border border-green-500/20 p-2"
+                        >
+                            <p class="text-xs text-green-600 dark:text-green-400 flex items-center gap-2">
+                                <CheckCircle2 class="h-3.5 w-3.5 shrink-0" />
+                                {{ t('serverFiles.subdirectoriesWillBePreserved') }}
+                            </p>
+                        </div>
+                    </div>
+
                     <div v-if="uploadProgress > 0" class="space-y-2">
                         <div class="flex justify-between text-sm">
                             <span>{{ t('serverFiles.uploading') }}</span>
@@ -1002,7 +1102,11 @@
                     >
                         {{ t('common.cancel') }}
                     </Button>
-                    <Button :disabled="!selectedFile || uploading" class="w-full sm:w-auto" @click="uploadFile">
+                    <Button
+                        :disabled="(!selectedFile && selectedFilesFromFolder.length === 0) || uploading"
+                        class="w-full sm:w-auto"
+                        @click="uploadFile"
+                    >
                         <Upload class="h-4 w-4 mr-2" />
                         {{ uploading ? t('serverFiles.uploading') : t('serverFiles.upload') }}
                     </Button>
@@ -1777,6 +1881,7 @@ import { useServerPermissions } from '@/composables/useServerPermissions';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { CheckCircle2 } from 'lucide-vue-next';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -1905,6 +2010,8 @@ const newIgnoredPattern = ref('');
 
 // Form data
 const selectedFile = ref<File | null>(null);
+const selectedFilesFromFolder = ref<File[]>([]);
+const isFolderUpload = ref(false);
 const uploadProgress = ref(0);
 const newFolderName = ref('');
 
@@ -2000,6 +2107,98 @@ const someFilesSelected = computed(() => {
 // Check if uploads are active
 const hasActiveUploads = computed(() => {
     return activeUploads.value.some((u) => u.status === 'uploading');
+});
+
+// Upload preview - analyze files and folders before upload
+interface StructureItem {
+    path: string;
+    type: 'file' | 'directory';
+}
+
+interface UploadPreview {
+    filesCount: number;
+    directoriesCount: number;
+    structure: StructureItem[];
+}
+
+const uploadPreview = computed<UploadPreview>(() => {
+    const preview: UploadPreview = {
+        filesCount: 0,
+        directoriesCount: 0,
+        structure: [],
+    };
+
+    // Handle single file upload
+    if (selectedFile.value && !isFolderUpload.value) {
+        preview.filesCount = 1;
+        preview.structure = [
+            {
+                path: selectedFile.value.name,
+                type: 'file',
+            },
+        ];
+        return preview;
+    }
+
+    // Handle folder upload
+    if (selectedFilesFromFolder.value.length > 0 && isFolderUpload.value) {
+        preview.filesCount = selectedFilesFromFolder.value.length;
+
+        // Detect root folder name to strip from preview
+        const rootFolderName = detectRootFolderName(selectedFilesFromFolder.value);
+
+        // Extract all directories (excluding root folder)
+        const directories = extractDirectoriesFromFiles(selectedFilesFromFolder.value, rootFolderName);
+        preview.directoriesCount = directories.size;
+
+        // Build structure preview - show directories first, then files (without root folder)
+        const structureMap = new Map<string, StructureItem>();
+
+        // Add all directories (already stripped)
+        directories.forEach((dirPath) => {
+            structureMap.set(dirPath, {
+                path: dirPath,
+                type: 'directory',
+            });
+        });
+
+        // Add all files with their relative paths (strip root folder)
+        selectedFilesFromFolder.value.forEach((file) => {
+            let relativePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
+            relativePath = stripRootFolder(relativePath, rootFolderName);
+            structureMap.set(relativePath, {
+                path: relativePath,
+                type: 'file',
+            });
+        });
+
+        // Sort structure: directories first (by depth), then files
+        const sortedStructure = Array.from(structureMap.values()).sort((a, b) => {
+            // Directories first
+            if (a.type !== b.type) {
+                return a.type === 'directory' ? -1 : 1;
+            }
+            // Then by depth (shallow first)
+            const depthA = a.path.split('/').length;
+            const depthB = b.path.split('/').length;
+            if (depthA !== depthB) {
+                return depthA - depthB;
+            }
+            // Finally alphabetically
+            return a.path.localeCompare(b.path);
+        });
+
+        // Limit to first 20 items to avoid huge lists
+        preview.structure = sortedStructure.slice(0, 20);
+        if (sortedStructure.length > 20) {
+            preview.structure.push({
+                path: `... ${sortedStructure.length - 20} more items`,
+                type: 'file',
+            });
+        }
+    }
+
+    return preview;
 });
 
 // Check if search query matches any ignored files
@@ -2838,10 +3037,38 @@ const isArchive = (file: FileItem) => {
     return false;
 };
 
+// Handle upload mode change (file/folder toggle)
+const handleUploadModeChange = (folderMode: boolean) => {
+    isFolderUpload.value = folderMode;
+    // Reset file input
+    if (fileInput.value) {
+        fileInput.value.value = '';
+    }
+    // Clear selections
+    selectedFile.value = null;
+    selectedFilesFromFolder.value = [];
+};
+
 // File operation implementations
 const handleFileSelect = (event: Event) => {
     const target = event.target as HTMLInputElement;
-    selectedFile.value = target.files?.[0] || null;
+    const files = target.files;
+
+    if (!files || files.length === 0) {
+        selectedFile.value = null;
+        selectedFilesFromFolder.value = [];
+        return;
+    }
+
+    if (isFolderUpload.value) {
+        // Folder upload mode - get all files with their relative paths
+        selectedFilesFromFolder.value = Array.from(files);
+        selectedFile.value = null;
+    } else {
+        // Single file mode
+        selectedFile.value = files[0] || null;
+        selectedFilesFromFolder.value = [];
+    }
 };
 
 // Error message extraction helper
@@ -2929,7 +3156,129 @@ const clearCompletedUploads = () => {
     uploading.value = activeUploads.value.some((u) => u.status === 'uploading');
 };
 
+// Helper function to detect root folder name from file paths
+// When uploading a folder, all paths start with the root folder name
+// e.g., "daddy/config.yml", "daddy/flamecord/file.txt"
+// Returns the root folder name or null if it can't be determined
+const detectRootFolderName = (files: File[]): string | null => {
+    if (files.length === 0) return null;
+
+    // Find first file with a path
+    const firstFile = files.find((f) => {
+        const path = (f as File & { webkitRelativePath?: string }).webkitRelativePath;
+        return path && path.includes('/');
+    });
+
+    if (!firstFile) return null;
+
+    const firstPath = (firstFile as File & { webkitRelativePath?: string }).webkitRelativePath;
+    if (!firstPath) return null;
+
+    // Get the first directory name from the path
+    const firstPart = firstPath.split('/')[0];
+    if (!firstPart) return null;
+
+    // Check if ALL files have paths starting with this root
+    const allHaveRoot = files.every((file) => {
+        const path = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
+        // Either starts with root/ or is just the root name (for root-level files)
+        return path.startsWith(`${firstPart}/`) || path === firstPart || !path.includes('/');
+    });
+
+    return allHaveRoot ? firstPart : null;
+};
+
+// Helper function to strip root folder from a path
+const stripRootFolder = (path: string, rootFolder: string | null): string => {
+    if (!rootFolder) return path;
+    // If path starts with "rootFolder/", remove it
+    if (path.startsWith(`${rootFolder}/`)) {
+        return path.slice(rootFolder.length + 1);
+    }
+    // If path is just the root folder name, return empty (file is at root)
+    if (path === rootFolder) {
+        return '';
+    }
+    return path;
+};
+
+// Helper function to extract directory paths from files (excluding root folder)
+const extractDirectoriesFromFiles = (files: File[], rootFolderName: string | null = null): Set<string> => {
+    const directories = new Set<string>();
+
+    for (const file of files) {
+        // webkitRelativePath contains the full path relative to the selected folder
+        // e.g., "daddy/subfolder/file.txt" -> we want "subfolder"
+        let relativePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
+
+        // Strip the root folder name if present
+        relativePath = stripRootFolder(relativePath, rootFolderName);
+
+        const pathParts = relativePath.split('/').slice(0, -1); // Remove filename, keep directories
+
+        // Build cumulative paths (excluding root folder)
+        let currentPath = '';
+        for (const part of pathParts) {
+            if (part) {
+                currentPath = currentPath ? `${currentPath}/${part}` : part;
+                directories.add(currentPath);
+            }
+        }
+    }
+
+    return directories;
+};
+
+// Helper function to create directory on server with proper path handling
+const ensureDirectoryExists = async (relativeDirPath: string): Promise<void> => {
+    // relativeDirPath is like "folderName" or "folderName/subfolder"
+    // We need to create this directory structure in the current server path
+
+    // Split the relative path into parts
+    const pathParts = relativeDirPath.split('/').filter((p) => p.length > 0);
+
+    // Build directories one by one from root to target
+    let builtPath: string = '';
+    for (let i = 0; i < pathParts.length; i++) {
+        const dirName = pathParts[i];
+        if (!dirName) continue;
+
+        const currentDir: string = builtPath ? `${builtPath}/${dirName}` : dirName;
+
+        // Calculate the parent path on the server
+        const serverParentPath = builtPath
+            ? currentPath.value === '/'
+                ? `/${builtPath}`
+                : `${currentPath.value}/${builtPath}`
+            : currentPath.value;
+
+        try {
+            await axios.post(`/api/user/servers/${route.params.uuidShort}/create-directory`, {
+                name: dirName,
+                path: serverParentPath,
+            });
+        } catch (error) {
+            // Ignore if directory already exists
+            const err = error as { response?: { data?: { message?: string } } };
+            const errorMsg = err.response?.data?.message?.toLowerCase() || '';
+            if (!errorMsg.includes('already exists') && !errorMsg.includes('file exists')) {
+                // Only throw if it's a real error, not just "already exists"
+                console.warn(`Directory creation warning for ${currentDir}:`, errorMsg);
+            }
+        }
+
+        builtPath = currentDir;
+    }
+};
+
 const uploadFile = async () => {
+    // Handle folder upload
+    if (isFolderUpload.value && selectedFilesFromFolder.value.length > 0) {
+        await uploadFolder(selectedFilesFromFolder.value);
+        return;
+    }
+
+    // Handle single file upload
     if (!selectedFile.value) return;
 
     const uploadId = addUpload(selectedFile.value.name);
@@ -2959,6 +3308,8 @@ const uploadFile = async () => {
             toast.success(t('serverFiles.uploadSuccess'));
             showUploadDialog.value = false;
             selectedFile.value = null;
+            selectedFilesFromFolder.value = [];
+            isFolderUpload.value = false;
             uploadProgress.value = 0;
             refreshFiles();
 
@@ -2987,13 +3338,138 @@ const uploadFile = async () => {
     }
 };
 
+// Upload folder with directory structure
+const uploadFolder = async (files: File[]) => {
+    if (files.length === 0) return;
+
+    uploading.value = true;
+
+    // Detect root folder name - we'll strip this from all paths
+    // e.g., if uploading "daddy" folder, all paths start with "daddy/"
+    // We want to create subdirectories like "flamecord", "logs" but NOT "daddy"
+    const rootFolderName = detectRootFolderName(files);
+
+    // Extract all directories that need to be created (excluding root folder)
+    const directories = extractDirectoriesFromFiles(files, rootFolderName);
+
+    // Sort directories to create parent directories first
+    const sortedDirectories = Array.from(directories).sort((a, b) => {
+        const depthA = a.split('/').length;
+        const depthB = b.split('/').length;
+        return depthA - depthB;
+    });
+
+    try {
+        // Create all directories first (excluding root folder)
+        if (sortedDirectories.length > 0) {
+            toast.info(t('serverFiles.creatingDirectories', { count: sortedDirectories.length }));
+            for (const dirPath of sortedDirectories) {
+                await ensureDirectoryExists(dirPath);
+            }
+        }
+
+        // Upload all files
+        toast.info(t('serverFiles.uploadingFiles', { count: files.length }));
+        for (const file of files) {
+            let relativePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
+
+            // Strip root folder from path
+            relativePath = stripRootFolder(relativePath, rootFolderName);
+
+            const pathParts = relativePath.split('/');
+            const fileName = pathParts[pathParts.length - 1] || file.name;
+            const dirPath = pathParts
+                .slice(0, -1)
+                .filter((p) => p.length > 0)
+                .join('/');
+
+            // Determine upload path - exclude root folder, only use subdirectories
+            let uploadPath: string;
+            if (dirPath) {
+                // Upload to subdirectory (not root folder)
+                uploadPath = currentPath.value === '/' ? `/${dirPath}` : `${currentPath.value}/${dirPath}`;
+            } else {
+                // File is at the root (after stripping root folder)
+                uploadPath = currentPath.value;
+            }
+
+            // Use the stripped path for display
+            const displayName = relativePath || fileName;
+            const uploadId = addUpload(displayName);
+
+            try {
+                const response = await axios.post(
+                    `/api/user/servers/${route.params.uuidShort}/upload-file?path=${encodeURIComponent(uploadPath)}&filename=${encodeURIComponent(fileName)}`,
+                    file,
+                    {
+                        headers: {
+                            'Content-Type': 'application/octet-stream',
+                        },
+                        onUploadProgress: (progressEvent) => {
+                            if (progressEvent.total) {
+                                const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                                updateUploadProgress(uploadId, progress);
+                            }
+                        },
+                    },
+                );
+
+                if (response.data.success) {
+                    completeUpload(uploadId, true);
+                } else {
+                    const errorMsg =
+                        response.data?.message || response.data?.error_message || t('serverFiles.uploadError');
+                    completeUpload(uploadId, false, errorMsg);
+                }
+            } catch (error) {
+                console.error(`Error uploading file ${relativePath}:`, error);
+                const errorMessage = getErrorMessage(error);
+                completeUpload(uploadId, false, errorMessage);
+            }
+        }
+
+        toast.success(t('serverFiles.folderUploadSuccess', { count: files.length }));
+        showUploadDialog.value = false;
+        selectedFilesFromFolder.value = [];
+        isFolderUpload.value = false;
+        refreshFiles();
+
+        // Remove completed uploads after 3 seconds
+        setTimeout(() => {
+            activeUploads.value = activeUploads.value.filter((u) => u.status === 'uploading');
+        }, 3000);
+    } catch (error) {
+        console.error('Error uploading folder:', error);
+        const errorMessage = getErrorMessage(error);
+        toast.error(errorMessage);
+    } finally {
+        uploading.value = false;
+        if (fileInput.value) {
+            fileInput.value.value = '';
+        }
+    }
+};
+
 // Drag and drop handlers
-const handleDragEnter = (e: DragEvent) => {
+const handleDragEnter = async (e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     // Only show overlay if dragging files
     if (e.dataTransfer?.types && e.dataTransfer.types.includes('Files')) {
+        // Check if any folders are being dragged (early detection)
+        if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+            try {
+                const hasFolders = await detectFolderInItems(e.dataTransfer.items);
+                if (hasFolders) {
+                    // Don't show overlay for folders
+                    toast.error(t('serverFiles.folderDragDropNotSupported'));
+                    return;
+                }
+            } catch {
+                // If detection fails, continue - we'll check again on drop
+            }
+        }
         isDraggingOver.value = true;
     }
 };
@@ -3002,36 +3478,191 @@ const closeDragOverlay = () => {
     isDraggingOver.value = false;
 };
 
+// Helper function to detect if dropped items contain folders
+const detectFolderInItems = async (items: DataTransferItemList): Promise<boolean> => {
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (!item || item.kind !== 'file') continue;
+
+        const itemWithHandle = item as DataTransferItem & {
+            getAsFileSystemHandle?: () => Promise<FileSystemHandle | null>;
+        };
+
+        if ('getAsFileSystemHandle' in itemWithHandle && typeof itemWithHandle.getAsFileSystemHandle === 'function') {
+            try {
+                const handle = await itemWithHandle.getAsFileSystemHandle();
+                if (handle && handle.kind === 'directory') {
+                    return true;
+                }
+            } catch {
+                // If we can't check, continue to next item
+                continue;
+            }
+        }
+    }
+    return false;
+};
+
+// Helper function to process dropped items (files only - folders are blocked)
+const processDroppedItems = async (items: DataTransferItemList): Promise<File[]> => {
+    const files: File[] = [];
+
+    // First check if any folders are present
+    const hasFolders = await detectFolderInItems(items);
+    if (hasFolders) {
+        throw new Error('FOLDER_DETECTED');
+    }
+
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (!item) continue;
+
+        if (item.kind === 'file') {
+            // Check if it's a folder using File System Access API
+            const itemWithHandle = item as DataTransferItem & {
+                getAsFileSystemHandle?: () => Promise<FileSystemHandle | null>;
+            };
+
+            if (
+                'getAsFileSystemHandle' in itemWithHandle &&
+                typeof itemWithHandle.getAsFileSystemHandle === 'function'
+            ) {
+                try {
+                    const handle = await itemWithHandle.getAsFileSystemHandle();
+
+                    if (handle && handle.kind === 'directory') {
+                        // This should not happen if detectFolderInItems worked, but as a safeguard
+                        throw new Error('FOLDER_DETECTED');
+                    } else if (handle && handle.kind === 'file') {
+                        // Regular file
+                        const fileHandle = handle as FileSystemFileHandle;
+                        const file = await fileHandle.getFile();
+                        files.push(file);
+                    }
+                } catch (error) {
+                    if ((error as Error).message === 'FOLDER_DETECTED') {
+                        throw error;
+                    }
+                    // Fallback: try to get file directly
+                    const file = item.getAsFile();
+                    if (file) {
+                        files.push(file);
+                    }
+                }
+            } else {
+                // Fallback: try to get file directly
+                const file = item.getAsFile();
+                if (file) {
+                    files.push(file);
+                }
+            }
+        }
+    }
+
+    return files;
+};
+
 const handleDrop = async (e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     closeDragOverlay();
 
-    if (!e.dataTransfer?.files || e.dataTransfer.files.length === 0) {
+    if (!e.dataTransfer) {
         return;
     }
 
-    const droppedFiles = Array.from(e.dataTransfer.files);
+    // FIRST: Check for folders BEFORE processing anything
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+        try {
+            const hasFolders = await detectFolderInItems(e.dataTransfer.items);
+            if (hasFolders) {
+                toast.error(t('serverFiles.folderDragDropNotSupported'));
+                return;
+            }
+        } catch (error) {
+            // If detection fails, log but continue - we'll check again below
+            console.warn('Folder detection failed, will check files:', error);
+        }
+    }
 
-    if (droppedFiles.length === 0) {
+    let filesToUpload: File[] = [];
+
+    // Try to process files using DataTransferItem API (modern browsers)
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+        try {
+            filesToUpload = await processDroppedItems(e.dataTransfer.items);
+        } catch (error) {
+            // Check if error is about folder detection
+            if ((error as Error).message === 'FOLDER_DETECTED') {
+                toast.error(t('serverFiles.folderDragDropNotSupported'));
+                return;
+            }
+            console.error('Error processing dropped items:', error);
+            // Fallback to regular file list (but check for folders first)
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                // Check file list size - if dragging a single item and it's a folder,
+                // browsers might give us the folder's file list
+                // We can't detect this perfectly, but we can check for suspicious patterns
+                const fileList = Array.from(e.dataTransfer.files);
+
+                // If we have many files from a single drag, it might be a folder
+                // But we can't be 100% sure, so we'll allow it and warn if webkitRelativePath exists
+                filesToUpload = fileList;
+            }
+        }
+    } else if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        // Fallback: use regular file list (older browsers or simple file drops)
+        const fileList = Array.from(e.dataTransfer.files);
+
+        // Check if any files have webkitRelativePath (indicates folder was dragged)
+        const hasFolderStructure = fileList.some(
+            (f) =>
+                (f as File & { webkitRelativePath?: string }).webkitRelativePath &&
+                (f as File & { webkitRelativePath?: string }).webkitRelativePath!.includes('/'),
+        );
+
+        if (hasFolderStructure) {
+            // Folder was dragged and browser gave us its contents via files API
+            toast.error(t('serverFiles.folderDragDropNotSupported'));
+            return;
+        }
+
+        filesToUpload = fileList;
+    }
+
+    if (filesToUpload.length === 0) {
         return;
     }
 
-    // Show a toast indicating upload is starting
-    if (droppedFiles.length === 1 && droppedFiles[0]) {
-        toast.info(t('serverFiles.uploadingFiles', { count: 1 }) + ` - ${droppedFiles[0].name}`);
+    // FINAL CHECK: Check if we have folder structure (webkitRelativePath)
+    // This happens when browsers process folders and give us their contents
+    const hasFolderStructure = filesToUpload.some(
+        (f) =>
+            (f as File & { webkitRelativePath?: string }).webkitRelativePath &&
+            (f as File & { webkitRelativePath?: string }).webkitRelativePath!.includes('/'),
+    );
+
+    if (hasFolderStructure) {
+        // This means a folder was dragged and browser gave us its contents
+        toast.error(t('serverFiles.folderDragDropNotSupported'));
+        return;
     } else {
-        toast.info(t('serverFiles.uploadingFiles', { count: droppedFiles.length }));
-    }
+        // Upload as individual files
+        if (filesToUpload.length === 1 && filesToUpload[0]) {
+            toast.info(t('serverFiles.uploadingFiles', { count: 1 }) + ` - ${filesToUpload[0].name}`);
+        } else {
+            toast.info(t('serverFiles.uploadingFiles', { count: filesToUpload.length }));
+        }
 
-    // Upload each file sequentially with progress tracking
-    for (const file of droppedFiles) {
-        await uploadDroppedFile(file);
-    }
+        // Upload each file sequentially with progress tracking
+        for (const file of filesToUpload) {
+            await uploadDroppedFile(file);
+        }
 
-    // Refresh file list after all uploads
-    await refreshFiles();
+        // Refresh file list after all uploads
+        await refreshFiles();
+    }
 };
 
 const uploadDroppedFile = async (file: File) => {
