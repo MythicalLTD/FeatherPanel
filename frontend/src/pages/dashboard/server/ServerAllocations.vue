@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 pb-8">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Header Section -->
             <div class="flex flex-col gap-4">
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -100,6 +103,9 @@
                 </div>
             </div>
 
+            <!-- Plugin Widgets: After Status Banner -->
+            <WidgetRenderer v-if="widgetsAfterStatusBanner.length > 0" :widgets="widgetsAfterStatusBanner" />
+
             <!-- Loading State -->
             <div v-if="loading && allocations.length === 0" class="flex flex-col items-center justify-center py-16">
                 <div class="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full"></div>
@@ -143,8 +149,14 @@
                 </div>
             </div>
 
+            <!-- Plugin Widgets: Before Allocations List -->
+            <WidgetRenderer
+                v-if="!loading && allocations.length > 0 && widgetsBeforeAllocations.length > 0"
+                :widgets="widgetsBeforeAllocations"
+            />
+
             <!-- Allocations List -->
-            <Card v-else class="border-2 hover:border-primary/50 transition-colors">
+            <Card v-if="!loading && allocations.length > 0" class="border-2 hover:border-primary/50 transition-colors">
                 <CardHeader>
                     <div class="flex items-center gap-3">
                         <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -258,6 +270,15 @@
                     </div>
                 </CardContent>
             </Card>
+
+            <!-- Plugin Widgets: After Allocations List -->
+            <WidgetRenderer
+                v-if="!loading && allocations.length > 0 && widgetsAfterAllocations.length > 0"
+                :widgets="widgetsAfterAllocations"
+            />
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
         <!-- Confirmation Dialog -->
@@ -344,6 +365,8 @@ import { RefreshCw, Network, Trash2, Star, Zap, Info, Loader2, AlertTriangle } f
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import { useServerPermissions } from '@/composables/useServerPermissions';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
 const route = useRoute();
 const router = useRouter();
@@ -395,6 +418,14 @@ const allocations = ref<
         is_primary: boolean;
     }>
 >([]);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('server-allocations');
+const widgetsTopOfPage = computed(() => getWidgets('server-allocations', 'top-of-page'));
+const widgetsAfterStatusBanner = computed(() => getWidgets('server-allocations', 'after-status-banner'));
+const widgetsBeforeAllocations = computed(() => getWidgets('server-allocations', 'before-allocations-list'));
+const widgetsAfterAllocations = computed(() => getWidgets('server-allocations', 'after-allocations-list'));
+const widgetsBottomOfPage = computed(() => getWidgets('server-allocations', 'bottom-of-page'));
 
 // Computed
 const breadcrumbs = computed(() => [
@@ -542,5 +573,8 @@ onMounted(async () => {
     }
 
     fetchAllocations();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 });
 </script>

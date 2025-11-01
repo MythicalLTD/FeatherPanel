@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 pb-8">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Header Section -->
             <div class="flex flex-col gap-4">
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -32,6 +35,9 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Plugin Widgets: After Header -->
+            <WidgetRenderer v-if="widgetsAfterHeader.length > 0" :widgets="widgetsAfterHeader" />
 
             <!-- Loading State -->
             <div v-if="loading && schedules.length === 0" class="flex flex-col items-center justify-center py-16">
@@ -75,8 +81,14 @@
                 </div>
             </div>
 
+            <!-- Plugin Widgets: Before Schedules List -->
+            <WidgetRenderer
+                v-if="!loading && schedules.length > 0 && widgetsBeforeSchedules.length > 0"
+                :widgets="widgetsBeforeSchedules"
+            />
+
             <!-- Schedules List -->
-            <Card v-else class="border-2 hover:border-primary/50 transition-colors">
+            <Card v-if="!loading && schedules.length > 0" class="border-2 hover:border-primary/50 transition-colors">
                 <CardHeader>
                     <div class="flex items-center gap-3">
                         <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -203,6 +215,15 @@
                     </div>
                 </CardContent>
             </Card>
+
+            <!-- Plugin Widgets: After Schedules List -->
+            <WidgetRenderer
+                v-if="!loading && schedules.length > 0 && widgetsAfterSchedules.length > 0"
+                :widgets="widgetsAfterSchedules"
+            />
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
         <!-- Create Schedule Drawer -->
@@ -639,6 +660,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
 type ScheduleItem = {
     id: number;
@@ -726,6 +749,14 @@ const editForm = ref({
     is_active: '1',
 });
 
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('server-schedules');
+const widgetsTopOfPage = computed(() => getWidgets('server-schedules', 'top-of-page'));
+const widgetsAfterHeader = computed(() => getWidgets('server-schedules', 'after-header'));
+const widgetsBeforeSchedules = computed(() => getWidgets('server-schedules', 'before-schedules-list'));
+const widgetsAfterSchedules = computed(() => getWidgets('server-schedules', 'after-schedules-list'));
+const widgetsBottomOfPage = computed(() => getWidgets('server-schedules', 'bottom-of-page'));
+
 const breadcrumbs = computed(() => [
     { text: t('common.dashboard'), href: '/dashboard' },
     { text: t('common.servers'), href: '/dashboard' },
@@ -749,6 +780,9 @@ onMounted(async () => {
     }
 
     await fetchSchedules();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 });
 
 function refresh() {

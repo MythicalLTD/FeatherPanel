@@ -2,6 +2,9 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 pb-8">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Header Section -->
             <div class="flex flex-col gap-4">
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -73,6 +76,9 @@
                 </nav>
             </div>
 
+            <!-- Plugin Widgets: After Navigation Tabs -->
+            <WidgetRenderer v-if="widgetsAfterTabs.length > 0" :widgets="widgetsAfterTabs" />
+
             <!-- Logs Display -->
             <Card class="border-2 hover:border-primary/50 transition-colors overflow-hidden">
                 <CardHeader class="border-b">
@@ -117,6 +123,15 @@
                     </div>
                 </CardContent>
             </Card>
+
+            <!-- Plugin Widgets: After Logs Display -->
+            <WidgetRenderer
+                v-if="!loading && logs.length > 0 && widgetsAfterLogs.length > 0"
+                :widgets="widgetsAfterLogs"
+            />
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
     </DashboardLayout>
 </template>
@@ -158,6 +173,8 @@ import { RefreshCw, Download, FileText, Upload } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import { useI18n } from 'vue-i18n';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import type { Server } from '@/types/server';
 import Convert from 'ansi-to-html';
 
@@ -179,6 +196,13 @@ const loading = ref(false);
 const uploading = ref(false);
 const logs = ref<string[]>([]);
 const lastUpdated = ref<string>('');
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('server-logs');
+const widgetsTopOfPage = computed(() => getWidgets('server-logs', 'top-of-page'));
+const widgetsAfterTabs = computed(() => getWidgets('server-logs', 'after-navigation-tabs'));
+const widgetsAfterLogs = computed(() => getWidgets('server-logs', 'after-logs-display'));
+const widgetsBottomOfPage = computed(() => getWidgets('server-logs', 'bottom-of-page'));
 
 // ANSI to HTML converter
 const ansiConverter = new Convert({
@@ -214,6 +238,9 @@ onMounted(async () => {
     }
 
     await fetchLogs();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 });
 
 async function fetchServer(): Promise<void> {

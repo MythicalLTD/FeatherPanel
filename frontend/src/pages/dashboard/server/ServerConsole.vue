@@ -2,6 +2,9 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 pb-8">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Customize Layout Button -->
             <div class="flex justify-end">
                 <Button
@@ -384,6 +387,9 @@
                 </CardContent>
             </Card>
 
+            <!-- Plugin Widgets: After Customization Panel -->
+            <WidgetRenderer v-if="widgetsAfterCustomization.length > 0" :widgets="widgetsAfterCustomization" />
+
             <!-- Filter Dialog -->
             <Dialog :open="showFilterDialog" @update:open="(val) => (showFilterDialog = val)">
                 <DialogContent class="sm:max-w-[500px]">
@@ -478,6 +484,9 @@
                 @kill="killServer"
             />
 
+            <!-- Plugin Widgets: After Header -->
+            <WidgetRenderer v-if="widgetsAfterHeader.length > 0" :widgets="widgetsAfterHeader" />
+
             <!-- Wings Connection Status (Only show when NOT healthy) -->
             <Card
                 v-if="!customization.components.wingsStatus && wingsConnectionInfo.status !== 'healthy'"
@@ -517,6 +526,9 @@
                 </CardContent>
             </Card>
 
+            <!-- Plugin Widgets: After Wings Status -->
+            <WidgetRenderer v-if="widgetsAfterWingsStatus.length > 0" :widgets="widgetsAfterWingsStatus" />
+
             <!-- Server Info Cards -->
             <ServerInfoCards
                 v-if="!customization.components.serverInfo"
@@ -524,6 +536,12 @@
                 :wings-uptime="wingsUptime"
                 :wings-state="wingsState"
             />
+
+            <!-- Plugin Widgets: Under Server Info Cards -->
+            <WidgetRenderer v-if="widgetsUnderServerInfo.length > 0" :widgets="widgetsUnderServerInfo" />
+
+            <!-- Plugin Widgets: Before Terminal Console -->
+            <WidgetRenderer v-if="widgetsBeforeTerminal.length > 0" :widgets="widgetsBeforeTerminal" />
 
             <!-- XTerm.js Terminal Console -->
             <Card class="border-2 transition-colors overflow-hidden">
@@ -642,6 +660,9 @@
                 </CardContent>
             </Card>
 
+            <!-- Plugin Widgets: After Terminal Console -->
+            <WidgetRenderer v-if="widgetsAfterTerminal.length > 0" :widgets="widgetsAfterTerminal" />
+
             <!-- Performance Monitoring -->
             <ServerPerformance
                 v-if="!customization.components.performance"
@@ -656,6 +677,12 @@
                 :show-disk="customization.charts.showDisk"
                 :show-network="customization.charts.showNetwork"
             />
+
+            <!-- Plugin Widgets: After Performance Monitoring -->
+            <WidgetRenderer v-if="widgetsAfterPerformance.length > 0" :widgets="widgetsAfterPerformance" />
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
         <!-- Feature Dialogs -->
@@ -877,6 +904,8 @@ import EulaFeature from '@/components/server/features/EulaFeature.vue';
 import JavaVersionFeature from '@/components/server/features/JavaVersionFeature.vue';
 import PidLimitFeature from '@/components/server/features/PidLimitFeature.vue';
 import { detectFeature } from '@/components/server/features/featureDetector';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
 // XTerm.js imports
 import { Terminal as XTerm } from '@xterm/xterm';
@@ -1037,6 +1066,18 @@ cpuData.value.push({ timestamp: initTimestamp, value: 0 });
 memoryData.value.push({ timestamp: initTimestamp, value: 0 });
 diskData.value.push({ timestamp: initTimestamp, value: 0 });
 networkData.value.push({ timestamp: initTimestamp, value: 0 });
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('server-console');
+const widgetsTopOfPage = computed(() => getWidgets('server-console', 'top-of-page'));
+const widgetsAfterCustomization = computed(() => getWidgets('server-console', 'after-customization-panel'));
+const widgetsAfterHeader = computed(() => getWidgets('server-console', 'after-header'));
+const widgetsAfterWingsStatus = computed(() => getWidgets('server-console', 'after-wings-status'));
+const widgetsUnderServerInfo = computed(() => getWidgets('server-console', 'under-server-info-cards'));
+const widgetsBeforeTerminal = computed(() => getWidgets('server-console', 'before-terminal-console'));
+const widgetsAfterTerminal = computed(() => getWidgets('server-console', 'after-terminal-console'));
+const widgetsAfterPerformance = computed(() => getWidgets('server-console', 'after-performance-monitoring'));
+const widgetsBottomOfPage = computed(() => getWidgets('server-console', 'bottom-of-page'));
 
 // Filtered data based on customization
 const filteredCpuData = computed(() => (customization.value.charts.showCPU ? cpuData.value : []));
@@ -1667,6 +1708,9 @@ async function saveAndApplyCustomization(): Promise<void> {
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect(router);
     await settingsStore.fetchSettings();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 
     // Wait for permission check to complete
     while (permissionsLoading.value) {

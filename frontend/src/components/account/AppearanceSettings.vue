@@ -1,5 +1,8 @@
 <template>
     <div class="space-y-6">
+        <!-- Plugin Widgets: Appearance Tab Top -->
+        <WidgetRenderer v-if="widgetsTop.length > 0" :widgets="widgetsTop" />
+
         <div>
             <h3 class="text-lg font-semibold">{{ $t('account.appearanceSettings') }}</h3>
             <p class="text-sm text-muted-foreground">{{ $t('account.appearanceSettingsDescription') }}</p>
@@ -405,6 +408,9 @@
                 {{ $t('account.resetAppearance') }}
             </Button>
         </div>
+
+        <!-- Plugin Widgets: Appearance Tab Bottom -->
+        <WidgetRenderer v-if="widgetsBottom.length > 0" :widgets="widgetsBottom" />
     </div>
 </template>
 
@@ -433,7 +439,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -443,6 +449,8 @@ import { useTheme } from '@/composables/useTheme';
 import { useLanguage } from '@/composables/useLanguage';
 import { useSidebarState, type SidebarVisibility } from '@/composables/useSidebarState';
 import { useBackground } from '@/composables/useBackground';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
 const { t: $t } = useI18n();
 const { isDark, toggleTheme, setTheme } = useTheme();
@@ -487,6 +495,11 @@ const contextMenuShowQuickActions = ref(true);
 
 // Loading state for sidebar changes
 const isReloading = ref(false);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('account');
+const widgetsTop = computed(() => getWidgets('account', 'appearance-top'));
+const widgetsBottom = computed(() => getWidgets('account', 'appearance-bottom'));
 
 // Sidebar options
 const sidebarOptions = [
@@ -801,8 +814,11 @@ watch(isDark, (newIsDark, oldIsDark) => {
     }
 });
 
-onMounted(() => {
+onMounted(async () => {
     loadSettings();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 });
 </script>
 

@@ -51,6 +51,9 @@
         </Transition>
 
         <div class="space-y-6 pb-8" @dragenter.prevent="handleDragEnter" @dragover.prevent @drop.prevent="handleDrop">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Header Section -->
             <div class="flex flex-col gap-4">
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -145,6 +148,9 @@
                 </div>
             </div>
 
+            <!-- Plugin Widgets: After Header -->
+            <WidgetRenderer v-if="widgetsAfterHeader.length > 0" :widgets="widgetsAfterHeader" />
+
             <!-- Enhanced Search Bar with Breadcrumbs -->
             <Card class="border-2 shadow-sm hover:shadow-md transition-all">
                 <CardContent class="p-4">
@@ -200,6 +206,9 @@
                     </div>
                 </CardContent>
             </Card>
+
+            <!-- Plugin Widgets: After Search Bar -->
+            <WidgetRenderer v-if="widgetsAfterSearchBar.length > 0" :widgets="widgetsAfterSearchBar" />
 
             <!-- Hidden Search Results Warning -->
             <Card
@@ -398,6 +407,12 @@
                     </div>
                 </CardContent>
             </Card>
+
+            <!-- Plugin Widgets: Before Files List -->
+            <WidgetRenderer
+                v-if="!loading && files.length > 0 && widgetsBeforeFilesList.length > 0"
+                :widgets="widgetsBeforeFilesList"
+            />
 
             <!-- Enhanced File Actions Toolbar (Sticky) -->
             <Card
@@ -960,6 +975,15 @@
                     </div>
                 </CardContent>
             </Card>
+
+            <!-- Plugin Widgets: After Files List -->
+            <WidgetRenderer
+                v-if="!loading && files.length > 0 && widgetsAfterFilesList.length > 0"
+                :widgets="widgetsAfterFilesList"
+            />
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
         <!-- Upload File Dialog -->
@@ -1938,6 +1962,8 @@ import {
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import { useI18n } from 'vue-i18n';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import type { Server } from '@/types/server';
 
 const route = useRoute();
@@ -2035,6 +2061,15 @@ const showKeyboardShortcuts = ref(false);
 // Navigation guard dialog
 const showNavigationGuardDialog = ref(false);
 const pendingNavigation = ref<(() => void) | null>(null);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('server-files');
+const widgetsTopOfPage = computed(() => getWidgets('server-files', 'top-of-page'));
+const widgetsAfterHeader = computed(() => getWidgets('server-files', 'after-header'));
+const widgetsAfterSearchBar = computed(() => getWidgets('server-files', 'after-search-bar'));
+const widgetsBeforeFilesList = computed(() => getWidgets('server-files', 'before-files-list'));
+const widgetsAfterFilesList = computed(() => getWidgets('server-files', 'after-files-list'));
+const widgetsBottomOfPage = computed(() => getWidgets('server-files', 'bottom-of-page'));
 
 // File input ref
 const fileInput = ref<HTMLInputElement>();
@@ -2496,6 +2531,9 @@ onMounted(async () => {
 
     // Start polling for downloads
     startDownloadsPolling();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 
     // Add keyboard shortcuts (ESC to close drag overlay, / to focus search)
     window.addEventListener('keydown', handleKeyboard);

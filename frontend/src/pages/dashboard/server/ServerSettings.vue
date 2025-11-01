@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 pb-8">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Header Section -->
             <div class="flex flex-col gap-4">
                 <div class="space-y-1">
@@ -14,6 +17,9 @@
                     <span class="text-muted-foreground">{{ t('common.unsavedChanges') }}</span>
                 </div>
             </div>
+
+            <!-- Plugin Widgets: After Header -->
+            <WidgetRenderer v-if="widgetsAfterHeader.length > 0" :widgets="widgetsAfterHeader" />
 
             <!-- Loading State -->
             <div v-if="loading" class="flex flex-col items-center justify-center py-16">
@@ -89,6 +95,12 @@
                         </div>
                     </CardContent>
                 </Card>
+
+                <!-- Plugin Widgets: After Server Information -->
+                <WidgetRenderer
+                    v-if="!loading && server && widgetsAfterServerInfo.length > 0"
+                    :widgets="widgetsAfterServerInfo"
+                />
 
                 <!-- SFTP Details -->
                 <Card class="border-2 hover:border-primary/50 transition-colors">
@@ -267,6 +279,12 @@
                     </CardContent>
                 </Card>
 
+                <!-- Plugin Widgets: After SFTP Details -->
+                <WidgetRenderer
+                    v-if="!loading && server && widgetsAfterSftpDetails.length > 0"
+                    :widgets="widgetsAfterSftpDetails"
+                />
+
                 <!-- Server Actions -->
                 <Card
                     v-if="canReinstallServer"
@@ -319,7 +337,16 @@
                         </div>
                     </CardContent>
                 </Card>
+
+                <!-- Plugin Widgets: After Server Actions -->
+                <WidgetRenderer
+                    v-if="!loading && server && canReinstallServer && widgetsAfterServerActions.length > 0"
+                    :widgets="widgetsAfterServerActions"
+                />
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
 
             <!-- Error State -->
             <div v-else-if="error" class="flex flex-col items-center justify-center py-16 text-center">
@@ -497,6 +524,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import {
     Server,
     FolderOpen,
@@ -578,6 +607,15 @@ const editForm = ref<EditForm>({
     name: '',
     description: '',
 });
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('server-settings');
+const widgetsTopOfPage = computed(() => getWidgets('server-settings', 'top-of-page'));
+const widgetsAfterHeader = computed(() => getWidgets('server-settings', 'after-header'));
+const widgetsAfterServerInfo = computed(() => getWidgets('server-settings', 'after-server-information'));
+const widgetsAfterSftpDetails = computed(() => getWidgets('server-settings', 'after-sftp-details'));
+const widgetsAfterServerActions = computed(() => getWidgets('server-settings', 'after-server-actions'));
+const widgetsBottomOfPage = computed(() => getWidgets('server-settings', 'bottom-of-page'));
 
 // Computed
 const breadcrumbs = computed(() => [
@@ -708,5 +746,8 @@ onMounted(async () => {
     }
 
     await fetchServer();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 });
 </script>

@@ -1,7 +1,13 @@
 <template>
     <DashboardLayout :breadcrumbs="[{ text: $t('account.title'), isCurrent: true, href: '/dashboard/account' }]">
         <div class="flex flex-col gap-6 mt-6">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <div class="grid gap-6">
+                <!-- Plugin Widgets: Before Profile Card -->
+                <WidgetRenderer v-if="widgetsBeforeProfileCard.length > 0" :widgets="widgetsBeforeProfileCard" />
+
                 <!-- Profile Information Card -->
                 <Card>
                     <div class="p-4 sm:p-6">
@@ -22,6 +28,12 @@
                         </div>
                     </div>
                 </Card>
+
+                <!-- Plugin Widgets: After Profile Card -->
+                <WidgetRenderer v-if="widgetsAfterProfileCard.length > 0" :widgets="widgetsAfterProfileCard" />
+
+                <!-- Plugin Widgets: Before Tabs -->
+                <WidgetRenderer v-if="widgetsBeforeTabs.length > 0" :widgets="widgetsBeforeTabs" />
 
                 <!-- Tabs -->
                 <Card>
@@ -79,7 +91,13 @@
                         </Tabs>
                     </div>
                 </Card>
+
+                <!-- Plugin Widgets: After Tabs -->
+                <WidgetRenderer v-if="widgetsAfterTabs.length > 0" :widgets="widgetsAfterTabs" />
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
     </DashboardLayout>
 </template>
@@ -124,6 +142,8 @@ import Activity from '@/components/account/Activity.vue';
 import MailList from '@/components/account/MailList.vue';
 import SshKeys from '@/components/account/SshKeys.vue';
 import ApiKeys from '@/components/account/ApiKeys.vue';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import type { UserInfo } from '@/stores/session';
 
 const { t: $t } = useI18n();
@@ -140,8 +160,20 @@ const activeTab = ref(validTabs.includes(route.query.tab as string) ? (route.que
 // Computed user data with proper typing
 const user = computed<UserInfo | null>(() => sessionStore.user);
 
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('account');
+const widgetsTopOfPage = computed(() => getWidgets('account', 'top-of-page'));
+const widgetsBeforeProfileCard = computed(() => getWidgets('account', 'before-profile-card'));
+const widgetsAfterProfileCard = computed(() => getWidgets('account', 'after-profile-card'));
+const widgetsBeforeTabs = computed(() => getWidgets('account', 'before-tabs'));
+const widgetsAfterTabs = computed(() => getWidgets('account', 'after-tabs'));
+const widgetsBottomOfPage = computed(() => getWidgets('account', 'bottom-of-page'));
+
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 });
 
 // Watch for URL query parameter changes and update active tab

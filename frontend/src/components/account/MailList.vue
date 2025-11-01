@@ -1,5 +1,8 @@
 <template>
     <div class="space-y-6">
+        <!-- Plugin Widgets: Mail Tab Top -->
+        <WidgetRenderer v-if="widgetsTop.length > 0" :widgets="widgetsTop" />
+
         <!-- Header -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div class="flex-1">
@@ -146,6 +149,9 @@
                 <p class="text-sm text-muted-foreground">{{ $t('account.mail.tryDifferentSearch') }}</p>
             </div>
         </div>
+
+        <!-- Plugin Widgets: Mail Tab Bottom -->
+        <WidgetRenderer v-if="widgetsBottom.length > 0" :widgets="widgetsBottom" />
     </div>
 </template>
 
@@ -189,6 +195,8 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Search, RefreshCw, Clock, Mail, AlertCircle } from 'lucide-vue-next';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
 const { t: $t } = useI18n();
 const sessionStore = useSessionStore();
@@ -209,6 +217,11 @@ const searchQuery = ref('');
 const mails = ref<MailItem[]>([]);
 const mailModalOpen = ref(false);
 const selectedMail = ref<MailItem | null>(null);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('account');
+const widgetsTop = computed(() => getWidgets('account', 'mail-top'));
+const widgetsBottom = computed(() => getWidgets('account', 'mail-bottom'));
 
 // Computed properties
 const filteredMails = computed(() => {
@@ -352,7 +365,10 @@ const formatDate = (dateString: string) => {
 };
 
 // Lifecycle
-onMounted(() => {
-    fetchMails();
+onMounted(async () => {
+    await fetchMails();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 });
 </script>

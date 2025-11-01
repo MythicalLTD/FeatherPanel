@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 pb-8">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Header Section -->
             <div class="flex flex-col gap-4">
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -32,6 +35,9 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Plugin Widgets: After Header -->
+            <WidgetRenderer v-if="widgetsAfterHeader.length > 0" :widgets="widgetsAfterHeader" />
 
             <!-- Loading State -->
             <div v-if="loading && subusers.length === 0" class="flex flex-col items-center justify-center py-16">
@@ -69,6 +75,12 @@
                     </Button>
                 </div>
             </div>
+
+            <!-- Plugin Widgets: Before Subusers List -->
+            <WidgetRenderer
+                v-if="!loading && (subusers.length > 0 || searchQuery) && widgetsBeforeSubusersList.length > 0"
+                :widgets="widgetsBeforeSubusersList"
+            />
 
             <!-- Subusers List -->
             <Card v-else class="border-2 hover:border-primary/50 transition-colors">
@@ -215,6 +227,15 @@
                     </div>
                 </CardContent>
             </Card>
+
+            <!-- Plugin Widgets: After Subusers List -->
+            <WidgetRenderer
+                v-if="!loading && (subusers.length > 0 || searchQuery) && widgetsAfterSubusersList.length > 0"
+                :widgets="widgetsAfterSubusersList"
+            />
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
         <!-- Add Subuser Dialog -->
@@ -459,6 +480,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import {
     RefreshCw,
     Users,
@@ -530,6 +553,14 @@ const groupedPermissions = ref<Record<string, { permissions: string[] }>>({});
 const selectedPermissions = ref<string[]>([]);
 const permissionsLoading = ref(false);
 const permissionsSaving = ref(false);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('server-subusers');
+const widgetsTopOfPage = computed(() => getWidgets('server-subusers', 'top-of-page'));
+const widgetsAfterHeader = computed(() => getWidgets('server-subusers', 'after-header'));
+const widgetsBeforeSubusersList = computed(() => getWidgets('server-subusers', 'before-subusers-list'));
+const widgetsAfterSubusersList = computed(() => getWidgets('server-subusers', 'after-subusers-list'));
+const widgetsBottomOfPage = computed(() => getWidgets('server-subusers', 'bottom-of-page'));
 
 // Computed
 const serverBasic = ref<{ name?: string } | null>(null);
@@ -821,6 +852,9 @@ onMounted(async () => {
 
     fetchServerBasic();
     fetchSubusers();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 });
 
 // Optional: auto-search when query changes with small debounce

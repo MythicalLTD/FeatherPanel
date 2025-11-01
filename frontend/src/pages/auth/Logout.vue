@@ -1,5 +1,7 @@
 <template>
     <div class="flex flex-col items-center justify-center gap-6">
+        <!-- Plugin Widgets: Top of Page -->
+        <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
         <div class="flex flex-col items-center gap-4 text-center">
             <!-- Logout Icon -->
             <div class="relative">
@@ -54,6 +56,9 @@
                 {{ $t('auth.continueToLogin') }}
             </Button>
         </div>
+
+        <!-- Plugin Widgets: Bottom of Page -->
+        <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
     </div>
 </template>
 
@@ -82,12 +87,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSessionStore } from '@/stores/session';
 import { LogOutIcon } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { useI18n } from 'vue-i18n';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
 const { t: $t } = useI18n();
 const router = useRouter();
@@ -95,6 +102,11 @@ const sessionStore = useSessionStore();
 
 const logoutProgress = ref(0);
 const showManualRedirect = ref(false);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('auth-logout');
+const widgetsTopOfPage = computed(() => getWidgets('auth-logout', 'top-of-page'));
+const widgetsBottomOfPage = computed(() => getWidgets('auth-logout', 'bottom-of-page'));
 
 // Clean up all stored data
 const cleanupStorage = async () => {
@@ -156,6 +168,9 @@ const manualRedirect = () => {
 };
 
 onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+
     // Start cleanup immediately
     cleanupStorage();
 

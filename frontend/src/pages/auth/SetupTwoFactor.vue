@@ -23,7 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted, type HTMLAttributes } from 'vue';
+import { computed, ref, onMounted, type HTMLAttributes } from 'vue';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,8 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useSessionStore } from '@/stores/session';
 import { useToast } from 'vue-toastification';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
 const settingsStore = useSettingsStore();
 const sessionStore = useSessionStore();
@@ -52,6 +54,13 @@ const secret = ref('');
 const code = ref('');
 const loading = ref(false);
 
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('auth-setup-two-factor');
+const widgetsTopOfPage = computed(() => getWidgets('auth-setup-two-factor', 'top-of-page'));
+const widgetsBeforeForm = computed(() => getWidgets('auth-setup-two-factor', 'before-form'));
+const widgetsAfterForm = computed(() => getWidgets('auth-setup-two-factor', 'after-form'));
+const widgetsBottomOfPage = computed(() => getWidgets('auth-setup-two-factor', 'bottom-of-page'));
+
 const form = ref({
     turnstile_token: '',
     code: '',
@@ -61,6 +70,10 @@ const router = useRouter();
 onMounted(async () => {
     const ok = await sessionStore.checkSessionOrRedirect(router);
     if (!ok) return;
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+
     loading.value = true;
     try {
         const res = await axios.request({
@@ -114,8 +127,13 @@ async function verify2FA(e: Event) {
 </script>
 <template>
     <div :class="cn('flex flex-col gap-6', props.class)">
+        <!-- Plugin Widgets: Top of Page -->
+        <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
         <div v-if="loading" class="text-center text-sm">{{ t('api_errors.TWO_FACTOR_LOADING') }}</div>
         <div v-else>
+            <!-- Plugin Widgets: Before Form -->
+            <WidgetRenderer v-if="widgetsBeforeForm.length > 0" :widgets="widgetsBeforeForm" />
             <form @submit="verify2FA">
                 <div class="flex flex-col gap-6">
                     <div class="flex flex-col gap-4">
@@ -154,6 +172,12 @@ async function verify2FA(e: Event) {
                     </div>
                 </div>
             </form>
+
+            <!-- Plugin Widgets: After Form -->
+            <WidgetRenderer v-if="widgetsAfterForm.length > 0" :widgets="widgetsAfterForm" />
         </div>
+
+        <!-- Plugin Widgets: Bottom of Page -->
+        <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
     </div>
 </template>

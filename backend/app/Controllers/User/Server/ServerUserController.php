@@ -805,7 +805,7 @@ class ServerUserController
         if (isset($data['startup']) && !$isSpellChanging) {
             $newStartup = (string) $data['startup'];
             $currentStartup = (string) ($server['startup'] ?? '');
-            
+
             // Only check permission if startup actually changed
             if (trim($newStartup) !== trim($currentStartup)) {
                 $app = App::getInstance(true);

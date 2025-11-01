@@ -1,5 +1,8 @@
 <template>
     <div class="space-y-6">
+        <!-- Plugin Widgets: API Keys Tab Top -->
+        <WidgetRenderer v-if="widgetsTop.length > 0" :widgets="widgetsTop" />
+
         <!-- Header -->
         <div class="space-y-4">
             <div>
@@ -371,6 +374,9 @@
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+
+        <!-- Plugin Widgets: API Keys Tab Bottom -->
+        <WidgetRenderer v-if="widgetsBottom.length > 0" :widgets="widgetsBottom" />
     </div>
 </template>
 
@@ -434,6 +440,8 @@ import {
     Info,
     ExternalLink,
 } from 'lucide-vue-next';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import axios from 'axios';
 
 const { t: $t } = useI18n();
@@ -469,6 +477,11 @@ const clientToRegenerate = ref<ApiClient | null>(null);
 const formData = ref({
     name: '',
 });
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('account');
+const widgetsTop = computed(() => getWidgets('account', 'api-keys-top'));
+const widgetsBottom = computed(() => getWidgets('account', 'api-keys-bottom'));
 
 // Computed
 const filteredApiClients = computed(() => {
@@ -716,5 +729,10 @@ function openApiDocumentation() {
 }
 
 // Lifecycle
-onMounted(fetchApiClients);
+onMounted(async () => {
+    await fetchApiClients();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+});
 </script>

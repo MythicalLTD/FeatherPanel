@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="min-h-screen bg-background">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Loading State -->
             <div v-if="loading" class="flex items-center justify-center py-12">
                 <div class="flex items-center gap-3">
@@ -11,6 +14,8 @@
 
             <!-- Edit Server Form -->
             <div v-else class="p-6">
+                <!-- Plugin Widgets: Before Form -->
+                <WidgetRenderer v-if="widgetsBeforeForm.length > 0" :widgets="widgetsBeforeForm" />
                 <div class="max-w-4xl mx-auto">
                     <div class="mb-8">
                         <h1 class="text-3xl font-bold">Edit Server</h1>
@@ -865,8 +870,14 @@
                             </div>
                         </div>
                     </form>
+
+                    <!-- Plugin Widgets: After Form -->
+                    <WidgetRenderer v-if="widgetsAfterForm.length > 0" :widgets="widgetsAfterForm" />
                 </div>
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
         <!-- Selection Modals -->
@@ -1161,6 +1172,8 @@ import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Check, ChevronsUpDown, Plus } from 'lucide-vue-next';
@@ -1215,6 +1228,13 @@ const breadcrumbs = [
 // Loading states
 const loading = ref(false);
 const submitting = ref(false);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-servers-edit');
+const widgetsTopOfPage = computed(() => getWidgets('admin-servers-edit', 'top-of-page'));
+const widgetsBeforeForm = computed(() => getWidgets('admin-servers-edit', 'before-form'));
+const widgetsAfterForm = computed(() => getWidgets('admin-servers-edit', 'after-form'));
+const widgetsBottomOfPage = computed(() => getWidgets('admin-servers-edit', 'bottom-of-page'));
 const suspending = ref(false);
 
 // Popover open states (keeping docker image popover for now)
@@ -2170,6 +2190,9 @@ function stopTransferStatusPolling() {
 }
 
 onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+
     await loadServerData();
     await fetchAllocations();
 

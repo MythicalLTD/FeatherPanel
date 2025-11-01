@@ -1,5 +1,8 @@
 <template>
     <div class="space-y-6">
+        <!-- Plugin Widgets: SSH Keys Tab Top -->
+        <WidgetRenderer v-if="widgetsTop.length > 0" :widgets="widgetsTop" />
+
         <!-- Header -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div class="flex-1">
@@ -283,6 +286,9 @@
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+
+        <!-- Plugin Widgets: SSH Keys Tab Bottom -->
+        <WidgetRenderer v-if="widgetsBottom.length > 0" :widgets="widgetsBottom" />
     </div>
 </template>
 
@@ -333,6 +339,8 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Plus, Edit, Eye, Trash2, RotateCcw, RefreshCw, Search, AlertCircle, Key, Clock } from 'lucide-vue-next';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import axios from 'axios';
 
 const { t: $t } = useI18n();
@@ -368,6 +376,11 @@ const formData = ref({
     name: '',
     public_key: '',
 });
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('account');
+const widgetsTop = computed(() => getWidgets('account', 'ssh-keys-top'));
+const widgetsBottom = computed(() => getWidgets('account', 'ssh-keys-bottom'));
 
 // Computed
 const filteredSshKeys = computed(() => {
@@ -596,5 +609,10 @@ function formatDate(dateString: string): string {
 }
 
 // Lifecycle
-onMounted(fetchSshKeys);
+onMounted(async () => {
+    await fetchSshKeys();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+});
 </script>

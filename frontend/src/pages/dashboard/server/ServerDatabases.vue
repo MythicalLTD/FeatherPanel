@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 pb-8">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Header Section -->
             <div class="flex flex-col gap-4">
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -61,6 +64,9 @@
                 </div>
             </div>
 
+            <!-- Plugin Widgets: After Warning Banner -->
+            <WidgetRenderer v-if="widgetsAfterWarning.length > 0" :widgets="widgetsAfterWarning" />
+
             <!-- Loading State -->
             <div v-if="loading && databases.length === 0" class="flex flex-col items-center justify-center py-16">
                 <div class="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full"></div>
@@ -107,8 +113,14 @@
                 </div>
             </div>
 
+            <!-- Plugin Widgets: Before Databases List -->
+            <WidgetRenderer
+                v-if="!loading && databases.length > 0 && widgetsBeforeDatabases.length > 0"
+                :widgets="widgetsBeforeDatabases"
+            />
+
             <!-- Databases List -->
-            <Card v-else class="border-2 hover:border-primary/50 transition-colors">
+            <Card v-if="!loading && databases.length > 0" class="border-2 hover:border-primary/50 transition-colors">
                 <CardHeader>
                     <div class="flex items-center gap-3">
                         <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -196,6 +208,15 @@
                     </div>
                 </CardContent>
             </Card>
+
+            <!-- Plugin Widgets: After Databases List -->
+            <WidgetRenderer
+                v-if="!loading && databases.length > 0 && widgetsAfterDatabases.length > 0"
+                :widgets="widgetsAfterDatabases"
+            />
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
         <!-- Create Database Drawer -->
@@ -776,6 +797,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import {
     Plus,
     Trash2,
@@ -879,6 +902,14 @@ const createForm = ref({
     max_connections: 0,
 });
 
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('server-databases');
+const widgetsTopOfPage = computed(() => getWidgets('server-databases', 'top-of-page'));
+const widgetsAfterWarning = computed(() => getWidgets('server-databases', 'after-warning-banner'));
+const widgetsBeforeDatabases = computed(() => getWidgets('server-databases', 'before-databases-list'));
+const widgetsAfterDatabases = computed(() => getWidgets('server-databases', 'after-databases-list'));
+const widgetsBottomOfPage = computed(() => getWidgets('server-databases', 'bottom-of-page'));
+
 // Computed
 const breadcrumbs = computed(() => [
     { text: t('common.dashboard'), href: '/dashboard' },
@@ -902,6 +933,9 @@ onMounted(async () => {
     }
 
     await Promise.all([fetchDatabases(), fetchAvailableHosts()]);
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 });
 
 // Methods

@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 pb-8">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Header Section -->
             <div class="flex flex-col gap-4">
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -57,6 +60,9 @@
                 </div>
             </div>
 
+            <!-- Plugin Widgets: After Warning Banner -->
+            <WidgetRenderer v-if="widgetsAfterWarning.length > 0" :widgets="widgetsAfterWarning" />
+
             <!-- Loading State -->
             <div v-if="loading && backups.length === 0" class="flex flex-col items-center justify-center py-16">
                 <div class="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full"></div>
@@ -104,8 +110,14 @@
                 </div>
             </div>
 
+            <!-- Plugin Widgets: Before Backups List -->
+            <WidgetRenderer
+                v-if="!loading && backups.length > 0 && widgetsBeforeBackups.length > 0"
+                :widgets="widgetsBeforeBackups"
+            />
+
             <!-- Backups List -->
-            <Card v-else class="border-2 hover:border-primary/50 transition-colors">
+            <Card v-if="!loading && backups.length > 0" class="border-2 hover:border-primary/50 transition-colors">
                 <CardHeader>
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                         <div class="flex items-center gap-3">
@@ -263,6 +275,15 @@
                     </div>
                 </CardContent>
             </Card>
+
+            <!-- Plugin Widgets: After Backups List -->
+            <WidgetRenderer
+                v-if="!loading && backups.length > 0 && widgetsAfterBackups.length > 0"
+                :widgets="widgetsAfterBackups"
+            />
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
         <!-- Confirm Dialog -->
@@ -516,6 +537,8 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { useServerPermissions } from '@/composables/useServerPermissions';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
 import {
     Plus,
@@ -614,6 +637,14 @@ const restoreBackup = ref({
     truncate_directory: false,
 });
 
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('server-backups');
+const widgetsTopOfPage = computed(() => getWidgets('server-backups', 'top-of-page'));
+const widgetsAfterWarning = computed(() => getWidgets('server-backups', 'after-warning-banner'));
+const widgetsBeforeBackups = computed(() => getWidgets('server-backups', 'before-backups-list'));
+const widgetsAfterBackups = computed(() => getWidgets('server-backups', 'after-backups-list'));
+const widgetsBottomOfPage = computed(() => getWidgets('server-backups', 'bottom-of-page'));
+
 const breadcrumbs = computed(() => [
     { text: t('common.dashboard'), href: '/dashboard' },
     { text: t('common.servers'), href: '/dashboard' },
@@ -635,6 +666,9 @@ onMounted(async () => {
     }
 
     await fetchBackups();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 });
 
 function refresh() {

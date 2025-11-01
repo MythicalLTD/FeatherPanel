@@ -1,10 +1,22 @@
 <template>
     <DashboardLayout :breadcrumbs="[{ text: $t('dashboard.title'), isCurrent: true, href: '/dashboard' }]">
         <div class="flex flex-col gap-6">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <div class="flex items-center gap-4"></div>
+
+            <!-- Plugin Widgets: Before Server List -->
+            <WidgetRenderer v-if="widgetsBeforeServerList.length > 0" :widgets="widgetsBeforeServerList" />
 
             <!-- Server List Section -->
             <ServerList />
+
+            <!-- Plugin Widgets: After Server List -->
+            <WidgetRenderer v-if="widgetsAfterServerList.length > 0" :widgets="widgetsAfterServerList" />
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
     </DashboardLayout>
 </template>
@@ -34,14 +46,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useSessionStore } from '@/stores/session';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import ServerList from '@/components/dashboard/ServerList.vue';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
 const sessionStore = useSessionStore();
 
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('dashboard');
+const widgetsTopOfPage = computed(() => getWidgets('dashboard', 'top-of-page'));
+const widgetsBeforeServerList = computed(() => getWidgets('dashboard', 'before-server-list'));
+const widgetsAfterServerList = computed(() => getWidgets('dashboard', 'after-server-list'));
+const widgetsBottomOfPage = computed(() => getWidgets('dashboard', 'bottom-of-page'));
+
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 });
 </script>

@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 pb-8">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Header Section with Actions -->
             <div class="flex flex-col gap-4">
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -41,6 +44,9 @@
                     <span class="text-muted-foreground">{{ t('common.unsavedChanges') }}</span>
                 </div>
             </div>
+
+            <!-- Plugin Widgets: After Header -->
+            <WidgetRenderer v-if="widgetsAfterHeader.length > 0" :widgets="widgetsAfterHeader" />
 
             <!-- Loading State -->
             <div v-if="loading" class="flex flex-col items-center justify-center py-16">
@@ -103,6 +109,12 @@
                     </CardContent>
                 </Card>
 
+                <!-- Plugin Widgets: After Startup Command -->
+                <WidgetRenderer
+                    v-if="!loading && server && widgetsAfterStartupCommand.length > 0"
+                    :widgets="widgetsAfterStartupCommand"
+                />
+
                 <!-- Docker Image Section -->
                 <Card class="border-2 hover:border-primary/50 transition-colors">
                     <CardHeader>
@@ -150,6 +162,12 @@
                         </div>
                     </CardContent>
                 </Card>
+
+                <!-- Plugin Widgets: After Docker Image -->
+                <WidgetRenderer
+                    v-if="!loading && server && widgetsAfterDockerImage.length > 0"
+                    :widgets="widgetsAfterDockerImage"
+                />
 
                 <!-- Spell/Egg Selection Section -->
                 <Card
@@ -305,6 +323,12 @@
                     </CardContent>
                 </Card>
 
+                <!-- Plugin Widgets: After Spell Selection -->
+                <WidgetRenderer
+                    v-if="!loading && server && canChangeSpell && widgetsAfterSpellSelection.length > 0"
+                    :widgets="widgetsAfterSpellSelection"
+                />
+
                 <!-- Variables Section -->
                 <Card class="border-2 hover:border-primary/50 transition-colors">
                     <CardHeader>
@@ -394,7 +418,16 @@
                         </div>
                     </CardContent>
                 </Card>
+
+                <!-- Plugin Widgets: After Variables -->
+                <WidgetRenderer
+                    v-if="!loading && server && widgetsAfterVariables.length > 0"
+                    :widgets="widgetsAfterVariables"
+                />
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
 
             <!-- Error State -->
             <div v-else class="flex flex-col items-center justify-center py-16 text-center">
@@ -597,6 +630,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import {
     RefreshCw,
     Save,
@@ -704,6 +739,16 @@ const pendingSpellChange = ref<{
 const newVariableValues = ref<Record<number, string>>({});
 const newVariableErrors = ref<Record<number, string>>({});
 const wipeFilesOnSpellChange = ref(false);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('server-startup');
+const widgetsTopOfPage = computed(() => getWidgets('server-startup', 'top-of-page'));
+const widgetsAfterHeader = computed(() => getWidgets('server-startup', 'after-header'));
+const widgetsAfterStartupCommand = computed(() => getWidgets('server-startup', 'after-startup-command'));
+const widgetsAfterDockerImage = computed(() => getWidgets('server-startup', 'after-docker-image'));
+const widgetsAfterSpellSelection = computed(() => getWidgets('server-startup', 'after-spell-selection'));
+const widgetsAfterVariables = computed(() => getWidgets('server-startup', 'after-variables'));
+const widgetsBottomOfPage = computed(() => getWidgets('server-startup', 'bottom-of-page'));
 
 const breadcrumbs = computed(() => [
     { text: t('common.dashboard'), href: '/dashboard' },
@@ -1170,6 +1215,9 @@ onMounted(async () => {
     }
 
     await fetchServer();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 });
 
 // Validation logic for variables based on rules string

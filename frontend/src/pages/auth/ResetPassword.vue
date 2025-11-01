@@ -23,7 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted, type HTMLAttributes } from 'vue';
+import { computed, ref, onMounted, type HTMLAttributes } from 'vue';
 import axios from 'axios';
 import { useRoute, useRouter } from 'vue-router';
 import { cn } from '@/lib/utils';
@@ -33,6 +33,8 @@ import { Label } from '@/components/ui/label';
 import { useI18n } from 'vue-i18n';
 import Turnstile from 'vue-turnstile';
 import { useSettingsStore } from '@/stores/settings';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
 const settingsStore = useSettingsStore();
 
@@ -53,8 +55,19 @@ const success = ref('');
 const tokenValid = ref(false);
 const submitting = ref(false);
 
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('auth-reset-password');
+const widgetsTopOfPage = computed(() => getWidgets('auth-reset-password', 'top-of-page'));
+const widgetsBeforeForm = computed(() => getWidgets('auth-reset-password', 'before-form'));
+const widgetsAfterForm = computed(() => getWidgets('auth-reset-password', 'after-form'));
+const widgetsBottomOfPage = computed(() => getWidgets('auth-reset-password', 'bottom-of-page'));
+
 onMounted(async () => {
     await settingsStore.fetchSettings();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+
     const token = route.query.token as string;
     if (!token) {
         error.value = 'Token is required.';
@@ -175,8 +188,13 @@ async function onSubmit(e: Event) {
 
 <template>
     <div :class="cn('flex flex-col gap-6', props.class)">
+        <!-- Plugin Widgets: Top of Page -->
+        <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
         <div v-if="loading" class="text-center text-sm">{{ $t('common.loading') }}</div>
         <div v-else>
+            <!-- Plugin Widgets: Before Form -->
+            <WidgetRenderer v-if="widgetsBeforeForm.length > 0" :widgets="widgetsBeforeForm" />
             <form v-if="tokenValid" @submit="onSubmit">
                 <div class="flex flex-col gap-6">
                     <div class="flex flex-col gap-4">
@@ -220,6 +238,12 @@ async function onSubmit(e: Event) {
             <div v-else class="text-center text-sm text-red-500">
                 {{ error || $t('auth.invalidToken') }}
             </div>
+
+            <!-- Plugin Widgets: After Form -->
+            <WidgetRenderer v-if="widgetsAfterForm.length > 0" :widgets="widgetsAfterForm" />
         </div>
+
+        <!-- Plugin Widgets: Bottom of Page -->
+        <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
     </div>
 </template>

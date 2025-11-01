@@ -1,5 +1,8 @@
 <template>
     <div class="space-y-6">
+        <!-- Plugin Widgets: Profile Tab Top -->
+        <WidgetRenderer v-if="widgetsTop.length > 0" :widgets="widgetsTop" />
+
         <div>
             <h3 class="text-lg font-semibold">{{ $t('account.editProfile') }}</h3>
             <p class="text-sm text-muted-foreground">{{ $t('account.editProfileDescription') }}</p>
@@ -99,6 +102,9 @@
                 </Button>
             </div>
         </form>
+
+        <!-- Plugin Widgets: Profile Tab Bottom -->
+        <WidgetRenderer v-if="widgetsBottom.length > 0" :widgets="widgetsBottom" />
     </div>
 </template>
 
@@ -127,7 +133,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSessionStore } from '@/stores/session';
 import { useToast } from 'vue-toastification';
@@ -136,6 +142,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { FormItem } from '@/components/ui/form';
 import { AvatarUpload } from '@/components/ui/avatar-upload';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import axios from 'axios';
 
 const { t: $t } = useI18n();
@@ -157,6 +165,11 @@ const isSubmitting = ref(false);
 const loading = ref(true);
 const avatarFile = ref<File | null>(null);
 const isUploadingAvatar = ref(false);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('account');
+const widgetsTop = computed(() => getWidgets('account', 'profile-top'));
+const widgetsBottom = computed(() => getWidgets('account', 'profile-bottom'));
 
 // Initialize form with current user data
 const initializeForm = () => {
@@ -296,6 +309,9 @@ onMounted(async () => {
         loading.value = true;
         await sessionStore.checkSessionOrRedirect();
         await initializeForm();
+
+        // Fetch plugin widgets
+        await fetchPluginWidgets();
     } finally {
         loading.value = false;
     }

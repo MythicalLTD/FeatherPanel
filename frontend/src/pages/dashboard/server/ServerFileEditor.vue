@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="min-h-screen flex flex-col space-y-6 pb-8">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- File Editor Header -->
             <div v-if="!loading && fileContent !== null && server" class="flex flex-col gap-4">
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -21,6 +24,12 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Plugin Widgets: After Header -->
+            <WidgetRenderer
+                v-if="!loading && fileContent !== null && server && widgetsAfterHeader.length > 0"
+                :widgets="widgetsAfterHeader"
+            />
 
             <!-- Monaco Editor -->
             <MonacoFileEditor
@@ -66,6 +75,9 @@
                     </Button>
                 </div>
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
     </DashboardLayout>
 </template>
@@ -108,6 +120,8 @@ import { AlertCircle, ArrowLeft } from 'lucide-vue-next';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
 import { useServerPermissions } from '@/composables/useServerPermissions';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import type { Server } from '@/types/server';
 
 const route = useRoute();
@@ -143,6 +157,12 @@ const readonly = computed(() => {
 // Editor state
 const fileContent = ref<string | null>(null);
 const loading = ref(true);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('server-file-editor');
+const widgetsTopOfPage = computed(() => getWidgets('server-file-editor', 'top-of-page'));
+const widgetsAfterHeader = computed(() => getWidgets('server-file-editor', 'after-header'));
+const widgetsBottomOfPage = computed(() => getWidgets('server-file-editor', 'bottom-of-page'));
 
 // File size limit - 5MB
 const FILE_SIZE_LIMIT = 5 * 1024 * 1024;
@@ -425,6 +445,9 @@ onMounted(async () => {
         }
 
         await loadFileContent();
+
+        // Fetch plugin widgets
+        await fetchPluginWidgets();
     } catch (error) {
         console.error('Error in ServerFileEditor onMounted:', error);
         toast(t('fileEditor.loadError'), { type: TYPE.ERROR });

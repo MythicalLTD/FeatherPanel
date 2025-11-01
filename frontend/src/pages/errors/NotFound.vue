@@ -1,4 +1,7 @@
 <template>
+    <!-- Plugin Widgets: Top of Page -->
+    <WidgetRenderer v-if="!checkingRedirect && widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
     <div v-if="checkingRedirect" class="min-h-screen bg-background flex items-center justify-center">
         <div class="text-center">
             <div
@@ -7,12 +10,12 @@
             <p class="text-muted-foreground">Checking for redirects...</p>
         </div>
     </div>
-    <ErrorLayout
-        v-else
-        error-code="404"
-        :title="$t('errors.notFound.title')"
-        :message="$t('errors.notFound.message')"
-    />
+    <ErrorLayout v-else error-code="404" :title="$t('errors.notFound.title')" :message="$t('errors.notFound.message')">
+        <template #footer>
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
+        </template>
+    </ErrorLayout>
 </template>
 <script setup lang="ts">
 // MIT License
@@ -39,13 +42,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ErrorLayout from '@/layouts/ErrorLayout.vue';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import axios from 'axios';
 
 // Reactive state
 const checkingRedirect = ref(true);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('error-404');
+const widgetsTopOfPage = computed(() => getWidgets('error-404', 'top-of-page'));
+const widgetsBottomOfPage = computed(() => getWidgets('error-404', 'bottom-of-page'));
 
 // Router
 const route = useRoute();
@@ -74,7 +84,10 @@ async function checkForRedirect() {
     }
 }
 
-onMounted(() => {
-    checkForRedirect();
+onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+
+    await checkForRedirect();
 });
 </script>

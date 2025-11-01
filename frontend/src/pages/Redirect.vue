@@ -1,6 +1,12 @@
 <template>
-    <div class="min-h-screen bg-background flex items-center justify-center">
-        <div class="max-w-md w-full mx-auto p-6">
+    <div class="min-h-screen bg-background flex flex-col items-center justify-center">
+        <!-- Plugin Widgets: Top of Page -->
+        <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" class="w-full" />
+
+        <div class="max-w-md w-full mx-auto p-6 flex-1 flex flex-col justify-center">
+            <!-- Plugin Widgets: Before Content -->
+            <WidgetRenderer v-if="widgetsBeforeContent.length > 0" :widgets="widgetsBeforeContent" />
+
             <div class="text-center">
                 <!-- Loading State -->
                 <div v-if="loading" class="space-y-4">
@@ -54,7 +60,13 @@
                     </p>
                 </div>
             </div>
+
+            <!-- Plugin Widgets: After Content -->
+            <WidgetRenderer v-if="widgetsAfterContent.length > 0" :widgets="widgetsAfterContent" />
         </div>
+
+        <!-- Plugin Widgets: Bottom of Page -->
+        <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" class="w-full" />
     </div>
 </template>
 
@@ -83,9 +95,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Button } from '@/components/ui/button';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import axios from 'axios';
 
 // Types
@@ -100,6 +114,13 @@ const loading = ref(true);
 const error = ref(false);
 const redirectLink = ref<RedirectLink | null>(null);
 const countdown = ref(5);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('redirect');
+const widgetsTopOfPage = computed(() => getWidgets('redirect', 'top-of-page'));
+const widgetsBeforeContent = computed(() => getWidgets('redirect', 'before-content'));
+const widgetsAfterContent = computed(() => getWidgets('redirect', 'after-content'));
+const widgetsBottomOfPage = computed(() => getWidgets('redirect', 'bottom-of-page'));
 
 // Router
 const route = useRoute();
@@ -146,7 +167,10 @@ function goHome() {
     router.push('/');
 }
 
-onMounted(() => {
-    checkRedirect();
+onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+
+    await checkRedirect();
 });
 </script>

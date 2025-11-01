@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Header with back button and create task button -->
             <div class="space-y-4">
                 <div class="flex items-center gap-2 sm:gap-4">
@@ -27,6 +30,9 @@
                     </Button>
                 </div>
             </div>
+
+            <!-- Plugin Widgets: After Header -->
+            <WidgetRenderer v-if="widgetsAfterHeader.length > 0" :widgets="widgetsAfterHeader" />
 
             <!-- Task List -->
             <div class="space-y-4">
@@ -66,7 +72,13 @@
                     </div>
                 </div>
 
-                <div v-else class="space-y-3">
+                <!-- Plugin Widgets: Before Tasks List -->
+                <WidgetRenderer
+                    v-if="!loading && tasks.length > 0 && widgetsBeforeTasksList.length > 0"
+                    :widgets="widgetsBeforeTasksList"
+                />
+
+                <div v-else-if="!loading && tasks.length > 0" class="space-y-3">
                     <div
                         v-for="task in sortedTasks"
                         :key="task.id"
@@ -225,7 +237,16 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Plugin Widgets: After Tasks List -->
+                <WidgetRenderer
+                    v-if="!loading && tasks.length > 0 && widgetsAfterTasksList.length > 0"
+                    :widgets="widgetsAfterTasksList"
+                />
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
         <!-- Create Task Drawer -->
@@ -613,6 +634,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
 type TaskItem = {
     id: number;
@@ -685,6 +708,15 @@ const editForm = ref({
 });
 
 const server = ref<{ name: string } | null>(null);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('server-tasks');
+const widgetsTopOfPage = computed(() => getWidgets('server-tasks', 'top-of-page'));
+const widgetsAfterHeader = computed(() => getWidgets('server-tasks', 'after-header'));
+const widgetsBeforeTasksList = computed(() => getWidgets('server-tasks', 'before-tasks-list'));
+const widgetsAfterTasksList = computed(() => getWidgets('server-tasks', 'after-tasks-list'));
+const widgetsBottomOfPage = computed(() => getWidgets('server-tasks', 'bottom-of-page'));
+
 const breadcrumbs = computed(() => [
     { text: t('common.dashboard'), href: '/dashboard' },
     { text: t('common.servers'), href: '/dashboard' },
@@ -718,6 +750,9 @@ onMounted(async () => {
     }
 
     await fetchTasks();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 });
 
 async function fetchSchedule() {

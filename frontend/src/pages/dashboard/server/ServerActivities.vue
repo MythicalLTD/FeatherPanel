@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 pb-8">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Header Section -->
             <div class="flex flex-col gap-4">
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -86,6 +89,9 @@
                 </Card>
             </div>
 
+            <!-- Plugin Widgets: After Search Filters -->
+            <WidgetRenderer v-if="widgetsAfterFilters.length > 0" :widgets="widgetsAfterFilters" />
+
             <!-- Loading State -->
             <div v-if="loading" class="flex flex-col items-center justify-center py-16">
                 <div class="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full"></div>
@@ -124,8 +130,14 @@
                 </div>
             </div>
 
+            <!-- Plugin Widgets: Before Activities List -->
+            <WidgetRenderer
+                v-if="!loading && activities.length > 0 && widgetsBeforeActivities.length > 0"
+                :widgets="widgetsBeforeActivities"
+            />
+
             <!-- Activities List -->
-            <div v-else class="space-y-4">
+            <div v-if="!loading && activities.length > 0" class="space-y-4">
                 <div v-for="activity in activities" :key="activity.id" class="group">
                     <Card class="border-2 hover:border-primary/50 transition-all duration-200">
                         <CardContent class="p-4">
@@ -271,6 +283,15 @@
                     </CardContent>
                 </Card>
             </div>
+
+            <!-- Plugin Widgets: After Activities List -->
+            <WidgetRenderer
+                v-if="!loading && activities.length > 0 && widgetsAfterActivities.length > 0"
+                :widgets="widgetsAfterActivities"
+            />
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
         <!-- Enhanced Activity Details Dialog -->
@@ -553,6 +574,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
 type ActivityMetadata = {
     message?: string;
@@ -644,6 +667,14 @@ const pagination = ref({
 // Debounce timer
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('server-activities');
+const widgetsTopOfPage = computed(() => getWidgets('server-activities', 'top-of-page'));
+const widgetsAfterFilters = computed(() => getWidgets('server-activities', 'after-search-filters'));
+const widgetsBeforeActivities = computed(() => getWidgets('server-activities', 'before-activities-list'));
+const widgetsAfterActivities = computed(() => getWidgets('server-activities', 'after-activities-list'));
+const widgetsBottomOfPage = computed(() => getWidgets('server-activities', 'bottom-of-page'));
+
 const breadcrumbs = computed(() => [
     { text: t('common.dashboard'), href: '/dashboard' },
     { text: t('common.servers'), href: '/dashboard' },
@@ -666,6 +697,9 @@ onMounted(async () => {
 
     await fetchServer();
     await fetchActivities();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 });
 
 async function fetchActivities(page = pagination.value.current_page) {

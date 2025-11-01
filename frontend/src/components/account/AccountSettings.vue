@@ -1,5 +1,8 @@
 <template>
     <div class="space-y-6">
+        <!-- Plugin Widgets: Settings Tab Top -->
+        <WidgetRenderer v-if="widgetsTop.length > 0" :widgets="widgetsTop" />
+
         <div>
             <h3 class="text-lg font-semibold">{{ $t('account.securitySettings') }}</h3>
             <p class="text-sm text-muted-foreground">{{ $t('account.securitySettingsDescription') }}</p>
@@ -119,6 +122,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- Plugin Widgets: Settings Tab Bottom -->
+        <WidgetRenderer v-if="widgetsBottom.length > 0" :widgets="widgetsBottom" />
     </div>
 </template>
 
@@ -156,6 +162,8 @@ import { useToast } from 'vue-toastification';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-vue-next';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import type { UserInfo } from '@/stores/session';
 
 const { t: $t } = useI18n();
@@ -170,6 +178,11 @@ const loading = ref(true);
 
 // Computed user data with proper typing
 const user = computed<UserInfo | null>(() => sessionStore.user);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('account');
+const widgetsTop = computed(() => getWidgets('account', 'settings-top'));
+const widgetsBottom = computed(() => getWidgets('account', 'settings-bottom'));
 
 // Handle Enable 2FA
 const handleEnable2FA = () => {
@@ -243,6 +256,9 @@ onMounted(async () => {
         loading.value = true;
         await sessionStore.checkSessionOrRedirect();
         await settingsStore.fetchSettings();
+
+        // Fetch plugin widgets
+        await fetchPluginWidgets();
     } finally {
         loading.value = false;
     }

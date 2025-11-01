@@ -1,5 +1,8 @@
 <template>
     <div class="space-y-6">
+        <!-- Plugin Widgets: Activity Tab Top -->
+        <WidgetRenderer v-if="widgetsTop.length > 0" :widgets="widgetsTop" />
+
         <div>
             <h3 class="text-lg font-medium">{{ $t('account.activity.title') }}</h3>
             <p class="text-sm text-muted-foreground">{{ $t('account.activity.description') }}</p>
@@ -124,6 +127,9 @@
                 </p>
             </div>
         </div>
+
+        <!-- Plugin Widgets: Activity Tab Bottom -->
+        <WidgetRenderer v-if="widgetsBottom.length > 0" :widgets="widgetsBottom" />
     </div>
 </template>
 
@@ -158,6 +164,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useSessionStore } from '@/stores/session';
 import { Search, RefreshCw, Clock, Globe, Activity } from 'lucide-vue-next';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import axios from 'axios';
 
 const { t } = useI18n();
@@ -177,6 +185,11 @@ const activities = ref<Activity[]>([]);
 const loading = ref(false);
 const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const searchQuery = ref('');
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('account');
+const widgetsTop = computed(() => getWidgets('account', 'activity-top'));
+const widgetsBottom = computed(() => getWidgets('account', 'activity-bottom'));
 
 const totalActivities = computed(() => activities.value.length);
 
@@ -252,5 +265,10 @@ function formatDate(dateString: string): string {
     }
 }
 
-onMounted(fetchActivity);
+onMounted(async () => {
+    await fetchActivity();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+});
 </script>

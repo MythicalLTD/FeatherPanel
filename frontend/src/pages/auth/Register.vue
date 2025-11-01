@@ -23,7 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { onMounted, ref, type HTMLAttributes } from 'vue';
+import { computed, onMounted, ref, type HTMLAttributes } from 'vue';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,8 @@ import Turnstile from 'vue-turnstile';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useI18n } from 'vue-i18n';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 const props = defineProps<{
     class?: HTMLAttributes['class'];
 }>();
@@ -41,6 +43,9 @@ const { t: $t } = useI18n();
 
 onMounted(async () => {
     await settingsStore.fetchSettings();
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 });
 
 const form = ref({
@@ -54,6 +59,13 @@ const form = ref({
 const loading = ref(false);
 const error = ref('');
 const success = ref('');
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('auth-register');
+const widgetsTopOfPage = computed(() => getWidgets('auth-register', 'top-of-page'));
+const widgetsBeforeForm = computed(() => getWidgets('auth-register', 'before-form'));
+const widgetsAfterForm = computed(() => getWidgets('auth-register', 'after-form'));
+const widgetsBottomOfPage = computed(() => getWidgets('auth-register', 'bottom-of-page'));
 
 function validateForm(): string | null {
     const requiredFields: Array<keyof typeof form.value> = ['username', 'email', 'password', 'first_name', 'last_name'];
@@ -198,6 +210,12 @@ async function onSubmit(e: Event) {
 
 <template>
     <div :class="cn('flex flex-col gap-6', props.class)">
+        <!-- Plugin Widgets: Top of Page -->
+        <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
+        <!-- Plugin Widgets: Before Form -->
+        <WidgetRenderer v-if="widgetsBeforeForm.length > 0" :widgets="widgetsBeforeForm" />
+
         <form @submit="onSubmit">
             <div class="flex flex-col gap-6">
                 <div class="flex flex-col gap-4">
@@ -283,5 +301,11 @@ async function onSubmit(e: Event) {
                 </div>
             </div>
         </form>
+
+        <!-- Plugin Widgets: After Form -->
+        <WidgetRenderer v-if="widgetsAfterForm.length > 0" :widgets="widgetsAfterForm" />
+
+        <!-- Plugin Widgets: Bottom of Page -->
+        <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
     </div>
 </template>

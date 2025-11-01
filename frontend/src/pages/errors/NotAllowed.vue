@@ -1,5 +1,13 @@
 <template>
-    <ErrorLayout error-code="403" :title="$t('errors.notAllowed.title')" :message="$t('errors.notAllowed.message')" />
+    <!-- Plugin Widgets: Top of Page -->
+    <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
+    <ErrorLayout error-code="403" :title="$t('errors.notAllowed.title')" :message="$t('errors.notAllowed.message')">
+        <template #footer>
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
+        </template>
+    </ErrorLayout>
 </template>
 <script setup lang="ts">
 // MIT License
@@ -26,5 +34,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+import { computed, onMounted } from 'vue';
 import ErrorLayout from '@/layouts/ErrorLayout.vue';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('error-403');
+const widgetsTopOfPage = computed(() => getWidgets('error-403', 'top-of-page'));
+const widgetsBottomOfPage = computed(() => getWidgets('error-403', 'bottom-of-page'));
+
+onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+});
 </script>
