@@ -568,7 +568,7 @@ class ServersController
                 return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a non-empty string', 'INVALID_DATA_TYPE', 400);
             }
         }
-        
+
         // Description is optional, but if provided must be a string
         if (isset($data['description']) && !is_string($data['description'])) {
             return ApiResponse::error('Description must be a string', 'INVALID_DATA_TYPE', 400);
@@ -590,7 +590,7 @@ class ServersController
                 return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . " must be less than $max characters long", 'INVALID_DATA_LENGTH', 400);
             }
         }
-        
+
         // Description is optional, but if provided validate length
         if (isset($data['description']) && $data['description'] !== null && $data['description'] !== '') {
             $descLen = strlen($data['description']);
@@ -948,7 +948,7 @@ class ServersController
                     }
                     continue;
                 }
-                
+
                 // For other string fields, must be a string
                 if (!is_string($value)) {
                     return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a string', 'INVALID_DATA_TYPE', 400);
@@ -1136,14 +1136,15 @@ class ServersController
                 }
             }
         }
-        
+
         // Log the data being sent for debugging
         App::getInstance(true)->getLogger()->debug('Updating server ID ' . $id . ' with data: ' . json_encode($serverUpdateData));
-        
+
         $updated = Server::updateServerById($id, $serverUpdateData);
         if (!$updated) {
             // Check backend logs for detailed error message
             App::getInstance(true)->getLogger()->error('Server update failed for ID: ' . $id);
+
             return ApiResponse::error('Failed to update server. Check server logs for details.', 'FAILED_TO_UPDATE_SERVER', 500);
         }
 

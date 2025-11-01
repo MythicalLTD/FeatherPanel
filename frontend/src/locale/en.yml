@@ -645,6 +645,7 @@ serverConsole:
     serverHistoryCleared: 'Server command history cleared'
     globalHistoryCleared: 'Global command history cleared'
     failedToCopy: 'Failed to copy to clipboard'
+    scrollToBottom: 'Scroll to bottom'
 
 # Server Startup
 serverStartup:

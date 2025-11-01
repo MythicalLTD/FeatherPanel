@@ -569,13 +569,24 @@
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent class="p-0">
+                <CardContent class="p-0 relative">
                     <div
                         ref="terminalContainer"
                         class="w-full h-[500px] sm:h-[600px] bg-black overflow-hidden"
                         @wheel.stop
                         @touchmove.stop
                     ></div>
+                    <!-- Scroll to bottom button -->
+                    <Button
+                        v-if="showScrollToBottom"
+                        variant="outline"
+                        size="sm"
+                        class="absolute top-4 right-4 z-10 shadow-lg backdrop-blur-sm bg-background/95 hover:bg-background"
+                        @click="scrollToBottom"
+                    >
+                        <ChevronDown class="h-4 w-4 mr-2" />
+                        <span class="hidden sm:inline">{{ t('serverConsole.scrollToBottom') }}</span>
+                    </Button>
 
                     <!-- Command Input Bar -->
                     <div v-if="hasServerPermission('control.console')" class="border-t p-3 bg-muted/30">
@@ -839,6 +850,7 @@ import {
     Copy,
     Calendar,
     Server as ServerIcon,
+    ChevronDown,
 } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
@@ -900,6 +912,10 @@ const WRITE_DELAY = 16; // ~60fps
 const commandInput = ref('');
 const sendingCommand = ref(false);
 const uploading = ref(false);
+
+// Scroll to bottom button state
+const showScrollToBottom = ref(false);
+let scrollCheckInterval: number | null = null;
 
 // Command History
 interface CommandHistoryEntry {
@@ -1175,6 +1191,9 @@ function initializeTerminal(): void {
     } else {
         writeToTerminal('\x1b[36mServer status: ' + server.value.status + '\x1b[0m\r\n\r\n');
     }
+
+    // Set up scroll position monitoring
+    setupScrollMonitoring();
 }
 
 // Replace brand names in console output
@@ -1308,7 +1327,13 @@ function writeToTerminal(data: string): void {
 
     // Schedule flush if not already scheduled
     if (writeTimeout === null) {
-        writeTimeout = window.setTimeout(flushWriteBuffer, WRITE_DELAY);
+        writeTimeout = window.setTimeout(() => {
+            flushWriteBuffer();
+            // After writing, check if we should auto-scroll (only if already at bottom)
+            if (!showScrollToBottom.value) {
+                scrollToBottom();
+            }
+        }, WRITE_DELAY);
     }
 }
 
@@ -1333,6 +1358,73 @@ function clearTerminal(): void {
         terminal.clear();
         writeToTerminal('\r\n\x1b[1;36mTerminal cleared\x1b[0m\r\n\r\n');
     }
+    // After clearing, scroll to bottom
+    scrollToBottom();
+}
+
+// Check if terminal is scrolled to bottom
+function checkScrollPosition(): void {
+    if (!terminal) {
+        showScrollToBottom.value = false;
+        return;
+    }
+
+    // Get terminal scroll position
+    const viewportElement = terminalContainer.value?.querySelector('.xterm-viewport') as HTMLElement;
+    if (!viewportElement) {
+        showScrollToBottom.value = false;
+        return;
+    }
+
+    const scrollTop = viewportElement.scrollTop;
+    const scrollHeight = viewportElement.scrollHeight;
+    const clientHeight = viewportElement.clientHeight;
+
+    // Check if scrolled to bottom (with 5px threshold for rounding errors)
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 5;
+    showScrollToBottom.value = !isAtBottom;
+}
+
+// Set up scroll monitoring
+function setupScrollMonitoring(): void {
+    // Wait for terminal to be ready
+    setTimeout(() => {
+        // Clear existing interval if any
+        if (scrollCheckInterval !== null) {
+            clearInterval(scrollCheckInterval);
+        }
+
+        // Check scroll position periodically
+        scrollCheckInterval = window.setInterval(() => {
+            checkScrollPosition();
+        }, 100);
+
+        // Also check on scroll events
+        const viewportElement = terminalContainer.value?.querySelector('.xterm-viewport') as HTMLElement;
+        if (viewportElement) {
+            viewportElement.addEventListener('scroll', checkScrollPosition);
+        }
+
+        // Initial check
+        checkScrollPosition();
+    }, 200);
+}
+
+// Scroll terminal to bottom
+function scrollToBottom(): void {
+    if (!terminal) return;
+
+    // Scroll terminal to bottom
+    terminal.scrollToBottom();
+
+    // Also ensure viewport is scrolled
+    const viewportElement = terminalContainer.value?.querySelector('.xterm-viewport') as HTMLElement;
+    if (viewportElement) {
+        viewportElement.scrollTop = viewportElement.scrollHeight;
+    }
+
+    // Update button state
+    checkScrollPosition();
 }
 
 // Upload console logs to mclo.gs
@@ -1684,6 +1776,18 @@ onUnmounted(() => {
 
     // Clear write buffer
     writeBuffer = [];
+
+    // Clean up scroll monitoring
+    if (scrollCheckInterval !== null) {
+        clearInterval(scrollCheckInterval);
+        scrollCheckInterval = null;
+    }
+
+    // Remove scroll event listener
+    const viewportElement = terminalContainer.value?.querySelector('.xterm-viewport') as HTMLElement;
+    if (viewportElement) {
+        viewportElement.removeEventListener('scroll', checkScrollPosition);
+    }
 
     // Clean up message handler
     if (messageHandler && wingsWebSocket.websocket.value) {

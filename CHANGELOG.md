@@ -14,6 +14,7 @@
 
 - Added the ability to create servers without requiring a description.
 - Users are now reminded of the default startup command after making changes, ensuring an easy way to restore the original if needed.
+- Added a button to the console that scrolls to the bottom, making it easier to quickly view the latest output.
 
 ## v1.0.0 BETA
 
