@@ -83,7 +83,10 @@
             />
 
             <!-- Subusers List -->
-            <Card v-else class="border-2 hover:border-primary/50 transition-colors">
+            <Card
+                v-if="!loading && (subusers.length > 0 || searchQuery)"
+                class="border-2 hover:border-primary/50 transition-colors"
+            >
                 <CardHeader>
                     <div class="flex items-center gap-3">
                         <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">

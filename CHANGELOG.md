@@ -5,6 +5,7 @@
 ### Fixed
 
 - Resolved an issue that prevented using Ctrl+C to interrupt processes in the server console—keyboard shortcuts now work as expected.
+- Fixed an issue where subuser search filters and the table would appear even when there were no subusers these elements now only show when subusers exist.
 
 ### Improved
 
