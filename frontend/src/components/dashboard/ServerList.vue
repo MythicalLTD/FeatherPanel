@@ -251,21 +251,22 @@
                                                         {{ server.description || $t('servers.noDescription') }}
                                                     </p>
                                                 </div>
-                                                <div class="flex flex-col gap-1">
-                                                    <Badge
-                                                        :variant="getStatusVariant(displayStatus(server))"
-                                                        class="bg-white/20 text-white border-white/30 hover:bg-white/30 text-xs"
-                                                    >
-                                                        {{ $t(`servers.status.${displayStatus(server)}`) }}
-                                                    </Badge>
-                                                    <!-- Subuser Access Badge -->
-                                                    <Badge
-                                                        v-if="server.is_subuser"
-                                                        variant="outline"
-                                                        class="bg-blue-500/20 text-blue-100 border-blue-300/30 text-xs"
-                                                    >
-                                                        {{ $t('servers.subuserAccess') }}
-                                                    </Badge>
+                                                <div class="flex flex-col gap-1 items-end">
+                                                    <div class="flex items-center gap-1.5">
+                                                        <div
+                                                            class="h-2.5 w-2.5 rounded-full"
+                                                            :class="getStatusDotColor(displayStatus(server))"
+                                                            :title="$t(`servers.status.${displayStatus(server)}`)"
+                                                        ></div>
+                                                        <!-- Subuser Access Badge -->
+                                                        <Badge
+                                                            v-if="server.is_subuser"
+                                                            variant="outline"
+                                                            class="bg-blue-500/20 text-blue-100 border-blue-300/30 text-xs"
+                                                        >
+                                                            {{ $t('servers.subuserAccess') }}
+                                                        </Badge>
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -491,21 +492,22 @@
                                                         {{ server.description || $t('servers.noDescription') }}
                                                     </p>
                                                 </div>
-                                                <div class="flex flex-col gap-1">
-                                                    <Badge
-                                                        :variant="getStatusVariant(displayStatus(server))"
-                                                        class="bg-white/20 text-white border-white/30 hover:bg-white/30 text-xs"
-                                                    >
-                                                        {{ $t(`servers.status.${displayStatus(server)}`) }}
-                                                    </Badge>
-                                                    <!-- Subuser Access Badge -->
-                                                    <Badge
-                                                        v-if="server.is_subuser"
-                                                        variant="outline"
-                                                        class="bg-blue-500/20 text-blue-100 border-blue-300/30 text-xs"
-                                                    >
-                                                        {{ $t('servers.subuserAccess') }}
-                                                    </Badge>
+                                                <div class="flex flex-col gap-1 items-end">
+                                                    <div class="flex items-center gap-1.5">
+                                                        <div
+                                                            class="h-2.5 w-2.5 rounded-full"
+                                                            :class="getStatusDotColor(displayStatus(server))"
+                                                            :title="$t(`servers.status.${displayStatus(server)}`)"
+                                                        ></div>
+                                                        <!-- Subuser Access Badge -->
+                                                        <Badge
+                                                            v-if="server.is_subuser"
+                                                            variant="outline"
+                                                            class="bg-blue-500/20 text-blue-100 border-blue-300/30 text-xs"
+                                                        >
+                                                            {{ $t('servers.subuserAccess') }}
+                                                        </Badge>
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -706,21 +708,22 @@
                                                 {{ server.description || $t('servers.noDescription') }}
                                             </p>
                                         </div>
-                                        <div class="flex flex-col gap-1">
-                                            <Badge
-                                                :variant="getStatusVariant(displayStatus(server))"
-                                                class="bg-white/20 text-white border-white/30 hover:bg-white/30"
-                                            >
-                                                {{ $t(`servers.status.${displayStatus(server)}`) }}
-                                            </Badge>
-                                            <!-- Subuser Access Badge -->
-                                            <Badge
-                                                v-if="server.is_subuser"
-                                                variant="outline"
-                                                class="bg-blue-500/20 text-blue-100 border-blue-300/30 text-xs"
-                                            >
-                                                {{ $t('servers.subuserAccess') }}
-                                            </Badge>
+                                        <div class="flex flex-col gap-1 items-end">
+                                            <div class="flex items-center gap-1.5">
+                                                <div
+                                                    class="h-2.5 w-2.5 rounded-full"
+                                                    :class="getStatusDotColor(displayStatus(server))"
+                                                    :title="$t(`servers.status.${displayStatus(server)}`)"
+                                                ></div>
+                                                <!-- Subuser Access Badge -->
+                                                <Badge
+                                                    v-if="server.is_subuser"
+                                                    variant="outline"
+                                                    class="bg-blue-500/20 text-blue-100 border-blue-300/30 text-xs"
+                                                >
+                                                    {{ $t('servers.subuserAccess') }}
+                                                </Badge>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -918,9 +921,11 @@
                                     </td>
                                     <td class="px-4 py-3">
                                         <div class="flex items-center gap-2">
-                                            <Badge :variant="getStatusVariant(displayStatus(server))" class="text-xs">
-                                                {{ $t(`servers.status.${displayStatus(server)}`) }}
-                                            </Badge>
+                                            <div
+                                                class="h-2.5 w-2.5 rounded-full"
+                                                :class="getStatusDotColor(displayStatus(server))"
+                                                :title="$t(`servers.status.${displayStatus(server)}`)"
+                                            ></div>
                                             <Badge
                                                 v-if="server.is_subuser"
                                                 variant="outline"
@@ -1049,9 +1054,11 @@
                                                 {{ server.spell?.name || 'N/A' }}
                                             </p>
                                         </div>
-                                        <Badge :variant="getStatusVariant(displayStatus(server))" class="text-xs">
-                                            {{ $t(`servers.status.${displayStatus(server)}`) }}
-                                        </Badge>
+                                        <div
+                                            class="h-2.5 w-2.5 rounded-full"
+                                            :class="getStatusDotColor(displayStatus(server))"
+                                            :title="$t(`servers.status.${displayStatus(server)}`)"
+                                        ></div>
                                     </div>
                                 </div>
 
@@ -1143,20 +1150,21 @@
                                                     {{ server.description || $t('servers.noDescription') }}
                                                 </p>
                                             </div>
-                                            <div class="flex flex-col gap-2">
-                                                <Badge
-                                                    :variant="getStatusVariant(displayStatus(server))"
-                                                    class="bg-white/20 text-white border-white/30"
-                                                >
-                                                    {{ $t(`servers.status.${displayStatus(server)}`) }}
-                                                </Badge>
-                                                <Badge
-                                                    v-if="server.is_subuser"
-                                                    variant="outline"
-                                                    class="bg-blue-500/20 text-blue-100 border-blue-300/30"
-                                                >
-                                                    {{ $t('servers.subuserAccess') }}
-                                                </Badge>
+                                            <div class="flex flex-col gap-2 items-end">
+                                                <div class="flex items-center gap-1.5">
+                                                    <div
+                                                        class="h-2.5 w-2.5 rounded-full"
+                                                        :class="getStatusDotColor(displayStatus(server))"
+                                                        :title="$t(`servers.status.${displayStatus(server)}`)"
+                                                    ></div>
+                                                    <Badge
+                                                        v-if="server.is_subuser"
+                                                        variant="outline"
+                                                        class="bg-blue-500/20 text-blue-100 border-blue-300/30"
+                                                    >
+                                                        {{ $t('servers.subuserAccess') }}
+                                                    </Badge>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -1578,9 +1586,11 @@
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2">
                                 <span class="text-sm font-medium truncate">{{ server.name }}</span>
-                                <Badge :variant="getStatusVariant(displayStatus(server))" class="text-xs">
-                                    {{ $t(`servers.status.${displayStatus(server)}`) }}
-                                </Badge>
+                                <div
+                                    class="h-2.5 w-2.5 rounded-full"
+                                    :class="getStatusDotColor(displayStatus(server))"
+                                    :title="$t(`servers.status.${displayStatus(server)}`)"
+                                ></div>
                                 <Badge v-if="server.is_subuser" variant="outline" class="text-xs">
                                     {{ $t('servers.subuserAccess') }}
                                 </Badge>
@@ -2128,20 +2138,21 @@ async function changePage(page: number) {
     await fetchServers();
 }
 
-function getStatusVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
+function getStatusDotColor(status: string): string {
     switch (status) {
         case 'running':
-            return 'default';
+            return 'bg-green-500';
         case 'stopped':
-            return 'secondary';
+        case 'offline':
+            return 'bg-red-500';
         case 'installing':
-            return 'outline';
+        case 'starting':
+        case 'stopping':
         case 'suspended':
-            return 'destructive';
         case 'error':
-            return 'destructive';
+        case 'unknown':
         default:
-            return 'outline';
+            return 'bg-yellow-500';
     }
 }
 
