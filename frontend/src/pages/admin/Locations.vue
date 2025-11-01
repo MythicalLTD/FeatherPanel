@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="[{ text: 'Locations', isCurrent: true, href: '/admin/locations' }]">
         <div class="min-h-screen bg-background">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Loading State -->
             <div v-if="loading" class="flex items-center justify-center py-12">
                 <div class="flex items-center gap-3">
@@ -11,6 +14,9 @@
 
             <!-- Locations Table -->
             <div v-else class="p-6">
+                <!-- Plugin Widgets: Before Table -->
+                <WidgetRenderer v-if="widgetsBeforeTable.length > 0" :widgets="widgetsBeforeTable" />
+
                 <TableComponent
                     title="Locations"
                     description="Manage all locations in your system."
@@ -100,6 +106,10 @@
                         </div>
                     </template>
                 </TableComponent>
+
+                <!-- Plugin Widgets: After Table -->
+                <WidgetRenderer v-if="widgetsAfterTable.length > 0" :widgets="widgetsAfterTable" />
+
                 <!-- Helpful info cards under the table -->
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Card>
@@ -150,7 +160,13 @@
                         </CardContent>
                     </Card>
                 </div>
+
+                <!-- Plugin Widgets: After Help Cards -->
+                <WidgetRenderer v-if="widgetsAfterHelpCards.length > 0" :widgets="widgetsAfterHelpCards" />
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
     </DashboardLayout>
 
@@ -309,8 +325,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Eye, Pencil, Trash2, Server, Plus, MapPin, Flag, Rocket } from 'lucide-vue-next';
@@ -339,6 +357,14 @@ type Location = {
 
 const toast = useToast();
 const router = useRouter();
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-locations');
+const widgetsTopOfPage = computed(() => getWidgets('admin-locations', 'top-of-page'));
+const widgetsBeforeTable = computed(() => getWidgets('admin-locations', 'before-table'));
+const widgetsAfterTable = computed(() => getWidgets('admin-locations', 'after-table'));
+const widgetsAfterHelpCards = computed(() => getWidgets('admin-locations', 'after-help-cards'));
+const widgetsBottomOfPage = computed(() => getWidgets('admin-locations', 'bottom-of-page'));
 
 const locations = ref<Location[]>([]);
 const searchQuery = ref('');
@@ -412,7 +438,12 @@ async function fetchLocations() {
     }
 }
 
-onMounted(fetchLocations);
+onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+    
+    await fetchLocations();
+});
 watch([() => pagination.value.page, () => pagination.value.pageSize, searchQuery], fetchLocations);
 
 function handleSearch(query: string) {

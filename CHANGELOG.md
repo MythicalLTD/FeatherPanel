@@ -26,6 +26,7 @@
 - Users are now prevented from leaving the file manager while uploads are in progress, ensuring files upload completely without accidental interruption. A prompt will ask you to confirm if you try to leave during uploads.
 - Added support for uploading entire folders, making it easy to transfer complex file structures to your server in one step.
 - Added a toggle/option to wipe all server files before reinstalling a server. When reinstalling, users can choose to delete all files in the root directory for a clean reset. This is available as an option in the reinstall endpoint and UI.
+- Plugin system now supports rendering custom components/widgets on every page, enabling seamless integration of new features and UI enhancements throughout the panel.
 
 ## v1.0.0 BETA
 

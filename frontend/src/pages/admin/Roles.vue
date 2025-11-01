@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="[{ text: 'Roles', isCurrent: true, href: '/admin/roles' }]">
         <div class="min-h-screen bg-background">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Loading State -->
             <div v-if="loading" class="flex items-center justify-center py-12">
                 <div class="flex items-center gap-3">
@@ -11,6 +14,8 @@
 
             <!-- Roles Table -->
             <div v-else class="p-6">
+                <!-- Plugin Widgets: Before Table -->
+                <WidgetRenderer v-if="widgetsBeforeTable.length > 0" :widgets="widgetsBeforeTable" />
                 <TableComponent
                     title="Roles"
                     description="Manage all roles in your system."
@@ -109,6 +114,10 @@
                         </div>
                     </template>
                 </TableComponent>
+
+                <!-- Plugin Widgets: After Table -->
+                <WidgetRenderer v-if="widgetsAfterTable.length > 0" :widgets="widgetsAfterTable" />
+
                 <!-- Roles help cards under the table -->
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <Card>
@@ -169,7 +178,13 @@
                         </CardContent>
                     </Card>
                 </div>
+
+                <!-- Plugin Widgets: After Help Cards -->
+                <WidgetRenderer v-if="widgetsAfterHelpCards.length > 0" :widgets="widgetsAfterHelpCards" />
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
         <!-- View Drawer -->
@@ -490,8 +505,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, watch, onMounted, computed } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -581,6 +598,14 @@ const filteredPermissionOptions = computed(() => {
             (!newPermission.value || node.value.toLowerCase().includes(newPermission.value.toLowerCase())),
     );
 });
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-roles');
+const widgetsTopOfPage = computed(() => getWidgets('admin-roles', 'top-of-page'));
+const widgetsBeforeTable = computed(() => getWidgets('admin-roles', 'before-table'));
+const widgetsAfterTable = computed(() => getWidgets('admin-roles', 'after-table'));
+const widgetsAfterHelpCards = computed(() => getWidgets('admin-roles', 'after-help-cards'));
+const widgetsBottomOfPage = computed(() => getWidgets('admin-roles', 'bottom-of-page'));
 
 // Table columns configuration
 const tableColumns: TableColumn[] = [
@@ -675,7 +700,12 @@ async function deletePermission(permissionId: number) {
     }
 }
 
-onMounted(fetchRoles);
+onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+
+    await fetchRoles();
+});
 watch([() => pagination.value.page, () => pagination.value.pageSize, searchQuery], fetchRoles);
 
 // Table event handlers

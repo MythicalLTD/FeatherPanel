@@ -1,9 +1,18 @@
 <template>
     <DashboardLayout :breadcrumbs="[{ text: 'API Keys', isCurrent: true, href: '/admin/api-keys' }]">
         <div class="min-h-screen bg-background p-6">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Reuse the existing ApiKeys component -->
             <div class="max-w-7xl mx-auto">
+                <!-- Plugin Widgets: Before ApiKeys -->
+                <WidgetRenderer v-if="widgetsBeforeApiKeys.length > 0" :widgets="widgetsBeforeApiKeys" />
+
                 <ApiKeys />
+
+                <!-- Plugin Widgets: After ApiKeys -->
+                <WidgetRenderer v-if="widgetsAfterApiKeys.length > 0" :widgets="widgetsAfterApiKeys" />
                 <!-- Developer guidance cards -->
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Card>
@@ -40,7 +49,13 @@
                         </CardContent>
                     </Card>
                 </div>
+
+                <!-- Plugin Widgets: After Guidance Cards -->
+                <WidgetRenderer v-if="widgetsAfterGuidanceCards.length > 0" :widgets="widgetsAfterGuidanceCards" />
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
     </DashboardLayout>
 </template>
@@ -70,8 +85,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+import { computed, onMounted } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import ApiKeys from '@/components/account/ApiKeys.vue';
 import { Card, CardContent } from '@/components/ui/card';
 import { KeyRound, Plug } from 'lucide-vue-next';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-api-keys');
+const widgetsTopOfPage = computed(() => getWidgets('admin-api-keys', 'top-of-page'));
+const widgetsBeforeApiKeys = computed(() => getWidgets('admin-api-keys', 'before-api-keys'));
+const widgetsAfterApiKeys = computed(() => getWidgets('admin-api-keys', 'after-api-keys'));
+const widgetsAfterGuidanceCards = computed(() => getWidgets('admin-api-keys', 'after-guidance-cards'));
+const widgetsBottomOfPage = computed(() => getWidgets('admin-api-keys', 'bottom-of-page'));
+
+onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+});
 </script>

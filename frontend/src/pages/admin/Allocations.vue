@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="min-h-screen bg-background">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Loading State -->
             <div v-if="loading" class="flex items-center justify-center py-12">
                 <div class="flex items-center gap-3">
@@ -11,6 +14,8 @@
 
             <!-- Allocations Table -->
             <div v-else class="p-6">
+                <!-- Plugin Widgets: Before Table -->
+                <WidgetRenderer v-if="widgetsBeforeTable.length > 0" :widgets="widgetsBeforeTable" />
                 <TableComponent
                     title="Allocations"
                     :description="`Managing allocations for node: ${currentNode?.name}`"
@@ -182,6 +187,10 @@
                         </div>
                     </template>
                 </TableComponent>
+
+                <!-- Plugin Widgets: After Table -->
+                <WidgetRenderer v-if="widgetsAfterTable.length > 0" :widgets="widgetsAfterTable" />
+
                 <!-- Allocations help cards under the table -->
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <Card>
@@ -250,7 +259,13 @@
                         </CardContent>
                     </Card>
                 </div>
+
+                <!-- Plugin Widgets: After Help Cards -->
+                <WidgetRenderer v-if="widgetsAfterHelpCards.length > 0" :widgets="widgetsAfterHelpCards" />
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
     </DashboardLayout>
 
@@ -586,6 +601,8 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -618,6 +635,14 @@ import { useToast } from 'vue-toastification';
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-allocations');
+const widgetsTopOfPage = computed(() => getWidgets('admin-allocations', 'top-of-page'));
+const widgetsBeforeTable = computed(() => getWidgets('admin-allocations', 'before-table'));
+const widgetsAfterTable = computed(() => getWidgets('admin-allocations', 'after-table'));
+const widgetsAfterHelpCards = computed(() => getWidgets('admin-allocations', 'after-help-cards'));
+const widgetsBottomOfPage = computed(() => getWidgets('admin-allocations', 'bottom-of-page'));
 
 const nodeIdParam = computed(() => (route.params.nodeId ? Number(route.params.nodeId) : null));
 const currentNode = ref<Node | null>(null);
@@ -1065,6 +1090,9 @@ async function confirmDeleteUnused() {
 }
 
 onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+
     await fetchCurrentNode();
 
     // Check node health before allowing any operations

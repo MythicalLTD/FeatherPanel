@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="[{ text: 'Dashboard', isCurrent: true, href: '/admin' }]">
         <main class="p-6 bg-background min-h-screen">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Header & Actions -->
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
                 <div>
@@ -35,6 +38,9 @@
                     </Button>
                 </div>
             </div>
+
+            <!-- Plugin Widgets: After Header -->
+            <WidgetRenderer v-if="widgetsAfterHeader.length > 0" :widgets="widgetsAfterHeader" />
 
             <!-- Error Message -->
             <div
@@ -74,6 +80,9 @@
                 </div>
             </div>
 
+            <!-- Plugin Widgets: Before Widgets Grid -->
+            <WidgetRenderer v-if="widgetsBeforeGrid.length > 0" :widgets="widgetsBeforeGrid" />
+
             <!-- Widgets Grid -->
             <draggable
                 v-model="sortedWidgets"
@@ -97,6 +106,9 @@
                     </div>
                 </template>
             </draggable>
+
+            <!-- Plugin Widgets: After Widgets Grid -->
+            <WidgetRenderer v-if="widgetsAfterGrid.length > 0" :widgets="widgetsAfterGrid" />
 
             <!-- Customization Panel -->
             <WidgetCustomizationPanel
@@ -214,6 +226,9 @@
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </main>
     </DashboardLayout>
 </template>
@@ -246,6 +261,8 @@
 import { computed, onMounted, ref } from 'vue';
 import draggable from 'vuedraggable';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Button } from '@/components/ui/button';
 import {
     AlertDialog,
@@ -282,7 +299,18 @@ const dashboardStore = useDashboardStore();
 const widgetsStore = useWidgetsStore();
 const router = useRouter();
 
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-home');
+const widgetsTopOfPage = computed(() => getWidgets('admin-home', 'top-of-page'));
+const widgetsAfterHeader = computed(() => getWidgets('admin-home', 'after-header'));
+const widgetsBeforeGrid = computed(() => getWidgets('admin-home', 'before-widgets-grid'));
+const widgetsAfterGrid = computed(() => getWidgets('admin-home', 'after-widgets-grid'));
+const widgetsBottomOfPage = computed(() => getWidgets('admin-home', 'bottom-of-page'));
+
 onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+
     widgetsStore.loadWidgets();
     await settingsStore.fetchSettings();
     await sessionStore.checkSessionOrRedirect();

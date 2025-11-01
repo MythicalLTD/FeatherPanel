@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="min-h-screen bg-background">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Loading State -->
             <div v-if="loading" class="flex items-center justify-center py-12">
                 <div class="flex items-center gap-3">
@@ -11,6 +14,8 @@
 
             <!-- Nodes Table -->
             <div v-else class="p-6">
+                <!-- Plugin Widgets: Before Table -->
+                <WidgetRenderer v-if="widgetsBeforeTable.length > 0" :widgets="widgetsBeforeTable" />
                 <TableComponent
                     title="Nodes"
                     :description="`Managing nodes for location: ${currentLocation?.name}`"
@@ -158,6 +163,10 @@
                         </div>
                     </template>
                 </TableComponent>
+
+                <!-- Plugin Widgets: After Table -->
+                <WidgetRenderer v-if="widgetsAfterTable.length > 0" :widgets="widgetsAfterTable" />
+
                 <!-- Nodes info cards under the table -->
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Card>
@@ -205,6 +214,10 @@
                         </CardContent>
                     </Card>
                 </div>
+
+                <!-- Plugin Widgets: After Info Cards -->
+                <WidgetRenderer v-if="widgetsAfterInfoCards.length > 0" :widgets="widgetsAfterInfoCards" />
+
                 <!-- Wings information card under the table -->
                 <Card class="mt-6">
                     <CardContent>
@@ -223,7 +236,13 @@
                         </div>
                     </CardContent>
                 </Card>
+
+                <!-- Plugin Widgets: After Wings Card -->
+                <WidgetRenderer v-if="widgetsAfterWingsCard.length > 0" :widgets="widgetsAfterWingsCard" />
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
         <!-- Drawers -->
@@ -1415,9 +1434,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1626,6 +1647,15 @@ const networkError = ref<string | null>(null);
 const nodeHealthStatus = ref<Record<number, 'healthy' | 'unhealthy' | 'unknown'>>({});
 const healthCheckInterval = ref<number | null>(null);
 const isCheckingHealth = ref(false);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-nodes');
+const widgetsTopOfPage = computed(() => getWidgets('admin-nodes', 'top-of-page'));
+const widgetsBeforeTable = computed(() => getWidgets('admin-nodes', 'before-table'));
+const widgetsAfterTable = computed(() => getWidgets('admin-nodes', 'after-table'));
+const widgetsAfterInfoCards = computed(() => getWidgets('admin-nodes', 'after-info-cards'));
+const widgetsAfterWingsCard = computed(() => getWidgets('admin-nodes', 'after-wings-card'));
+const widgetsBottomOfPage = computed(() => getWidgets('admin-nodes', 'bottom-of-page'));
 
 // Wings configuration computed property
 const wingsConfigYaml = computed(() => {
@@ -2045,6 +2075,9 @@ function changePage(page: number) {
     fetchNodes();
 }
 onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+
     await fetchLocations();
     await fetchCurrentLocation();
     await fetchNodes();

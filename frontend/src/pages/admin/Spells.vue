@@ -6,6 +6,9 @@
         ]"
     >
         <div class="min-h-screen bg-background">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Loading State -->
             <div v-if="loading" class="flex items-center justify-center py-12">
                 <div class="flex items-center gap-3">
@@ -38,8 +41,17 @@
                     </div>
                 </div>
 
+                <!-- Plugin Widgets: After Header -->
+                <WidgetRenderer v-if="widgetsAfterHeader.length > 0" :widgets="widgetsAfterHeader" />
+
                 <Tabs v-model="activeTab">
                     <TabsContent value="installed">
+                        <!-- Plugin Widgets: Before Installed Table -->
+                        <WidgetRenderer
+                            v-if="activeTab === 'installed' && widgetsBeforeInstalledTable.length > 0"
+                            :widgets="widgetsBeforeInstalledTable"
+                        />
+
                         <TableComponent
                             :title="'Installed Spells'"
                             :description="'Manage your locally installed spells'"
@@ -164,9 +176,21 @@
                                 </div>
                             </template>
                         </TableComponent>
+
+                        <!-- Plugin Widgets: After Installed Table -->
+                        <WidgetRenderer
+                            v-if="activeTab === 'installed' && widgetsAfterInstalledTable.length > 0"
+                            :widgets="widgetsAfterInstalledTable"
+                        />
                     </TabsContent>
 
                     <TabsContent value="online">
+                        <!-- Plugin Widgets: Before Online Content -->
+                        <WidgetRenderer
+                            v-if="activeTab === 'online' && widgetsBeforeOnlineContent.length > 0"
+                            :widgets="widgetsBeforeOnlineContent"
+                        />
+
                         <!-- Publish Banner -->
                         <div v-if="showOnlinePublishBanner" class="mb-4">
                             <div
@@ -363,9 +387,22 @@
                                 </CardContent>
                             </Card>
                         </div>
+
+                        <!-- Plugin Widgets: After Online Content -->
+                        <WidgetRenderer
+                            v-if="activeTab === 'online' && widgetsAfterOnlineContent.length > 0"
+                            :widgets="widgetsAfterOnlineContent"
+                        />
                     </TabsContent>
                 </Tabs>
                 <br />
+
+                <!-- Plugin Widgets: Before Compatibility Card -->
+                <WidgetRenderer
+                    v-if="widgetsBeforeCompatibilityCard.length > 0"
+                    :widgets="widgetsBeforeCompatibilityCard"
+                />
+
                 <!-- Cross-compatibility note -->
                 <Card class="mb-4">
                     <CardContent>
@@ -383,6 +420,18 @@
                         </div>
                     </CardContent>
                 </Card>
+
+                <!-- Plugin Widgets: After Compatibility Card -->
+                <WidgetRenderer
+                    v-if="widgetsAfterCompatibilityCard.length > 0"
+                    :widgets="widgetsAfterCompatibilityCard"
+                />
+
+                <!-- Plugin Widgets: Before Documentation Cards -->
+                <WidgetRenderer
+                    v-if="widgetsBeforeDocumentationCards.length > 0"
+                    :widgets="widgetsBeforeDocumentationCards"
+                />
 
                 <!-- Spells documentation cards -->
                 <div class="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -445,7 +494,16 @@
                         </CardContent>
                     </Card>
                 </div>
+
+                <!-- Plugin Widgets: After Documentation Cards -->
+                <WidgetRenderer
+                    v-if="widgetsAfterDocumentationCards.length > 0"
+                    :widgets="widgetsAfterDocumentationCards"
+                />
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
         <!-- View Drawer -->
@@ -1353,9 +1411,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, watch, onMounted, computed } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -1584,6 +1644,20 @@ const confirmOnlineOpen = ref(false);
 const selectedSpellForInstall = ref<OnlineSpell | null>(null);
 const installedSpellIds = computed<Set<string>>(() => new Set(spells.value.map((s) => s.name)));
 
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-spells');
+const widgetsTopOfPage = computed(() => getWidgets('admin-spells', 'top-of-page'));
+const widgetsAfterHeader = computed(() => getWidgets('admin-spells', 'after-header'));
+const widgetsBeforeInstalledTable = computed(() => getWidgets('admin-spells', 'before-installed-table'));
+const widgetsAfterInstalledTable = computed(() => getWidgets('admin-spells', 'after-installed-table'));
+const widgetsBeforeOnlineContent = computed(() => getWidgets('admin-spells', 'before-online-content'));
+const widgetsAfterOnlineContent = computed(() => getWidgets('admin-spells', 'after-online-content'));
+const widgetsBeforeCompatibilityCard = computed(() => getWidgets('admin-spells', 'before-compatibility-card'));
+const widgetsAfterCompatibilityCard = computed(() => getWidgets('admin-spells', 'after-compatibility-card'));
+const widgetsBeforeDocumentationCards = computed(() => getWidgets('admin-spells', 'before-documentation-cards'));
+const widgetsAfterDocumentationCards = computed(() => getWidgets('admin-spells', 'after-documentation-cards'));
+const widgetsBottomOfPage = computed(() => getWidgets('admin-spells', 'bottom-of-page'));
+
 // Table columns configuration
 const tableColumns: TableColumn[] = [
     { key: 'name', label: 'Name', searchable: true },
@@ -1654,6 +1728,9 @@ async function fetchCurrentRealm() {
 }
 
 onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+
     const dismissed = localStorage.getItem('featherpanel_spells_online_banner_dismissed');
     showOnlinePublishBanner.value = dismissed !== 'true';
     await fetchRealms();

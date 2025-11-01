@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="[{ text: 'Settings', isCurrent: true, href: '/admin/settings' }]">
         <div class="min-h-screen bg-background">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Loading State -->
             <div v-if="loading" class="flex items-center justify-center py-12">
                 <div class="text-center">
@@ -33,6 +36,9 @@
                         </p>
                     </div>
                 </div>
+
+                <!-- Plugin Widgets: After Header -->
+                <WidgetRenderer v-if="widgetsAfterHeader.length > 0" :widgets="widgetsAfterHeader" />
 
                 <!-- Upload Logs to Support -->
                 <Card
@@ -176,6 +182,9 @@
                     </CardContent>
                 </Card>
 
+                <!-- Plugin Widgets: After Upload Logs Card -->
+                <WidgetRenderer v-if="widgetsAfterUploadLogs.length > 0" :widgets="widgetsAfterUploadLogs" />
+
                 <!-- Category Tabs -->
                 <div class="mb-6">
                     <!-- Mobile: Grid Layout -->
@@ -226,6 +235,9 @@
                         </nav>
                     </div>
                 </div>
+
+                <!-- Plugin Widgets: After Category Tabs -->
+                <WidgetRenderer v-if="widgetsAfterTabs.length > 0" :widgets="widgetsAfterTabs" />
 
                 <!-- Category Loading State -->
                 <div v-if="categoryLoading" class="flex items-center justify-center py-8">
@@ -378,6 +390,12 @@
                             </div>
                         </form>
                     </div>
+
+                    <!-- Plugin Widgets: After Settings Form -->
+                    <WidgetRenderer
+                        v-if="!categoryLoading && currentCategorySettings && widgetsAfterSettingsForm.length > 0"
+                        :widgets="widgetsAfterSettingsForm"
+                    />
                 </div>
 
                 <!-- Empty Category -->
@@ -395,6 +413,9 @@
         </div>
         <!-- Settings help cards under the content -->
         <div class="p-4 sm:p-6">
+            <!-- Plugin Widgets: Before Help Cards -->
+            <WidgetRenderer v-if="widgetsBeforeHelpCards.length > 0" :widgets="widgetsBeforeHelpCards" />
+
             <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <Card>
                     <CardContent>
@@ -455,7 +476,13 @@
                     </CardContent>
                 </Card>
             </div>
+
+            <!-- Plugin Widgets: After Help Cards -->
+            <WidgetRenderer v-if="widgetsAfterHelpCards.length > 0" :widgets="widgetsAfterHelpCards" />
         </div>
+
+        <!-- Plugin Widgets: Bottom of Page -->
+        <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
     </DashboardLayout>
 </template>
 
@@ -484,10 +511,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useSessionStore } from '@/stores/session';
 import { useRouter } from 'vue-router';
 import { useAdminSettingsStore, type Setting } from '@/stores/adminSettings';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import {
     Settings,
     Save,
@@ -534,6 +563,17 @@ const logUploadResults = ref<{
     app?: { success: boolean; url?: string; raw?: string; error?: string };
 } | null>(null);
 const copiedUrl = ref<string | null>(null);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-settings');
+const widgetsTopOfPage = computed(() => getWidgets('admin-settings', 'top-of-page'));
+const widgetsAfterHeader = computed(() => getWidgets('admin-settings', 'after-header'));
+const widgetsAfterUploadLogs = computed(() => getWidgets('admin-settings', 'after-upload-logs-card'));
+const widgetsAfterTabs = computed(() => getWidgets('admin-settings', 'after-category-tabs'));
+const widgetsAfterSettingsForm = computed(() => getWidgets('admin-settings', 'after-settings-form'));
+const widgetsBeforeHelpCards = computed(() => getWidgets('admin-settings', 'before-help-cards'));
+const widgetsAfterHelpCards = computed(() => getWidgets('admin-settings', 'after-help-cards'));
+const widgetsBottomOfPage = computed(() => getWidgets('admin-settings', 'bottom-of-page'));
 
 // Computed
 const loading = computed(() => adminSettingsStore.loading);
@@ -689,6 +729,9 @@ const copyToClipboard = async (url: string) => {
 onMounted(async () => {
     const ok = await sessionStore.checkSessionOrRedirect(router);
     if (!ok) return;
+
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
 
     await fetchSettings();
 });

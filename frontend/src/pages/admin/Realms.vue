@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="[{ text: 'Realms', isCurrent: true, href: '/admin/realms' }]">
         <div class="min-h-screen bg-background">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Loading State -->
             <div v-if="loading" class="flex items-center justify-center py-12">
                 <div class="flex items-center gap-3">
@@ -11,6 +14,8 @@
 
             <!-- Realms Table -->
             <div v-else class="p-6">
+                <!-- Plugin Widgets: Before Table -->
+                <WidgetRenderer v-if="widgetsBeforeTable.length > 0" :widgets="widgetsBeforeTable" />
                 <TableComponent
                     title="Realms"
                     description="Manage all realms in your system."
@@ -95,6 +100,10 @@
                         </div>
                     </template>
                 </TableComponent>
+
+                <!-- Plugin Widgets: After Table -->
+                <WidgetRenderer v-if="widgetsAfterTable.length > 0" :widgets="widgetsAfterTable" />
+
                 <!-- Realms help cards under the table -->
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Card>
@@ -127,7 +136,13 @@
                         </CardContent>
                     </Card>
                 </div>
+
+                <!-- Plugin Widgets: After Help Cards -->
+                <WidgetRenderer v-if="widgetsAfterHelpCards.length > 0" :widgets="widgetsAfterHelpCards" />
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
         <!-- View Drawer -->
@@ -250,8 +265,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, watch, onMounted } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Eye, Pencil, Trash2, Sparkles, Plus, FolderTree } from 'lucide-vue-next';
@@ -309,6 +326,14 @@ const createForm = ref({
     description: '',
 });
 
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-realms');
+const widgetsTopOfPage = computed(() => getWidgets('admin-realms', 'top-of-page'));
+const widgetsBeforeTable = computed(() => getWidgets('admin-realms', 'before-table'));
+const widgetsAfterTable = computed(() => getWidgets('admin-realms', 'after-table'));
+const widgetsAfterHelpCards = computed(() => getWidgets('admin-realms', 'after-help-cards'));
+const widgetsBottomOfPage = computed(() => getWidgets('admin-realms', 'bottom-of-page'));
+
 // Table columns configuration
 const tableColumns: TableColumn[] = [
     { key: 'name', label: 'Name', searchable: true },
@@ -352,7 +377,12 @@ async function fetchRealms() {
     }
 }
 
-onMounted(fetchRealms);
+onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+
+    await fetchRealms();
+});
 watch([() => pagination.value.page, () => pagination.value.pageSize, searchQuery], fetchRealms);
 
 // Table event handlers

@@ -23,8 +23,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Database as DatabaseIcon, Activity, Wrench, AlertTriangle } from 'lucide-vue-next';
@@ -51,6 +53,16 @@ const loading = ref(false);
 const status = ref<StatusResp['data'] | null>(null);
 const migRunning = ref(false);
 const migOutput = ref('');
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-database-management');
+const widgetsTopOfPage = computed(() => getWidgets('admin-database-management', 'top-of-page'));
+const widgetsAfterHeader = computed(() => getWidgets('admin-database-management', 'after-header'));
+const widgetsBeforeStatusCards = computed(() => getWidgets('admin-database-management', 'before-status-cards'));
+const widgetsAfterStatusCards = computed(() => getWidgets('admin-database-management', 'after-status-cards'));
+const widgetsAfterMigrationOutput = computed(() => getWidgets('admin-database-management', 'after-migration-output'));
+const widgetsAfterHelpCards = computed(() => getWidgets('admin-database-management', 'after-help-cards'));
+const widgetsBottomOfPage = computed(() => getWidgets('admin-database-management', 'bottom-of-page'));
 
 async function fetchStatus() {
     loading.value = true;
@@ -81,12 +93,20 @@ async function runMigrations() {
     }
 }
 
-fetchStatus();
+onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+
+    await fetchStatus();
+});
 </script>
 
 <template>
     <DashboardLayout :breadcrumbs="[{ text: 'Database', isCurrent: true, href: '/admin/databases/management' }]">
         <div class="min-h-screen bg-background">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <div class="p-4 sm:p-6 space-y-6">
                 <!-- Header -->
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -120,6 +140,9 @@ fetchStatus();
                     </div>
                 </div>
 
+                <!-- Plugin Widgets: After Header -->
+                <WidgetRenderer v-if="widgetsAfterHeader.length > 0" :widgets="widgetsAfterHeader" />
+
                 <!-- Loading -->
                 <div v-if="loading" class="flex items-center justify-center py-12">
                     <div class="flex items-center gap-3">
@@ -131,65 +154,78 @@ fetchStatus();
                 </div>
 
                 <!-- Status Cards -->
-                <div v-else-if="status" class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <Card class="p-4">
-                        <div class="font-semibold mb-3">Overview</div>
-                        <div class="text-sm text-muted-foreground space-y-1">
-                            <div><span class="font-medium text-foreground">Engine:</span> {{ status.engine }}</div>
-                            <div><span class="font-medium text-foreground">Version:</span> {{ status.version }}</div>
-                            <div>
-                                <span class="font-medium text-foreground">Uptime (s):</span> {{ status.uptime_seconds }}
+                <template v-if="!loading && status">
+                    <!-- Plugin Widgets: Before Status Cards -->
+                    <WidgetRenderer v-if="widgetsBeforeStatusCards.length > 0" :widgets="widgetsBeforeStatusCards" />
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <Card class="p-4">
+                            <div class="font-semibold mb-3">Overview</div>
+                            <div class="text-sm text-muted-foreground space-y-1">
+                                <div><span class="font-medium text-foreground">Engine:</span> {{ status.engine }}</div>
+                                <div>
+                                    <span class="font-medium text-foreground">Version:</span> {{ status.version }}
+                                </div>
+                                <div>
+                                    <span class="font-medium text-foreground">Uptime (s):</span>
+                                    {{ status.uptime_seconds }}
+                                </div>
+                                <div>
+                                    <span class="font-medium text-foreground">QPS:</span> {{ status.qps.toFixed(2) }}
+                                </div>
                             </div>
-                            <div><span class="font-medium text-foreground">QPS:</span> {{ status.qps.toFixed(2) }}</div>
-                        </div>
-                    </Card>
-                    <Card class="p-4">
-                        <div class="font-semibold mb-3">Connections</div>
-                        <div class="text-sm text-muted-foreground space-y-1">
-                            <div>
-                                <span class="font-medium text-foreground">Threads connected:</span>
-                                {{ status.threads_connected }}
+                        </Card>
+                        <Card class="p-4">
+                            <div class="font-semibold mb-3">Connections</div>
+                            <div class="text-sm text-muted-foreground space-y-1">
+                                <div>
+                                    <span class="font-medium text-foreground">Threads connected:</span>
+                                    {{ status.threads_connected }}
+                                </div>
+                                <div>
+                                    <span class="font-medium text-foreground">Threads running:</span>
+                                    {{ status.threads_running }}
+                                </div>
+                                <div>
+                                    <span class="font-medium text-foreground">Total connections:</span>
+                                    {{ status.connections_total }}
+                                </div>
+                                <div>
+                                    <span class="font-medium text-foreground">Aborted connects:</span>
+                                    {{ status.aborted_connects }}
+                                </div>
                             </div>
-                            <div>
-                                <span class="font-medium text-foreground">Threads running:</span>
-                                {{ status.threads_running }}
+                        </Card>
+                        <Card class="p-4">
+                            <div class="font-semibold mb-3">Queries</div>
+                            <div class="text-sm text-muted-foreground space-y-1">
+                                <div>
+                                    <span class="font-medium text-foreground">Queries total:</span>
+                                    {{ status.queries_total }}
+                                </div>
+                                <div>
+                                    <span class="font-medium text-foreground">Questions total:</span>
+                                    {{ status.questions_total }}
+                                </div>
                             </div>
-                            <div>
-                                <span class="font-medium text-foreground">Total connections:</span>
-                                {{ status.connections_total }}
+                        </Card>
+                        <Card class="p-4">
+                            <div class="font-semibold mb-3">Network</div>
+                            <div class="text-sm text-muted-foreground space-y-1">
+                                <div>
+                                    <span class="font-medium text-foreground">Bytes received:</span>
+                                    {{ status.bytes_received }}
+                                </div>
+                                <div>
+                                    <span class="font-medium text-foreground">Bytes sent:</span> {{ status.bytes_sent }}
+                                </div>
                             </div>
-                            <div>
-                                <span class="font-medium text-foreground">Aborted connects:</span>
-                                {{ status.aborted_connects }}
-                            </div>
-                        </div>
-                    </Card>
-                    <Card class="p-4">
-                        <div class="font-semibold mb-3">Queries</div>
-                        <div class="text-sm text-muted-foreground space-y-1">
-                            <div>
-                                <span class="font-medium text-foreground">Queries total:</span>
-                                {{ status.queries_total }}
-                            </div>
-                            <div>
-                                <span class="font-medium text-foreground">Questions total:</span>
-                                {{ status.questions_total }}
-                            </div>
-                        </div>
-                    </Card>
-                    <Card class="p-4">
-                        <div class="font-semibold mb-3">Network</div>
-                        <div class="text-sm text-muted-foreground space-y-1">
-                            <div>
-                                <span class="font-medium text-foreground">Bytes received:</span>
-                                {{ status.bytes_received }}
-                            </div>
-                            <div>
-                                <span class="font-medium text-foreground">Bytes sent:</span> {{ status.bytes_sent }}
-                            </div>
-                        </div>
-                    </Card>
-                </div>
+                        </Card>
+                    </div>
+
+                    <!-- Plugin Widgets: After Status Cards -->
+                    <WidgetRenderer v-if="widgetsAfterStatusCards.length > 0" :widgets="widgetsAfterStatusCards" />
+                </template>
 
                 <!-- Migration Output -->
                 <Card class="p-0 overflow-hidden">
@@ -209,6 +245,9 @@ fetchStatus();
                         >{{ migOutput }}</pre
                     >
                 </Card>
+
+                <!-- Plugin Widgets: After Migration Output -->
+                <WidgetRenderer v-if="widgetsAfterMigrationOutput.length > 0" :widgets="widgetsAfterMigrationOutput" />
 
                 <!-- Database Management help cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -270,7 +309,13 @@ fetchStatus();
                         </CardContent>
                     </Card>
                 </div>
+
+                <!-- Plugin Widgets: After Help Cards -->
+                <WidgetRenderer v-if="widgetsAfterHelpCards.length > 0" :widgets="widgetsAfterHelpCards" />
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
     </DashboardLayout>
 </template>

@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="min-h-screen bg-background">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Loading State -->
             <div v-if="loading" class="flex items-center justify-center py-12">
                 <div class="flex items-center gap-3">
@@ -11,6 +14,8 @@
 
             <!-- Databases Table -->
             <div v-else class="p-6">
+                <!-- Plugin Widgets: Before Table -->
+                <WidgetRenderer v-if="widgetsBeforeTable.length > 0" :widgets="widgetsBeforeTable" />
                 <TableComponent
                     title="Server Databases"
                     :description="`Managing databases for node: ${node?.name}`"
@@ -125,6 +130,10 @@
                         </div>
                     </template>
                 </TableComponent>
+
+                <!-- Plugin Widgets: After Table -->
+                <WidgetRenderer v-if="widgetsAfterTable.length > 0" :widgets="widgetsAfterTable" />
+
                 <!-- Databases info card under the table -->
                 <Card class="mt-6">
                     <CardContent>
@@ -138,7 +147,13 @@
                         </div>
                     </CardContent>
                 </Card>
+
+                <!-- Plugin Widgets: After Info Card -->
+                <WidgetRenderer v-if="widgetsAfterInfoCard.length > 0" :widgets="widgetsAfterInfoCard" />
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
         <!-- Drawers -->
@@ -316,9 +331,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, computed, onMounted, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -389,6 +406,14 @@ const confirmDeleteRow = ref<number | null>(null);
 const deleting = ref(false);
 const formLoading = ref(false);
 const loading = ref(false);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-node-databases');
+const widgetsTopOfPage = computed(() => getWidgets('admin-node-databases', 'top-of-page'));
+const widgetsBeforeTable = computed(() => getWidgets('admin-node-databases', 'before-table'));
+const widgetsAfterTable = computed(() => getWidgets('admin-node-databases', 'after-table'));
+const widgetsAfterInfoCard = computed(() => getWidgets('admin-node-databases', 'after-info-card'));
+const widgetsBottomOfPage = computed(() => getWidgets('admin-node-databases', 'bottom-of-page'));
 
 // Table columns configuration
 const tableColumns: TableColumn[] = [
@@ -675,6 +700,9 @@ watch(
 );
 
 onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+
     await fetchNode();
     await fetchDatabases();
     await checkAllDatabasesHealth();

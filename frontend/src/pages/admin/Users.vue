@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="[{ text: 'Users', isCurrent: true, href: '/admin/users' }]">
         <div class="min-h-screen bg-background">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Loading State -->
             <div v-if="loading" class="flex items-center justify-center py-12">
                 <div class="flex items-center gap-3">
@@ -11,6 +14,9 @@
 
             <!-- Users Table -->
             <div v-else class="p-6">
+                <!-- Plugin Widgets: Before Table -->
+                <WidgetRenderer v-if="widgetsBeforeTable.length > 0" :widgets="widgetsBeforeTable" />
+
                 <TableComponent
                     title="Users"
                     description="Manage all users in your system."
@@ -106,6 +112,13 @@
                         </div>
                     </template>
                 </TableComponent>
+
+                <!-- Plugin Widgets: After Table -->
+                <WidgetRenderer v-if="widgetsAfterTable.length > 0" :widgets="widgetsAfterTable" />
+
+                <!-- Plugin Widgets: Before Help Cards -->
+                <WidgetRenderer v-if="widgetsBeforeHelpCards.length > 0" :widgets="widgetsBeforeHelpCards" />
+
                 <!-- Users page help cards -->
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <Card>
@@ -167,7 +180,13 @@
                         </CardContent>
                     </Card>
                 </div>
+
+                <!-- Plugin Widgets: After Help Cards -->
+                <WidgetRenderer v-if="widgetsAfterHelpCards.length > 0" :widgets="widgetsAfterHelpCards" />
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
         <!-- View Drawer -->
@@ -661,8 +680,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, watch, onMounted } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -784,6 +805,15 @@ const ownedServers = ref<
     { id: number; name: string; description?: string; status?: string; uuidShort: string; created_at: string }[]
 >([]);
 
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-users');
+const widgetsTopOfPage = computed(() => getWidgets('admin-users', 'top-of-page'));
+const widgetsBeforeTable = computed(() => getWidgets('admin-users', 'before-table'));
+const widgetsAfterTable = computed(() => getWidgets('admin-users', 'after-table'));
+const widgetsBeforeHelpCards = computed(() => getWidgets('admin-users', 'before-help-cards'));
+const widgetsAfterHelpCards = computed(() => getWidgets('admin-users', 'after-help-cards'));
+const widgetsBottomOfPage = computed(() => getWidgets('admin-users', 'bottom-of-page'));
+
 // Table columns configuration
 const tableColumns: TableColumn[] = [
     { key: 'avatar', label: 'Avatar', headerClass: 'w-[50px]', hideLabelOnLayout: true },
@@ -822,7 +852,12 @@ async function fetchUsers() {
     }
 }
 
-onMounted(fetchUsers);
+onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+
+    await fetchUsers();
+});
 watch([() => pagination.value.page, () => pagination.value.pageSize, searchQuery], fetchUsers);
 
 // Table event handlers

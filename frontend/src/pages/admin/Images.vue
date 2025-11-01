@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="[{ text: 'Images', isCurrent: true, href: '/admin/images' }]">
         <div class="min-h-screen bg-background">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Loading State -->
             <div v-if="loading" class="flex items-center justify-center py-12">
                 <div class="flex items-center gap-3">
@@ -33,6 +36,9 @@
 
             <!-- Images Table -->
             <div v-else class="p-6">
+                <!-- Plugin Widgets: Before Table -->
+                <WidgetRenderer v-if="widgetsBeforeTable.length > 0" :widgets="widgetsBeforeTable" />
+
                 <TableComponent
                     title="Images"
                     description="Manage uploaded images for your system."
@@ -163,6 +169,10 @@
                         </div>
                     </template>
                 </TableComponent>
+
+                <!-- Plugin Widgets: After Table -->
+                <WidgetRenderer v-if="widgetsAfterTable.length > 0" :widgets="widgetsAfterTable" />
+
                 <!-- Images help cards under the table -->
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Card>
@@ -194,7 +204,13 @@
                         </CardContent>
                     </Card>
                 </div>
+
+                <!-- Plugin Widgets: After Help Cards -->
+                <WidgetRenderer v-if="widgetsAfterHelpCards.length > 0" :widgets="widgetsAfterHelpCards" />
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
         <!-- View Drawer -->
@@ -372,10 +388,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useToast } from 'vue-toastification';
 import axios from 'axios';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { TableColumn } from '@/kit/types';
 import { Button } from '@/components/ui/button';
@@ -455,6 +473,14 @@ const tableColumns: TableColumn[] = [
 ];
 
 const toast = useToast();
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-images');
+const widgetsTopOfPage = computed(() => getWidgets('admin-images', 'top-of-page'));
+const widgetsBeforeTable = computed(() => getWidgets('admin-images', 'before-table'));
+const widgetsAfterTable = computed(() => getWidgets('admin-images', 'after-table'));
+const widgetsAfterHelpCards = computed(() => getWidgets('admin-images', 'after-help-cards'));
+const widgetsBottomOfPage = computed(() => getWidgets('admin-images', 'bottom-of-page'));
 
 // Methods
 async function fetchImages() {
@@ -673,6 +699,11 @@ const formatDate = (dateString: string) => {
     });
 };
 
-onMounted(fetchImages);
+onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+    
+    await fetchImages();
+});
 watch([() => pagination.value.page, () => pagination.value.pageSize, searchQuery], fetchImages);
 </script>

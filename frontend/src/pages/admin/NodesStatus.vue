@@ -1,6 +1,9 @@
 <template>
     <DashboardLayout :breadcrumbs="[{ text: 'Node Status Dashboard', isCurrent: true, href: '/admin/nodes/status' }]">
         <div class="min-h-screen bg-background">
+            <!-- Plugin Widgets: Top of Page -->
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Header -->
             <div class="p-6 border-b">
                 <div class="flex items-center justify-between">
@@ -21,6 +24,9 @@
                 </div>
             </div>
 
+            <!-- Plugin Widgets: After Header -->
+            <WidgetRenderer v-if="widgetsAfterHeader.length > 0" :widgets="widgetsAfterHeader" />
+
             <!-- Loading State -->
             <div v-if="loading && !globalStats" class="flex items-center justify-center py-12">
                 <div class="flex items-center gap-3">
@@ -31,6 +37,9 @@
 
             <!-- Dashboard Content -->
             <div v-else-if="globalStats" class="p-6">
+                <!-- Plugin Widgets: Before Global Stats -->
+                <WidgetRenderer v-if="widgetsBeforeGlobalStats.length > 0" :widgets="widgetsBeforeGlobalStats" />
+
                 <!-- Global Stats Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <!-- Total Nodes -->
@@ -93,6 +102,9 @@
                         </CardContent>
                     </Card>
                 </div>
+
+                <!-- Plugin Widgets: After Global Stats -->
+                <WidgetRenderer v-if="widgetsAfterGlobalStats.length > 0" :widgets="widgetsAfterGlobalStats" />
 
                 <!-- Global Resource Usage Cards -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -170,6 +182,9 @@
                         </CardContent>
                     </Card>
                 </div>
+
+                <!-- Plugin Widgets: After Resource Usage -->
+                <WidgetRenderer v-if="widgetsAfterResourceUsage.length > 0" :widgets="widgetsAfterResourceUsage" />
 
                 <!-- Individual Node Cards -->
                 <div>
@@ -297,7 +312,13 @@
                         </Card>
                     </div>
                 </div>
+
+                <!-- Plugin Widgets: After Individual Nodes -->
+                <WidgetRenderer v-if="widgetsAfterIndividualNodes.length > 0" :widgets="widgetsAfterIndividualNodes" />
             </div>
+
+            <!-- Plugin Widgets: Bottom of Page -->
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
 
             <!-- Error State -->
             <div v-else-if="error" class="p-6">
@@ -339,8 +360,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -392,6 +415,16 @@ const globalStats = ref<GlobalStats | null>(null);
 const nodes = ref<NodeStatus[]>([]);
 const autoRefreshInterval = ref<number | null>(null);
 
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-nodes-status');
+const widgetsTopOfPage = computed(() => getWidgets('admin-nodes-status', 'top-of-page'));
+const widgetsAfterHeader = computed(() => getWidgets('admin-nodes-status', 'after-header'));
+const widgetsBeforeGlobalStats = computed(() => getWidgets('admin-nodes-status', 'before-global-stats'));
+const widgetsAfterGlobalStats = computed(() => getWidgets('admin-nodes-status', 'after-global-stats'));
+const widgetsAfterResourceUsage = computed(() => getWidgets('admin-nodes-status', 'after-resource-usage'));
+const widgetsAfterIndividualNodes = computed(() => getWidgets('admin-nodes-status', 'after-individual-nodes'));
+const widgetsBottomOfPage = computed(() => getWidgets('admin-nodes-status', 'bottom-of-page'));
+
 async function fetchGlobalStatus() {
     loading.value = true;
     error.value = null;
@@ -440,6 +473,9 @@ function formatBytes(bytes: number): string {
 }
 
 onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+
     await fetchGlobalStatus();
 
     // Auto-refresh every 10 seconds
