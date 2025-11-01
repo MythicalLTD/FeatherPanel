@@ -80,7 +80,9 @@
                             <Info class="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                             <div class="flex-1 min-w-0 space-y-2">
                                 <div class="flex items-center justify-between gap-2">
-                                    <span class="text-sm font-medium text-foreground">Default startup command:</span>
+                                    <span class="text-sm font-medium text-foreground">{{
+                                        t('serverStartup.defaultStartupCommand')
+                                    }}</span>
                                     <Button
                                         v-if="canUpdateStartup"
                                         variant="outline"
@@ -89,7 +91,7 @@
                                         @click="restoreDefaultStartup"
                                     >
                                         <RefreshCw class="h-3 w-3 mr-1" />
-                                        Restore Default
+                                        {{ t('serverStartup.restoreDefault') }}
                                     </Button>
                                 </div>
                                 <code
@@ -318,14 +320,18 @@
                             </div>
                             <Badge variant="secondary" class="text-xs">
                                 {{ viewableVariables.length }}
-                                {{ viewableVariables.length === 1 ? 'variable' : 'variables' }}
+                                {{
+                                    viewableVariables.length === 1
+                                        ? t('serverStartup.variableSingular')
+                                        : t('serverStartup.variablePlural')
+                                }}
                             </Badge>
                         </div>
                     </CardHeader>
                     <CardContent>
                         <div v-if="viewableVariables.length === 0" class="text-center py-8 text-muted-foreground">
                             <Settings class="h-12 w-12 mx-auto mb-3 opacity-20" />
-                            <p class="text-sm">No variables configured for this server</p>
+                            <p class="text-sm">{{ t('serverStartup.noVariablesConfigured') }}</p>
                         </div>
                         <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                             <div
@@ -343,7 +349,7 @@
                                                 variant="outline"
                                                 class="text-[10px] px-1.5 py-0"
                                             >
-                                                Read-only
+                                                {{ t('serverStartup.readOnly') }}
                                             </Badge>
                                         </div>
                                         <p class="text-xs text-muted-foreground line-clamp-2">{{ v.description }}</p>
@@ -455,7 +461,7 @@
                                                 variant="destructive"
                                                 class="text-[10px] px-1.5 py-0"
                                             >
-                                                Required
+                                                {{ t('serverStartup.required') }}
                                             </Badge>
                                         </div>
                                         <p class="text-xs text-muted-foreground line-clamp-2">{{ v.description }}</p>
@@ -492,6 +498,39 @@
                                         <Info class="h-3 w-3 shrink-0 mt-0.5" />
                                         <code class="bg-muted px-2 py-0.5 rounded flex-1 break-all">{{ v.rules }}</code>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- File Wipe Option -->
+                        <div
+                            class="p-4 rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/20"
+                        >
+                            <div class="flex items-start gap-3">
+                                <div class="flex items-center h-5 mt-0.5">
+                                    <input
+                                        id="wipeFilesOnSpellChange"
+                                        v-model="wipeFilesOnSpellChange"
+                                        type="checkbox"
+                                        class="w-4 h-4 text-orange-600 bg-background border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
+                                    />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <Label
+                                        for="wipeFilesOnSpellChange"
+                                        class="text-sm font-medium cursor-pointer text-orange-800 dark:text-orange-200"
+                                    >
+                                        {{ t('serverStartup.wipeFilesOnSpellChange') }}
+                                    </Label>
+                                    <p class="text-xs text-orange-700 dark:text-orange-300 mt-1">
+                                        {{ t('serverStartup.wipeFilesOnSpellChangeDescription') }}
+                                    </p>
+                                    <p
+                                        v-if="wipeFilesOnSpellChange"
+                                        class="text-xs font-semibold text-orange-800 dark:text-orange-200 mt-2"
+                                    >
+                                        ⚠️ {{ t('serverStartup.wipeFilesOnSpellChangeWarning') }}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -664,6 +703,7 @@ const pendingSpellChange = ref<{
 } | null>(null);
 const newVariableValues = ref<Record<number, string>>({});
 const newVariableErrors = ref<Record<number, string>>({});
+const wipeFilesOnSpellChange = ref(false);
 
 const breadcrumbs = computed(() => [
     { text: t('common.dashboard'), href: '/dashboard' },
@@ -974,6 +1014,7 @@ function cancelSpellChange(): void {
     pendingSpellChange.value = null;
     newVariableValues.value = {};
     newVariableErrors.value = {};
+    wipeFilesOnSpellChange.value = false;
     selectedSpellId.value = String(currentSpellInfo.value?.id || '');
 }
 
@@ -1034,10 +1075,16 @@ async function confirmSpellChange(): Promise<void> {
             form.value.image = '';
         }
 
-        // Clear modal state
+        // Update selectedSpellId to the new spell ID (needed for saveChanges to detect spell change)
+        if (pendingSpellChange.value.spell.id) {
+            selectedSpellId.value = String(pendingSpellChange.value.spell.id);
+        }
+
+        // Clear modal state (but keep wipeFilesOnSpellChange until saveChanges completes)
         pendingSpellChange.value = null;
         newVariableValues.value = {};
         newVariableErrors.value = {};
+        // NOTE: Don't reset wipeFilesOnSpellChange here - it needs to persist until saveChanges() runs
 
         toast.info(t('serverStartup.spellChanged'));
     } catch (e: unknown) {
@@ -1064,8 +1111,14 @@ async function saveChanges() {
         // Include spell_id if changed (will also update realm_id automatically on backend)
         const spellChanged =
             selectedSpellId.value && selectedSpellId.value !== String(currentSpellInfo.value?.id || '');
+
         if (spellChanged) {
             payload.spell_id = Number(selectedSpellId.value);
+
+            // Include wipe_files if requested
+            if (wipeFilesOnSpellChange.value) {
+                payload.wipe_files = true;
+            }
 
             // When spell changes, send ALL variables (not just editable ones)
             // This ensures all variables from the new spell are created
@@ -1085,6 +1138,10 @@ async function saveChanges() {
 
         const { data } = await axios.put(`/api/user/servers/${route.params.uuidShort}`, payload);
         if (!data.success) throw new Error(data.message || 'Failed to save');
+
+        // Reset wipeFilesOnSpellChange after successful save
+        wipeFilesOnSpellChange.value = false;
+
         await fetchServer();
         toast.success(t('serverStartup.saveSuccess'));
     } catch (e: unknown) {
@@ -1171,13 +1228,13 @@ function validateVariableAgainstRules(value: string, rules: string): string | ''
     // Handle required/nullable with trimmed check for empty
     const trimmedForEmptyCheck = val.trim();
     if (!isRequired && hasNullable && trimmedForEmptyCheck === '') return '';
-    if (isRequired && trimmedForEmptyCheck === '') return 'This field is required';
+    if (isRequired && trimmedForEmptyCheck === '') return t('serverStartup.fieldRequired');
 
     // If empty and not required, pass validation
     if (!isRequired && trimmedForEmptyCheck === '') return '';
 
     // Check numeric/integer (use trimmed value)
-    if (isNumeric && !/^\d+$/.test(trimmedForEmptyCheck)) return 'This field must be a number';
+    if (isNumeric && !/^\d+$/.test(trimmedForEmptyCheck)) return t('serverStartup.fieldMustBeNumeric');
 
     // Check other rules (use raw value for regex, numeric value for min/max when numeric, length for strings)
     for (const rule of parsed) {
@@ -1186,12 +1243,12 @@ function validateVariableAgainstRules(value: string, rules: string): string | ''
                 // For numeric: check if the NUMBER value is >= min
                 const numValue = Number(trimmedForEmptyCheck);
                 if (isNaN(numValue) || numValue < rule.value) {
-                    return `Minimum value is ${rule.value}`;
+                    return t('serverStartup.minimumValue', { value: rule.value });
                 }
             } else {
                 // For strings: check length
                 if (trimmedForEmptyCheck.length < rule.value) {
-                    return `Minimum ${rule.value} characters`;
+                    return t('serverStartup.minimumCharacters', { value: rule.value });
                 }
             }
         }
@@ -1200,12 +1257,12 @@ function validateVariableAgainstRules(value: string, rules: string): string | ''
                 // For numeric: check if the NUMBER value is <= max
                 const numValue = Number(trimmedForEmptyCheck);
                 if (isNaN(numValue) || numValue > rule.value) {
-                    return `Maximum value is ${rule.value}`;
+                    return t('serverStartup.maximumValue', { value: rule.value });
                 }
             } else {
                 // For strings: check length
                 if (trimmedForEmptyCheck.length > rule.value) {
-                    return `Maximum ${rule.value} characters`;
+                    return t('serverStartup.maximumCharacters', { value: rule.value });
                 }
             }
         }

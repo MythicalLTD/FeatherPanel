@@ -164,6 +164,8 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Server description'),
         new OA\Property(property: 'startup', type: 'string', nullable: true, description: 'Startup command'),
         new OA\Property(property: 'image', type: 'string', nullable: true, description: 'Docker image'),
+        new OA\Property(property: 'spell_id', type: 'integer', nullable: true, description: 'Spell ID to change server spell'),
+        new OA\Property(property: 'wipe_files', type: 'boolean', nullable: true, description: 'Whether to delete all server files before reinstalling (only applies when changing spell_id)', default: false),
         new OA\Property(property: 'variables', type: 'array', items: new OA\Items(type: 'object', properties: [
             new OA\Property(property: 'variable_id', type: 'integer'),
             new OA\Property(property: 'variable_value', type: 'string'),
@@ -706,6 +708,9 @@ class ServerUserController
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST', 400);
         }
 
+        // Save wipe_files flag early (before any processing that might modify $data)
+        $wipeFilesRequested = isset($data['wipe_files']) && ($data['wipe_files'] === true || $data['wipe_files'] === 'true' || $data['wipe_files'] === 1 || $data['wipe_files'] === '1');
+
         // Check permissions for non-owners
         if (!$isOwner) {
             // Check for settings.rename permission if updating name or description
@@ -1006,7 +1011,7 @@ class ServerUserController
         }
 
         // Log the update
-        App::getInstance(true)->getLogger()->info('Server updated');
+        App::getInstance(true)->getLogger()->debug('Server updated');
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
             return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
@@ -1031,6 +1036,15 @@ class ServerUserController
 
             // If spell changed, trigger reinstall instead of just sync
             if ($spellChanged) {
+                // Log wipe_files status (debug level)
+                App::getInstance(true)->getLogger()->debug('Spell change detected. wipe_files requested: ' . ($wipeFilesRequested ? 'true' : 'false'));
+
+                // Wipe files if requested before reinstalling
+                if ($wipeFilesRequested) {
+                    App::getInstance(true)->getLogger()->debug('Wiping server files before spell change reinstall');
+                    $this->wipeServerFiles($wings, $server['uuid']);
+                }
+
                 $response = $wings->getServer()->reinstallServer($server['uuid']);
             } else {
                 $response = $wings->getServer()->syncServer($server['uuid']);
@@ -1104,7 +1118,7 @@ class ServerUserController
     #[OA\Post(
         path: '/api/user/servers/{uuidShort}/reinstall',
         summary: 'Reinstall server',
-        description: 'Reinstall a server using Wings daemon. This will reset the server to its initial state.',
+        description: 'Reinstall a server using Wings daemon. This will reset the server to its initial state. Optionally wipe all files before reinstalling.',
         tags: ['User - Server Management'],
         parameters: [
             new OA\Parameter(
@@ -1115,6 +1129,14 @@ class ServerUserController
                 schema: new OA\Schema(type: 'string')
             ),
         ],
+        requestBody: new OA\RequestBody(
+            required: false,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'wipe_files', type: 'boolean', description: 'Whether to delete all server files before reinstalling', default: false),
+                ]
+            )
+        ),
         responses: [
             new OA\Response(
                 response: 200,
@@ -1165,6 +1187,10 @@ class ServerUserController
             }
         }
 
+        // Get request data for wipe_files option
+        $data = json_decode($request->getContent(), true);
+        $wipeFiles = isset($data['wipe_files']) && ($data['wipe_files'] === true || $data['wipe_files'] === 'true' || $data['wipe_files'] === 1);
+
         // Get node information
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
@@ -1187,6 +1213,11 @@ class ServerUserController
                 $token,
                 $timeout
             );
+
+            // Wipe files if requested
+            if ($wipeFiles) {
+                $this->wipeServerFiles($wings, $server['uuid']);
+            }
 
             $response = $wings->getServer()->reinstallServer($server['uuid']);
 
@@ -1542,6 +1573,87 @@ class ServerUserController
 
         // User is neither owner nor subuser
         return [];
+    }
+
+    /**
+     * Helper method to wipe all server files before reinstall.
+     * Lists all files in root directory and deletes them.
+     */
+    private function wipeServerFiles(\App\Services\Wings\Wings $wings, string $serverUuid): void
+    {
+        try {
+            // List all files in root directory
+            $listResponse = $wings->getServer()->listDirectory($serverUuid, '/');
+            if (!$listResponse->isSuccessful()) {
+                App::getInstance(true)->getLogger()->warning('Failed to list server files for wipe: ' . $listResponse->getError());
+
+                return;
+            }
+
+            $responseData = $listResponse->getData();
+
+            // Handle different response structures
+            // Wings might return array directly or wrapped in 'contents' key
+            if (is_array($responseData) && isset($responseData['contents']) && is_array($responseData['contents'])) {
+                $files = $responseData['contents'];
+            } elseif (is_array($responseData)) {
+                $files = $responseData;
+            } else {
+                $files = [];
+            }
+
+            if (empty($files) || !is_array($files)) {
+                // No files to delete, which is fine
+                App::getInstance(true)->getLogger()->info('No files found in server root directory to wipe');
+
+                return;
+            }
+
+            App::getInstance(true)->getLogger()->debug('Found ' . count($files) . ' items in server root directory');
+
+            // Extract file names from the list (Wings returns file objects with 'name' property)
+            // Wings structure: { name: string, file: boolean, directory: boolean, mime: string, ... }
+            $fileNames = [];
+            foreach ($files as $file) {
+                if (is_array($file)) {
+                    // Check for name property (most common)
+                    if (isset($file['name'])) {
+                        $fileNames[] = $file['name'];
+                    } elseif (isset($file['path'])) {
+                        // Fallback to path if name not available
+                        $fileNames[] = basename($file['path']);
+                    } else {
+                        // Log unexpected structure for debugging
+                        App::getInstance(true)->getLogger()->debug('Unexpected file structure in wipe: ' . json_encode($file));
+                    }
+                } elseif (is_string($file)) {
+                    $fileNames[] = $file;
+                }
+            }
+
+            // Log what we're about to delete (debug level for details, info for summary)
+            if (empty($fileNames)) {
+                App::getInstance(true)->getLogger()->warning('No file names extracted from Wings response. Raw response structure: ' . json_encode(array_slice($files, 0, 3)));
+            } else {
+                App::getInstance(true)->getLogger()->debug('Wiping server files: Found ' . count($fileNames) . ' items to delete: ' . implode(', ', array_slice($fileNames, 0, 10)) . (count($fileNames) > 10 ? '...' : ''));
+            }
+
+            if (empty($fileNames)) {
+                return;
+            }
+
+            // Delete all files in root
+            $deleteResponse = $wings->getServer()->deleteFiles($serverUuid, '/', $fileNames);
+            if (!$deleteResponse->isSuccessful()) {
+                App::getInstance(true)->getLogger()->warning('Failed to delete some files during wipe: ' . $deleteResponse->getError());
+                // Continue anyway - reinstall will proceed
+            } else {
+                App::getInstance(true)->getLogger()->info('Server files wiped before reinstall: ' . count($fileNames) . ' items deleted');
+            }
+        } catch (\Exception $e) {
+            // Log error but don't fail reinstall
+            App::getInstance(true)->getLogger()->error('Error wiping server files: ' . $e->getMessage());
+        }
     }
 
     /**

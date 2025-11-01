@@ -385,13 +385,50 @@
                                 {{ t('serverSettings.typeReinstallToConfirm') }}
                             </p>
                         </div>
+                        <div
+                            class="p-4 rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/20"
+                        >
+                            <div class="flex items-start gap-3">
+                                <div class="flex items-center h-5 mt-0.5">
+                                    <input
+                                        id="wipeFiles"
+                                        v-model="wipeFilesOnReinstall"
+                                        type="checkbox"
+                                        class="w-4 h-4 text-orange-600 bg-background border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
+                                    />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <Label
+                                        for="wipeFiles"
+                                        class="text-sm font-medium cursor-pointer text-orange-800 dark:text-orange-200"
+                                    >
+                                        {{ t('serverSettings.wipeFiles') }}
+                                    </Label>
+                                    <p class="text-xs text-orange-700 dark:text-orange-300 mt-1">
+                                        {{ t('serverSettings.wipeFilesDescription') }}
+                                    </p>
+                                    <p
+                                        v-if="wipeFilesOnReinstall"
+                                        class="text-xs font-semibold text-orange-800 dark:text-orange-200 mt-2"
+                                    >
+                                        ⚠️ {{ t('serverSettings.wipeFilesWarning') }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <DialogFooter class="gap-2">
                         <Button
                             variant="outline"
                             size="sm"
                             :disabled="reinstalling"
-                            @click="showReinstallDialog = false"
+                            @click="
+                                () => {
+                                    showReinstallDialog = false;
+                                    confirmReinstallText = '';
+                                    wipeFilesOnReinstall = false;
+                                }
+                            "
                         >
                             {{ t('serverSettings.cancel') }}
                         </Button>
@@ -534,6 +571,7 @@ const error = ref<string | null>(null);
 const server = ref<ServerData | null>(null);
 const showReinstallDialog = ref(false);
 const confirmReinstallText = ref('');
+const wipeFilesOnReinstall = ref(false);
 
 // Form
 const editForm = ref<EditForm>({
@@ -631,12 +669,15 @@ async function confirmReinstall(): Promise<void> {
     try {
         reinstalling.value = true;
 
-        const response = await axios.post(`/api/user/servers/${route.params.uuidShort}/reinstall`);
+        const response = await axios.post(`/api/user/servers/${route.params.uuidShort}/reinstall`, {
+            wipe_files: wipeFilesOnReinstall.value,
+        });
 
         if (response.data.success) {
             toast.success(t('serverSettings.reinstallStarted'));
             showReinstallDialog.value = false;
             confirmReinstallText.value = '';
+            wipeFilesOnReinstall.value = false;
             await fetchServer(); // Refresh server data
         } else {
             toast.error(response.data.message || t('serverSettings.failedToReinstall'));
