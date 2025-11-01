@@ -10,6 +10,7 @@
 
 - When editing file, return to original folder (of the edited file)
 - Changed the Console layout button from using `position: fixed` to being placed at the top of the page for a more consistent and integrated interface.
+- In the SFTP section of the server settings, clarified that the password is your panel login password and made this visible instead of masked. This helps prevent confusion for users who might otherwise copy the field thinking it's a dedicated FTP password.
 
 ### Added
 

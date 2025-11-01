@@ -182,32 +182,12 @@
                                     {{ t('serverSettings.sftpPassword') }}
                                 </Label>
                                 <div
-                                    class="flex items-center gap-2 p-3 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors"
+                                    class="flex items-center gap-2 p-3 bg-muted/30 rounded-lg border border-dashed border-muted-foreground/30"
                                 >
-                                    <code class="text-sm font-mono flex-1">
-                                        {{
-                                            showPassword
-                                                ? t('serverSettings.sftpPasswordPlaceholder')
-                                                : '••••••••••••••••'
-                                        }}
-                                    </code>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        class="h-7 w-7 p-0 hover:bg-background"
-                                        @click="showPassword = !showPassword"
-                                    >
-                                        <Eye v-if="!showPassword" class="h-3.5 w-3.5" />
-                                        <EyeOff v-else class="h-3.5 w-3.5" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        class="h-7 w-7 p-0 hover:bg-background"
-                                        @click="copyToClipboard(t('serverSettings.usePanelPassword'))"
-                                    >
-                                        <Copy class="h-3.5 w-3.5" />
-                                    </Button>
+                                    <Info class="h-4 w-4 text-muted-foreground shrink-0" />
+                                    <span class="text-sm text-muted-foreground flex-1">
+                                        {{ t('serverSettings.sftpPasswordPlaceholder') }}
+                                    </span>
                                 </div>
                                 <p class="text-xs text-muted-foreground flex items-center gap-1.5">
                                     <Info class="h-3 w-3" />
@@ -487,8 +467,6 @@ import {
     AlertCircle,
     Info,
     ExternalLink,
-    Eye,
-    EyeOff,
     Hash,
     User,
     KeyRound,
@@ -552,7 +530,6 @@ const error = ref<string | null>(null);
 const server = ref<ServerData | null>(null);
 const showReinstallDialog = ref(false);
 const confirmReinstallText = ref('');
-const showPassword = ref(false);
 
 // Form
 const editForm = ref<EditForm>({
