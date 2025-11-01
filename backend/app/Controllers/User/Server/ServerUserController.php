@@ -780,16 +780,6 @@ class ServerUserController
             }
         }
 
-        // Check if startup command changes are allowed globally (only applies to startup, not Docker image)
-        // Skip this check if spell is changing - allow startup/image changes during spell change
-        if (isset($data['startup']) && !$isSpellChanging) {
-            $app = App::getInstance(true);
-            $allowStartupChange = $app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE, 'true');
-            if ($allowStartupChange !== 'true' && $allowStartupChange !== true && $allowStartupChange !== '1' && $allowStartupChange !== 1) {
-                return ApiResponse::error('Startup changes are currently disabled by the administrator', 'STARTUP_CHANGE_DISABLED', 403);
-            }
-        }
-
         // Allow updating name, description, startup, image, spell_id
         if (isset($data['name'])) {
             $name = trim($data['name']);
@@ -808,6 +798,22 @@ class ServerUserController
                 return ApiResponse::error('Server description is too long (max 1000 characters)', 'DESCRIPTION_TOO_LONG', 400);
             }
             $updateData['description'] = $description;
+        }
+
+        // Check if startup command has actually changed (only block if it changed AND changes are disabled)
+        // Skip this check if spell is changing - allow startup/image changes during spell change
+        if (isset($data['startup']) && !$isSpellChanging) {
+            $newStartup = (string) $data['startup'];
+            $currentStartup = (string) ($server['startup'] ?? '');
+            
+            // Only check permission if startup actually changed
+            if (trim($newStartup) !== trim($currentStartup)) {
+                $app = App::getInstance(true);
+                $allowStartupChange = $app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE, 'true');
+                if ($allowStartupChange !== 'true' && $allowStartupChange !== true && $allowStartupChange !== '1' && $allowStartupChange !== 1) {
+                    return ApiResponse::error('Startup changes are currently disabled by the administrator', 'STARTUP_CHANGE_DISABLED', 403);
+                }
+            }
         }
 
         if (isset($data['startup'])) {

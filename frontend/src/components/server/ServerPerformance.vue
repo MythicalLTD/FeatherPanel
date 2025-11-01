@@ -17,13 +17,8 @@
                         >{{ getCurrentValue(cpuData) }}%</span
                     >
                 </div>
-                <div class="w-full h-20">
-                    <PerformanceChart
-                        :data="cpuData"
-                        :color="dataColors.cpu"
-                        unit="%"
-                        :max-value="server?.cpu || 100"
-                    />
+                <div class="w-full h-[200px]">
+                    <Line v-if="cpuChartData" :data="cpuChartData" :options="cpuChartOptions" />
                 </div>
             </CardContent>
         </Card>
@@ -45,13 +40,8 @@
                         >{{ getCurrentValue(memoryData) }} MiB</span
                     >
                 </div>
-                <div class="w-full h-20">
-                    <PerformanceChart
-                        :data="memoryData"
-                        :color="dataColors.memory"
-                        unit="MiB"
-                        :max-value="server?.memory || 100"
-                    />
+                <div class="w-full h-[200px]">
+                    <Line v-if="memoryChartData" :data="memoryChartData" :options="memoryChartOptions" />
                 </div>
             </CardContent>
         </Card>
@@ -80,13 +70,8 @@
                         >{{ getCurrentValue(diskData) }} MiB</span
                     >
                 </div>
-                <div class="w-full h-20">
-                    <PerformanceChart
-                        :data="diskData"
-                        :color="getDiskChartColor()"
-                        unit="MiB"
-                        :max-value="server?.disk || 100"
-                    />
+                <div class="w-full h-[200px]">
+                    <Line v-if="diskChartData" :data="diskChartData" :options="diskChartOptions" />
                 </div>
             </CardContent>
         </Card>
@@ -120,8 +105,8 @@
                         getCurrentValue(networkData)
                     }}</span>
                 </div>
-                <div class="w-full h-20">
-                    <PerformanceChart :data="networkData" :color="dataColors.network" unit="B" />
+                <div class="w-full h-[200px]">
+                    <Line v-if="networkChartData" :data="networkChartData" :options="networkChartOptions" />
                 </div>
             </CardContent>
         </Card>
@@ -157,8 +142,23 @@ import { computed } from 'vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Cpu, MemoryStick, HardDrive, Globe } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
-import PerformanceChart from '@/components/charts/PerformanceChart.vue';
+import { Line } from 'vue-chartjs';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler,
+    type TooltipItem,
+} from 'chart.js';
 import type { Server, NetworkStats } from '@/types/server';
+
+// Register Chart.js components
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
 const { t } = useI18n();
 
@@ -260,6 +260,307 @@ function getCurrentValue(data: Array<{ timestamp: number; value: number }>): str
     }
     return lastValue.value.toFixed(1);
 }
+
+// Chart Data Computed Properties
+const cpuChartData = computed(() => {
+    if (!props.cpuData.length) return null;
+
+    return {
+        labels: props.cpuData.map(() => ''),
+        datasets: [
+            {
+                label: 'CPU Usage',
+                data: props.cpuData.map((d) => d.value),
+                borderColor: dataColors.cpu,
+                backgroundColor: dataColors.cpu + '20',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                borderWidth: 2,
+            },
+        ],
+    };
+});
+
+const memoryChartData = computed(() => {
+    if (!props.memoryData.length) return null;
+
+    return {
+        labels: props.memoryData.map(() => ''),
+        datasets: [
+            {
+                label: 'Memory Usage',
+                data: props.memoryData.map((d) => d.value),
+                borderColor: dataColors.memory,
+                backgroundColor: dataColors.memory + '20',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                borderWidth: 2,
+            },
+        ],
+    };
+});
+
+const diskChartData = computed(() => {
+    if (!props.diskData.length) return null;
+
+    const diskColor = getDiskChartColor();
+
+    return {
+        labels: props.diskData.map(() => ''),
+        datasets: [
+            {
+                label: 'Disk Usage',
+                data: props.diskData.map((d) => d.value),
+                borderColor: diskColor,
+                backgroundColor: diskColor + '20',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                borderWidth: 2,
+            },
+        ],
+    };
+});
+
+const networkChartData = computed(() => {
+    if (!props.networkData.length) return null;
+
+    return {
+        labels: props.networkData.map(() => ''),
+        datasets: [
+            {
+                label: 'Network Usage',
+                data: props.networkData.map((d) => d.value),
+                borderColor: dataColors.network,
+                backgroundColor: dataColors.network + '20',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                borderWidth: 2,
+            },
+        ],
+    };
+});
+
+// Chart Options
+const cpuChartOptions = computed(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: {
+        duration: 0,
+    },
+    plugins: {
+        legend: {
+            display: false,
+        },
+        tooltip: {
+            enabled: true,
+            mode: 'index' as const,
+            intersect: false,
+            callbacks: {
+                label: (context: TooltipItem<'line'>) => {
+                    const value = context.parsed.y;
+                    if (value === null) return '';
+                    return `${value.toFixed(1)}%`;
+                },
+            },
+        },
+    },
+    scales: {
+        x: {
+            display: false,
+            grid: {
+                display: false,
+            },
+        },
+        y: {
+            beginAtZero: true,
+            max: props.server?.cpu && props.server.cpu > 0 ? props.server.cpu : undefined,
+            grid: {
+                color: 'rgba(148, 163, 184, 0.1)',
+            },
+            ticks: {
+                precision: 0,
+                callback: (tickValue: string | number) => {
+                    if (typeof tickValue === 'string') return tickValue;
+                    return `${tickValue}%`;
+                },
+            },
+        },
+    },
+}));
+
+const memoryChartOptions = computed(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: {
+        duration: 0,
+    },
+    plugins: {
+        legend: {
+            display: false,
+        },
+        tooltip: {
+            enabled: true,
+            mode: 'index' as const,
+            intersect: false,
+            callbacks: {
+                label: (context: TooltipItem<'line'>) => {
+                    const value = context.parsed.y;
+                    if (value === null) return '';
+                    if (value >= 1024) {
+                        return `${(value / 1024).toFixed(1)} GiB`;
+                    }
+                    return `${value.toFixed(1)} MiB`;
+                },
+            },
+        },
+    },
+    scales: {
+        x: {
+            display: false,
+            grid: {
+                display: false,
+            },
+        },
+        y: {
+            beginAtZero: true,
+            max: props.server?.memory && props.server.memory > 0 ? props.server.memory : undefined,
+            grid: {
+                color: 'rgba(148, 163, 184, 0.1)',
+            },
+            ticks: {
+                precision: 0,
+                callback: (tickValue: string | number) => {
+                    if (typeof tickValue === 'string') return tickValue;
+                    if (tickValue >= 1024) {
+                        return `${(tickValue / 1024).toFixed(1)} GiB`;
+                    }
+                    return `${tickValue} MiB`;
+                },
+            },
+        },
+    },
+}));
+
+const diskChartOptions = computed(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: {
+        duration: 0,
+    },
+    plugins: {
+        legend: {
+            display: false,
+        },
+        tooltip: {
+            enabled: true,
+            mode: 'index' as const,
+            intersect: false,
+            callbacks: {
+                label: (context: TooltipItem<'line'>) => {
+                    const value = context.parsed.y;
+                    if (value === null) return '';
+                    if (value >= 1024) {
+                        return `${(value / 1024).toFixed(1)} GiB`;
+                    }
+                    return `${value.toFixed(1)} MiB`;
+                },
+            },
+        },
+    },
+    scales: {
+        x: {
+            display: false,
+            grid: {
+                display: false,
+            },
+        },
+        y: {
+            beginAtZero: true,
+            max: props.server?.disk && props.server.disk > 0 ? props.server.disk : undefined,
+            grid: {
+                color: 'rgba(148, 163, 184, 0.1)',
+            },
+            ticks: {
+                precision: 0,
+                callback: (tickValue: string | number) => {
+                    if (typeof tickValue === 'string') return tickValue;
+                    if (tickValue >= 1024) {
+                        return `${(tickValue / 1024).toFixed(1)} GiB`;
+                    }
+                    return `${tickValue} MiB`;
+                },
+            },
+        },
+    },
+}));
+
+const networkChartOptions = computed(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: {
+        duration: 0,
+    },
+    plugins: {
+        legend: {
+            display: false,
+        },
+        tooltip: {
+            enabled: true,
+            mode: 'index' as const,
+            intersect: false,
+            callbacks: {
+                label: (context: TooltipItem<'line'>) => {
+                    const value = context.parsed.y;
+                    if (value === null) return '';
+                    if (value >= 1024 * 1024 * 1024) {
+                        return `${(value / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+                    } else if (value >= 1024 * 1024) {
+                        return `${(value / (1024 * 1024)).toFixed(2)} MB`;
+                    } else if (value >= 1024) {
+                        return `${(value / 1024).toFixed(2)} KB`;
+                    }
+                    return `${value.toFixed(2)} B`;
+                },
+            },
+        },
+    },
+    scales: {
+        x: {
+            display: false,
+            grid: {
+                display: false,
+            },
+        },
+        y: {
+            beginAtZero: true,
+            grid: {
+                color: 'rgba(148, 163, 184, 0.1)',
+            },
+            ticks: {
+                precision: 0,
+                callback: (tickValue: string | number) => {
+                    if (typeof tickValue === 'string') return tickValue;
+                    if (tickValue >= 1024 * 1024 * 1024) {
+                        return `${(tickValue / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+                    } else if (tickValue >= 1024 * 1024) {
+                        return `${(tickValue / (1024 * 1024)).toFixed(2)} MB`;
+                    } else if (tickValue >= 1024) {
+                        return `${(tickValue / 1024).toFixed(2)} KB`;
+                    }
+                    return `${tickValue} B`;
+                },
+            },
+        },
+    },
+}));
 </script>
 
 <style scoped>
