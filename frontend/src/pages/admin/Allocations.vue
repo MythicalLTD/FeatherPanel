@@ -309,8 +309,77 @@
                 >
             </DrawerHeader>
             <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitEdit">
-                <label for="edit-ip" class="block mb-1 font-medium">IP Address</label>
-                <Input id="edit-ip" v-model="editForm.ip" placeholder="192.168.1.1" required />
+                <div>
+                    <label for="edit-ip" class="block mb-1 font-medium">IP Address</label>
+                    <Select
+                        v-if="!editUsingCustomIP"
+                        v-model="editForm.ip"
+                        @update:model-value="
+                            (value) => {
+                                if (value === 'custom') {
+                                    editUsingCustomIP = true;
+                                    editForm.ip = '';
+                                } else if (typeof value === 'string' && value) {
+                                    editForm.ip = value;
+                                }
+                            }
+                        "
+                    >
+                        <SelectTrigger id="edit-ip">
+                            <SelectValue placeholder="Select an IP address or enter custom" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem v-for="ip in availableIPs" :key="ip" :value="ip">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono">{{ ip }}</span>
+                                    <span
+                                        v-if="ip === '0.0.0.0'"
+                                        class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs rounded-full"
+                                    >
+                                        All interfaces
+                                    </span>
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="custom" class="font-medium text-primary">
+                                <div class="flex items-center gap-2">
+                                    <span>+ Custom IP...</span>
+                                </div>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Input
+                        v-else
+                        id="edit-ip"
+                        v-model="editForm.ip"
+                        type="text"
+                        placeholder="Enter IP address (e.g., 192.168.1.1)"
+                        required
+                    />
+                    <div class="flex items-center gap-2 mt-1">
+                        <div class="text-xs text-muted-foreground flex-1">
+                            <span v-if="!editUsingCustomIP">
+                                Select an IP from the node or choose "Custom IP..." to enter a different address.
+                            </span>
+                            <span v-else>
+                                Enter a custom IP address. Use <code class="text-xs">0.0.0.0</code> to bind to all
+                                interfaces.
+                            </span>
+                        </div>
+                        <Button
+                            v-if="editUsingCustomIP"
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            class="text-xs h-auto py-0"
+                            @click="
+                                editUsingCustomIP = false;
+                                editForm.ip = '';
+                            "
+                        >
+                            Use dropdown
+                        </Button>
+                    </div>
+                </div>
                 <label for="edit-port" class="block mb-1 font-medium">Port</label>
                 <Input
                     id="edit-port"
@@ -350,35 +419,73 @@
             <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreate">
                 <div>
                     <label for="create-ip" class="block mb-1 font-medium">IP Address</label>
-                    <Select v-model="createForm.ip" required>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select an IP address" />
+                    <Select
+                        v-if="!createUsingCustomIP"
+                        v-model="createForm.ip"
+                        @update:model-value="
+                            (value) => {
+                                if (value === 'custom') {
+                                    createUsingCustomIP = true;
+                                    createForm.ip = '';
+                                } else if (typeof value === 'string' && value) {
+                                    createForm.ip = value;
+                                }
+                            }
+                        "
+                    >
+                        <SelectTrigger id="create-ip">
+                            <SelectValue placeholder="Select an IP address or enter custom" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem v-for="ip in nodeIPs" :key="ip" :value="ip">
+                            <SelectItem v-for="ip in availableIPs" :key="ip" :value="ip">
                                 <div class="flex items-center gap-2">
                                     <span class="font-mono">{{ ip }}</span>
                                     <span
-                                        v-if="isIPv6(ip)"
-                                        class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
+                                        v-if="ip === '0.0.0.0'"
+                                        class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs rounded-full"
                                     >
-                                        IPv6
+                                        All interfaces
                                     </span>
-                                    <span
-                                        v-else-if="isPrivateIP(ip)"
-                                        class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
-                                    >
-                                        Private
-                                    </span>
-                                    <span v-else class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                                        Public
-                                    </span>
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="custom" class="font-medium text-primary">
+                                <div class="flex items-center gap-2">
+                                    <span>+ Custom IP...</span>
                                 </div>
                             </SelectItem>
                         </SelectContent>
                     </Select>
-                    <div class="text-xs text-muted-foreground mt-1">
-                        Available IP addresses from Wings daemon. You can create multiple ports for the same IP.
+                    <Input
+                        v-else
+                        id="create-ip"
+                        v-model="createForm.ip"
+                        type="text"
+                        placeholder="Enter IP address (e.g., 192.168.1.1)"
+                        required
+                    />
+                    <div class="flex items-center gap-2 mt-1">
+                        <div class="text-xs text-muted-foreground flex-1">
+                            <span v-if="!createUsingCustomIP">
+                                Select an IP from the node or choose "Custom IP..." to enter a different address.
+                            </span>
+                            <span v-else>
+                                Enter a custom IP address. Use <code class="text-xs">0.0.0.0</code> to bind to all
+                                interfaces.
+                            </span>
+                        </div>
+                        <Button
+                            v-if="createUsingCustomIP"
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            class="text-xs h-auto py-0"
+                            @click="
+                                createUsingCustomIP = false;
+                                createForm.ip = '';
+                            "
+                        >
+                            Use dropdown
+                        </Button>
                     </div>
                 </div>
 
@@ -552,12 +659,23 @@ const editForm = ref({
     ip_alias: '',
     notes: '',
 });
+const editUsingCustomIP = ref(false);
 const createDrawerOpen = ref(false);
 const createForm = ref({
     ip: '',
     port: '',
     ip_alias: '',
     notes: '',
+});
+const createUsingCustomIP = ref(false);
+
+// Computed property for available IPs (node IPs + 0.0.0.0)
+const availableIPs = computed(() => {
+    const ips = [...nodeIPs.value];
+    if (!ips.includes('0.0.0.0')) {
+        ips.unshift('0.0.0.0');
+    }
+    return ips;
 });
 
 // Table columns configuration
@@ -622,35 +740,6 @@ async function fetchNodeIPs() {
     } catch {
         nodeIPs.value = [];
     }
-}
-
-// Utility functions for IP classification
-function isIPv6(ip: string): boolean {
-    return ip.includes(':');
-}
-
-function isPrivateIP(ip: string): boolean {
-    // Check for private IP ranges
-    if (isIPv6(ip)) {
-        return ip.startsWith('fd') || ip.startsWith('fe80');
-    }
-
-    const octets = ip.split('.').map(Number);
-    if (octets.length !== 4) return false;
-
-    // 10.0.0.0/8
-    if (octets[0] === 10) return true;
-
-    // 172.16.0.0/12
-    if (octets[0] === 172 && octets[1] && octets[1] >= 16 && octets[1] <= 31) return true;
-
-    // 192.168.0.0/16
-    if (octets[0] === 192 && octets[1] === 168) return true;
-
-    // 127.0.0.0/8 (localhost)
-    if (octets[0] === 127) return true;
-
-    return false;
 }
 
 async function fetchCurrentNode() {
@@ -799,12 +888,15 @@ async function openEditDrawer(allocation: Allocation) {
         const { data } = await axios.get(`/api/admin/allocations/${allocation.id}`);
         const a: Allocation = data.data.allocation;
         editingAllocation.value = a;
+        const ip = a.ip || '';
         editForm.value = {
-            ip: a.ip || '',
+            ip: ip,
             port: a.port.toString() || '',
             ip_alias: a.ip_alias || '',
             notes: a.notes || '',
         };
+        // Check if IP is in available IPs, if not use custom input
+        editUsingCustomIP.value = !availableIPs.value.includes(ip);
         editDrawerOpen.value = true;
     } catch {
         toast.error('Failed to fetch allocation details for editing');
@@ -814,6 +906,7 @@ async function openEditDrawer(allocation: Allocation) {
 function closeEditDrawer() {
     editDrawerOpen.value = false;
     editingAllocation.value = null;
+    editUsingCustomIP.value = false;
 }
 
 async function submitEdit() {
@@ -845,10 +938,12 @@ async function openCreateDrawer() {
 
     createDrawerOpen.value = true;
     createForm.value = { ip: '', port: '', ip_alias: '', notes: '' };
+    createUsingCustomIP.value = false;
 }
 
 function closeCreateDrawer() {
     createDrawerOpen.value = false;
+    createUsingCustomIP.value = false;
 }
 
 async function submitCreate() {
