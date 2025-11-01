@@ -1,0 +1,34 @@
+{
+  "total": {
+    "files": 761,
+    "lines": 130925
+  },
+  ".php": {
+    "files": 334,
+    "lines": 61647
+  },
+  ".vue": {
+    "files": 282,
+    "lines": 56887
+  },
+  ".ts": {
+    "files": 75,
+    "lines": 5562
+  },
+  ".yaml": {
+    "files": 3,
+    "lines": 3374
+  },
+  ".yml": {
+    "files": 14,
+    "lines": 2482
+  },
+  ".sql": {
+    "files": 50,
+    "lines": 741
+  },
+  ".js": {
+    "files": 3,
+    "lines": 232
+  }
+}

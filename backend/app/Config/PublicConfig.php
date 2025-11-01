@@ -87,6 +87,10 @@ class PublicConfig extends ConfigFactory
             // Discord OAuth settings
             ConfigInterface::DISCORD_OAUTH_ENABLED => 'false',
             ConfigInterface::DISCORD_OAUTH_CLIENT_ID => 'XXXX',
+
+            // Servers related settings
+            ConfigInterface::SERVER_ALLOW_EGG_CHANGE => 'false',
+            ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE => 'true',
         ];
 
     }

@@ -79,4 +79,10 @@ interface ConfigInterface
     public const DISCORD_OAUTH_ENABLED = 'discord_oauth_enabled';
     public const DISCORD_OAUTH_CLIENT_ID = 'discord_oauth_client_id';
     public const DISCORD_OAUTH_CLIENT_SECRET = 'discord_oauth_client_secret';
+
+    /**
+     * Servers Related Configs.
+     */
+    public const SERVER_ALLOW_EGG_CHANGE = 'server_allow_egg_change';
+    public const SERVER_ALLOW_STARTUP_CHANGE = 'server_allow_startup_change';
 }

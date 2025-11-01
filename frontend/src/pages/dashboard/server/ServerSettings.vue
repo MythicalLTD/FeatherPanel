@@ -11,7 +11,7 @@
                 <!-- Status Indicator -->
                 <div v-if="hasChanges && !loading" class="flex items-center gap-2 text-sm">
                     <div class="h-2 w-2 rounded-full bg-yellow-500 animate-pulse"></div>
-                    <span class="text-muted-foreground">Unsaved changes</span>
+                    <span class="text-muted-foreground">{{ t('common.unsavedChanges') }}</span>
                 </div>
             </div>
 
@@ -118,7 +118,7 @@
                                     class="flex items-center gap-2 p-3 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors"
                                 >
                                     <code class="text-sm font-mono flex-1 truncate">{{
-                                        server?.sftp?.host ? `sftp://${server.sftp.host}` : 'N/A'
+                                        server?.sftp?.host ? `sftp://${server.sftp.host}` : t('common.nA')
                                     }}</code>
                                     <Button
                                         variant="ghost"
@@ -140,7 +140,9 @@
                                 <div
                                     class="flex items-center gap-2 p-3 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors"
                                 >
-                                    <code class="text-sm font-mono flex-1">{{ server?.sftp?.port || 'N/A' }}</code>
+                                    <code class="text-sm font-mono flex-1">{{
+                                        server?.sftp?.port || t('common.nA')
+                                    }}</code>
                                     <Button
                                         variant="ghost"
                                         size="sm"
@@ -162,7 +164,7 @@
                                     class="flex items-center gap-2 p-3 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors"
                                 >
                                     <code class="text-sm font-mono flex-1 truncate">{{
-                                        server?.sftp?.username || 'N/A'
+                                        server?.sftp?.username || t('common.nA')
                                     }}</code>
                                     <Button
                                         variant="ghost"
@@ -205,7 +207,9 @@
                             <div
                                 class="flex items-center gap-2 p-3 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors"
                             >
-                                <code class="text-sm font-mono flex-1 truncate">{{ server?.sftp?.url || 'N/A' }}</code>
+                                <code class="text-sm font-mono flex-1 truncate">{{
+                                    server?.sftp?.url || t('common.nA')
+                                }}</code>
                                 <Button
                                     variant="ghost"
                                     size="sm"
@@ -324,7 +328,7 @@
                 <p class="text-sm text-muted-foreground max-w-md">{{ error }}</p>
                 <Button variant="outline" size="sm" class="mt-4" @click="fetchServer">
                     <RotateCcw class="h-4 w-4 mr-2" />
-                    Try Again
+                    {{ t('serverSettings.tryAgain') }}
                 </Button>
             </div>
 
@@ -378,7 +382,7 @@
                                 class="text-sm font-mono"
                             />
                             <p class="text-xs text-muted-foreground">
-                                Type <code class="px-1.5 py-0.5 rounded bg-muted font-mono">REINSTALL</code> to confirm
+                                {{ t('serverSettings.typeReinstallToConfirm') }}
                             </p>
                         </div>
                     </div>

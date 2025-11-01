@@ -179,5 +179,11 @@ export const useSettingsStore = defineStore('settings', {
         customAppLogoDark: () => localStorage.getItem('appLogoDark') || null,
         customAppLogoWhite: () => localStorage.getItem('appLogoWhite') || null,
         customTelemetry: () => localStorage.getItem('telemetry') || null,
+
+        /**
+         * Server-related settings
+         */
+        serverAllowEggChange: (state) => getBooleanSetting(state, 'server_allow_egg_change'),
+        serverAllowStartupChange: (state) => getBooleanSetting(state, 'server_allow_startup_change'),
     },
 });

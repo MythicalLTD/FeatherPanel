@@ -1282,6 +1282,7 @@ const spellVariables = ref<ApiSpellVariable[]>([]);
 const spellVariableValues = ref<Record<string, string>>({});
 const availableDockerImages = ref<string[]>([]);
 const selectedDockerImage = ref<string>('');
+const originalSpellId = ref<number | null>(null); // Track original spell ID to detect changes
 const isSuspended = computed(() => Number(form.value?.suspended ?? 0) === 1);
 
 // Computed filtered lists with hierarchical filtering
@@ -1388,6 +1389,10 @@ function selectRealm(item: ApiRealm) {
 
 function selectSpell(item: ApiSpell) {
     if (item && item.id) {
+        // Update realm_id to match the selected spell's realm (allow cross-realm spell changes)
+        if (item.realm_id && String(item.realm_id) !== form.value.realms_id) {
+            form.value.realms_id = String(item.realm_id);
+        }
         form.value.spell_id = String(item.id);
         spellModal.closeModal();
         fetchSpellDetails(item.id);
@@ -1468,34 +1473,70 @@ async function fetchSpellDetails(spellId: number) {
             if (selectedSpell.value?.docker_images) {
                 try {
                     const dockerImagesObj = JSON.parse(selectedSpell.value.docker_images);
-                    availableDockerImages.value = Object.values(dockerImagesObj);
+                    const imageArray = Object.values(dockerImagesObj) as string[];
+                    availableDockerImages.value = imageArray;
 
-                    // Set selectedDockerImage to current server image if it exists in available images
-                    // Otherwise use the first available image
-                    if (form.value.image && availableDockerImages.value.includes(form.value.image)) {
+                    // Always auto-select the first Docker image if available
+                    // Check if current server image exists in available images first
+                    if (form.value.image && imageArray.includes(form.value.image)) {
                         selectedDockerImage.value = form.value.image;
+                        // Keep current if valid (no assignment needed)
+                    } else if (imageArray.length > 0 && imageArray[0]) {
+                        // Auto-select first Docker image from new spell
+                        selectedDockerImage.value = imageArray[0];
+                        form.value.image = imageArray[0];
                     } else {
-                        selectedDockerImage.value = availableDockerImages.value[0] || '';
+                        selectedDockerImage.value = '';
+                        form.value.image = '';
                     }
                 } catch (e) {
                     console.error('Failed to parse docker images:', e);
                     availableDockerImages.value = [];
                     selectedDockerImage.value = '';
+                    form.value.image = form.value.image || ''; // Keep existing if parse fails
                 }
+            } else {
+                // No Docker images in spell, clear selection but keep existing if possible
+                availableDockerImages.value = [];
+                selectedDockerImage.value = '';
             }
 
             if (selectedSpell.value?.startup) {
                 form.value.startup = selectedSpell.value.startup;
             }
-
-            if (selectedDockerImage.value) {
-                form.value.image = selectedDockerImage.value;
-            }
         }
 
+        // Update variables if spell is changing (different from original server spell)
+        const isSpellChanging = originalSpellId.value !== null && spellId !== originalSpellId.value;
+
         if (variablesRes.data?.success) {
-            // Don't override server variables - we're using the ones from the server response
-            // Only use spell details for docker images, startup command, etc.
+            const newVariables = variablesRes.data.data.variables || [];
+
+            // If spell is changing, update variables to match new spell
+            if (isSpellChanging && newVariables.length > 0) {
+                // Map spell variables to the format we use
+                spellVariables.value = newVariables.map((v: ApiSpellVariable) => ({
+                    id: v.id,
+                    spell_id: spellId,
+                    name: v.name,
+                    description: v.description,
+                    env_variable: v.env_variable,
+                    default_value: v.default_value,
+                    user_viewable: v.user_viewable,
+                    user_editable: v.user_editable,
+                    rules: v.rules,
+                    field_type: v.field_type,
+                }));
+
+                // Initialize variable values with defaults
+                spellVariableValues.value = {};
+                newVariables.forEach((v: ApiSpellVariable) => {
+                    spellVariableValues.value[v.env_variable] = v.default_value || '';
+                });
+            } else if (!isSpellChanging && originalSpellId.value === spellId) {
+                // Spell hasn't changed - keep existing server variables (they're already loaded)
+                // Don't override server variables - we're using the ones from the server response
+            }
         }
     } catch (error: unknown) {
         console.error('Failed to fetch spell details:', error);
@@ -1629,10 +1670,29 @@ async function loadServerData() {
                 });
             }
 
+            // Store original spell ID to detect changes
+            originalSpellId.value = server.spell_id;
+
             // Load spell details for additional information (docker images, startup command, etc.)
             // Note: We don't use spell variables since the server already has its own configured variables
             if (server.spell_id) {
                 await fetchSpellDetails(server.spell_id);
+                // Ensure Docker image is set - if current image is not in available images, use first available
+                if (availableDockerImages.value.length > 0 && form.value.image) {
+                    if (!availableDockerImages.value.includes(form.value.image)) {
+                        // Current image not in available list, use first available
+                        if (availableDockerImages.value[0]) {
+                            form.value.image = availableDockerImages.value[0];
+                            selectedDockerImage.value = availableDockerImages.value[0];
+                        }
+                    }
+                } else if (availableDockerImages.value.length > 0 && !form.value.image) {
+                    // No image set, use first available
+                    if (availableDockerImages.value[0]) {
+                        form.value.image = availableDockerImages.value[0];
+                        selectedDockerImage.value = availableDockerImages.value[0];
+                    }
+                }
             }
         }
 

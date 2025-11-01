@@ -12,13 +12,15 @@
 - Changed the Console layout button from using `position: fixed` to being placed at the top of the page for a more consistent and integrated interface.
 - In the SFTP section of the server settings, clarified that the password is your panel login password and made this visible instead of masked. This helps prevent confusion for users who might otherwise copy the field thinking it's a dedicated FTP password.
 - Changed the server list status indicator on the dashboard from text to a colored dot for better visual clarity (green for running, red for offline/stopped, yellow for installing/starting/stopping/suspended/error/unknown).
-
+- Improved the admin server edit interface when changing eggs/spells: switching the server's spell automatically updates the available variables, Docker images, and startup command for consistency and clarity.
 
 ### Added
 
 - Added the ability to create servers without requiring a description.
 - Users are now reminded of the default startup command after making changes, ensuring an easy way to restore the original if needed.
 - Added a button to the console that scrolls to the bottom, making it easier to quickly view the latest output.
+- Users can now edit the startup command for their servers if this is allowed by the panel administrator or server policy.
+- Users can now change their server’s egg (installer template) if permitted by the panel administrator or server policy.
 
 ## v1.0.0 BETA
 

@@ -153,6 +153,15 @@ class SettingsController
                 ConfigInterface::DISCORD_OAUTH_CLIENT_SECRET,
             ],
         ],
+        'servers' => [
+            'name' => 'Servers',
+            'description' => 'Servers configuration settings',
+            'icon' => 'server',
+            'settings' => [
+                ConfigInterface::SERVER_ALLOW_EGG_CHANGE,
+                ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE,
+            ],
+        ],
     ];
 
     public function __construct()
@@ -422,6 +431,28 @@ class SettingsController
                 'required' => false,
                 'placeholder' => 'Enter client secret to change',
                 'sensitive' => true,
+            ],
+            ConfigInterface::SERVER_ALLOW_EGG_CHANGE => [
+                'name' => ConfigInterface::SERVER_ALLOW_EGG_CHANGE,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_EGG_CHANGE, 'false'),
+                'description' => 'Allow users to change the server egg',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'servers',
+            ],
+            ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE => [
+                'name' => ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE, 'true'),
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'description' => 'Allow users to change the server startup',
+                'category' => 'servers',
             ],
         ];
     }

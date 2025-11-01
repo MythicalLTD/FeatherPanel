@@ -32,6 +32,7 @@ namespace App\Controllers\User\Server;
 
 use App\App;
 use App\Chat\Node;
+use App\Chat\Spell;
 use App\Chat\Server;
 use App\Permissions;
 use App\Chat\Subuser;
@@ -326,7 +327,7 @@ class ServerUserController
                 'description' => $server['realm']['description'] ?? null,
                 'logo' => $server['realm']['logo'] ?? null,
             ];
-            $server['spell'] = \App\Chat\Spell::getSpellById($server['spell_id']);
+            $server['spell'] = Spell::getSpellById($server['spell_id']);
             $server['spell'] = [
                 'name' => $server['spell']['name'] ?? null,
                 'description' => $server['spell']['description'] ?? null,
@@ -421,8 +422,22 @@ class ServerUserController
         }
 
         $server['node'] = Node::getNodeById($server['node_id']);
-        $server['realm'] = \App\Chat\Realm::getById($server['realms_id']);
-        $server['spell'] = \App\Chat\Spell::getSpellById($server['spell_id']);
+        $realmData = \App\Chat\Realm::getById($server['realms_id']);
+        $server['realm'] = $realmData ? [
+            'id' => $realmData['id'] ?? null,
+            'name' => $realmData['name'] ?? null,
+            'description' => $realmData['description'] ?? null,
+            'logo' => $realmData['logo'] ?? null,
+        ] : null;
+        $spellData = Spell::getSpellById($server['spell_id']);
+        $server['spell'] = $spellData ? [
+            'id' => $spellData['id'] ?? null,
+            'name' => $spellData['name'] ?? null,
+            'description' => $spellData['description'] ?? null,
+            'banner' => $spellData['banner'] ?? null,
+            'startup' => $spellData['startup'] ?? null,
+            'docker_images' => $spellData['docker_images'] ?? null,
+        ] : null;
 
         $server['allocation'] = \App\Chat\Allocation::getAllocationById($server['allocation_id']);
         $server['activity'] = ServerActivity::getActivitiesByServerId($server['id']);
@@ -720,8 +735,57 @@ class ServerUserController
 
         // Validate and sanitize input
         $updateData = [];
+        $spellChanged = false;
+        $oldSpellId = (int) $server['spell_id'];
+        $newRealmId = null;
 
-        // Allow updating name, description, startup, image
+        // Check early if spell is changing (needed for startup check below)
+        $isSpellChanging = false;
+        if (isset($data['spell_id'])) {
+            $newSpellId = (int) $data['spell_id'];
+            $isSpellChanging = ($newSpellId !== $oldSpellId && $newSpellId > 0);
+        }
+
+        // Check if egg/spell changes are allowed globally
+        if (isset($data['spell_id'])) {
+            $app = App::getInstance(true);
+            $allowEggChange = $app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_EGG_CHANGE, 'false');
+            if ($allowEggChange !== 'true' && $allowEggChange !== true && $allowEggChange !== '1' && $allowEggChange !== 1) {
+                return ApiResponse::error('Egg/spell changes are currently disabled by the administrator', 'EGG_CHANGE_DISABLED', 403);
+            }
+
+            // Validate spell exists
+            $newSpell = Spell::getSpellById((int) $data['spell_id']);
+            if (!$newSpell) {
+                return ApiResponse::error('Invalid spell_id: Spell not found', 'INVALID_SPELL_ID', 404);
+            }
+
+            // Get the new spell's realm_id
+            $newRealmId = (int) $newSpell['realm_id'];
+
+            // Verify the new realm exists (for realm verification)
+            $newRealm = \App\Chat\Realm::getById($newRealmId);
+            if (!$newRealm) {
+                return ApiResponse::error('Invalid realm_id: Realm not found for the selected spell', 'INVALID_REALM_ID', 404);
+            }
+
+            // Update realm_id to match the new spell's realm (allow cross-realm spell changes)
+            if ($newRealmId !== (int) $server['realms_id']) {
+                $updateData['realms_id'] = $newRealmId;
+            }
+        }
+
+        // Check if startup command changes are allowed globally (only applies to startup, not Docker image)
+        // Skip this check if spell is changing - allow startup/image changes during spell change
+        if (isset($data['startup']) && !$isSpellChanging) {
+            $app = App::getInstance(true);
+            $allowStartupChange = $app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE, 'true');
+            if ($allowStartupChange !== 'true' && $allowStartupChange !== true && $allowStartupChange !== '1' && $allowStartupChange !== 1) {
+                return ApiResponse::error('Startup changes are currently disabled by the administrator', 'STARTUP_CHANGE_DISABLED', 403);
+            }
+        }
+
+        // Allow updating name, description, startup, image, spell_id
         if (isset($data['name'])) {
             $name = trim($data['name']);
             if (empty($name)) {
@@ -765,6 +829,17 @@ class ServerUserController
             $updateData['image'] = $image;
         }
 
+        if (isset($data['spell_id'])) {
+            $spellId = (int) $data['spell_id'];
+            if ($spellId <= 0) {
+                return ApiResponse::error('Invalid spell_id', 'INVALID_SPELL_ID', 400);
+            }
+            if ($spellId !== $oldSpellId) {
+                $spellChanged = true;
+            }
+            $updateData['spell_id'] = $spellId;
+        }
+
         // Normalize variables payload if provided
         $variablesPayload = null;
         if (isset($data['variables'])) {
@@ -795,13 +870,92 @@ class ServerUserController
         }
 
         // Additional security check: only allow specific fields
-        $allowedFields = ['name', 'description', 'startup', 'image'];
+        $allowedFields = ['name', 'description', 'startup', 'image', 'spell_id', 'realms_id'];
         $updateData = array_intersect_key($updateData, array_flip($allowedFields));
 
         // Double check that we only have allowed fields
         foreach ($updateData as $field => $value) {
             if (!in_array($field, $allowedFields)) {
                 return ApiResponse::error('Invalid field: ' . $field, 'INVALID_FIELD', 400);
+            }
+        }
+
+        // Handle spell change: delete old variables and create new ones with user-provided values
+        if ($spellChanged) {
+            // Delete all old server variables
+            $deleted = ServerVariable::deleteServerVariablesByServerId((int) $server['id']);
+            if (!$deleted) {
+                // Log but don't fail - variables might not exist
+                App::getInstance(true)->getLogger()->warning('Failed to delete old variables for server ID: ' . $server['id']);
+            }
+
+            // Get new spell variables
+            $newSpellId = (int) $updateData['spell_id'];
+            $newSpellVariables = SpellVariable::getVariablesBySpellId($newSpellId);
+
+            // Create new server variables with values from variables payload (user-provided)
+            // The variables payload should contain all variables for the new spell
+            if ($variablesPayload !== null && !empty($variablesPayload)) {
+                // Validate that all variables belong to the new spell
+                $spellVarMap = [];
+                foreach ($newSpellVariables as $sv) {
+                    $spellVarMap[(int) $sv['id']] = $sv;
+                }
+
+                $validatedVariables = [];
+                foreach ($variablesPayload as $item) {
+                    $varId = (int) $item['variable_id'];
+                    $val = (string) $item['variable_value'];
+
+                    if (!isset($spellVarMap[$varId])) {
+                        return ApiResponse::error('Variable does not belong to the selected spell: ' . $varId, 'INVALID_VARIABLE_SCOPE', 422);
+                    }
+
+                    $sv = $spellVarMap[$varId];
+
+                    // Validate variable value
+                    $error = $this->validateVariableValue($val, (string) ($sv['rules'] ?? ''), (string) ($sv['field_type'] ?? ''));
+                    if ($error !== null) {
+                        return ApiResponse::error('Validation failed for ' . $sv['env_variable'] . ': ' . $error, 'INVALID_VARIABLE_VALUE', 422);
+                    }
+
+                    $validatedVariables[] = [
+                        'variable_id' => $varId,
+                        'variable_value' => $val,
+                    ];
+                }
+
+                if (!empty($validatedVariables)) {
+                    $created = ServerVariable::createOrUpdateServerVariables((int) $server['id'], $validatedVariables);
+                    if (!$created) {
+                        return ApiResponse::error('Failed to create new server variables', 'VARIABLES_CREATE_FAILED', 500);
+                    }
+                }
+            } else {
+                // No variables provided - create with default values (fallback)
+                $newVariables = [];
+                foreach ($newSpellVariables as $sv) {
+                    $newVariables[] = [
+                        'variable_id' => (int) $sv['id'],
+                        'variable_value' => (string) ($sv['default_value'] ?? ''),
+                    ];
+                }
+
+                if (!empty($newVariables)) {
+                    $created = ServerVariable::createOrUpdateServerVariables((int) $server['id'], $newVariables);
+                    if (!$created) {
+                        return ApiResponse::error('Failed to create new server variables', 'VARIABLES_CREATE_FAILED', 500);
+                    }
+                }
+            }
+
+            // Update startup command from new spell if not explicitly provided
+            $newSpell = Spell::getSpellById($newSpellId);
+            if ($newSpell) {
+                if (!isset($data['startup']) && !empty($newSpell['startup'])) {
+                    $updateData['startup'] = $newSpell['startup'];
+                }
+                // Don't auto-update image - let user choose or keep existing
             }
         }
 
@@ -813,10 +967,11 @@ class ServerUserController
             }
         }
 
-        // Update variables if provided
-        if ($variablesPayload !== null) {
+        // Update variables if provided (only if spell hasn't changed)
+        if ($variablesPayload !== null && !$spellChanged) {
             // Fetch spell variables for this server's spell
-            $spellVariables = SpellVariable::getVariablesBySpellId((int) $server['spell_id']);
+            $activeSpellId = isset($updateData['spell_id']) ? (int) $updateData['spell_id'] : (int) $server['spell_id'];
+            $spellVariables = SpellVariable::getVariablesBySpellId($activeSpellId);
             $spellVarMap = [];
             foreach ($spellVariables as $sv) {
                 $spellVarMap[(int) $sv['id']] = $sv;
@@ -831,7 +986,7 @@ class ServerUserController
                 }
                 $sv = $spellVarMap[$varId];
                 // Ensure variable belongs to this spell and is editable
-                if ((int) $sv['spell_id'] !== (int) $server['spell_id']) {
+                if ((int) $sv['spell_id'] !== $activeSpellId) {
                     return ApiResponse::error('Variable does not belong to this server spell: ' . $sv['env_variable'], 'INVALID_VARIABLE_SCOPE', 422);
                 }
                 if ((int) $sv['user_editable'] !== 1) {
@@ -874,7 +1029,12 @@ class ServerUserController
                 $timeout
             );
 
-            $response = $wings->getServer()->syncServer($server['uuid']);
+            // If spell changed, trigger reinstall instead of just sync
+            if ($spellChanged) {
+                $response = $wings->getServer()->reinstallServer($server['uuid']);
+            } else {
+                $response = $wings->getServer()->syncServer($server['uuid']);
+            }
 
             if (!$response->isSuccessful()) {
                 $error = $response->getError();
@@ -889,6 +1049,20 @@ class ServerUserController
                 }
 
                 return ApiResponse::error('Failed to send power action to Wings: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            }
+
+            // Emit event if spell changed (reinstall)
+            if ($spellChanged) {
+                global $eventManager;
+                if (isset($eventManager) && $eventManager !== null) {
+                    $eventManager->emit(
+                        ServerEvent::onServerReinstalled(),
+                        [
+                            'user_uuid' => $user['uuid'],
+                            'server_uuid' => $server['uuid'],
+                        ]
+                    );
+                }
             }
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to send power action to Wings: ' . $e->getMessage());
@@ -1226,7 +1400,7 @@ class ServerUserController
         $parts = explode('|', $rules);
         $required = in_array('required', $parts, true);
         $nullable = in_array('nullable', $parts, true);
-        $isNumeric = in_array('numeric', $parts, true);
+        $isNumeric = in_array('numeric', $parts, true) || in_array('integer', $parts, true);
         // string rule is informational for our basic validator
 
         if ($value === '') {

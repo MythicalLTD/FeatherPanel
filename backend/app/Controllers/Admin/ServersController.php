@@ -1044,6 +1044,28 @@ class ServersController
             return ApiResponse::error('Invalid spell_id: Spell not found', 'INVALID_SPELL_ID', 400);
         }
 
+        // Check if spell is changing
+        $spellChanged = false;
+        $oldSpellId = (int) $server['spell_id'];
+        if (isset($data['spell_id'])) {
+            $newSpellId = (int) $data['spell_id'];
+            if ($newSpellId !== $oldSpellId && $newSpellId > 0) {
+                $spellChanged = true;
+
+                // Validate spell exists
+                $newSpell = Spell::getSpellById($newSpellId);
+                if (!$newSpell) {
+                    return ApiResponse::error('Invalid spell_id: Spell not found', 'INVALID_SPELL_ID', 404);
+                }
+
+                // Update realm_id to match the new spell's realm (allow cross-realm spell changes)
+                $newRealmId = (int) $newSpell['realm_id'];
+                if ($newRealmId !== (int) $server['realms_id']) {
+                    $data['realms_id'] = $newRealmId;
+                }
+            }
+        }
+
         // Handle variables if provided (similar to user controller)
         $variablesPayload = null;
         if (isset($data['variables'])) {
@@ -1103,6 +1125,91 @@ class ServersController
         // Update the server fields (exclude variables from direct update payload)
         $serverUpdateData = $data;
         unset($serverUpdateData['variables']);
+
+        // Handle spell change: delete old variables and create new ones (before updating server)
+        if ($spellChanged) {
+            // Delete all old server variables
+            $deleted = ServerVariable::deleteServerVariablesByServerId((int) $id);
+            if (!$deleted) {
+                // Log but don't fail - variables might not exist
+                App::getInstance(true)->getLogger()->warning('Failed to delete old variables for server ID: ' . $id);
+            }
+
+            // Get new spell variables
+            $newSpellId = (int) $data['spell_id'];
+            $newSpell = Spell::getSpellById($newSpellId);
+
+            // Update startup command from new spell if not explicitly provided
+            if ($newSpell) {
+                if (!isset($data['startup']) && !empty($newSpell['startup'])) {
+                    $serverUpdateData['startup'] = $newSpell['startup'];
+                }
+                // Auto-select first Docker image if not provided and available
+                if (!isset($data['image']) && !empty($newSpell['docker_images'])) {
+                    try {
+                        $dockerImages = json_decode($newSpell['docker_images'], true);
+                        if (is_array($dockerImages) && !empty($dockerImages)) {
+                            $imageArray = array_values($dockerImages);
+                            if (!empty($imageArray[0])) {
+                                $serverUpdateData['image'] = $imageArray[0];
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        App::getInstance(true)->getLogger()->warning('Failed to parse docker_images for auto-selection: ' . $e->getMessage());
+                    }
+                }
+            }
+
+            $newSpellVariables = SpellVariable::getVariablesBySpellId($newSpellId);
+
+            // Create new server variables with values from variables payload (admin-provided)
+            // The variables payload should contain all variables for the new spell
+            if ($variablesPayload !== null && !empty($variablesPayload)) {
+                // Validate that all variables belong to the new spell
+                $spellVarMap = [];
+                foreach ($newSpellVariables as $sv) {
+                    $spellVarMap[(int) $sv['id']] = $sv;
+                }
+
+                $validatedVariables = [];
+                foreach ($variablesPayload as $item) {
+                    $varId = (int) $item['variable_id'];
+                    $val = (string) $item['variable_value'];
+
+                    if (!isset($spellVarMap[$varId])) {
+                        return ApiResponse::error('Variable does not belong to the selected spell: ' . $varId, 'INVALID_VARIABLE_SCOPE', 422);
+                    }
+
+                    $validatedVariables[] = [
+                        'variable_id' => $varId,
+                        'variable_value' => $val,
+                    ];
+                }
+
+                if (!empty($validatedVariables)) {
+                    $created = ServerVariable::createOrUpdateServerVariables((int) $id, $validatedVariables);
+                    if (!$created) {
+                        return ApiResponse::error('Failed to create new server variables', 'VARIABLES_CREATE_FAILED', 500);
+                    }
+                }
+            } else {
+                // No variables provided - create with default values (fallback)
+                $newVariables = [];
+                foreach ($newSpellVariables as $sv) {
+                    $newVariables[] = [
+                        'variable_id' => (int) $sv['id'],
+                        'variable_value' => (string) ($sv['default_value'] ?? ''),
+                    ];
+                }
+
+                if (!empty($newVariables)) {
+                    $created = ServerVariable::createOrUpdateServerVariables((int) $id, $newVariables);
+                    if (!$created) {
+                        return ApiResponse::error('Failed to create new server variables', 'VARIABLES_CREATE_FAILED', 500);
+                    }
+                }
+            }
+        }
 
         // Normalize integer/boolean fields to avoid empty-string writes
         $intFields = [
@@ -1165,8 +1272,8 @@ class ServersController
             }
         }
 
-        // Update variables if provided
-        if ($variablesPayload !== null) {
+        // Update variables if provided (only if spell hasn't changed)
+        if ($variablesPayload !== null && !$spellChanged) {
             $ok = ServerVariable::createOrUpdateServerVariables((int) $id, $variablesPayload);
             if (!$ok) {
                 return ApiResponse::error('Failed to update server variables', 'VARIABLES_UPDATE_FAILED', 500);
@@ -1174,6 +1281,7 @@ class ServersController
         }
 
         // Sync with Wings if node information is available
+        // If spell changed, trigger reinstall instead of just sync
         if (isset($data['node_id']) || isset($data['allocation_id']) || isset($data['spell_id']) || isset($data['variables']) || isset($data['image']) || isset($data['startup'])) {
             $nodeInfo = Node::getNodeById($data['node_id'] ?? $server['node_id']);
             if ($nodeInfo) {
@@ -1192,12 +1300,30 @@ class ServersController
                         $timeout
                     );
 
-                    $response = $wings->getServer()->syncServer($server['uuid']);
+                    // If spell changed, trigger reinstall instead of just sync
+                    if ($spellChanged) {
+                        $response = $wings->getServer()->reinstallServer($server['uuid']);
+
+                        // Emit reinstall event
+                        global $eventManager;
+                        if (isset($eventManager) && $eventManager !== null) {
+                            $eventManager->emit(
+                                ServerEvent::onServerReinstalled(),
+                                [
+                                    'server' => Server::getServerById($id),
+                                    'updated_by' => $request->get('user'),
+                                ]
+                            );
+                        }
+                    } else {
+                        $response = $wings->getServer()->syncServer($server['uuid']);
+                    }
+
                     if (!$response->isSuccessful()) {
-                        App::getInstance(true)->getLogger()->warning('Failed to sync server with Wings: ' . $response->getError());
+                        App::getInstance(true)->getLogger()->warning('Failed to ' . ($spellChanged ? 'reinstall' : 'sync') . ' server with Wings: ' . $response->getError());
                     }
                 } catch (\Exception $e) {
-                    App::getInstance(true)->getLogger()->error('Failed to sync server with Wings: ' . $e->getMessage());
+                    App::getInstance(true)->getLogger()->error('Failed to ' . ($spellChanged ? 'reinstall' : 'sync') . ' server with Wings: ' . $e->getMessage());
                 }
             }
         }
