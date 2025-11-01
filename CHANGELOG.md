@@ -13,7 +13,7 @@
 - In the SFTP section of the server settings, clarified that the password is your panel login password and made this visible instead of masked. This helps prevent confusion for users who might otherwise copy the field thinking it's a dedicated FTP password.
 - Changed the server list status indicator on the dashboard from text to a colored dot for better visual clarity (green for running, red for offline/stopped, yellow for installing/starting/stopping/suspended/error/unknown).
 - Improved the admin server edit interface when changing eggs/spells: switching the server's spell automatically updates the available variables, Docker images, and startup command for consistency and clarity.
-- Added support for using 0.0.0.0 or custom user-provided IP addresses as the Wings interface, making it possible to bind to all interfaces or a specific address as needed. (#70)
+- Added support for using 0.0.0.0 or custom user-provided IP addresses as the Wings interface, making it possible to bind to all interfaces or a specific address as needed.
 
 ### Added
 
@@ -22,6 +22,8 @@
 - Added a button to the console that scrolls to the bottom, making it easier to quickly view the latest output.
 - Users can now edit the startup command for their servers if this is allowed by the panel administrator or server policy.
 - Users can now change their server’s egg (installer template) if permitted by the panel administrator or server policy.
+- Added real-time upload progress indicators to the file manager for a clearer and more responsive file upload experience!
+- Users are now prevented from leaving the file manager while uploads are in progress, ensuring files upload completely without accidental interruption. A prompt will ask you to confirm if you try to leave during uploads.
 
 ## v1.0.0 BETA
 

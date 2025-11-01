@@ -60,12 +60,16 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <Badge
-                            v-if="uploading"
+                            v-if="activeUploads.some((u) => u.status === 'uploading')"
                             variant="outline"
-                            class="text-sm px-3 py-1.5 bg-linear-to-r from-yellow-500/20 to-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30 animate-pulse"
+                            class="text-sm px-3 py-1.5 bg-linear-to-r from-green-500/20 to-green-500/10 text-green-600 dark:text-green-400 border-green-500/30 animate-pulse"
                         >
                             <Upload class="h-3.5 w-3.5 mr-2 animate-bounce" />
-                            {{ t('serverFiles.uploadingStatus') }}
+                            {{
+                                t('serverFiles.uploadingStatus', {
+                                    count: activeUploads.filter((u) => u.status === 'uploading').length,
+                                })
+                            }}
                         </Badge>
                         <Badge variant="secondary" class="text-sm px-3 py-1.5">
                             {{ filteredFiles.length }} / {{ files.length }} items
@@ -245,6 +249,93 @@
                 </CardContent>
             </Card>
 
+            <!-- Active Uploads Card -->
+            <Card
+                v-if="activeUploads.length > 0"
+                class="border-2 border-green-500/30 bg-linear-to-r from-green-500/5 to-green-500/10 shadow-sm"
+            >
+                <CardContent class="p-4">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="p-2 rounded-full bg-green-500/20">
+                                    <Upload class="h-4 w-4 text-green-600 dark:text-green-400 animate-bounce" />
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-semibold">{{ t('serverFiles.activeUploads') }}</h3>
+                                    <p class="text-xs text-muted-foreground">
+                                        {{
+                                            t('serverFiles.uploadsInProgress', {
+                                                count: activeUploads.filter((u) => u.status === 'uploading').length,
+                                                total: activeUploads.length,
+                                            })
+                                        }}
+                                    </p>
+                                </div>
+                            </div>
+                            <Button variant="ghost" size="sm" @click="clearCompletedUploads">
+                                <X class="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <div class="space-y-2">
+                            <div
+                                v-for="upload in activeUploads"
+                                :key="upload.id"
+                                class="flex items-center justify-between p-3 rounded-lg bg-background border"
+                            >
+                                <div class="flex items-center gap-3 flex-1 min-w-0">
+                                    <Upload
+                                        :class="[
+                                            'h-4 w-4 shrink-0',
+                                            upload.status === 'uploading'
+                                                ? 'text-green-600 dark:text-green-400 animate-pulse'
+                                                : upload.status === 'completed'
+                                                  ? 'text-green-600 dark:text-green-400'
+                                                  : 'text-red-600 dark:text-red-400',
+                                        ]"
+                                    />
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm font-medium truncate">{{ upload.fileName }}</p>
+                                        <div
+                                            v-if="upload.status === 'uploading'"
+                                            class="mt-1.5 flex items-center gap-2"
+                                        >
+                                            <div class="flex-1 bg-secondary rounded-full h-1.5 max-w-[200px]">
+                                                <div
+                                                    class="bg-green-500 h-1.5 rounded-full transition-all"
+                                                    :style="{ width: `${upload.progress}%` }"
+                                                ></div>
+                                            </div>
+                                            <span class="text-xs text-muted-foreground font-mono">
+                                                {{ upload.progress }}%
+                                            </span>
+                                        </div>
+                                        <p
+                                            v-else-if="upload.status === 'completed'"
+                                            class="text-xs text-green-600 dark:text-green-400 mt-1"
+                                        >
+                                            {{ t('serverFiles.uploadCompleted') }}
+                                        </p>
+                                        <p v-else-if="upload.error" class="text-xs text-red-600 dark:text-red-400 mt-1">
+                                            {{ upload.error }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <Button
+                                    v-if="upload.status === 'uploading'"
+                                    variant="ghost"
+                                    size="sm"
+                                    class="text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                                    @click="cancelUpload(upload.id)"
+                                >
+                                    <X class="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
             <!-- Active Downloads Card -->
             <Card
                 v-if="activeDownloads.length > 0"
@@ -365,7 +456,7 @@
                                 @click="showMoveDialog = true"
                             >
                                 <FileEdit class="h-4 w-4" />
-                                <span>{{ t('serverFiles.move', { defaultValue: 'Move' }) }}</span>
+                                <span>{{ t('serverFiles.move') }}</span>
                             </Button>
                             <Button
                                 v-if="canArchiveFiles"
@@ -1142,14 +1233,10 @@
                 <DialogHeader>
                     <DialogTitle class="flex items-center gap-2">
                         <Copy class="h-5 w-5 text-primary" />
-                        {{ t('serverFiles.copyFiles', { defaultValue: 'Copy Files' }) }}
+                        {{ t('serverFiles.copyFiles') }}
                     </DialogTitle>
                     <DialogDescription>
-                        {{
-                            t('serverFiles.copyFilesDescription', {
-                                defaultValue: 'Copy the selected files to a new location.',
-                            })
-                        }}
+                        {{ t('serverFiles.copyFilesDescription') }}
                     </DialogDescription>
                 </DialogHeader>
                 <div class="space-y-4">
@@ -1159,9 +1246,7 @@
                         </p>
                     </div>
                     <div class="space-y-2">
-                        <Label for="copyDestination"
-                            >{{ t('serverFiles.destination', { defaultValue: 'Destination Path' }) }} *</Label
-                        >
+                        <Label for="copyDestination">{{ t('serverFiles.destination') }} *</Label>
                         <Input
                             id="copyDestination"
                             v-model="copyDestination"
@@ -1193,7 +1278,7 @@
                     </Button>
                     <Button :disabled="!copyDestination || loading" class="w-full sm:w-auto" @click="copySelected">
                         <Copy class="h-4 w-4 mr-2" />
-                        {{ t('serverFiles.copy', { defaultValue: 'Copy' }) }}
+                        {{ t('serverFiles.copy') }}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -1205,14 +1290,10 @@
                 <DialogHeader>
                     <DialogTitle class="flex items-center gap-2">
                         <FileEdit class="h-5 w-5 text-primary" />
-                        {{ t('serverFiles.moveFiles', { defaultValue: 'Move Files' }) }}
+                        {{ t('serverFiles.moveFiles') }}
                     </DialogTitle>
                     <DialogDescription>
-                        {{
-                            t('serverFiles.moveFilesDescription', {
-                                defaultValue: 'Move the selected files to a new location.',
-                            })
-                        }}
+                        {{ t('serverFiles.moveFilesDescription') }}
                     </DialogDescription>
                 </DialogHeader>
                 <div class="space-y-4">
@@ -1222,9 +1303,7 @@
                         </p>
                     </div>
                     <div class="space-y-2">
-                        <Label for="moveDestination"
-                            >{{ t('serverFiles.destination', { defaultValue: 'Destination Path' }) }} *</Label
-                        >
+                        <Label for="moveDestination">{{ t('serverFiles.destination') }} *</Label>
                         <Input
                             id="moveDestination"
                             v-model="moveDestination"
@@ -1256,7 +1335,7 @@
                     </Button>
                     <Button :disabled="!moveDestination || loading" class="w-full sm:w-auto" @click="moveSelected">
                         <FileEdit class="h-4 w-4 mr-2" />
-                        {{ t('serverFiles.move', { defaultValue: 'Move' }) }}
+                        {{ t('serverFiles.move') }}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -1592,6 +1671,76 @@
                 >
             </Button>
         </div>
+
+        <!-- Navigation Guard Dialog -->
+        <Dialog v-model:open="showNavigationGuardDialog">
+            <DialogContent class="mx-4 sm:mx-0 sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle class="flex items-center gap-3">
+                        <div class="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+                            <AlertTriangle class="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <div>
+                            <div class="text-lg font-semibold">{{ t('serverFiles.uploadInProgressTitle') }}</div>
+                            <div class="text-sm font-normal text-muted-foreground mt-0.5">
+                                {{ t('serverFiles.uploadInProgressSubtitle') }}
+                            </div>
+                        </div>
+                    </DialogTitle>
+                </DialogHeader>
+                <div class="py-4 space-y-4">
+                    <div class="rounded-lg bg-orange-500/10 border border-orange-500/20 p-4">
+                        <div class="flex items-start gap-3">
+                            <Upload class="h-5 w-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
+                            <div class="flex-1 space-y-2">
+                                <p class="text-sm font-medium text-orange-900 dark:text-orange-100">
+                                    {{
+                                        t('serverFiles.uploadInProgressMessage', {
+                                            count: activeUploads.filter((u: UploadStatus) => u.status === 'uploading')
+                                                .length,
+                                        })
+                                    }}
+                                </p>
+                                <div class="space-y-1.5">
+                                    <div
+                                        v-for="upload in activeUploads.filter(
+                                            (u: UploadStatus) => u.status === 'uploading',
+                                        )"
+                                        :key="upload.id"
+                                        class="flex items-center gap-2 text-xs text-orange-700 dark:text-orange-300"
+                                    >
+                                        <div class="flex-1 bg-orange-200 dark:bg-orange-900/30 rounded-full h-1.5">
+                                            <div
+                                                class="bg-orange-600 dark:bg-orange-400 h-1.5 rounded-full transition-all"
+                                                :style="{ width: `${upload.progress}%` }"
+                                            ></div>
+                                        </div>
+                                        <span class="font-mono text-orange-600 dark:text-orange-400 shrink-0">
+                                            {{ upload.progress }}%
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-muted-foreground">
+                        {{ t('serverFiles.uploadInProgressWarning') }}
+                    </p>
+                </div>
+                <DialogFooter class="gap-3 flex-col sm:flex-row">
+                    <Button variant="outline" class="w-full sm:w-auto order-2 sm:order-1" @click="handleStayOnPage">
+                        {{ t('serverFiles.stayOnPage') }}
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        class="w-full sm:w-auto order-1 sm:order-2"
+                        @click="handleLeaveAnyway"
+                    >
+                        {{ t('serverFiles.leaveAnyway') }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </DashboardLayout>
 </template>
 
@@ -1621,7 +1770,7 @@
 // SOFTWARE.
 
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
 import { useServerPermissions } from '@/composables/useServerPermissions';
@@ -1679,6 +1828,7 @@ import {
     Folder,
     Search,
     Plus,
+    AlertTriangle,
 } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
@@ -1716,6 +1866,17 @@ const files = ref<FileItem[]>([]);
 const currentPath = ref('/');
 const selectedFiles = ref<string[]>([]);
 const activeDownloads = ref<DownloadProcess[]>([]);
+
+// Upload status tracking
+interface UploadStatus {
+    id: string;
+    fileName: string;
+    progress: number;
+    status: 'uploading' | 'completed' | 'error';
+    error?: string;
+}
+
+const activeUploads = ref<UploadStatus[]>([]);
 const searchQuery = ref('');
 const searchInput = ref<{ $el?: HTMLElement } | HTMLInputElement>();
 const showCreateFileDialog = ref(false);
@@ -1763,6 +1924,10 @@ const lastSelectedIndex = ref<number>(-1);
 
 // Keyboard shortcuts panel
 const showKeyboardShortcuts = ref(false);
+
+// Navigation guard dialog
+const showNavigationGuardDialog = ref(false);
+const pendingNavigation = ref<(() => void) | null>(null);
 
 // File input ref
 const fileInput = ref<HTMLInputElement>();
@@ -1830,6 +1995,11 @@ const allFilesSelected = computed(() => {
 
 const someFilesSelected = computed(() => {
     return selectedFiles.value.length > 0 && selectedFiles.value.length < filteredFiles.value.length;
+});
+
+// Check if uploads are active
+const hasActiveUploads = computed(() => {
+    return activeUploads.value.some((u) => u.status === 'uploading');
 });
 
 // Check if search query matches any ignored files
@@ -2044,6 +2214,46 @@ const stopDownloadsPolling = () => {
     }
 };
 
+// Navigation guards to prevent leaving during uploads
+const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+    if (hasActiveUploads.value) {
+        // Modern browsers ignore custom messages, but we still need to call preventDefault
+        event.preventDefault();
+        // Set returnValue for older browsers
+        event.returnValue = t('serverFiles.uploadInProgressWarning');
+        return t('serverFiles.uploadInProgressWarning');
+    }
+};
+
+// Navigation guard handlers
+const handleStayOnPage = () => {
+    showNavigationGuardDialog.value = false;
+    pendingNavigation.value = null;
+};
+
+const handleLeaveAnyway = () => {
+    if (pendingNavigation.value) {
+        pendingNavigation.value();
+    }
+};
+
+// Vue Router navigation guard
+onBeforeRouteLeave((to, from, next) => {
+    if (hasActiveUploads.value) {
+        // Show custom confirmation dialog
+        pendingNavigation.value = () => {
+            next();
+            showNavigationGuardDialog.value = false;
+            pendingNavigation.value = null;
+        };
+        showNavigationGuardDialog.value = true;
+        // Block navigation for now, will proceed when user confirms
+        next(false);
+    } else {
+        next();
+    }
+});
+
 // Watch for route changes (browser back/forward navigation)
 watch(
     () => route.query.path,
@@ -2093,11 +2303,15 @@ onMounted(async () => {
 
     // Add global drag over handler to keep overlay visible while dragging
     window.addEventListener('dragover', handleGlobalDragOver);
+
+    // Add beforeunload handler to warn about active uploads
+    window.addEventListener('beforeunload', handleBeforeUnload);
 });
 
 onUnmounted(() => {
     window.removeEventListener('keydown', handleKeyboard);
     window.removeEventListener('dragover', handleGlobalDragOver);
+    window.removeEventListener('beforeunload', handleBeforeUnload);
 
     // Stop downloads polling
     stopDownloadsPolling();
@@ -2298,7 +2512,6 @@ const moveSelected = async () => {
             toast.success(
                 t('serverFiles.filesMoved', {
                     count: selectedFiles.value.length,
-                    defaultValue: `${selectedFiles.value.length} file(s) moved successfully`,
                 }),
             );
             showMoveDialog.value = false;
@@ -2306,14 +2519,13 @@ const moveSelected = async () => {
             clearSelection();
             refreshFiles();
         } else {
-            toast.error(response.data.message || t('serverFiles.moveError', { defaultValue: 'Failed to move files' }));
+            const errorMsg = response.data?.message || response.data?.error_message || t('serverFiles.moveError');
+            toast.error(errorMsg);
         }
     } catch (error) {
         console.error('Error moving files:', error);
-        const err = error as { response?: { data?: { message?: string } } };
-        toast.error(
-            err.response?.data?.message || t('serverFiles.moveError', { defaultValue: 'Failed to move files' }),
-        );
+        const errorMessage = getErrorMessage(error, t('serverFiles.moveError'));
+        toast.error(errorMessage);
     } finally {
         loading.value = false;
     }
@@ -2504,22 +2716,13 @@ const handleFileClick = (file: FileItem) => {
     if (file.file) {
         // Check if file is editable before opening
         if (!isFileEditable(file)) {
-            toast.warning(
-                t('serverFiles.cannotEditFile', {
-                    defaultValue:
-                        'Cannot edit this file type. Binary files like archives, images, and executables cannot be edited as text.',
-                }),
-            );
+            toast.warning(t('serverFiles.cannotEditFile'));
             return;
         }
 
         // Check file size
         if (!isFileSizeValid(file)) {
-            toast.warning(
-                t('serverFiles.fileTooLarge', {
-                    defaultValue: 'File is too large to edit (max 5MB). Please download it instead.',
-                }),
-            );
+            toast.warning(t('serverFiles.fileTooLarge'));
             return;
         }
 
@@ -2641,9 +2844,95 @@ const handleFileSelect = (event: Event) => {
     selectedFile.value = target.files?.[0] || null;
 };
 
+// Error message extraction helper
+const getErrorMessage = (err: unknown, fallback?: string): string => {
+    if (typeof err === 'object' && err !== null) {
+        const e = err as {
+            response?: {
+                data?: {
+                    message?: string;
+                    error_message?: string;
+                    error_code?: string;
+                };
+            };
+            message?: string;
+        };
+
+        // Return the error message from API response, checking multiple possible fields
+        return (
+            e.response?.data?.message ||
+            e.response?.data?.error_message ||
+            e.response?.data?.error_code ||
+            e.message ||
+            fallback ||
+            t('serverFiles.uploadError')
+        );
+    }
+
+    if (typeof err === 'string') {
+        return err;
+    }
+
+    return fallback || t('serverFiles.uploadError');
+};
+
+// Upload status management
+const addUpload = (fileName: string): string => {
+    const id = `upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    activeUploads.value.push({
+        id,
+        fileName,
+        progress: 0,
+        status: 'uploading',
+    });
+    return id;
+};
+
+const updateUploadProgress = (id: string, progress: number) => {
+    const upload = activeUploads.value.find((u) => u.id === id);
+    if (upload) {
+        upload.progress = progress;
+    }
+    // Update global uploading flag
+    uploading.value = activeUploads.value.some((u) => u.status === 'uploading');
+};
+
+const completeUpload = (id: string, success: boolean, error?: string) => {
+    const upload = activeUploads.value.find((u) => u.id === id);
+    if (upload) {
+        if (success) {
+            upload.status = 'completed';
+            upload.progress = 100;
+        } else {
+            upload.status = 'error';
+            upload.error = error || t('serverFiles.uploadError');
+        }
+    }
+    // Update global uploading flag
+    uploading.value = activeUploads.value.some((u) => u.status === 'uploading');
+};
+
+const cancelUpload = (id: string) => {
+    // Note: Axios doesn't support cancellation easily, but we can mark it as cancelled
+    const upload = activeUploads.value.find((u) => u.id === id);
+    if (upload) {
+        upload.status = 'error';
+        upload.error = t('serverFiles.uploadCancelled');
+    }
+    // Update global uploading flag
+    uploading.value = activeUploads.value.some((u) => u.status === 'uploading');
+};
+
+const clearCompletedUploads = () => {
+    activeUploads.value = activeUploads.value.filter((u) => u.status === 'uploading');
+    // Update global uploading flag
+    uploading.value = activeUploads.value.some((u) => u.status === 'uploading');
+};
+
 const uploadFile = async () => {
     if (!selectedFile.value) return;
 
+    const uploadId = addUpload(selectedFile.value.name);
     uploading.value = true;
     uploadProgress.value = 0;
 
@@ -2657,25 +2946,39 @@ const uploadFile = async () => {
                 },
                 onUploadProgress: (progressEvent) => {
                     if (progressEvent.total) {
-                        uploadProgress.value = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        uploadProgress.value = progress;
+                        updateUploadProgress(uploadId, progress);
                     }
                 },
             },
         );
 
         if (response.data.success) {
+            completeUpload(uploadId, true);
             toast.success(t('serverFiles.uploadSuccess'));
             showUploadDialog.value = false;
             selectedFile.value = null;
             uploadProgress.value = 0;
             refreshFiles();
+
+            // Remove completed upload after 3 seconds
+            setTimeout(() => {
+                const index = activeUploads.value.findIndex((u) => u.id === uploadId);
+                if (index > -1) {
+                    activeUploads.value.splice(index, 1);
+                }
+            }, 3000);
         } else {
-            toast.error(response.data.message || t('serverFiles.uploadError'));
+            const errorMsg = response.data?.message || response.data?.error_message || t('serverFiles.uploadError');
+            completeUpload(uploadId, false, errorMsg);
+            toast.error(errorMsg);
         }
     } catch (error) {
         console.error('Error uploading file:', error);
-        const err = error as { response?: { data?: { message?: string } } };
-        toast.error(err.response?.data?.message || t('serverFiles.uploadError'));
+        const errorMessage = getErrorMessage(error);
+        completeUpload(uploadId, false, errorMessage);
+        toast.error(errorMessage);
     } finally {
         uploading.value = false;
         if (fileInput.value) {
@@ -2722,7 +3025,7 @@ const handleDrop = async (e: DragEvent) => {
         toast.info(t('serverFiles.uploadingFiles', { count: droppedFiles.length }));
     }
 
-    // Upload each file
+    // Upload each file sequentially with progress tracking
     for (const file of droppedFiles) {
         await uploadDroppedFile(file);
     }
@@ -2732,7 +3035,8 @@ const handleDrop = async (e: DragEvent) => {
 };
 
 const uploadDroppedFile = async (file: File) => {
-    uploading.value = true;
+    const uploadId = addUpload(file.name);
+    uploading.value = activeUploads.value.some((u) => u.status === 'uploading');
 
     try {
         const response = await axios.post(
@@ -2742,20 +3046,39 @@ const uploadDroppedFile = async (file: File) => {
                 headers: {
                     'Content-Type': 'application/octet-stream',
                 },
+                onUploadProgress: (progressEvent) => {
+                    if (progressEvent.total) {
+                        const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        updateUploadProgress(uploadId, progress);
+                    }
+                },
             },
         );
 
         if (response.data.success) {
+            completeUpload(uploadId, true);
             toast.success(t('serverFiles.uploadSuccess') + `: ${file.name}`);
+
+            // Remove completed upload after 3 seconds
+            setTimeout(() => {
+                const index = activeUploads.value.findIndex((u) => u.id === uploadId);
+                if (index > -1) {
+                    activeUploads.value.splice(index, 1);
+                }
+            }, 3000);
         } else {
-            toast.error(`${file.name}: ${response.data.message || t('serverFiles.uploadError')}`);
+            const errorMsg = response.data?.message || response.data?.error_message || t('serverFiles.uploadError');
+            completeUpload(uploadId, false, errorMsg);
+            toast.error(`${file.name}: ${errorMsg}`);
         }
     } catch (error) {
         console.error('Error uploading file:', error);
-        const err = error as { response?: { data?: { message?: string } } };
-        toast.error(`${file.name}: ${err.response?.data?.message || t('serverFiles.uploadError')}`);
+        const errorMessage = getErrorMessage(error);
+        completeUpload(uploadId, false, errorMessage);
+        toast.error(`${file.name}: ${errorMessage}`);
     } finally {
-        uploading.value = false;
+        // Update global uploading flag based on active uploads
+        uploading.value = activeUploads.value.some((u) => u.status === 'uploading');
     }
 };
 
@@ -3021,9 +3344,7 @@ const pullFile = async () => {
         });
 
         if (response.data && response.data.success) {
-            toast.success(
-                t('serverFiles.pullStarted', { defaultValue: 'File download started! Check Active Downloads below.' }),
-            );
+            toast.success(t('serverFiles.pullStarted'));
 
             showPullDialog.value = false;
             pullUrl.value = '';
@@ -3037,16 +3358,13 @@ const pullFile = async () => {
                 refreshFiles();
             }, 3000);
         } else {
-            toast.error(
-                response.data?.message || t('serverFiles.pullError', { defaultValue: 'Failed to start download' }),
-            );
+            const errorMsg = response.data?.message || response.data?.error_message || t('serverFiles.pullError');
+            toast.error(errorMsg);
         }
     } catch (error) {
         console.error('Error pulling file:', error);
-        const err = error as { response?: { data?: { message?: string } } };
-        toast.error(
-            err.response?.data?.message || t('serverFiles.pullError', { defaultValue: 'Failed to start download' }),
-        );
+        const errorMessage = getErrorMessage(error, t('serverFiles.pullError'));
+        toast.error(errorMessage);
     } finally {
         pulling.value = false;
     }
@@ -3111,37 +3429,25 @@ const addIgnoredPattern = () => {
     if (!pattern) return;
 
     if (ignoredPatterns.value.includes(pattern)) {
-        toast.warning(t('serverFiles.patternAlreadyExists', { defaultValue: 'This pattern already exists' }));
+        toast.warning(t('serverFiles.patternAlreadyExists'));
         return;
     }
 
     ignoredPatterns.value.push(pattern);
     saveIgnoredPatterns();
     newIgnoredPattern.value = '';
-    toast.success(
-        t('serverFiles.patternAdded', {
-            defaultValue: 'Pattern added successfully',
-        }),
-    );
+    toast.success(t('serverFiles.patternAdded'));
 };
 
 const removeIgnoredPattern = (index: number) => {
     ignoredPatterns.value.splice(index, 1);
     saveIgnoredPatterns();
-    toast.success(
-        t('serverFiles.patternRemoved', {
-            defaultValue: 'Pattern removed successfully',
-        }),
-    );
+    toast.success(t('serverFiles.patternRemoved'));
 };
 
 const clearAllIgnoredPatterns = () => {
     ignoredPatterns.value = [];
     saveIgnoredPatterns();
-    toast.success(
-        t('serverFiles.allPatternsCleared', {
-            defaultValue: 'All patterns cleared',
-        }),
-    );
+    toast.success(t('serverFiles.allPatternsCleared'));
 };
 </script>
