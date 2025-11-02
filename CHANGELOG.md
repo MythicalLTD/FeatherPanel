@@ -7,6 +7,7 @@
 - Resolved an issue that prevented using Ctrl+C to interrupt processes in the server console—keyboard shortcuts now work as expected.
 - Fixed an issue where subuser search filters and the table would appear even when there were no subusers these elements now only show when subusers exist.
 - Navigating to a plugin page that does not exist now correctly sends you to the 404 Not Found page.
+- Fixed a connection timeout issue that could occur after being idle (AFK) on the console page connections now remain stable during periods of inactivity.
 
 ### Improved
 
@@ -33,6 +34,7 @@
 - Added a new security setting that allows administrators to block users from uploading or changing their profile pictures. When disabled, users are no longer given the option to upload a profile image in their account settings.
 - Added a new setting that allows administrators to block the use of subusers for servers. When disabled, users will no longer be able to add or manage subusers on their servers.
 - Added a new setting that allows administrators to block the use of Schedules for servers. When disabled, users will no longer be able to create or manage schedules on their servers.
+- Enhanced the server list to display real-time status indicators alongside resource usage metrics for each server
 
 ## v1.0.0 BETA
 
@@ -56,6 +58,7 @@
 - Fixed an issue where the sidebar logo could become stuck in dark mode and not update correctly when themes were changed.
 - Fixed a broken database schema migration that could cause issues when upgrading from older versions.
 - No longer performing JWT renewals over the WebSocket protocol; authentication tokens must now be refreshed via the REST API and re-established by reconnecting the WebSocket when needed.
+- Resolved reliability issues with JWT token refresh on server console pages, ensuring seamless authentication and uninterrupted session access.
 
 ### Improved
 

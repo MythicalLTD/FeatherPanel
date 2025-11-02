@@ -81,7 +81,8 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
     const reconnectTimeout = ref<number | null>(null);
     const isReconnecting = ref(false);
     const healthCheckTimeout = ref<number | null>(null); // Health check timeout
-    const onAuthSuccessCallbacks = ref<Set<() => void>>(new Set()); // Callbacks to run after auth success
+    const onAuthSuccessCallbacks = ref<Set<(isRefresh: boolean) => void>>(new Set()); // Callbacks to run after auth success
+    const isRefreshingToken = ref(false); // Track if we're refreshing token to prevent reconnect logic
 
     const isConnected = computed(() => connectionStatus.value === 'connected');
     const isConnecting = computed(() => connectionStatus.value === 'connecting');
@@ -139,8 +140,8 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                                 healthCheckTimeout.value = null;
                             }
 
-                            // Trigger auth success callbacks
-                            triggerAuthSuccess();
+                            // Trigger auth success callbacks (not a refresh on initial connect)
+                            triggerAuthSuccess(false);
                         } else if (data.event === 'auth_error') {
                             connectionStatus.value = 'disconnected';
                             wingsStatus.value = 'error';
@@ -178,9 +179,10 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                     connectionStatus.value = 'disconnected';
                     websocket.value = null;
 
-                    // Only attempt to reconnect if not manually disconnected and not navigating away
+                    // Only attempt to reconnect if not manually disconnected, not refreshing token, and not navigating away
                     if (
                         !isReconnecting.value &&
+                        !isRefreshingToken.value &&
                         reconnectAttempts.value < maxReconnectAttempts &&
                         !isNavigatingAway?.value
                     ) {
@@ -193,9 +195,10 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                     websocket.value = null;
                     console.error('WebSocket error:', error);
 
-                    // Only attempt to reconnect if not manually disconnected and not navigating away
+                    // Only attempt to reconnect if not manually disconnected, not refreshing token, and not navigating away
                     if (
                         !isReconnecting.value &&
+                        !isRefreshingToken.value &&
                         reconnectAttempts.value < maxReconnectAttempts &&
                         !isNavigatingAway?.value
                     ) {
@@ -252,6 +255,9 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
         try {
             console.log(t('serverConsole.refreshingToken'));
 
+            // Set flag to prevent reconnect logic during token refresh
+            isRefreshingToken.value = true;
+
             // Close current WebSocket connection gracefully
             if (websocket.value) {
                 websocket.value.close();
@@ -293,6 +299,7 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                             connectionStatus.value = 'connected';
                             reconnectAttempts.value = 0;
                             wingsStatus.value = 'healthy';
+                            isRefreshingToken.value = false; // Clear flag after successful refresh
                             console.log('Token refreshed successfully');
 
                             // Clear any pending health check timeout
@@ -301,11 +308,12 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                                 healthCheckTimeout.value = null;
                             }
 
-                            // Trigger auth success callbacks
-                            triggerAuthSuccess();
+                            // Trigger auth success callbacks (this is a token refresh)
+                            triggerAuthSuccess(true);
                         } else if (data.event === 'auth_error') {
                             connectionStatus.value = 'disconnected';
                             wingsStatus.value = 'error';
+                            isRefreshingToken.value = false; // Clear flag on auth error
                             if (!isNavigatingAway?.value) {
                                 toast.error(t('serverConsole.authenticationFailedAfterRefresh'));
                             }
@@ -335,9 +343,10 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                     connectionStatus.value = 'disconnected';
                     websocket.value = null;
 
-                    // Only attempt to reconnect if not manually disconnected and not navigating away
+                    // Only attempt to reconnect if not manually disconnected, not refreshing token, and not navigating away
                     if (
                         !isReconnecting.value &&
+                        !isRefreshingToken.value &&
                         reconnectAttempts.value < maxReconnectAttempts &&
                         !isNavigatingAway?.value
                     ) {
@@ -350,9 +359,10 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                     websocket.value = null;
                     console.error('WebSocket error after token refresh:', error);
 
-                    // Only attempt to reconnect if not manually disconnected and not navigating away
+                    // Only attempt to reconnect if not manually disconnected, not refreshing token, and not navigating away
                     if (
                         !isReconnecting.value &&
+                        !isRefreshingToken.value &&
                         reconnectAttempts.value < maxReconnectAttempts &&
                         !isNavigatingAway?.value
                     ) {
@@ -367,6 +377,7 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
             toast.error(t('serverConsole.failedToRefreshSession'));
             connectionStatus.value = 'disconnected';
             wingsStatus.value = 'error';
+            isRefreshingToken.value = false; // Clear flag on error
         }
     }
 
@@ -384,28 +395,35 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
         const expiresAt = jwtExpiresAt.value;
         const timeUntilExpiration = (expiresAt - now) * 1000; // Convert to milliseconds
 
-        // Only set timer if token expires in the future
-        if (timeUntilExpiration > 60000) {
-            // Only set timer if more than 1 minute remaining
-            // Refresh token 1 minute before it expires
-            const refreshTime = timeUntilExpiration - 60000; // 1 minute before expiration
-            const refreshTimeInMinutes = Math.floor(refreshTime / 1000 / 60);
-
-            console.log(
-                `Token expires in ${Math.floor(timeUntilExpiration / 1000 / 60)} minutes. Will refresh in ${refreshTimeInMinutes} minutes.`,
-            );
-
-            // Set timer to refresh token before it expires
-            tokenExpirationTimer.value = setTimeout(
-                async () => {
-                    if (!isNavigatingAway?.value && connectionStatus.value === 'connected') {
-                        console.log('Refreshing token before expiration...');
-                        await refreshToken();
-                    }
-                },
-                Math.max(refreshTime, 5000), // Minimum 5 seconds
-            );
+        // Handle edge cases
+        if (timeUntilExpiration <= 0) {
+            // Token already expired, refresh immediately
+            console.warn('Token has already expired, refreshing immediately...');
+            if (!isNavigatingAway?.value && connectionStatus.value === 'connected') {
+                refreshToken().catch((error) => {
+                    console.error('Failed to refresh expired token:', error);
+                });
+            }
+            return;
         }
+
+        // Tokens typically expire in 5 minutes per Wings docs
+        // Refresh 1 minute before expiration (or sooner if less than 1 minute remaining)
+        const refreshTime = Math.max(timeUntilExpiration - 60000, 5000); // 1 minute before, or 5 seconds minimum
+        const refreshTimeInMinutes = Math.floor(refreshTime / 1000 / 60);
+        const totalMinutes = Math.floor(timeUntilExpiration / 1000 / 60);
+
+        console.log(
+            `Token expires in ${totalMinutes} minute(s). Will refresh in ${refreshTimeInMinutes} minute(s) (${Math.floor(refreshTime / 1000)} seconds).`,
+        );
+
+        // Set timer to refresh token before it expires
+        tokenExpirationTimer.value = setTimeout(async () => {
+            if (!isNavigatingAway?.value && connectionStatus.value === 'connected') {
+                console.log('Refreshing token before expiration...');
+                await refreshToken();
+            }
+        }, refreshTime);
     }
 
     function scheduleReconnect(): void {
@@ -478,20 +496,20 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
     }
 
     // Register callback to run after auth success
-    function onAuthSuccess(callback: () => void): void {
+    function onAuthSuccess(callback: (isRefresh: boolean) => void): void {
         onAuthSuccessCallbacks.value.add(callback);
     }
 
     // Remove callback
-    function removeAuthSuccessCallback(callback: () => void): void {
+    function removeAuthSuccessCallback(callback: (isRefresh: boolean) => void): void {
         onAuthSuccessCallbacks.value.delete(callback);
     }
 
     // Trigger all callbacks
-    function triggerAuthSuccess(): void {
+    function triggerAuthSuccess(isRefresh: boolean): void {
         onAuthSuccessCallbacks.value.forEach((callback) => {
             try {
-                callback();
+                callback(isRefresh);
             } catch (error) {
                 console.error('Error in auth success callback:', error);
             }
@@ -512,6 +530,7 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
         reconnectAttempts,
         isReconnecting,
         wingsStatus,
+        isRefreshingToken,
 
         // Computed
         isConnected,

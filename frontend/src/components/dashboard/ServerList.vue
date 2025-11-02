@@ -314,55 +314,145 @@
 
                                             <!-- Resources -->
                                             <div class="grid grid-cols-3 gap-1 sm:gap-2 text-xs">
+                                                <!-- Memory -->
                                                 <div
-                                                    class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                    class="p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div
-                                                        class="font-semibold text-xs sm:text-sm"
-                                                        :class="
-                                                            server.memory === 0
-                                                                ? 'text-green-600 dark:text-green-400 text-lg'
-                                                                : 'text-primary'
-                                                        "
-                                                    >
-                                                        {{ formatMemory(server.memory) }}
-                                                    </div>
-                                                    <div class="text-muted-foreground text-xs">
-                                                        {{ $t('servers.memory') }}
+                                                    <div class="space-y-1">
+                                                        <div class="flex items-center justify-between gap-1">
+                                                            <span
+                                                                class="text-muted-foreground text-[10px] sm:text-xs truncate"
+                                                                >{{ $t('servers.memory') }}</span
+                                                            >
+                                                            <span
+                                                                class="font-semibold text-[10px] sm:text-xs shrink-0"
+                                                                :class="
+                                                                    getServerMemoryLimit(server) === 0
+                                                                        ? 'text-blue-500'
+                                                                        : 'text-foreground'
+                                                                "
+                                                            >
+                                                                {{
+                                                                    getServerMemoryLimit(server) === 0
+                                                                        ? '∞'
+                                                                        : `${formatResourceUsage(getServerMemory(server), getServerMemoryLimit(server), formatMemory)}/${formatMemory(getServerMemoryLimit(server))}`
+                                                                }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                            <div
+                                                                class="h-full transition-all duration-300"
+                                                                :class="
+                                                                    getProgressColor(
+                                                                        getUsagePercentage(
+                                                                            getServerMemory(server),
+                                                                            getServerMemoryLimit(server),
+                                                                        ),
+                                                                        getServerMemoryLimit(server) === 0,
+                                                                    )
+                                                                "
+                                                                :style="{
+                                                                    width: getProgressWidth(
+                                                                        getServerMemory(server),
+                                                                        getServerMemoryLimit(server),
+                                                                    ),
+                                                                }"
+                                                            ></div>
+                                                        </div>
                                                     </div>
                                                 </div>
+                                                <!-- Disk -->
                                                 <div
-                                                    class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                    class="p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div
-                                                        class="font-semibold text-xs sm:text-sm"
-                                                        :class="
-                                                            server.disk === 0
-                                                                ? 'text-green-600 dark:text-green-400 text-lg'
-                                                                : 'text-primary'
-                                                        "
-                                                    >
-                                                        {{ formatDisk(server.disk) }}
-                                                    </div>
-                                                    <div class="text-muted-foreground text-xs">
-                                                        {{ $t('servers.disk') }}
+                                                    <div class="space-y-1">
+                                                        <div class="flex items-center justify-between gap-1">
+                                                            <span
+                                                                class="text-muted-foreground text-[10px] sm:text-xs truncate"
+                                                                >{{ $t('servers.disk') }}</span
+                                                            >
+                                                            <span
+                                                                class="font-semibold text-[10px] sm:text-xs shrink-0"
+                                                                :class="
+                                                                    getServerDiskLimit(server) === 0
+                                                                        ? 'text-blue-500'
+                                                                        : 'text-foreground'
+                                                                "
+                                                            >
+                                                                {{
+                                                                    getServerDiskLimit(server) === 0
+                                                                        ? '∞'
+                                                                        : `${formatResourceUsage(getServerDisk(server), getServerDiskLimit(server), formatDisk)}/${formatDisk(getServerDiskLimit(server))}`
+                                                                }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                            <div
+                                                                class="h-full transition-all duration-300"
+                                                                :class="
+                                                                    getProgressColor(
+                                                                        getUsagePercentage(
+                                                                            getServerDisk(server),
+                                                                            getServerDiskLimit(server),
+                                                                        ),
+                                                                        getServerDiskLimit(server) === 0,
+                                                                    )
+                                                                "
+                                                                :style="{
+                                                                    width: getProgressWidth(
+                                                                        getServerDisk(server),
+                                                                        getServerDiskLimit(server),
+                                                                    ),
+                                                                }"
+                                                            ></div>
+                                                        </div>
                                                     </div>
                                                 </div>
+                                                <!-- CPU -->
                                                 <div
-                                                    class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                    class="p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div
-                                                        class="font-semibold text-xs sm:text-sm"
-                                                        :class="
-                                                            server.cpu === 0
-                                                                ? 'text-green-600 dark:text-green-400 text-lg'
-                                                                : 'text-primary'
-                                                        "
-                                                    >
-                                                        {{ formatCpu(server.cpu) }}
-                                                    </div>
-                                                    <div class="text-muted-foreground text-xs">
-                                                        {{ $t('servers.cpu') }}
+                                                    <div class="space-y-1">
+                                                        <div class="flex items-center justify-between gap-1">
+                                                            <span
+                                                                class="text-muted-foreground text-[10px] sm:text-xs truncate"
+                                                                >{{ $t('servers.cpu') }}</span
+                                                            >
+                                                            <span
+                                                                class="font-semibold text-[10px] sm:text-xs shrink-0"
+                                                                :class="
+                                                                    getServerCpuLimit(server) === 0
+                                                                        ? 'text-blue-500'
+                                                                        : 'text-foreground'
+                                                                "
+                                                            >
+                                                                {{
+                                                                    getServerCpuLimit(server) === 0
+                                                                        ? '∞'
+                                                                        : `${formatResourceUsage(getServerCpu(server), getServerCpuLimit(server), formatCpu)}/${formatCpu(getServerCpuLimit(server))}`
+                                                                }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                            <div
+                                                                class="h-full transition-all duration-300"
+                                                                :class="
+                                                                    getProgressColor(
+                                                                        getUsagePercentage(
+                                                                            getServerCpu(server),
+                                                                            getServerCpuLimit(server),
+                                                                        ),
+                                                                        getServerCpuLimit(server) === 0,
+                                                                    )
+                                                                "
+                                                                :style="{
+                                                                    width: getProgressWidth(
+                                                                        getServerCpu(server),
+                                                                        getServerCpuLimit(server),
+                                                                    ),
+                                                                }"
+                                                            ></div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -555,55 +645,145 @@
 
                                             <!-- Resources -->
                                             <div class="grid grid-cols-3 gap-1 sm:gap-2 text-xs">
+                                                <!-- Memory -->
                                                 <div
-                                                    class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                    class="p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div
-                                                        class="font-semibold text-xs sm:text-sm"
-                                                        :class="
-                                                            server.memory === 0
-                                                                ? 'text-green-600 dark:text-green-400 text-lg'
-                                                                : 'text-primary'
-                                                        "
-                                                    >
-                                                        {{ formatMemory(server.memory) }}
-                                                    </div>
-                                                    <div class="text-muted-foreground text-xs">
-                                                        {{ $t('servers.memory') }}
+                                                    <div class="space-y-1">
+                                                        <div class="flex items-center justify-between gap-1">
+                                                            <span
+                                                                class="text-muted-foreground text-[10px] sm:text-xs truncate"
+                                                                >{{ $t('servers.memory') }}</span
+                                                            >
+                                                            <span
+                                                                class="font-semibold text-[10px] sm:text-xs shrink-0"
+                                                                :class="
+                                                                    getServerMemoryLimit(server) === 0
+                                                                        ? 'text-blue-500'
+                                                                        : 'text-foreground'
+                                                                "
+                                                            >
+                                                                {{
+                                                                    getServerMemoryLimit(server) === 0
+                                                                        ? '∞'
+                                                                        : `${formatResourceUsage(getServerMemory(server), getServerMemoryLimit(server), formatMemory)}/${formatMemory(getServerMemoryLimit(server))}`
+                                                                }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                            <div
+                                                                class="h-full transition-all duration-300"
+                                                                :class="
+                                                                    getProgressColor(
+                                                                        getUsagePercentage(
+                                                                            getServerMemory(server),
+                                                                            getServerMemoryLimit(server),
+                                                                        ),
+                                                                        getServerMemoryLimit(server) === 0,
+                                                                    )
+                                                                "
+                                                                :style="{
+                                                                    width: getProgressWidth(
+                                                                        getServerMemory(server),
+                                                                        getServerMemoryLimit(server),
+                                                                    ),
+                                                                }"
+                                                            ></div>
+                                                        </div>
                                                     </div>
                                                 </div>
+                                                <!-- Disk -->
                                                 <div
-                                                    class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                    class="p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div
-                                                        class="font-semibold text-xs sm:text-sm"
-                                                        :class="
-                                                            server.disk === 0
-                                                                ? 'text-green-600 dark:text-green-400 text-lg'
-                                                                : 'text-primary'
-                                                        "
-                                                    >
-                                                        {{ formatDisk(server.disk) }}
-                                                    </div>
-                                                    <div class="text-muted-foreground text-xs">
-                                                        {{ $t('servers.disk') }}
+                                                    <div class="space-y-1">
+                                                        <div class="flex items-center justify-between gap-1">
+                                                            <span
+                                                                class="text-muted-foreground text-[10px] sm:text-xs truncate"
+                                                                >{{ $t('servers.disk') }}</span
+                                                            >
+                                                            <span
+                                                                class="font-semibold text-[10px] sm:text-xs shrink-0"
+                                                                :class="
+                                                                    getServerDiskLimit(server) === 0
+                                                                        ? 'text-blue-500'
+                                                                        : 'text-foreground'
+                                                                "
+                                                            >
+                                                                {{
+                                                                    getServerDiskLimit(server) === 0
+                                                                        ? '∞'
+                                                                        : `${formatResourceUsage(getServerDisk(server), getServerDiskLimit(server), formatDisk)}/${formatDisk(getServerDiskLimit(server))}`
+                                                                }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                            <div
+                                                                class="h-full transition-all duration-300"
+                                                                :class="
+                                                                    getProgressColor(
+                                                                        getUsagePercentage(
+                                                                            getServerDisk(server),
+                                                                            getServerDiskLimit(server),
+                                                                        ),
+                                                                        getServerDiskLimit(server) === 0,
+                                                                    )
+                                                                "
+                                                                :style="{
+                                                                    width: getProgressWidth(
+                                                                        getServerDisk(server),
+                                                                        getServerDiskLimit(server),
+                                                                    ),
+                                                                }"
+                                                            ></div>
+                                                        </div>
                                                     </div>
                                                 </div>
+                                                <!-- CPU -->
                                                 <div
-                                                    class="text-center p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                    class="p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div
-                                                        class="font-semibold text-xs sm:text-sm"
-                                                        :class="
-                                                            server.cpu === 0
-                                                                ? 'text-green-600 dark:text-green-400 text-lg'
-                                                                : 'text-primary'
-                                                        "
-                                                    >
-                                                        {{ formatCpu(server.cpu) }}
-                                                    </div>
-                                                    <div class="text-muted-foreground text-xs">
-                                                        {{ $t('servers.cpu') }}
+                                                    <div class="space-y-1">
+                                                        <div class="flex items-center justify-between gap-1">
+                                                            <span
+                                                                class="text-muted-foreground text-[10px] sm:text-xs truncate"
+                                                                >{{ $t('servers.cpu') }}</span
+                                                            >
+                                                            <span
+                                                                class="font-semibold text-[10px] sm:text-xs shrink-0"
+                                                                :class="
+                                                                    getServerCpuLimit(server) === 0
+                                                                        ? 'text-blue-500'
+                                                                        : 'text-foreground'
+                                                                "
+                                                            >
+                                                                {{
+                                                                    getServerCpuLimit(server) === 0
+                                                                        ? '∞'
+                                                                        : `${formatResourceUsage(getServerCpu(server), getServerCpuLimit(server), formatCpu)}/${formatCpu(getServerCpuLimit(server))}`
+                                                                }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                            <div
+                                                                class="h-full transition-all duration-300"
+                                                                :class="
+                                                                    getProgressColor(
+                                                                        getUsagePercentage(
+                                                                            getServerCpu(server),
+                                                                            getServerCpuLimit(server),
+                                                                        ),
+                                                                        getServerCpuLimit(server) === 0,
+                                                                    )
+                                                                "
+                                                                :style="{
+                                                                    width: getProgressWidth(
+                                                                        getServerCpu(server),
+                                                                        getServerCpuLimit(server),
+                                                                    ),
+                                                                }"
+                                                            ></div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -759,50 +939,143 @@
 
                                     <!-- Resources -->
                                     <div class="grid grid-cols-3 gap-2 text-xs">
+                                        <!-- Memory -->
                                         <div
-                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                            class="p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div
-                                                class="font-semibold"
-                                                :class="
-                                                    server.memory === 0
-                                                        ? 'text-green-600 dark:text-green-400 text-lg'
-                                                        : 'text-primary'
-                                                "
-                                            >
-                                                {{ formatMemory(server.memory) }}
+                                            <div class="space-y-1">
+                                                <div class="flex items-center justify-between gap-1">
+                                                    <span class="text-muted-foreground text-xs">{{
+                                                        $t('servers.memory')
+                                                    }}</span>
+                                                    <span
+                                                        class="font-semibold text-xs shrink-0"
+                                                        :class="
+                                                            getServerMemoryLimit(server) === 0
+                                                                ? 'text-blue-500'
+                                                                : 'text-foreground'
+                                                        "
+                                                    >
+                                                        {{
+                                                            getServerMemoryLimit(server) === 0
+                                                                ? '∞'
+                                                                : `${formatResourceUsage(getServerMemory(server), getServerMemoryLimit(server), formatMemory)}/${formatMemory(getServerMemoryLimit(server))}`
+                                                        }}
+                                                    </span>
+                                                </div>
+                                                <div class="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                                    <div
+                                                        class="h-full transition-all duration-300"
+                                                        :class="
+                                                            getProgressColor(
+                                                                getUsagePercentage(
+                                                                    getServerMemory(server),
+                                                                    getServerMemoryLimit(server),
+                                                                ),
+                                                                getServerMemoryLimit(server) === 0,
+                                                            )
+                                                        "
+                                                        :style="{
+                                                            width: getProgressWidth(
+                                                                getServerMemory(server),
+                                                                getServerMemoryLimit(server),
+                                                            ),
+                                                        }"
+                                                    ></div>
+                                                </div>
                                             </div>
-                                            <div class="text-muted-foreground">{{ $t('servers.memory') }}</div>
                                         </div>
+                                        <!-- Disk -->
                                         <div
-                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                            class="p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div
-                                                class="font-semibold"
-                                                :class="
-                                                    server.disk === 0
-                                                        ? 'text-green-600 dark:text-green-400 text-lg'
-                                                        : 'text-primary'
-                                                "
-                                            >
-                                                {{ formatDisk(server.disk) }}
+                                            <div class="space-y-1">
+                                                <div class="flex items-center justify-between gap-1">
+                                                    <span class="text-muted-foreground text-xs">{{
+                                                        $t('servers.disk')
+                                                    }}</span>
+                                                    <span
+                                                        class="font-semibold text-xs shrink-0"
+                                                        :class="
+                                                            getServerDiskLimit(server) === 0
+                                                                ? 'text-blue-500'
+                                                                : 'text-foreground'
+                                                        "
+                                                    >
+                                                        {{
+                                                            getServerDiskLimit(server) === 0
+                                                                ? '∞'
+                                                                : `${formatResourceUsage(getServerDisk(server), getServerDiskLimit(server), formatDisk)}/${formatDisk(getServerDiskLimit(server))}`
+                                                        }}
+                                                    </span>
+                                                </div>
+                                                <div class="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                                    <div
+                                                        class="h-full transition-all duration-300"
+                                                        :class="
+                                                            getProgressColor(
+                                                                getUsagePercentage(
+                                                                    getServerDisk(server),
+                                                                    getServerDiskLimit(server),
+                                                                ),
+                                                                getServerDiskLimit(server) === 0,
+                                                            )
+                                                        "
+                                                        :style="{
+                                                            width: getProgressWidth(
+                                                                getServerDisk(server),
+                                                                getServerDiskLimit(server),
+                                                            ),
+                                                        }"
+                                                    ></div>
+                                                </div>
                                             </div>
-                                            <div class="text-muted-foreground">{{ $t('servers.disk') }}</div>
                                         </div>
+                                        <!-- CPU -->
                                         <div
-                                            class="text-center p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                            class="p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div
-                                                class="font-semibold"
-                                                :class="
-                                                    server.cpu === 0
-                                                        ? 'text-green-600 dark:text-green-400 text-lg'
-                                                        : 'text-primary'
-                                                "
-                                            >
-                                                {{ formatCpu(server.cpu) }}
+                                            <div class="space-y-1">
+                                                <div class="flex items-center justify-between gap-1">
+                                                    <span class="text-muted-foreground text-xs">{{
+                                                        $t('servers.cpu')
+                                                    }}</span>
+                                                    <span
+                                                        class="font-semibold text-xs shrink-0"
+                                                        :class="
+                                                            getServerCpuLimit(server) === 0
+                                                                ? 'text-blue-500'
+                                                                : 'text-foreground'
+                                                        "
+                                                    >
+                                                        {{
+                                                            getServerCpuLimit(server) === 0
+                                                                ? '∞'
+                                                                : `${formatResourceUsage(getServerCpu(server), getServerCpuLimit(server), formatCpu)}/${formatCpu(getServerCpuLimit(server))}`
+                                                        }}
+                                                    </span>
+                                                </div>
+                                                <div class="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                                    <div
+                                                        class="h-full transition-all duration-300"
+                                                        :class="
+                                                            getProgressColor(
+                                                                getUsagePercentage(
+                                                                    getServerCpu(server),
+                                                                    getServerCpuLimit(server),
+                                                                ),
+                                                                getServerCpuLimit(server) === 0,
+                                                            )
+                                                        "
+                                                        :style="{
+                                                            width: getProgressWidth(
+                                                                getServerCpu(server),
+                                                                getServerCpuLimit(server),
+                                                            ),
+                                                        }"
+                                                    ></div>
+                                                </div>
                                             </div>
-                                            <div class="text-muted-foreground">{{ $t('servers.cpu') }}</div>
                                         </div>
                                     </div>
 
@@ -954,38 +1227,127 @@
                                         </div>
                                     </td>
                                     <td class="px-4 py-3">
-                                        <span
-                                            class="text-sm font-medium"
-                                            :class="
-                                                server.memory === 0
-                                                    ? 'text-green-600 dark:text-green-400'
-                                                    : 'text-primary'
-                                            "
-                                        >
-                                            {{ formatMemory(server.memory) }}
-                                        </span>
+                                        <div class="space-y-1.5 min-w-[120px]">
+                                            <div class="flex items-center justify-between gap-2 text-xs">
+                                                <span class="text-muted-foreground">{{ $t('servers.memory') }}</span>
+                                                <span
+                                                    class="font-semibold text-xs"
+                                                    :class="
+                                                        getServerMemoryLimit(server) === 0
+                                                            ? 'text-blue-500'
+                                                            : 'text-foreground'
+                                                    "
+                                                >
+                                                    {{
+                                                        getServerMemoryLimit(server) === 0
+                                                            ? '∞'
+                                                            : `${formatResourceUsage(getServerMemory(server), getServerMemoryLimit(server), formatMemory)}/${formatMemory(getServerMemoryLimit(server))}`
+                                                    }}
+                                                </span>
+                                            </div>
+                                            <div class="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                                <div
+                                                    class="h-full transition-all duration-300"
+                                                    :class="
+                                                        getProgressColor(
+                                                            getUsagePercentage(
+                                                                getServerMemory(server),
+                                                                getServerMemoryLimit(server),
+                                                            ),
+                                                            getServerMemoryLimit(server) === 0,
+                                                        )
+                                                    "
+                                                    :style="{
+                                                        width: getProgressWidth(
+                                                            getServerMemory(server),
+                                                            getServerMemoryLimit(server),
+                                                        ),
+                                                    }"
+                                                ></div>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td class="px-4 py-3">
-                                        <span
-                                            class="text-sm font-medium"
-                                            :class="
-                                                server.disk === 0
-                                                    ? 'text-green-600 dark:text-green-400'
-                                                    : 'text-primary'
-                                            "
-                                        >
-                                            {{ formatDisk(server.disk) }}
-                                        </span>
+                                        <div class="space-y-1.5 min-w-[120px]">
+                                            <div class="flex items-center justify-between gap-2 text-xs">
+                                                <span class="text-muted-foreground">{{ $t('servers.disk') }}</span>
+                                                <span
+                                                    class="font-semibold text-xs"
+                                                    :class="
+                                                        getServerDiskLimit(server) === 0
+                                                            ? 'text-blue-500'
+                                                            : 'text-foreground'
+                                                    "
+                                                >
+                                                    {{
+                                                        getServerDiskLimit(server) === 0
+                                                            ? '∞'
+                                                            : `${formatResourceUsage(getServerDisk(server), getServerDiskLimit(server), formatDisk)}/${formatDisk(getServerDiskLimit(server))}`
+                                                    }}
+                                                </span>
+                                            </div>
+                                            <div class="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                                <div
+                                                    class="h-full transition-all duration-300"
+                                                    :class="
+                                                        getProgressColor(
+                                                            getUsagePercentage(
+                                                                getServerDisk(server),
+                                                                getServerDiskLimit(server),
+                                                            ),
+                                                            getServerDiskLimit(server) === 0,
+                                                        )
+                                                    "
+                                                    :style="{
+                                                        width: getProgressWidth(
+                                                            getServerDisk(server),
+                                                            getServerDiskLimit(server),
+                                                        ),
+                                                    }"
+                                                ></div>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td class="px-4 py-3">
-                                        <span
-                                            class="text-sm font-medium"
-                                            :class="
-                                                server.cpu === 0 ? 'text-green-600 dark:text-green-400' : 'text-primary'
-                                            "
-                                        >
-                                            {{ formatCpu(server.cpu) }}
-                                        </span>
+                                        <div class="space-y-1.5 min-w-[120px]">
+                                            <div class="flex items-center justify-between gap-2 text-xs">
+                                                <span class="text-muted-foreground">{{ $t('servers.cpu') }}</span>
+                                                <span
+                                                    class="font-semibold text-xs"
+                                                    :class="
+                                                        getServerCpuLimit(server) === 0
+                                                            ? 'text-blue-500'
+                                                            : 'text-foreground'
+                                                    "
+                                                >
+                                                    {{
+                                                        getServerCpuLimit(server) === 0
+                                                            ? '∞'
+                                                            : `${formatResourceUsage(getServerCpu(server), getServerCpuLimit(server), formatCpu)}/${formatCpu(getServerCpuLimit(server))}`
+                                                    }}
+                                                </span>
+                                            </div>
+                                            <div class="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                                <div
+                                                    class="h-full transition-all duration-300"
+                                                    :class="
+                                                        getProgressColor(
+                                                            getUsagePercentage(
+                                                                getServerCpu(server),
+                                                                getServerCpuLimit(server),
+                                                            ),
+                                                            getServerCpuLimit(server) === 0,
+                                                        )
+                                                    "
+                                                    :style="{
+                                                        width: getProgressWidth(
+                                                            getServerCpu(server),
+                                                            getServerCpuLimit(server),
+                                                        ),
+                                                    }"
+                                                ></div>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td class="px-4 py-3">
                                         <span
@@ -1063,18 +1425,132 @@
                                 </div>
 
                                 <!-- Compact Content -->
-                                <div class="p-2 space-y-1">
-                                    <div class="flex items-center justify-between text-xs">
-                                        <span class="text-muted-foreground">{{ $t('servers.memory') }}</span>
-                                        <span class="font-medium">{{ formatMemory(server.memory) }}</span>
+                                <div class="p-2 space-y-2">
+                                    <!-- Memory -->
+                                    <div class="space-y-1">
+                                        <div class="flex items-center justify-between text-xs gap-1">
+                                            <span class="text-muted-foreground text-[10px]">{{
+                                                $t('servers.memory')
+                                            }}</span>
+                                            <span
+                                                class="font-semibold text-[10px] shrink-0"
+                                                :class="
+                                                    getServerMemoryLimit(server) === 0
+                                                        ? 'text-blue-500'
+                                                        : 'text-foreground'
+                                                "
+                                            >
+                                                {{
+                                                    getServerMemoryLimit(server) === 0
+                                                        ? '∞'
+                                                        : `${formatResourceUsage(getServerMemory(server), getServerMemoryLimit(server), formatMemory)}/${formatMemory(getServerMemoryLimit(server))}`
+                                                }}
+                                            </span>
+                                        </div>
+                                        <div class="w-full h-1 bg-muted rounded-full overflow-hidden">
+                                            <div
+                                                class="h-full transition-all duration-300"
+                                                :class="
+                                                    getProgressColor(
+                                                        getUsagePercentage(
+                                                            getServerMemory(server),
+                                                            getServerMemoryLimit(server),
+                                                        ),
+                                                        getServerMemoryLimit(server) === 0,
+                                                    )
+                                                "
+                                                :style="{
+                                                    width: getProgressWidth(
+                                                        getServerMemory(server),
+                                                        getServerMemoryLimit(server),
+                                                    ),
+                                                }"
+                                            ></div>
+                                        </div>
                                     </div>
-                                    <div class="flex items-center justify-between text-xs">
-                                        <span class="text-muted-foreground">{{ $t('servers.disk') }}</span>
-                                        <span class="font-medium">{{ formatDisk(server.disk) }}</span>
+                                    <!-- Disk -->
+                                    <div class="space-y-1">
+                                        <div class="flex items-center justify-between text-xs gap-1">
+                                            <span class="text-muted-foreground text-[10px]">{{
+                                                $t('servers.disk')
+                                            }}</span>
+                                            <span
+                                                class="font-semibold text-[10px] shrink-0"
+                                                :class="
+                                                    getServerDiskLimit(server) === 0
+                                                        ? 'text-blue-500'
+                                                        : 'text-foreground'
+                                                "
+                                            >
+                                                {{
+                                                    getServerDiskLimit(server) === 0
+                                                        ? '∞'
+                                                        : `${formatResourceUsage(getServerDisk(server), getServerDiskLimit(server), formatDisk)}/${formatDisk(getServerDiskLimit(server))}`
+                                                }}
+                                            </span>
+                                        </div>
+                                        <div class="w-full h-1 bg-muted rounded-full overflow-hidden">
+                                            <div
+                                                class="h-full transition-all duration-300"
+                                                :class="
+                                                    getProgressColor(
+                                                        getUsagePercentage(
+                                                            getServerDisk(server),
+                                                            getServerDiskLimit(server),
+                                                        ),
+                                                        getServerDiskLimit(server) === 0,
+                                                    )
+                                                "
+                                                :style="{
+                                                    width: getProgressWidth(
+                                                        getServerDisk(server),
+                                                        getServerDiskLimit(server),
+                                                    ),
+                                                }"
+                                            ></div>
+                                        </div>
                                     </div>
-                                    <div class="flex items-center justify-between text-xs">
-                                        <span class="text-muted-foreground">{{ $t('servers.cpu') }}</span>
-                                        <span class="font-medium">{{ formatCpu(server.cpu) }}</span>
+                                    <!-- CPU -->
+                                    <div class="space-y-1">
+                                        <div class="flex items-center justify-between text-xs gap-1">
+                                            <span class="text-muted-foreground text-[10px]">{{
+                                                $t('servers.cpu')
+                                            }}</span>
+                                            <span
+                                                class="font-semibold text-[10px] shrink-0"
+                                                :class="
+                                                    getServerCpuLimit(server) === 0
+                                                        ? 'text-blue-500'
+                                                        : 'text-foreground'
+                                                "
+                                            >
+                                                {{
+                                                    getServerCpuLimit(server) === 0
+                                                        ? '∞'
+                                                        : `${formatResourceUsage(getServerCpu(server), getServerCpuLimit(server), formatCpu)}/${formatCpu(getServerCpuLimit(server))}`
+                                                }}
+                                            </span>
+                                        </div>
+                                        <div class="w-full h-1 bg-muted rounded-full overflow-hidden">
+                                            <div
+                                                class="h-full transition-all duration-300"
+                                                :class="
+                                                    getProgressColor(
+                                                        getUsagePercentage(
+                                                            getServerCpu(server),
+                                                            getServerCpuLimit(server),
+                                                        ),
+                                                        getServerCpuLimit(server) === 0,
+                                                    )
+                                                "
+                                                :style="{
+                                                    width: getProgressWidth(
+                                                        getServerCpu(server),
+                                                        getServerCpuLimit(server),
+                                                    ),
+                                                }"
+                                            ></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1223,48 +1699,137 @@
                                             {{ $t('servers.resources') }}
                                         </h4>
                                         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                                            <div class="text-center p-3 bg-muted/50 rounded-lg border border-border/50">
-                                                <div
-                                                    class="text-lg font-bold"
-                                                    :class="
-                                                        server.memory === 0
-                                                            ? 'text-green-600 dark:text-green-400'
-                                                            : 'text-primary'
-                                                    "
-                                                >
-                                                    {{ formatMemory(server.memory) }}
-                                                </div>
-                                                <div class="text-xs text-muted-foreground">
-                                                    {{ $t('servers.memory') }}
+                                            <!-- Memory -->
+                                            <div class="p-3 bg-muted/50 rounded-lg border border-border/50">
+                                                <div class="space-y-2">
+                                                    <div class="flex items-center justify-between text-xs">
+                                                        <span class="text-muted-foreground">{{
+                                                            $t('servers.memory')
+                                                        }}</span>
+                                                        <span
+                                                            class="font-bold text-xs"
+                                                            :class="
+                                                                getServerMemoryLimit(server) === 0
+                                                                    ? 'text-blue-500'
+                                                                    : 'text-foreground'
+                                                            "
+                                                        >
+                                                            {{
+                                                                getServerMemoryLimit(server) === 0
+                                                                    ? '∞'
+                                                                    : `${formatResourceUsage(getServerMemory(server), getServerMemoryLimit(server), formatMemory)}/${formatMemory(getServerMemoryLimit(server))}`
+                                                            }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                                        <div
+                                                            class="h-full transition-all duration-300"
+                                                            :class="
+                                                                getProgressColor(
+                                                                    getUsagePercentage(
+                                                                        getServerMemory(server),
+                                                                        getServerMemoryLimit(server),
+                                                                    ),
+                                                                    getServerMemoryLimit(server) === 0,
+                                                                )
+                                                            "
+                                                            :style="{
+                                                                width: getProgressWidth(
+                                                                    getServerMemory(server),
+                                                                    getServerMemoryLimit(server),
+                                                                ),
+                                                            }"
+                                                        ></div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="text-center p-3 bg-muted/50 rounded-lg border border-border/50">
-                                                <div
-                                                    class="text-lg font-bold"
-                                                    :class="
-                                                        server.disk === 0
-                                                            ? 'text-green-600 dark:text-green-400'
-                                                            : 'text-primary'
-                                                    "
-                                                >
-                                                    {{ formatDisk(server.disk) }}
-                                                </div>
-                                                <div class="text-xs text-muted-foreground">
-                                                    {{ $t('servers.disk') }}
+                                            <!-- Disk -->
+                                            <div class="p-3 bg-muted/50 rounded-lg border border-border/50">
+                                                <div class="space-y-2">
+                                                    <div class="flex items-center justify-between text-xs">
+                                                        <span class="text-muted-foreground">{{
+                                                            $t('servers.disk')
+                                                        }}</span>
+                                                        <span
+                                                            class="font-bold text-xs"
+                                                            :class="
+                                                                getServerDiskLimit(server) === 0
+                                                                    ? 'text-blue-500'
+                                                                    : 'text-foreground'
+                                                            "
+                                                        >
+                                                            {{
+                                                                getServerDiskLimit(server) === 0
+                                                                    ? '∞'
+                                                                    : `${formatResourceUsage(getServerDisk(server), getServerDiskLimit(server), formatDisk)}/${formatDisk(getServerDiskLimit(server))}`
+                                                            }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                                        <div
+                                                            class="h-full transition-all duration-300"
+                                                            :class="
+                                                                getProgressColor(
+                                                                    getUsagePercentage(
+                                                                        getServerDisk(server),
+                                                                        getServerDiskLimit(server),
+                                                                    ),
+                                                                    getServerDiskLimit(server) === 0,
+                                                                )
+                                                            "
+                                                            :style="{
+                                                                width: getProgressWidth(
+                                                                    getServerDisk(server),
+                                                                    getServerDiskLimit(server),
+                                                                ),
+                                                            }"
+                                                        ></div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="text-center p-3 bg-muted/50 rounded-lg border border-border/50">
-                                                <div
-                                                    class="text-lg font-bold"
-                                                    :class="
-                                                        server.cpu === 0
-                                                            ? 'text-green-600 dark:text-green-400'
-                                                            : 'text-primary'
-                                                    "
-                                                >
-                                                    {{ formatCpu(server.cpu) }}
+                                            <!-- CPU -->
+                                            <div class="p-3 bg-muted/50 rounded-lg border border-border/50">
+                                                <div class="space-y-2">
+                                                    <div class="flex items-center justify-between text-xs">
+                                                        <span class="text-muted-foreground">{{
+                                                            $t('servers.cpu')
+                                                        }}</span>
+                                                        <span
+                                                            class="font-bold text-xs"
+                                                            :class="
+                                                                getServerCpuLimit(server) === 0
+                                                                    ? 'text-blue-500'
+                                                                    : 'text-foreground'
+                                                            "
+                                                        >
+                                                            {{
+                                                                getServerCpuLimit(server) === 0
+                                                                    ? '∞'
+                                                                    : `${formatResourceUsage(getServerCpu(server), getServerCpuLimit(server), formatCpu)}/${formatCpu(getServerCpuLimit(server))}`
+                                                            }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                                        <div
+                                                            class="h-full transition-all duration-300"
+                                                            :class="
+                                                                getProgressColor(
+                                                                    getUsagePercentage(
+                                                                        getServerCpu(server),
+                                                                        getServerCpuLimit(server),
+                                                                    ),
+                                                                    getServerCpuLimit(server) === 0,
+                                                                )
+                                                            "
+                                                            :style="{
+                                                                width: getProgressWidth(
+                                                                    getServerCpu(server),
+                                                                    getServerCpuLimit(server),
+                                                                ),
+                                                            }"
+                                                        ></div>
+                                                    </div>
                                                 </div>
-                                                <div class="text-xs text-muted-foreground">{{ $t('servers.cpu') }}</div>
                                             </div>
                                             <div class="text-center p-3 bg-muted/50 rounded-lg border border-border/50">
                                                 <div
@@ -1511,23 +2076,137 @@
                                     <div class="p-3 bg-card">
                                         <div class="space-y-2">
                                             <div class="grid grid-cols-3 gap-1 text-xs">
-                                                <div class="text-center p-1.5 bg-muted/50 rounded border">
-                                                    <div class="font-semibold text-primary">
-                                                        {{ formatMemory(server.memory) }}
+                                                <!-- Memory -->
+                                                <div class="p-1.5 bg-muted/50 rounded border">
+                                                    <div class="space-y-1">
+                                                        <div class="flex items-center justify-between gap-1">
+                                                            <span class="text-muted-foreground text-[10px]">{{
+                                                                $t('servers.memory')
+                                                            }}</span>
+                                                            <span
+                                                                class="font-semibold text-[10px] shrink-0"
+                                                                :class="
+                                                                    getServerMemoryLimit(server) === 0
+                                                                        ? 'text-blue-500'
+                                                                        : 'text-primary'
+                                                                "
+                                                            >
+                                                                {{
+                                                                    getServerMemoryLimit(server) === 0
+                                                                        ? '∞'
+                                                                        : `${formatResourceUsage(getServerMemory(server), getServerMemoryLimit(server), formatMemory)}/${formatMemory(getServerMemoryLimit(server))}`
+                                                                }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="w-full h-1 bg-muted rounded-full overflow-hidden">
+                                                            <div
+                                                                class="h-full transition-all duration-300"
+                                                                :class="
+                                                                    getProgressColor(
+                                                                        getUsagePercentage(
+                                                                            getServerMemory(server),
+                                                                            getServerMemoryLimit(server),
+                                                                        ),
+                                                                        getServerMemoryLimit(server) === 0,
+                                                                    )
+                                                                "
+                                                                :style="{
+                                                                    width: getProgressWidth(
+                                                                        getServerMemory(server),
+                                                                        getServerMemoryLimit(server),
+                                                                    ),
+                                                                }"
+                                                            ></div>
+                                                        </div>
                                                     </div>
-                                                    <div class="text-muted-foreground">{{ $t('servers.memory') }}</div>
                                                 </div>
-                                                <div class="text-center p-1.5 bg-muted/50 rounded border">
-                                                    <div class="font-semibold text-primary">
-                                                        {{ formatDisk(server.disk) }}
+                                                <!-- Disk -->
+                                                <div class="p-1.5 bg-muted/50 rounded border">
+                                                    <div class="space-y-1">
+                                                        <div class="flex items-center justify-between gap-1">
+                                                            <span class="text-muted-foreground text-[10px]">{{
+                                                                $t('servers.disk')
+                                                            }}</span>
+                                                            <span
+                                                                class="font-semibold text-[10px] shrink-0"
+                                                                :class="
+                                                                    getServerDiskLimit(server) === 0
+                                                                        ? 'text-blue-500'
+                                                                        : 'text-primary'
+                                                                "
+                                                            >
+                                                                {{
+                                                                    getServerDiskLimit(server) === 0
+                                                                        ? '∞'
+                                                                        : `${formatResourceUsage(getServerDisk(server), getServerDiskLimit(server), formatDisk)}/${formatDisk(getServerDiskLimit(server))}`
+                                                                }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="w-full h-1 bg-muted rounded-full overflow-hidden">
+                                                            <div
+                                                                class="h-full transition-all duration-300"
+                                                                :class="
+                                                                    getProgressColor(
+                                                                        getUsagePercentage(
+                                                                            getServerDisk(server),
+                                                                            getServerDiskLimit(server),
+                                                                        ),
+                                                                        getServerDiskLimit(server) === 0,
+                                                                    )
+                                                                "
+                                                                :style="{
+                                                                    width: getProgressWidth(
+                                                                        getServerDisk(server),
+                                                                        getServerDiskLimit(server),
+                                                                    ),
+                                                                }"
+                                                            ></div>
+                                                        </div>
                                                     </div>
-                                                    <div class="text-muted-foreground">{{ $t('servers.disk') }}</div>
                                                 </div>
-                                                <div class="text-center p-1.5 bg-muted/50 rounded border">
-                                                    <div class="font-semibold text-primary">
-                                                        {{ formatCpu(server.cpu) }}
+                                                <!-- CPU -->
+                                                <div class="p-1.5 bg-muted/50 rounded border">
+                                                    <div class="space-y-1">
+                                                        <div class="flex items-center justify-between gap-1">
+                                                            <span class="text-muted-foreground text-[10px]">{{
+                                                                $t('servers.cpu')
+                                                            }}</span>
+                                                            <span
+                                                                class="font-semibold text-[10px] shrink-0"
+                                                                :class="
+                                                                    getServerCpuLimit(server) === 0
+                                                                        ? 'text-blue-500'
+                                                                        : 'text-primary'
+                                                                "
+                                                            >
+                                                                {{
+                                                                    getServerCpuLimit(server) === 0
+                                                                        ? '∞'
+                                                                        : `${formatResourceUsage(getServerCpu(server), getServerCpuLimit(server), formatCpu)}/${formatCpu(getServerCpuLimit(server))}`
+                                                                }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="w-full h-1 bg-muted rounded-full overflow-hidden">
+                                                            <div
+                                                                class="h-full transition-all duration-300"
+                                                                :class="
+                                                                    getProgressColor(
+                                                                        getUsagePercentage(
+                                                                            getServerCpu(server),
+                                                                            getServerCpuLimit(server),
+                                                                        ),
+                                                                        getServerCpuLimit(server) === 0,
+                                                                    )
+                                                                "
+                                                                :style="{
+                                                                    width: getProgressWidth(
+                                                                        getServerCpu(server),
+                                                                        getServerCpuLimit(server),
+                                                                    ),
+                                                                }"
+                                                            ></div>
+                                                        </div>
                                                     </div>
-                                                    <div class="text-muted-foreground">{{ $t('servers.cpu') }}</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1598,8 +2277,11 @@
                             <div class="text-xs text-muted-foreground truncate">{{ server.spell?.name || 'N/A' }}</div>
                         </div>
                         <div class="shrink-0 text-xs text-muted-foreground">
-                            {{ formatMemory(server.memory) }} / {{ formatDisk(server.disk) }} /
-                            {{ formatCpu(server.cpu) }}
+                            {{
+                                formatResourceUsage(getServerMemory(server), getServerMemoryLimit(server), formatMemory)
+                            }}
+                            / {{ formatResourceUsage(getServerDisk(server), getServerDiskLimit(server), formatDisk) }} /
+                            {{ formatResourceUsage(getServerCpu(server), getServerCpuLimit(server), formatCpu) }}
                         </div>
                     </div>
                 </div>
@@ -1772,6 +2454,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 import { Badge } from '@/components/ui/badge';
+import { useWingsWebSocketServersList } from '@/composables/useWingsWebSocketServersList';
 import {
     Search,
     RefreshCw,
@@ -1819,6 +2502,19 @@ const sessionStore = useSessionStore();
 const router = useRouter();
 const toast = useToast();
 const { t } = useI18n();
+
+// Wings WebSocket connections for live server status
+const wingsWebSocket = useWingsWebSocketServersList();
+
+// Watch reactive live data to trigger updates
+const reactiveLiveData = wingsWebSocket.getReactiveLiveData();
+watch(
+    reactiveLiveData,
+    () => {
+        // This will trigger reactivity when live data changes
+    },
+    { deep: true },
+);
 
 // Define emits
 const emit = defineEmits<{
@@ -2073,13 +2769,34 @@ onMounted(async () => {
 onUnmounted(() => {
     clearInterval(validationInterval);
     window.removeEventListener('resize', handleResize);
+    // Cleanup Wings WebSocket connections
+    wingsWebSocket.cleanup();
 });
 
-// Watch for servers changes and emit updates
+// Watch for servers changes and emit updates, also manage WebSocket connections
 watch(
     servers,
-    (newServers) => {
+    (newServers, oldServers) => {
         emit('servers-updated', newServers);
+
+        // Get current connected server UUIDs
+        const oldUuids = oldServers ? new Set(oldServers.map((s: Server) => s.uuidShort)) : new Set<string>();
+        const newUuids = new Set(newServers.map((s: Server) => s.uuidShort));
+
+        // Disconnect from servers that are no longer in the list
+        oldUuids.forEach((uuid: string) => {
+            if (!newUuids.has(uuid)) {
+                wingsWebSocket.removeServer(uuid);
+            }
+        });
+
+        // Connect to new servers
+        const serversToConnect = newServers
+            .map((s: Server) => s.uuidShort)
+            .filter((uuid: string) => !oldUuids.has(uuid));
+        if (serversToConnect.length > 0) {
+            wingsWebSocket.connectServers(serversToConnect);
+        }
     },
     { immediate: true },
 );
@@ -2117,6 +2834,10 @@ async function fetchServers() {
 
             // After fetching servers, organize them into folders
             await organizeServersIntoFolders();
+
+            // Connect to Wings WebSocket for live status updates
+            const serverUuids = servers.value.map((s) => s.uuidShort);
+            await wingsWebSocket.connectServers(serverUuids);
         } else {
             error.value = response.data.message || 'Failed to fetch servers';
         }
@@ -2157,9 +2878,24 @@ function getStatusDotColor(status: string): string {
 }
 
 function displayStatus(server: Server): string {
+    // First check if server is suspended
     if (server.suspended) {
         return 'suspended';
     }
+
+    // Try to get live status from reactive data first (for Vue reactivity)
+    const reactiveData = reactiveLiveData.value[server.uuidShort];
+    if (reactiveData?.status) {
+        return reactiveData.status.toLowerCase();
+    }
+
+    // Fallback to getServerStatus
+    const liveStatus = wingsWebSocket.getServerStatus(server.uuidShort);
+    if (liveStatus) {
+        return liveStatus.toLowerCase();
+    }
+
+    // Fallback to server.status
     if (!server.status) {
         return 'unknown';
     }
@@ -2176,6 +2912,25 @@ function formatMemory(memory: number): string {
     return `${memory} MB`;
 }
 
+function getServerMemory(server: Server): number | null {
+    // Access reactive live data to ensure Vue tracks changes
+    const reactiveData = reactiveLiveData.value[server.uuidShort];
+    if (reactiveData?.stats?.memoryUsage !== undefined && reactiveData.stats.memoryUsage > 0) {
+        return reactiveData.stats.memoryUsage;
+    }
+    // Try fallback to getServerStats if reactive data not yet available
+    const stats = wingsWebSocket.getServerStats(server.uuidShort);
+    if (stats?.memoryUsage !== undefined && stats.memoryUsage > 0) {
+        return stats.memoryUsage;
+    }
+    // Return null if no live data available (will fallback to limit in display)
+    return null;
+}
+
+function getServerMemoryLimit(server: Server): number {
+    return server.memory;
+}
+
 function formatDisk(disk: number): string {
     if (disk === 0) {
         return '∞';
@@ -2186,11 +2941,93 @@ function formatDisk(disk: number): string {
     return `${disk} MB`;
 }
 
+function getServerDisk(server: Server): number | null {
+    // Access reactive live data to ensure Vue tracks changes
+    const reactiveData = reactiveLiveData.value[server.uuidShort];
+    if (reactiveData?.stats?.diskUsage !== undefined && reactiveData.stats.diskUsage > 0) {
+        return reactiveData.stats.diskUsage;
+    }
+    // Try fallback to getServerStats if reactive data not yet available
+    const stats = wingsWebSocket.getServerStats(server.uuidShort);
+    if (stats?.diskUsage !== undefined && stats.diskUsage > 0) {
+        return stats.diskUsage;
+    }
+    // Return null if no live data available (will fallback to limit in display)
+    return null;
+}
+
+function getServerDiskLimit(server: Server): number {
+    return server.disk;
+}
+
 function formatCpu(cpu: number): string {
     if (cpu === 0) {
         return '∞';
     }
     return `${cpu}%`;
+}
+
+function getServerCpu(server: Server): number | null {
+    // Access reactive live data to ensure Vue tracks changes
+    const reactiveData = reactiveLiveData.value[server.uuidShort];
+    if (reactiveData?.stats?.cpuUsage !== undefined && reactiveData.stats.cpuUsage >= 0) {
+        return reactiveData.stats.cpuUsage;
+    }
+    // Try fallback to getServerStats if reactive data not yet available
+    const stats = wingsWebSocket.getServerStats(server.uuidShort);
+    if (stats?.cpuUsage !== undefined && stats.cpuUsage >= 0) {
+        return stats.cpuUsage;
+    }
+    // Return null if no live data available (will fallback to limit in display)
+    return null;
+}
+
+function getServerCpuLimit(server: Server): number {
+    return server.cpu;
+}
+
+// Format resource display with usage / limit
+function formatResourceUsage(usage: number | null, limit: number, formatter: (val: number) => string): string {
+    if (usage !== null && usage > 0) {
+        return formatter(usage);
+    }
+    // Show limit with indicator that it's not live
+    return formatter(limit);
+}
+
+// Calculate usage percentage (0-100)
+function getUsagePercentage(usage: number | null, limit: number): number {
+    if (limit === 0) {
+        // Unlimited - show 0% (or could show usage if available)
+        return usage !== null && usage > 0 ? 1 : 0; // Show minimal progress if there's usage
+    }
+    if (usage === null || usage <= 0) {
+        return 0;
+    }
+    // Cap at 100%
+    return Math.min(Math.round((usage / limit) * 100), 100);
+}
+
+// Get progress width style safely
+function getProgressWidth(usage: number | null, limit: number): string {
+    if (limit === 0) {
+        return usage !== null && usage > 0 ? '5%' : '0%';
+    }
+    return `${getUsagePercentage(usage, limit)}%`;
+}
+
+// Get progress bar color based on usage percentage
+function getProgressColor(percentage: number, isUnlimited: boolean): string {
+    if (isUnlimited) {
+        return 'bg-blue-500'; // Blue for unlimited
+    }
+    if (percentage >= 90) {
+        return 'bg-red-500'; // Red for critical (>90%)
+    }
+    if (percentage >= 70) {
+        return 'bg-yellow-500'; // Yellow for warning (>70%)
+    }
+    return 'bg-green-500'; // Green for normal (<70%)
 }
 
 function formatSwap(swap: number): string {

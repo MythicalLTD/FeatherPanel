@@ -348,8 +348,11 @@
             <!-- Plugin Widgets: Bottom of Page -->
             <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
 
-            <!-- Error State -->
-            <div v-else-if="error" class="flex flex-col items-center justify-center py-16 text-center">
+            <!-- Error State (only show when no server data and there's an error) -->
+            <div
+                v-if="!loading && !server && error"
+                class="flex flex-col items-center justify-center py-16 text-center"
+            >
                 <AlertCircle class="h-16 w-16 text-muted-foreground/50 mb-4" />
                 <h3 class="text-lg font-semibold text-foreground mb-2">{{ t('serverSettings.errorTitle') }}</h3>
                 <p class="text-sm text-muted-foreground max-w-md">{{ error }}</p>
@@ -635,18 +638,28 @@ async function fetchServer(): Promise<void> {
     try {
         loading.value = true;
         error.value = null;
+        server.value = null; // Clear server data before fetching
 
         const response = await axios.get(`/api/user/servers/${route.params.uuidShort}`);
 
         if (response.data.success) {
             server.value = response.data.data;
             resetForm();
+            // Ensure error is cleared when server loads successfully
+            error.value = null;
         } else {
             error.value = response.data.message || t('serverSettings.failedToFetchServer');
+            server.value = null;
         }
     } catch (err) {
         console.error('Error fetching server:', err);
-        error.value = t('serverSettings.failedToFetchServer');
+        // Check if it's a 404 (server not found)
+        if (axios.isAxiosError(err) && err.response?.status === 404) {
+            error.value = t('serverSettings.serverNotFound');
+        } else {
+            error.value = t('serverSettings.failedToFetchServer');
+        }
+        server.value = null;
     } finally {
         loading.value = false;
     }

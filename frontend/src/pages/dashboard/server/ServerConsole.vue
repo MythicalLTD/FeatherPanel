@@ -1029,9 +1029,13 @@ let lastJwtErrorTime = 0;
 const JWT_ERROR_THROTTLE_MS = 10000; // Only show error once every 10 seconds
 
 // Auth success callback - defined before onMounted for cleanup access
-function onAuthSuccessCallback(): void {
+function onAuthSuccessCallback(isRefresh: boolean): void {
     requestServerStats();
-    requestServerLogs();
+    // Only request logs on initial connection, not during token refresh
+    // Token refresh reuses the existing connection, so logs don't need to be re-requested
+    if (!isRefresh) {
+        requestServerLogs();
+    }
 }
 
 const server = ref<Server | null>(null);
