@@ -6,6 +6,7 @@
 
 - Resolved an issue that prevented using Ctrl+C to interrupt processes in the server console—keyboard shortcuts now work as expected.
 - Fixed an issue where subuser search filters and the table would appear even when there were no subusers these elements now only show when subusers exist.
+- Navigating to a plugin page that does not exist now correctly sends you to the 404 Not Found page.
 
 ### Improved
 
@@ -28,6 +29,10 @@
 - Added support for uploading entire folders, making it easy to transfer complex file structures to your server in one step.
 - Added a toggle/option to wipe all server files before reinstalling a server. When reinstalling, users can choose to delete all files in the root directory for a clean reset. This is available as an option in the reinstall endpoint and UI.
 - Plugin system now supports rendering custom components/widgets on every page, enabling seamless integration of new features and UI enhancements throughout the panel.
+- Added support for requiring two-factor authentication (2FA) for admin users. A new setting, "Require 2FA for Admins," is available in the security section of the application settings. When enabled, all admin accounts must configure 2FA to access the admin dashboard.
+- Added a new security setting that allows administrators to block users from uploading or changing their profile pictures. When disabled, users are no longer given the option to upload a profile image in their account settings.
+- Added a new setting that allows administrators to block the use of subusers for servers. When disabled, users will no longer be able to add or manage subusers on their servers.
+- Added a new setting that allows administrators to block the use of Schedules for servers. When disabled, users will no longer be able to create or manage schedules on their servers.
 
 ## v1.0.0 BETA
 

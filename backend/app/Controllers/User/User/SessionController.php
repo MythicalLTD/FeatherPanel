@@ -347,8 +347,13 @@ class SessionController
     public function uploadAvatar(Request $request): Response
     {
         $user = AuthMiddleware::getCurrentUser($request);
+        $config = App::getInstance(true)->getConfig();
         if ($user == null) {
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
+        if ($config->getSetting(ConfigInterface::USER_ALLOW_AVATAR_CHANGE, 'true') == 'false') {
+            return ApiResponse::error('You are not allowed to change your avatar!', 'AVATAR_CHANGE_NOT_ALLOWED', 403, []);
         }
 
         $uploadedFile = $request->files->get('avatar');

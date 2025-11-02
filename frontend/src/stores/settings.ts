@@ -185,5 +185,10 @@ export const useSettingsStore = defineStore('settings', {
          */
         serverAllowEggChange: (state) => getBooleanSetting(state, 'server_allow_egg_change'),
         serverAllowStartupChange: (state) => getBooleanSetting(state, 'server_allow_startup_change'),
+
+        /**
+         * User-related settings
+         */
+        userAllowAvatarChange: (state) => getBooleanSetting(state, 'user_allow_avatar_change'),
     },
 });

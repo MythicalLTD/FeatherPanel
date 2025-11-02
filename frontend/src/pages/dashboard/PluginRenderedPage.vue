@@ -142,13 +142,14 @@
 // SOFTWARE.
 
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { computed, ref, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { useSettingsStore } from '@/stores/settings';
 
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 const settingsStore = useSettingsStore();
 
@@ -178,12 +179,10 @@ const context = computed<PluginContext>(() => {
 
 const iframeSrc = computed(() => {
     if (!pluginData.value || !pluginData.value.component) {
-        console.log('No iframe src - missing pluginData or component');
         return null;
     }
 
     const src = `/components/${pluginData.value.plugin}/${pluginData.value.component}`;
-    console.log('Computed iframe src:', src);
     return src;
 });
 
@@ -218,7 +217,6 @@ const fetchServerName = async () => {
         const response = await axios.get(`/api/user/servers/${route.params.uuidShort}`);
         if (response.data?.success && response.data?.data) {
             serverName.value = response.data.data.name;
-            console.log('Fetched server name:', serverName.value);
         }
     } catch (error) {
         console.error('Failed to fetch server name:', error);
@@ -230,12 +228,9 @@ const fetchPluginSidebar = async () => {
     try {
         loading.value = true;
         error.value = null;
-        console.log('Starting fetchPluginSidebar...');
 
         // Fetch the plugin sidebar data from the backend
-        console.log('Fetching from /api/system/plugin-sidebar');
         const response = await axios.get('/api/system/plugin-sidebar');
-        console.log('API Response:', response.data);
 
         if (response.data.success && response.data.data.sidebar) {
             const sidebar = response.data.data.sidebar;
@@ -272,14 +267,6 @@ const fetchPluginSidebar = async () => {
                 pluginPath = fullPath.replace('/dashboard', '');
             }
 
-            console.log('Debug Info:', {
-                context: context.value,
-                fullPath,
-                pluginPath,
-                sidebarKeys: Object.keys(sidebarSection),
-                routeParams: route.params,
-            });
-
             // Find the matching sidebar item
             let matchingItem = sidebarSection[pluginPath];
 
@@ -288,7 +275,6 @@ const fetchPluginSidebar = async () => {
                 // Try to match using the last part of the path
                 for (const [key, value] of Object.entries(sidebarSection)) {
                     const sidebarItem = value;
-                    console.log(`Comparing key: ${key} with pluginPath: ${pluginPath}`);
                     if (
                         key === pluginPath ||
                         (sidebarItem.redirect && pluginPath.endsWith(sidebarItem.redirect)) ||
@@ -303,7 +289,6 @@ const fetchPluginSidebar = async () => {
             // If we found a matching item but it doesn't have a component,
             // try to find another entry with the same plugin that has a component
             if (matchingItem && !matchingItem.component) {
-                console.log('Found matching item but no component, looking for component-based entry...');
                 for (const [key, value] of Object.entries(sidebarSection)) {
                     const sidebarItem = value;
                     if (
@@ -312,7 +297,6 @@ const fetchPluginSidebar = async () => {
                             pluginPath.includes(key) ||
                             (sidebarItem.plugin && pluginPath.includes(sidebarItem.plugin)))
                     ) {
-                        console.log(`Found component-based entry: ${key}`, sidebarItem);
                         matchingItem = sidebarItem;
                         break;
                     }
@@ -320,18 +304,15 @@ const fetchPluginSidebar = async () => {
             }
 
             if (matchingItem) {
-                console.log('Found matching item:', matchingItem);
                 pluginData.value = {
                     name: matchingItem.name,
                     plugin: matchingItem.plugin,
                     component: matchingItem.component,
                 };
-                console.log('Set pluginData:', pluginData.value);
-                console.log('Computed iframeSrc:', iframeSrc.value);
             } else {
-                console.log('No matching item found');
-                console.log('Available sidebar items:', Object.keys(sidebarSection));
-                error.value = `Plugin page not found. Context: ${context.value}, Looking for: ${pluginPath}`;
+                // Redirect to 404 page when plugin page is not found
+                router.push('/404');
+                return;
             }
         } else {
             error.value = t('plugins.failedToLoadPluginData');
@@ -345,7 +326,6 @@ const fetchPluginSidebar = async () => {
 };
 
 const onIframeLoad = () => {
-    console.log('Iframe loaded successfully:', iframeSrc.value);
     iframeError.value = null;
     iframeLoading.value = false;
 };
@@ -376,10 +356,6 @@ const retryLoad = () => {
 };
 
 onMounted(async () => {
-    console.log('PluginRenderedPage mounted');
-    console.log('Route path:', route.path);
-    console.log('Route params:', route.params);
-
     // Fetch settings for debug mode and other configuration
     await settingsStore.fetchSettings();
 
@@ -394,7 +370,6 @@ onMounted(async () => {
 watch(
     () => route.path,
     async () => {
-        console.log('Route changed to:', route.path);
         // Reset iframe loading state
         iframeLoading.value = true;
         iframeError.value = null;

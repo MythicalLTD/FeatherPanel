@@ -30,6 +30,7 @@
 
 namespace App\Controllers\User\Server;
 
+use App\App;
 use App\Chat\Node;
 use App\Chat\User;
 use App\Chat\Server;
@@ -38,6 +39,7 @@ use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Config\ConfigInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Plugins\Events\Events\ServerSubuserEvent;
@@ -331,6 +333,11 @@ class SubuserController
     )]
     public function createSubuser(Request $request, string $serverUuid): Response
     {
+        $config = App::getInstance(true)->getConfig();
+        if ($config->getSetting(ConfigInterface::SERVER_ALLOW_SUBUSERS, 'true') == 'false') {
+            return ApiResponse::error('Subusers are disabled on this host. Please contact your administrator to enable this feature.', 'SUBUSERS_NOT_ALLOWED', 403);
+        }
+
         // Get server info
         $server = Server::getServerByUuid($serverUuid);
         if (!$server) {

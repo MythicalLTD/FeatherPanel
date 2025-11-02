@@ -1,5 +1,31 @@
 <template>
-    <div v-if="widgets.length > 0" class="widgets-container">
+    <div v-if="widgets.length > 0" class="widgets-container relative">
+        <!-- Developer Mode: Floating Reload Button -->
+        <div v-if="settingsStore.appDeveloperMode" class="absolute bottom-6 right-6 z-30">
+            <button
+                class="flex items-center justify-center w-12 h-12 sm:w-auto sm:h-auto sm:px-4 sm:py-2 sm:gap-2 bg-linear-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-full sm:rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-110 font-medium text-sm"
+                :title="t('plugins.reloadIframe')"
+                data-umami-event="Widget reload"
+                @click="retryLoadAll"
+            >
+                <svg
+                    class="w-5 h-5"
+                    :class="{ 'animate-spin': isReloadingAll }"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    ></path>
+                </svg>
+                <span class="hidden sm:inline sm:ml-2">{{ t('plugins.reloadIframe') }}</span>
+            </button>
+        </div>
+
         <div
             v-for="widget in widgets"
             :key="widget.id"
@@ -96,6 +122,7 @@ import { useI18n } from 'vue-i18n';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RotateCcw } from 'lucide-vue-next';
+import { useSettingsStore } from '@/stores/settings';
 import type { PluginWidget } from '@/composables/usePluginWidgets';
 
 const props = defineProps<{
@@ -104,12 +131,17 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+const settingsStore = useSettingsStore();
 
 const loadingStates = ref<Record<string, boolean>>({});
 const errorStates = ref<Record<string, string | null>>({});
+const isReloadingAll = ref(false);
 
 // Initialize loading states
-onMounted(() => {
+onMounted(async () => {
+    // Fetch settings for developer mode and other configuration
+    await settingsStore.fetchSettings();
+
     props.widgets.forEach((widget) => {
         loadingStates.value[widget.id] = true;
         errorStates.value[widget.id] = null;
@@ -143,6 +175,30 @@ function retryLoad(widgetId: string): void {
             iframe.src = src;
         }, 100);
     }
+}
+
+function retryLoadAll(): void {
+    isReloadingAll.value = true;
+
+    // Reload all widgets
+    props.widgets.forEach((widget) => {
+        errorStates.value[widget.id] = null;
+        loadingStates.value[widget.id] = true;
+
+        const iframe = document.querySelector(`iframe[data-widget-id="${widget.id}"]`) as HTMLIFrameElement;
+        if (iframe) {
+            const src = iframe.src;
+            iframe.src = '';
+            setTimeout(() => {
+                iframe.src = src;
+            }, 100);
+        }
+    });
+
+    // Reset reloading state after a short delay
+    setTimeout(() => {
+        isReloadingAll.value = false;
+    }, 500);
 }
 
 function getWidgetSizeClass(size: 'full' | 'half' | 'third' | 'quarter'): string {

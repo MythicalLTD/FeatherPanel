@@ -58,8 +58,7 @@
                         :placeholder="$t('account.lastNamePlaceholder')"
                     />
                 </FormItem>
-
-                <FormItem>
+                <FormItem v-if="allowAvatarChange">
                     <AvatarUpload
                         v-model="formData.avatar"
                         :label="$t('account.avatar')"
@@ -145,9 +144,11 @@ import { AvatarUpload } from '@/components/ui/avatar-upload';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import axios from 'axios';
+import { useSettingsStore } from '@/stores/settings';
 
 const { t: $t } = useI18n();
 const sessionStore = useSessionStore();
+const settingsStore = useSettingsStore();
 const toast = useToast();
 
 // Form data with proper typing
@@ -158,6 +159,17 @@ const formData = ref({
     last_name: '',
     password: '',
     avatar: '',
+});
+
+// Check if avatar change is allowed by settings
+const allowAvatarChange = computed(() => settingsStore.userAllowAvatarChange);
+
+// Remove avatar (hide upload field and clear avatar file) if avatar change is denied
+onMounted(() => {
+    if (!allowAvatarChange.value) {
+        avatarFile.value = null;
+        formData.value.avatar = '';
+    }
 });
 
 // Form state
@@ -182,6 +194,9 @@ const initializeForm = () => {
             password: '',
             avatar: sessionStore.user.avatar || '',
         };
+        if (!allowAvatarChange.value) {
+            formData.value.avatar = '';
+        }
     }
 };
 
@@ -230,32 +245,34 @@ const handleSubmit = async () => {
             submitData.email = formData.value.email;
         }
 
-        // Only include avatar if it's different from the original or if there's a new file
-        if (formData.value.avatar !== (sessionStore.user?.avatar || '') || avatarFile.value) {
-            if (avatarFile.value) {
-                // Upload avatar file first
-                isUploadingAvatar.value = true;
-                try {
-                    const formDataUpload = new FormData();
-                    formDataUpload.append('avatar', avatarFile.value);
+        if (allowAvatarChange.value) {
+            // Only include avatar if it's different from the original or if there's a new file
+            if (formData.value.avatar !== (sessionStore.user?.avatar || '') || avatarFile.value) {
+                if (avatarFile.value) {
+                    // Upload avatar file first
+                    isUploadingAvatar.value = true;
+                    try {
+                        const formDataUpload = new FormData();
+                        formDataUpload.append('avatar', avatarFile.value);
 
-                    const uploadResponse = await axios.post('/api/user/avatar', formDataUpload, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                        },
-                    });
+                        const uploadResponse = await axios.post('/api/user/avatar', formDataUpload, {
+                            headers: {
+                                'Content-Type': 'multipart/form-data',
+                            },
+                        });
 
-                    if (uploadResponse.data.success) {
-                        submitData.avatar = uploadResponse.data.data.avatar_url;
-                    } else {
-                        toast.error(uploadResponse.data.message || $t('account.avatarUploadFailed'));
-                        return;
+                        if (uploadResponse.data.success) {
+                            submitData.avatar = uploadResponse.data.data.avatar_url;
+                        } else {
+                            toast.error(uploadResponse.data.message || $t('account.avatarUploadFailed'));
+                            return;
+                        }
+                    } finally {
+                        isUploadingAvatar.value = false;
                     }
-                } finally {
-                    isUploadingAvatar.value = false;
+                } else {
+                    submitData.avatar = formData.value.avatar;
                 }
-            } else {
-                submitData.avatar = formData.value.avatar;
             }
         }
 
@@ -309,7 +326,7 @@ onMounted(async () => {
         loading.value = true;
         await sessionStore.checkSessionOrRedirect();
         await initializeForm();
-
+        await settingsStore.fetchSettings();
         // Fetch plugin widgets
         await fetchPluginWidgets();
     } finally {

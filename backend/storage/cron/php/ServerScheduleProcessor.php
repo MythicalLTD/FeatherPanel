@@ -36,6 +36,7 @@ use App\Cron\Cron;
 use App\Cron\TimeTask;
 use App\Services\Wings\Wings;
 use App\Chat\TimedTask;
+use App\Config\ConfigInterface;
 
 class ServerScheduleProcessor implements TimeTask
 {
@@ -64,6 +65,12 @@ class ServerScheduleProcessor implements TimeTask
 	private function processSchedules()
 	{
 		$app = App::getInstance(false, true);
+		$config = $app->getConfig();
+		if ($config->getSetting(ConfigInterface::SERVER_ALLOW_SCHEDULES, 'true') == 'false') {
+			MinecraftColorCodeSupport::sendOutputWithNewLine('&cSchedules are disabled on this host, skipping...');
+			return;
+		}
+
 		MinecraftColorCodeSupport::sendOutputWithNewLine('&aProcessing server schedules...');
 
 		// Get all due schedules

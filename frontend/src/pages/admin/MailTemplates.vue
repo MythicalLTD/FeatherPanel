@@ -861,7 +861,7 @@ const formatDate = (dateString: string) => {
 onMounted(async () => {
     // Fetch plugin widgets
     await fetchPluginWidgets();
-    
+
     await fetchTemplates();
 });
 watch([() => pagination.value.page, () => pagination.value.pageSize, searchQuery], fetchTemplates);

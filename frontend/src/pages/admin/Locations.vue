@@ -441,7 +441,7 @@ async function fetchLocations() {
 onMounted(async () => {
     // Fetch plugin widgets
     await fetchPluginWidgets();
-    
+
     await fetchLocations();
 });
 watch([() => pagination.value.page, () => pagination.value.pageSize, searchQuery], fetchLocations);

@@ -85,4 +85,11 @@ interface ConfigInterface
      */
     public const SERVER_ALLOW_EGG_CHANGE = 'server_allow_egg_change';
     public const SERVER_ALLOW_STARTUP_CHANGE = 'server_allow_startup_change';
+    public const SERVER_ALLOW_SUBUSERS = 'server_allow_subusers';
+    public const SERVER_ALLOW_SCHEDULES = 'server_allow_schedules';
+
+    /**
+     * User Related Configs.
+     */
+    public const USER_ALLOW_AVATAR_CHANGE = 'user_allow_avatar_change';
 }
