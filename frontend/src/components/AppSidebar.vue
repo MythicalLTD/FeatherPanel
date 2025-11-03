@@ -41,12 +41,13 @@ import {
 } from '@/components/ui/sidebar';
 import { useSessionStore } from '@/stores/session';
 import { useRouter } from 'vue-router';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useSettingsStore } from '@/stores/settings';
 import axios from 'axios';
 import { useNavigation } from '@/composables/useNavigation';
 import { useSidebarState } from '@/composables/useSidebarState';
 import { useServerContext } from '@/composables/useServerContext';
+import { useWingsWebSocketServersList } from '@/composables/useWingsWebSocketServersList';
 import { Copy, Check, Play, Square, RotateCw, Skull } from 'lucide-vue-next';
 
 const { t } = useI18n();
@@ -58,6 +59,11 @@ onMounted(async () => {
     const ok = await sessionStore.checkSessionOrRedirect(router);
     if (!ok) return;
     await settingsStore.fetchSettings();
+    // Connect to live status for current server
+    const uuid = currentServer.value?.uuidShort;
+    if (uuid) {
+        await connectServer(uuid);
+    }
 });
 
 const props = withDefaults(defineProps<SidebarProps>(), {
@@ -68,6 +74,21 @@ const { state } = useSidebar();
 const { sidebarNavigation } = useNavigation();
 const { sidebarVisibility } = useSidebarState();
 const { currentServer } = useServerContext();
+
+// Live status via servers-list websocket
+const { connectServer, disconnectServer, getServerStatus, isServerConnecting } = useWingsWebSocketServersList();
+
+const liveStatus = computed<string>(() => {
+    const uuid = currentServer.value?.uuidShort;
+    if (!uuid) return 'unknown';
+    return getServerStatus(uuid) || (currentServer.value?.status as string) || 'unknown';
+});
+
+const isConnecting = computed<boolean>(() => {
+    const uuid = currentServer.value?.uuidShort;
+    if (!uuid) return false;
+    return isServerConnecting(uuid);
+});
 
 // Server IP copy state
 const ipCopied = ref(false);
@@ -113,6 +134,20 @@ onMounted(() => {
     window.addEventListener('theme-changed', updateTheme as EventListener);
 });
 
+// Reconnect when current server changes
+watch(
+    () => currentServer.value?.uuidShort,
+    async (newUuid, oldUuid) => {
+        if (oldUuid) disconnectServer(oldUuid);
+        if (newUuid) await connectServer(newUuid);
+    },
+);
+
+onUnmounted(() => {
+    const uuid = currentServer.value?.uuidShort;
+    if (uuid) disconnectServer(uuid);
+});
+
 // Determine if sidebar should be visible
 const isSidebarVisible = computed(() => {
     return sidebarVisibility.value !== 'hidden';
@@ -125,6 +160,33 @@ const serverAddress = computed(() => {
     const port = currentServer.value.allocation.port;
     return `${ip}:${port}`;
 });
+
+// Status dot color
+const statusDotClass = computed(() => {
+    // Show blue while connecting and no known status yet
+    if (isConnecting.value && (!liveStatus.value || liveStatus.value === 'unknown')) {
+        return 'bg-blue-500';
+    }
+    switch (liveStatus.value) {
+        case 'running':
+            return 'bg-green-500';
+        case 'starting':
+            return 'bg-yellow-500';
+        case 'stopping':
+            return 'bg-orange-500';
+        case 'offline':
+        case 'stopped':
+            return 'bg-red-500';
+        default:
+            return 'bg-muted-foreground/50';
+    }
+});
+
+// Button guards
+const canStart = computed(() => ['offline', 'stopped'].includes(liveStatus.value));
+const canStop = computed(() => ['running', 'starting'].includes(liveStatus.value));
+const canRestart = computed(() => liveStatus.value === 'running');
+const canKill = computed(() => ['running', 'starting'].includes(liveStatus.value));
 
 // Copy server IP to clipboard
 const copyServerAddress = async (): Promise<void> => {
@@ -237,6 +299,19 @@ const sendServerCommand = async (command: 'start' | 'stop' | 'restart' | 'kill')
                                 <Copy v-else :size="11" />
                             </button>
                         </div>
+                        <!-- Live status -->
+                        <div class="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground">
+                            <span class="inline-flex items-center gap-1">
+                                <span class="h-2.5 w-2.5 rounded-full" :class="statusDotClass"></span>
+                                <span class="capitalize">{{
+                                    liveStatus && liveStatus !== 'unknown'
+                                        ? liveStatus
+                                        : isConnecting
+                                          ? 'connecting'
+                                          : 'unknown'
+                                }}</span>
+                            </span>
+                        </div>
                     </div>
 
                     <!-- Control Buttons -->
@@ -244,31 +319,35 @@ const sendServerCommand = async (command: 'start' | 'stop' | 'restart' | 'kill')
                         <button
                             class="flex-1 h-8 rounded-md flex items-center justify-center bg-green-500/10 hover:bg-green-500/15 text-green-600 dark:text-green-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
                             :title="t('serverConsole.start')"
-                            :disabled="serverActionLoading !== null"
+                            :disabled="serverActionLoading !== null || !canStart"
                             @click="sendServerCommand('start')"
                         >
                             <Play
                                 :size="13"
-                                :class="serverActionLoading === 'start' ? 'animate-pulse' : ''"
+                                :class="
+                                    serverActionLoading === 'start' || liveStatus === 'starting' ? 'animate-pulse' : ''
+                                "
                                 fill="currentColor"
                             />
                         </button>
                         <button
                             class="flex-1 h-8 rounded-md flex items-center justify-center bg-red-500/10 hover:bg-red-500/15 text-red-600 dark:text-red-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
                             :title="t('serverConsole.stop')"
-                            :disabled="serverActionLoading !== null"
+                            :disabled="serverActionLoading !== null || !canStop"
                             @click="sendServerCommand('stop')"
                         >
                             <Square
                                 :size="13"
-                                :class="serverActionLoading === 'stop' ? 'animate-pulse' : ''"
+                                :class="
+                                    serverActionLoading === 'stop' || liveStatus === 'stopping' ? 'animate-pulse' : ''
+                                "
                                 fill="currentColor"
                             />
                         </button>
                         <button
                             class="flex-1 h-8 rounded-md flex items-center justify-center bg-blue-500/10 hover:bg-blue-500/15 text-blue-600 dark:text-blue-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
                             :title="t('serverConsole.restart')"
-                            :disabled="serverActionLoading !== null"
+                            :disabled="serverActionLoading !== null || !canRestart"
                             @click="sendServerCommand('restart')"
                         >
                             <RotateCw :size="13" :class="serverActionLoading === 'restart' ? 'animate-spin' : ''" />
@@ -276,7 +355,7 @@ const sendServerCommand = async (command: 'start' | 'stop' | 'restart' | 'kill')
                         <button
                             class="flex-1 h-8 rounded-md flex items-center justify-center bg-orange-500/10 hover:bg-orange-500/15 text-orange-600 dark:text-orange-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
                             :title="t('serverConsole.kill')"
-                            :disabled="serverActionLoading !== null"
+                            :disabled="serverActionLoading !== null || !canKill"
                             @click="sendServerCommand('kill')"
                         >
                             <Skull :size="13" :class="serverActionLoading === 'kill' ? 'animate-pulse' : ''" />

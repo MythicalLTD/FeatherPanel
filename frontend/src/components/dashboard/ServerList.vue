@@ -2862,10 +2862,10 @@ async function changePage(page: number) {
 function getStatusDotColor(status: string): string {
     switch (status) {
         case 'running':
-            return 'bg-green-500';
+            return 'status-dot status-dot--online bg-green-500 text-green-500';
         case 'stopped':
         case 'offline':
-            return 'bg-red-500';
+            return 'status-dot status-dot--offline bg-red-500 text-red-500';
         case 'installing':
         case 'starting':
         case 'stopping':
@@ -2873,7 +2873,7 @@ function getStatusDotColor(status: string): string {
         case 'error':
         case 'unknown':
         default:
-            return 'bg-yellow-500';
+            return 'status-dot status-dot--online bg-yellow-500 text-yellow-500';
     }
 }
 
@@ -3434,3 +3434,64 @@ function getStatusBgColor(status: string): string {
     }
 }
 </script>
+
+<style scoped>
+.status-dot {
+    position: relative;
+}
+
+@keyframes status-ring-rotate {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes status-ping {
+    0% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+    80%,
+    100% {
+        transform: scale(1.75);
+        opacity: 0;
+    }
+}
+
+/* Outer ring that fills around the dot */
+.status-dot::after {
+    content: '';
+    position: absolute;
+    inset: -3px; /* ring slightly larger than the 10px dot */
+    border-radius: 9999px;
+    /* A 90deg sweep segment that rotates continuously */
+    background: conic-gradient(currentColor 0deg, currentColor 90deg, transparent 90deg 360deg);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(50% - 2px), #000 calc(50% - 1px));
+    mask: radial-gradient(farthest-side, transparent calc(50% - 2px), #000 calc(50% - 1px));
+    opacity: 0.55;
+    animation: status-ring-rotate 1.6s linear infinite;
+    will-change: transform;
+    pointer-events: none;
+}
+
+/* Halo ping layer */
+.status-dot::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background-color: currentColor;
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+/* Online: faster halo */
+.status-dot--online::before {
+    animation: status-ping 1.25s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Offline: slower halo */
+.status-dot--offline::before {
+    animation: status-ping 5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+</style>

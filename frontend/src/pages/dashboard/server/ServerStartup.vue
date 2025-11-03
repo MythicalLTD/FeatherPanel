@@ -424,10 +424,10 @@
                     v-if="!loading && server && widgetsAfterVariables.length > 0"
                     :widgets="widgetsAfterVariables"
                 />
-            </div>
 
-            <!-- Plugin Widgets: Bottom of Page -->
-            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
+                <!-- Plugin Widgets: Bottom of Page -->
+                <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
+            </div>
 
             <!-- Error State -->
             <div v-else class="flex flex-col items-center justify-center py-16 text-center">

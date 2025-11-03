@@ -17,6 +17,7 @@
 - Changed the server list status indicator on the dashboard from text to a colored dot for better visual clarity (green for running, red for offline/stopped, yellow for installing/starting/stopping/suspended/error/unknown).
 - Improved the admin server edit interface when changing eggs/spells: switching the server's spell automatically updates the available variables, Docker images, and startup command for consistency and clarity.
 - Added support for using 0.0.0.0 or custom user-provided IP addresses as the Wings interface, making it possible to bind to all interfaces or a specific address as needed.
+- The server sidebar now displays each server's current status, and action buttons are automatically hidden when unavailable based on server state.
 
 ### Added
 
