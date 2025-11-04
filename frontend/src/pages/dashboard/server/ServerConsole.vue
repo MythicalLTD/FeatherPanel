@@ -555,13 +555,17 @@
                         </div>
                         <div class="flex items-center gap-2">
                             <!-- Auto-scroll Toggle -->
-                            <label class="flex items-center gap-2 cursor-pointer group">
+                            <label
+                                class="flex items-center gap-2 cursor-pointer group px-2 py-1.5 rounded-md hover:bg-muted/50 transition-colors"
+                            >
                                 <input
                                     v-model="autoScrollEnabled"
                                     type="checkbox"
-                                    class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-0 cursor-pointer transition-colors"
+                                    class="w-4 h-4 rounded border-2 border-input bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-0 cursor-pointer transition-all duration-200 checked:bg-primary checked:border-primary"
                                 />
-                                <span class="text-xs sm:text-sm text-muted-foreground group-hover:text-foreground transition-colors select-none">
+                                <span
+                                    class="text-xs sm:text-sm text-muted-foreground group-hover:text-foreground transition-colors select-none"
+                                >
                                     {{ t('serverConsole.autoScroll') }}
                                 </span>
                             </label>
@@ -1395,9 +1399,9 @@ function writeToTerminal(data: string): void {
         writeTimeout = window.setTimeout(() => {
             // Check scroll position right before flushing to ensure accuracy
             const wasAtBottom = checkScrollPositionBeforeWrite();
-            
+
             flushWriteBuffer();
-            
+
             // Auto-scroll if enabled and user was at bottom before the write
             if (autoScrollEnabled.value && wasAtBottom) {
                 scrollToBottom();
