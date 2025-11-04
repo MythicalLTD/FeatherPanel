@@ -36,11 +36,13 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Install PHP extensions (based on health check requirements)
+# Install PHP extensions, including PostgreSQL support
 # Note: pdo, json, openssl, curl, fileinfo, xml, dom, sodium, exif, pcntl, opcache are built-in
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
         pdo_mysql \
+        pdo_pgsql \
+        pgsql \
         mbstring \
         zip \
         gd \

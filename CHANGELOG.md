@@ -8,6 +8,8 @@
 - Fixed an issue where subuser search filters and the table would appear even when there were no subusers these elements now only show when subusers exist.
 - Navigating to a plugin page that does not exist now correctly sends you to the 404 Not Found page.
 - Fixed a connection timeout issue that could occur after being idle (AFK) on the console page connections now remain stable during periods of inactivity.
+- Fixed an issue where the Postgres driver was not detected, ensuring proper database connectivity.
+- Fixed an issue where autoscroll was not functioning properly in the console—the console now automatically scrolls to show the latest output as expected.
 
 ### Improved
 

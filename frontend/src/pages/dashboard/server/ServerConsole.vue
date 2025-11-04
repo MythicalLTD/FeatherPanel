@@ -1239,8 +1239,12 @@ function initializeTerminal(): void {
         writeToTerminal('\x1b[36mServer status: ' + server.value.status + '\x1b[0m\r\n\r\n');
     }
 
-    // Set up scroll position monitoring
-    setupScrollMonitoring();
+    // Ensure terminal is scrolled to bottom after initial writes
+    setTimeout(() => {
+        scrollToBottom();
+        // Set up scroll position monitoring after ensuring we're at bottom
+        setupScrollMonitoring();
+    }, 100);
 }
 
 // Replace brand names in console output
@@ -1375,11 +1379,19 @@ function writeToTerminal(data: string): void {
     // Schedule flush if not already scheduled
     if (writeTimeout === null) {
         writeTimeout = window.setTimeout(() => {
+            // Check scroll position right before flushing to ensure accuracy
+            const wasAtBottom = checkScrollPositionBeforeWrite();
+
             flushWriteBuffer();
-            // After writing, check if we should auto-scroll (only if already at bottom)
-            if (!showScrollToBottom.value) {
+
+            // Auto-scroll if user was at bottom before the write
+            if (wasAtBottom) {
                 scrollToBottom();
             }
+            // Update scroll position state after write
+            setTimeout(() => {
+                checkScrollPosition();
+            }, 10);
         }, WRITE_DELAY);
     }
 }
@@ -1393,10 +1405,27 @@ function writeToTerminalImmediate(data: string): void {
         flushWriteBuffer();
     }
 
+    // Check if user is at bottom before writing
+    const wasAtBottom = checkScrollPositionBeforeWrite();
+
     // Replace brand names (important messages should always be shown regardless of filter)
     const processedData = replaceBrandNames(data);
     const formattedData = processedData.replace(/\r?\n/g, '\r\n');
     terminal.write(formattedData);
+
+    // Auto-scroll if user was at bottom before the write
+    if (wasAtBottom) {
+        // Use nextTick to ensure the write has been rendered
+        setTimeout(() => {
+            scrollToBottom();
+            checkScrollPosition();
+        }, 10);
+    } else {
+        // Still update scroll position state
+        setTimeout(() => {
+            checkScrollPosition();
+        }, 10);
+    }
 }
 
 // Clear terminal
@@ -1409,7 +1438,28 @@ function clearTerminal(): void {
     scrollToBottom();
 }
 
-// Check if terminal is scrolled to bottom
+// Check if terminal is scrolled to bottom (returns boolean, doesn't update state)
+function checkScrollPositionBeforeWrite(): boolean {
+    if (!terminal) {
+        return true; // Default to auto-scroll if terminal not ready
+    }
+
+    // Get terminal scroll position
+    const viewportElement = terminalContainer.value?.querySelector('.xterm-viewport') as HTMLElement;
+    if (!viewportElement) {
+        return true; // Default to auto-scroll if viewport not found
+    }
+
+    const scrollTop = viewportElement.scrollTop;
+    const scrollHeight = viewportElement.scrollHeight;
+    const clientHeight = viewportElement.clientHeight;
+
+    // Check if scrolled to bottom (with 5px threshold for rounding errors)
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 5;
+    return isAtBottom;
+}
+
+// Check if terminal is scrolled to bottom (updates state)
 function checkScrollPosition(): void {
     if (!terminal) {
         showScrollToBottom.value = false;
