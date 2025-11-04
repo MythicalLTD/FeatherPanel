@@ -36,6 +36,8 @@
 - Added a new setting that allows administrators to block the use of subusers for servers. When disabled, users will no longer be able to add or manage subusers on their servers.
 - Added a new setting that allows administrators to block the use of Schedules for servers. When disabled, users will no longer be able to create or manage schedules on their servers.
 - Enhanced the server list to display real-time status indicators alongside resource usage metrics for each server
+- Added support for server thread locking, allowing you to set and enforce the number of threads a server can use for greater control and stability.
+- Added support for OOM (Out-Of-Memory) killing, allowing administrators to enable or disable OOM killer for servers that exceed their allowed memory usage, providing better control over server resource limits.
 
 ## v1.0.0 BETA
 

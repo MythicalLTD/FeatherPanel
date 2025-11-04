@@ -361,7 +361,38 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label for="memory" class="block mb-2 font-medium">Memory (MiB)</label>
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            :variant="form.memory === 0 ? 'default' : 'outline'"
+                                            :class="
+                                                form.memory === 0
+                                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                                    : ''
+                                            "
+                                            @click="form.memory = 0"
+                                        >
+                                            Unlimited
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            :variant="form.memory !== 0 ? 'default' : 'outline'"
+                                            :class="
+                                                form.memory !== 0 ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''
+                                            "
+                                            @click="
+                                                () => {
+                                                    if (form.memory === 0) form.memory = 1024;
+                                                }
+                                            "
+                                        >
+                                            Limited
+                                        </Button>
+                                    </div>
                                     <Input
+                                        v-if="form.memory !== 0"
                                         id="memory"
                                         v-model.number="form.memory"
                                         type="number"
@@ -380,12 +411,52 @@
                                 </div>
                                 <div>
                                     <label for="swap" class="block mb-2 font-medium">Swap (MiB)</label>
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            :variant="form.swap === 0 ? 'default' : 'outline'"
+                                            :class="form.swap === 0 ? 'bg-red-600 hover:bg-red-700 text-white' : ''"
+                                            @click="form.swap = 0"
+                                        >
+                                            Disabled
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            :variant="form.swap !== 0 && form.swap !== -1 ? 'default' : 'outline'"
+                                            :class="
+                                                form.swap !== 0 && form.swap !== -1
+                                                    ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                                                    : ''
+                                            "
+                                            @click="
+                                                () => {
+                                                    if (form.swap === 0 || form.swap === -1) form.swap = 256;
+                                                }
+                                            "
+                                        >
+                                            Limited
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            :variant="form.swap === -1 ? 'default' : 'outline'"
+                                            :class="
+                                                form.swap === -1 ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''
+                                            "
+                                            @click="form.swap = -1"
+                                        >
+                                            Unlimited
+                                        </Button>
+                                    </div>
                                     <Input
+                                        v-if="form.swap !== 0 && form.swap !== -1"
                                         id="swap"
                                         v-model.number="form.swap"
                                         type="number"
-                                        placeholder="0"
-                                        min="0"
+                                        placeholder="256"
+                                        min="1"
                                         :class="{ 'border-red-500': validationErrors.swap }"
                                         required
                                     />
@@ -393,13 +464,40 @@
                                         {{ validationErrors.swap }}
                                     </p>
                                     <p v-else class="text-xs text-muted-foreground mt-1">
-                                        The maximum amount of swap allowed for this container. Setting this to 0 will
-                                        disable swap space.
+                                        Setting this to 0 will disable swap space on this server. Setting to -1 will
+                                        allow unlimited swap.
                                     </p>
                                 </div>
                                 <div>
                                     <label for="disk" class="block mb-2 font-medium">Disk Space (MiB)</label>
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            :variant="form.disk === 0 ? 'default' : 'outline'"
+                                            :class="
+                                                form.disk === 0 ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''
+                                            "
+                                            @click="form.disk = 0"
+                                        >
+                                            Unlimited
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            :variant="form.disk !== 0 ? 'default' : 'outline'"
+                                            :class="form.disk !== 0 ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''"
+                                            @click="
+                                                () => {
+                                                    if (form.disk === 0) form.disk = 1024;
+                                                }
+                                            "
+                                        >
+                                            Limited
+                                        </Button>
+                                    </div>
                                     <Input
+                                        v-if="form.disk !== 0"
                                         id="disk"
                                         v-model.number="form.disk"
                                         type="number"
@@ -418,7 +516,34 @@
                                 </div>
                                 <div>
                                     <label for="cpu" class="block mb-2 font-medium">CPU Limit (%)</label>
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            :variant="form.cpu === 0 ? 'default' : 'outline'"
+                                            :class="
+                                                form.cpu === 0 ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''
+                                            "
+                                            @click="form.cpu = 0"
+                                        >
+                                            Unlimited
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            :variant="form.cpu !== 0 ? 'default' : 'outline'"
+                                            :class="form.cpu !== 0 ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''"
+                                            @click="
+                                                () => {
+                                                    if (form.cpu === 0) form.cpu = 100;
+                                                }
+                                            "
+                                        >
+                                            Limited
+                                        </Button>
+                                    </div>
                                     <Input
+                                        v-if="form.cpu !== 0"
                                         id="cpu"
                                         v-model.number="form.cpu"
                                         type="number"
@@ -453,6 +578,52 @@
                                     <p v-else class="text-xs text-muted-foreground mt-1">
                                         Advanced: The IO performance of this server relative to other running
                                         containers. A value between 10 and 1000.
+                                    </p>
+                                </div>
+                                <div>
+                                    <label class="block mb-2 font-medium">OOM Killer</label>
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            :variant="oomKiller ? 'default' : 'outline'"
+                                            :class="oomKiller ? 'bg-red-600 hover:bg-red-700 text-white' : ''"
+                                            @click="oomKiller = true"
+                                        >
+                                            Enabled
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            :variant="!oomKiller ? 'default' : 'outline'"
+                                            :class="!oomKiller ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''"
+                                            @click="oomKiller = false"
+                                        >
+                                            Disabled
+                                        </Button>
+                                    </div>
+                                    <p class="text-xs text-muted-foreground">
+                                        Terminates the server if it breaches the memory limits. Enabling OOM killer may
+                                        cause server processes to exit unexpectedly.
+                                    </p>
+                                </div>
+                                <div>
+                                    <label for="threads" class="block mb-2 font-medium">CPU Threads</label>
+                                    <Input
+                                        v-if="true"
+                                        id="threads"
+                                        v-model="threads"
+                                        type="text"
+                                        placeholder="e.g. 0,1,3 or 0-1,3"
+                                        :class="{ 'border-red-500': validationErrors.threads }"
+                                    />
+                                    <p v-if="validationErrors.threads" class="text-xs text-red-500 mt-1">
+                                        {{ validationErrors.threads }}
+                                    </p>
+                                    <p v-else class="text-xs text-muted-foreground mt-1">
+                                        Advanced: Enter the specific CPU threads that this process can run on, or leave
+                                        blank to allow all threads. This can be a single number, or a comma separated
+                                        list. Example: 0, 0-1,3, or 0,1,3,4.
                                     </p>
                                 </div>
                             </div>
@@ -1287,6 +1458,10 @@ const form = ref<EditForm>({
     location_id: '',
 });
 
+// Advanced settings
+const oomKiller = ref<boolean>(true);
+const threads = ref<string>('');
+
 // Units are always fixed: MiB for memory/swap/disk, % for CPU
 
 // Dropdown data
@@ -1666,6 +1841,29 @@ async function loadServerData() {
             const suspendedValue: number = (server as Partial<ApiServer> & { suspended?: number }).suspended ?? 0;
             form.value.suspended = Number(suspendedValue);
 
+            // Advanced settings from server (legacy oom_disabled -> oom_killer)
+            // If oom_disabled present: true means killer disabled
+            const serverExt = server as ApiServer & {
+                oom_disabled?: number | boolean;
+                oom_killer?: boolean | 0 | 1;
+                threads?: string | number;
+            };
+            if (typeof serverExt.oom_killer === 'boolean' || serverExt.oom_killer === 0 || serverExt.oom_killer === 1) {
+                oomKiller.value = serverExt.oom_killer === true || serverExt.oom_killer === 1;
+            } else if (serverExt.oom_disabled !== undefined) {
+                const ld = serverExt.oom_disabled;
+                oomKiller.value = !(ld === true || ld === 1);
+            }
+            if (serverExt.threads === null || serverExt.threads === undefined) {
+                threads.value = '';
+            } else if (typeof serverExt.threads === 'number') {
+                threads.value = String(serverExt.threads);
+            } else if (typeof serverExt.threads === 'string') {
+                threads.value = serverExt.threads.toLowerCase().trim() === 'null' ? '' : serverExt.threads;
+            } else {
+                threads.value = '';
+            }
+
             // Load server variables directly from the API response
             if (server.variables && Array.isArray(server.variables)) {
                 // Use the server variables that are already provided in the API response
@@ -1805,8 +2003,8 @@ function validateForm(): boolean {
         validationErrors.value.memory = 'Memory cannot exceed 1TB (1048576 MB)';
     }
 
-    if (form.value.swap < 0) {
-        validationErrors.value.swap = 'Swap cannot be negative';
+    if (form.value.swap < -1) {
+        validationErrors.value.swap = 'Swap cannot be less than -1';
     } else if (form.value.swap > 1048576) {
         // 1TB in MB
         validationErrors.value.swap = 'Swap cannot exceed 1TB (1048576 MB)';
@@ -1825,6 +2023,15 @@ function validateForm(): boolean {
 
     if (form.value.cpu < 0 || form.value.cpu > 1000000) {
         validationErrors.value.cpu = 'CPU must be between 0 and 1,000,000';
+    }
+
+    // Threads validation (optional)
+    if (threads.value && threads.value.trim() !== '') {
+        const pattern = /^\s*(\d+|\d+-\d+)(\s*,\s*(\d+|\d+-\d+))*\s*$/;
+        if (!pattern.test(threads.value)) {
+            validationErrors.value.threads =
+                'Invalid threads format. Use numbers, commas, and ranges like 0,1,3 or 0-1,3.';
+        }
     }
 
     // Feature limits validation
@@ -1945,7 +2152,7 @@ async function submitUpdate() {
     try {
         const serverId = route.params.id;
         const descriptionValue: string | null = form.value.description?.trim() || null;
-        const submitData: SubmitData = {
+        const submitDataBase: SubmitData = {
             node_id: Number(form.value.node_id),
             name: form.value.name,
             description: descriptionValue,
@@ -1966,6 +2173,17 @@ async function submitUpdate() {
             skip_scripts: form.value.skip_scripts,
             // Always include variables as an array of { variable_id, variable_value }
             variables: [],
+        };
+        const normalizedThreads = (() => {
+            const tv = threads.value.trim();
+            if (tv === '' || tv.toLowerCase() === 'null') return null;
+            return tv;
+        })();
+
+        const submitData = {
+            ...submitDataBase,
+            oom_killer: oomKiller.value,
+            threads: normalizedThreads,
         };
 
         // Remove node_id from submit data

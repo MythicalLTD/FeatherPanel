@@ -84,9 +84,9 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'database_limit', type: 'integer', description: 'Database limit'),
         new OA\Property(property: 'backup_limit', type: 'integer', description: 'Backup limit'),
         new OA\Property(property: 'external_id', type: 'string', nullable: true, description: 'External ID'),
-        new OA\Property(property: 'threads', type: 'integer', nullable: true, description: 'Thread limit'),
+        new OA\Property(property: 'threads', type: 'string', nullable: true, description: 'Specific CPU threads this process can run on. Single number, comma list, or ranges like 0,1,3 or 0-1,3'),
         new OA\Property(property: 'skip_scripts', type: 'boolean', description: 'Skip scripts flag'),
-        new OA\Property(property: 'oom_disabled', type: 'boolean', description: 'OOM disabled flag'),
+        new OA\Property(property: 'oom_killer', type: 'boolean', description: 'Whether the OOM killer is enabled (true) or disabled (false)'),
         new OA\Property(property: 'suspended', type: 'boolean', description: 'Suspended flag'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
@@ -116,7 +116,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Server description (optional)', maxLength: 65535),
         new OA\Property(property: 'owner_id', type: 'integer', description: 'Owner user ID', minimum: 1),
         new OA\Property(property: 'memory', type: 'integer', description: 'Memory limit in MB', minimum: 128),
-        new OA\Property(property: 'swap', type: 'integer', description: 'Swap limit in MB', minimum: 0),
+        new OA\Property(property: 'swap', type: 'integer', description: 'Swap limit in MB (-1 = unlimited, 0 = disabled)', minimum: -1),
         new OA\Property(property: 'disk', type: 'integer', description: 'Disk limit in MB', minimum: 1024),
         new OA\Property(property: 'io', type: 'integer', description: 'IO limit', minimum: 10),
         new OA\Property(property: 'cpu', type: 'integer', description: 'CPU limit percentage', minimum: 10),
@@ -130,7 +130,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'database_limit', type: 'integer', description: 'Database limit', minimum: 0),
         new OA\Property(property: 'backup_limit', type: 'integer', description: 'Backup limit', minimum: 0),
         new OA\Property(property: 'external_id', type: 'string', nullable: true, description: 'External ID', maxLength: 191),
-        new OA\Property(property: 'threads', type: 'integer', nullable: true, description: 'Thread limit'),
+        new OA\Property(property: 'threads', type: 'string', nullable: true, description: 'Specific CPU threads this process can run on. Single number, comma list, or ranges like 0,1,3 or 0-1,3'),
         new OA\Property(property: 'skip_scripts', type: 'boolean', description: 'Skip scripts flag'),
         new OA\Property(property: 'oom_disabled', type: 'boolean', description: 'OOM disabled flag'),
         new OA\Property(property: 'variables', type: 'object', description: 'Server variables as key-value pairs'),
@@ -145,7 +145,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'description', type: 'string', description: 'Server description', maxLength: 65535),
         new OA\Property(property: 'owner_id', type: 'integer', description: 'Owner user ID', minimum: 1),
         new OA\Property(property: 'memory', type: 'integer', description: 'Memory limit in MB', minimum: 128),
-        new OA\Property(property: 'swap', type: 'integer', description: 'Swap limit in MB', minimum: 0),
+        new OA\Property(property: 'swap', type: 'integer', description: 'Swap limit in MB (-1 = unlimited, 0 = disabled)', minimum: -1),
         new OA\Property(property: 'disk', type: 'integer', description: 'Disk limit in MB', minimum: 1024),
         new OA\Property(property: 'io', type: 'integer', description: 'IO limit', minimum: 10),
         new OA\Property(property: 'cpu', type: 'integer', description: 'CPU limit percentage', minimum: 10),
@@ -159,7 +159,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'database_limit', type: 'integer', description: 'Database limit', minimum: 0),
         new OA\Property(property: 'backup_limit', type: 'integer', description: 'Backup limit', minimum: 0),
         new OA\Property(property: 'external_id', type: 'string', nullable: true, description: 'External ID', maxLength: 191),
-        new OA\Property(property: 'threads', type: 'integer', nullable: true, description: 'Thread limit'),
+        new OA\Property(property: 'threads', type: 'string', nullable: true, description: 'Specific CPU threads this process can run on. Single number, comma list, or ranges like 0,1,3 or 0-1,3'),
         new OA\Property(property: 'skip_scripts', type: 'boolean', description: 'Skip scripts flag'),
         new OA\Property(property: 'oom_disabled', type: 'boolean', description: 'OOM disabled flag'),
         new OA\Property(property: 'variables', type: 'object', description: 'Server variables as key-value pairs'),
@@ -554,11 +554,16 @@ class ServersController
         }
 
         // Fields that can be 0 (for unlimited) or positive integers
-        $nonNegativeFields = ['memory', 'swap', 'disk', 'cpu'];
+        // Numeric validations per field
+        // memory, disk, cpu must be >= 0 (0 = unlimited), swap may be -1 (unlimited) or 0 (disabled) or >0 (limited)
+        $nonNegativeFields = ['memory', 'disk', 'cpu'];
         foreach ($nonNegativeFields as $field) {
             if (!is_numeric($data[$field]) || (int) $data[$field] < 0) {
                 return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a non-negative integer (0 for unlimited)', 'INVALID_DATA_TYPE', 400);
             }
+        }
+        if (!is_numeric($data['swap']) || (int) $data['swap'] < -1) {
+            return ApiResponse::error('Swap must be -1 (unlimited), 0 (disabled), or a positive integer', 'INVALID_DATA_TYPE', 400);
         }
 
         // Validate string fields (description is optional)
@@ -603,8 +608,8 @@ class ServersController
         if ($data['memory'] !== 0 && ($data['memory'] < 128 || $data['memory'] > 1048576)) {
             return ApiResponse::error('Memory must be between 128 MB and 1TB', 'INVALID_MEMORY_LIMIT', 400);
         }
-        if ($data['swap'] !== 0 && $data['swap'] > 1048576) {
-            return ApiResponse::error('Swap must be between 0 MB and 1TB', 'INVALID_SWAP_LIMIT', 400);
+        if ($data['swap'] !== 0 && $data['swap'] !== -1 && $data['swap'] > 1048576) {
+            return ApiResponse::error('Swap must be -1 (unlimited), 0 (disabled), or between 1 MB and 1TB', 'INVALID_SWAP_LIMIT', 400);
         }
         if ($data['disk'] !== 0 && ($data['disk'] < 128 || $data['disk'] > 10485760)) {
             return ApiResponse::error('Disk must be between 128 MB and 10TB', 'INVALID_DISK_LIMIT', 400);
@@ -648,7 +653,13 @@ class ServersController
         $data['description'] = isset($data['description']) && $data['description'] !== '' ? $data['description'] : null;
         $data['status'] = $data['status'] ?? 'installing';
         $data['skip_scripts'] = isset($data['skip_scripts']) ? (int) $data['skip_scripts'] : 0;
-        $data['oom_disabled'] = isset($data['oom_disabled']) ? (int) $data['oom_disabled'] : 0;
+        // Map oom_killer -> oom_disabled for DB (oom_disabled true when killer is false)
+        if (array_key_exists('oom_killer', $data)) {
+            $data['oom_disabled'] = $data['oom_killer'] ? 0 : 1;
+            unset($data['oom_killer']);
+        } else {
+            $data['oom_disabled'] = isset($data['oom_disabled']) ? (int) $data['oom_disabled'] : 0;
+        }
         $data['allocation_limit'] = $data['allocation_limit'] ?? null;
         $data['database_limit'] = isset($data['database_limit']) ? (int) $data['database_limit'] : 0;
         $data['backup_limit'] = isset($data['backup_limit']) ? (int) $data['backup_limit'] : 0;
@@ -920,11 +931,31 @@ class ServersController
         }
 
         // Validate data types for numeric fields
-        $numericFields = ['node_id', 'owner_id', 'memory', 'swap', 'disk', 'io', 'cpu', 'allocation_id', 'realms_id', 'spell_id', 'allocation_limit', 'database_limit', 'backup_limit', 'threads'];
+        $numericFields = ['node_id', 'owner_id', 'memory', 'swap', 'disk', 'io', 'cpu', 'allocation_id', 'realms_id', 'spell_id', 'allocation_limit', 'database_limit', 'backup_limit'];
         foreach ($data as $field => $value) {
             if (in_array($field, $numericFields)) {
-                if (!is_numeric($value) || (int) $value < 0) {
-                    return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a non-negative integer', 'INVALID_DATA_TYPE', 400);
+                if ($field === 'swap') {
+                    if (!is_numeric($value) || (int) $value < -1) {
+                        return ApiResponse::error('Swap must be -1 (unlimited), 0 (disabled), or a positive integer', 'INVALID_DATA_TYPE', 400);
+                    }
+                } else {
+                    if (!is_numeric($value) || (int) $value < 0) {
+                        return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a non-negative integer', 'INVALID_DATA_TYPE', 400);
+                    }
+                }
+            }
+        }
+
+        // Validate threads if provided
+        if (array_key_exists('threads', $data)) {
+            if ($data['threads'] === null || (is_string($data['threads']) && trim($data['threads']) === '')) {
+                // ok - treated as null/unset later
+            } elseif (!is_string($data['threads'])) {
+                return ApiResponse::error('Threads must be a string (e.g. "0,1,3" or "0-1,3")', 'INVALID_DATA_TYPE', 400);
+            } else {
+                $t = trim((string) $data['threads']);
+                if (!preg_match('/^\s*(\d+|\d+-\d+)(\s*,\s*(\d+|\d+-\d+))*\s*$/', $t)) {
+                    return ApiResponse::error('Invalid threads format. Use numbers, commas, and ranges like 0,1,3 or 0-1,3.', 'INVALID_THREADS_FORMAT', 400);
                 }
             }
         }
@@ -960,7 +991,7 @@ class ServersController
         }
 
         // Validate boolean fields
-        $booleanFields = ['skip_scripts', 'oom_disabled'];
+        $booleanFields = ['skip_scripts', 'oom_disabled', 'oom_killer'];
         foreach ($data as $field => $value) {
             if (in_array($field, $booleanFields) && isset($data[$field])) {
                 if (!is_bool($value) && !in_array($value, [0, 1, '0', '1'], true)) {
@@ -1007,8 +1038,8 @@ class ServersController
         if (isset($data['memory']) && $data['memory'] !== 0 && ($data['memory'] < 128 || $data['memory'] > 1048576)) {
             return ApiResponse::error('Memory must be between 128 MB and 1TB', 'INVALID_MEMORY_LIMIT', 400);
         }
-        if (isset($data['swap']) && $data['swap'] !== 0 && $data['swap'] > 1048576) {
-            return ApiResponse::error('Swap must be between 0 MB and 1TB', 'INVALID_SWAP_LIMIT', 400);
+        if (isset($data['swap']) && $data['swap'] !== 0 && $data['swap'] !== -1 && $data['swap'] > 1048576) {
+            return ApiResponse::error('Swap must be -1 (unlimited), 0 (disabled), or between 1 MB and 1TB', 'INVALID_SWAP_LIMIT', 400);
         }
         if (isset($data['disk']) && $data['disk'] !== 0 && ($data['disk'] < 128 || $data['disk'] > 10485760)) {
             return ApiResponse::error('Disk must be between 128 MB and 10TB', 'INVALID_DISK_LIMIT', 400);
@@ -1126,6 +1157,21 @@ class ServersController
         $serverUpdateData = $data;
         unset($serverUpdateData['variables']);
 
+        // Map oom_killer to oom_disabled for DB
+        if (array_key_exists('oom_killer', $serverUpdateData)) {
+            $serverUpdateData['oom_disabled'] = ($serverUpdateData['oom_killer'] ? 0 : 1);
+            unset($serverUpdateData['oom_killer']);
+        }
+
+        // Normalize threads: empty string -> null (leave string if provided)
+        if (array_key_exists('threads', $serverUpdateData)) {
+            if ($serverUpdateData['threads'] === null) {
+                // keep null
+            } elseif (is_string($serverUpdateData['threads']) && trim($serverUpdateData['threads']) === '') {
+                $serverUpdateData['threads'] = null;
+            }
+        }
+
         // Handle spell change: delete old variables and create new ones (before updating server)
         if ($spellChanged) {
             // Delete all old server variables
@@ -1226,7 +1272,6 @@ class ServersController
             'allocation_limit',
             'database_limit',
             'backup_limit',
-            'threads',
             'skip_scripts',
             'oom_disabled',
             'suspended',
