@@ -554,6 +554,17 @@
                             <CardTitle class="text-lg">{{ t('common.console') }}</CardTitle>
                         </div>
                         <div class="flex items-center gap-2">
+                            <!-- Auto-scroll Toggle -->
+                            <label class="flex items-center gap-2 cursor-pointer group">
+                                <input
+                                    v-model="autoScrollEnabled"
+                                    type="checkbox"
+                                    class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-0 cursor-pointer transition-colors"
+                                />
+                                <span class="text-xs sm:text-sm text-muted-foreground group-hover:text-foreground transition-colors select-none">
+                                    {{ t('serverConsole.autoScroll') }}
+                                </span>
+                            </label>
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -947,6 +958,9 @@ const uploading = ref(false);
 // Scroll to bottom button state
 const showScrollToBottom = ref(false);
 let scrollCheckInterval: number | null = null;
+
+// Auto-scroll enabled state (default: true)
+const autoScrollEnabled = ref(true);
 
 // Command History
 interface CommandHistoryEntry {
@@ -1381,11 +1395,11 @@ function writeToTerminal(data: string): void {
         writeTimeout = window.setTimeout(() => {
             // Check scroll position right before flushing to ensure accuracy
             const wasAtBottom = checkScrollPositionBeforeWrite();
-
+            
             flushWriteBuffer();
-
-            // Auto-scroll if user was at bottom before the write
-            if (wasAtBottom) {
+            
+            // Auto-scroll if enabled and user was at bottom before the write
+            if (autoScrollEnabled.value && wasAtBottom) {
                 scrollToBottom();
             }
             // Update scroll position state after write
@@ -1413,8 +1427,8 @@ function writeToTerminalImmediate(data: string): void {
     const formattedData = processedData.replace(/\r?\n/g, '\r\n');
     terminal.write(formattedData);
 
-    // Auto-scroll if user was at bottom before the write
-    if (wasAtBottom) {
+    // Auto-scroll if enabled and user was at bottom before the write
+    if (autoScrollEnabled.value && wasAtBottom) {
         // Use nextTick to ensure the write has been rendered
         setTimeout(() => {
             scrollToBottom();
@@ -1683,9 +1697,12 @@ async function saveCustomization(): Promise<void> {
             terminal: customization.value.terminal,
             charts: customization.value.charts,
             filters: customization.value.filters,
+            autoScrollEnabled: autoScrollEnabled.value,
         };
 
         localStorage.setItem('featherpanel-console-customization', JSON.stringify(customizationData));
+        // Also save to separate key for backward compatibility
+        localStorage.setItem('featherpanel-console-autoscroll', String(autoScrollEnabled.value));
     } catch (error) {
         console.error('Error saving console customization:', error);
     }
@@ -1709,6 +1726,7 @@ async function loadCustomization(): Promise<void> {
                     terminal: Record<string, unknown>;
                     charts: Record<string, unknown>;
                     filters?: ConsoleFilter[];
+                    autoScrollEnabled?: boolean;
                 };
 
                 customization.value = {
@@ -1720,7 +1738,18 @@ async function loadCustomization(): Promise<void> {
                     charts: { ...customization.value.charts, ...typedParsed.charts },
                     filters: typedParsed.filters || [],
                 };
+
+                // Load auto-scroll setting
+                if (typeof typedParsed.autoScrollEnabled === 'boolean') {
+                    autoScrollEnabled.value = typedParsed.autoScrollEnabled;
+                }
             }
+        }
+
+        // Also try loading from a separate key for backward compatibility
+        const autoScrollSaved = localStorage.getItem('featherpanel-console-autoscroll');
+        if (autoScrollSaved !== null) {
+            autoScrollEnabled.value = autoScrollSaved === 'true';
         }
     } catch (error) {
         console.error('Error loading console customization:', error);
@@ -1748,6 +1777,7 @@ async function resetCustomization(): Promise<void> {
         },
         filters: [],
     };
+    autoScrollEnabled.value = true; // Reset to default
     await saveCustomization();
     applyTerminalSettings();
     toast.success(t('serverConsole.layoutResetToDefaults'));
@@ -1863,6 +1893,14 @@ onMounted(async () => {
                     writeToTerminalImmediate('\x1b[32m✅ Server is now running\x1b[0m\r\n\r\n');
                 }
             }
+        },
+    );
+
+    // Watch for auto-scroll changes and save to localStorage
+    watch(
+        () => autoScrollEnabled.value,
+        () => {
+            saveCustomization();
         },
     );
 });

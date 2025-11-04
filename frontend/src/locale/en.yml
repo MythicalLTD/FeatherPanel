@@ -501,6 +501,7 @@ serverConsole:
     performanceMonitoring: 'Performance Monitoring'
     terminalSettings: 'Terminal Settings'
     autoScrollToBottom: 'Auto-scroll to bottom'
+    autoScroll: 'Auto Scroll'
     showTimestamps: 'Show timestamps'
     filterCommandEchoes: 'Filter command echoes'
     maxTerminalLines: 'Max terminal lines'
