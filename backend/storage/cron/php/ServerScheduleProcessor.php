@@ -26,6 +26,7 @@ namespace App\Cron;
  */
 
 use App\App;
+use App\Chat\Backup;
 use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\ServerActivity;
@@ -414,6 +415,25 @@ class ServerScheduleProcessor implements TimeTask
 		MinecraftColorCodeSupport::sendOutputWithNewLine('&aBacking up server: ' . $server['name']);
 
 		try {
+			$currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
+			$backupLimit = (int) ($server['backup_limit'] ?? 0);
+
+			if ($backupLimit > 0 && $currentBackups >= $backupLimit) {
+				MinecraftColorCodeSupport::sendOutputWithNewLine('&eSkipping backup: limit reached (' . $currentBackups . '/' . $backupLimit . ') for server: ' . $server['name']);
+				$app->getLogger()->info('Skipped scheduled backup for server ' . ($server['name'] ?? 'unknown') . ': backup limit reached (' . $currentBackups . '/' . $backupLimit . ')');
+				ServerActivity::createActivity([
+					'server_id' => $server['id'],
+					'node_id' => $server['node_id'],
+					'event' => 'schedule_backup_skipped_limit',
+					'metadata' => json_encode([
+						'current_backups' => $currentBackups,
+						'backup_limit' => $backupLimit,
+					]),
+				]);
+
+				return;
+			}
+
 			$wings = $this->getWingsConnection($server);
 
 			// Generate backup UUID and name
