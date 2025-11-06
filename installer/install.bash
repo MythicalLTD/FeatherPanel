@@ -32,6 +32,46 @@ log_warn()    { echo -e "${YELLOW}[WARN]${NC} $1"; echo "[WARN] $1"    >> "$LOG_
 log_error()   { echo -e "${RED}[FAIL]${NC} $1";   echo "[ERROR] $1"   >> "$LOG_FILE"; }
 log_step()    { echo -e "${CYAN}${BOLD}==> $1${NC}"; echo "[STEP] $1" >> "$LOG_FILE"; }
 
+run_with_spinner() {
+    local start_message="$1"
+    local success_message="$2"
+    shift 2
+
+    log_step "$start_message"
+
+    "$@" >> "$LOG_FILE" 2>&1 &
+    local cmd_pid=$!
+    local spinner="|/-\\"
+    local i=0
+
+    if [ -t 1 ]; then
+        printf '  '
+    fi
+
+    while kill -0 "$cmd_pid" >/dev/null 2>&1; do
+        if [ -t 1 ]; then
+            printf '\r[%c] %s' "${spinner:i%${#spinner}:1}" "$start_message"
+        fi
+        i=$(((i + 1) % ${#spinner}))
+        sleep 0.15
+    done
+
+    wait "$cmd_pid"
+    local exit_code=$?
+
+    if [ -t 1 ]; then
+        printf '\r\033[K'
+    fi
+
+    if [ $exit_code -eq 0 ]; then
+        log_success "$success_message"
+        return 0
+    fi
+
+    log_error "$start_message failed. Check $LOG_FILE for details."
+    return $exit_code
+}
+
 support_hint() {
     echo -e "${YELLOW}Need help?${NC} Join Discord: ${BLUE}https://discord.mythical.systems${NC}  Docs: ${BLUE}https://docs.mythical.systems${NC}"
 }
@@ -357,7 +397,10 @@ setup_cloudflare_tunnel_client() {
             sudo usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
             log_success "Docker installed. You may need to re-login for group changes to take effect."
             fi
-        docker run -d --network host --restart always cloudflare/cloudflared:latest tunnel --no-autoupdate run --token "$CF_TUNNEL_TOKEN" >> "$LOG_FILE" 2>&1
+        if ! run_with_spinner "Starting Cloudflare Tunnel container" "Cloudflare Tunnel container running." \
+            docker run -d --network host --restart always cloudflare/cloudflared:latest tunnel --no-autoupdate run --token "$CF_TUNNEL_TOKEN"; then
+            return 1
+        fi
         log_info "Cloudflare Tunnel setup complete."
         if [ "$CF_TUNNEL_MODE" == "2" ]; then
             echo -e "\033[0;33mYou have chosen Semi-Automatic Cloudflare Tunnel setup.\033[0m"
@@ -983,6 +1026,10 @@ setup_nginx_reverse_proxy() {
     local domain="$1"
     local has_ssl="$2"
     
+    install_packages nginx
+    sudo systemctl enable nginx >> "$LOG_FILE" 2>&1 || true
+    sudo systemctl start nginx >> "$LOG_FILE" 2>&1 || true
+
     # Create config directory if it doesn't exist
     sudo mkdir -p /etc/nginx/sites-available
     sudo mkdir -p /etc/nginx/sites-enabled
@@ -1004,8 +1051,11 @@ setup_nginx_reverse_proxy() {
     sudo ln -sf /etc/nginx/sites-available/featherpanel /etc/nginx/sites-enabled/
     
     # Test nginx configuration
-    if sudo nginx -t; then
+    if sudo nginx -t >> "$LOG_FILE" 2>&1; then
         log_success "Nginx configuration is valid"
+        if ! run_with_spinner "Reloading Nginx" "Nginx reloaded." sudo systemctl reload nginx; then
+            return 1
+        fi
     else
         log_error "Nginx configuration test failed"
         return 1
@@ -1016,9 +1066,13 @@ setup_apache_reverse_proxy() {
     local domain="$1"
     local has_ssl="$2"
     
+    install_packages apache2
+    sudo systemctl enable apache2 >> "$LOG_FILE" 2>&1 || true
+    sudo systemctl start apache2 >> "$LOG_FILE" 2>&1 || true
+
     # Enable required Apache modules
     log_info "Enabling required Apache modules..."
-    sudo a2enmod ssl proxy proxy_http proxy_wstunnel rewrite
+    sudo a2enmod ssl proxy proxy_http proxy_wstunnel rewrite >> "$LOG_FILE" 2>&1 || true
     
     # Create config directory if it doesn't exist
     sudo mkdir -p /etc/apache2/sites-available
@@ -1037,11 +1091,14 @@ setup_apache_reverse_proxy() {
     fi
     
     # Enable the site
-    sudo a2ensite featherpanel
+    sudo a2ensite featherpanel >> "$LOG_FILE" 2>&1 || true
     
     # Test apache configuration
-    if sudo apache2ctl configtest; then
+    if sudo apache2ctl configtest >> "$LOG_FILE" 2>&1; then
         log_success "Apache configuration is valid"
+        if ! run_with_spinner "Reloading Apache" "Apache reloaded." sudo systemctl reload apache2; then
+            return 1
+        fi
     else
         log_error "Apache configuration test failed"
         return 1
@@ -1316,14 +1373,16 @@ CF_HOSTNAME=""
             ensure_env_cloudflare
 
             if [ ! -f /var/www/featherpanel/docker-compose.yml ]; then
-                log_step "Downloading docker-compose.yml for FeatherPanel..."
-                curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml" >> "$LOG_FILE" 2>&1 || { log_error "Failed to download docker-compose.yml"; exit 1; }
+                if ! run_with_spinner "Downloading docker-compose.yml for FeatherPanel" "docker-compose.yml downloaded." \
+                    curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml"; then
+                    exit 1
+                fi
             fi
 
             print_banner
-            log_step "Starting FeatherPanel stack..."
-            sudo docker compose up -d 2>&1 | tee -a "$LOG_FILE" >/dev/null || { log_error "Failed to start FeatherPanel stack"; exit 1; }
-            log_success "FeatherPanel stack started."
+            if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." sudo docker compose up -d; then
+                exit 1
+            fi
 
                 if [[ "$CF_TUNNEL_SETUP" =~ ^[yY]$ ]]; then
                     if [ "$CF_TUNNEL_MODE" == "1" ]; then
@@ -1421,17 +1480,35 @@ CF_HOSTNAME=""
                 exit 0
             fi
             print_banner
-            log_step "Updating FeatherPanel (pulling latest images and compose file)..."
+            log_step "Updating FeatherPanel components..."
             if [ ! -f /var/www/featherpanel/docker-compose.yml ]; then
-                log_info "docker-compose.yml missing, downloading it first..."
-                curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml" >> "$LOG_FILE" 2>&1 || { log_error "Failed to download docker-compose.yml"; upload_logs_on_fail; exit 1; }
+                if ! run_with_spinner "Downloading docker-compose.yml for FeatherPanel" "docker-compose.yml downloaded." \
+                    curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml"; then
+                    upload_logs_on_fail
+                    exit 1
+                fi
             else
-                log_info "Refreshing docker-compose.yml from upstream..."
-                curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml" >> "$LOG_FILE" 2>&1 || log_warn "Could not refresh compose file; keeping existing."
+                if ! run_with_spinner "Refreshing docker-compose.yml from upstream" "docker-compose.yml refreshed." \
+                    curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml"; then
+                    log_warn "Could not refresh compose file; keeping existing copy."
+                fi
             fi
-            (cd /var/www/featherpanel && sudo docker compose pull) >> "$LOG_FILE" 2>&1 || { log_error "Failed pulling images"; upload_logs_on_fail; exit 1; }
-            (cd /var/www/featherpanel && sudo docker compose down) >> "$LOG_FILE" 2>&1 || { log_error "Failed applying updated stack"; upload_logs_on_fail; exit 1; }
-            (cd /var/www/featherpanel && sudo docker compose up -d) >> "$LOG_FILE" 2>&1 || { log_error "Failed applying updated stack"; upload_logs_on_fail; exit 1; }
+
+            if ! run_with_spinner "Pulling FeatherPanel Docker images" "Docker images updated." bash -c "cd /var/www/featherpanel && sudo docker compose pull"; then
+                upload_logs_on_fail
+                exit 1
+            fi
+
+            if ! run_with_spinner "Stopping existing FeatherPanel containers" "Existing containers stopped." bash -c "cd /var/www/featherpanel && sudo docker compose down"; then
+                upload_logs_on_fail
+                exit 1
+            fi
+
+            if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
+                upload_logs_on_fail
+                exit 1
+            fi
+
             log_success "FeatherPanel updated successfully."
                     exit 0
         elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "0" ]; then

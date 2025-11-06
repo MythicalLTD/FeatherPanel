@@ -17,9 +17,11 @@
 - Fixed an issue where creating a scheduled task required entering a payload even when it was marked as optional payload is now truly optional as intended.
 - Fixed an issue where schedules did not properly enforce the server backup limit.
 - Resolved build issues encountered with the latest versions of Vue, Vite, and TypeScript, ensuring full compatibility and smoother development experience.
+- Resolved an issue causing server schedules to malfunction, restoring full scheduling functionality
 
 ### Improved
 - Reduced excessive and unnecessary log output from the admin dashboard page for a cleaner log experience
+- Significantly enhanced the installer for both updates and first-time setups, making the process smoother, more intuitive, and user-friendly!
 
 ### Added
 - The panel now updates itself automatically whenever FeatherPanel is restarted this ensures you’re always running the latest version without manual intervention. This feature can be disabled in your docker-compose.yml if desired.
