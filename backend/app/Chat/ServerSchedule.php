@@ -523,40 +523,62 @@ class ServerSchedule
 
     /**
      * Calculate next run time based on cron expression.
+     *
+     * @param string      $dayOfWeek     Cron expression day of week component
+     * @param string      $month         Cron expression month component
+     * @param string      $dayOfMonth    Cron expression day of month component
+     * @param string      $hour          Cron expression hour component
+     * @param string      $minute        Cron expression minute component
+     * @param string|null $referenceTime Optional reference time (e.g. current next_run_at) to maintain cadence
      */
-    public static function calculateNextRunTime(string $dayOfWeek, string $month, string $dayOfMonth, string $hour, string $minute): string
+    public static function calculateNextRunTime(string $dayOfWeek, string $month, string $dayOfMonth, string $hour, string $minute, ?string $referenceTime = null): string
     {
-        $now = new \DateTime();
-        $nextRun = clone $now;
+		$currentTime = new \DateTime();
+		$searchStart = clone $currentTime;
 
-        // Start with current time and find the next valid time
-        $found = false;
-        $attempts = 0;
-        $maxAttempts = 1000; // Prevent infinite loops
+		if ($referenceTime !== null) {
+			try {
+				$searchStart = new \DateTime($referenceTime);
+			} catch (\Exception $e) {
+				// Ignore invalid reference times and fall back to current time
+			}
+		}
 
-        while (!$found && $attempts < $maxAttempts) {
-            ++$attempts;
+		// Normalise to the start of the minute
+		$searchStart->setTime((int) $searchStart->format('H'), (int) $searchStart->format('i'), 0);
+		$currentTime->setTime((int) $currentTime->format('H'), (int) $currentTime->format('i'), 0);
 
-            // Check if current time matches all cron fields
-            if (self::timeMatchesCron($nextRun, $dayOfWeek, $month, $dayOfMonth, $hour, $minute)) {
-                // If it's in the future, we found our time
-                if ($nextRun > $now) {
-                    $found = true;
-                    break;
-                }
-            }
+		$nextRun = clone $searchStart;
+		$nextRun->add(new \DateInterval('PT1M'));
 
-            // Move to next minute
-            $nextRun->add(new \DateInterval('PT1M'));
-        }
+		// Start with current time and find the next valid time
+		$found = false;
+		$attempts = 0;
+		$maxAttempts = 10080; // Prevent infinite loops (covers up to 7 days)
 
-        // If we couldn't find a valid time, default to 1 hour from now
-        if (!$found) {
-            $nextRun = clone $now;
-            $nextRun->add(new \DateInterval('PT1H'));
-        }
+		while (!$found && $attempts < $maxAttempts) {
+			++$attempts;
 
-        return $nextRun->format('Y-m-d H:i:s');
+			// Check if current time matches all cron fields
+			if (self::timeMatchesCron($nextRun, $dayOfWeek, $month, $dayOfMonth, $hour, $minute)) {
+				// If it's in the future, we found our time
+				if ($nextRun > $currentTime) {
+					$found = true;
+					break;
+				}
+			}
+
+			// Move to next minute
+			$nextRun->add(new \DateInterval('PT1M'));
+		}
+
+		// If we couldn't find a valid time, default to 1 day from now
+		if (!$found) {
+			$nextRun = clone $currentTime;
+			$nextRun->add(new \DateInterval('P1D'));
+		}
+
+		return $nextRun->format('Y-m-d H:i:s');
     }
 
     /**

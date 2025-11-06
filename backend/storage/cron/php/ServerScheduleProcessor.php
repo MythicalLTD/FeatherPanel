@@ -124,7 +124,8 @@ class ServerScheduleProcessor implements TimeTask
 					$schedule['cron_month'],
 					$schedule['cron_day_of_month'],
 					$schedule['cron_hour'],
-					$schedule['cron_minute']
+					$schedule['cron_minute'],
+					$schedule['next_run_at'] ?? null
 				);
 
 				ServerSchedule::updateSchedule($schedule['id'], [
@@ -158,7 +159,8 @@ class ServerScheduleProcessor implements TimeTask
 			$schedule['cron_month'],
 			$schedule['cron_day_of_month'],
 			$schedule['cron_hour'],
-			$schedule['cron_minute']
+			$schedule['cron_minute'],
+			$schedule['next_run_at'] ?? null
 		);
 
 		// Update schedule with next run time and mark as not processing
@@ -415,11 +417,12 @@ class ServerScheduleProcessor implements TimeTask
 		MinecraftColorCodeSupport::sendOutputWithNewLine('&aBacking up server: ' . $server['name']);
 
 		try {
+			$ignoredFiles = $this->normalizeIgnoredFiles($ignoredFiles);
 			$currentBackups = count(Backup::getBackupsByServerId((int) $server['id']));
 			$backupLimit = (int) ($server['backup_limit'] ?? 0);
 
 			if ($backupLimit > 0 && $currentBackups >= $backupLimit) {
-				MinecraftColorCodeSupport::sendOutputWithNewLine('&eSkipping backup: limit reached (' . $currentBackups . '/' . $backupLimit . ') for server: ' . $server['name']);
+				MinecraftColorCodeSupport::sendOutputWithNewLine('&eSkipping backup: limit reached (' . $currentBackups . '/' . $backupLimit . ') for server: ' . $server['name'] . ')');
 				$app->getLogger()->info('Skipped scheduled backup for server ' . ($server['name'] ?? 'unknown') . ': backup limit reached (' . $currentBackups . '/' . $backupLimit . ')');
 				ServerActivity::createActivity([
 					'server_id' => $server['id'],
@@ -434,21 +437,46 @@ class ServerScheduleProcessor implements TimeTask
 				return;
 			}
 
-			$wings = $this->getWingsConnection($server);
-
-			// Generate backup UUID and name
+			$adapter = 'wings';
 			$backupUuid = $this->generateUuid();
 			$backupName = 'Scheduled backup at ' . date('Y-m-d H:i:s');
-			$adapter = 'wings';
 
+			$backupId = Backup::createBackup([
+				'server_id' => (int) $server['id'],
+				'uuid' => $backupUuid,
+				'name' => $backupName,
+				'ignored_files' => $ignoredFiles,
+				'disk' => $adapter,
+				'is_successful' => 0,
+				'is_locked' => 1,
+			]);
+
+			if (!$backupId) {
+				$app->getLogger()->error('Failed to create scheduled backup record for server ' . ($server['name'] ?? 'unknown'));
+				throw new \Exception('Failed to create backup record');
+			}
+
+			$wings = $this->getWingsConnection($server);
 			$response = $wings->getServer()->createBackup($server['uuid'], $adapter, $backupUuid, $ignoredFiles);
 
 			if (!$response->isSuccessful()) {
 				$error = $response->getError();
+				Backup::deleteBackup($backupId);
 				$app->getLogger()->error('Failed to create backup for server ' . $server['name'] . ': ' . $error);
 				MinecraftColorCodeSupport::sendOutputWithNewLine('&cFailed to create backup: ' . $error);
 				throw new \Exception('Wings API error: ' . $error);
 			}
+
+			ServerActivity::createActivity([
+				'server_id' => $server['id'],
+				'node_id' => $server['node_id'],
+				'event' => 'schedule_backup_started',
+				'metadata' => json_encode([
+					'backup_uuid' => $backupUuid,
+					'backup_id' => $backupId,
+					'schedule_triggered' => true,
+				]),
+			]);
 
 			MinecraftColorCodeSupport::sendOutputWithNewLine('&aBackup created successfully: ' . $backupName);
 		} catch (\Exception $e) {
@@ -612,5 +640,26 @@ class ServerScheduleProcessor implements TimeTask
 		$data[6] = chr(ord($data[6]) & 0x0f | 0x40); // set version to 0100
 		$data[8] = chr(ord($data[8]) & 0x3f | 0x80); // set bits 6-7 to 10
 		return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+	}
+
+	/**
+	 * Normalize ignored files payload to valid JSON expected by Wings.
+	 */
+	private function normalizeIgnoredFiles(string $payload): string
+	{
+		$payload = trim($payload);
+		if ($payload === '') {
+			return '[]';
+		}
+
+		$json = json_decode($payload, true);
+		if (json_last_error() === JSON_ERROR_NONE && is_array($json)) {
+			return json_encode(array_values(array_filter($json, fn ($item) => is_string($item) && $item !== '')));
+		}
+
+		$parts = preg_split('/[\r\n,]+/', $payload) ?: [];
+		$parts = array_values(array_filter(array_map(static fn ($part) => trim($part), $parts), static fn ($part) => $part !== ''));
+
+		return json_encode($parts);
 	}
 }
