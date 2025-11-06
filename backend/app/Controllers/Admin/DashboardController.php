@@ -210,15 +210,15 @@ class DashboardController
                 ],
             ]);
 
-            $logger->info('Attempting to fetch current version from: ' . $currentVersionUrl);
+            $logger->debug('Attempting to fetch current version from: ' . $currentVersionUrl);
             $currentVersionResponse = @file_get_contents($currentVersionUrl, false, $context);
 
             if ($currentVersionResponse !== false) {
-                $logger->info('Current version API response received: ' . substr($currentVersionResponse, 0, 200) . '...');
+                $logger->debug('Current version API response received: ' . substr($currentVersionResponse, 0, 200) . '...');
                 $currentVersionData = json_decode($currentVersionResponse, true);
                 if (isset($currentVersionData['success']) && $currentVersionData['success'] && isset($currentVersionData['data']['version'])) {
                     $versionInfo['current'] = $currentVersionData['data']['version'];
-                    $logger->info('Successfully fetched current version details: ' . $currentVersion);
+                    $logger->debug('Successfully fetched current version details: ' . $currentVersion);
                 } else {
                     $logger->warning('Failed to parse current version response. Success: ' . ($currentVersionData['success'] ?? 'not set') . ', Response: ' . $currentVersionResponse);
                 }
@@ -229,11 +229,11 @@ class DashboardController
 
             // Fetch latest version details
             $latestVersionUrl = 'https://api.featherpanel.com/versions/latest?type=' . $upstream;
-            $logger->info('Attempting to fetch latest version from: ' . $latestVersionUrl);
+            $logger->debug('Attempting to fetch latest version from: ' . $latestVersionUrl);
             $latestVersionResponse = @file_get_contents($latestVersionUrl, false, $context);
 
             if ($latestVersionResponse !== false) {
-                $logger->info('Latest version API response received: ' . substr($latestVersionResponse, 0, 200) . '...');
+                $logger->debug('Latest version API response received: ' . substr($latestVersionResponse, 0, 200) . '...');
                 $latestVersionData = json_decode($latestVersionResponse, true);
                 if (isset($latestVersionData['success']) && $latestVersionData['success'] && isset($latestVersionData['data']['version'])) {
                     $versionInfo['latest'] = $latestVersionData['data']['version'];
@@ -250,7 +250,7 @@ class DashboardController
                     }
 
                     $latestVersion = is_array($latestVersionData) && isset($latestVersionData['version']) ? $latestVersionData['version'] : 'unknown';
-                    $logger->info('Successfully fetched latest version details: ' . $latestVersion);
+                    $logger->debug('Successfully fetched latest version details: ' . $latestVersion);
                 } else {
                     $logger->warning('Failed to parse latest version response. Success: ' . ($latestVersionData['success'] ?? 'not set') . ', Response: ' . $latestVersionResponse);
                 }

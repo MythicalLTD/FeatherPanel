@@ -300,8 +300,9 @@ class ServerAllocationsController
                 return ApiResponse::error('Cannot delete primary allocation', 'PRIMARY_ALLOCATION_DELETE', 400);
             }
 
-            // Delete the allocation (unassign from server)
-            $success = Allocation::delete($allocationId);
+            // Unassign the allocation from the server (sets server_id to NULL)
+            // This preserves the allocation for potential reuse rather than deleting it
+            $success = Allocation::unassignFromServer($allocationId);
             if (!$success) {
                 return ApiResponse::error('Failed to delete allocation', 'ALLOCATION_DELETE_FAILED', 500);
             }

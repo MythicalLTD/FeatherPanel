@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.0.2 BETA
+
+### Fixed
+- Fixed an issue where attempting to delete an allocated port (in either admin or user mode) could result in an error or database rejection.
+
+### Improved
+- Reduced excessive and unnecessary log output from the admin dashboard page for a cleaner log experience
+
+### Added
+- The panel now updates itself automatically whenever FeatherPanel is restarted this ensures you’re always running the latest version without manual intervention. This feature can be disabled in your docker-compose.yml if desired.
+
 ## v1.0.1 BETA
 
 ### Fixed

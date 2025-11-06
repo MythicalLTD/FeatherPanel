@@ -60,6 +60,8 @@ services:
       - featherpanel_config:/var/www/html/storage/config
     networks:
       - featherpanel_network
+    # Always pull latest image on create/start
+    pull_policy: always
 
   frontend:
     image: ghcr.io/mythicalltd/featherpanel-frontend:latest
@@ -81,6 +83,8 @@ services:
       - "4831:80"
     networks:
       - featherpanel_network
+    # Always pull latest image on create/start
+    pull_policy: always
 
 volumes:
   mariadb_data:
