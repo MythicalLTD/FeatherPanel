@@ -14,7 +14,7 @@
                 <div class="flex justify-between items-center">
                     <span class="text-xs text-muted-foreground">Limit: {{ server?.cpu || 0 }}%</span>
                     <span class="text-xs font-medium text-red-600 dark:text-red-400"
-                        >{{ getCurrentValue(cpuData) }}%</span
+                        >{{ getCurrentValue(cpuData, 'percentage') }}%</span
                     >
                 </div>
                 <div class="w-full h-[200px]">
@@ -36,9 +36,9 @@
             <CardContent class="space-y-3">
                 <div class="flex justify-between items-center">
                     <span class="text-xs text-muted-foreground">Limit: {{ formatMemory(server?.memory || 0) }}</span>
-                    <span class="text-xs font-medium text-blue-600 dark:text-blue-400"
-                        >{{ getCurrentValue(memoryData) }} MiB</span
-                    >
+                    <span class="text-xs font-medium text-blue-600 dark:text-blue-400">{{
+                        getCurrentValue(memoryData, 'mib')
+                    }}</span>
                 </div>
                 <div class="w-full h-[200px]">
                     <Line v-if="memoryChartData" :data="memoryChartData" :options="memoryChartOptions" />
@@ -66,9 +66,9 @@
                             <span v-else-if="getDiskUsagePercentage() > 80" class="text-yellow-500">(warning)</span>
                         </span>
                     </div>
-                    <span class="text-xs font-medium" :class="getDiskValueColor()"
-                        >{{ getCurrentValue(diskData) }} MiB</span
-                    >
+                    <span class="text-xs font-medium" :class="getDiskValueColor()">{{
+                        getCurrentValue(diskData, 'mib')
+                    }}</span>
                 </div>
                 <div class="w-full h-[200px]">
                     <Line v-if="diskChartData" :data="diskChartData" :options="diskChartOptions" />
@@ -102,7 +102,7 @@
                         </span>
                     </div>
                     <span class="text-xs font-medium text-orange-600 dark:text-orange-400">{{
-                        getCurrentValue(networkData)
+                        getCurrentValue(networkData, 'bytes')
                     }}</span>
                 </div>
                 <div class="w-full h-[200px]">
@@ -199,6 +199,8 @@ const dataColors = {
     network: '#f59e0b',
 };
 
+type UsageUnit = 'raw' | 'percentage' | 'mib' | 'bytes';
+
 function formatMemory(memory: number): string {
     if (memory >= 1024) {
         return `${(memory / 1024).toFixed(1)} GiB`;
@@ -246,19 +248,55 @@ function getDiskValueColor(): string {
     return 'text-green-600 dark:text-green-400'; // Green for normal
 }
 
-function getCurrentValue(data: Array<{ timestamp: number; value: number }>): string {
-    if (data.length === 0) return '0';
-    const lastValue = data[data.length - 1];
-    if (!lastValue) return '0';
-
-    if (lastValue.value >= 1024 * 1024 * 1024) {
-        return (lastValue.value / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
-    } else if (lastValue.value >= 1024 * 1024) {
-        return (lastValue.value / (1024 * 1024)).toFixed(1) + ' MB';
-    } else if (lastValue.value >= 1024) {
-        return (lastValue.value / 1024).toFixed(1) + ' KB';
+function getLastNumericValue(data: Array<{ timestamp: number; value: number }>): number | null {
+    if (!data.length) return null;
+    const lastEntry = data[data.length - 1];
+    if (!lastEntry || typeof lastEntry.value !== 'number') {
+        return null;
     }
-    return lastValue.value.toFixed(1);
+    return lastEntry.value;
+}
+
+function formatBytes(value: number): string {
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let size = value;
+    let unitIndex = 0;
+
+    while (size >= 1024 && unitIndex < units.length - 1) {
+        size /= 1024;
+        unitIndex += 1;
+    }
+
+    return `${size.toFixed(1)} ${units[unitIndex]}`;
+}
+
+function formatMebibytes(value: number): string {
+    if (value >= 1024) {
+        return `${(value / 1024).toFixed(1)} GiB`;
+    }
+    if (value >= 1) {
+        return `${value.toFixed(1)} MiB`;
+    }
+    return `${(value * 1024).toFixed(1)} KiB`;
+}
+
+function getCurrentValue(data: Array<{ timestamp: number; value: number }>, unit: UsageUnit = 'raw'): string {
+    const numericValue = getLastNumericValue(data);
+    if (numericValue === null) {
+        return '0';
+    }
+
+    switch (unit) {
+        case 'percentage':
+            return numericValue.toFixed(1);
+        case 'mib':
+            return formatMebibytes(numericValue);
+        case 'bytes':
+            return formatBytes(numericValue);
+        case 'raw':
+        default:
+            return numericValue.toFixed(1);
+    }
 }
 
 // Chart Data Computed Properties
