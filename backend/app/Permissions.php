@@ -212,6 +212,16 @@ class Permissions
     /** View statistics */
     public const ADMIN_STATISTICS_VIEW = 'admin.statistics.view';
 
+    // Admin Subdomains Permissions
+    /** View subdomains */
+    public const ADMIN_SUBDOMAINS_VIEW = 'admin.subdomains.view';
+    /** Create new subdomains */
+    public const ADMIN_SUBDOMAINS_CREATE = 'admin.subdomains.create';
+    /** Edit subdomains */
+    public const ADMIN_SUBDOMAINS_EDIT = 'admin.subdomains.edit';
+    /** Delete subdomains */
+    public const ADMIN_SUBDOMAINS_DELETE = 'admin.subdomains.delete';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -613,6 +623,30 @@ class Permissions
                 'value' => self::ADMIN_STATISTICS_VIEW,
                 'category' => 'Admin Statistics',
                 'description' => 'View statistics',
+            ],
+            [
+                'constant' => 'ADMIN_SUBDOMAINS_VIEW',
+                'value' => self::ADMIN_SUBDOMAINS_VIEW,
+                'category' => 'Admin Subdomains',
+                'description' => 'View subdomains',
+            ],
+            [
+                'constant' => 'ADMIN_SUBDOMAINS_CREATE',
+                'value' => self::ADMIN_SUBDOMAINS_CREATE,
+                'category' => 'Admin Subdomains',
+                'description' => 'Create new subdomains',
+            ],
+            [
+                'constant' => 'ADMIN_SUBDOMAINS_EDIT',
+                'value' => self::ADMIN_SUBDOMAINS_EDIT,
+                'category' => 'Admin Subdomains',
+                'description' => 'Edit subdomains',
+            ],
+            [
+                'constant' => 'ADMIN_SUBDOMAINS_DELETE',
+                'value' => self::ADMIN_SUBDOMAINS_DELETE,
+                'category' => 'Admin Subdomains',
+                'description' => 'Delete subdomains',
             ],
         ];
     }

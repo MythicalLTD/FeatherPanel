@@ -113,6 +113,11 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/RedirectLinks.vue'),
     },
     {
+        path: '/admin/subdomains',
+        name: 'AdminSubdomains',
+        component: () => import('@/pages/admin/Subdomains.vue'),
+    },
+    {
         path: '/admin/plugins',
         name: 'AdminPlugins',
         component: () => import('@/pages/admin/Plugins.vue'),

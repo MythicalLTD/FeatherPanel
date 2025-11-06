@@ -7,7 +7,7 @@
 - Added an enhanced editor specifically for Paper Spigot spigot.yml files, allowing for easier configuration and improved editing experience.
 - Added an enhanced editor specifically for Paper bukkit.yml files, allowing for easier configuration and improved editing experience.
 - Added an enhanced editor specifically for vanilla default files, allowing for easier configuration and improved editing experience.
-
+- Built-in subdomain manager now available for all users at no additional cost.
 
 ### Fixed
 - Fixed an issue where attempting to delete an allocated port (in either admin or user mode) could result in an error or database rejection.
@@ -18,6 +18,7 @@
 - Fixed an issue where schedules did not properly enforce the server backup limit.
 - Resolved build issues encountered with the latest versions of Vue, Vite, and TypeScript, ensuring full compatibility and smoother development experience.
 - Resolved an issue causing server schedules to malfunction, restoring full scheduling functionality
+- Missing translations strings in some pages!
 
 ### Improved
 - Reduced excessive and unnecessary log output from the admin dashboard page for a cleaner log experience

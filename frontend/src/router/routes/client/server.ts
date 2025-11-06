@@ -92,6 +92,15 @@ const clientRoutes: RouteRecordRaw[] = [
         },
     },
     {
+        path: '/server/:uuidShort/subdomains',
+        name: 'ServerSubdomains',
+        component: () => import('@/pages/dashboard/server/ServerSubdomains.vue'),
+        beforeEnter: (to, from, next) => {
+            Cookie.set('serverUuid', to.params.uuidShort as string);
+            next();
+        },
+    },
+    {
         path: '/server/:uuidShort/backups',
         name: 'ServerBackups',
         component: () => import('@/pages/dashboard/server/ServerBackups.vue'),

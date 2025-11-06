@@ -76,6 +76,7 @@ class SubuserPermissions
     public const SETTINGS_CHANGE_EGG = 'settings.change-egg';
     public const SETTINGS_REINSTALL = 'settings.reinstall';
     public const ACTIVITY_READ = 'activity.read';
+    public const SUBDOMAIN_MANAGE = 'subdomain.manage';
 
     // Array of all permissions
     public const PERMISSIONS = [
@@ -122,6 +123,7 @@ class SubuserPermissions
         self::SETTINGS_CHANGE_EGG,
         self::SETTINGS_REINSTALL,
         self::ACTIVITY_READ,
+        self::SUBDOMAIN_MANAGE,
     ];
 
     /**
@@ -166,6 +168,9 @@ class SubuserPermissions
             ],
             'activity' => [
                 'permissions' => ['activity.read'],
+            ],
+            'subdomain' => [
+                'permissions' => ['subdomain.manage'],
             ],
         ];
     }

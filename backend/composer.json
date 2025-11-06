@@ -42,7 +42,8 @@
     "ext-redis": "*",
     "ext-sodium": "*",
     "mongodb/mongodb": "^2.1",
-    "cron/cron": "^1.9"
+    "cron/cron": "^1.9",
+    "cloudflare/sdk": "dev-master#541fb4e2c9942a3b660bb6a0db676f7c851c144c"
   },
   "require-dev": {
     "phpunit/phpunit": "^11.1",

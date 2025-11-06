@@ -106,3 +106,9 @@ ADMIN_DATABASES_MANAGE=admin.databases.manage | Admin Databases | Manage databas
 
 # Statistics 
 ADMIN_STATISTICS_VIEW=admin.statistics.view | Admin Statistics | View statistics
+
+# Subdomains Permissions
+ADMIN_SUBDOMAINS_VIEW=admin.subdomains.view | Admin Subdomains | View subdomains
+ADMIN_SUBDOMAINS_CREATE=admin.subdomains.create | Admin Subdomains | Create new subdomains
+ADMIN_SUBDOMAINS_EDIT=admin.subdomains.edit | Admin Subdomains | Edit subdomains
+ADMIN_SUBDOMAINS_DELETE=admin.subdomains.delete | Admin Subdomains | Delete subdomains

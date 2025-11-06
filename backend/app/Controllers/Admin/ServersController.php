@@ -57,6 +57,7 @@ use App\Mail\templates\ServerUnbanned;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Subdomain\SubdomainCleanupService;
 
 #[OA\Schema(
     schema: 'Server',
@@ -1451,6 +1452,8 @@ class ServersController
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
 
+        (new SubdomainCleanupService())->cleanupServerSubdomains((int) $server['id']);
+
         // Unclaim the allocation before deleting the server
         if (isset($server['allocation_id'])) {
             $allocationUnclaimed = Allocation::unassignFromServer($server['allocation_id']);
@@ -1584,6 +1587,8 @@ class ServersController
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
+
+        (new SubdomainCleanupService())->cleanupServerSubdomains((int) $server['id']);
 
         // Unclaim the allocation before deleting the server
         if (isset($server['allocation_id'])) {

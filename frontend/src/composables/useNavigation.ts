@@ -297,7 +297,7 @@ export function useNavigation() {
         const items: NavigationItem[] = [
             {
                 id: 'dashboard',
-                name: 'Main',
+                name: t('nav.main'),
                 title: t('nav.dashboard'),
                 url: '/dashboard',
                 icon: Home,
@@ -307,7 +307,7 @@ export function useNavigation() {
             },
             {
                 id: 'account',
-                name: 'Account',
+                name: t('nav.account'),
                 title: t('nav.account'),
                 url: '/dashboard/account',
                 icon: Users,
@@ -331,7 +331,7 @@ export function useNavigation() {
             // Overview
             {
                 id: 'admin-dashboard',
-                name: 'Dashboard',
+                name: t('nav.dashboard'),
                 title: t('nav.dashboard'),
                 url: '/admin',
                 icon: Home,
@@ -342,8 +342,8 @@ export function useNavigation() {
             },
             {
                 id: 'admin-kpi-analytics',
-                name: 'Analytics (KPIs)',
-                title: 'Analytics (KPIs)',
+                name: t('nav.analyticsKpis'),
+                title: t('nav.analyticsKpis'),
                 url: '/admin/kpi/analytics',
                 icon: BarChart3,
                 isActive: currentPath.value.startsWith('/admin/kpi'),
@@ -354,7 +354,7 @@ export function useNavigation() {
             // User Management
             {
                 id: 'admin-users',
-                name: 'Users',
+                name: t('nav.users'),
                 title: t('nav.users'),
                 url: '/admin/users',
                 icon: Users,
@@ -365,7 +365,7 @@ export function useNavigation() {
             },
             {
                 id: 'admin-roles',
-                name: 'Roles',
+                name: t('nav.roles'),
                 title: t('nav.roles'),
                 url: '/admin/roles',
                 icon: Crown,
@@ -376,7 +376,7 @@ export function useNavigation() {
             },
             {
                 id: 'admin-api-keys',
-                name: 'API Keys',
+                name: t('nav.apiKeys'),
                 title: t('nav.apiKeys'),
                 url: '/admin/api-keys',
                 icon: Key,
@@ -388,7 +388,7 @@ export function useNavigation() {
             // Infrastructure
             {
                 id: 'admin-servers',
-                name: 'Servers',
+                name: t('nav.servers'),
                 title: t('nav.servers'),
                 url: '/admin/servers',
                 icon: Server,
@@ -399,8 +399,8 @@ export function useNavigation() {
             },
             {
                 id: 'admin-nodes-status',
-                name: 'Node Status',
-                title: 'Node Status Dashboard',
+                name: t('nav.nodeStatus'),
+                title: t('nav.nodeStatusDashboard'),
                 url: '/admin/nodes/status',
                 icon: Activity,
                 isActive: currentPath.value === '/admin/nodes/status',
@@ -410,7 +410,7 @@ export function useNavigation() {
             },
             {
                 id: 'admin-locations',
-                name: 'Locations',
+                name: t('nav.locations'),
                 title: t('nav.locations'),
                 url: '/admin/locations',
                 icon: Globe,
@@ -419,11 +419,22 @@ export function useNavigation() {
                 permission: Permissions.ADMIN_LOCATIONS_VIEW,
                 group: 'infrastructure',
             },
+            {
+                id: 'admin-subdomains',
+                name: t('nav.subdomains'),
+                title: t('nav.subdomains'),
+                url: '/admin/subdomains',
+                icon: Link,
+                isActive: currentPath.value.startsWith('/admin/subdomains'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_SUBDOMAINS_VIEW,
+                group: 'infrastructure',
+            },
             // Content
             {
                 id: 'admin-realms',
-                name: 'Realms',
-                title: t('nav.realms') + ' (Nests)',
+                name: t('nav.realms'),
+                title: t('nav.realmsLegacy'),
                 url: '/admin/realms',
                 icon: Newspaper,
                 isActive: currentPath.value.startsWith('/admin/realms'),
@@ -433,7 +444,7 @@ export function useNavigation() {
             },
             {
                 id: 'admin-images',
-                name: 'Images',
+                name: t('nav.images'),
                 title: t('nav.images'),
                 url: '/admin/images',
                 icon: ImageIcon,
@@ -444,7 +455,7 @@ export function useNavigation() {
             },
             {
                 id: 'admin-mail-templates',
-                name: 'Mail Templates',
+                name: t('nav.mailTemplates'),
                 title: t('nav.mailTemplates'),
                 url: '/admin/mail-templates',
                 icon: FileText,
@@ -456,7 +467,7 @@ export function useNavigation() {
             // System
             {
                 id: 'admin-settings',
-                name: 'Settings',
+                name: t('nav.settings'),
                 title: t('nav.settings'),
                 url: '/admin/settings',
                 icon: Settings,
@@ -467,7 +478,7 @@ export function useNavigation() {
             },
             {
                 id: 'admin-plugins',
-                name: 'Plugins',
+                name: t('nav.plugins'),
                 title: t('nav.plugins'),
                 url: '/admin/plugins',
                 icon: PlayCircle,
@@ -478,8 +489,8 @@ export function useNavigation() {
             },
             {
                 id: 'admin-database-management',
-                name: 'DB Management',
-                title: 'Database Management',
+                name: t('nav.databaseManagement'),
+                title: t('nav.databaseManagement'),
                 url: '/admin/databases/management',
                 icon: Database,
                 isActive: currentPath.value.startsWith('/admin/databases/management'),
@@ -489,7 +500,7 @@ export function useNavigation() {
             },
             {
                 id: 'admin-redirect-links',
-                name: 'Redirect Links',
+                name: t('nav.redirectLinks'),
                 title: t('nav.redirectLinks'),
                 url: '/admin/redirect-links',
                 icon: Link,
@@ -521,7 +532,7 @@ export function useNavigation() {
         const items: NavigationItem[] = [
             {
                 id: 'server-console',
-                name: 'Console',
+                name: t('nav.console'),
                 title: t('nav.console'),
                 url: `/server/${uuidShort}`,
                 icon: SquareTerminal,
@@ -532,7 +543,7 @@ export function useNavigation() {
             },
             {
                 id: 'server-logs',
-                name: 'Logs',
+                name: t('nav.logs'),
                 title: t('nav.logs'),
                 url: `/server/${uuidShort}/logs`,
                 icon: FileText,
@@ -543,7 +554,7 @@ export function useNavigation() {
             },
             {
                 id: 'server-activities',
-                name: 'Activities',
+                name: t('nav.activities'),
                 title: t('nav.activities'),
                 url: `/server/${uuidShort}/activities`,
                 icon: Clock,
@@ -554,7 +565,7 @@ export function useNavigation() {
             },
             {
                 id: 'server-files',
-                name: 'Files',
+                name: t('nav.files'),
                 title: t('nav.files'),
                 url: `/server/${uuidShort}/files`,
                 icon: Folder,
@@ -565,7 +576,7 @@ export function useNavigation() {
             },
             {
                 id: 'server-databases',
-                name: 'Databases',
+                name: t('nav.databases'),
                 title: t('nav.databases'),
                 url: `/server/${uuidShort}/databases`,
                 icon: Database,
@@ -576,7 +587,7 @@ export function useNavigation() {
             },
             {
                 id: 'server-schedules',
-                name: 'Schedules',
+                name: t('nav.schedules'),
                 title: t('nav.schedules'),
                 url: `/server/${uuidShort}/schedules`,
                 icon: Calendar,
@@ -587,7 +598,7 @@ export function useNavigation() {
             },
             {
                 id: 'server-users',
-                name: 'Users',
+                name: t('nav.users'),
                 title: t('nav.users'),
                 url: `/server/${uuidShort}/users`,
                 icon: Users,
@@ -598,7 +609,7 @@ export function useNavigation() {
             },
             {
                 id: 'server-backups',
-                name: 'Backups',
+                name: t('nav.backups'),
                 title: t('nav.backups'),
                 url: `/server/${uuidShort}/backups`,
                 icon: Archive,
@@ -609,18 +620,29 @@ export function useNavigation() {
             },
             {
                 id: 'server-allocations',
-                name: 'Allocations',
-                title: 'Allocations',
+                name: t('nav.allocations'),
+                title: t('nav.allocations'),
                 url: `/server/${uuidShort}/allocations`,
                 icon: Network,
                 isActive: currentPath.value.startsWith(`/server/${uuidShort}/allocations`),
                 category: 'server' as const,
-                group: 'configuration',
+                group: 'networking',
                 permission: 'allocation.read',
             },
             {
+                id: 'server-subdomains',
+                name: t('nav.subdomains'),
+                title: t('nav.subdomains'),
+                url: `/server/${uuidShort}/subdomains`,
+                icon: Globe,
+                isActive: currentPath.value.startsWith(`/server/${uuidShort}/subdomains`),
+                category: 'server' as const,
+                group: 'networking',
+                permission: 'subdomain.manage',
+            },
+            {
                 id: 'server-startup',
-                name: 'Startup',
+                name: t('nav.startup'),
                 title: t('nav.startup'),
                 url: `/server/${uuidShort}/startup`,
                 icon: PlayCircle,
@@ -631,7 +653,7 @@ export function useNavigation() {
             },
             {
                 id: 'server-settings',
-                name: 'Settings',
+                name: t('nav.settings'),
                 title: t('nav.settings'),
                 url: `/server/${uuidShort}/settings`,
                 icon: Settings,
@@ -658,8 +680,8 @@ export function useNavigation() {
         return [
             {
                 id: 'debug-logs',
-                name: 'Log Viewer',
-                title: 'Log Viewer',
+                name: t('nav.logViewer'),
+                title: t('nav.logViewer'),
                 url: '/admin/dev/logs',
                 icon: BookAlert,
                 isActive: currentPath.value.startsWith('/admin/dev/logs'),
@@ -667,8 +689,8 @@ export function useNavigation() {
             },
             {
                 id: 'debug-file-manager',
-                name: 'File Manager',
-                title: 'File Manager',
+                name: t('nav.fileManager'),
+                title: t('nav.fileManager'),
                 url: '/admin/dev/files',
                 icon: FileText,
                 isActive: currentPath.value.startsWith('/admin/dev/files'),
@@ -676,8 +698,8 @@ export function useNavigation() {
             },
             {
                 id: 'debug-console',
-                name: 'Console',
-                title: 'Console',
+                name: t('nav.console'),
+                title: t('nav.console'),
                 url: '/admin/dev/console',
                 icon: TerminalIcon,
                 isActive: currentPath.value.startsWith('/admin/dev/console'),
@@ -685,8 +707,8 @@ export function useNavigation() {
             },
             {
                 id: 'debug-plugin-manager',
-                name: 'Plugin Manager',
-                title: 'Plugin Manager',
+                name: t('nav.pluginManager'),
+                title: t('nav.pluginManager'),
                 url: '/admin/dev/plugins',
                 icon: PlayCircle,
                 isActive: currentPath.value.startsWith('/admin/dev/plugin-manager'),
@@ -722,20 +744,22 @@ export function useNavigation() {
         });
 
         // Define group order and labels
-        const groupConfig: Record<string, string> = {
-            overview: 'Overview',
-            users: 'User Management',
-            infrastructure: 'Infrastructure',
-            content: 'Content',
-            system: 'System',
-            plugins: 'Plugins',
+        const groupConfig: Record<string, () => string> = {
+            overview: () => t('navGroups.overview'),
+            users: () => t('navGroups.userManagement'),
+            networking: () => t('navGroups.networking'),
+            infrastructure: () => t('navGroups.infrastructure'),
+            content: () => t('navGroups.content'),
+            system: () => t('navGroups.system'),
+            plugins: () => t('navGroups.plugins'),
         };
 
         // Return groups in specific order
         return Object.keys(groupConfig)
             .filter((key) => groups[key] && groups[key].length > 0)
             .map((key) => {
-                const name = groupConfig[key];
+                const labelResolver = groupConfig[key];
+                const name = labelResolver ? labelResolver() : '';
                 const items = groups[key];
                 if (!name || !items) {
                     return { name: '', items: [] };
@@ -758,19 +782,21 @@ export function useNavigation() {
         });
 
         // Define group order and labels
-        const groupConfig: Record<string, string> = {
-            management: 'Management',
-            files: 'Files & Data',
-            automation: 'Automation',
-            configuration: 'Configuration',
-            plugins: 'Plugins',
+        const groupConfig: Record<string, () => string> = {
+            management: () => t('navGroups.management'),
+            files: () => t('navGroups.filesData'),
+            networking: () => t('navGroups.networking'),
+            automation: () => t('navGroups.automation'),
+            configuration: () => t('navGroups.configuration'),
+            plugins: () => t('navGroups.plugins'),
         };
 
         // Return groups in specific order
         return Object.keys(groupConfig)
             .filter((key) => groups[key] && groups[key].length > 0)
             .map((key) => {
-                const name = groupConfig[key];
+                const labelResolver = groupConfig[key];
+                const name = labelResolver ? labelResolver() : '';
                 const items = groups[key];
                 if (!name || !items) {
                     return { name: '', items: [] };
