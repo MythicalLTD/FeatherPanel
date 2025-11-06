@@ -104,11 +104,20 @@ class Task
                 }
             } else {
                 // String fields validation
-                if (!is_string($data[$field]) || trim($data[$field]) === '') {
-                    $sanitizedData = self::sanitizeDataForLogging($data);
-                    App::getInstance(true)->getLogger()->error('Missing required field: ' . $field . ' for task: ' . $data['action'] . ' with data: ' . json_encode($sanitizedData));
+                if ($field === 'payload') {
+                    if (!is_string($data[$field])) {
+                        $sanitizedData = self::sanitizeDataForLogging($data);
+                        App::getInstance(true)->getLogger()->error('Missing required field: ' . $field . ' for task: ' . $data['action'] . ' with data: ' . json_encode($sanitizedData));
 
-                    return false;
+                        return false;
+                    }
+                } else {
+                    if (!is_string($data[$field]) || trim($data[$field]) === '') {
+                        $sanitizedData = self::sanitizeDataForLogging($data);
+                        App::getInstance(true)->getLogger()->error('Missing required field: ' . $field . ' for task: ' . $data['action'] . ' with data: ' . json_encode($sanitizedData));
+
+                        return false;
+                    }
                 }
             }
         }

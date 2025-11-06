@@ -7,6 +7,7 @@
 - Introduced seamless pagination to the Spells page for improved navigation and usability
 - Added seamless pagination to the Plugins page for improved navigation and user experience
 - Fixed a bug where memory usage was displayed incorrectly (showing "4.0 KB MiB" instead of the actual value such as "4.0 GiB") on the server dashboard when the server had unlimited memory allowance.
+- Fixed an issue where creating a scheduled task required entering a payload even when it was marked as optional payload is now truly optional as intended.
 
 ### Improved
 - Reduced excessive and unnecessary log output from the admin dashboard page for a cleaner log experience

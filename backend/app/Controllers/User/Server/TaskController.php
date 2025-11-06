@@ -74,10 +74,10 @@ use Symfony\Component\HttpFoundation\Response;
 #[OA\Schema(
     schema: 'TaskCreateRequest',
     type: 'object',
-    required: ['action', 'payload'],
+    required: ['action'],
     properties: [
         new OA\Property(property: 'action', type: 'string', description: 'Task action type'),
-        new OA\Property(property: 'payload', type: 'string', description: 'Task payload data'),
+        new OA\Property(property: 'payload', type: 'string', nullable: true, description: 'Task payload data', default: ''),
         new OA\Property(property: 'time_offset', type: 'integer', nullable: true, description: 'Time offset in seconds', default: 0),
         new OA\Property(property: 'continue_on_failure', type: 'boolean', nullable: true, description: 'Whether to continue on failure', default: false),
     ]
@@ -382,17 +382,27 @@ class TaskController
             return ApiResponse::error('Invalid request body', 'INVALID_REQUEST_BODY', 400);
         }
 
-        // Validate required fields
-        $required = ['action', 'payload'];
-        foreach ($required as $field) {
-            if (!isset($body[$field]) || trim($body[$field]) === '') {
-                return ApiResponse::error("Missing required field: {$field}", 'MISSING_REQUIRED_FIELD', 400);
-            }
+        // Validate action
+        if (!isset($body['action']) || trim((string) $body['action']) === '') {
+            return ApiResponse::error('Missing required field: action', 'MISSING_REQUIRED_FIELD', 400);
         }
 
+        $action = trim((string) $body['action']);
+
         // Validate action
-        if (!Task::validateAction($body['action'])) {
+        if (!Task::validateAction($action)) {
             return ApiResponse::error('Invalid action type', 'INVALID_ACTION', 400);
+        }
+
+        $rawPayload = $body['payload'] ?? '';
+        $payload = is_string($rawPayload) ? trim($rawPayload) : '';
+
+        if (in_array($action, ['power', 'command'], true)) {
+            if ($payload === '') {
+                return ApiResponse::error('Missing required field: payload', 'MISSING_REQUIRED_FIELD', 400);
+            }
+        } else {
+            $payload = is_string($rawPayload) ? $payload : '';
         }
 
         // Get next sequence ID for this schedule
@@ -402,8 +412,8 @@ class TaskController
         $taskData = [
             'schedule_id' => $scheduleId,
             'sequence_id' => $nextSequenceId,
-            'action' => $body['action'],
-            'payload' => $body['payload'],
+            'action' => $action,
+            'payload' => $payload,
             'time_offset' => $body['time_offset'] ?? 0,
             'is_queued' => 0,
             'continue_on_failure' => $body['continue_on_failure'] ?? 0,
@@ -424,7 +434,7 @@ class TaskController
             'schedule_id' => $scheduleId,
             'schedule_name' => $schedule['name'],
             'task_id' => $taskId,
-            'action' => $body['action'],
+            'action' => $action,
             'sequence_id' => $nextSequenceId,
         ], $user);
 
@@ -542,6 +552,25 @@ class TaskController
         // Validate action if provided
         if (isset($body['action']) && !Task::validateAction($body['action'])) {
             return ApiResponse::error('Invalid action type', 'INVALID_ACTION', 400);
+        }
+
+        if (array_key_exists('payload', $body)) {
+            $payloadValue = $body['payload'];
+            if ($payloadValue === null) {
+                $body['payload'] = '';
+            } elseif (is_string($payloadValue)) {
+                $body['payload'] = trim($payloadValue);
+            } else {
+                return ApiResponse::error('Invalid payload value', 'INVALID_PAYLOAD', 400);
+            }
+        }
+
+        $finalAction = $body['action'] ?? $task['action'];
+        if (in_array($finalAction, ['power', 'command'], true)) {
+            $effectivePayload = array_key_exists('payload', $body) ? $body['payload'] : ($task['payload'] ?? '');
+            if (trim((string) $effectivePayload) === '') {
+                return ApiResponse::error('Missing required field: payload', 'MISSING_REQUIRED_FIELD', 400);
+            }
         }
 
         // Update task

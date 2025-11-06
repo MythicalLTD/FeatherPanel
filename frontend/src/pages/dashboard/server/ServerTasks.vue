@@ -336,7 +336,6 @@
                                 v-model="createForm.payload"
                                 :placeholder="getPayloadPlaceholder(createForm.action)"
                                 class="text-sm"
-                                required
                             />
                         </div>
 
@@ -500,7 +499,6 @@
                                 v-model="editForm.payload"
                                 :placeholder="getPayloadPlaceholder(editForm.action)"
                                 class="text-sm"
-                                required
                             />
                         </div>
 
