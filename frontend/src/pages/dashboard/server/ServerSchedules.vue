@@ -138,7 +138,7 @@
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2 mb-1">
                                             <h3 class="font-semibold text-sm truncate">{{ schedule.name }}</h3>
-                                            <Badge :variant="getStatusVariant(schedule) as any" class="text-xs">
+                                            <Badge :variant="getStatusVariant(schedule)" class="text-xs">
                                                 {{ getStatusText(schedule) }}
                                             </Badge>
                                         </div>
@@ -630,6 +630,7 @@ import { useServerPermissions } from '@/composables/useServerPermissions';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import type { BadgeVariants } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -828,7 +829,7 @@ function formatCronExpression(schedule: ScheduleItem): string {
     return `${schedule.cron_minute} ${schedule.cron_hour} ${schedule.cron_day_of_month} ${schedule.cron_month} ${schedule.cron_day_of_week}`;
 }
 
-function getStatusVariant(schedule: ScheduleItem): 'default' | 'secondary' | 'destructive' {
+function getStatusVariant(schedule: ScheduleItem): BadgeVariants['variant'] {
     if (schedule.is_processing) return 'secondary';
     if (schedule.is_active) return 'default';
     return 'destructive';

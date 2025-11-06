@@ -2,6 +2,9 @@
 
 ## v1.0.2 BETA
 
+### Added
+- Added an enhanced editor specifically for Minecraft server.properties files, allowing for easier configuration and improved editing experience.
+
 ### Fixed
 - Fixed an issue where attempting to delete an allocated port (in either admin or user mode) could result in an error or database rejection.
 - Introduced seamless pagination to the Spells page for improved navigation and usability
@@ -9,6 +12,7 @@
 - Fixed a bug where memory usage was displayed incorrectly (showing "4.0 KB MiB" instead of the actual value such as "4.0 GiB") on the server dashboard when the server had unlimited memory allowance.
 - Fixed an issue where creating a scheduled task required entering a payload even when it was marked as optional payload is now truly optional as intended.
 - Fixed an issue where schedules did not properly enforce the server backup limit.
+- Resolved build issues encountered with the latest versions of Vue, Vite, and TypeScript, ensuring full compatibility and smoother development experience.
 
 ### Improved
 - Reduced excessive and unnecessary log output from the admin dashboard page for a cleaner log experience

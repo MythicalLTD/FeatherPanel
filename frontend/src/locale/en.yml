@@ -1701,6 +1701,164 @@ fileEditor:
     cannotEditBinaryFile: 'Cannot edit binary files. Please download the file instead.'
     fileTooLarge: 'File is too large to edit (max 100MB). Please download it instead.'
 
+# Minecraft Server Properties Editor
+minecraftProperties:
+    title: 'Minecraft Server Properties'
+    description: 'Tune common options for your Minecraft server without touching raw configuration files.'
+    prompt:
+        title: 'Minecraft server.properties detected!'
+        description: 'Would you like to use our custom GUI editor for an easier configuration experience?'
+        useGui: 'Use GUI Editor'
+        continueRaw: 'Continue with Raw Editor'
+        stayRaw: 'Stay in Raw Editor'
+    tabs:
+        overview: 'Overview'
+        advanced: 'Advanced'
+    actions:
+        save: 'Save changes'
+        saving: 'Saving...'
+        switchToRaw: 'Switch to raw editor'
+    advanced:
+        empty: 'No additional properties detected. Use the raw editor to add custom options.'
+    saveSuccess: 'Minecraft server properties saved successfully!'
+    saveError: 'Failed to save Minecraft server properties.'
+    fields:
+        motd:
+            label: 'Message of the day'
+            description: 'Shown in the multiplayer server list. Use § codes for colors.'
+        difficulty:
+            label: 'Difficulty'
+        gamemode:
+            label: 'Gamemode'
+        allowFlight:
+            label: 'Fly'
+            description: 'Allows users in creative mode to fly.'
+        forceGamemode:
+            label: 'Force Gamemode'
+            description: 'Force players to join in the default gamemode.'
+        enableCommandBlock:
+            label: 'Commandblocks'
+            description: 'Enable command blocks on the server.'
+        pvp:
+            label: 'PVP'
+            description: 'Enable or disable player-versus-player combat.'
+        whiteList:
+            label: 'Whitelist'
+            description: 'Only players on the whitelist can join the server.'
+        hardcore:
+            label: 'Hardcore'
+            description: 'Players are banned after dying.'
+        onlineMode:
+            label: 'Cracked'
+            description: 'Enables Mojang authentication for players. Set to false for cracked servers.'
+        enableRcon:
+            label: 'Enable RCON'
+            description: 'Enables remote console access for server administration.'
+        maxPlayers:
+            label: 'Slots'
+            description: 'The maximum number of players that can play on the server at the same time.'
+        spawnProtection:
+            label: 'Spawn Protection'
+            description: 'Radius of spawn protection in blocks. 0 to disable.'
+        viewDistance:
+            label: 'View distance'
+            description: 'The number of chunks that are sent to the client.'
+        simulationDistance:
+            label: 'Simulation distance'
+            description: 'The number of chunks that are ticked around the player.'
+        serverPort:
+            label: 'Server Port'
+            description: 'The port the server will listen on.'
+        maxWorldSize:
+            label: 'Max world size'
+            description: 'Maximum size of the world in blocks. Default is 29999984.'
+        levelName:
+            label: 'World name'
+            description: 'The name of the world folder.'
+        levelSeed:
+            label: 'Seed'
+            description: 'Seed for the world generation. Leave empty for random.'
+        serverIp:
+            label: 'Server IP'
+            description: 'The IP address the server will bind to. Leave empty for all available IPs.'
+        resourcePack:
+            label: 'Resource pack'
+            description: 'URL to a resource pack that clients will be prompted to download.'
+        resourcePackSha1:
+            label: 'Resource pack SHA-1'
+            description: 'SHA-1 hash of the resource pack for verification.'
+        spawnMonsters:
+            label: 'Monster'
+            description: 'Enable or disable monster spawning.'
+        allowNether:
+            label: 'Nether'
+            description: 'Allow players to travel to the Nether.'
+        broadcastConsoleToOps:
+            label: 'Broadcast console to OPs'
+            description: 'Send console command outputs to all online operators.'
+        enforceWhitelist:
+            label: 'Enforce whitelist'
+            description: 'Enforce the whitelist even when ops join.'
+        generateStructures:
+            label: 'Generate structures'
+            description: 'Generate structures like villages and dungeons.'
+        requireResourcePack:
+            label: 'Resource pack required'
+            description: 'Require players to accept the resource pack.'
+        hideOnlinePlayers:
+            label: 'Hide online players'
+            description: 'Hide the online player list in the server list.'
+        enforceSecureProfile:
+            label: 'Enforce secure profile'
+            description: 'Enforce secure player profiles (1.19.1+).'
+        previewsChat:
+            label: 'Chat preview'
+            description: 'Enable chat preview feature.'
+        useNativeTransport:
+            label: 'Native Transport'
+            description: 'Use native transport for better performance.'
+        generatorSettings:
+            label: 'Generator'
+            description: 'Settings for the world generator.'
+        levelType:
+            label: 'Worldtype'
+            description: 'Type of world to generate.'
+        resourcePackId:
+            label: 'Resource pack ID'
+            description: 'UUID for the resource pack.'
+        resourcePackPrompt:
+            label: 'Resource pack prompt'
+            description: 'Custom message shown when prompting for resource pack.'
+        opPermissionLevel:
+            label: 'OP permission level'
+            description: 'Permission level for server operators (1-4).'
+        functionPermissionLevel:
+            label: 'Function permission level'
+            description: 'Permission level required to run functions (1-4).'
+        entityBroadcastRangePercentage:
+            label: 'Entity broadcast range'
+            description: 'Percentage of view distance to broadcast entities (0-500).'
+        maxChainedNeighborUpdates:
+            label: 'Max chained neighbor updates'
+            description: 'Maximum number of chained neighbor updates.'
+    options:
+        difficulty:
+            peaceful: 'Peaceful'
+            easy: 'Easy'
+            normal: 'Normal'
+            hard: 'Hard'
+        gamemode:
+            survival: 'Survival'
+            creative: 'Creative'
+            adventure: 'Adventure'
+            spectator: 'Spectator'
+        levelType:
+            default: 'Default'
+            flat: 'Superflat'
+            amplified: 'Amplified'
+            largeBiomes: 'Large Biomes'
+            singleBiome: 'Single Biome'
+
 # Server Databases
 serverDatabases:
     title: 'Databases'

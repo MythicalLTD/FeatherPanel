@@ -158,9 +158,7 @@
                                                 {{ backup.name }}
                                             </h3>
                                             <Badge
-                                                :variant="
-                                                    getStatusVariant(backup.is_successful, backup.is_locked) as any
-                                                "
+                                                :variant="getStatusVariant(backup.is_successful, backup.is_locked)"
                                                 class="text-xs shrink-0"
                                             >
                                                 {{ getStatusText(backup.is_successful, backup.is_locked) }}
@@ -523,6 +521,7 @@ import { useI18n } from 'vue-i18n';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import type { BadgeVariants } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -956,7 +955,7 @@ function formatBytes(bytes: number): string {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-function getStatusVariant(isSuccessful: number, isLocked: number): string {
+function getStatusVariant(isSuccessful: number, isLocked: number): BadgeVariants['variant'] {
     if (isLocked) return 'secondary';
     if (isSuccessful) return 'default';
     return 'destructive';

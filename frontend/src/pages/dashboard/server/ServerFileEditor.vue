@@ -31,9 +31,67 @@
                 :widgets="widgetsAfterHeader"
             />
 
+            <!-- Minecraft server.properties prompt -->
+            <Card v-if="shouldShowMinecraftPrompt" class="border-primary/30 bg-primary/5 backdrop-blur">
+                <CardHeader class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-start gap-3">
+                        <div
+                            class="mt-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary"
+                        >
+                            <CheckCircle2 class="h-6 w-6" />
+                        </div>
+                        <div class="space-y-2">
+                            <CardTitle class="text-xl">
+                                {{
+                                    t('minecraftProperties.prompt.title', {
+                                        defaultValue: 'Minecraft server.properties detected',
+                                    })
+                                }}
+                            </CardTitle>
+                            <CardDescription class="text-sm text-muted-foreground">
+                                {{
+                                    t('minecraftProperties.prompt.description', {
+                                        defaultValue:
+                                            'We can translate this file into a friendly interface so you can update settings without touching raw text.',
+                                    })
+                                }}
+                            </CardDescription>
+                        </div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <Button size="sm" class="gap-2" @click="handleUseMinecraftEditor">
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{
+                                t('minecraftProperties.prompt.useGui', {
+                                    defaultValue: 'Open visual editor',
+                                })
+                            }}
+                        </Button>
+                        <Button size="sm" variant="outline" class="gap-2" @click="handleDismissMinecraftEditor">
+                            <FileCode2 class="h-4 w-4" />
+                            {{
+                                t('minecraftProperties.prompt.stayRaw', {
+                                    defaultValue: 'Stay in raw editor',
+                                })
+                            }}
+                        </Button>
+                    </div>
+                </CardHeader>
+            </Card>
+
+            <!-- Minecraft server.properties editor -->
+            <MinecraftServerPropertiesEditor
+                v-if="!loading && fileContent !== null && server && useMinecraftEditor && shouldOfferMinecraftEditor"
+                :content="fileContent"
+                :readonly="readonly"
+                :saving="isSaving"
+                @save="handleSave"
+                @switch-to-raw="handleSwitchToRawEditor"
+            />
+
             <!-- Monaco Editor -->
             <MonacoFileEditor
-                v-if="!loading && fileContent !== null && server"
+                v-else-if="!loading && fileContent !== null && server"
                 :file-name="fileName || 'unknown.txt'"
                 :file-path="filePath || '/'"
                 :content="fileContent || ''"
@@ -116,7 +174,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import MonacoFileEditor from '@/components/server/MonacoFileEditor.vue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, ArrowLeft } from 'lucide-vue-next';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertCircle, ArrowLeft, CheckCircle2, FileCode2 } from 'lucide-vue-next';
+import MinecraftServerPropertiesEditor from '@/pages/dashboard/server/features/minecraft/MinecraftServerPropertiesEditor.vue';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
 import { useServerPermissions } from '@/composables/useServerPermissions';
@@ -157,6 +217,33 @@ const readonly = computed(() => {
 // Editor state
 const fileContent = ref<string | null>(null);
 const loading = ref(true);
+const isSaving = ref(false);
+
+// Minecraft server.properties handling
+const useMinecraftEditor = ref(false);
+const promptDismissed = ref(false);
+
+const isMinecraftProperties = computed(() => fileName.value.trim().toLowerCase() === 'server.properties');
+
+const looksLikeMinecraftProperties = computed(() => {
+    if (!fileContent.value) {
+        return false;
+    }
+
+    const signatureKeys = ['motd=', 'gamemode=', 'difficulty=', 'level-name=', 'online-mode='];
+    return signatureKeys.every((signature) => fileContent.value?.includes(signature));
+});
+
+const shouldOfferMinecraftEditor = computed(() => isMinecraftProperties.value && looksLikeMinecraftProperties.value);
+
+const shouldShowMinecraftPrompt = computed(
+    () =>
+        !loading.value &&
+        fileContent.value !== null &&
+        server.value !== null &&
+        shouldOfferMinecraftEditor.value &&
+        !promptDismissed.value,
+);
 
 // Plugin widgets
 const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('server-file-editor');
@@ -374,11 +461,19 @@ const loadFileContent = async () => {
         });
     } finally {
         loading.value = false;
+        if (shouldOfferMinecraftEditor.value) {
+            promptDismissed.value = false;
+            useMinecraftEditor.value = false;
+        } else {
+            promptDismissed.value = true;
+            useMinecraftEditor.value = false;
+        }
     }
 };
 
 // Save file content (matching ServerFiles pattern)
 const handleSave = async (content: string) => {
+    isSaving.value = true;
     try {
         const fullPath = `${filePath.value}/${fileName.value}`.replace(/\/+/g, '/');
 
@@ -394,6 +489,7 @@ const handleSave = async (content: string) => {
 
         if (response.data.success) {
             toast(t('fileEditor.saveSuccess'), { type: TYPE.SUCCESS });
+            fileContent.value = content;
         } else {
             throw new Error(response.data.message || 'Failed to save file');
         }
@@ -402,6 +498,8 @@ const handleSave = async (content: string) => {
         const err = error as { response?: { data?: { message?: string } } };
         toast(err.response?.data?.message || t('fileEditor.saveError'), { type: TYPE.ERROR });
         throw error; // Re-throw to let the editor know saving failed
+    } finally {
+        isSaving.value = false;
     }
 };
 
@@ -412,6 +510,21 @@ const handleClose = () => {
         params: { uuidShort: serverUuid },
         query: { path: (filePath.value || '/').replace(/\/+$/, '') || '/' },
     });
+};
+
+const handleUseMinecraftEditor = () => {
+    useMinecraftEditor.value = true;
+    promptDismissed.value = true;
+};
+
+const handleDismissMinecraftEditor = () => {
+    useMinecraftEditor.value = false;
+    promptDismissed.value = true;
+};
+
+const handleSwitchToRawEditor = () => {
+    useMinecraftEditor.value = false;
+    promptDismissed.value = true;
 };
 
 // Lifecycle (following ServerFiles pattern with error handling)
