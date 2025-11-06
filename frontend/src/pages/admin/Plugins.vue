@@ -340,18 +340,18 @@
                                         v-model="onlineSearch"
                                         placeholder="Search online addons..."
                                         class="pr-10 w-full sm:w-64"
-                                        @keyup.enter="fetchOnlineAddons"
+                                        @keyup.enter="submitOnlineSearch"
                                     />
                                     <button
                                         class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
-                                        @click="fetchOnlineAddons"
+                                        @click="submitOnlineSearch"
                                     >
                                         <CloudDownload class="h-4 w-4" />
                                     </button>
                                 </div>
                             </div>
                             <div v-if="onlinePagination" class="text-xs text-muted-foreground text-center sm:text-left">
-                                Page {{ onlinePagination.current_page }} / {{ onlinePagination.total_pages }} •
+                                Page {{ currentOnlinePage }} / {{ onlinePagination.total_pages }} •
                                 {{ onlinePagination.total_records }} results
                             </div>
                         </div>
@@ -367,7 +367,7 @@
                         <div v-else-if="onlineError" class="text-center py-8">
                             <AlertCircle class="h-8 w-8 mx-auto mb-2 text-destructive" />
                             <p class="text-destructive">{{ onlineError }}</p>
-                            <Button size="sm" variant="outline" class="mt-2" @click="fetchOnlineAddons"
+                            <Button size="sm" variant="outline" class="mt-2" @click="fetchOnlineAddons()"
                                 >Try Again</Button
                             >
                         </div>
@@ -533,6 +533,56 @@
                                     </div>
                                 </div>
                             </Card>
+                        </div>
+
+                        <div
+                            v-if="onlinePagination && onlinePagination.total_pages > 1 && onlineAddons.length > 0"
+                            class="mt-6 flex justify-center"
+                        >
+                            <div class="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    :disabled="currentOnlinePage === 1 || onlineLoading"
+                                    @click="changeOnlinePage(currentOnlinePage - 1)"
+                                >
+                                    <ChevronLeft class="h-4 w-4 mr-1" />
+                                    Previous
+                                </Button>
+                                <template
+                                    v-for="(page, index) in getVisibleOnlinePages()"
+                                    :key="`addon-page-${page}-${index}`"
+                                >
+                                    <span
+                                        v-if="typeof page === 'string'"
+                                        class="px-2 text-sm text-muted-foreground select-none"
+                                    >
+                                        &hellip;
+                                    </span>
+                                    <Button
+                                        v-else
+                                        size="sm"
+                                        :variant="page === currentOnlinePage ? 'default' : 'outline'"
+                                        :disabled="page === currentOnlinePage"
+                                        @click="changeOnlinePage(page)"
+                                    >
+                                        {{ page }}
+                                    </Button>
+                                </template>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    :disabled="
+                                        !onlinePagination ||
+                                        currentOnlinePage === onlinePagination.total_pages ||
+                                        onlineLoading
+                                    "
+                                    @click="changeOnlinePage(currentOnlinePage + 1)"
+                                >
+                                    Next
+                                    <ChevronRight class="h-4 w-4 ml-1" />
+                                </Button>
+                            </div>
                         </div>
                     </TabsContent>
                 </Tabs>
@@ -1064,6 +1114,8 @@ import {
     CloudDownload,
     Download,
     Save,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -1154,6 +1206,14 @@ interface OnlineAddon {
         created_at?: string | null;
     };
 }
+
+type OnlinePagination = {
+    current_page: number;
+    total_pages: number;
+    total_records: number;
+};
+
+type OnlinePaginationItem = number | 'ellipsis-left' | 'ellipsis-right';
 
 // Stores
 const sessionStore = useSessionStore();
@@ -1440,19 +1500,52 @@ const onlineAddons = ref<OnlineAddon[]>([]);
 const onlineLoading = ref(false);
 const onlineError = ref<string | null>(null);
 const installingOnlineId = ref<string | null>(null);
-const onlinePagination = ref<{ current_page: number; total_pages: number; total_records: number } | null>(null);
+const onlinePagination = ref<OnlinePagination | null>(null);
+const currentOnlinePage = ref(1);
+const ONLINE_ADDONS_PER_PAGE = 20;
 const onlineSearch = ref('');
 
-const fetchOnlineAddons = async () => {
+function isOnlinePagination(value: unknown): value is OnlinePagination {
+    if (!value || typeof value !== 'object') {
+        return false;
+    }
+
+    const record = value as Record<string, unknown>;
+
+    return (
+        typeof record.current_page === 'number' &&
+        typeof record.total_pages === 'number' &&
+        typeof record.total_records === 'number'
+    );
+}
+
+const fetchOnlineAddons = async (page = currentOnlinePage.value) => {
     onlineLoading.value = true;
     onlineError.value = null;
+
+    const params = new URLSearchParams({
+        page: String(page),
+        per_page: String(ONLINE_ADDONS_PER_PAGE),
+    });
+
+    if (onlineSearch.value) {
+        params.set('q', onlineSearch.value);
+    }
+
     try {
-        const q = onlineSearch.value ? `?q=${encodeURIComponent(onlineSearch.value)}` : '';
-        const resp = await fetch(`/api/admin/plugins/online/list${q}`, { credentials: 'include' });
+        const resp = await fetch(`/api/admin/plugins/online/list?${params.toString()}`, { credentials: 'include' });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
         const data = await resp.json();
         onlineAddons.value = Array.isArray(data.data?.addons) ? (data.data.addons as OnlineAddon[]) : [];
-        onlinePagination.value = data.data?.pagination ?? null;
+
+        const paginationData = data.data?.pagination;
+        if (isOnlinePagination(paginationData)) {
+            onlinePagination.value = paginationData;
+            currentOnlinePage.value = paginationData.current_page;
+        } else {
+            onlinePagination.value = null;
+            currentOnlinePage.value = page;
+        }
     } catch (e) {
         onlineError.value = e instanceof Error ? e.message : 'Failed to load online addons';
     } finally {
@@ -1496,6 +1589,92 @@ const proceedOnlineInstall = async () => {
     selectedAddonForInstall.value = null;
 };
 
+function getVisibleOnlinePages(): OnlinePaginationItem[] {
+    const paginationState = onlinePagination.value;
+
+    if (!paginationState) {
+        return [];
+    }
+
+    const totalPages = paginationState.total_pages;
+    const currentPage = currentOnlinePage.value;
+
+    if (totalPages <= 5) {
+        return Array.from({ length: totalPages }, (_, index) => (index + 1) as OnlinePaginationItem);
+    }
+
+    const pages = new Set<number>();
+    pages.add(1);
+    pages.add(totalPages);
+    pages.add(currentPage);
+
+    if (currentPage > 1) {
+        pages.add(currentPage - 1);
+    }
+
+    if (currentPage < totalPages) {
+        pages.add(currentPage + 1);
+    }
+
+    if (currentPage <= 3) {
+        for (let pageNumber = 2; pageNumber <= Math.min(4, totalPages - 1); pageNumber += 1) {
+            pages.add(pageNumber);
+        }
+    } else if (currentPage >= totalPages - 2) {
+        for (let pageNumber = Math.max(totalPages - 3, 2); pageNumber <= totalPages - 1; pageNumber += 1) {
+            pages.add(pageNumber);
+        }
+    }
+
+    const sortedPages = Array.from(pages)
+        .filter((pageNumber) => pageNumber >= 1 && pageNumber <= totalPages)
+        .sort((a, b) => a - b);
+
+    const visible: OnlinePaginationItem[] = [];
+    let hasLeftEllipsis = false;
+    let hasRightEllipsis = false;
+    let previousNumber: number | null = null;
+
+    for (const pageNumber of sortedPages) {
+        if (previousNumber !== null && pageNumber - previousNumber > 1) {
+            if (pageNumber > currentPage) {
+                if (!hasRightEllipsis) {
+                    visible.push('ellipsis-right');
+                    hasRightEllipsis = true;
+                }
+            } else if (!hasLeftEllipsis) {
+                visible.push('ellipsis-left');
+                hasLeftEllipsis = true;
+            }
+        }
+
+        visible.push(pageNumber as OnlinePaginationItem);
+        previousNumber = pageNumber;
+    }
+
+    return visible;
+}
+
+function changeOnlinePage(page: number) {
+    if (onlineLoading.value) {
+        return;
+    }
+
+    const paginationState = onlinePagination.value;
+    const totalPages = paginationState?.total_pages ?? page;
+
+    if (page < 1 || page > totalPages || page === currentOnlinePage.value) {
+        return;
+    }
+
+    fetchOnlineAddons(page);
+}
+
+const submitOnlineSearch = () => {
+    currentOnlinePage.value = 1;
+    fetchOnlineAddons(1);
+};
+
 const installFromUrl = async () => {
     if (!installUrl.value) return;
     installingFromUrl.value = true;
@@ -1536,9 +1715,9 @@ const dismissPluginsOnlineBanner = () => {
     localStorage.setItem('featherpanel_plugins_online_banner_dismissed', 'true');
 };
 
-watch(activeTab, (v) => {
-    if (v === 'online' && !onlineLoading.value && onlineAddons.value.length === 0) {
-        fetchOnlineAddons();
+watch(activeTab, (value) => {
+    if (value === 'online') {
+        submitOnlineSearch();
     }
 });
 

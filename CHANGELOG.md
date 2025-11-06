@@ -4,6 +4,8 @@
 
 ### Fixed
 - Fixed an issue where attempting to delete an allocated port (in either admin or user mode) could result in an error or database rejection.
+- Introduced seamless pagination to the Spells page for improved navigation and usability
+- Added seamless pagination to the Plugins page for improved navigation and user experience
 
 ### Improved
 - Reduced excessive and unnecessary log output from the admin dashboard page for a cleaner log experience
