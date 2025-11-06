@@ -31,6 +31,7 @@
 namespace App\Chat;
 
 use App\App;
+use Cron\Schedule\CrontabSchedule;
 
 /**
  * ServerSchedule service/model for CRUD operations on the featherpanel_server_schedules table.
@@ -513,7 +514,18 @@ class ServerSchedule
      */
     public static function validateCronExpression(string $dayOfWeek, string $month, string $dayOfMonth, string $hour, string $minute): bool
     {
-        // Validate each component using proper cron validation
+        $expression = self::formatCronExpression($dayOfWeek, $month, $dayOfMonth, $hour, $minute);
+
+        if (class_exists(CrontabSchedule::class)) {
+            try {
+                new CrontabSchedule($expression);
+
+                return true;
+            } catch (\Throwable $e) {
+                return false;
+            }
+        }
+
         return self::validateCronField($minute, 0, 59)
             && self::validateCronField($hour, 0, 23)
             && self::validateCronField($dayOfMonth, 1, 31)
@@ -524,61 +536,114 @@ class ServerSchedule
     /**
      * Calculate next run time based on cron expression.
      *
-     * @param string      $dayOfWeek     Cron expression day of week component
-     * @param string      $month         Cron expression month component
-     * @param string      $dayOfMonth    Cron expression day of month component
-     * @param string      $hour          Cron expression hour component
-     * @param string      $minute        Cron expression minute component
+     * @param string $dayOfWeek Cron expression day of week component
+     * @param string $month Cron expression month component
+     * @param string $dayOfMonth Cron expression day of month component
+     * @param string $hour Cron expression hour component
+     * @param string $minute Cron expression minute component
      * @param string|null $referenceTime Optional reference time (e.g. current next_run_at) to maintain cadence
      */
     public static function calculateNextRunTime(string $dayOfWeek, string $month, string $dayOfMonth, string $hour, string $minute, ?string $referenceTime = null): string
     {
-		$currentTime = new \DateTime();
-		$searchStart = clone $currentTime;
+        $expression = self::formatCronExpression($dayOfWeek, $month, $dayOfMonth, $hour, $minute);
 
-		if ($referenceTime !== null) {
-			try {
-				$searchStart = new \DateTime($referenceTime);
-			} catch (\Exception $e) {
-				// Ignore invalid reference times and fall back to current time
-			}
-		}
+        if (class_exists(CrontabSchedule::class)) {
+            try {
+                $schedule = new CrontabSchedule($expression);
+                if (method_exists($schedule, 'getNextRunDate')) {
+                    $base = self::resolveBaseDateTime($referenceTime);
+                    $nextRun = $schedule->getNextRunDate($base, 0, false);
 
-		// Normalise to the start of the minute
-		$searchStart->setTime((int) $searchStart->format('H'), (int) $searchStart->format('i'), 0);
-		$currentTime->setTime((int) $currentTime->format('H'), (int) $currentTime->format('i'), 0);
+                    return $nextRun->format('Y-m-d H:i:s');
+                }
+            } catch (\Throwable $e) {
+                App::getInstance(true)->getLogger()->error('Failed to calculate next run time for expression ' . $expression . ': ' . $e->getMessage());
+            }
+        }
 
-		$nextRun = clone $searchStart;
-		$nextRun->add(new \DateInterval('PT1M'));
+        return self::calculateNextRunTimeFallback($dayOfWeek, $month, $dayOfMonth, $hour, $minute, $referenceTime);
+    }
 
-		// Start with current time and find the next valid time
-		$found = false;
-		$attempts = 0;
-		$maxAttempts = 10080; // Prevent infinite loops (covers up to 7 days)
+    /**
+     * Build cron expression string in minute-hour-dayOfMonth-month-dayOfWeek order.
+     */
+    private static function formatCronExpression(string $dayOfWeek, string $month, string $dayOfMonth, string $hour, string $minute): string
+    {
+        return sprintf('%s %s %s %s %s', $minute, $hour, $dayOfMonth, $month, $dayOfWeek);
+    }
 
-		while (!$found && $attempts < $maxAttempts) {
-			++$attempts;
+    /**
+     * Resolve base date time for cron calculation using the greater of now or reference time.
+     */
+    private static function resolveBaseDateTime(?string $referenceTime = null): \DateTime
+    {
+        $currentTime = new \DateTime();
+        $base = clone $currentTime;
 
-			// Check if current time matches all cron fields
-			if (self::timeMatchesCron($nextRun, $dayOfWeek, $month, $dayOfMonth, $hour, $minute)) {
-				// If it's in the future, we found our time
-				if ($nextRun > $currentTime) {
-					$found = true;
-					break;
-				}
-			}
+        if ($referenceTime !== null) {
+            try {
+                $reference = new \DateTime($referenceTime);
+                if ($reference > $base) {
+                    $base = $reference;
+                }
+            } catch (\Exception $e) {
+                // Ignore invalid reference times and continue with current time
+            }
+        }
 
-			// Move to next minute
-			$nextRun->add(new \DateInterval('PT1M'));
-		}
+        $base->setTime((int) $base->format('H'), (int) $base->format('i'), 0);
 
-		// If we couldn't find a valid time, default to 1 day from now
-		if (!$found) {
-			$nextRun = clone $currentTime;
-			$nextRun->add(new \DateInterval('P1D'));
-		}
+        return $base;
+    }
 
-		return $nextRun->format('Y-m-d H:i:s');
+    /**
+     * Fallback calculation when external cron library is unavailable.
+     */
+    private static function calculateNextRunTimeFallback(string $dayOfWeek, string $month, string $dayOfMonth, string $hour, string $minute, ?string $referenceTime = null): string
+    {
+        $currentTime = new \DateTime();
+        $searchStart = clone $currentTime;
+
+        if ($referenceTime !== null) {
+            try {
+                $reference = new \DateTime($referenceTime);
+                if ($reference > $searchStart) {
+                    $searchStart = $reference;
+                }
+            } catch (\Exception $e) {
+                // Ignore invalid reference times and fall back to current time
+            }
+        }
+
+        $searchStart->setTime((int) $searchStart->format('H'), (int) $searchStart->format('i'), 0);
+        $currentTime->setTime((int) $currentTime->format('H'), (int) $currentTime->format('i'), 0);
+
+        $nextRun = clone $searchStart;
+        $nextRun->add(new \DateInterval('PT1M'));
+
+        $found = false;
+        $attempts = 0;
+        $maxAttempts = 10080; // Prevent infinite loops (covers up to 7 days)
+
+        while (!$found && $attempts < $maxAttempts) {
+            ++$attempts;
+
+            if (self::timeMatchesCron($nextRun, $dayOfWeek, $month, $dayOfMonth, $hour, $minute)) {
+                if ($nextRun > $currentTime) {
+                    $found = true;
+                    break;
+                }
+            }
+
+            $nextRun->add(new \DateInterval('PT1M'));
+        }
+
+        if (!$found) {
+            $nextRun = clone $currentTime;
+            $nextRun->add(new \DateInterval('P1D'));
+        }
+
+        return $nextRun->format('Y-m-d H:i:s');
     }
 
     /**

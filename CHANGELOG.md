@@ -4,6 +4,10 @@
 
 ### Added
 - Added an enhanced editor specifically for Minecraft server.properties files, allowing for easier configuration and improved editing experience.
+- Added an enhanced editor specifically for Paper Spigot spigot.yml files, allowing for easier configuration and improved editing experience.
+- Added an enhanced editor specifically for Paper bukkit.yml files, allowing for easier configuration and improved editing experience.
+- Added an enhanced editor specifically for vanilla default files, allowing for easier configuration and improved editing experience.
+
 
 ### Fixed
 - Fixed an issue where attempting to delete an allocated port (in either admin or user mode) could result in an error or database rejection.

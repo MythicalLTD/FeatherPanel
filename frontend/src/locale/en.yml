@@ -1859,6 +1859,448 @@ minecraftProperties:
             largeBiomes: 'Large Biomes'
             singleBiome: 'Single Biome'
 
+# Paper Bukkit configuration editor
+bukkitConfig:
+    title: 'Paper Bukkit Configuration'
+    description: 'Adjust core Paper/Bukkit options with a guided editor instead of editing YAML by hand.'
+    prompt:
+        title: 'Paper bukkit.yml detected!'
+        description: 'We can present a friendly interface so you can edit your bukkit.yml safely.'
+        useGui: 'Open visual editor'
+        stayRaw: 'Stay in raw editor'
+    actions:
+        save: 'Save changes'
+        saving: 'Saving...'
+        switchToRaw: 'Switch to raw editor'
+    sections:
+        settings: 'General settings'
+        spawnLimits: 'Mob spawn limits'
+        ticksPer: 'Tick timings'
+        chunkGc: 'Chunk garbage collection'
+        aliases: 'Command aliases'
+    sectionsDescriptions:
+        settings: 'Control Paper platform toggles, compatibility settings, and safety checks.'
+        spawnLimits: 'Define how many mobs of each category the server will keep loaded at once.'
+        ticksPer: 'Fine-tune the tick frequencies for spawn cycles and the autosave system.'
+        chunkGc: 'Configure how frequently Paper purges inactive chunks from memory.'
+        aliases: 'Choose the file that stores command aliases for Bukkit.'
+    fields:
+        allowEnd:
+            label: 'Allow The End'
+            description: 'Permit the End dimension to be generated and accessed by players.'
+        warnOnOverload:
+            label: 'Warn on overload'
+            description: 'Log a warning when the server cannot keep up with the tick rate.'
+        permissionsFile:
+            label: 'Permissions file'
+            placeholder: 'permissions.yml'
+            description: 'Relative path to the permissions configuration file used by Bukkit.'
+        updateFolder:
+            label: 'Update folder'
+            placeholder: 'update'
+            description: 'Directory where Paper saves downloaded plugin updates.'
+        pluginProfiling:
+            label: 'Plugin profiling'
+            description: 'Enable detailed profiling information for /timings reports. Slightly impacts performance.'
+        connectionThrottle:
+            label: 'Connection throttle (ms)'
+            description: 'Delay in milliseconds between new player connections. Set to -1 to disable throttling.'
+        queryPlugins:
+            label: 'Query plugins'
+            description: 'Expose the plugin list in GameSpy query responses.'
+        deprecatedVerbose:
+            label: 'Deprecated verbose logging'
+            placeholder: 'Select behaviour'
+            description: 'Control verbose logging for deprecated plugin API usage.'
+        shutdownMessage:
+            label: 'Shutdown message'
+            description: 'Message shown to players when the server shuts down.'
+        minimumApi:
+            label: 'Minimum API version'
+            placeholder: 'none'
+            description: 'Require plugins to target at least this Bukkit API version. Use none to disable the check.'
+        useMapColorCache:
+            label: 'Use map color cache'
+            description: 'Cache map colors for improved performance when rendering maps.'
+        spawnLimits:
+            monsters:
+                label: 'Monsters'
+                description: 'Maximum number of hostile mobs allowed to spawn.'
+            animals:
+                label: 'Animals'
+                description: 'Maximum number of passive animals allowed to spawn.'
+            waterAnimals:
+                label: 'Water animals'
+                description: 'Maximum number of water creatures such as squids and dolphins.'
+            waterAmbient:
+                label: 'Water ambient mobs'
+                description: 'Maximum number of ambient water mobs such as fish.'
+            waterUndergroundCreature:
+                label: 'Water underground creatures'
+                description: 'Maximum number of glow squids and other underground water mobs.'
+            axolotls:
+                label: 'Axolotls'
+                description: 'Maximum number of axolotls allowed in the world.'
+            ambient:
+                label: 'Ambient mobs'
+                description: 'Maximum number of ambient mobs such as bats.'
+        chunkGc:
+            periodInTicks:
+                label: 'Chunk GC interval (ticks)'
+                description: 'Number of ticks between chunk garbage collection runs. 20 ticks equals one second.'
+        ticksPer:
+            animalSpawns:
+                label: 'Animal spawn ticks'
+                description: 'Ticks between spawn attempts for passive animals.'
+            monsterSpawns:
+                label: 'Monster spawn ticks'
+                description: 'Ticks between spawn attempts for hostile monsters.'
+            waterSpawns:
+                label: 'Water spawn ticks'
+                description: 'Ticks between spawn attempts for water mobs.'
+            waterAmbientSpawns:
+                label: 'Water ambient spawn ticks'
+                description: 'Ticks between spawn attempts for ambient water mobs.'
+            waterUndergroundCreatureSpawns:
+                label: 'Water underground spawn ticks'
+                description: 'Ticks between spawn attempts for underground water creatures.'
+            axolotlSpawns:
+                label: 'Axolotl spawn ticks'
+                description: 'Ticks between spawn attempts for axolotls.'
+            ambientSpawns:
+                label: 'Ambient spawn ticks'
+                description: 'Ticks between spawn attempts for ambient mobs.'
+            autosave:
+                label: 'Autosave ticks'
+                description: 'Ticks between automatic world saves.'
+        aliases:
+            label: 'Aliases file'
+            placeholder: 'now-in-commands.yml'
+            description: 'File that contains command aliases. Defaults to now-in-commands.yml.'
+    options:
+        deprecatedVerbose:
+            default: 'Use default'
+            true: 'Always verbose'
+            false: 'Disable verbose logging'
+
+# Paper Spigot configuration editor
+spigotConfig:
+    title: 'Paper Spigot Configuration'
+    description: 'Fine-tune spigot.yml options with a structured editor designed for Paper servers.'
+    prompt:
+        title: 'Paper spigot.yml detected!'
+        description: 'We can translate this file into a guided form so you can edit safely without raw YAML.'
+        useGui: 'Open visual editor'
+        stayRaw: 'Stay in raw editor'
+    actions:
+        save: 'Save changes'
+        saving: 'Saving...'
+        switchToRaw: 'Switch to raw editor'
+    sections:
+        settings: 'General settings'
+        attributeLimits: 'Attribute limits'
+        messages: 'Server messages'
+        advancements: 'Advancements'
+        worldSettings: 'World defaults'
+        mergeRadius: 'Merge radius'
+        growthRates: 'Growth modifiers'
+        entityActivationRange: 'Entity activation range'
+        entityTrackingRange: 'Entity tracking range'
+        seeds: 'Structure seeds'
+        hunger: 'Hunger exhaustion'
+        playersStats: 'Players & stats'
+        commands: 'Commands'
+    sectionsDescriptions:
+        settings: 'Control proxy integration, caching, restarts, logging, and movement thresholds.'
+        messages: 'Customize the messages players see for common server events.'
+        advancements: 'Enable or disable advancement saving and configure blacklist entries.'
+        worldSettings: 'Manage gameplay-affecting defaults for every world unless overridden.'
+        playersStats: 'Manage persistence for player data and custom statistics.'
+        commands: 'Configure command logging, tab completion, spam protection, and replacements.'
+    fields:
+        settings:
+            bungeecord:
+                label: 'Enable BungeeCord'
+                description: 'Forward IPs and UUIDs when running behind a BungeeCord proxy.'
+            saveUserCacheOnStopOnly:
+                label: 'Save user cache on stop only'
+                description: 'Write the UUID cache when the server stops instead of during runtime.'
+            restartOnCrash:
+                label: 'Restart on crash'
+                description: 'Execute the configured restart script if the server crashes.'
+            logVillagerDeaths:
+                label: 'Log villager deaths'
+                description: 'Log when villagers die to help track issues with farms or raids.'
+            logNamedDeaths:
+                label: 'Log named entity deaths'
+                description: 'Record deaths of named mobs for easier debugging.'
+            debug:
+                label: 'Enable debug logging'
+                description: 'Output additional debug information to the console.'
+            sampleCount:
+                label: 'Sample count'
+                description: 'Number of samples used for TPS calculations.'
+            playerShuffle:
+                label: 'Player shuffle interval'
+                description: 'How frequently to shuffle the player list when ticking.'
+            userCacheSize:
+                label: 'User cache size'
+                description: 'Maximum players stored in the UUID cache.'
+            movedWronglyThreshold:
+                label: 'Moved wrongly threshold'
+                description: 'Distance before a player is flagged for incorrect movement.'
+            movedTooQuicklyMultiplier:
+                label: 'Moved too quickly multiplier'
+                description: 'Multiplier applied to speed checks when detecting fast movement.'
+            timeoutTime:
+                label: 'Timeout time (seconds)'
+                description: 'Seconds before a connection is considered timed out.'
+            nettyThreads:
+                label: 'Netty threads'
+                description: 'Number of Netty IO threads used for networking.'
+            attribute:
+                maxAbsorption: 'Max absorption'
+                maxHealth: 'Max health'
+                movementSpeed: 'Max movement speed'
+                attackDamage: 'Max attack damage'
+        messages:
+            whitelist: 'Whitelist message'
+            unknownCommand: 'Unknown command message'
+            serverFull: 'Server full message'
+            outdatedClient: 'Outdated client message'
+            outdatedServer: 'Outdated server message'
+            restart: 'Restart message'
+        advancements:
+            disableSaving:
+                label: 'Disable saving'
+                description: 'Stop advancements from being persisted to disk.'
+            disabled:
+                label: 'Disabled advancements'
+                description: 'One advancement key per line to disable automatically.'
+        world:
+            belowZeroGenerationInExistingChunks:
+                label: 'Enable below-zero generation'
+                description: 'Allow generation below Y=0 in previously generated chunks.'
+            mobSpawnRange:
+                label: 'Mob spawn range'
+                description: 'Chunk radius to consider when spawning mobs.'
+            itemDespawnRate:
+                label: 'Item despawn rate'
+                description: 'Ticks before dropped items despawn (20 = 1 second).'
+            thunderChance:
+                label: 'Thunder chance'
+                description: 'One-in-N chance for thunder during storms.'
+            arrowDespawnRate:
+                label: 'Arrow despawn rate'
+                description: 'Ticks before arrows despawn.'
+            tridentDespawnRate:
+                label: 'Trident despawn rate'
+                description: 'Ticks before tridents despawn.'
+            hangingTickFrequency:
+                label: 'Hanging entity tick frequency'
+                description: 'Tick interval for paintings, item frames, and other hanging entities.'
+            zombieAggressiveTowardsVillager:
+                label: 'Zombies target villagers'
+                description: 'Keep zombies aggressive towards villagers.'
+            nerfSpawnerMobs:
+                label: 'Nerf spawner mobs'
+                description: 'Disable AI for mobs spawned from monster spawners.'
+            enableZombiePigmenPortalSpawns:
+                label: 'Portal zombified piglin spawns'
+                description: 'Allow zombified piglins to spawn from Nether portals.'
+            unloadFrozenChunks:
+                label: 'Unload frozen chunks'
+                description: 'Permit chunks held by tickets to unload when idle.'
+            viewDistance:
+                label: 'Default view distance'
+                description: 'Distance (or "default") used if the world has no override.'
+            simulationDistance:
+                label: 'Default simulation distance'
+                description: 'Chunk radius for ticking (or "default").'
+            mergeRadius:
+                item: 'Item merge radius'
+                exp: 'Experience merge radius'
+            ticksPer:
+                hopperTransfer: 'Hopper transfer interval'
+                hopperCheck: 'Hopper check interval'
+            hopperAmount:
+                label: 'Hopper transfer amount'
+            hopperCanLoadChunks:
+                label: 'Hoppers can load chunks'
+                description: 'Allow hoppers to force-load chunks when active.'
+            dragonDeathSoundRadius:
+                label: 'Dragon death sound radius'
+            witherSpawnSoundRadius:
+                label: 'Wither spawn sound radius'
+            endPortalSoundRadius:
+                label: 'End portal sound radius'
+            maxTntPerTick:
+                label: 'Max TNT per tick'
+            maxTickTime:
+                tile: 'Max tile tick time'
+                entity: 'Max entity tick time'
+            verbose:
+                label: 'Verbose chunk logger'
+                description: 'Show extra logging for chunk checks.'
+        growth:
+            cactus-modifier: 'Cactus'
+            cane-modifier: 'Sugar cane'
+            melon-modifier: 'Melon'
+            mushroom-modifier: 'Mushroom'
+            pumpkin-modifier: 'Pumpkin'
+            sapling-modifier: 'Sapling'
+            beetroot-modifier: 'Beetroot'
+            carrot-modifier: 'Carrot'
+            potato-modifier: 'Potato'
+            torchflower-modifier: 'Torchflower'
+            wheat-modifier: 'Wheat'
+            netherwart-modifier: 'Nether wart'
+            vine-modifier: 'Vines'
+            cocoa-modifier: 'Cocoa'
+            bamboo-modifier: 'Bamboo'
+            sweetberry-modifier: 'Sweet berries'
+            kelp-modifier: 'Kelp'
+            twistingvines-modifier: 'Twisting vines'
+            weepingvines-modifier: 'Weeping vines'
+            cavevines-modifier: 'Cave vines'
+            glowberry-modifier: 'Glow berries'
+            pitcherplant-modifier: 'Pitcher plant'
+        entityActivationRange:
+            animals: 'Animals'
+            monsters: 'Monsters'
+            raiders: 'Raiders'
+            misc: 'Miscellaneous'
+            water: 'Water mobs'
+            villagers: 'Villagers'
+            flyingMonsters: 'Flying monsters'
+            'animals-max-per-tick': 'Animals woken per tick'
+            'animals-every': 'Animal wake interval'
+            'animals-for': 'Animal wake duration'
+            'monsters-max-per-tick': 'Monsters woken per tick'
+            'monsters-every': 'Monster wake interval'
+            'monsters-for': 'Monster wake duration'
+            'villagers-max-per-tick': 'Villagers woken per tick'
+            'villagers-every': 'Villager wake interval'
+            'villagers-for': 'Villager wake duration'
+            'flying-monsters-max-per-tick': 'Flying monsters woken per tick'
+            'flying-monsters-every': 'Flying monster wake interval'
+            'flying-monsters-for': 'Flying monster wake duration'
+            villagersWorkImmunityAfter: 'Villager work immunity after'
+            villagersWorkImmunityFor: 'Villager work immunity duration'
+            villagersWorkImmunityAfterDescription: 'Ticks after working before villager AI slows.'
+            villagersWorkImmunityForDescription: 'Ticks villagers remain active after working.'
+            villagersActiveForPanic: 'Villagers stay active during panic'
+            villagersActiveForPanicDescription: 'Keep villagers active when fleeing threats.'
+            tickInactiveVillagers: 'Tick inactive villagers'
+            tickInactiveVillagersDescription: 'Continue ticking villagers even outside activation range.'
+            ignoreSpectators: 'Ignore spectators'
+            ignoreSpectatorsDescription: 'Do not activate entities for spectator players.'
+        entityTrackingRange:
+            players: 'Players'
+            animals: 'Animals'
+            monsters: 'Monsters'
+            misc: 'Miscellaneous'
+            display: 'Display entities'
+            other: 'Other entities'
+        hunger:
+            jump-walk-exhaustion: 'Jump-walk exhaustion'
+            jump-sprint-exhaustion: 'Jump-sprint exhaustion'
+            combat-exhaustion: 'Combat exhaustion'
+            regen-exhaustion: 'Regeneration exhaustion'
+            swim-multiplier: 'Swim multiplier'
+            sprint-multiplier: 'Sprint multiplier'
+            other-multiplier: 'Other multiplier'
+        seeds:
+            seed-village: 'Village seed'
+            seed-desert: 'Desert temple seed'
+            seed-igloo: 'Igloo seed'
+            seed-jungle: 'Jungle temple seed'
+            seed-swamp: 'Swamp hut seed'
+            seed-monument: 'Ocean monument seed'
+            seed-shipwreck: 'Shipwreck seed'
+            seed-ocean: 'Ocean ruin seed'
+            seed-outpost: 'Pillager outpost seed'
+            seed-endcity: 'End city seed'
+            seed-slime: 'Slime chunk seed'
+            seed-nether: 'Nether fortress seed'
+            seed-mansion: 'Woodland mansion seed'
+            seed-fossil: 'Fossil seed'
+            seed-portal: 'Ruined portal seed'
+            seed-ancientcity: 'Ancient city seed'
+            seed-trailruins: 'Trail ruins seed'
+            seed-trialchambers: 'Trial chambers seed'
+            seed-buriedtreasure: 'Buried treasure seed'
+            seed-mineshaft: 'Mineshaft seed'
+            seed-stronghold: 'Stronghold seed'
+        players:
+            disableSaving:
+                label: 'Disable player saving'
+                description: 'Prevent player data from being saved (use with caution).'
+        configVersion:
+            label: 'Config version'
+        stats:
+            disableSaving:
+                label: 'Disable stats saving'
+                description: 'Do not persist vanilla statistics to disk.'
+            forcedStats:
+                label: 'Forced stats JSON'
+                description: 'JSON object of statistic overrides. Leave blank to clear.'
+        commands:
+            log:
+                label: 'Log commands'
+                description: 'Write all player commands to the console.'
+            tabComplete:
+                label: 'Tab complete limit'
+                description: 'Maximum tab results (0 = unlimited, -1 = disabled).'
+            sendNamespaced:
+                label: 'Send namespaced commands'
+                description: 'Expose namespaced commands to clients for tab completion.'
+            spamExclusions:
+                label: 'Spam exclusion commands'
+                description: 'Commands (one per line) ignored by spam protection.'
+            enableSpamExclusions:
+                label: 'Enable spam exclusions'
+                description: 'Apply the spam exclusion list when detecting spam.'
+            replaceCommands:
+                label: 'Replace vanilla commands'
+                description: 'Commands (one per line) to redirect to the server implementation.'
+            silentCommandblockConsole:
+                label: 'Silent command block console'
+                description: 'Hide command block output in the console.'
+
+# Paper commands.yml editor
+commandsConfig:
+    title: 'Paper Commands Configuration'
+    description: 'Configure command block overrides and server aliases without touching raw YAML.'
+    prompt:
+        title: 'Paper commands.yml detected!'
+        description: 'Use the guided editor to manage command block overrides and aliases.'
+        useGui: 'Open visual editor'
+        stayRaw: 'Stay in raw editor'
+    actions:
+        save: 'Save changes'
+        saving: 'Saving...'
+        switchToRaw: 'Switch to raw editor'
+    sections:
+        general: 'General settings'
+        aliases: 'Aliases'
+    sectionsDescriptions:
+        general: 'Toggle core Paper command behaviour and overrides.'
+        aliases: 'Add or edit legacy command aliases executed when a player uses a shortcut.'
+    fields:
+        ignoreVanillaPermissions:
+            label: 'Ignore vanilla permissions'
+            description: 'Allow aliases to run even when vanilla permission checks would block them.'
+        commandBlockOverrides:
+            label: 'Command block overrides'
+            description: 'One command per line that should bypass command block restrictions.'
+        aliases:
+            addAlias: 'Add alias'
+            emptyState: 'No aliases configured yet. Add an alias to start.'
+            aliasName: 'Alias name'
+            aliasCommands: 'Commands (one per line)'
+            aliasCommandsHint: 'Each line runs sequentially when the alias is executed.'
+
 # Server Databases
 serverDatabases:
     title: 'Databases'
@@ -2137,3 +2579,114 @@ features:
         suggestion3: 'Contact your hosting provider to increase the PID limit'
         restartServer: 'Restart Server'
         serverRestarted: 'Server restart initiated successfully'
+
+# EULA editor
+eulaConfig:
+    title: 'Minecraft EULA'
+    description: 'Review and accept the Minecraft End User License Agreement required to start the server.'
+    notice: 'By enabling this option you acknowledge the Minecraft EULA: https://aka.ms/MinecraftEULA'
+    actions:
+        save: 'Save changes'
+        saving: 'Saving...'
+        switchToRaw: 'Switch to raw editor'
+    prompt:
+        title: 'Minecraft eula.txt detected!'
+        description: 'Use the guided editor to accept or decline the Minecraft EULA without editing the file manually.'
+        useGui: 'Open visual editor'
+        stayRaw: 'Stay in raw editor'
+    fields:
+        accept:
+            label: 'Accept the EULA'
+            true: 'I agree to the Minecraft EULA'
+            false: 'I do not agree to the Minecraft EULA'
+
+# Banned IPs editor
+bannedIpsConfig:
+    title: 'Banned IP addresses'
+    description: 'Inspect and edit the list of IP addresses blocked from joining the server.'
+    notice: 'Caution: this file is normally managed with /ban-ip, /pardon-ip, and /banlist ips commands.'
+    actions:
+        add: 'Add banned IP'
+        save: 'Save changes'
+        saving: 'Saving...'
+        switchToRaw: 'Switch to raw editor'
+    emptyState: 'No banned IPs yet. Add one to get started.'
+    fields:
+        ip: 'IP address'
+        created: 'Created'
+        source: 'Source'
+        expires: 'Expires'
+        reason: 'Reason'
+    prompt:
+        title: 'banned-ips.json detected!'
+        description: 'Open the visual editor to review or adjust banned IP entries safely.'
+        useGui: 'Open visual editor'
+        stayRaw: 'Stay in raw editor'
+
+# Banned players editor
+bannedPlayersConfig:
+    title: 'Banned players'
+    description: 'Inspect and edit the list of banned players.'
+    notice: 'Caution: consider using /ban, /pardon, and /banlist players instead of editing this file manually.'
+    actions:
+        add: 'Add banned player'
+        save: 'Save changes'
+        saving: 'Saving...'
+        switchToRaw: 'Switch to raw editor'
+    emptyState: 'No banned players yet. Add an entry to begin.'
+    fields:
+        uuid: 'Player UUID'
+        name: 'Player name'
+        created: 'Created'
+        source: 'Source'
+        expires: 'Expires'
+        reason: 'Reason'
+    prompt:
+        title: 'banned-players.json detected!'
+        description: 'Use the form-based editor to manage banned players without editing JSON.'
+        useGui: 'Open visual editor'
+        stayRaw: 'Stay in raw editor'
+
+# Ops editor
+opsConfig:
+    title: 'Server operators'
+    description: 'Manage operator accounts stored in ops.json.'
+    notice: 'Tip: /op and /deop are the preferred ways to manage operators.'
+    actions:
+        add: 'Add operator'
+        save: 'Save changes'
+        saving: 'Saving...'
+        switchToRaw: 'Switch to raw editor'
+    emptyState: 'No operators defined. Add one to start.'
+    fields:
+        uuid: 'Player UUID'
+        name: 'Player name'
+        level: 'Permission level (0-4)'
+        bypassesPlayerLimit: 'Bypasses player limit'
+        enabled: 'Enabled'
+        disabled: 'Disabled'
+    prompt:
+        title: 'ops.json detected!'
+        description: 'Open the operator editor to adjust permission levels and bypass settings.'
+        useGui: 'Open visual editor'
+        stayRaw: 'Stay in raw editor'
+
+# Whitelist editor
+whitelistConfig:
+    title: 'Whitelist'
+    description: 'Manage the players allowed to join when whitelist mode is enabled.'
+    notice: 'Tip: /whitelist add/remove commands are usually the safest way to manage this list.'
+    actions:
+        add: 'Add whitelisted player'
+        save: 'Save changes'
+        saving: 'Saving...'
+        switchToRaw: 'Switch to raw editor'
+    emptyState: 'No whitelist entries yet. Add a player to begin.'
+    fields:
+        uuid: 'Player UUID'
+        name: 'Player name'
+    prompt:
+        title: 'whitelist.json detected!'
+        description: 'Use the visual editor to add or remove players from the whitelist.'
+        useGui: 'Open visual editor'
+        stayRaw: 'Stay in raw editor'

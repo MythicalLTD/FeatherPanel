@@ -14,6 +14,132 @@
                         </p>
                     </div>
                     <div class="flex items-center gap-2">
+                        <Button
+                            v-if="shouldOfferEulaEditor && !useEulaEditor"
+                            size="sm"
+                            class="gap-2"
+                            variant="outline"
+                            @click="handleUseEulaEditor"
+                        >
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{
+                                t('eulaConfig.prompt.useGui', {
+                                    defaultValue: 'Open visual editor',
+                                })
+                            }}
+                        </Button>
+                        <Button
+                            v-if="shouldOfferCommandsEditor && !useCommandsEditor"
+                            size="sm"
+                            class="gap-2"
+                            variant="outline"
+                            @click="handleUseCommandsEditor"
+                        >
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{
+                                t('commandsConfig.prompt.useGui', {
+                                    defaultValue: 'Open visual editor',
+                                })
+                            }}
+                        </Button>
+                        <Button
+                            v-if="shouldOfferSpigotEditor && !useSpigotEditor"
+                            size="sm"
+                            class="gap-2"
+                            variant="outline"
+                            @click="handleUseSpigotEditor"
+                        >
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{
+                                t('spigotConfig.prompt.useGui', {
+                                    defaultValue: 'Open visual editor',
+                                })
+                            }}
+                        </Button>
+                        <Button
+                            v-if="shouldOfferMinecraftEditor && !useMinecraftEditor"
+                            size="sm"
+                            class="gap-2"
+                            variant="outline"
+                            @click="handleUseMinecraftEditor"
+                        >
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{
+                                t('minecraftProperties.prompt.useGui', {
+                                    defaultValue: 'Open visual editor',
+                                })
+                            }}
+                        </Button>
+                        <Button
+                            v-if="shouldOfferBukkitEditor && !useBukkitEditor"
+                            size="sm"
+                            class="gap-2"
+                            variant="outline"
+                            @click="handleUseBukkitEditor"
+                        >
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{
+                                t('bukkitConfig.prompt.useGui', {
+                                    defaultValue: 'Open visual editor',
+                                })
+                            }}
+                        </Button>
+                        <Button
+                            v-if="shouldOfferBannedIpsEditor && !useBannedIpsEditor"
+                            size="sm"
+                            class="gap-2"
+                            variant="outline"
+                            @click="handleUseBannedIpsEditor"
+                        >
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{
+                                t('bannedIpsConfig.prompt.useGui', {
+                                    defaultValue: 'Open visual editor',
+                                })
+                            }}
+                        </Button>
+                        <Button
+                            v-if="shouldOfferBannedPlayersEditor && !useBannedPlayersEditor"
+                            size="sm"
+                            class="gap-2"
+                            variant="outline"
+                            @click="handleUseBannedPlayersEditor"
+                        >
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{
+                                t('bannedPlayersConfig.prompt.useGui', {
+                                    defaultValue: 'Open visual editor',
+                                })
+                            }}
+                        </Button>
+                        <Button
+                            v-if="shouldOfferOpsEditor && !useOpsEditor"
+                            size="sm"
+                            class="gap-2"
+                            variant="outline"
+                            @click="handleUseOpsEditor"
+                        >
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{
+                                t('opsConfig.prompt.useGui', {
+                                    defaultValue: 'Open visual editor',
+                                })
+                            }}
+                        </Button>
+                        <Button
+                            v-if="shouldOfferWhitelistEditor && !useWhitelistEditor"
+                            size="sm"
+                            class="gap-2"
+                            variant="outline"
+                            @click="handleUseWhitelistEditor"
+                        >
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{
+                                t('whitelistConfig.prompt.useGui', {
+                                    defaultValue: 'Open visual editor',
+                                })
+                            }}
+                        </Button>
                         <Badge
                             v-if="!canUpdateFiles"
                             variant="outline"
@@ -79,6 +205,304 @@
                 </CardHeader>
             </Card>
 
+            <!-- Bukkit bukkit.yml prompt -->
+            <Card v-if="shouldShowBukkitPrompt" class="border-primary/30 bg-primary/5 backdrop-blur">
+                <CardHeader class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-start gap-3">
+                        <div
+                            class="mt-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary"
+                        >
+                            <CheckCircle2 class="h-6 w-6" />
+                        </div>
+                        <div class="space-y-2">
+                            <CardTitle class="text-xl">
+                                {{
+                                    t('bukkitConfig.prompt.title', {
+                                        defaultValue: 'Paper bukkit.yml detected',
+                                    })
+                                }}
+                            </CardTitle>
+                            <CardDescription class="text-sm text-muted-foreground">
+                                {{
+                                    t('bukkitConfig.prompt.description', {
+                                        defaultValue:
+                                            'Switch to a friendly editor to manage Paper configuration without editing raw YAML.',
+                                    })
+                                }}
+                            </CardDescription>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <Button size="sm" class="gap-2" @click="handleUseBukkitEditor">
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{
+                                t('bukkitConfig.prompt.useGui', {
+                                    defaultValue: 'Open visual editor',
+                                })
+                            }}
+                        </Button>
+                        <Button size="sm" variant="outline" class="gap-2" @click="handleDismissBukkitEditor">
+                            <FileCode2 class="h-4 w-4" />
+                            {{
+                                t('bukkitConfig.prompt.stayRaw', {
+                                    defaultValue: 'Stay in raw editor',
+                                })
+                            }}
+                        </Button>
+                    </div>
+                </CardHeader>
+            </Card>
+
+            <!-- Spigot spigot.yml prompt -->
+            <Card v-if="shouldShowSpigotPrompt" class="border-primary/30 bg-primary/5 backdrop-blur">
+                <CardHeader class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-start gap-3">
+                        <div
+                            class="mt-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary"
+                        >
+                            <CheckCircle2 class="h-6 w-6" />
+                        </div>
+                        <div class="space-y-2">
+                            <CardTitle class="text-xl">
+                                {{
+                                    t('spigotConfig.prompt.title', {
+                                        defaultValue: 'Paper spigot.yml detected',
+                                    })
+                                }}
+                            </CardTitle>
+                            <CardDescription class="text-sm text-muted-foreground">
+                                {{
+                                    t('spigotConfig.prompt.description', {
+                                        defaultValue: 'Switch to the visual editor to tweak Spigot options safely.',
+                                    })
+                                }}
+                            </CardDescription>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <Button size="sm" class="gap-2" @click="handleUseSpigotEditor">
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{
+                                t('spigotConfig.prompt.useGui', {
+                                    defaultValue: 'Open visual editor',
+                                })
+                            }}
+                        </Button>
+                        <Button size="sm" variant="outline" class="gap-2" @click="handleDismissSpigotEditor">
+                            <FileCode2 class="h-4 w-4" />
+                            {{
+                                t('spigotConfig.prompt.stayRaw', {
+                                    defaultValue: 'Stay in raw editor',
+                                })
+                            }}
+                        </Button>
+                    </div>
+                </CardHeader>
+            </Card>
+
+            <!-- Commands commands.yml prompt -->
+            <Card v-if="shouldShowCommandsPrompt" class="border-primary/30 bg-primary/5 backdrop-blur">
+                <CardHeader class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-start gap-3">
+                        <div
+                            class="mt-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary"
+                        >
+                            <CheckCircle2 class="h-6 w-6" />
+                        </div>
+                        <div class="space-y-2">
+                            <CardTitle class="text-xl">
+                                {{
+                                    t('commandsConfig.prompt.title', {
+                                        defaultValue: 'Paper commands.yml detected',
+                                    })
+                                }}
+                            </CardTitle>
+                            <CardDescription class="text-sm text-muted-foreground">
+                                {{
+                                    t('commandsConfig.prompt.description', {
+                                        defaultValue:
+                                            'Use the guided editor to manage command aliases and overrides without editing YAML.',
+                                    })
+                                }}
+                            </CardDescription>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <Button size="sm" class="gap-2" @click="handleUseCommandsEditor">
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{
+                                t('commandsConfig.prompt.useGui', {
+                                    defaultValue: 'Open visual editor',
+                                })
+                            }}
+                        </Button>
+                        <Button size="sm" variant="outline" class="gap-2" @click="handleDismissCommandsEditor">
+                            <FileCode2 class="h-4 w-4" />
+                            {{
+                                t('commandsConfig.prompt.stayRaw', {
+                                    defaultValue: 'Stay in raw editor',
+                                })
+                            }}
+                        </Button>
+                    </div>
+                </CardHeader>
+            </Card>
+
+            <!-- EULA prompt -->
+            <Card v-if="shouldShowEulaPrompt" class="border-primary/30 bg-primary/5 backdrop-blur">
+                <CardHeader class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-start gap-3">
+                        <div
+                            class="mt-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary"
+                        >
+                            <CheckCircle2 class="h-6 w-6" />
+                        </div>
+                        <div class="space-y-2">
+                            <CardTitle class="text-xl">
+                                {{ t('eulaConfig.prompt.title') }}
+                            </CardTitle>
+                            <CardDescription class="text-sm text-muted-foreground">
+                                {{ t('eulaConfig.prompt.description') }}
+                            </CardDescription>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <Button size="sm" class="gap-2" @click="handleUseEulaEditor">
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{ t('eulaConfig.prompt.useGui') }}
+                        </Button>
+                        <Button size="sm" variant="outline" class="gap-2" @click="handleDismissEulaEditor">
+                            <FileCode2 class="h-4 w-4" />
+                            {{ t('eulaConfig.prompt.stayRaw') }}
+                        </Button>
+                    </div>
+                </CardHeader>
+            </Card>
+
+            <!-- Banned IPs prompt -->
+            <Card v-if="shouldShowBannedIpsPrompt" class="border-primary/30 bg-primary/5 backdrop-blur">
+                <CardHeader class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-start gap-3">
+                        <div
+                            class="mt-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary"
+                        >
+                            <CheckCircle2 class="h-6 w-6" />
+                        </div>
+                        <div class="space-y-2">
+                            <CardTitle class="text-xl">
+                                {{ t('bannedIpsConfig.prompt.title') }}
+                            </CardTitle>
+                            <CardDescription class="text-sm text-muted-foreground">
+                                {{ t('bannedIpsConfig.prompt.description') }}
+                            </CardDescription>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <Button size="sm" class="gap-2" @click="handleUseBannedIpsEditor">
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{ t('bannedIpsConfig.prompt.useGui') }}
+                        </Button>
+                        <Button size="sm" variant="outline" class="gap-2" @click="handleDismissBannedIpsEditor">
+                            <FileCode2 class="h-4 w-4" />
+                            {{ t('bannedIpsConfig.prompt.stayRaw') }}
+                        </Button>
+                    </div>
+                </CardHeader>
+            </Card>
+
+            <!-- Banned players prompt -->
+            <Card v-if="shouldShowBannedPlayersPrompt" class="border-primary/30 bg-primary/5 backdrop-blur">
+                <CardHeader class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-start gap-3">
+                        <div
+                            class="mt-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary"
+                        >
+                            <CheckCircle2 class="h-6 w-6" />
+                        </div>
+                        <div class="space-y-2">
+                            <CardTitle class="text-xl">
+                                {{ t('bannedPlayersConfig.prompt.title') }}
+                            </CardTitle>
+                            <CardDescription class="text-sm text-muted-foreground">
+                                {{ t('bannedPlayersConfig.prompt.description') }}
+                            </CardDescription>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <Button size="sm" class="gap-2" @click="handleUseBannedPlayersEditor">
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{ t('bannedPlayersConfig.prompt.useGui') }}
+                        </Button>
+                        <Button size="sm" variant="outline" class="gap-2" @click="handleDismissBannedPlayersEditor">
+                            <FileCode2 class="h-4 w-4" />
+                            {{ t('bannedPlayersConfig.prompt.stayRaw') }}
+                        </Button>
+                    </div>
+                </CardHeader>
+            </Card>
+
+            <!-- Ops prompt -->
+            <Card v-if="shouldShowOpsPrompt" class="border-primary/30 bg-primary/5 backdrop-blur">
+                <CardHeader class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-start gap-3">
+                        <div
+                            class="mt-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary"
+                        >
+                            <CheckCircle2 class="h-6 w-6" />
+                        </div>
+                        <div class="space-y-2">
+                            <CardTitle class="text-xl">
+                                {{ t('opsConfig.prompt.title') }}
+                            </CardTitle>
+                            <CardDescription class="text-sm text-muted-foreground">
+                                {{ t('opsConfig.prompt.description') }}
+                            </CardDescription>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <Button size="sm" class="gap-2" @click="handleUseOpsEditor">
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{ t('opsConfig.prompt.useGui') }}
+                        </Button>
+                        <Button size="sm" variant="outline" class="gap-2" @click="handleDismissOpsEditor">
+                            <FileCode2 class="h-4 w-4" />
+                            {{ t('opsConfig.prompt.stayRaw') }}
+                        </Button>
+                    </div>
+                </CardHeader>
+            </Card>
+
+            <!-- Whitelist prompt -->
+            <Card v-if="shouldShowWhitelistPrompt" class="border-primary/30 bg-primary/5 backdrop-blur">
+                <CardHeader class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-start gap-3">
+                        <div
+                            class="mt-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary"
+                        >
+                            <CheckCircle2 class="h-6 w-6" />
+                        </div>
+                        <div class="space-y-2">
+                            <CardTitle class="text-xl">
+                                {{ t('whitelistConfig.prompt.title') }}
+                            </CardTitle>
+                            <CardDescription class="text-sm text-muted-foreground">
+                                {{ t('whitelistConfig.prompt.description') }}
+                            </CardDescription>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <Button size="sm" class="gap-2" @click="handleUseWhitelistEditor">
+                            <CheckCircle2 class="h-4 w-4" />
+                            {{ t('whitelistConfig.prompt.useGui') }}
+                        </Button>
+                        <Button size="sm" variant="outline" class="gap-2" @click="handleDismissWhitelistEditor">
+                            <FileCode2 class="h-4 w-4" />
+                            {{ t('whitelistConfig.prompt.stayRaw') }}
+                        </Button>
+                    </div>
+                </CardHeader>
+            </Card>
+
             <!-- Minecraft server.properties editor -->
             <MinecraftServerPropertiesEditor
                 v-if="!loading && fileContent !== null && server && useMinecraftEditor && shouldOfferMinecraftEditor"
@@ -87,6 +511,96 @@
                 :saving="isSaving"
                 @save="handleSave"
                 @switch-to-raw="handleSwitchToRawEditor"
+            />
+
+            <!-- Paper Bukkit configuration editor -->
+            <BukkitConfigurationEditor
+                v-else-if="!loading && fileContent !== null && server && useBukkitEditor && shouldOfferBukkitEditor"
+                :content="fileContent"
+                :readonly="readonly"
+                :saving="isSaving"
+                @save="handleSave"
+                @switch-to-raw="handleSwitchToRawBukkitEditor"
+            />
+
+            <!-- Paper Spigot configuration editor -->
+            <SpigotConfigurationEditor
+                v-else-if="!loading && fileContent !== null && server && useSpigotEditor && shouldOfferSpigotEditor"
+                :content="fileContent"
+                :readonly="readonly"
+                :saving="isSaving"
+                @save="handleSave"
+                @switch-to-raw="handleSwitchToRawSpigotEditor"
+            />
+
+            <!-- Commands.yml editor -->
+            <CommandsConfigurationEditor
+                v-else-if="!loading && fileContent !== null && server && useCommandsEditor && shouldOfferCommandsEditor"
+                :content="fileContent"
+                :readonly="readonly"
+                :saving="isSaving"
+                @save="handleSave"
+                @switch-to-raw="handleSwitchToRawCommandsEditor"
+            />
+
+            <!-- EULA editor -->
+            <EulaEditor
+                v-else-if="!loading && fileContent !== null && server && useEulaEditor && shouldOfferEulaEditor"
+                :content="fileContent"
+                :readonly="readonly"
+                :saving="isSaving"
+                @save="handleSave"
+                @switch-to-raw="handleSwitchToRawEulaEditor"
+            />
+
+            <!-- Banned IPs editor -->
+            <BannedIpsEditor
+                v-else-if="
+                    !loading && fileContent !== null && server && useBannedIpsEditor && shouldOfferBannedIpsEditor
+                "
+                :content="fileContent"
+                :readonly="readonly"
+                :saving="isSaving"
+                @save="handleSave"
+                @switch-to-raw="handleSwitchToRawBannedIpsEditor"
+            />
+
+            <!-- Banned players editor -->
+            <BannedPlayersEditor
+                v-else-if="
+                    !loading &&
+                    fileContent !== null &&
+                    server &&
+                    useBannedPlayersEditor &&
+                    shouldOfferBannedPlayersEditor
+                "
+                :content="fileContent"
+                :readonly="readonly"
+                :saving="isSaving"
+                @save="handleSave"
+                @switch-to-raw="handleSwitchToRawBannedPlayersEditor"
+            />
+
+            <!-- Ops editor -->
+            <OpsEditor
+                v-else-if="!loading && fileContent !== null && server && useOpsEditor && shouldOfferOpsEditor"
+                :content="fileContent"
+                :readonly="readonly"
+                :saving="isSaving"
+                @save="handleSave"
+                @switch-to-raw="handleSwitchToRawOpsEditor"
+            />
+
+            <!-- Whitelist editor -->
+            <WhitelistEditor
+                v-else-if="
+                    !loading && fileContent !== null && server && useWhitelistEditor && shouldOfferWhitelistEditor
+                "
+                :content="fileContent"
+                :readonly="readonly"
+                :saving="isSaving"
+                @save="handleSave"
+                @switch-to-raw="handleSwitchToRawWhitelistEditor"
             />
 
             <!-- Monaco Editor -->
@@ -177,6 +691,14 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, ArrowLeft, CheckCircle2, FileCode2 } from 'lucide-vue-next';
 import MinecraftServerPropertiesEditor from '@/pages/dashboard/server/features/minecraft/MinecraftServerPropertiesEditor.vue';
+import BukkitConfigurationEditor from '@/pages/dashboard/server/features/minecraft/BukkitConfigurationEditor.vue';
+import SpigotConfigurationEditor from '@/pages/dashboard/server/features/minecraft/SpigotConfigurationEditor.vue';
+import CommandsConfigurationEditor from '@/pages/dashboard/server/features/minecraft/CommandsConfigurationEditor.vue';
+import EulaEditor from '@/pages/dashboard/server/features/minecraft/EulaEditor.vue';
+import BannedIpsEditor from '@/pages/dashboard/server/features/minecraft/BannedIpsEditor.vue';
+import BannedPlayersEditor from '@/pages/dashboard/server/features/minecraft/BannedPlayersEditor.vue';
+import OpsEditor from '@/pages/dashboard/server/features/minecraft/OpsEditor.vue';
+import WhitelistEditor from '@/pages/dashboard/server/features/minecraft/WhitelistEditor.vue';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
 import { useServerPermissions } from '@/composables/useServerPermissions';
@@ -222,6 +744,22 @@ const isSaving = ref(false);
 // Minecraft server.properties handling
 const useMinecraftEditor = ref(false);
 const promptDismissed = ref(false);
+const useBukkitEditor = ref(false);
+const bukkitPromptDismissed = ref(false);
+const useSpigotEditor = ref(false);
+const spigotPromptDismissed = ref(false);
+const useCommandsEditor = ref(false);
+const commandsPromptDismissed = ref(false);
+const useEulaEditor = ref(false);
+const eulaPromptDismissed = ref(false);
+const useBannedIpsEditor = ref(false);
+const bannedIpsPromptDismissed = ref(false);
+const useBannedPlayersEditor = ref(false);
+const bannedPlayersPromptDismissed = ref(false);
+const useOpsEditor = ref(false);
+const opsPromptDismissed = ref(false);
+const useWhitelistEditor = ref(false);
+const whitelistPromptDismissed = ref(false);
 
 const isMinecraftProperties = computed(() => fileName.value.trim().toLowerCase() === 'server.properties');
 
@@ -242,7 +780,241 @@ const shouldShowMinecraftPrompt = computed(
         fileContent.value !== null &&
         server.value !== null &&
         shouldOfferMinecraftEditor.value &&
+        !useMinecraftEditor.value &&
         !promptDismissed.value,
+);
+
+const isBukkitConfiguration = computed(() => fileName.value.trim().toLowerCase() === 'bukkit.yml');
+
+const looksLikeBukkitConfiguration = computed(() => {
+    if (!fileContent.value) {
+        return false;
+    }
+
+    const signatureKeys = ['settings:', 'spawn-limits:', 'chunk-gc:', 'ticks-per:'];
+    return signatureKeys.every((signature) => fileContent.value?.includes(signature));
+});
+
+const shouldOfferBukkitEditor = computed(() => isBukkitConfiguration.value && looksLikeBukkitConfiguration.value);
+
+const shouldShowBukkitPrompt = computed(
+    () =>
+        !loading.value &&
+        fileContent.value !== null &&
+        server.value !== null &&
+        shouldOfferBukkitEditor.value &&
+        !useBukkitEditor.value &&
+        !bukkitPromptDismissed.value,
+);
+
+const isSpigotConfiguration = computed(() => fileName.value.trim().toLowerCase() === 'spigot.yml');
+
+const looksLikeSpigotConfiguration = computed(() => {
+    if (!fileContent.value) {
+        return false;
+    }
+
+    const signatureKeys = ['settings:', 'messages:', 'world-settings:', 'commands:'];
+    return signatureKeys.every((signature) => fileContent.value?.includes(signature));
+});
+
+const shouldOfferSpigotEditor = computed(() => isSpigotConfiguration.value && looksLikeSpigotConfiguration.value);
+
+const shouldShowSpigotPrompt = computed(
+    () =>
+        !loading.value &&
+        fileContent.value !== null &&
+        server.value !== null &&
+        shouldOfferSpigotEditor.value &&
+        !useSpigotEditor.value &&
+        !spigotPromptDismissed.value,
+);
+
+const isCommandsConfiguration = computed(() => fileName.value.trim().toLowerCase() === 'commands.yml');
+
+const looksLikeCommandsConfiguration = computed(() => {
+    if (!fileContent.value) {
+        return false;
+    }
+
+    const content = fileContent.value;
+    const requiredMarkers = ['command-block-overrides', 'ignore-vanilla-permissions', 'aliases:'];
+
+    return requiredMarkers.every((marker) => content.includes(marker));
+});
+
+const shouldOfferCommandsEditor = computed(() => isCommandsConfiguration.value && looksLikeCommandsConfiguration.value);
+
+const shouldShowCommandsPrompt = computed(
+    () =>
+        !loading.value &&
+        fileContent.value !== null &&
+        server.value !== null &&
+        shouldOfferCommandsEditor.value &&
+        !useCommandsEditor.value &&
+        !commandsPromptDismissed.value,
+);
+
+const isEulaFile = computed(() => fileName.value.trim().toLowerCase() === 'eula.txt');
+
+const looksLikeEulaFile = computed(() => {
+    if (!fileContent.value) {
+        return false;
+    }
+
+    const content = fileContent.value;
+    return /eula\s*=\s*(true|false)/i.test(content);
+});
+
+const shouldOfferEulaEditor = computed(() => isEulaFile.value && looksLikeEulaFile.value);
+
+const shouldShowEulaPrompt = computed(
+    () =>
+        !loading.value &&
+        fileContent.value !== null &&
+        server.value !== null &&
+        shouldOfferEulaEditor.value &&
+        !useEulaEditor.value &&
+        !eulaPromptDismissed.value,
+);
+
+function parseJsonSafe(content: string | null): unknown {
+    if (!content) {
+        return null;
+    }
+    try {
+        return JSON.parse(content);
+    } catch {
+        return null;
+    }
+}
+
+const bannedIpsData = computed(() => parseJsonSafe(fileContent.value));
+const bannedPlayersData = computed(() => parseJsonSafe(fileContent.value));
+const opsData = computed(() => parseJsonSafe(fileContent.value));
+const whitelistData = computed(() => parseJsonSafe(fileContent.value));
+
+const isBannedIpsFile = computed(() => fileName.value.trim().toLowerCase() === 'banned-ips.json');
+const looksLikeBannedIpsFile = computed(() => {
+    if (!isBannedIpsFile.value) {
+        return false;
+    }
+    const data = bannedIpsData.value;
+    return (
+        Array.isArray(data) &&
+        data.every(
+            (entry) =>
+                entry &&
+                typeof entry === 'object' &&
+                'ip' in entry &&
+                'created' in entry &&
+                'source' in entry &&
+                'expires' in entry &&
+                'reason' in entry,
+        )
+    );
+});
+
+const shouldOfferBannedIpsEditor = computed(() => isBannedIpsFile.value && looksLikeBannedIpsFile.value);
+
+const shouldShowBannedIpsPrompt = computed(
+    () =>
+        !loading.value &&
+        fileContent.value !== null &&
+        server.value !== null &&
+        shouldOfferBannedIpsEditor.value &&
+        !useBannedIpsEditor.value &&
+        !bannedIpsPromptDismissed.value,
+);
+
+const isBannedPlayersFile = computed(() => fileName.value.trim().toLowerCase() === 'banned-players.json');
+const looksLikeBannedPlayersFile = computed(() => {
+    if (!isBannedPlayersFile.value) {
+        return false;
+    }
+    const data = bannedPlayersData.value;
+    return (
+        Array.isArray(data) &&
+        data.every(
+            (entry) =>
+                entry &&
+                typeof entry === 'object' &&
+                'uuid' in entry &&
+                'name' in entry &&
+                'created' in entry &&
+                'source' in entry &&
+                'expires' in entry &&
+                'reason' in entry,
+        )
+    );
+});
+
+const shouldOfferBannedPlayersEditor = computed(() => isBannedPlayersFile.value && looksLikeBannedPlayersFile.value);
+
+const shouldShowBannedPlayersPrompt = computed(
+    () =>
+        !loading.value &&
+        fileContent.value !== null &&
+        server.value !== null &&
+        shouldOfferBannedPlayersEditor.value &&
+        !useBannedPlayersEditor.value &&
+        !bannedPlayersPromptDismissed.value,
+);
+
+const isOpsFile = computed(() => fileName.value.trim().toLowerCase() === 'ops.json');
+const looksLikeOpsFile = computed(() => {
+    if (!isOpsFile.value) {
+        return false;
+    }
+    const data = opsData.value;
+    return (
+        Array.isArray(data) &&
+        data.every(
+            (entry) =>
+                entry &&
+                typeof entry === 'object' &&
+                'uuid' in entry &&
+                'name' in entry &&
+                'level' in entry &&
+                'bypassesPlayerLimit' in entry,
+        )
+    );
+});
+
+const shouldOfferOpsEditor = computed(() => isOpsFile.value && looksLikeOpsFile.value);
+
+const shouldShowOpsPrompt = computed(
+    () =>
+        !loading.value &&
+        fileContent.value !== null &&
+        server.value !== null &&
+        shouldOfferOpsEditor.value &&
+        !useOpsEditor.value &&
+        !opsPromptDismissed.value,
+);
+
+const isWhitelistFile = computed(() => fileName.value.trim().toLowerCase() === 'whitelist.json');
+const looksLikeWhitelistFile = computed(() => {
+    if (!isWhitelistFile.value) {
+        return false;
+    }
+    const data = whitelistData.value;
+    return (
+        Array.isArray(data) &&
+        data.every((entry) => entry && typeof entry === 'object' && 'uuid' in entry && 'name' in entry)
+    );
+});
+
+const shouldOfferWhitelistEditor = computed(() => isWhitelistFile.value && looksLikeWhitelistFile.value);
+
+const shouldShowWhitelistPrompt = computed(
+    () =>
+        !loading.value &&
+        fileContent.value !== null &&
+        server.value !== null &&
+        shouldOfferWhitelistEditor.value &&
+        !useWhitelistEditor.value &&
+        !whitelistPromptDismissed.value,
 );
 
 // Plugin widgets
@@ -461,12 +1233,48 @@ const loadFileContent = async () => {
         });
     } finally {
         loading.value = false;
-        if (shouldOfferMinecraftEditor.value) {
-            promptDismissed.value = false;
-            useMinecraftEditor.value = false;
-        } else {
-            promptDismissed.value = true;
-            useMinecraftEditor.value = false;
+        const activateEditor = (
+            shouldOffer: boolean,
+            useRef: typeof useMinecraftEditor,
+            dismissedRef: typeof promptDismissed,
+        ) => {
+            if (shouldOffer) {
+                useRef.value = !dismissedRef.value;
+            } else {
+                dismissedRef.value = true;
+                useRef.value = false;
+            }
+        };
+
+        activateEditor(shouldOfferMinecraftEditor.value, useMinecraftEditor, promptDismissed);
+        activateEditor(shouldOfferBukkitEditor.value, useBukkitEditor, bukkitPromptDismissed);
+        activateEditor(shouldOfferSpigotEditor.value, useSpigotEditor, spigotPromptDismissed);
+        activateEditor(shouldOfferCommandsEditor.value, useCommandsEditor, commandsPromptDismissed);
+        activateEditor(shouldOfferEulaEditor.value, useEulaEditor, eulaPromptDismissed);
+        activateEditor(shouldOfferBannedIpsEditor.value, useBannedIpsEditor, bannedIpsPromptDismissed);
+        activateEditor(shouldOfferBannedPlayersEditor.value, useBannedPlayersEditor, bannedPlayersPromptDismissed);
+        activateEditor(shouldOfferOpsEditor.value, useOpsEditor, opsPromptDismissed);
+        activateEditor(shouldOfferWhitelistEditor.value, useWhitelistEditor, whitelistPromptDismissed);
+
+        const activeEditors = [
+            useMinecraftEditor,
+            useBukkitEditor,
+            useSpigotEditor,
+            useCommandsEditor,
+            useEulaEditor,
+            useBannedIpsEditor,
+            useBannedPlayersEditor,
+            useOpsEditor,
+            useWhitelistEditor,
+        ];
+
+        const firstActive = activeEditors.find((editor) => editor.value);
+        if (firstActive) {
+            activeEditors.forEach((editor) => {
+                if (editor !== firstActive) {
+                    editor.value = false;
+                }
+            });
         }
     }
 };
@@ -513,8 +1321,11 @@ const handleClose = () => {
 };
 
 const handleUseMinecraftEditor = () => {
+    promptDismissed.value = false;
     useMinecraftEditor.value = true;
-    promptDismissed.value = true;
+    useBukkitEditor.value = false;
+    useSpigotEditor.value = false;
+    useCommandsEditor.value = false;
 };
 
 const handleDismissMinecraftEditor = () => {
@@ -524,7 +1335,191 @@ const handleDismissMinecraftEditor = () => {
 
 const handleSwitchToRawEditor = () => {
     useMinecraftEditor.value = false;
-    promptDismissed.value = true;
+    promptDismissed.value = false;
+};
+
+const handleUseBukkitEditor = () => {
+    bukkitPromptDismissed.value = false;
+    useBukkitEditor.value = true;
+    useMinecraftEditor.value = false;
+    useSpigotEditor.value = false;
+    useCommandsEditor.value = false;
+    useEulaEditor.value = false;
+    useBannedIpsEditor.value = false;
+    useBannedPlayersEditor.value = false;
+    useOpsEditor.value = false;
+    useWhitelistEditor.value = false;
+};
+
+const handleDismissBukkitEditor = () => {
+    useBukkitEditor.value = false;
+    bukkitPromptDismissed.value = true;
+};
+
+const handleSwitchToRawBukkitEditor = () => {
+    useBukkitEditor.value = false;
+    bukkitPromptDismissed.value = false;
+};
+
+const handleUseSpigotEditor = () => {
+    spigotPromptDismissed.value = false;
+    useSpigotEditor.value = true;
+    useMinecraftEditor.value = false;
+    useBukkitEditor.value = false;
+    useCommandsEditor.value = false;
+    useEulaEditor.value = false;
+    useBannedIpsEditor.value = false;
+    useBannedPlayersEditor.value = false;
+    useOpsEditor.value = false;
+    useWhitelistEditor.value = false;
+};
+
+const handleDismissSpigotEditor = () => {
+    useSpigotEditor.value = false;
+    spigotPromptDismissed.value = true;
+};
+
+const handleSwitchToRawSpigotEditor = () => {
+    useSpigotEditor.value = false;
+    spigotPromptDismissed.value = false;
+};
+
+const handleUseCommandsEditor = () => {
+    commandsPromptDismissed.value = false;
+    useCommandsEditor.value = true;
+    useMinecraftEditor.value = false;
+    useBukkitEditor.value = false;
+    useSpigotEditor.value = false;
+    useEulaEditor.value = false;
+    useBannedIpsEditor.value = false;
+    useBannedPlayersEditor.value = false;
+    useOpsEditor.value = false;
+    useWhitelistEditor.value = false;
+};
+
+const handleDismissCommandsEditor = () => {
+    useCommandsEditor.value = false;
+    commandsPromptDismissed.value = true;
+};
+
+const handleSwitchToRawCommandsEditor = () => {
+    useCommandsEditor.value = false;
+    commandsPromptDismissed.value = false;
+};
+
+const handleUseEulaEditor = () => {
+    eulaPromptDismissed.value = false;
+    useEulaEditor.value = true;
+    useMinecraftEditor.value = false;
+    useBukkitEditor.value = false;
+    useSpigotEditor.value = false;
+    useCommandsEditor.value = false;
+    useBannedIpsEditor.value = false;
+    useBannedPlayersEditor.value = false;
+    useOpsEditor.value = false;
+    useWhitelistEditor.value = false;
+};
+
+const handleDismissEulaEditor = () => {
+    useEulaEditor.value = false;
+    eulaPromptDismissed.value = true;
+};
+
+const handleSwitchToRawEulaEditor = () => {
+    useEulaEditor.value = false;
+    eulaPromptDismissed.value = false;
+};
+
+const handleUseBannedIpsEditor = () => {
+    bannedIpsPromptDismissed.value = false;
+    useBannedIpsEditor.value = true;
+    useMinecraftEditor.value = false;
+    useBukkitEditor.value = false;
+    useSpigotEditor.value = false;
+    useCommandsEditor.value = false;
+    useEulaEditor.value = false;
+    useBannedPlayersEditor.value = false;
+    useOpsEditor.value = false;
+    useWhitelistEditor.value = false;
+};
+
+const handleDismissBannedIpsEditor = () => {
+    useBannedIpsEditor.value = false;
+    bannedIpsPromptDismissed.value = true;
+};
+
+const handleSwitchToRawBannedIpsEditor = () => {
+    useBannedIpsEditor.value = false;
+    bannedIpsPromptDismissed.value = false;
+};
+
+const handleUseBannedPlayersEditor = () => {
+    bannedPlayersPromptDismissed.value = false;
+    useBannedPlayersEditor.value = true;
+    useMinecraftEditor.value = false;
+    useBukkitEditor.value = false;
+    useSpigotEditor.value = false;
+    useCommandsEditor.value = false;
+    useEulaEditor.value = false;
+    useBannedIpsEditor.value = false;
+    useOpsEditor.value = false;
+    useWhitelistEditor.value = false;
+};
+
+const handleDismissBannedPlayersEditor = () => {
+    useBannedPlayersEditor.value = false;
+    bannedPlayersPromptDismissed.value = true;
+};
+
+const handleSwitchToRawBannedPlayersEditor = () => {
+    useBannedPlayersEditor.value = false;
+    bannedPlayersPromptDismissed.value = false;
+};
+
+const handleUseOpsEditor = () => {
+    opsPromptDismissed.value = false;
+    useOpsEditor.value = true;
+    useMinecraftEditor.value = false;
+    useBukkitEditor.value = false;
+    useSpigotEditor.value = false;
+    useCommandsEditor.value = false;
+    useEulaEditor.value = false;
+    useBannedIpsEditor.value = false;
+    useBannedPlayersEditor.value = false;
+    useWhitelistEditor.value = false;
+};
+
+const handleDismissOpsEditor = () => {
+    useOpsEditor.value = false;
+    opsPromptDismissed.value = true;
+};
+
+const handleSwitchToRawOpsEditor = () => {
+    useOpsEditor.value = false;
+    opsPromptDismissed.value = false;
+};
+
+const handleUseWhitelistEditor = () => {
+    whitelistPromptDismissed.value = false;
+    useWhitelistEditor.value = true;
+    useMinecraftEditor.value = false;
+    useBukkitEditor.value = false;
+    useSpigotEditor.value = false;
+    useCommandsEditor.value = false;
+    useEulaEditor.value = false;
+    useBannedIpsEditor.value = false;
+    useBannedPlayersEditor.value = false;
+    useOpsEditor.value = false;
+};
+
+const handleDismissWhitelistEditor = () => {
+    useWhitelistEditor.value = false;
+    whitelistPromptDismissed.value = true;
+};
+
+const handleSwitchToRawWhitelistEditor = () => {
+    useWhitelistEditor.value = false;
+    whitelistPromptDismissed.value = false;
 };
 
 // Lifecycle (following ServerFiles pattern with error handling)
