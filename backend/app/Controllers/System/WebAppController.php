@@ -44,21 +44,85 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'name', type: 'string', description: 'Webapp name'),
         new OA\Property(property: 'short_name', type: 'string', description: 'Webapp short name'),
         new OA\Property(property: 'description', type: 'string', description: 'Webapp description'),
-        new OA\Property(property: 'icons', type: 'array', description: 'Webapp icons with multiple sizes and purposes'),
+        new OA\Property(
+            property: 'icons',
+            type: 'array',
+            description: 'Webapp icons with multiple sizes and purposes',
+            items: new OA\Items(
+                type: 'object',
+                required: ['src', 'sizes', 'type'],
+                properties: [
+                    new OA\Property(property: 'src', type: 'string', description: 'Icon asset URL'),
+                    new OA\Property(property: 'sizes', type: 'string', description: 'Icon dimensions (e.g. 192x192)'),
+                    new OA\Property(property: 'type', type: 'string', description: 'MIME type for the icon'),
+                    new OA\Property(property: 'purpose', type: 'string', description: 'Icon usage context (any, maskable, monochrome, etc.)'),
+                ]
+            )
+        ),
         new OA\Property(property: 'start_url', type: 'string', description: 'Webapp start URL'),
         new OA\Property(property: 'scope', type: 'string', description: 'Webapp scope'),
         new OA\Property(property: 'display', type: 'string', description: 'Webapp display mode'),
         new OA\Property(property: 'theme_color', type: 'string', description: 'Webapp theme color (indigo-500)'),
         new OA\Property(property: 'background_color', type: 'string', description: 'Webapp background color (darkest theme)'),
         new OA\Property(property: 'orientation', type: 'string', description: 'Webapp orientation'),
-        new OA\Property(property: 'categories', type: 'array', description: 'Webapp categories'),
+        new OA\Property(
+            property: 'categories',
+            type: 'array',
+            description: 'Webapp categories',
+            items: new OA\Items(type: 'string')
+        ),
         new OA\Property(property: 'lang', type: 'string', description: 'Webapp language'),
         new OA\Property(property: 'dir', type: 'string', description: 'Webapp text direction'),
         new OA\Property(property: 'id', type: 'string', description: 'Webapp unique identifier'),
         new OA\Property(property: 'prefer_related_applications', type: 'boolean', description: 'Prefer related applications'),
-        new OA\Property(property: 'shortcuts', type: 'array', description: 'Webapp shortcuts for quick access'),
-        new OA\Property(property: 'display_override', type: 'array', description: 'Webapp display override modes'),
-        new OA\Property(property: 'related_applications', type: 'array', description: 'Related applications'),
+        new OA\Property(
+            property: 'shortcuts',
+            type: 'array',
+            description: 'Webapp shortcuts for quick access',
+            items: new OA\Items(
+                type: 'object',
+                required: ['name', 'short_name', 'description', 'url'],
+                properties: [
+                    new OA\Property(property: 'name', type: 'string', description: 'Shortcut display name'),
+                    new OA\Property(property: 'short_name', type: 'string', description: 'Shortcut short name'),
+                    new OA\Property(property: 'description', type: 'string', description: 'Shortcut description'),
+                    new OA\Property(property: 'url', type: 'string', description: 'Shortcut target URL'),
+                    new OA\Property(
+                        property: 'icons',
+                        type: 'array',
+                        description: 'Shortcut icons',
+                        items: new OA\Items(
+                            type: 'object',
+                            required: ['src', 'sizes', 'type'],
+                            properties: [
+                                new OA\Property(property: 'src', type: 'string', description: 'Icon asset URL'),
+                                new OA\Property(property: 'sizes', type: 'string', description: 'Icon dimensions'),
+                                new OA\Property(property: 'type', type: 'string', description: 'MIME type for the icon'),
+                            ]
+                        )
+                    ),
+                ]
+            )
+        ),
+        new OA\Property(
+            property: 'display_override',
+            type: 'array',
+            description: 'Webapp display override modes',
+            items: new OA\Items(type: 'string')
+        ),
+        new OA\Property(
+            property: 'related_applications',
+            type: 'array',
+            description: 'Related applications',
+            items: new OA\Items(
+                type: 'object',
+                properties: [
+                    new OA\Property(property: 'platform', type: 'string', description: 'Platform identifier (e.g. play, itunes)'),
+                    new OA\Property(property: 'url', type: 'string', description: 'Related application URL'),
+                    new OA\Property(property: 'id', type: 'string', description: 'Application store identifier'),
+                ]
+            )
+        ),
     ]
 )]
 class WebAppController
