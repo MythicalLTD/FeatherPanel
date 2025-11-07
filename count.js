@@ -31,7 +31,7 @@ const EXCLUDED_DIRS = [
   ".vite-cache",
 ];
 // Process arguments
-const targetDir = process.argv[2] || ".";
+const targetDir = process.argv[2] || process.cwd();
 
 // Regular expressions for detecting comments
 const COMMENT_PATTERNS = {
