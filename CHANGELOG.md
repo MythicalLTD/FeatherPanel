@@ -8,6 +8,8 @@
 - Added an enhanced editor specifically for Paper bukkit.yml files, allowing for easier configuration and improved editing experience.
 - Added an enhanced editor specifically for vanilla default files, allowing for easier configuration and improved editing experience.
 - Built-in subdomain manager now available for all users at no additional cost.
+- Added the ability to retrieve comprehensive system diagnostics directly from the admin panel for easier troubleshooting and insight.
+- You can now seamlessly update Wings directly from the admin panel, making upgrades faster and easier than ever before!
 
 ### Fixed
 - Fixed an issue where attempting to delete an allocated port (in either admin or user mode) could result in an error or database rejection.

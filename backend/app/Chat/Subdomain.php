@@ -102,6 +102,7 @@ class Subdomain
         $stmt = $pdo->prepare('
             SELECT * FROM ' . self::$table . ' WHERE uuid = :uuid AND server_id = :server_id LIMIT 1
         ');
+
         $stmt->execute([
             'uuid' => $uuid,
             'server_id' => $serverId,

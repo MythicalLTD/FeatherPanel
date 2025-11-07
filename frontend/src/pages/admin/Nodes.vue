@@ -758,12 +758,14 @@
                 </form>
                 <div v-else class="p-4 space-y-4 overflow-y-auto max-h-[calc(100vh-200px)]">
                     <Tabs v-model="viewActiveTab" class="w-full">
-                        <TabsList class="grid w-full grid-cols-5">
+                        <TabsList class="grid w-full grid-cols-7">
                             <TabsTrigger value="overview">Overview</TabsTrigger>
                             <TabsTrigger value="system">System Info</TabsTrigger>
                             <TabsTrigger value="utilization">Utilization</TabsTrigger>
                             <TabsTrigger value="docker">Docker</TabsTrigger>
                             <TabsTrigger value="network">Network</TabsTrigger>
+                            <TabsTrigger value="diagnostics">Diagnostics</TabsTrigger>
+                            <TabsTrigger value="self-update">Self-Update</TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="overview" class="space-y-4 mt-4">
@@ -901,6 +903,179 @@
                                         </div>
                                     </CardContent>
                                 </Card>
+
+                                <!-- Diagnostics -->
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg">Diagnostics</CardTitle>
+                                        <CardDescription>
+                                            Generate a diagnostics bundle for this node&apos;s Wings daemon.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent class="space-y-4">
+                                        <div class="grid gap-4 md:grid-cols-2">
+                                            <div class="space-y-3">
+                                                <div>
+                                                    <Label class="text-sm font-medium">Format</Label>
+                                                    <Select v-model="diagnosticsOptions.format">
+                                                        <SelectTrigger class="w-full">
+                                                            <SelectValue placeholder="Select format" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="text">Plain text</SelectItem>
+                                                            <SelectItem value="url">Upload &amp; URL</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div v-if="diagnosticsOptions.includeLogs" class="space-y-2">
+                                                    <Label class="text-sm font-medium" for="diagnostics-log-lines"
+                                                        >Log Lines</Label
+                                                    >
+                                                    <Input
+                                                        id="diagnostics-log-lines"
+                                                        v-model.number="diagnosticsOptions.logLines"
+                                                        type="number"
+                                                        min="1"
+                                                        max="500"
+                                                    />
+                                                    <p class="text-xs text-muted-foreground">
+                                                        Between 1 and 500 lines of daemon logs.
+                                                    </p>
+                                                </div>
+                                                <div v-if="showUploadApiField" class="space-y-2">
+                                                    <Label class="text-sm font-medium" for="diagnostics-upload-url"
+                                                        >Upload API URL</Label
+                                                    >
+                                                    <Input
+                                                        id="diagnostics-upload-url"
+                                                        v-model="diagnosticsOptions.uploadApiUrl"
+                                                        type="url"
+                                                        placeholder="https://debug.mythical.systems/upload"
+                                                    />
+                                                    <p class="text-xs text-muted-foreground">
+                                                        Optional override when sending diagnostics to a custom endpoint.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div class="space-y-4">
+                                                <div class="flex items-start justify-between gap-4">
+                                                    <div>
+                                                        <Label
+                                                            class="text-sm font-medium"
+                                                            for="diagnostics-include-endpoints"
+                                                            >Include Endpoints</Label
+                                                        >
+                                                        <p class="text-xs text-muted-foreground">
+                                                            Append HTTP endpoint metadata to the report.
+                                                        </p>
+                                                    </div>
+                                                    <Switch
+                                                        id="diagnostics-include-endpoints"
+                                                        v-model:checked="diagnosticsOptions.includeEndpoints"
+                                                    />
+                                                </div>
+                                                <div class="flex items-start justify-between gap-4">
+                                                    <div>
+                                                        <Label
+                                                            class="text-sm font-medium"
+                                                            for="diagnostics-include-logs"
+                                                            >Include Logs</Label
+                                                        >
+                                                        <p class="text-xs text-muted-foreground">
+                                                            Attach recent Wings daemon logs.
+                                                        </p>
+                                                    </div>
+                                                    <Switch
+                                                        id="diagnostics-include-logs"
+                                                        v-model:checked="diagnosticsOptions.includeLogs"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Alert v-if="diagnosticsError" variant="destructive">
+                                            <div class="text-sm">{{ diagnosticsError }}</div>
+                                        </Alert>
+                                        <div
+                                            v-if="diagnosticsResult"
+                                            class="space-y-3 rounded-lg border bg-muted/50 p-4"
+                                        >
+                                            <div
+                                                class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                                            >
+                                                <div class="text-sm text-muted-foreground">
+                                                    {{
+                                                        diagnosticsResult.format === 'url'
+                                                            ? 'Diagnostics uploaded successfully.'
+                                                            : 'Diagnostics generated successfully.'
+                                                    }}
+                                                </div>
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        :disabled="!diagnosticsCopyValue"
+                                                        @click="copyDiagnostics(diagnosticsCopyValue)"
+                                                    >
+                                                        Copy
+                                                    </Button>
+                                                    <Button
+                                                        v-if="
+                                                            diagnosticsResult.format === 'url' && diagnosticsResult.url
+                                                        "
+                                                        size="sm"
+                                                        variant="secondary"
+                                                        as="a"
+                                                        :href="diagnosticsResult.url"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                    >
+                                                        Open URL
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <textarea
+                                                v-if="diagnosticsResult.format === 'text'"
+                                                readonly
+                                                rows="10"
+                                                class="w-full rounded border bg-background p-3 text-xs font-mono"
+                                                :value="diagnosticsResult.content ?? ''"
+                                            ></textarea>
+                                            <div v-else class="text-sm">
+                                                <span class="font-medium text-muted-foreground">URL:</span>
+                                                <a
+                                                    v-if="diagnosticsResult.url"
+                                                    :href="diagnosticsResult.url"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    class="ml-2 break-all text-primary underline"
+                                                >
+                                                    {{ diagnosticsResult.url }}
+                                                </a>
+                                                <span v-else class="ml-2 text-muted-foreground">No URL returned</span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter
+                                        class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                                    >
+                                        <div class="text-xs text-muted-foreground">
+                                            Diagnostics requests may take a few seconds while Wings prepares the report.
+                                        </div>
+                                        <div class="flex flex-col-reverse gap-2 sm:flex-row">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                :disabled="diagnosticsLoading"
+                                                @click="resetDiagnosticsState"
+                                            >
+                                                Reset Options
+                                            </Button>
+                                            <Button size="sm" :loading="diagnosticsLoading" @click="fetchDiagnostics">
+                                                Generate Diagnostics
+                                            </Button>
+                                        </div>
+                                    </CardFooter>
+                                </Card>
                             </div>
 
                             <div v-else-if="systemInfoError" class="space-y-4">
@@ -933,6 +1108,181 @@
                                             </Button>
                                         </div>
                                     </CardContent>
+                                </Card>
+
+                                <!-- Diagnostics -->
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg">Diagnostics</CardTitle>
+                                        <CardDescription>
+                                            Generate a diagnostics bundle for this node&apos;s Wings daemon.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent class="space-y-4">
+                                        <div class="grid gap-4 md:grid-cols-2">
+                                            <div class="space-y-3">
+                                                <div>
+                                                    <Label class="text-sm font-medium">Format</Label>
+                                                    <Select v-model="diagnosticsOptions.format">
+                                                        <SelectTrigger class="w-full">
+                                                            <SelectValue placeholder="Select format" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="text">Plain text</SelectItem>
+                                                            <SelectItem value="url">Upload &amp; URL</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div v-if="diagnosticsOptions.includeLogs" class="space-y-2">
+                                                    <Label class="text-sm font-medium" for="diagnostics-log-lines-error"
+                                                        >Log Lines</Label
+                                                    >
+                                                    <Input
+                                                        id="diagnostics-log-lines-error"
+                                                        v-model.number="diagnosticsOptions.logLines"
+                                                        type="number"
+                                                        min="1"
+                                                        max="500"
+                                                    />
+                                                    <p class="text-xs text-muted-foreground">
+                                                        Between 1 and 500 lines of daemon logs.
+                                                    </p>
+                                                </div>
+                                                <div v-if="showUploadApiField" class="space-y-2">
+                                                    <Label
+                                                        class="text-sm font-medium"
+                                                        for="diagnostics-upload-url-error"
+                                                        >Upload API URL</Label
+                                                    >
+                                                    <Input
+                                                        id="diagnostics-upload-url-error"
+                                                        v-model="diagnosticsOptions.uploadApiUrl"
+                                                        type="url"
+                                                        placeholder="https://debug.mythical.systems/upload"
+                                                    />
+                                                    <p class="text-xs text-muted-foreground">
+                                                        Optional override when sending diagnostics to a custom endpoint.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div class="space-y-4">
+                                                <div class="flex items-start justify-between gap-4">
+                                                    <div>
+                                                        <Label
+                                                            class="text-sm font-medium"
+                                                            for="diagnostics-include-endpoints-error"
+                                                            >Include Endpoints</Label
+                                                        >
+                                                        <p class="text-xs text-muted-foreground">
+                                                            Append HTTP endpoint metadata to the report.
+                                                        </p>
+                                                    </div>
+                                                    <Switch
+                                                        id="diagnostics-include-endpoints-error"
+                                                        v-model:checked="diagnosticsOptions.includeEndpoints"
+                                                    />
+                                                </div>
+                                                <div class="flex items-start justify-between gap-4">
+                                                    <div>
+                                                        <Label
+                                                            class="text-sm font-medium"
+                                                            for="diagnostics-include-logs-error"
+                                                            >Include Logs</Label
+                                                        >
+                                                        <p class="text-xs text-muted-foreground">
+                                                            Attach recent Wings daemon logs.
+                                                        </p>
+                                                    </div>
+                                                    <Switch
+                                                        id="diagnostics-include-logs-error"
+                                                        v-model:checked="diagnosticsOptions.includeLogs"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Alert v-if="diagnosticsError" variant="destructive">
+                                            <div class="text-sm">{{ diagnosticsError }}</div>
+                                        </Alert>
+                                        <div
+                                            v-if="diagnosticsResult"
+                                            class="space-y-3 rounded-lg border bg-muted/50 p-4"
+                                        >
+                                            <div
+                                                class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                                            >
+                                                <div class="text-sm text-muted-foreground">
+                                                    {{
+                                                        diagnosticsResult.format === 'url'
+                                                            ? 'Diagnostics uploaded successfully.'
+                                                            : 'Diagnostics generated successfully.'
+                                                    }}
+                                                </div>
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        :disabled="!diagnosticsCopyValue"
+                                                        @click="copyDiagnostics(diagnosticsCopyValue)"
+                                                    >
+                                                        Copy
+                                                    </Button>
+                                                    <Button
+                                                        v-if="
+                                                            diagnosticsResult.format === 'url' && diagnosticsResult.url
+                                                        "
+                                                        size="sm"
+                                                        variant="secondary"
+                                                        as="a"
+                                                        :href="diagnosticsResult.url"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                    >
+                                                        Open URL
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <textarea
+                                                v-if="diagnosticsResult.format === 'text'"
+                                                readonly
+                                                rows="10"
+                                                class="w-full rounded border bg-background p-3 text-xs font-mono"
+                                                :value="diagnosticsResult.content ?? ''"
+                                            ></textarea>
+                                            <div v-else class="text-sm">
+                                                <span class="font-medium text-muted-foreground">URL:</span>
+                                                <a
+                                                    v-if="diagnosticsResult.url"
+                                                    :href="diagnosticsResult.url"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    class="ml-2 break-all text-primary underline"
+                                                >
+                                                    {{ diagnosticsResult.url }}
+                                                </a>
+                                                <span v-else class="ml-2 text-muted-foreground">No URL returned</span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter
+                                        class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                                    >
+                                        <div class="text-xs text-muted-foreground">
+                                            Diagnostics requests may take a few seconds while Wings prepares the report.
+                                        </div>
+                                        <div class="flex flex-col-reverse gap-2 sm:flex-row">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                :disabled="diagnosticsLoading"
+                                                @click="resetDiagnosticsState"
+                                            >
+                                                Reset Options
+                                            </Button>
+                                            <Button size="sm" :loading="diagnosticsLoading" @click="fetchDiagnostics">
+                                                Generate Diagnostics
+                                            </Button>
+                                        </div>
+                                    </CardFooter>
                                 </Card>
                             </div>
                         </TabsContent>
@@ -1398,6 +1748,699 @@
                                 </Card>
                             </div>
                         </TabsContent>
+
+                        <TabsContent value="diagnostics" class="space-y-4 mt-4">
+                            <!-- Diagnostics Configuration -->
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle class="text-lg">Generate Diagnostics Report</CardTitle>
+                                    <CardDescription>
+                                        Create a comprehensive diagnostics bundle for troubleshooting node issues
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent class="space-y-6">
+                                    <!-- Format Selection -->
+                                    <div class="space-y-3">
+                                        <label class="text-sm font-medium">Output Format</label>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <button
+                                                type="button"
+                                                :class="[
+                                                    'relative flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all',
+                                                    diagnosticsOptions.format === 'text'
+                                                        ? 'border-primary bg-primary/5'
+                                                        : 'border-border hover:border-primary/50',
+                                                ]"
+                                                @click="diagnosticsOptions.format = 'text'"
+                                            >
+                                                <div
+                                                    :class="[
+                                                        'flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all',
+                                                        diagnosticsOptions.format === 'text'
+                                                            ? 'border-primary'
+                                                            : 'border-muted-foreground',
+                                                    ]"
+                                                >
+                                                    <div
+                                                        v-if="diagnosticsOptions.format === 'text'"
+                                                        class="h-2.5 w-2.5 rounded-full bg-primary"
+                                                    ></div>
+                                                </div>
+                                                <div class="text-left">
+                                                    <div class="text-sm font-medium">Raw Text</div>
+                                                    <div class="text-xs text-muted-foreground">
+                                                        View report directly
+                                                    </div>
+                                                </div>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                :class="[
+                                                    'relative flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all',
+                                                    diagnosticsOptions.format === 'url'
+                                                        ? 'border-primary bg-primary/5'
+                                                        : 'border-border hover:border-primary/50',
+                                                ]"
+                                                @click="diagnosticsOptions.format = 'url'"
+                                            >
+                                                <div
+                                                    :class="[
+                                                        'flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all',
+                                                        diagnosticsOptions.format === 'url'
+                                                            ? 'border-primary'
+                                                            : 'border-muted-foreground',
+                                                    ]"
+                                                >
+                                                    <div
+                                                        v-if="diagnosticsOptions.format === 'url'"
+                                                        class="h-2.5 w-2.5 rounded-full bg-primary"
+                                                    ></div>
+                                                </div>
+                                                <div class="text-left">
+                                                    <div class="text-sm font-medium">Upload URL</div>
+                                                    <div class="text-xs text-muted-foreground">Get shareable link</div>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Options -->
+                                    <div class="space-y-4">
+                                        <label class="text-sm font-medium">Report Options</label>
+
+                                        <!-- Include Endpoints -->
+                                        <div
+                                            class="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                                            @click="
+                                                diagnosticsOptions.includeEndpoints =
+                                                    !diagnosticsOptions.includeEndpoints
+                                            "
+                                        >
+                                            <div class="flex items-center h-5">
+                                                <div
+                                                    :class="[
+                                                        'flex h-5 w-5 items-center justify-center rounded border-2 transition-all',
+                                                        diagnosticsOptions.includeEndpoints
+                                                            ? 'bg-primary border-primary'
+                                                            : 'border-muted-foreground',
+                                                    ]"
+                                                >
+                                                    <svg
+                                                        v-if="diagnosticsOptions.includeEndpoints"
+                                                        class="h-3 w-3 text-primary-foreground"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            stroke-width="3"
+                                                            d="M5 13l4 4L19 7"
+                                                        />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="text-sm font-medium">Include HTTP Endpoints</div>
+                                                <div class="text-xs text-muted-foreground mt-0.5">
+                                                    Add API endpoint metadata to the diagnostics report
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Include Logs -->
+                                        <div
+                                            class="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                                            @click="diagnosticsOptions.includeLogs = !diagnosticsOptions.includeLogs"
+                                        >
+                                            <div class="flex items-center h-5">
+                                                <div
+                                                    :class="[
+                                                        'flex h-5 w-5 items-center justify-center rounded border-2 transition-all',
+                                                        diagnosticsOptions.includeLogs
+                                                            ? 'bg-primary border-primary'
+                                                            : 'border-muted-foreground',
+                                                    ]"
+                                                >
+                                                    <svg
+                                                        v-if="diagnosticsOptions.includeLogs"
+                                                        class="h-3 w-3 text-primary-foreground"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            stroke-width="3"
+                                                            d="M5 13l4 4L19 7"
+                                                        />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="text-sm font-medium">Include Daemon Logs</div>
+                                                <div class="text-xs text-muted-foreground mt-0.5">
+                                                    Attach recent Wings daemon logs for debugging
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Log Lines (conditional) -->
+                                        <div v-if="diagnosticsOptions.includeLogs" class="ml-8 space-y-2">
+                                            <label class="text-sm font-medium">Number of Log Lines</label>
+                                            <Input
+                                                v-model.number="diagnosticsOptions.logLines"
+                                                type="number"
+                                                min="1"
+                                                max="500"
+                                                placeholder="200"
+                                                class="max-w-xs"
+                                            />
+                                            <p class="text-xs text-muted-foreground">Between 1 and 500 lines</p>
+                                        </div>
+
+                                        <!-- Upload API URL (conditional) -->
+                                        <div v-if="diagnosticsOptions.format === 'url'" class="space-y-2">
+                                            <label class="text-sm font-medium">Custom Upload API URL (Optional)</label>
+                                            <Input
+                                                v-model="diagnosticsOptions.uploadApiUrl"
+                                                type="url"
+                                                placeholder="https://api.example.com/upload"
+                                                class="font-mono text-sm"
+                                            />
+                                            <p class="text-xs text-muted-foreground">
+                                                Override the default upload endpoint for the diagnostics report
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Generate Button -->
+                                    <div class="pt-4 border-t">
+                                        <Button
+                                            type="button"
+                                            class="w-full"
+                                            :loading="diagnosticsLoading"
+                                            @click="fetchDiagnostics"
+                                        >
+                                            <svg
+                                                v-if="!diagnosticsLoading"
+                                                class="h-4 w-4 mr-2"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                />
+                                            </svg>
+                                            Generate Diagnostics Report
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <!-- Diagnostics Result -->
+                            <Card v-if="diagnosticsResult">
+                                <CardHeader>
+                                    <CardTitle class="text-lg">Diagnostics Report</CardTitle>
+                                    <CardDescription>
+                                        {{
+                                            diagnosticsResult.format === 'url'
+                                                ? 'Your report has been uploaded'
+                                                : 'Raw diagnostics output'
+                                        }}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent class="space-y-4">
+                                    <!-- URL Result -->
+                                    <div
+                                        v-if="diagnosticsResult.format === 'url' && diagnosticsResult.url"
+                                        class="space-y-3"
+                                    >
+                                        <div
+                                            class="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg"
+                                        >
+                                            <svg
+                                                class="h-5 w-5 text-green-600 dark:text-green-400 shrink-0"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
+                                            </svg>
+                                            <span class="text-sm font-medium text-green-900 dark:text-green-100">
+                                                Report uploaded successfully
+                                            </span>
+                                        </div>
+
+                                        <div class="space-y-2">
+                                            <label class="text-sm font-medium">Report URL</label>
+                                            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                                <div
+                                                    class="w-full rounded-lg border bg-muted px-3 py-2 font-mono text-xs sm:text-sm sm:leading-6"
+                                                >
+                                                    <span class="break-all">{{ diagnosticsResult.url }}</span>
+                                                </div>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    @click="copyDiagnostics(diagnosticsResult.url)"
+                                                >
+                                                    <svg
+                                                        class="h-4 w-4"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                                        />
+                                                    </svg>
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    as="a"
+                                                    :href="diagnosticsResult.url"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    <svg
+                                                        class="h-4 w-4"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                                        />
+                                                    </svg>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Text Result -->
+                                    <div
+                                        v-if="diagnosticsResult.format === 'text' && diagnosticsResult.content"
+                                        class="space-y-3"
+                                    >
+                                        <div class="flex items-center justify-between">
+                                            <label class="text-sm font-medium">Diagnostics Output</label>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                @click="copyDiagnostics(diagnosticsResult.content)"
+                                            >
+                                                <svg
+                                                    class="h-4 w-4 mr-1"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                                    />
+                                                </svg>
+                                                Copy
+                                            </Button>
+                                        </div>
+                                        <pre
+                                            class="p-4 bg-muted rounded-lg border text-xs font-mono overflow-x-auto max-h-96 overflow-y-auto"
+                                            >{{ diagnosticsResult.content }}</pre
+                                        >
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <!-- Error State -->
+                            <Card v-if="diagnosticsError">
+                                <CardHeader>
+                                    <CardTitle class="text-lg flex items-center gap-2">
+                                        <div class="h-3 w-3 bg-red-500 rounded-full animate-pulse"></div>
+                                        Diagnostics Failed
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <Alert variant="destructive">
+                                        <div class="space-y-3">
+                                            <div class="font-medium">Failed to generate diagnostics report</div>
+                                            <div class="text-sm">{{ diagnosticsError }}</div>
+                                        </div>
+                                    </Alert>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        <TabsContent value="self-update" class="space-y-4 mt-4">
+                            <!-- Self-update configuration -->
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle class="text-lg">Self-Update Options</CardTitle>
+                                    <CardDescription>
+                                        Configure how Wings should update itself on this node.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent class="space-y-6">
+                                    <!-- Source selection -->
+                                    <div class="space-y-3">
+                                        <label class="text-sm font-medium">Update Source</label>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <button
+                                                type="button"
+                                                :class="[
+                                                    'relative flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all',
+                                                    selfUpdateOptions.source === 'github'
+                                                        ? 'border-primary bg-primary/5'
+                                                        : 'border-border hover:border-primary/50',
+                                                ]"
+                                                @click="selfUpdateOptions.source = 'github'"
+                                            >
+                                                <div
+                                                    :class="[
+                                                        'flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all',
+                                                        selfUpdateOptions.source === 'github'
+                                                            ? 'border-primary'
+                                                            : 'border-muted-foreground',
+                                                    ]"
+                                                >
+                                                    <div
+                                                        v-if="selfUpdateOptions.source === 'github'"
+                                                        class="h-2.5 w-2.5 rounded-full bg-primary"
+                                                    ></div>
+                                                </div>
+                                                <div class="text-left">
+                                                    <div class="text-sm font-medium">GitHub Release</div>
+                                                    <div class="text-xs text-muted-foreground">
+                                                        Pull from GitHub repo (default).
+                                                    </div>
+                                                </div>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                :class="[
+                                                    'relative flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all',
+                                                    selfUpdateOptions.source === 'url'
+                                                        ? 'border-primary bg-primary/5'
+                                                        : 'border-border hover:border-primary/50',
+                                                ]"
+                                                @click="selfUpdateOptions.source = 'url'"
+                                            >
+                                                <div
+                                                    :class="[
+                                                        'flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all',
+                                                        selfUpdateOptions.source === 'url'
+                                                            ? 'border-primary'
+                                                            : 'border-muted-foreground',
+                                                    ]"
+                                                >
+                                                    <div
+                                                        v-if="selfUpdateOptions.source === 'url'"
+                                                        class="h-2.5 w-2.5 rounded-full bg-primary"
+                                                    ></div>
+                                                </div>
+                                                <div class="text-left">
+                                                    <div class="text-sm font-medium">Direct URL</div>
+                                                    <div class="text-xs text-muted-foreground">
+                                                        Download from a custom URL.
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- GitHub fields -->
+                                    <div
+                                        v-if="selfUpdateOptions.source === 'github'"
+                                        class="space-y-4 rounded-lg border bg-card/40 p-4"
+                                    >
+                                        <div class="grid gap-4 sm:grid-cols-2">
+                                            <div class="space-y-2">
+                                                <Label class="text-sm font-medium" for="self-update-repo-owner"
+                                                    >Repository Owner</Label
+                                                >
+                                                <Input
+                                                    id="self-update-repo-owner"
+                                                    v-model="selfUpdateOptions.repoOwner"
+                                                    placeholder="e.g. pterodactyl"
+                                                />
+                                            </div>
+                                            <div class="space-y-2">
+                                                <Label class="text-sm font-medium" for="self-update-repo-name"
+                                                    >Repository Name</Label
+                                                >
+                                                <Input
+                                                    id="self-update-repo-name"
+                                                    v-model="selfUpdateOptions.repoName"
+                                                    placeholder="e.g. wings"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div class="space-y-2">
+                                            <Label class="text-sm font-medium" for="self-update-version"
+                                                >Version (optional)</Label
+                                            >
+                                            <Input
+                                                id="self-update-version"
+                                                v-model="selfUpdateOptions.version"
+                                                placeholder="e.g. v1.11.0"
+                                            />
+                                            <p class="text-xs text-muted-foreground">
+                                                Leave empty to fetch the latest release from the selected repository.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Direct URL fields -->
+                                    <div
+                                        v-if="selfUpdateOptions.source === 'url'"
+                                        class="space-y-4 rounded-lg border bg-card/40 p-4"
+                                    >
+                                        <div class="space-y-2">
+                                            <Label class="text-sm font-medium" for="self-update-url"
+                                                >Download URL</Label
+                                            >
+                                            <Input
+                                                id="self-update-url"
+                                                v-model="selfUpdateOptions.url"
+                                                placeholder="https://example.com/wings.tar.gz"
+                                            />
+                                        </div>
+                                        <div class="space-y-2">
+                                            <Label class="text-sm font-medium" for="self-update-sha"
+                                                >SHA256 checksum (optional)</Label
+                                            >
+                                            <Input
+                                                id="self-update-sha"
+                                                v-model="selfUpdateOptions.sha256"
+                                                placeholder="Provide checksum to verify download integrity"
+                                            />
+                                        </div>
+                                        <div class="space-y-2">
+                                            <Label class="text-sm font-medium" for="self-update-version-direct"
+                                                >Version (optional)</Label
+                                            >
+                                            <Input
+                                                id="self-update-version-direct"
+                                                v-model="selfUpdateOptions.version"
+                                                placeholder="Identifies the installed version after update"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <!-- Toggles -->
+                                    <div class="space-y-3">
+                                        <label class="text-sm font-medium">Update Flags</label>
+                                        <div class="space-y-3">
+                                            <div
+                                                class="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                                                @click="selfUpdateOptions.force = !selfUpdateOptions.force"
+                                            >
+                                                <div class="flex items-center h-5">
+                                                    <div
+                                                        :class="[
+                                                            'flex h-5 w-5 items-center justify-center rounded border-2 transition-all',
+                                                            selfUpdateOptions.force
+                                                                ? 'bg-primary border-primary'
+                                                                : 'border-muted-foreground',
+                                                        ]"
+                                                    >
+                                                        <svg
+                                                            v-if="selfUpdateOptions.force"
+                                                            class="h-3 w-3 text-primary-foreground"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path
+                                                                stroke-linecap="round"
+                                                                stroke-linejoin="round"
+                                                                stroke-width="3"
+                                                                d="M5 13l4 4L19 7"
+                                                            />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <div class="text-sm font-medium">Force Update</div>
+                                                    <div class="text-xs text-muted-foreground mt-0.5">
+                                                        Reinstall Wings even if it is already on the requested version.
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div
+                                                v-if="selfUpdateOptions.source === 'url'"
+                                                class="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                                                @click="
+                                                    selfUpdateOptions.disableChecksum =
+                                                        !selfUpdateOptions.disableChecksum
+                                                "
+                                            >
+                                                <div class="flex items-center h-5">
+                                                    <div
+                                                        :class="[
+                                                            'flex h-5 w-5 items-center justify-center rounded border-2 transition-all',
+                                                            selfUpdateOptions.disableChecksum
+                                                                ? 'bg-primary border-primary'
+                                                                : 'border-muted-foreground',
+                                                        ]"
+                                                    >
+                                                        <svg
+                                                            v-if="selfUpdateOptions.disableChecksum"
+                                                            class="h-3 w-3 text-primary-foreground"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path
+                                                                stroke-linecap="round"
+                                                                stroke-linejoin="round"
+                                                                stroke-width="3"
+                                                                d="M5 13l4 4L19 7"
+                                                            />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <div class="text-sm font-medium">Disable Checksum Validation</div>
+                                                    <div class="text-xs text-muted-foreground mt-0.5">
+                                                        Skip checksum verification for the downloaded artifact.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Submit button -->
+                                    <div class="pt-4 border-t">
+                                        <Button
+                                            type="button"
+                                            class="w-full"
+                                            :loading="selfUpdateLoading"
+                                            @click="submitSelfUpdate"
+                                        >
+                                            <svg
+                                                v-if="!selfUpdateLoading"
+                                                class="h-4 w-4 mr-2"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M12 8v8m4-4H8m12 6H4a2 2 0 01-2-2V6a2 2 0 012-2h12l4 4v12a2 2 0 01-2 2z"
+                                                />
+                                            </svg>
+                                            Trigger Self-Update
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <!-- Result & Error -->
+                            <Card v-if="selfUpdateError || selfUpdateMessage || selfUpdateResult">
+                                <CardHeader>
+                                    <CardTitle class="text-lg flex items-center gap-2">
+                                        <div
+                                            :class="[
+                                                'h-3 w-3 rounded-full',
+                                                selfUpdateError ? 'bg-red-500 animate-pulse' : 'bg-emerald-500',
+                                            ]"
+                                        ></div>
+                                        {{ selfUpdateError ? 'Self-Update Failed' : 'Self-Update Status' }}
+                                    </CardTitle>
+                                    <CardDescription>
+                                        {{
+                                            selfUpdateError
+                                                ? 'Review the details below and adjust the options before trying again.'
+                                                : selfUpdateMessage ||
+                                                  'Self-update request accepted. Wings will handle the update in the background.'
+                                        }}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent class="space-y-4">
+                                    <template v-if="selfUpdateError">
+                                        <div
+                                            class="rounded-lg border border-red-300/70 bg-red-500/10 px-4 py-3 text-sm text-red-100 shadow-inner"
+                                        >
+                                            <div class="font-semibold text-red-200">Unable to trigger self-update</div>
+                                            <p class="mt-2 whitespace-pre-line text-red-100/90">
+                                                {{ selfUpdateError }}
+                                            </p>
+                                        </div>
+                                    </template>
+                                    <template v-else>
+                                        <div
+                                            class="rounded-lg border border-emerald-300/70 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100 shadow-inner"
+                                        >
+                                            <div class="font-semibold text-emerald-200">
+                                                Self-update queued successfully
+                                            </div>
+                                            <p class="mt-2 text-emerald-100/90">
+                                                Wings received the request and will install the update shortly. You can
+                                                monitor progress from the node logs if needed.
+                                            </p>
+                                        </div>
+                                        <div class="space-y-2">
+                                            <div
+                                                class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                                            >
+                                                Response details
+                                            </div>
+                                            <pre
+                                                class="max-h-80 overflow-y-auto overflow-x-auto rounded-lg border bg-muted/60 p-4 text-xs font-mono text-muted-foreground"
+                                                >{{ formatSelfUpdateResult(selfUpdateResult) }}</pre
+                                            >
+                                        </div>
+                                    </template>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
                     </Tabs>
 
                     <DrawerFooter>
@@ -1434,7 +2477,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
@@ -1442,6 +2485,7 @@ import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Eye,
     Pencil,
@@ -1468,8 +2512,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import TableComponent from '@/kit/TableComponent.vue';
-import type { TableColumn } from '@/kit/types';
+import type { ApiResponse, TableColumn } from '@/kit/types';
 import { useToast } from 'vue-toastification';
 
 // Extend Node type and form default
@@ -1510,6 +2555,15 @@ type NetworkResponse = {
     ips: {
         ip_addresses: string[];
     };
+};
+
+type DiagnosticsResult = {
+    format: 'text' | 'url';
+    content: string | null;
+    url: string | null;
+    include_endpoints: boolean;
+    include_logs: boolean;
+    log_lines: number | null;
 };
 
 type SystemInfoResponse = {
@@ -1642,6 +2696,94 @@ const dockerPruning = ref(false);
 const networkLoading = ref(false);
 const networkData = ref<NetworkResponse | null>(null);
 const networkError = ref<string | null>(null);
+
+// Diagnostics state
+const diagnosticsOptions = reactive({
+    format: 'text' as 'text' | 'url',
+    includeEndpoints: false,
+    includeLogs: false,
+    logLines: 200,
+    uploadApiUrl: '',
+});
+const diagnosticsLoading = ref(false);
+const diagnosticsResult = ref<DiagnosticsResult | null>(null);
+const diagnosticsError = ref<string | null>(null);
+const showUploadApiField = computed(() => diagnosticsOptions.format === 'url');
+const diagnosticsCopyValue = computed(() => {
+    if (!diagnosticsResult.value) {
+        return null;
+    }
+
+    return diagnosticsResult.value.format === 'url' ? diagnosticsResult.value.url : diagnosticsResult.value.content;
+});
+
+const DEFAULT_SELF_UPDATE = {
+    repoOwner: 'mythicalltd',
+    repoName: 'featherwings',
+    downloadUrl: 'https://github.com/mythicalltd/featherwings/releases/latest/download/featherwings',
+};
+
+const selfUpdateOptions = reactive({
+    source: 'github' as 'github' | 'url',
+    repoOwner: DEFAULT_SELF_UPDATE.repoOwner,
+    repoName: DEFAULT_SELF_UPDATE.repoName,
+    version: '',
+    url: DEFAULT_SELF_UPDATE.downloadUrl,
+    sha256: '',
+    force: false,
+    disableChecksum: false,
+});
+const selfUpdateLoading = ref(false);
+const selfUpdateResult = ref<Record<string, unknown> | null>(null);
+const selfUpdateMessage = ref<string | null>(null);
+const selfUpdateError = ref<string | null>(null);
+
+watch(
+    () => diagnosticsOptions.logLines,
+    (value) => {
+        if (value === null || Number.isNaN(value)) {
+            diagnosticsOptions.logLines = 200;
+
+            return;
+        }
+
+        if (value < 1) {
+            diagnosticsOptions.logLines = 1;
+        } else if (value > 500) {
+            diagnosticsOptions.logLines = 500;
+        }
+    },
+);
+
+watch(
+    () => diagnosticsOptions.format,
+    (value) => {
+        if (value === 'text') {
+            diagnosticsOptions.uploadApiUrl = '';
+        }
+    },
+);
+
+watch(
+    () => selfUpdateOptions.source,
+    (value) => {
+        if (value === 'github') {
+            selfUpdateOptions.repoOwner = DEFAULT_SELF_UPDATE.repoOwner;
+            selfUpdateOptions.repoName = DEFAULT_SELF_UPDATE.repoName;
+            selfUpdateOptions.url = DEFAULT_SELF_UPDATE.downloadUrl;
+            selfUpdateOptions.sha256 = '';
+            selfUpdateOptions.disableChecksum = false;
+        } else {
+            selfUpdateOptions.url = DEFAULT_SELF_UPDATE.downloadUrl;
+            selfUpdateOptions.repoOwner = DEFAULT_SELF_UPDATE.repoOwner;
+            selfUpdateOptions.repoName = DEFAULT_SELF_UPDATE.repoName;
+        }
+
+        selfUpdateError.value = null;
+        selfUpdateResult.value = null;
+        selfUpdateMessage.value = null;
+    },
+);
 
 // Node health tracking
 const nodeHealthStatus = ref<Record<number, 'healthy' | 'unhealthy' | 'unknown'>>({});
@@ -1857,6 +2999,32 @@ function resetWizard() {
     formErrors.value = {};
 }
 
+function resetDiagnosticsState() {
+    diagnosticsOptions.format = 'text';
+    diagnosticsOptions.includeEndpoints = false;
+    diagnosticsOptions.includeLogs = false;
+    diagnosticsOptions.logLines = 200;
+    diagnosticsOptions.uploadApiUrl = '';
+    diagnosticsLoading.value = false;
+    diagnosticsResult.value = null;
+    diagnosticsError.value = null;
+}
+
+function resetSelfUpdateState() {
+    selfUpdateOptions.source = 'github';
+    selfUpdateOptions.repoOwner = DEFAULT_SELF_UPDATE.repoOwner;
+    selfUpdateOptions.repoName = DEFAULT_SELF_UPDATE.repoName;
+    selfUpdateOptions.version = '';
+    selfUpdateOptions.url = DEFAULT_SELF_UPDATE.downloadUrl;
+    selfUpdateOptions.sha256 = '';
+    selfUpdateOptions.force = false;
+    selfUpdateOptions.disableChecksum = false;
+    selfUpdateLoading.value = false;
+    selfUpdateResult.value = null;
+    selfUpdateMessage.value = null;
+    selfUpdateError.value = null;
+}
+
 function openCreateDrawer() {
     drawerMode.value = 'create';
     editingNodeId.value = null;
@@ -1923,6 +3091,8 @@ async function onView(node: Node) {
     drawerNode.value = node;
     viewActiveTab.value = 'overview';
     showDrawer.value = true;
+    resetDiagnosticsState();
+    resetSelfUpdateState();
 
     // Fetch all node information when opening view mode
     await Promise.all([
@@ -1935,6 +3105,8 @@ async function onView(node: Node) {
 function closeDrawer() {
     showDrawer.value = false;
     drawerNode.value = null;
+    resetDiagnosticsState();
+    resetSelfUpdateState();
 
     // Reset all data states
     systemInfoData.value = null;
@@ -2248,6 +3420,179 @@ async function fetchNetworkInfo(node: Node) {
     }
 }
 
+async function fetchDiagnostics() {
+    if (!drawerNode.value) {
+        return;
+    }
+
+    diagnosticsLoading.value = true;
+    diagnosticsError.value = null;
+    diagnosticsResult.value = null;
+
+    const params: Record<string, string | number> = {
+        format: diagnosticsOptions.format,
+    };
+
+    if (diagnosticsOptions.includeEndpoints) {
+        params.include_endpoints = 'true';
+    }
+
+    if (diagnosticsOptions.includeLogs) {
+        params.include_logs = 'true';
+    }
+
+    if (diagnosticsOptions.includeLogs && diagnosticsOptions.logLines) {
+        params.log_lines = diagnosticsOptions.logLines;
+    }
+
+    if (showUploadApiField.value && diagnosticsOptions.uploadApiUrl.trim() !== '') {
+        params.upload_api_url = diagnosticsOptions.uploadApiUrl.trim();
+    }
+
+    try {
+        const response = await axios.get<ApiResponse<{ diagnostics: DiagnosticsResult }>>(
+            `/api/admin/nodes/${drawerNode.value.id}/diagnostics`,
+            { params },
+        );
+
+        if (!response.data.success || !response.data.data) {
+            const message = response.data.message || 'Failed to generate diagnostics';
+            diagnosticsError.value = message;
+            toast.error(message);
+
+            return;
+        }
+
+        diagnosticsResult.value = response.data.data.diagnostics;
+        toast.success(
+            diagnosticsResult.value.format === 'url'
+                ? 'Diagnostics link generated successfully'
+                : 'Diagnostics generated successfully',
+        );
+    } catch (e) {
+        const err = e as { response?: { data?: { message?: string } } };
+        const message = err?.response?.data?.message || 'Failed to generate diagnostics';
+        diagnosticsError.value = message;
+        toast.error(message);
+    } finally {
+        diagnosticsLoading.value = false;
+    }
+}
+
+function copyDiagnostics(value: string | null) {
+    if (!value) {
+        toast.error('Nothing to copy');
+
+        return;
+    }
+
+    navigator.clipboard
+        .writeText(value)
+        .then(() => {
+            toast.success('Copied to clipboard');
+        })
+        .catch(() => {
+            toast.error('Failed to copy to clipboard');
+        });
+}
+
+function validateSelfUpdate(): string | null {
+    if (selfUpdateOptions.source === 'github') {
+        if (!selfUpdateOptions.repoOwner.trim()) {
+            return 'Repository owner is required when using GitHub.';
+        }
+        if (!selfUpdateOptions.repoName.trim()) {
+            return 'Repository name is required when using GitHub.';
+        }
+    }
+
+    if (selfUpdateOptions.source === 'url') {
+        if (!selfUpdateOptions.url.trim()) {
+            return 'A download URL is required when using the direct URL source.';
+        }
+
+        const urlPattern = /^(https?:\/\/).+/i;
+        if (!urlPattern.test(selfUpdateOptions.url.trim())) {
+            return 'Download URL must start with http:// or https://';
+        }
+
+        if (!selfUpdateOptions.disableChecksum && !selfUpdateOptions.sha256.trim()) {
+            return 'Provide a SHA256 checksum or disable checksum validation for direct URL updates.';
+        }
+    }
+
+    return null;
+}
+
+async function submitSelfUpdate() {
+    if (!drawerNode.value) {
+        return;
+    }
+
+    if (selfUpdateLoading.value) {
+        return;
+    }
+
+    const validationError = validateSelfUpdate();
+    if (validationError) {
+        selfUpdateError.value = validationError;
+        toast.error(validationError);
+
+        return;
+    }
+
+    selfUpdateLoading.value = true;
+    selfUpdateError.value = null;
+    selfUpdateResult.value = null;
+    selfUpdateMessage.value = null;
+
+    const payload: Record<string, unknown> = {
+        source: selfUpdateOptions.source,
+        force: selfUpdateOptions.force,
+    };
+
+    const trimmedVersion = selfUpdateOptions.version.trim();
+    if (trimmedVersion !== '') {
+        payload.version = trimmedVersion;
+    }
+
+    if (selfUpdateOptions.source === 'github') {
+        payload.repo_owner = selfUpdateOptions.repoOwner.trim();
+        payload.repo_name = selfUpdateOptions.repoName.trim();
+    } else if (selfUpdateOptions.source === 'url') {
+        payload.url = selfUpdateOptions.url.trim();
+        payload.disable_checksum = selfUpdateOptions.disableChecksum;
+
+        const trimmedSha = selfUpdateOptions.sha256.trim();
+        if (trimmedSha !== '') {
+            payload.sha256 = trimmedSha;
+        }
+    }
+
+    try {
+        const response = await axios.post<ApiResponse<{ result: Record<string, unknown> }>>(
+            `/api/admin/nodes/${drawerNode.value.id}/self-update`,
+            payload,
+        );
+
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Self-update request failed');
+        }
+
+        selfUpdateResult.value = response.data.data?.result ?? null;
+        selfUpdateMessage.value =
+            response.data.message || 'Self-update requested successfully. Wings will apply the update shortly.';
+        toast.success(selfUpdateMessage.value);
+    } catch (e) {
+        const err = e as { response?: { data?: { message?: string } }; message?: string };
+        const message = err.response?.data?.message || err.message || 'Failed to trigger self-update';
+        selfUpdateError.value = message;
+        toast.error(message);
+    } finally {
+        selfUpdateLoading.value = false;
+    }
+}
+
 // Utility functions for network info
 function isIPv6(ip: string): boolean {
     return ip.includes(':');
@@ -2327,6 +3672,18 @@ async function checkAllNodesHealth() {
         await Promise.allSettled(healthCheckPromises);
     } finally {
         isCheckingHealth.value = false;
+    }
+}
+
+function formatSelfUpdateResult(result: Record<string, unknown> | null): string {
+    if (!result) {
+        return 'No additional response data returned.';
+    }
+
+    try {
+        return JSON.stringify(result, null, 2);
+    } catch {
+        return String(result);
     }
 }
 

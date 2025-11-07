@@ -582,4 +582,75 @@ class SystemService
             ],
         ];
     }
+
+    /**
+     * Trigger a Wings self-update.
+     *
+     * @param array $options Self-update options payload
+     * @param bool $disableRetries Whether to disable client-level retry logic
+     */
+    public function triggerSelfUpdate(array $options, bool $disableRetries = false): array
+    {
+        $maxRetries = $disableRetries ? 0 : 3;
+
+        return $this->connection->post('/api/system/self-update', $options, [], $maxRetries);
+    }
+
+    /**
+     * Generate a diagnostics bundle.
+     *
+     * Returns plain-text diagnostics by default. When format is set to `url`,
+     * the response will be JSON with an uploaded report URL.
+     *
+     * @param bool|null $includeEndpoints Include HTTP endpoint metadata when true
+     * @param bool|null $includeLogs Include daemon logs when true
+     * @param int|null $logLines Number of log lines to include (1-500)
+     * @param string|null $format Response format (`text`|`url`)
+     * @param string|null $uploadApiUrl Override upload endpoint when using `url` format
+     *
+     * @return array|string Plain text diagnostics or JSON payload depending on format
+     */
+    public function getDiagnostics(
+        ?bool $includeEndpoints = null,
+        ?bool $includeLogs = null,
+        ?int $logLines = null,
+        ?string $format = null,
+        ?string $uploadApiUrl = null,
+    ): array|string {
+        $queryParameters = [];
+
+        if ($includeEndpoints !== null) {
+            $queryParameters['include_endpoints'] = $includeEndpoints ? 'true' : 'false';
+        }
+
+        if ($includeLogs !== null) {
+            $queryParameters['include_logs'] = $includeLogs ? 'true' : 'false';
+        }
+
+        if ($logLines !== null) {
+            $queryParameters['log_lines'] = max(1, min(500, $logLines));
+        }
+
+        $normalizedFormat = null;
+        if ($format !== null) {
+            $candidateFormat = strtolower($format);
+            $normalizedFormat = in_array($candidateFormat, ['text', 'url'], true) ? $candidateFormat : 'text';
+            $queryParameters['format'] = $normalizedFormat;
+        }
+
+        if ($uploadApiUrl !== null && $uploadApiUrl !== '' && $normalizedFormat === 'url') {
+            $queryParameters['upload_api_url'] = $uploadApiUrl;
+        }
+
+        $endpoint = '/api/diagnostics';
+        if ($queryParameters !== []) {
+            $endpoint .= '?' . http_build_query($queryParameters);
+        }
+
+        if ($normalizedFormat === 'url') {
+            return $this->connection->get($endpoint);
+        }
+
+        return $this->connection->getRaw($endpoint, ['Accept' => 'text/plain']);
+    }
 }

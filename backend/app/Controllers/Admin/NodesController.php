@@ -35,6 +35,7 @@ use App\Chat\Node;
 use App\Chat\Activity;
 use App\Chat\Location;
 use App\Helpers\ApiResponse;
+use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
 use App\Plugins\Events\Events\NodesEvent;
@@ -483,6 +484,289 @@ class NodesController
         }
 
         return ApiResponse::success([], 'Node deleted successfully', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/admin/nodes/{id}/diagnostics',
+        summary: 'Generate node diagnostics bundle',
+        description: 'Fetches diagnostics output from the Wings daemon. Returns plain-text content by default or an uploaded report URL when format=url.',
+        tags: ['Admin - Nodes'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Node ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'include_endpoints',
+                in: 'query',
+                description: 'Include HTTP endpoint metadata',
+                required: false,
+                schema: new OA\Schema(type: 'boolean')
+            ),
+            new OA\Parameter(
+                name: 'include_logs',
+                in: 'query',
+                description: 'Include daemon logs in the report',
+                required: false,
+                schema: new OA\Schema(type: 'boolean')
+            ),
+            new OA\Parameter(
+                name: 'log_lines',
+                in: 'query',
+                description: 'Number of log lines to include (1-500)',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 500)
+            ),
+            new OA\Parameter(
+                name: 'format',
+                in: 'query',
+                description: 'Response format: raw text or uploaded URL',
+                required: false,
+                schema: new OA\Schema(type: 'string', enum: ['text', 'url'])
+            ),
+            new OA\Parameter(
+                name: 'upload_api_url',
+                in: 'query',
+                description: 'Override upload endpoint when requesting format=url',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Diagnostics generated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'diagnostics',
+                            type: 'object',
+                            properties: [
+                                new OA\Property(property: 'format', type: 'string', enum: ['text', 'url']),
+                                new OA\Property(property: 'content', type: 'string', nullable: true, description: 'Plain-text diagnostics content when format=text'),
+                                new OA\Property(property: 'url', type: 'string', nullable: true, description: 'Diagnostics report URL when format=url'),
+                                new OA\Property(property: 'include_endpoints', type: 'boolean'),
+                                new OA\Property(property: 'include_logs', type: 'boolean'),
+                                new OA\Property(property: 'log_lines', type: 'integer', nullable: true),
+                            ]
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid query parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'Node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to generate diagnostics'),
+        ]
+    )]
+    public function diagnostics(Request $request, int $id): Response
+    {
+        $node = Node::getNodeById($id);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $includeEndpoints = $request->query->has('include_endpoints')
+            ? $request->query->getBoolean('include_endpoints')
+            : null;
+        $includeLogs = $request->query->has('include_logs')
+            ? $request->query->getBoolean('include_logs')
+            : null;
+
+        $logLines = null;
+        if ($request->query->has('log_lines')) {
+            $logLines = (int) $request->query->get('log_lines');
+            if ($logLines < 1 || $logLines > 500) {
+                return ApiResponse::error('log_lines must be between 1 and 500', 'INVALID_LOG_LINES', 400);
+            }
+        }
+
+        $format = $request->query->get('format');
+        if ($format !== null && !in_array(strtolower((string) $format), ['text', 'url'], true)) {
+            return ApiResponse::error('Invalid format provided', 'INVALID_FORMAT', 400);
+        }
+        $normalizedFormat = $format ? strtolower((string) $format) : 'text';
+
+        $uploadApiUrl = $request->query->get('upload_api_url');
+        if ($uploadApiUrl && $normalizedFormat !== 'url') {
+            return ApiResponse::error('upload_api_url can only be used when format=url', 'INVALID_UPLOAD_API_URL', 400);
+        }
+
+        try {
+            $wings = new Wings(
+                $node['fqdn'],
+                (int) $node['daemonListen'],
+                $node['scheme'],
+                $node['daemon_token'],
+                30
+            );
+
+            $diagnostics = $wings->getSystem()->getDiagnostics(
+                $includeEndpoints,
+                $includeLogs,
+                $logLines,
+                $normalizedFormat,
+                $uploadApiUrl ?: null
+            );
+
+            $payload = [
+                'format' => $normalizedFormat,
+                'content' => is_string($diagnostics) ? $diagnostics : null,
+                'url' => is_array($diagnostics) ? ($diagnostics['url'] ?? null) : null,
+                'include_endpoints' => $includeEndpoints ?? false,
+                'include_logs' => $includeLogs ?? false,
+                'log_lines' => $logLines,
+            ];
+
+            if ($normalizedFormat === 'url' && $payload['url'] === null) {
+                return ApiResponse::error('Failed to upload diagnostics report', 'DIAGNOSTICS_UPLOAD_FAILED', 500);
+            }
+
+            return ApiResponse::success([
+                'diagnostics' => $payload,
+            ], 'Diagnostics generated successfully', 200);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Failed to generate diagnostics for node ' . $id . ': ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to generate diagnostics', 'NODE_DIAGNOSTICS_FAILED', 500);
+        }
+    }
+
+    #[OA\Post(
+        path: '/api/admin/nodes/{id}/self-update',
+        summary: 'Trigger Wings self-update',
+        description: 'Initiate a self-update on the Wings daemon either via GitHub release channel or a custom download URL.',
+        tags: ['Admin - Nodes'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Node ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                properties: [
+                    new OA\Property(property: 'source', type: 'string', description: 'Update source (e.g. github, url)'),
+                    new OA\Property(property: 'version', type: 'string', description: 'Specific Wings version to install'),
+                    new OA\Property(property: 'url', type: 'string', description: 'Direct download URL for installing Wings'),
+                    new OA\Property(property: 'repo_owner', type: 'string', description: 'GitHub repository owner (when source=github)'),
+                    new OA\Property(property: 'repo_name', type: 'string', description: 'GitHub repository name (when source=github)'),
+                    new OA\Property(property: 'sha256', type: 'string', description: 'SHA256 checksum for validating download'),
+                    new OA\Property(property: 'force', type: 'boolean', description: 'Force reinstall even if Wings is up-to-date'),
+                    new OA\Property(property: 'disable_checksum', type: 'boolean', description: 'Skip checksum validation of the downloaded artifact'),
+                ],
+                additionalProperties: false
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Self-update already applied or not required',
+                content: new OA\JsonContent(type: 'object')
+            ),
+            new OA\Response(
+                response: 202,
+                description: 'Self-update accepted and queued',
+                content: new OA\JsonContent(type: 'object')
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid payload or updates disabled'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions or API updates disabled'),
+            new OA\Response(response: 404, description: 'Node not found'),
+            new OA\Response(response: 500, description: 'Failed to trigger self-update'),
+        ]
+    )]
+    public function triggerSelfUpdate(Request $request, int $id): Response
+    {
+        $admin = $request->get('user');
+        $node = Node::getNodeById($id);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $payload = json_decode($request->getContent() ?: '{}', true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
+        }
+
+        if (!is_array($payload)) {
+            return ApiResponse::error('Request payload must be an object', 'INVALID_PAYLOAD', 400);
+        }
+
+        $allowedKeys = [
+            'source',
+            'version',
+            'url',
+            'repo_owner',
+            'repo_name',
+            'sha256',
+            'force',
+            'disable_checksum',
+        ];
+        $booleanKeys = ['force', 'disable_checksum'];
+        $cleanPayload = [];
+        foreach ($allowedKeys as $key) {
+            if (!array_key_exists($key, $payload)) {
+                continue;
+            }
+
+            $value = $payload[$key];
+            if (in_array($key, $booleanKeys, true)) {
+                $cleanPayload[$key] = (bool) $value;
+                continue;
+            }
+
+            if (is_string($value)) {
+                $trimmed = trim($value);
+                if ($trimmed === '') {
+                    continue;
+                }
+                $cleanPayload[$key] = $trimmed;
+                continue;
+            }
+
+            $cleanPayload[$key] = $value;
+        }
+
+        if (!isset($cleanPayload['source']) || !is_string($cleanPayload['source'])) {
+            $cleanPayload['source'] = 'github';
+        }
+
+        try {
+            $wings = new Wings(
+                $node['fqdn'],
+                (int) $node['daemonListen'],
+                $node['scheme'],
+                $node['daemon_token'],
+                30
+            );
+
+            $response = $wings->getSystem()->triggerSelfUpdate($cleanPayload, true);
+
+            Activity::createActivity([
+                'user_uuid' => $admin['uuid'] ?? null,
+                'name' => 'trigger_node_self_update',
+                'context' => 'Triggered Wings self-update for node: ' . $node['name'],
+                'ip_address' => CloudFlareRealIP::getRealIP(),
+            ]);
+
+            return ApiResponse::success([
+                'result' => $response,
+            ], 'Self-update requested successfully', 202);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Failed to trigger self-update for node ' . $id . ': ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to trigger self-update', 'NODE_SELF_UPDATE_FAILED', 500);
+        }
     }
 
     #[OA\Post(
