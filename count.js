@@ -31,7 +31,7 @@ const EXCLUDED_DIRS = [
   ".vite-cache",
 ];
 // Process arguments
-const targetDir = process.argv[2] || ".";
+const targetDir = process.argv[2] || process.cwd();
 
 // Regular expressions for detecting comments
 const COMMENT_PATTERNS = {
@@ -84,7 +84,7 @@ async function traverseDirectory(dir, results = {}) {
       if (entry.isDirectory()) {
         // Skip excluded directories
         if (
-          EXCLUDED_DIRS.some((excluded) =>
+			EXCLUDED_DIRS.some((excluded) =>
             entry.name.toLowerCase().includes(excluded.toLowerCase())
           )
         ) {
@@ -111,15 +111,17 @@ async function traverseDirectory(dir, results = {}) {
 }
 
 async function main() {
-  console.log(`Counting non-empty lines of code in ${targetDir}...`);
-  console.log(`Including extensions: ${VALID_EXTENSIONS.join(", ")}`);
-  console.log(`Excluding directories: ${EXCLUDED_DIRS.join(", ")}`);
-  console.log("Excluding: comments and empty lines");
+	let countings = ''
+
+  countings += `Counting non-empty lines of code in ${targetDir}... \n`;
+  countings += `Including extensions: ${VALID_EXTENSIONS.join(", ")} \n`;
+  countings += `Excluding directories: ${EXCLUDED_DIRS.join(", ")} \n`;
+  countings += "Excluding also comments and empty lines \n";
 
   const results = await traverseDirectory(targetDir);
 
-  console.log("\nResults:");
-  console.log("-".repeat(50));
+  countings += "\nResults:\n";
+  countings += "-".repeat(50) + "\n";
 
   let totalFiles = 0;
   let totalLines = 0;
@@ -130,20 +132,20 @@ async function main() {
   );
 
   sortedResults.forEach(([ext, { files, lines }]) => {
-    console.log(
+    countings += (
       `${ext.padEnd(6)} | ${formatNumber(files).padStart(
         6
-      )} files | ${formatNumber(lines).padStart(8)} lines`
+      )} files | ${formatNumber(lines).padStart(8)} lines \n`
     );
     totalFiles += files;
     totalLines += lines;
   });
 
-  console.log("-".repeat(50));
-  console.log(
+  countings += ("-".repeat(50) + "\n");
+  countings += (
     `Total  | ${formatNumber(totalFiles).padStart(6)} files | ${formatNumber(
       totalLines
-    ).padStart(8)} lines`
+    ).padStart(8)} lines \n`
   );
 
   // Store results in a JSON file
@@ -164,11 +166,19 @@ async function main() {
     fs.mkdirSync(resultsDir);
   }
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const resultsFile = path.join(resultsDir, `count-results-${timestamp}.json`);
+	const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+
+  const resultsFile = path.join(resultsDir, `count-results-${timestamp}.json`)
+  const resultsFileRaw = path.join(resultsDir, `count-results-${timestamp}.txt`)
 
   fs.writeFileSync(resultsFile, JSON.stringify(resultsWithTotal, null, 2));
-  console.log(`\nResults saved to: ${resultsFile}`);
+  fs.writeFileSync(resultsFileRaw, countings);
+
+  console.log(
+		countings + '\n\n' +
+		`Results saved to: \n` +
+    resultsFile + '\n' + resultsFileRaw
+	);
 }
 
 main().catch((error) => {
