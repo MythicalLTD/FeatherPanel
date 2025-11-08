@@ -10,6 +10,8 @@
 - Built-in subdomain manager now available for all users at no additional cost.
 - Added the ability to retrieve comprehensive system diagnostics directly from the admin panel for easier troubleshooting and insight.
 - You can now seamlessly update Wings directly from the admin panel, making upgrades faster and easier than ever before!
+- Added full Wings terminal integration—execute system commands directly on your Wings server from the panel!
+
 
 ### Fixed
 - Fixed an issue where attempting to delete an allocated port (in either admin or user mode) could result in an error or database rejection.
@@ -22,7 +24,6 @@
 - Resolved an issue causing server schedules to malfunction, restoring full scheduling functionality
 - Missing translations strings in some pages!
 - Error reporting and warnings are now automatically silenced in production mode for a cleaner user experience.
-- Added full Wings terminal integration—execute system commands directly on your Wings server from the panel!
 
 ### Improved
 - Reduced excessive and unnecessary log output from the admin dashboard page for a cleaner log experience
