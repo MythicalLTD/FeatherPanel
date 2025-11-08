@@ -597,6 +597,41 @@ class SystemService
     }
 
     /**
+     * Execute a command on the host system.
+     *
+     * @param string $command The command to execute
+     * @param int|null $timeoutSeconds Command timeout in seconds (default: 60)
+     * @param string|null $workingDirectory Working directory for command execution
+     * @param array|null $environment Environment variables for the command
+     *
+     * @return array Response containing exit_code, stdout, stderr, timed_out, duration_ms
+     */
+    public function executeCommand(
+        string $command,
+        ?int $timeoutSeconds = null,
+        ?string $workingDirectory = null,
+        ?array $environment = null,
+    ): array {
+        $payload = [
+            'command' => $command,
+        ];
+
+        if ($timeoutSeconds !== null) {
+            $payload['timeout_seconds'] = $timeoutSeconds;
+        }
+
+        if ($workingDirectory !== null) {
+            $payload['working_directory'] = $workingDirectory;
+        }
+
+        if ($environment !== null && !empty($environment)) {
+            $payload['environment'] = $environment;
+        }
+
+        return $this->connection->post('/api/system/terminal/exec', $payload);
+    }
+
+    /**
      * Generate a diagnostics bundle.
      *
      * Returns plain-text diagnostics by default. When format is set to `url`,

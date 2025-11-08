@@ -758,7 +758,7 @@
                 </form>
                 <div v-else class="p-4 space-y-4 overflow-y-auto max-h-[calc(100vh-200px)]">
                     <Tabs v-model="viewActiveTab" class="w-full">
-                        <TabsList class="grid w-full grid-cols-7">
+                        <TabsList class="grid w-full grid-cols-8">
                             <TabsTrigger value="overview">Overview</TabsTrigger>
                             <TabsTrigger value="system">System Info</TabsTrigger>
                             <TabsTrigger value="utilization">Utilization</TabsTrigger>
@@ -766,6 +766,7 @@
                             <TabsTrigger value="network">Network</TabsTrigger>
                             <TabsTrigger value="diagnostics">Diagnostics</TabsTrigger>
                             <TabsTrigger value="self-update">Self-Update</TabsTrigger>
+                            <TabsTrigger value="terminal">Terminal</TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="overview" class="space-y-4 mt-4">
@@ -2441,6 +2442,105 @@
                                 </CardContent>
                             </Card>
                         </TabsContent>
+
+                        <TabsContent value="terminal" class="space-y-4 mt-4">
+                            <!-- System Terminal -->
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle class="text-lg flex items-center gap-2">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                            />
+                                        </svg>
+                                        Host Terminal
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Execute commands on the node's host system. Commands run with system privileges
+                                        via the Wings daemon.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent class="space-y-4">
+                                    <!-- Terminal Output Container -->
+                                    <div class="rounded-lg border bg-black overflow-hidden">
+                                        <div ref="systemTerminalContainer" class="w-full h-[400px] bg-black"></div>
+                                    </div>
+
+                                    <!-- Command Input -->
+                                    <form class="flex gap-2" @submit.prevent="executeTerminalCommand">
+                                        <Input
+                                            v-model="terminalCommandInput"
+                                            placeholder="Enter command (e.g., ls -la, whoami, df -h)"
+                                            class="flex-1 font-mono text-sm"
+                                            :disabled="systemTerminalComposable.isExecuting.value"
+                                        />
+                                        <Button
+                                            type="submit"
+                                            :loading="systemTerminalComposable.isExecuting.value"
+                                            :disabled="!terminalCommandInput.trim()"
+                                        >
+                                            <svg
+                                                v-if="!systemTerminalComposable.isExecuting.value"
+                                                class="h-4 w-4 mr-2"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                                                />
+                                            </svg>
+                                            Execute
+                                        </Button>
+                                        <Button type="button" variant="outline" @click="clearTerminal">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                />
+                                            </svg>
+                                        </Button>
+                                    </form>
+
+                                    <!-- Warning -->
+                                    <div class="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-4">
+                                        <div class="flex items-start gap-3">
+                                            <svg
+                                                class="h-5 w-5 text-yellow-500 shrink-0 mt-0.5"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                                />
+                                            </svg>
+                                            <div class="flex-1">
+                                                <div class="text-sm font-semibold text-yellow-200">
+                                                    Administrative Access Warning
+                                                </div>
+                                                <p class="mt-1 text-xs text-yellow-100/90">
+                                                    Commands execute with system privileges on the host. Use caution as
+                                                    operations can affect server stability. Long-running commands may
+                                                    time out after 60 seconds.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
                     </Tabs>
 
                     <DrawerFooter>
@@ -2482,7 +2582,7 @@ import { useRoute, useRouter } from 'vue-router';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -2516,6 +2616,11 @@ import { Switch } from '@/components/ui/switch';
 import TableComponent from '@/kit/TableComponent.vue';
 import type { ApiResponse, TableColumn } from '@/kit/types';
 import { useToast } from 'vue-toastification';
+import { useSystemTerminal } from '@/composables/useSystemTerminal';
+import { Terminal as XTerm } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
+import { WebLinksAddon } from '@xterm/addon-web-links';
+import '@xterm/xterm/css/xterm.css';
 
 // Extend Node type and form default
 
@@ -2738,6 +2843,18 @@ const selfUpdateResult = ref<Record<string, unknown> | null>(null);
 const selfUpdateMessage = ref<string | null>(null);
 const selfUpdateError = ref<string | null>(null);
 
+// Watch for terminal tab to initialize terminal
+watch(
+    () => viewActiveTab.value,
+    (newTab) => {
+        if (newTab === 'terminal' && systemTerminalContainer.value && !systemTerminal) {
+            setTimeout(() => {
+                initializeSystemTerminal();
+            }, 100);
+        }
+    },
+);
+
 watch(
     () => diagnosticsOptions.logLines,
     (value) => {
@@ -2919,6 +3036,65 @@ const showDrawer = ref(false);
 const drawerMode = ref<'create' | 'edit' | 'view'>('create');
 const drawerNode = ref<Node | null>(null);
 const editingNodeId = ref<number | null>(null);
+
+// Terminal state
+const systemTerminalContainer = ref<HTMLElement | null>(null);
+let systemTerminal: XTerm | null = null;
+let systemTerminalFitAddon: FitAddon | null = null;
+const terminalCommandInput = ref('');
+const systemTerminalComposable = useSystemTerminal(drawerNode);
+
+// Watch for terminal execution results
+watch(
+    () => systemTerminalComposable.lastResult.value,
+    (result) => {
+        if (result && systemTerminal) {
+            // Write stdout (already includes newlines from command output)
+            if (result.stdout) {
+                systemTerminal.write(result.stdout);
+            }
+
+            // Write stderr in red if present
+            if (result.stderr) {
+                systemTerminal.write('\x1b[31m' + result.stderr + '\x1b[0m');
+            }
+
+            // Only add a newline if there's no output (empty command)
+            if (!result.stdout && !result.stderr) {
+                systemTerminal.write('\r\n');
+            }
+
+            // Write status line with exit code and duration
+            const statusColor = result.exit_code === 0 ? '\x1b[32m' : '\x1b[31m';
+            const statusSymbol = result.exit_code === 0 ? '✓' : '✗';
+            const statusText = result.exit_code === 0 ? 'Success' : 'Failed (exit code: ' + result.exit_code + ')';
+
+            systemTerminal.write(
+                '\x1b[90m[' +
+                    statusColor +
+                    statusSymbol +
+                    ' ' +
+                    statusText +
+                    '\x1b[90m | ' +
+                    result.duration_ms +
+                    'ms' +
+                    (result.timed_out ? ' | ⚠ Timed out' : '') +
+                    ']\x1b[0m\r\n',
+            );
+        }
+    },
+);
+
+// Watch for terminal errors
+watch(
+    () => systemTerminalComposable.error.value,
+    (err) => {
+        if (err && systemTerminal) {
+            systemTerminal.write('\x1b[31m✗ Error: ' + err + '\x1b[0m\r\n');
+        }
+    },
+);
+
 const form = ref<FormData>({
     name: '',
     description: '',
@@ -3107,6 +3283,7 @@ function closeDrawer() {
     drawerNode.value = null;
     resetDiagnosticsState();
     resetSelfUpdateState();
+    cleanupSystemTerminal();
 
     // Reset all data states
     systemInfoData.value = null;
@@ -3591,6 +3768,129 @@ async function submitSelfUpdate() {
     } finally {
         selfUpdateLoading.value = false;
     }
+}
+
+// Terminal functions
+function initializeSystemTerminal(): void {
+    if (!systemTerminalContainer.value || systemTerminal) return;
+
+    // Create terminal with custom theme
+    systemTerminal = new XTerm({
+        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+        fontSize: 14,
+        theme: {
+            background: '#000000',
+            foreground: '#d1d5db',
+            cursor: '#ffffff',
+            black: '#000000',
+            red: '#e74c3c',
+            green: '#2ecc71',
+            yellow: '#f39c12',
+            blue: '#3498db',
+            magenta: '#9b59b6',
+            cyan: '#1abc9c',
+            white: '#ecf0f1',
+            brightBlack: '#95a5a6',
+            brightRed: '#ff6b6b',
+            brightGreen: '#51cf66',
+            brightYellow: '#ffd43b',
+            brightBlue: '#74c0fc',
+            brightMagenta: '#da77f2',
+            brightCyan: '#3bc9db',
+            brightWhite: '#ffffff',
+        },
+        cursorBlink: true,
+        cursorStyle: 'block',
+        scrollback: 10000,
+        convertEol: true,
+        allowTransparency: false,
+        cols: 80,
+        rows: 24,
+        lineHeight: 1.2,
+        letterSpacing: 0,
+        allowProposedApi: false,
+        disableStdin: true, // Disable direct input - we'll use a form
+    });
+
+    // Load addons
+    systemTerminalFitAddon = new FitAddon();
+    systemTerminal.loadAddon(systemTerminalFitAddon);
+    systemTerminal.loadAddon(new WebLinksAddon());
+
+    // Open terminal in container
+    systemTerminal.open(systemTerminalContainer.value);
+
+    // Fit terminal to container
+    systemTerminalFitAddon.fit();
+
+    // Handle window resize
+    const resizeObserver = new ResizeObserver(() => {
+        if (systemTerminalFitAddon && systemTerminal) {
+            systemTerminalFitAddon.fit();
+        }
+    });
+
+    if (systemTerminalContainer.value) {
+        resizeObserver.observe(systemTerminalContainer.value);
+    }
+
+    // Write welcome message only once
+    systemTerminal.writeln('\x1b[1;36m╔' + '═'.repeat(58) + '╗\x1b[0m');
+    systemTerminal.writeln('\x1b[1;36m║       Welcome to FeatherPanel Host Terminal            ║\x1b[0m');
+    systemTerminal.writeln('\x1b[1;36m╚' + '═'.repeat(58) + '╝\x1b[0m');
+    systemTerminal.writeln('');
+    systemTerminal.writeln('\x1b[90mHost: ' + (drawerNode.value?.fqdn || 'Unknown') + '\x1b[0m');
+    systemTerminal.writeln('\x1b[90mCommands execute with system privileges - use with caution.\x1b[0m');
+    systemTerminal.writeln('');
+}
+
+async function executeTerminalCommand(): Promise<void> {
+    if (!drawerNode.value) {
+        toast.error('No node selected');
+        return;
+    }
+
+    const command = terminalCommandInput.value.trim();
+    if (!command) {
+        toast.error('Please enter a command');
+        return;
+    }
+
+    if (!systemTerminal) {
+        initializeSystemTerminal();
+    }
+
+    if (systemTerminal) {
+        // Show command being executed with prompt
+        systemTerminal.write('\r\n\x1b[1;36m❯\x1b[0m \x1b[37m' + command + '\x1b[0m\r\n');
+    }
+
+    // Execute command via backend API
+    await systemTerminalComposable.executeCommand({
+        command: command,
+        timeout_seconds: 60,
+    });
+
+    // Clear input after execution
+    terminalCommandInput.value = '';
+}
+
+function clearTerminal(): void {
+    if (systemTerminal) {
+        systemTerminal.clear();
+        systemTerminal.writeln('\x1b[32mTerminal cleared\x1b[0m');
+        systemTerminal.writeln('');
+    }
+}
+
+function cleanupSystemTerminal(): void {
+    systemTerminalComposable.reset();
+    if (systemTerminal) {
+        systemTerminal.dispose();
+        systemTerminal = null;
+    }
+    systemTerminalFitAddon = null;
+    terminalCommandInput.value = '';
 }
 
 // Utility functions for network info

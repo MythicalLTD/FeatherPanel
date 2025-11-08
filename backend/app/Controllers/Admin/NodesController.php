@@ -831,4 +831,147 @@ class NodesController
 
         return ApiResponse::success(['node' => $updatedNode], 'Master daemon reset key generated successfully', 200);
     }
+
+    #[OA\Post(
+        path: '/api/admin/nodes/{id}/terminal/exec',
+        summary: 'Execute command on node host',
+        description: 'Execute a command on the node host system via Wings terminal API. Requires system.host_terminal.enabled=true in Wings config.',
+        tags: ['Admin - Nodes'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Node ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['command'],
+                properties: [
+                    new OA\Property(property: 'command', type: 'string', description: 'Command to execute on the host'),
+                    new OA\Property(property: 'timeout_seconds', type: 'integer', description: 'Timeout in seconds (default: 60)', minimum: 1, maximum: 300),
+                    new OA\Property(property: 'working_directory', type: 'string', description: 'Working directory for command execution'),
+                    new OA\Property(
+                        property: 'environment',
+                        type: 'object',
+                        description: 'Environment variables for the command',
+                        additionalProperties: new OA\Schema(type: 'string')
+                    ),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Command executed successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'exit_code', type: 'integer', description: 'Command exit code'),
+                        new OA\Property(property: 'stdout', type: 'string', description: 'Standard output'),
+                        new OA\Property(property: 'stderr', type: 'string', description: 'Standard error'),
+                        new OA\Property(property: 'timed_out', type: 'boolean', description: 'Whether command timed out'),
+                        new OA\Property(property: 'duration_ms', type: 'integer', description: 'Execution duration in milliseconds'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid payload or missing command'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions or host terminal disabled'),
+            new OA\Response(response: 404, description: 'Node not found'),
+            new OA\Response(response: 504, description: 'Gateway Timeout - Command execution timed out'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to execute command'),
+        ]
+    )]
+    public function executeTerminalCommand(Request $request, int $id): Response
+    {
+        $admin = $request->get('user');
+        $node = Node::getNodeById($id);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $payload = json_decode($request->getContent() ?: '{}', true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return ApiResponse::error('Invalid JSON in request body', 'INVALID_JSON', 400);
+        }
+
+        if (!is_array($payload) || empty($payload['command']) || !is_string($payload['command'])) {
+            return ApiResponse::error('Command is required and must be a string', 'MISSING_COMMAND', 400);
+        }
+
+        $command = trim($payload['command']);
+        if ($command === '') {
+            return ApiResponse::error('Command cannot be empty', 'EMPTY_COMMAND', 400);
+        }
+
+        $timeoutSeconds = isset($payload['timeout_seconds']) ? (int) $payload['timeout_seconds'] : null;
+        if ($timeoutSeconds !== null && ($timeoutSeconds < 1 || $timeoutSeconds > 300)) {
+            return ApiResponse::error('Timeout must be between 1 and 300 seconds', 'INVALID_TIMEOUT', 400);
+        }
+
+        $workingDirectory = isset($payload['working_directory']) && is_string($payload['working_directory'])
+            ? trim($payload['working_directory'])
+            : null;
+
+        $environment = isset($payload['environment']) && is_array($payload['environment'])
+            ? $payload['environment']
+            : null;
+
+        try {
+            $wings = new Wings(
+                $node['fqdn'],
+                (int) $node['daemonListen'],
+                $node['scheme'],
+                $node['daemon_token'],
+                ($timeoutSeconds ?? 60) + 10 // Add 10s buffer for HTTP timeout
+            );
+
+            $result = $wings->getSystem()->executeCommand(
+                $command,
+                $timeoutSeconds,
+                $workingDirectory,
+                $environment
+            );
+
+            // Log the command execution
+            App::getInstance(true)->getLogger()->debug(
+                'Host command executed on node ' . $node['name'] . ' by ' . ($admin['username'] ?? 'unknown') .
+                ': ' . substr($command, 0, 100) . (strlen($command) > 100 ? '...' : '')
+            );
+
+            Activity::createActivity([
+                'user_uuid' => $admin['uuid'] ?? null,
+                'name' => 'execute_node_terminal_command',
+                'context' => 'Executed command on node ' . $node['name'] . ': ' . substr($command, 0, 50),
+                'ip_address' => CloudFlareRealIP::getRealIP(),
+            ]);
+
+            return ApiResponse::success($result, 'Command executed successfully', 200);
+        } catch (\Throwable $e) {
+            $errorMessage = $e->getMessage();
+            App::getInstance(true)->getLogger()->error(
+                'Failed to execute terminal command on node ' . $id . ': ' . $errorMessage
+            );
+
+            // Check if it's a timeout
+            if (str_contains($errorMessage, 'timeout') || str_contains($errorMessage, '504')) {
+                return ApiResponse::error('Command execution timed out', 'COMMAND_TIMEOUT', 504);
+            }
+
+            // Check if host terminal is disabled
+            if (str_contains($errorMessage, 'forbidden') || str_contains($errorMessage, '403')) {
+                return ApiResponse::error(
+                    'Host terminal is disabled on this node. Enable system.host_terminal.enabled in Wings config.',
+                    'HOST_TERMINAL_DISABLED',
+                    403
+                );
+            }
+
+            return ApiResponse::error('Failed to execute command', 'COMMAND_EXECUTION_FAILED', 500);
+        }
+    }
 }

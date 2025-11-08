@@ -155,4 +155,19 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_NODES_EDIT,
         ['POST']
     );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-nodes-terminal-exec',
+        '/api/admin/nodes/{id}/terminal/exec',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new NodesController())->executeTerminalCommand($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['POST']
+    );
 };

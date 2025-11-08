@@ -22,6 +22,7 @@
 - Resolved an issue causing server schedules to malfunction, restoring full scheduling functionality
 - Missing translations strings in some pages!
 - Error reporting and warnings are now automatically silenced in production mode for a cleaner user experience.
+- Added full Wings terminal integration—execute system commands directly on your Wings server from the panel!
 
 ### Improved
 - Reduced excessive and unnecessary log output from the admin dashboard page for a cleaner log experience
