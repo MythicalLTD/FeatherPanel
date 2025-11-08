@@ -30,10 +30,6 @@
 
 use App\App;
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-
 /**
  * Define the environment path.
  */
@@ -54,6 +50,16 @@ define('TELEMETRY', true);
 define('APP_VERSION', 'v1.0.2');
 define('APP_UPSTREAM', 'beta');
 define('REQUEST_ID', uniqid());
+
+if (APP_DEBUG) {
+	error_reporting(E_ALL);
+	ini_set('display_errors', 1);
+	ini_set('display_startup_errors', 1);
+} else {
+	error_reporting(0);
+	ini_set('display_errors', 0);
+	ini_set('display_startup_errors', 0);
+}
 
 if (APP_DEBUG) {
     define('RATE_LIMIT', 500000);

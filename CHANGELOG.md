@@ -21,6 +21,7 @@
 - Resolved build issues encountered with the latest versions of Vue, Vite, and TypeScript, ensuring full compatibility and smoother development experience.
 - Resolved an issue causing server schedules to malfunction, restoring full scheduling functionality
 - Missing translations strings in some pages!
+- Error reporting and warnings are now automatically silenced in production mode for a cleaner user experience.
 
 ### Improved
 - Reduced excessive and unnecessary log output from the admin dashboard page for a cleaner log experience
