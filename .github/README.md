@@ -38,10 +38,33 @@ For installation instructions, system requirements, and complete guides, please 
 
 ## 🚀 Quick Links
 
-|                                                 📘 Documentation                                                 |                                                                   💬 Discord Support                                                                   |                                                                             🔌 API Documentation                                                                              |
-| :--------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+|                                                 📘 Documentation                                                 |                                                                   💬 Discord Support                                                                   |                                                                             🔌 API Documentation                                                                             |
+| :--------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
 | [![Visit Docs](https://img.shields.io/badge/Visit_Docs-blue?style=for-the-badge)](https://docs.mythical.systems) | [![Join Discord](https://img.shields.io/badge/Join_Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.mythical.systems) | [![View API](https://img.shields.io/badge/View_API-FF6C37?style=for-the-badge&logo=postman&logoColor=white)](https://www.postman.com/mythicalsystems/workspace/featherpanel) |
-|                         Installation guides, API reference, and configuration tutorials                          |                                                    Get help from the community and development team                                                    |                                                                     Complete API reference for developers                                                                     |
+|                         Installation guides, API reference, and configuration tutorials                          |                                                    Get help from the community and development team                                                    |                                                                    Complete API reference for developers                                                                     |
+
+---
+
+## 📊 Code Statistics
+
+<!-- COUNT-STATS:START -->
+
+_Last updated: 2025-11-08T11:42:24.403Z_
+
+| Extension | Files |   Lines |
+| --------- | ----: | ------: |
+| `.php`    |   382 |  77,388 |
+| `.vue`    |   294 |  70,439 |
+| `.ts`     |    79 |   6,012 |
+| `.yml`    |    17 |   3,456 |
+| `.yaml`   |     3 |   3,443 |
+| `.cs`     |    46 |   3,346 |
+| `.js`     |     6 |     898 |
+| `.sql`    |    55 |     858 |
+| `.css`    |     3 |     250 |
+| **Total** |   885 | 166,090 |
+
+<!-- COUNT-STATS:END -->
 
 ---
 

@@ -5,6 +5,11 @@ const path = require("path");
 const { promisify } = require("util");
 const readFileAsync = promisify(fs.readFile);
 
+const DEFAULT_README_PATH = path.join(__dirname, ".github", "README.md");
+const README_MARKER_START = "<!-- COUNT-STATS:START -->";
+const README_MARKER_END = "<!-- COUNT-STATS:END -->";
+const numberFormatter = new Intl.NumberFormat("en-US");
+
 // File extensions to include
 const VALID_EXTENSIONS = [
   ".vue",
@@ -16,7 +21,7 @@ const VALID_EXTENSIONS = [
   ".yaml",
   ".sql",
   ".cs",
-  '.css'
+  ".css",
 ];
 // Directories to exclude
 const EXCLUDED_DIRS = [
@@ -53,6 +58,151 @@ function formatNumber(num) {
   return num.toString();
 }
 
+function formatInteger(value) {
+  return numberFormatter.format(value);
+}
+
+function printUsage() {
+  console.log(
+    [
+      "Usage: node count.js [targetDir] [options]",
+      "",
+      "Options:",
+      "  --update-readme          Update the default README with the latest counts.",
+      "  --readme <path>          Update the specified README file.",
+      "  --no-readme              Do not update a README file (overrides other options).",
+      "  -h, --help               Show this help message.",
+    ].join("\n")
+  );
+}
+
+function parseArguments(argv) {
+  const args = [...argv];
+  let targetDir = process.cwd();
+  let readmePath = null;
+
+  if (args.length > 0 && !args[0].startsWith("-")) {
+    targetDir = path.resolve(args.shift());
+  } else {
+    targetDir = path.resolve(targetDir);
+  }
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+
+    switch (arg) {
+      case "--readme": {
+        const providedPath = args[index + 1];
+        if (!providedPath || providedPath.startsWith("-")) {
+          throw new Error("Missing path after --readme option.");
+        }
+        readmePath = path.resolve(providedPath);
+        index += 1;
+        break;
+      }
+      case "--update-readme":
+        if (!readmePath) {
+          readmePath = DEFAULT_README_PATH;
+        }
+        break;
+      case "--no-readme":
+        readmePath = null;
+        break;
+      case "--help":
+      case "-h":
+        printUsage();
+        process.exit(0);
+      default:
+        throw new Error(`Unknown argument: ${arg}`);
+    }
+  }
+
+  return {
+    targetDir,
+    readmePath,
+    shouldUpdateReadme: Boolean(readmePath),
+  };
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildReadmeTable(sortedResults, totalFiles, totalLines) {
+  const header = "| Extension | Files | Lines |\n| --- | ---: | ---: |";
+
+  const body =
+    sortedResults.length > 0
+      ? sortedResults
+          .map(([ext, { files, lines }]) => {
+            return `| \`${ext}\` | ${formatInteger(files)} | ${formatInteger(
+              lines
+            )} |`;
+          })
+          .join("\n")
+      : "| _No matching files_ | 0 | 0 |";
+
+  const totalRow = `| **Total** | ${formatInteger(
+    totalFiles
+  )} | ${formatInteger(totalLines)} |`;
+
+  return [header, body, totalRow].join("\n");
+}
+
+function buildReadmeSection(table, timestampIso) {
+  return [
+    README_MARKER_START,
+    "",
+    `_Last updated: ${timestampIso}_`,
+    "",
+    table,
+    "",
+    README_MARKER_END,
+  ].join("\n");
+}
+
+function updateReadmeWithResults(
+  readmePath,
+  sortedResults,
+  totalFiles,
+  totalLines,
+  timestampIso
+) {
+  if (!fs.existsSync(readmePath)) {
+    console.warn(
+      `README file not found at ${readmePath}. Skipping README update.`
+    );
+    return false;
+  }
+
+  const readmeContent = fs.readFileSync(readmePath, "utf8");
+
+  if (
+    !readmeContent.includes(README_MARKER_START) ||
+    !readmeContent.includes(README_MARKER_END)
+  ) {
+    console.warn(
+      `README markers not found in ${readmePath}. Add "${README_MARKER_START}" and "${README_MARKER_END}" to enable automatic updates.`
+    );
+    return false;
+  }
+
+  const sectionPattern = new RegExp(
+    `${escapeRegExp(README_MARKER_START)}[\\s\\S]*?${escapeRegExp(
+      README_MARKER_END
+    )}`
+  );
+
+  const table = buildReadmeTable(sortedResults, totalFiles, totalLines);
+  const newSection = buildReadmeSection(table, timestampIso);
+
+  const updatedContent = readmeContent.replace(sectionPattern, newSection);
+
+  fs.writeFileSync(readmePath, updatedContent);
+
+  return true;
+}
+
 async function countLinesInFile(filePath) {
   try {
     let content = await readFileAsync(filePath, "utf8");
@@ -84,7 +234,7 @@ async function traverseDirectory(dir, results = {}) {
       if (entry.isDirectory()) {
         // Skip excluded directories
         if (
-			EXCLUDED_DIRS.some((excluded) =>
+          EXCLUDED_DIRS.some((excluded) =>
             entry.name.toLowerCase().includes(excluded.toLowerCase())
           )
         ) {
@@ -111,7 +261,18 @@ async function traverseDirectory(dir, results = {}) {
 }
 
 async function main() {
-	let countings = ''
+  let parsedArgs;
+
+  try {
+    parsedArgs = parseArguments(process.argv.slice(2));
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+
+  const { targetDir, readmePath, shouldUpdateReadme } = parsedArgs;
+
+  let countings = "";
 
   countings += `Counting non-empty lines of code in ${targetDir}... \n`;
   countings += `Including extensions: ${VALID_EXTENSIONS.join(", ")} \n`;
@@ -132,21 +293,35 @@ async function main() {
   );
 
   sortedResults.forEach(([ext, { files, lines }]) => {
-    countings += (
-      `${ext.padEnd(6)} | ${formatNumber(files).padStart(
-        6
-      )} files | ${formatNumber(lines).padStart(8)} lines \n`
-    );
+    countings += `${ext.padEnd(6)} | ${formatNumber(files).padStart(
+      6
+    )} files | ${formatNumber(lines).padStart(8)} lines \n`;
     totalFiles += files;
     totalLines += lines;
   });
 
-  countings += ("-".repeat(50) + "\n");
-  countings += (
-    `Total  | ${formatNumber(totalFiles).padStart(6)} files | ${formatNumber(
-      totalLines
-    ).padStart(8)} lines \n`
-  );
+  countings += "-".repeat(50) + "\n";
+  countings += `Total  | ${formatNumber(totalFiles).padStart(
+    6
+  )} files | ${formatNumber(totalLines).padStart(8)} lines \n`;
+
+  const timestampIso = new Date().toISOString();
+
+  if (shouldUpdateReadme) {
+    const readmeUpdated = updateReadmeWithResults(
+      readmePath,
+      sortedResults,
+      totalFiles,
+      totalLines,
+      timestampIso
+    );
+
+    if (readmeUpdated) {
+      countings += `README updated at ${readmePath} \n`;
+    } else {
+      countings += `README update skipped for ${readmePath} \n`;
+    }
+  }
 
   // Store results in a JSON file
   const resultsWithTotal = {
@@ -166,19 +341,28 @@ async function main() {
     fs.mkdirSync(resultsDir);
   }
 
-	const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const safeTimestamp = timestampIso.replace(/[:.]/g, "-");
 
-  const resultsFile = path.join(resultsDir, `count-results-${timestamp}.json`)
-  const resultsFileRaw = path.join(resultsDir, `count-results-${timestamp}.txt`)
+  const resultsFile = path.join(
+    resultsDir,
+    `count-results-${safeTimestamp}.json`
+  );
+  const resultsFileRaw = path.join(
+    resultsDir,
+    `count-results-${safeTimestamp}.txt`
+  );
 
   fs.writeFileSync(resultsFile, JSON.stringify(resultsWithTotal, null, 2));
   fs.writeFileSync(resultsFileRaw, countings);
 
   console.log(
-		countings + '\n\n' +
-		`Results saved to: \n` +
-    resultsFile + '\n' + resultsFileRaw
-	);
+    countings +
+      "\n\n" +
+      `Results saved to: \n` +
+      resultsFile +
+      "\n" +
+      resultsFileRaw
+  );
 }
 
 main().catch((error) => {
