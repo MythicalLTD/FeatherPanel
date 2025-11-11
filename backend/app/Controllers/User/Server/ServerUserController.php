@@ -530,7 +530,9 @@ class ServerUserController
             $server['node']['daemon_token'],
             $server['node']['daemonListen'],
             $server['node']['daemonSFTP'],
-            $server['node']['daemonBase']
+            $server['node']['daemonBase'],
+            $server['node']['public_ip_v4'],
+            $server['node']['public_ip_v6']
         );
 
         return ApiResponse::success($server, 'Server fetched successfully', 200);

@@ -38,6 +38,8 @@ use App\Cli\CommandBuilder;
 
 class Migrate extends App implements CommandBuilder
 {
+    private const PLUGIN_NAMESPACE_PREFIX = 'addon:';
+
     public static function execute(array $args): void
     {
         $cliApp = App::getInstance();
@@ -103,12 +105,10 @@ class Migrate extends App implements CommandBuilder
         /**
          * Get all the migration scripts.
          */
-        $migrations = scandir(__DIR__ . '/../../../storage/migrations/');
-        $migrationFiles = array_filter($migrations, function ($file) {
-            return $file !== '.' && $file !== '..' && pathinfo($file, PATHINFO_EXTENSION) === 'sql';
-        });
+        $migrationDirectories = self::getMigrationDirectories();
+        $orderedMigrations = self::collectMigrationFiles($migrationDirectories);
 
-        $totalMigrations = count($migrationFiles);
+        $totalMigrations = count($orderedMigrations);
         $executedMigrations = 0;
         $skippedMigrations = 0;
         $failedMigrations = 0;
@@ -116,32 +116,60 @@ class Migrate extends App implements CommandBuilder
         $cliApp->send($cliApp->color3 . '&l📊 Found &r&f' . $totalMigrations . '&r' . $cliApp->color3 . ' migration files');
         $cliApp->send('&7' . str_repeat('─', 50));
 
-        foreach ($migrationFiles as $migration) {
-            $migrationPath = __DIR__ . "/../../../storage/migrations/$migration";
-            $migrationContent = file_get_contents($migrationPath);
-            $migrationName = $migration;
+        $currentNamespace = null;
+
+        foreach ($orderedMigrations as $migration) {
+            if ($currentNamespace !== $migration['namespace']) {
+                if ($currentNamespace !== null) {
+                    $cliApp->send('&7' . str_repeat('─', 50));
+                }
+
+                $currentNamespace = $migration['namespace'];
+
+                $sourceLabel = $currentNamespace === 'core'
+                    ? 'Core Migrations'
+                    : 'Plugin - ' . substr($currentNamespace, strlen(self::PLUGIN_NAMESPACE_PREFIX));
+
+                $cliApp->send($cliApp->color1 . '&l📦 Source: &r&f' . $sourceLabel);
+            }
+
+            $migrationPath = $migration['path'];
+            $migrationName = $migration['name'];
+            $isCoreMigration = $currentNamespace === 'core';
+            $addonName = $isCoreMigration ? null : substr($currentNamespace, strlen(self::PLUGIN_NAMESPACE_PREFIX));
+            $displayName = $isCoreMigration ? $migrationName : $addonName . '::' . $migrationName;
+            $scriptIdentifier = $isCoreMigration
+                ? $migrationName
+                : self::PLUGIN_NAMESPACE_PREFIX . $addonName . ':' . $migrationName;
 
             /**
              * Check if the migration was already executed.
              */
             $stmt = $db->getPdo()->prepare("SELECT COUNT(*) FROM featherpanel_migrations WHERE script = :script AND migrated = 'true'");
-            $stmt->execute(['script' => $migrationName]);
+            $stmt->execute(['script' => $scriptIdentifier]);
             $migrationExists = $stmt->fetchColumn();
 
             if ($migrationExists > 0) {
-                $cliApp->send('&7&l⏭️  Skipped: &r&7' . $migrationName . ' &8(already executed)');
+                $cliApp->send('&7&l⏭️  Skipped: &r&7' . $displayName . ' &8(already executed)');
                 ++$skippedMigrations;
                 continue;
+            }
+
+            $migrationContent = file_get_contents($migrationPath);
+            if ($migrationContent === false) {
+                $cliApp->send('&c&l❌ Failed to read migration file: &r&f' . $displayName);
+                ++$failedMigrations;
+                exit;
             }
 
             /**
              * Execute the migration.
              */
-            $cliApp->send($cliApp->color3 . '&l🔄 Executing: &r&f' . $migrationName);
+            $cliApp->send($cliApp->color3 . '&l🔄 Executing: &r&f' . $displayName);
             $migrationStartTime = microtime(true);
 
             try {
-                if ($migrationName == '2024-11-15-22.17-create-settings.sql') {
+                if ($isCoreMigration && $migrationName == '2024-11-15-22.17-create-settings.sql') {
                     $cliApp->send($cliApp->color3 . '&l🔄 Generating encryption key...');
                     // Generate an encryption key for xchacha20
                     $encryptionKey = XChaCha20::generateStrongKey(true);
@@ -151,10 +179,10 @@ class Migrate extends App implements CommandBuilder
                 }
                 $db->getPdo()->exec($migrationContent);
                 $migrationTime = round((microtime(true) - $migrationStartTime) * 1000, 2);
-                $cliApp->send('&a&l✅ Success: &r&f' . $migrationName . ' &7(' . $migrationTime . 'ms)');
+                $cliApp->send('&a&l✅ Success: &r&f' . $displayName . ' &7(' . $migrationTime . 'ms)');
                 ++$executedMigrations;
             } catch (\Exception $e) {
-                $cliApp->send('&c&l❌ Failed: &r&f' . $migrationName);
+                $cliApp->send('&c&l❌ Failed: &r&f' . $displayName);
                 $cliApp->send('&c&l   Error: &r' . $e->getMessage());
                 ++$failedMigrations;
                 exit;
@@ -166,7 +194,7 @@ class Migrate extends App implements CommandBuilder
             try {
                 $stmt = $db->getPdo()->prepare('INSERT INTO featherpanel_migrations (script, migrated) VALUES (:script, :migrated)');
                 $stmt->execute([
-                    'script' => $migrationName,
+                    'script' => $scriptIdentifier,
                     'migrated' => 'true',
                 ]);
             } catch (\Exception $e) {
@@ -212,5 +240,81 @@ class Migrate extends App implements CommandBuilder
             `date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'The date from when this was executed!',
             PRIMARY KEY (`id`)
         ) ENGINE = InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT = 'The migrations table is table where save the sql migrations!';";
+    }
+
+    /**
+     * Get all migration directories, including core and plugin migrations.
+     *
+     * @return array<string, string>
+     */
+    private static function getMigrationDirectories(): array
+    {
+        $directories = [
+            'core' => __DIR__ . '/../../../storage/migrations/',
+        ];
+
+        $addonsRoot = __DIR__ . '/../../../storage/addons/';
+        if (is_dir($addonsRoot)) {
+            $addons = array_filter(scandir($addonsRoot) ?: [], static function (string $entry) use ($addonsRoot): bool {
+                if ($entry === '.' || $entry === '..') {
+                    return false;
+                }
+
+                return is_dir($addonsRoot . $entry);
+            });
+
+            sort($addons);
+
+            foreach ($addons as $addon) {
+                $migrationDirectory = $addonsRoot . $addon . '/Migrations/';
+                if (is_dir($migrationDirectory)) {
+                    $directories[self::PLUGIN_NAMESPACE_PREFIX . $addon] = $migrationDirectory;
+                }
+            }
+        }
+
+        return $directories;
+    }
+
+    /**
+     * Collects migration files from the provided directories.
+     *
+     * @param array<string, string> $directories
+     *
+     * @return array<int, array{namespace: string, path: string, name: string}>
+     */
+    private static function collectMigrationFiles(array $directories): array
+    {
+        $migrations = [];
+
+        foreach ($directories as $namespace => $directory) {
+            if (!is_dir($directory)) {
+                continue;
+            }
+
+            $files = array_filter(scandir($directory) ?: [], static function (string $file) use ($directory): bool {
+                if ($file === '.' || $file === '..') {
+                    return false;
+                }
+
+                if (pathinfo($file, PATHINFO_EXTENSION) !== 'sql') {
+                    return false;
+                }
+
+                return is_file($directory . $file);
+            });
+
+            sort($files);
+
+            foreach ($files as $file) {
+                $migrations[] = [
+                    'namespace' => $namespace,
+                    'path' => $directory . $file,
+                    'name' => $file,
+                ];
+            }
+        }
+
+        return $migrations;
     }
 }

@@ -453,6 +453,37 @@
                                         :disabled="formLoading"
                                     />
                                 </div>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="block font-medium mb-1">Public IPv4</label>
+                                        <Input
+                                            v-model="form.public_ip_v4"
+                                            :disabled="formLoading"
+                                            placeholder="203.0.113.42"
+                                        />
+                                        <div class="text-xs text-muted-foreground">
+                                            This address is used for client connectivity. Provide it if you plan to use
+                                            the subdomain manager.
+                                        </div>
+                                        <div v-if="formErrors.public_ip_v4" class="text-red-500 text-xs mt-1">
+                                            {{ formErrors.public_ip_v4 }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block font-medium mb-1">Public IPv6</label>
+                                        <Input
+                                            v-model="form.public_ip_v6"
+                                            :disabled="formLoading"
+                                            placeholder="2001:db8::10"
+                                        />
+                                        <div class="text-xs text-muted-foreground">
+                                            Optional IPv6 address that clients can use to reach this node.
+                                        </div>
+                                        <div v-if="formErrors.public_ip_v6" class="text-red-500 text-xs mt-1">
+                                            {{ formErrors.public_ip_v6 }}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div v-show="currentStep === 3">
@@ -651,6 +682,37 @@
                                         :disabled="formLoading"
                                     />
                                 </div>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="block font-medium mb-1">Public IPv4</label>
+                                        <Input
+                                            v-model="form.public_ip_v4"
+                                            :disabled="formLoading"
+                                            placeholder="203.0.113.42"
+                                        />
+                                        <div class="text-xs text-muted-foreground">
+                                            Provide this if the subdomain manager should route traffic through this
+                                            node.
+                                        </div>
+                                        <div v-if="formErrors.public_ip_v4" class="text-red-500 text-xs mt-1">
+                                            {{ formErrors.public_ip_v4 }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block font-medium mb-1">Public IPv6</label>
+                                        <Input
+                                            v-model="form.public_ip_v6"
+                                            :disabled="formLoading"
+                                            placeholder="2001:db8::10"
+                                        />
+                                        <div class="text-xs text-muted-foreground">
+                                            Optional IPv6 address reachable by clients.
+                                        </div>
+                                        <div v-if="formErrors.public_ip_v6" class="text-red-500 text-xs mt-1">
+                                            {{ formErrors.public_ip_v6 }}
+                                        </div>
+                                    </div>
+                                </div>
                             </TabsContent>
                             <TabsContent value="advanced" class="space-y-4">
                                 <div>
@@ -795,6 +857,14 @@
                                         <div>
                                             <div class="text-sm font-medium text-muted-foreground">Disk</div>
                                             <div class="text-sm">{{ drawerNode?.disk }} MiB</div>
+                                        </div>
+                                        <div v-if="drawerNode?.public_ip_v4">
+                                            <div class="text-sm font-medium text-muted-foreground">Public IPv4</div>
+                                            <div class="text-sm font-mono">{{ drawerNode?.public_ip_v4 }}</div>
+                                        </div>
+                                        <div v-if="drawerNode?.public_ip_v6">
+                                            <div class="text-sm font-medium text-muted-foreground">Public IPv6</div>
+                                            <div class="text-sm font-mono">{{ drawerNode?.public_ip_v6 }}</div>
                                         </div>
                                         <div>
                                             <div class="text-sm font-medium text-muted-foreground">Created</div>
@@ -1640,6 +1710,29 @@
                             </div>
 
                             <div v-else-if="networkData" class="space-y-4">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle class="text-lg">Configured Public Addresses</CardTitle>
+                                        <CardDescription>
+                                            These addresses are stored in FeatherPanel. Set the IPv4 when using the
+                                            subdomain manager.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent class="grid gap-4 md:grid-cols-2">
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">Public IPv4</div>
+                                            <div class="text-sm font-mono">
+                                                {{ drawerNode?.public_ip_v4 ?? 'Not set' }}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-muted-foreground">Public IPv6</div>
+                                            <div class="text-sm font-mono">
+                                                {{ drawerNode?.public_ip_v6 ?? 'Not set' }}
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                                 <!-- IP Addresses -->
                                 <Card>
                                     <CardHeader>
@@ -2726,6 +2819,8 @@ type Node = {
     daemonListen: number;
     daemonSFTP: number;
     daemonBase: string;
+    public_ip_v4?: string | null;
+    public_ip_v6?: string | null;
     created_at: string;
     updated_at: string;
     // ...add other fields as needed
@@ -2748,6 +2843,8 @@ type FormData = {
     daemonListen: number;
     daemonSFTP: number;
     daemonBase: string;
+    public_ip_v4: string;
+    public_ip_v6: string;
 };
 
 const toast = useToast();
@@ -3112,6 +3209,8 @@ const form = ref<FormData>({
     daemonListen: 8080,
     daemonSFTP: 2022,
     daemonBase: '/var/lib/featherpanel/volumes',
+    public_ip_v4: '',
+    public_ip_v6: '',
 });
 const formErrors = ref<Record<string, string>>({});
 const formLoading = ref(false);
@@ -3161,6 +3260,12 @@ function validateStep(stepIdx: number): boolean {
     if (step.key === 'network') {
         if (!form.value.daemonListen) errors.daemonListen = 'Daemon port is required';
         if (!form.value.daemonSFTP) errors.daemonSFTP = 'Daemon SFTP port is required';
+        if (form.value.public_ip_v4 && !isValidIPv4Address(form.value.public_ip_v4)) {
+            errors.public_ip_v4 = 'Public IPv4 must be a valid IPv4 address';
+        }
+        if (form.value.public_ip_v6 && !isValidIPv6Address(form.value.public_ip_v6)) {
+            errors.public_ip_v6 = 'Public IPv6 must be a valid IPv6 address';
+        }
     }
     if (step.key === 'advanced') {
         if (form.value.upload_size === undefined || form.value.upload_size < 1)
@@ -3221,6 +3326,8 @@ function openCreateDrawer() {
         daemonListen: 8080,
         daemonSFTP: 2022,
         daemonBase: '/var/lib/featherpanel/volumes',
+        public_ip_v4: '',
+        public_ip_v6: '',
     };
     resetWizard();
     showDrawer.value = true;
@@ -3250,6 +3357,8 @@ function onEdit(node: Node) {
         daemonListen: node.daemonListen || 8080,
         daemonSFTP: node.daemonSFTP || 2022,
         daemonBase: node.daemonBase || '/var/lib/featherpanel/volumes',
+        public_ip_v4: node.public_ip_v4 ?? '',
+        public_ip_v6: node.public_ip_v6 ?? '',
     };
     resetWizard(); // Reset wizard for edit mode
     showDrawer.value = true;
@@ -3332,6 +3441,14 @@ function validateForm() {
     if (form.value.upload_size === undefined || form.value.upload_size < 1)
         errors.upload_size = 'Upload size limit is required and must be at least 1';
 
+    if (form.value.public_ip_v4 && !isValidIPv4Address(form.value.public_ip_v4)) {
+        errors.public_ip_v4 = 'Public IPv4 must be a valid IPv4 address';
+    }
+
+    if (form.value.public_ip_v6 && !isValidIPv6Address(form.value.public_ip_v6)) {
+        errors.public_ip_v6 = 'Public IPv6 must be a valid IPv6 address';
+    }
+
     return errors;
 }
 
@@ -3341,12 +3458,17 @@ async function submitForm() {
     formLoading.value = true;
     try {
         // Convert string boolean values to actual booleans/integers for API
+        const trimmedIPv4 = form.value.public_ip_v4.trim();
+        const trimmedIPv6 = form.value.public_ip_v6.trim();
+
         const submitData = {
             ...form.value,
             location_id: form.value.location_id ? Number(form.value.location_id) : undefined,
             public: form.value.public === 'true' ? 1 : 0,
             behind_proxy: form.value.behind_proxy === 'true' ? 1 : 0,
             maintenance_mode: form.value.maintenance_mode === 'true' ? 1 : 0,
+            public_ip_v4: trimmedIPv4 === '' ? null : trimmedIPv4,
+            public_ip_v6: trimmedIPv6 === '' ? null : trimmedIPv6,
         };
 
         if (drawerMode.value === 'create') {
@@ -3993,5 +4115,32 @@ function formatBytes(bytes: number): string {
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function isValidIPv4Address(value: string): boolean {
+    if (!value) {
+        return false;
+    }
+
+    return (
+        /^[0-9]{1,3}(\.[0-9]{1,3}){3}$/.test(value) &&
+        value.split('.').every((segment) => {
+            const parsed = Number(segment);
+            return parsed >= 0 && parsed <= 255;
+        })
+    );
+}
+
+function isValidIPv6Address(value: string): boolean {
+    if (!value) {
+        return false;
+    }
+
+    try {
+        const url = new URL(`http://[${value}]/`);
+        return url.hostname.length > 0;
+    } catch {
+        return false;
+    }
 }
 </script>

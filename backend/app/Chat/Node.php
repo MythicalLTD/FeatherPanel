@@ -65,6 +65,8 @@ class Node
         'daemonListen',
         'daemonSFTP',
         'daemonBase',
+        'public_ip_v4',
+        'public_ip_v6',
     ];
 
     /**
@@ -112,6 +114,18 @@ class Node
 
         if (isset($data['daemonSFTP']) && (!is_numeric($data['daemonSFTP']) || (int) $data['daemonSFTP'] < 1)) {
             $errors[] = 'Daemon SFTP port must be a positive number';
+        }
+
+        if (isset($data['public_ip_v4']) && $data['public_ip_v4'] !== null && $data['public_ip_v4'] !== '') {
+            if (!filter_var($data['public_ip_v4'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                $errors[] = 'public_ip_v4 must be a valid IPv4 address';
+            }
+        }
+
+        if (isset($data['public_ip_v6']) && $data['public_ip_v6'] !== null && $data['public_ip_v6'] !== '') {
+            if (!filter_var($data['public_ip_v6'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+                $errors[] = 'public_ip_v6 must be a valid IPv6 address';
+            }
         }
 
         return $errors;

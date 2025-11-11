@@ -31,6 +31,7 @@
 namespace App\Controllers\User\Server;
 
 use App\App;
+use App\Chat\Node;
 use App\Chat\Subdomain;
 use App\Chat\Allocation;
 use App\SubuserPermissions;
@@ -243,7 +244,21 @@ class SubdomainController
         $protocolService = $mapping['protocol_service'] ?? null;
         $recordType = $protocolService ? 'SRV' : 'CNAME';
 
-        $target = $allocation['ip_alias'] ?: $allocation['ip'];
+        // If ip_alias is not set, use the node public ipv4; else use ip_alias or fallback to allocation ip
+        if (!empty($allocation['ip_alias'])) {
+            // Just use those assuming it exists in cloudflare already!
+            $target = $allocation['ip_alias'];
+        } elseif (!empty($allocation['node_id'])) {
+            $node = Node::getNodeById((int) $allocation['node_id']);
+            if (!empty($node['public_ip_v4'])) {
+                $target = $node['public_ip_v4'];
+            } else {
+                $target = $allocation['ip'];
+            }
+        } else {
+            $target = $allocation['ip'];
+        }
+
         $port = (int) ($allocation['port'] ?? 0);
         $ttl = (int) ($mapping['ttl'] ?? 120);
 

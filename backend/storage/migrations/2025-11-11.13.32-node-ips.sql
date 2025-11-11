@@ -1,0 +1,3 @@
+ALTER TABLE `featherpanel_nodes`
+ADD COLUMN `public_ip_v4` VARCHAR(15) NULL DEFAULT NULL,
+ADD COLUMN `public_ip_v6` VARCHAR(45) NULL DEFAULT NULL;

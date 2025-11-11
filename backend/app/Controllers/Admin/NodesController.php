@@ -53,6 +53,18 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'location_id', type: 'integer', description: 'Location ID'),
         new OA\Property(property: 'daemon_token_id', type: 'string', description: 'Daemon token ID'),
         new OA\Property(property: 'daemon_token', type: 'string', description: 'Daemon authentication token'),
+        new OA\Property(
+            property: 'public_ip_v4',
+            type: 'string',
+            nullable: true,
+            description: 'Public IPv4 address reachable by clients. Required when using the subdomain manager.'
+        ),
+        new OA\Property(
+            property: 'public_ip_v6',
+            type: 'string',
+            nullable: true,
+            description: 'Public IPv6 address reachable by clients.'
+        ),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
     ]
@@ -79,6 +91,20 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'name', type: 'string', description: 'Node name', minLength: 1, maxLength: 255),
         new OA\Property(property: 'fqdn', type: 'string', description: 'Fully qualified domain name', minLength: 1, maxLength: 255),
         new OA\Property(property: 'location_id', type: 'integer', description: 'Location ID', minimum: 1),
+        new OA\Property(
+            property: 'public_ip_v4',
+            type: 'string',
+            nullable: true,
+            description: 'Public IPv4 address reachable by clients. Set this if you plan to use the subdomain manager.',
+            example: '203.0.113.42'
+        ),
+        new OA\Property(
+            property: 'public_ip_v6',
+            type: 'string',
+            nullable: true,
+            description: 'Public IPv6 address reachable by clients.',
+            example: '2001:db8::10'
+        ),
     ]
 )]
 #[OA\Schema(
@@ -89,6 +115,18 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'fqdn', type: 'string', description: 'Fully qualified domain name', minLength: 1, maxLength: 255),
         new OA\Property(property: 'location_id', type: 'integer', description: 'Location ID', minimum: 1),
         new OA\Property(property: 'uuid', type: 'string', description: 'Node UUID (must be valid UUID format)'),
+        new OA\Property(
+            property: 'public_ip_v4',
+            type: 'string',
+            nullable: true,
+            description: 'Public IPv4 address reachable by clients. Set this if you plan to use the subdomain manager.'
+        ),
+        new OA\Property(
+            property: 'public_ip_v6',
+            type: 'string',
+            nullable: true,
+            description: 'Public IPv6 address reachable by clients.'
+        ),
     ]
 )]
 class NodesController
@@ -279,6 +317,23 @@ class NodesController
         if (!empty($errors)) {
             return ApiResponse::error(implode('; ', $errors), 'NODE_VALIDATION_FAILED', 400);
         }
+
+        $data['public_ip_v4'] = isset($data['public_ip_v4']) ? trim((string) $data['public_ip_v4']) : null;
+        $data['public_ip_v6'] = isset($data['public_ip_v6']) ? trim((string) $data['public_ip_v6']) : null;
+
+        if ($data['public_ip_v4'] === '') {
+            $data['public_ip_v4'] = null;
+        }
+        if ($data['public_ip_v6'] === '') {
+            $data['public_ip_v6'] = null;
+        }
+
+        if ($data['public_ip_v4'] !== null && !filter_var($data['public_ip_v4'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            return ApiResponse::error('public_ip_v4 must be a valid IPv4 address', 'NODE_VALIDATION_FAILED', 400);
+        }
+        if ($data['public_ip_v6'] !== null && !filter_var($data['public_ip_v6'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            return ApiResponse::error('public_ip_v6 must be a valid IPv6 address', 'NODE_VALIDATION_FAILED', 400);
+        }
         // Generate UUID and tokens for the node
         $data['uuid'] = Node::generateUuid();
         $data['daemon_token_id'] = Node::generateDaemonTokenId();
@@ -386,6 +441,27 @@ class NodesController
         if (!empty($errors)) {
             return ApiResponse::error(implode('; ', $errors), 'NODE_VALIDATION_FAILED', 400);
         }
+
+        if (array_key_exists('public_ip_v4', $data)) {
+            $data['public_ip_v4'] = $data['public_ip_v4'] === null ? null : trim((string) $data['public_ip_v4']);
+            if ($data['public_ip_v4'] === '') {
+                $data['public_ip_v4'] = null;
+            }
+            if ($data['public_ip_v4'] !== null && !filter_var($data['public_ip_v4'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                return ApiResponse::error('public_ip_v4 must be a valid IPv4 address', 'NODE_VALIDATION_FAILED', 400);
+            }
+        }
+
+        if (array_key_exists('public_ip_v6', $data)) {
+            $data['public_ip_v6'] = $data['public_ip_v6'] === null ? null : trim((string) $data['public_ip_v6']);
+            if ($data['public_ip_v6'] === '') {
+                $data['public_ip_v6'] = null;
+            }
+            if ($data['public_ip_v6'] !== null && !filter_var($data['public_ip_v6'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+                return ApiResponse::error('public_ip_v6 must be a valid IPv6 address', 'NODE_VALIDATION_FAILED', 400);
+            }
+        }
+
         if (isset($data['uuid']) && !Node::isValidUuid($data['uuid'])) {
             return ApiResponse::error('Invalid UUID format', 'INVALID_UUID', 400);
         }
@@ -859,7 +935,7 @@ class NodesController
                         property: 'environment',
                         type: 'object',
                         description: 'Environment variables for the command',
-                        additionalProperties: new OA\Schema(type: 'string')
+                        additionalProperties: true
                     ),
                 ]
             )

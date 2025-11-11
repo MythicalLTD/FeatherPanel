@@ -4,7 +4,16 @@
 
 ### Fixed
 
-- Plugins not being able to register dashboard pages!
+- Resolved an issue preventing plugins from registering their own dashboard pages.
+- Fixed an issue where the subdomain manager would fail if an allocation did not have an ip_alias and the allocation IP was not public.
+- Removed the "Set Primary" button from the server edit page to prevent user confusion and streamline the allocation management experience.
+
+### Added
+
+- The migration CLI now fully supports running plugin-provided migrations, enabling seamless updates and database changes for all your plugins!
+- The migration interface in the admin panel now fully supports executing migrations provided by plugins, enabling streamlined database updates for all installed plugins!
+- Added support for specifying public IPv4 and IPv6 addresses on nodes, enhancing subdomain manager functionality and enabling broader networking capabilities.
+- Significantly expanded plugin widget customization options power users and plugin developers can now personalize widgets to their heart's content!
 
 ## v1.0.2 BETA
 

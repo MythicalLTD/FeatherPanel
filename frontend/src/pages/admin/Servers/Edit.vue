@@ -817,16 +817,6 @@
                                         <Button
                                             v-if="!allocation.is_primary"
                                             type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            :disabled="settingPrimary === allocation.id"
-                                            @click="setPrimaryAllocation(allocation.id)"
-                                        >
-                                            {{ settingPrimary === allocation.id ? 'Setting...' : 'Set Primary' }}
-                                        </Button>
-                                        <Button
-                                            v-if="!allocation.is_primary"
-                                            type="button"
                                             variant="destructive"
                                             size="sm"
                                             :disabled="deletingAllocation === allocation.id"
@@ -1767,7 +1757,6 @@ const serverAllocations = ref<{
     allocations: [],
 });
 const loadingAllocations = ref(false);
-const settingPrimary = ref<number | null>(null);
 const deletingAllocation = ref<number | null>(null);
 
 // Server transfer state
@@ -2278,29 +2267,6 @@ async function deleteAllocation(allocationId: number) {
         toast.error('Failed to delete allocation');
     } finally {
         deletingAllocation.value = null;
-    }
-}
-
-// Set primary allocation
-async function setPrimaryAllocation(allocationId: number) {
-    const serverId = route.params.id;
-    if (!serverId) return;
-
-    settingPrimary.value = allocationId;
-    try {
-        const { data } = await axios.post(`/api/admin/servers/${serverId}/allocations/${allocationId}/primary`);
-
-        if (data && data.success) {
-            toast.success('Primary allocation updated successfully!');
-            await fetchAllocations();
-        } else {
-            toast.error(data?.message || 'Failed to set primary allocation');
-        }
-    } catch (error) {
-        console.error('Failed to set primary allocation:', error);
-        toast.error('Failed to set primary allocation');
-    } finally {
-        settingPrimary.value = null;
     }
 }
 

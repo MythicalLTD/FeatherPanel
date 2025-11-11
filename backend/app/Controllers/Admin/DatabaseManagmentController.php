@@ -39,6 +39,8 @@ use App\Plugins\Events\Events\DatabaseManagementEvent;
 
 class DatabaseManagmentController
 {
+    private const PLUGIN_NAMESPACE_PREFIX = 'addon:';
+
     #[OA\Get(
         path: '/api/admin/databases/management/status',
         summary: 'Get database status',
@@ -168,42 +170,62 @@ class DatabaseManagmentController
 			) ENGINE = InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT = 'The migrations table is table where save the sql migrations!';";
             $pdo->exec($migrationsSql);
 
-            // Find migrations
-            $dir = dirname(__DIR__, 3) . '/storage/migrations/';
-            $files = is_dir($dir) ? scandir($dir) : [];
-            $migrationFiles = array_values(array_filter($files ?: [], function ($file) {
-                return $file !== '.' && $file !== '..' && pathinfo($file, PATHINFO_EXTENSION) === 'sql';
-            }));
+            // Collect core and plugin migrations
+            $migrationDirectories = $this->getMigrationDirectories();
+            $migrationFiles = $this->collectMigrationFiles($migrationDirectories);
             $lines[] = '📊 Found ' . count($migrationFiles) . ' migration files';
 
             $executed = 0;
             $skipped = 0;
             $failed = 0;
+            $currentNamespace = null;
+
             foreach ($migrationFiles as $migration) {
-                $path = $dir . $migration;
+                if ($currentNamespace !== $migration['namespace']) {
+                    if ($currentNamespace !== null) {
+                        $lines[] = str_repeat('-', 60);
+                    }
+
+                    $currentNamespace = $migration['namespace'];
+                    $sourceLabel = $currentNamespace === 'core'
+                        ? 'Core Migrations'
+                        : 'Plugin - ' . substr($currentNamespace, strlen(self::PLUGIN_NAMESPACE_PREFIX));
+
+                    $lines[] = '📦 Source: ' . $sourceLabel;
+                }
+
+                $path = $migration['path'];
+                $migrationName = $migration['name'];
+                $isCoreMigration = $currentNamespace === 'core';
+                $addonName = $isCoreMigration ? null : substr($currentNamespace, strlen(self::PLUGIN_NAMESPACE_PREFIX));
+                $displayName = $isCoreMigration ? $migrationName : $addonName . '::' . $migrationName;
+                $scriptIdentifier = $isCoreMigration
+                    ? $migrationName
+                    : self::PLUGIN_NAMESPACE_PREFIX . $addonName . ':' . $migrationName;
+
                 $sql = @file_get_contents($path);
                 if ($sql === false) {
-                    $lines[] = '⏭️  Skipped: ' . $migration . ' (unreadable)';
+                    $lines[] = '⏭️  Skipped: ' . $displayName . ' (unreadable)';
                     ++$skipped;
                     continue;
                 }
                 $stmt = $pdo->prepare("SELECT COUNT(*) FROM featherpanel_migrations WHERE script = :script AND migrated = 'true'");
-                $stmt->execute(['script' => $migration]);
+                $stmt->execute(['script' => $scriptIdentifier]);
                 if ((int) $stmt->fetchColumn() > 0) {
-                    $lines[] = '⏭️  Skipped: ' . $migration . ' (already executed)';
+                    $lines[] = '⏭️  Skipped: ' . $displayName . ' (already executed)';
                     ++$skipped;
                     continue;
                 }
-                $lines[] = '🔄 Executing: ' . $migration;
+                $lines[] = '🔄 Executing: ' . $displayName;
                 $mt = microtime(true);
                 try {
                     $pdo->exec($sql);
                     $ins = $pdo->prepare('INSERT INTO featherpanel_migrations (script, migrated) VALUES (:script, :migrated)');
-                    $ins->execute(['script' => $migration, 'migrated' => 'true']);
-                    $lines[] = '✅ Success: ' . $migration . ' (' . round((microtime(true) - $mt) * 1000, 2) . 'ms)';
+                    $ins->execute(['script' => $scriptIdentifier, 'migrated' => 'true']);
+                    $lines[] = '✅ Success: ' . $displayName . ' (' . round((microtime(true) - $mt) * 1000, 2) . 'ms)';
                     ++$executed;
                 } catch (\Exception $ex) {
-                    $lines[] = '❌ Failed: ' . $migration;
+                    $lines[] = '❌ Failed: ' . $displayName;
                     $lines[] = '   Error: ' . $ex->getMessage();
                     ++$failed;
                 }
@@ -238,5 +260,77 @@ class DatabaseManagmentController
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to run migrations: ' . $e->getMessage(), 500);
         }
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function getMigrationDirectories(): array
+    {
+        $directories = [
+            'core' => dirname(__DIR__, 3) . '/storage/migrations/',
+        ];
+
+        $addonsRoot = dirname(__DIR__, 3) . '/storage/addons/';
+        if (is_dir($addonsRoot)) {
+            $addons = array_filter(scandir($addonsRoot) ?: [], static function (string $entry) use ($addonsRoot): bool {
+                if ($entry === '.' || $entry === '..') {
+                    return false;
+                }
+
+                return is_dir($addonsRoot . $entry);
+            });
+
+            sort($addons);
+
+            foreach ($addons as $addon) {
+                $migrationDirectory = $addonsRoot . $addon . '/Migrations/';
+                if (is_dir($migrationDirectory)) {
+                    $directories[self::PLUGIN_NAMESPACE_PREFIX . $addon] = $migrationDirectory;
+                }
+            }
+        }
+
+        return $directories;
+    }
+
+    /**
+     * @param array<string, string> $directories
+     *
+     * @return array<int, array{namespace: string, path: string, name: string}>
+     */
+    private function collectMigrationFiles(array $directories): array
+    {
+        $migrations = [];
+
+        foreach ($directories as $namespace => $directory) {
+            if (!is_dir($directory)) {
+                continue;
+            }
+
+            $files = array_filter(scandir($directory) ?: [], static function (string $file) use ($directory): bool {
+                if ($file === '.' || $file === '..') {
+                    return false;
+                }
+
+                if (pathinfo($file, PATHINFO_EXTENSION) !== 'sql') {
+                    return false;
+                }
+
+                return is_file($directory . $file);
+            });
+
+            sort($files);
+
+            foreach ($files as $file) {
+                $migrations[] = [
+                    'namespace' => $namespace,
+                    'path' => $directory . $file,
+                    'name' => $file,
+                ];
+            }
+        }
+
+        return $migrations;
     }
 }
