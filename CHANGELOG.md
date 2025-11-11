@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.3 BETA
+
+### Fixed
+
+- Plugins not being able to register dashboard pages!
+
 ## v1.0.2 BETA
 
 ### Added

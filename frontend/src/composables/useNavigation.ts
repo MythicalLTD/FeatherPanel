@@ -99,7 +99,7 @@ interface PluginSidebarResponse {
     data: {
         sidebar: {
             server: Record<string, PluginSidebarItem>;
-            dashboard: Record<string, PluginSidebarItem>;
+            client: Record<string, PluginSidebarItem>;
             admin: Record<string, PluginSidebarItem>;
         };
     };
@@ -301,8 +301,7 @@ export function useNavigation() {
                 title: t('nav.dashboard'),
                 url: '/dashboard',
                 icon: Home,
-                isActive:
-                    currentPath.value.startsWith('/dashboard') && !currentPath.value.startsWith('/dashboard/account'),
+                isActive: currentPath.value === '/dashboard',
                 category: 'main' as const,
             },
             {
@@ -316,9 +315,9 @@ export function useNavigation() {
             },
         ];
 
-        // Add plugin dashboard items (with permission filtering)
-        if (pluginRoutes.value?.dashboard) {
-            const pluginItems = convertPluginItems(pluginRoutes.value.dashboard, 'main');
+        // Add plugin client items (with permission filtering)
+        if (pluginRoutes.value?.client) {
+            const pluginItems = convertPluginItems(pluginRoutes.value.client, 'main');
             items.push(...pluginItems);
         }
 

@@ -43,7 +43,7 @@ use Symfony\Component\HttpFoundation\Response;
     properties: [
         new OA\Property(property: 'sidebar', type: 'object', properties: [
             new OA\Property(property: 'server', type: 'object', description: 'Server section sidebar items'),
-            new OA\Property(property: 'dashboard', type: 'object', description: 'Dashboard section sidebar items'),
+            new OA\Property(property: 'client', type: 'object', description: 'Client section sidebar items'),
             new OA\Property(property: 'admin', type: 'object', description: 'Admin section sidebar items'),
         ], description: 'Complete sidebar structure with plugin items'),
     ]
@@ -65,7 +65,7 @@ class PluginSidebarController
     #[OA\Get(
         path: '/api/system/plugin-sidebar',
         summary: 'Get plugin sidebar configuration',
-        description: 'Retrieve sidebar configuration from all installed plugins. This endpoint aggregates sidebar items from all plugins and organizes them by section (server, dashboard, admin).',
+        description: 'Retrieve sidebar configuration from all installed plugins. This endpoint aggregates sidebar items from all plugins and organizes them by section (server, client, admin).',
         tags: ['System'],
         responses: [
             new OA\Response(
@@ -80,7 +80,7 @@ class PluginSidebarController
     {
         $sidebarData = [
             'server' => [],
-            'dashboard' => [],
+            'client' => [],
             'admin' => [],
         ];
 
@@ -99,7 +99,7 @@ class PluginSidebarController
 
                         if (json_last_error() === JSON_ERROR_NONE && is_array($sidebarConfig)) {
                             // Merge plugin sidebar items into main structure
-                            foreach (['server', 'dashboard', 'admin'] as $section) {
+                            foreach (['server', 'client', 'admin'] as $section) {
                                 if (isset($sidebarConfig[$section]) && is_array($sidebarConfig[$section])) {
                                     foreach ($sidebarConfig[$section] as $key => $item) {
                                         // Add plugin identifier to avoid conflicts
@@ -165,7 +165,7 @@ class PluginSidebarController
      * Add query parameters to component URL based on section.
      *
      * @param string $component Original component URL
-     * @param string $section Section type (server, dashboard, admin)
+     * @param string $section Section type (server, client, admin)
      *
      * @return string Enhanced component URL with placeholders
      */
