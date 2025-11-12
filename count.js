@@ -34,6 +34,7 @@ const EXCLUDED_DIRS = [
   "assets",
   ".vite",
   ".vite-cache",
+  "addons"
 ];
 // Process arguments
 const targetDir = process.argv[2] || process.cwd();

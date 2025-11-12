@@ -61,12 +61,12 @@ class PluginSidebarControllerTest extends TestCase
 
         // Should have all three sections
         $this->assertArrayHasKey('server', $sidebar);
-        $this->assertArrayHasKey('dashboard', $sidebar);
+        $this->assertArrayHasKey('client', $sidebar);
         $this->assertArrayHasKey('admin', $sidebar);
 
         // All sections should be arrays
         $this->assertIsArray($sidebar['server']);
-        $this->assertIsArray($sidebar['dashboard']);
+        $this->assertIsArray($sidebar['client']);
         $this->assertIsArray($sidebar['admin']);
     }
 
