@@ -172,6 +172,25 @@
                             >
                                 <Pencil :size="16" />
                             </Button>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                class="border-primary/50 text-primary hover:bg-primary/10 transition-all duration-300"
+                                :class="{
+                                    'animate-pulse': scanningServers.has((item as ApiServer).uuid),
+                                }"
+                                data-umami-event="Scan server"
+                                :data-umami-event-server="(item as ApiServer).name"
+                                :disabled="scanningServers.has((item as ApiServer).uuid)"
+                                @click="quickScanServer(item as ApiServer)"
+                            >
+                                <ShieldCheck
+                                    :size="16"
+                                    :class="{
+                                        'animate-spin': scanningServers.has((item as ApiServer).uuid),
+                                    }"
+                                />
+                            </Button>
                             <template v-if="confirmDeleteRow === String((item as ApiServer).id)">
                                 <Button
                                     size="sm"
@@ -652,7 +671,7 @@ import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Eye, Pencil, Trash2, Plus, Server, Layers, Gauge, HelpCircle } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Plus, Server, Layers, Gauge, HelpCircle, ShieldCheck } from 'lucide-vue-next';
 import axios from 'axios';
 import {
     Drawer,
@@ -767,6 +786,7 @@ const selectedServer = ref<ApiServer | null>(null);
 const viewing = ref(false);
 const showHardDeleteWarning = ref(false);
 const serverToHardDelete = ref<ApiServer | null>(null);
+const scanningServers = ref<Set<string>>(new Set());
 
 // Plugin widgets
 const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-servers');
@@ -976,5 +996,54 @@ function formatCpu(cpu: number): string {
 
 function formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString();
+}
+
+async function quickScanServer(server: ApiServer): Promise<void> {
+    scanningServers.value.add(server.uuid);
+
+    // Show initial toast with fake progress
+    const progressToast = toast.info(`Starting scan for ${server.name}...`, {
+        timeout: false,
+        closeOnClick: false,
+        pauseOnFocusLoss: false,
+        pauseOnHover: false,
+    });
+
+    // Fake progress updates
+    const progressMessages = [
+        'Scanning directory structure...',
+        'Analyzing files...',
+        'Checking for threats...',
+        'Finalizing scan...',
+    ];
+    let messageIndex = 0;
+    const progressInterval = setInterval(() => {
+        if (messageIndex < progressMessages.length) {
+            toast.update(progressToast, {
+                content: `${progressMessages[messageIndex]} (${server.name})`,
+            });
+            messageIndex++;
+        }
+    }, 2000);
+
+    try {
+        const { data } = await axios.post('/api/admin/featherzerotrust/scan', {
+            server_uuid: server.uuid,
+            directory: '/',
+            max_depth: 10,
+        });
+        clearInterval(progressInterval);
+        toast.dismiss(progressToast);
+        if (data.success) {
+            toast.success(`Scan completed for ${server.name}. Found ${data.data.detections_count || 0} detections.`);
+        }
+    } catch (error: unknown) {
+        clearInterval(progressInterval);
+        toast.dismiss(progressToast);
+        const errorMessage = (error as AxiosError)?.response?.data?.message || 'Failed to scan server';
+        toast.error(errorMessage);
+    } finally {
+        scanningServers.value.delete(server.uuid);
+    }
 }
 </script>

@@ -112,3 +112,13 @@ ADMIN_SUBDOMAINS_VIEW=admin.subdomains.view | Admin Subdomains | View subdomains
 ADMIN_SUBDOMAINS_CREATE=admin.subdomains.create | Admin Subdomains | Create new subdomains
 ADMIN_SUBDOMAINS_EDIT=admin.subdomains.edit | Admin Subdomains | Edit subdomains
 ADMIN_SUBDOMAINS_DELETE=admin.subdomains.delete | Admin Subdomains | Delete subdomains
+
+# TIS Permissions
+ADMIN_TIS_VIEW=admin.tis.view | Admin TIS | View TIS statistics and hashes
+ADMIN_TIS_MANAGE=admin.tis.manage | Admin TIS | Manage TIS settings
+
+# FeatherZeroTrust Permissions
+ADMIN_FEATHERZEROTRUST_VIEW=admin.featherzerotrust.view | Admin FeatherZeroTrust | View FeatherZeroTrust scanner
+ADMIN_FEATHERZEROTRUST_SCAN=admin.featherzerotrust.scan | Admin FeatherZeroTrust | Run scans with FeatherZeroTrust
+ADMIN_FEATHERZEROTRUST_CONFIGURE=admin.featherzerotrust.configure | Admin FeatherZeroTrust | Configure FeatherZeroTrust settings
+ADMIN_FEATHERZEROTRUST_MANAGE=admin.featherzerotrust.manage | Admin FeatherZeroTrust | Manage FeatherZeroTrust

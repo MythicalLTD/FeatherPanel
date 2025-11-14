@@ -56,7 +56,7 @@
         "@modyfi/vite-plugin-yaml": "^1.1.1",
         "@tailwindcss/vite": "^4.1.17",
         "@tanstack/vue-table": "^8.21.3",
-        "@tsconfig/node22": "^22.0.2",
+        "@tsconfig/node22": "^22.0.3",
         "@types/js-cookie": "^3.0.6",
         "@types/node": "^24.10.1",
         "@vitejs/plugin-vue": "^6.0.1",

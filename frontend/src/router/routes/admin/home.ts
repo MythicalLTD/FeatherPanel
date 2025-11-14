@@ -208,6 +208,31 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/dev/PluginManager.vue'),
     },
     {
+        path: '/admin/feathercloud/tis',
+        name: 'AdminTIS',
+        component: () => import('@/pages/admin/feathercloud/TIS.vue'),
+    },
+    {
+        path: '/admin/feathercloud/featherzerotrust',
+        name: 'AdminFeatherZeroTrust',
+        component: () => import('@/pages/admin/feathercloud/FeatherZeroTrust.vue'),
+    },
+    {
+        path: '/admin/feathercloud/featherzerotrust/config',
+        name: 'AdminFeatherZeroTrustConfig',
+        component: () => import('@/pages/admin/feathercloud/FeatherZeroTrustConfig.vue'),
+    },
+    {
+        path: '/admin/feathercloud/featherzerotrust/logs',
+        name: 'AdminFeatherZeroTrustLogs',
+        component: () => import('@/pages/admin/feathercloud/FeatherZeroTrustLogs.vue'),
+    },
+    {
+        path: '/admin/feathercloud/featherzerotrust/logs/:executionId',
+        name: 'AdminFeatherZeroTrustLogDetails',
+        component: () => import('@/pages/admin/feathercloud/FeatherZeroTrustLogDetails.vue'),
+    },
+    {
         path: '/admin/:pathMatch(.*)*',
         name: 'AdminPluginRenderedPage',
         component: () => import('@/pages/dashboard/PluginRenderedPage.vue'),

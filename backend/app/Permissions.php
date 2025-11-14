@@ -222,6 +222,22 @@ class Permissions
     /** Delete subdomains */
     public const ADMIN_SUBDOMAINS_DELETE = 'admin.subdomains.delete';
 
+    // Admin TIS Permissions
+    /** View TIS statistics and hashes */
+    public const ADMIN_TIS_VIEW = 'admin.tis.view';
+    /** Manage TIS settings */
+    public const ADMIN_TIS_MANAGE = 'admin.tis.manage';
+
+    // Admin FeatherZeroTrust Permissions
+    /** View FeatherZeroTrust scanner */
+    public const ADMIN_FEATHERZEROTRUST_VIEW = 'admin.featherzerotrust.view';
+    /** Run scans with FeatherZeroTrust */
+    public const ADMIN_FEATHERZEROTRUST_SCAN = 'admin.featherzerotrust.scan';
+    /** Configure FeatherZeroTrust settings */
+    public const ADMIN_FEATHERZEROTRUST_CONFIGURE = 'admin.featherzerotrust.configure';
+    /** Manage FeatherZeroTrust */
+    public const ADMIN_FEATHERZEROTRUST_MANAGE = 'admin.featherzerotrust.manage';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -647,6 +663,42 @@ class Permissions
                 'value' => self::ADMIN_SUBDOMAINS_DELETE,
                 'category' => 'Admin Subdomains',
                 'description' => 'Delete subdomains',
+            ],
+            [
+                'constant' => 'ADMIN_TIS_VIEW',
+                'value' => self::ADMIN_TIS_VIEW,
+                'category' => 'Admin TIS',
+                'description' => 'View TIS statistics and hashes',
+            ],
+            [
+                'constant' => 'ADMIN_TIS_MANAGE',
+                'value' => self::ADMIN_TIS_MANAGE,
+                'category' => 'Admin TIS',
+                'description' => 'Manage TIS settings',
+            ],
+            [
+                'constant' => 'ADMIN_FEATHERZEROTRUST_VIEW',
+                'value' => self::ADMIN_FEATHERZEROTRUST_VIEW,
+                'category' => 'Admin FeatherZeroTrust',
+                'description' => 'View FeatherZeroTrust scanner',
+            ],
+            [
+                'constant' => 'ADMIN_FEATHERZEROTRUST_SCAN',
+                'value' => self::ADMIN_FEATHERZEROTRUST_SCAN,
+                'category' => 'Admin FeatherZeroTrust',
+                'description' => 'Run scans with FeatherZeroTrust',
+            ],
+            [
+                'constant' => 'ADMIN_FEATHERZEROTRUST_CONFIGURE',
+                'value' => self::ADMIN_FEATHERZEROTRUST_CONFIGURE,
+                'category' => 'Admin FeatherZeroTrust',
+                'description' => 'Configure FeatherZeroTrust settings',
+            ],
+            [
+                'constant' => 'ADMIN_FEATHERZEROTRUST_MANAGE',
+                'value' => self::ADMIN_FEATHERZEROTRUST_MANAGE,
+                'category' => 'Admin FeatherZeroTrust',
+                'description' => 'Manage FeatherZeroTrust',
             ],
         ];
     }

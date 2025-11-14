@@ -14,6 +14,9 @@
 - The migration interface in the admin panel now fully supports executing migrations provided by plugins, enabling streamlined database updates for all installed plugins!
 - Added support for specifying public IPv4 and IPv6 addresses on nodes, enhancing subdomain manager functionality and enabling broader networking capabilities.
 - Significantly expanded plugin widget customization options power users and plugin developers can now personalize widgets to their heart's content!
+- Added FeatherCloud handshake support, allowing seamless and secure linking of your panel to a FeatherCloud account!
+- Introduced FeatherPanel Zero Trust Security: servers are now automatically scanned for malware and threats, enhancing protection and peace of mind!
+- FeatherPanel Thread Intelligence Server (TIS): introduces advanced real-time malware and threat detection, empowering your panel with cutting-edge active protection and intelligent security analytics for all managed servers. Powerd by FeatherWings TIS and FeatherCloud TIS!
 
 ## v1.0.2 BETA
 
