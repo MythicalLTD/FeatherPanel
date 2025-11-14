@@ -50,7 +50,7 @@ class Subuser
      *
      * @return int|false The new subuser's ID or false on failure
      */
-    public static function createSubuser(array $data): int|false
+    public static function createSubuser(array $data): int | false
     {
         // Required fields for subuser creation
         $required = [

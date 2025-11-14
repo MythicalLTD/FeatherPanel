@@ -242,7 +242,6 @@ class WingsActivityController
                 } else {
                     $errors[] = "Activity at index {$index}: Failed to store activity log";
                 }
-
             } catch (\Exception $e) {
                 $errors[] = "Activity at index {$index}: " . $e->getMessage();
             }
@@ -279,6 +278,5 @@ class WingsActivityController
                 'errors' => $errors,
             ]
         );
-
     }
 }

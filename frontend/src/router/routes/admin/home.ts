@@ -168,6 +168,26 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/kpi/System.vue'),
     },
     {
+        path: '/admin/featherpanel-cloud',
+        name: 'AdminFeatherPanelCloud',
+        component: () => import('@/pages/admin/cloud/FeatherPanelCloud.vue'),
+    },
+    {
+        path: '/admin/feathercloud-ai-agent',
+        name: 'AdminFeatherCloudAiAgent',
+        component: () => import('@/pages/admin/cloud/FeatherCloudAiAgent.vue'),
+    },
+    {
+        path: '/admin/cloud-management',
+        name: 'AdminCloudManagement',
+        component: () => import('@/pages/admin/CloudManagement.vue'),
+    },
+    {
+        path: '/admin/feathercloud-zero-intelligence',
+        name: 'AdminFeatherCloudZeroIntelligence',
+        component: () => import('@/pages/admin/cloud/FeatherCloudZeroIntelligence.vue'),
+    },
+    {
         path: '/admin/dev/logs',
         name: 'AdminLogViewer',
         component: () => import('@/pages/admin/dev/LogViewer.vue'),

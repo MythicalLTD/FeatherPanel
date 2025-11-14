@@ -96,7 +96,6 @@ class PluginDB extends Database
             }
 
             return true;
-
         } catch (\Exception $e) {
             self::db_Error('Failed to register plugin: ' . $e->getMessage());
 

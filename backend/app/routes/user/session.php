@@ -34,7 +34,6 @@ use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\User\User\SessionController;
 
 return function (RouteCollection $routes): void {
-
     App::getInstance(true)->registerAuthRoute(
         $routes,
         'session',
@@ -44,7 +43,6 @@ return function (RouteCollection $routes): void {
         },
         ['GET']
     );
-
     App::getInstance(true)->registerAuthRoute(
         $routes,
         'session-update',
@@ -54,7 +52,6 @@ return function (RouteCollection $routes): void {
         },
         ['PATCH']
     );
-
     App::getInstance(true)->registerAuthRoute(
         $routes,
         'avatar-upload',
@@ -64,7 +61,6 @@ return function (RouteCollection $routes): void {
         },
         ['POST']
     );
-
     App::getInstance(true)->registerAuthRoute(
         $routes,
         'preferences-get',
@@ -74,7 +70,6 @@ return function (RouteCollection $routes): void {
         },
         ['GET']
     );
-
     App::getInstance(true)->registerAuthRoute(
         $routes,
         'preferences-update',
@@ -84,7 +79,6 @@ return function (RouteCollection $routes): void {
         },
         ['PATCH']
     );
-
     App::getInstance(true)->registerAuthRoute(
         $routes,
         'discord-unlink',
@@ -94,5 +88,4 @@ return function (RouteCollection $routes): void {
         },
         ['DELETE']
     );
-
 };

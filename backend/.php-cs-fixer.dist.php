@@ -104,5 +104,8 @@ return (new Config())
 		'no_useless_else' => true,
 		'no_extra_blank_lines' => true,
 		'logical_operators' => true,
-		'no_unused_imports' => true
+		'no_unused_imports' => true,
+		'types_spaces' => [
+			'space' => 'single',
+		],
 	]);

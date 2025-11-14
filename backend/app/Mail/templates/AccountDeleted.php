@@ -117,6 +117,5 @@ class AccountDeleted
         if ($mailID == false) {
             return;
         }
-
     }
 }

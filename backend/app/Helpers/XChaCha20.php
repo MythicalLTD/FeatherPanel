@@ -41,7 +41,7 @@ class XChaCha20
      *
      * @return string|array The encrypted data!
      */
-    public static function encrypt(string|array $data, string $key, bool $isKeyHashed = true): string|array
+    public static function encrypt(string | array $data, string $key, bool $isKeyHashed = true): string | array
     {
         $nonce = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
         if ($isKeyHashed) {
@@ -59,7 +59,7 @@ class XChaCha20
      * @param string $key The key you want to decrypt the data with!
      * @param bool $isKeyHashed Is the key hashed in base64?
      */
-    public static function decrypt(string|array $data, string $key, bool $isKeyHashed = true): string|array
+    public static function decrypt(string | array $data, string $key, bool $isKeyHashed = true): string | array
     {
         $data = base64_decode($data);
         if ($isKeyHashed) {
@@ -100,6 +100,5 @@ class XChaCha20
         }
 
         return sodium_crypto_secretbox_keygen();
-
     }
 }

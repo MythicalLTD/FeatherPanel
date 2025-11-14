@@ -120,7 +120,7 @@ class CloudflareSubdomainService
             App::getInstance(true)->getLogger()->warning(
                 'Cloudflare zone resolve returned no results for domain ' . $domain . ' within account ' . $this->accountId
             );
-        } catch (GuzzleException|\JsonException $exception) {
+        } catch (GuzzleException | \JsonException $exception) {
             App::getInstance(true)->getLogger()->error('Cloudflare zone resolve failed: ' . $exception->getMessage());
         }
 
@@ -316,7 +316,7 @@ class CloudflareSubdomainService
             }
 
             App::getInstance(true)->getLogger()->warning('Cloudflare record creation returned unexpected response: ' . json_encode($body));
-        } catch (GuzzleException|\JsonException $exception) {
+        } catch (GuzzleException | \JsonException $exception) {
             App::getInstance(true)->getLogger()->error('Cloudflare record creation failed: ' . $exception->getMessage());
         }
 

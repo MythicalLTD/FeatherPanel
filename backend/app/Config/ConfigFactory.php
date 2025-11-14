@@ -104,20 +104,30 @@ class ConfigFactory
      * Set a setting in the database.
      *
      * @param string $name The name of the setting
-     * @param string $value The value of the setting
+     * @param string|null $value The value of the setting (null to delete)
      *
      * @throws \Exception If the setting already exists
      *
      * @return bool True if the setting was set successfully
      */
-    public function setSetting(string $name, string $value): bool
+    public function setSetting(string $name, ?string $value): bool
     {
-        $value = App::getInstance(true)->encryptValue($value);
+        if ($value === null) {
+            // Delete the setting from the database if value is null
+            $stmt = $this->db->prepare("DELETE FROM {$this->table_name} WHERE name = :name");
+            $result = $stmt->execute(['name' => $name]);
+            // Remove from cache if present
+            unset($this->cache[$name]);
+
+            return $result;
+        }
+
+        $encryptedValue = App::getInstance(true)->encryptValue($value);
         $stmt = $this->db->prepare("INSERT INTO {$this->table_name} (name, value, date) VALUES (:name, :value, NOW()) ON DUPLICATE KEY UPDATE value = :value, date = NOW()");
-        $result = $stmt->execute(['name' => $name, 'value' => $value]);
+        $result = $stmt->execute(['name' => $name, 'value' => $encryptedValue]);
         if ($result) {
             // Update the cache
-            $this->cache[$name] = $value;
+            $this->cache[$name] = $encryptedValue;
         }
 
         return $result;

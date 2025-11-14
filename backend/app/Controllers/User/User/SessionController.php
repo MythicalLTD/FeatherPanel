@@ -394,7 +394,6 @@ class SessionController
             return ApiResponse::success([
                 'avatar_url' => $avatarUrl,
             ], 'Avatar uploaded successfully', 200);
-
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to save avatar', 'SAVE_FAILED', 500);
         }

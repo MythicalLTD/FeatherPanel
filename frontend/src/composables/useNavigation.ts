@@ -53,6 +53,9 @@ import {
     BarChart3,
     Crown,
     Activity,
+    ShieldCheck,
+    Cloud,
+    Bot,
 } from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
 import Permissions from '@/lib/permissions';
@@ -487,6 +490,51 @@ export function useNavigation() {
                 group: 'system',
             },
             {
+                id: 'admin-cloud-management',
+                name: 'FeatherCloud Cloud',
+                title: 'FeatherCloud Cloud',
+                url: '/admin/cloud-management',
+                icon: Key,
+                isActive: currentPath.value.startsWith('/admin/cloud-management'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_STATISTICS_VIEW,
+                group: 'overviewFeatherCloud',
+            },
+            {
+                id: 'admin-featherpanel-cloud',
+                name: 'FeatherPanel Cloud Storage',
+                title: 'FeatherPanel Cloud Storage',
+                url: '/admin/featherpanel-cloud',
+                icon: Cloud,
+                isActive: currentPath.value.startsWith('/admin/featherpanel-cloud'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_STATISTICS_VIEW,
+                group: 'overviewFeatherCloud',
+            },
+
+            {
+                id: 'admin-feathercloud-ai-agent',
+                name: 'FeatherCloud AI Agent',
+                title: 'FeatherCloud AI Agent',
+                url: '/admin/feathercloud-ai-agent',
+                icon: Bot,
+                isActive: currentPath.value.startsWith('/admin/feathercloud-ai-agent'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_STATISTICS_VIEW,
+                group: 'overviewFeatherCloud',
+            },
+            {
+                id: 'admin-feathercloud-zero-intelligence',
+                name: 'FeatherCloud Zero Trust',
+                title: 'FeatherCloud Zero Trust',
+                url: '/admin/feathercloud-zero-intelligence',
+                icon: ShieldCheck,
+                isActive: currentPath.value.startsWith('/admin/feathercloud-zero-intelligence'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_STATISTICS_VIEW,
+                group: 'overviewFeatherCloud',
+            },
+            {
                 id: 'admin-database-management',
                 name: t('nav.databaseManagement'),
                 title: t('nav.databaseManagement'),
@@ -745,6 +793,7 @@ export function useNavigation() {
         // Define group order and labels
         const groupConfig: Record<string, () => string> = {
             overview: () => t('navGroups.overview'),
+            overviewFeatherCloud: () => 'Overview · FeatherCloud Suite',
             users: () => t('navGroups.userManagement'),
             networking: () => t('navGroups.networking'),
             infrastructure: () => t('navGroups.infrastructure'),

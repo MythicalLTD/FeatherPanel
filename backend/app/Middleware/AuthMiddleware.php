@@ -55,7 +55,6 @@ class AuthMiddleware implements MiddlewareInterface
             // Attach user info to the request attributes for downstream use
             $request->attributes->set('user', $userInfo);
             $request->attributes->set('auth_type', 'session');
-
         } else {
             // Check for Authorization header (Bearer token for API keys)
             $authHeader = $request->headers->get('Authorization');

@@ -161,7 +161,6 @@ class ForgotPasswordController
         $resetToken = bin2hex(random_bytes(32));
 
         if (User::updateUser($userInfo['uuid'], ['mail_verify' => $resetToken])) {
-
             // Send reset password email
             $appUrl = $config->getSetting(ConfigInterface::APP_URL, 'cloud.mythical.systems');
             if (!preg_match('#^https?://#i', $appUrl)) {
@@ -206,6 +205,5 @@ class ForgotPasswordController
         }
 
         return ApiResponse::error('Failed to update user', 'FAILED_TO_UPDATE_USER');
-
     }
 }

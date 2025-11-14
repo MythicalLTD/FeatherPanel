@@ -127,6 +127,5 @@ class ServerDeleted
         if ($mailID == false) {
             return;
         }
-
     }
 }

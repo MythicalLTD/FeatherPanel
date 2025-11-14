@@ -132,5 +132,4 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_NODES_EDIT,
         ['DELETE']
     );
-
 };

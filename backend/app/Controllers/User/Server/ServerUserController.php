@@ -641,7 +641,6 @@ class ServerUserController
                 'permissions' => $permissions,
                 'connection_string' => $scheme . '://' . $host . ':' . $port . '/api/servers/' . $server['uuid'] . '/ws',
             ], 'JWT token generated successfully', 200);
-
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to generate JWT token: ' . $e->getMessage(), 'JWT_GENERATION_FAILED', 500);
         }
@@ -1418,7 +1417,6 @@ class ServerUserController
                 'message' => 'Command sent successfully',
                 'command' => $command,
             ], 'Command sent successfully', 200);
-
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to send command to Wings: ' . $e->getMessage());
 

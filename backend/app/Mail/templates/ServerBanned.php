@@ -124,6 +124,5 @@ class ServerBanned
         if ($mailID == false) {
             return;
         }
-
     }
 }

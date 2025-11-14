@@ -117,6 +117,5 @@ class Welcome
         if ($mailID == false) {
             return;
         }
-
     }
 }

@@ -163,7 +163,6 @@ class ResetPasswordController
             }
 
             return ApiResponse::error('Failed to reset password', 'FAILED_TO_RESET_PASSWORD');
-
         } catch (\Exception $e) {
             return ApiResponse::exception('An error occurred: ' . $e->getMessage(), $e->getCode());
         }

@@ -34,7 +34,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ApiResponse
 {
-    public const prettyPrint = true;
+    public const PRETTYPRINT = true;
 
     public static function success(?array $data = null, string $message = 'OK', int $status = 200): Response
     {
@@ -45,7 +45,7 @@ class ApiResponse
             'error' => false,
             'error_message' => null,
             'error_code' => null,
-        ], self::prettyPrint ? JSON_PRETTY_PRINT : 0), $status, [
+        ], self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), $status, [
             'Content-Type' => 'application/json',
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
@@ -70,7 +70,7 @@ class ApiResponse
                     'status' => $status,
                 ],
             ],
-        ], self::prettyPrint ? JSON_PRETTY_PRINT : 0), $status, [
+        ], self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), $status, [
             'Content-Type' => 'application/json',
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
@@ -100,7 +100,7 @@ class ApiResponse
                 ],
             ],
             'trace' => $trace,
-        ], self::prettyPrint ? JSON_PRETTY_PRINT : 0), 500, [
+        ], self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), 500, [
             'Content-Type' => 'application/json',
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
@@ -111,7 +111,7 @@ class ApiResponse
 
     public static function sendManualResponse(array $data, int $status = 200): Response
     {
-        return new Response(json_encode($data, self::prettyPrint ? JSON_PRETTY_PRINT : 0), $status, [
+        return new Response(json_encode($data, self::PRETTYPRINT ? JSON_PRETTY_PRINT : 0), $status, [
             'Content-Type' => 'application/json',
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',

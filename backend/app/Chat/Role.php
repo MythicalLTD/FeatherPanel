@@ -89,7 +89,7 @@ class Role
         return (int) $stmt->fetchColumn();
     }
 
-    public static function createRole(array $data): int|false
+    public static function createRole(array $data): int | false
     {
         $required = ['name', 'display_name', 'color'];
         foreach ($required as $field) {

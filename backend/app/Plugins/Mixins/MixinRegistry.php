@@ -59,7 +59,6 @@ class MixinRegistry
 
             $mixins = MixinManager::getRegisteredMixins();
             $logger->debug('Registered ' . count($mixins) . ' mixins: ' . implode(', ', $mixins));
-
         } catch (\Throwable $e) {
             $logger->error('Failed to register mixins: ' . $e->getMessage());
         }

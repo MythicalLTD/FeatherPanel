@@ -92,7 +92,7 @@ class Image
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
-    public static function create(array $data): int|false
+    public static function create(array $data): int | false
     {
         $required = ['name', 'url'];
         foreach ($required as $field) {

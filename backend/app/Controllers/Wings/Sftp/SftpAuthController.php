@@ -203,7 +203,6 @@ class SftpAuthController
                 'user' => $user['uuid'],
                 'permissions' => $permissions,
             ], 200);
-
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('SFTP auth error: ' . $e->getMessage());
 

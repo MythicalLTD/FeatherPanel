@@ -494,7 +494,6 @@ class ServerDatabaseController
                 'password' => $password,
                 'message' => 'Database created successfully',
             ]);
-
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to create database: ' . $e->getMessage());
 
@@ -752,7 +751,6 @@ class ServerDatabaseController
             return ApiResponse::success([
                 'message' => 'Database deleted successfully',
             ]);
-
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Failed to delete database: ' . $e->getMessage());
 
@@ -976,7 +974,6 @@ class ServerDatabaseController
                 default:
                     throw new \Exception("Unsupported database type: {$databaseHost['database_type']}");
             }
-
         } catch (\PDOException $e) {
             throw new \Exception("Failed to create database on host {$databaseHost['name']}: " . $e->getMessage());
         }
@@ -1041,7 +1038,6 @@ class ServerDatabaseController
                 default:
                     throw new \Exception("Unsupported database type: {$databaseHost['database_type']}");
             }
-
         } catch (\PDOException $e) {
             throw new \Exception("Failed to delete database from host {$databaseHost['name']}: " . $e->getMessage());
         }
@@ -1083,7 +1079,6 @@ class ServerDatabaseController
                         'message' => "Unsupported database type: {$databaseHost['database_type']}",
                     ];
             }
-
         } catch (\Exception $e) {
             $endTime = microtime(true);
             $responseTime = round(($endTime - $startTime) * 1000, 2);
@@ -1115,7 +1110,6 @@ class ServerDatabaseController
                 'message' => 'Connection successful',
                 'response_time' => $responseTime,
             ];
-
         } catch (\PDOException $e) {
             $endTime = microtime(true);
             $responseTime = round(($endTime - $startTime) * 1000, 2);

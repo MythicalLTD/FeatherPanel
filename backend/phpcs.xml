@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<ruleset name="FeatherPanel">
+	<description>PHP CodeSniffer configuration for FeatherPanel</description>
+
+	<!-- Include PSR12 standard -->
+	<rule ref="PSR12" />
+
+	<!-- Set line length to very high value to effectively disable warnings -->
+	<rule ref="Generic.Files.LineLength">
+		<properties>
+			<property name="lineLimit" value="9999" />
+			<property name="absoluteLineLimit" value="9999" />
+		</properties>
+	</rule>
+
+	<rule ref="PSR1.Methods.CamelCapsMethodName">
+		<exclude-pattern>*</exclude-pattern>
+	</rule>
+</ruleset>

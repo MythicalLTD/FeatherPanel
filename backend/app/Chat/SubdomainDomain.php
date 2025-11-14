@@ -203,7 +203,7 @@ class SubdomainDomain
     /**
      * Create a new domain with spell mappings.
      */
-    public static function createDomain(array $data, array $spellConfigs): int|false
+    public static function createDomain(array $data, array $spellConfigs): int | false
     {
         $required = ['domain', 'cloudflare_account_id'];
         foreach ($required as $field) {

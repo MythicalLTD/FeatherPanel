@@ -232,7 +232,6 @@ class LoginController
 
         // Use the common login completion method
         return $this->completeLogin($userInfo, $request);
-
     }
 
     /**

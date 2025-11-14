@@ -38,11 +38,13 @@ class Cron
      * @var array Supported time units and their minute equivalents
      */
     private const TIME_UNITS = [
-        'S' => 1,        // Seconds
-        'M' => 1,        // Minutes
-        'H' => 60,       // Hours
-        'D' => 1440,     // Days
-        'W' => 10080,    // Weeks
+        'S' => 1 / 60,          // Seconds → 1/60 minute
+        'M' => 1,               // Minutes
+        'H' => 60,              // Hours
+        'D' => 1440,            // Days
+        'W' => 10080,           // Weeks
+        'MO' => 43200,          // Months (approx. 30 days)
+        'Y' => 525600,          // Years (365 days)
     ];
 
     /**

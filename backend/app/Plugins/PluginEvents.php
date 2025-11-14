@@ -32,7 +32,7 @@ namespace App\Plugins;
 
 class PluginEvents
 {
-    public static $_instance;
+    public static $instance;
     /**
      * All listeners for the specified event.
      */
@@ -43,11 +43,11 @@ class PluginEvents
      */
     public static function getInstance(): PluginEvents
     {
-        if (!(self::$_instance instanceof self)) {
-            self::$_instance = new self();
+        if (!(self::$instance instanceof self)) {
+            self::$instance = new self();
         }
 
-        return self::$_instance;
+        return self::$instance;
     }
 
     /**

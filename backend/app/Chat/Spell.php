@@ -49,7 +49,7 @@ class Spell
      *
      * @return int|false The new spell's ID or false on failure
      */
-    public static function createSpell(array $data): int|false
+    public static function createSpell(array $data): int | false
     {
         // Required fields for spell creation
         $required = [

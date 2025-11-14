@@ -73,7 +73,6 @@ class LoggerFactory
         $caller = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['class'] ?? 'unknown';
         // $eventID = null;
         if ($sendTelemetry) {
-
             // $eventID = \Sentry\captureMessage($message, \Sentry\Severity::fatal(), null);
         }
         $this->appendLog('[CRITICAL]  [' . $caller . '] ' . $message);

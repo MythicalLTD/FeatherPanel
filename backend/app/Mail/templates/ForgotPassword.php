@@ -122,6 +122,5 @@ class ForgotPassword
         if ($mailID == false) {
             return;
         }
-
     }
 }

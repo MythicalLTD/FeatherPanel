@@ -49,7 +49,7 @@ class ApiClient
      *
      * @return int|false The new API client's ID or false on failure
      */
-    public static function createApiClient(array $data): int|false
+    public static function createApiClient(array $data): int | false
     {
         // Required fields for API client creation
         $required = ['user_uuid', 'name', 'public_key', 'private_key'];

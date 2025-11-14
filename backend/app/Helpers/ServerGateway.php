@@ -68,6 +68,5 @@ class ServerGateway
         }
 
         return false;
-
     }
 }

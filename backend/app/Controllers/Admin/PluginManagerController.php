@@ -391,7 +391,6 @@ class PluginManagerController
                 'files_created' => $this->getPluginFiles($identifier),
                 'migration_result' => $migrationResult,
             ], 'Plugin created successfully', 201);
-
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to create plugin: ' . $e->getMessage(), 500);
         }
@@ -527,7 +526,6 @@ class PluginManagerController
                 'identifier' => $identifier,
                 'config' => $pluginConfig,
             ], 'Plugin updated successfully', 200);
-
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to update plugin: ' . $e->getMessage(), 500);
         }
@@ -591,7 +589,6 @@ class PluginManagerController
             $plugin['config'] = $config['config'] ?? [];
 
             return ApiResponse::success($plugin, 'Plugin details fetched successfully', 200);
-
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to fetch plugin details: ' . $e->getMessage(), 500);
         }
@@ -672,7 +669,6 @@ class PluginManagerController
                 'identifier' => $identifier,
                 'updated_settings' => array_keys($data['settings']),
             ], 'Plugin settings updated successfully', 200);
-
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to update plugin settings: ' . $e->getMessage(), 500);
         }
@@ -765,7 +761,6 @@ class PluginManagerController
             $validation['overall_valid'] = !in_array(false, $validation);
 
             return ApiResponse::success($validation, 'Plugin validation completed', 200);
-
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to validate plugin: ' . $e->getMessage(), 500);
         }
@@ -885,7 +880,6 @@ class PluginManagerController
             }
 
             return ApiResponse::error($result['message'], 500);
-
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to create plugin file: ' . $e->getMessage(), 500);
         }
@@ -996,7 +990,6 @@ class PluginManagerController
             ];
 
             return ApiResponse::success($options, 'Plugin creation options retrieved successfully');
-
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to get creation options: ' . $e->getMessage(), 500);
         }

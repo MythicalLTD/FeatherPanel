@@ -49,7 +49,7 @@ class UserSshKey
      *
      * @return int|false The new SSH key's ID or false on failure
      */
-    public static function createUserSshKey(array $data): int|false
+    public static function createUserSshKey(array $data): int | false
     {
         // Required fields for SSH key creation
         $required = [

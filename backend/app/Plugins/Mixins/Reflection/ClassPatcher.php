@@ -121,7 +121,6 @@ class ClassPatcher
             $logger->debug("Patched method {$className}::{$methodName} with {$patchType} patch");
 
             return true;
-
         } catch (\Throwable $e) {
             $logger->error("Failed to patch method {$className}::{$methodName}: " . $e->getMessage());
 
@@ -303,7 +302,6 @@ class ClassPatcher
             $logger->debug("Overrode property {$className}::{$propertyName}");
 
             return true;
-
         } catch (\Throwable $e) {
             $logger->error("Failed to override property {$className}::{$propertyName}: " . $e->getMessage());
 
@@ -366,7 +364,6 @@ class ClassPatcher
             $logger->debug("Created proxy class {$proxyClassName} for {$className}");
 
             return $proxyClassName;
-
         } catch (\Throwable $e) {
             $logger->error("Failed to create proxy class for {$className}: " . $e->getMessage());
 
@@ -396,7 +393,6 @@ class ClassPatcher
 
             // Otherwise, create a new instance of the original class
             return new $className(...$constructorArgs);
-
         } catch (\Throwable $e) {
             $logger->error("Failed to get proxy instance for {$className}: " . $e->getMessage());
 

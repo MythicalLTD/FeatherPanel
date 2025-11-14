@@ -36,7 +36,7 @@ class Activity
 {
     private static string $table = 'featherpanel_activity';
 
-    public static function createActivity(array $data): int|false
+    public static function createActivity(array $data): int | false
     {
         $pdo = Database::getPdoConnection();
         $fields = array_keys($data);

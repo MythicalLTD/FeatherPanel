@@ -49,7 +49,7 @@ class Backup
      *
      * @return int|false The new backup's ID or false on failure
      */
-    public static function createBackup(array $data): int|false
+    public static function createBackup(array $data): int | false
     {
         // Required fields for backup creation
         $required = [

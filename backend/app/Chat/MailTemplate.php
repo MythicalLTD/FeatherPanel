@@ -37,7 +37,7 @@ class MailTemplate
 {
     private static string $table = 'featherpanel_mail_templates';
 
-    public static function create(array $data): int|false
+    public static function create(array $data): int | false
     {
         $required = ['name', 'subject', 'body'];
         foreach ($required as $field) {

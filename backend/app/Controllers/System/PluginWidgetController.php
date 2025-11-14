@@ -348,7 +348,7 @@ class PluginWidgetController
      *
      * @return string|array<string, int>
      */
-    private function normalizeWidgetSize(mixed $size): string|array
+    private function normalizeWidgetSize(mixed $size): string | array
     {
         if ($size === null) {
             return 'full';

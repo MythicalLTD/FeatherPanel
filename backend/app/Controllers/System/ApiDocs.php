@@ -125,7 +125,6 @@ class ApiDocs
                 json_decode($openapi->toJson(), true),
                 200
             );
-
         } catch (\Exception $e) {
             // Clean any output and restore error reporting
             ob_end_clean();

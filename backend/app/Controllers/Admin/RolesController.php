@@ -174,7 +174,6 @@ class RolesController
                 'has_results' => count($roles) > 0,
             ],
         ], 'Roles fetched successfully', 200);
-
     }
 
     #[OA\Get(

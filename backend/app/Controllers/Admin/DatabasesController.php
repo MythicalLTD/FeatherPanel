@@ -850,7 +850,6 @@ class DatabasesController
                         'message' => 'Unsupported database type',
                     ];
             }
-
         } catch (\Exception $e) {
             $endTime = microtime(true);
             $responseTime = round(($endTime - $startTime) * 1000, 2);
@@ -884,7 +883,6 @@ class DatabasesController
                 'message' => 'Connection successful',
                 'response_time' => $responseTime,
             ];
-
         } catch (\PDOException $e) {
             $endTime = microtime(true);
             $responseTime = round(($endTime - $startTime) * 1000, 2);

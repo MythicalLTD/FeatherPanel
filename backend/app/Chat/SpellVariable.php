@@ -52,7 +52,7 @@ class SpellVariable
         'field_type',
     ];
 
-    public static function createVariable(array $data): int|false
+    public static function createVariable(array $data): int | false
     {
         // Log incoming data for debugging
         \App\App::getInstance(true)->getLogger()->debug('SpellVariable::createVariable called with data: ' . json_encode($data));

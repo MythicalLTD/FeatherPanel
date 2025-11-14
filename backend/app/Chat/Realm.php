@@ -89,7 +89,7 @@ class Realm
         return (int) $stmt->fetchColumn();
     }
 
-    public static function create(array $data): int|false
+    public static function create(array $data): int | false
     {
         $fields = ['name', 'description'];
         $insert = [];

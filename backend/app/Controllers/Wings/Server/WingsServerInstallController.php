@@ -290,7 +290,6 @@ class WingsServerInstallController
             );
 
             return ApiResponse::sendManualResponse([], 204);
-
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to update installation status', 'UPDATE_FAILED', 500);
         }

@@ -39,7 +39,7 @@ class ServerTransfer
     /**
      * Create a new server transfer record.
      */
-    public static function create(array $data): int|false
+    public static function create(array $data): int | false
     {
         $pdo = Database::getPdoConnection();
 

@@ -2427,13 +2427,11 @@ class ServersController
                     } else {
                         App::getInstance(true)->getLogger()->info('Successfully deleted database: ' . $database['database'] . ' (ID: ' . $database['id'] . ')');
                     }
-
                 } catch (\Exception $e) {
                     // Log the error but continue with other databases
                     App::getInstance(true)->getLogger()->error('Failed to delete database ID ' . $database['id'] . ': ' . $e->getMessage());
                 }
             }
-
         } catch (\Exception $e) {
             // Log the error but don't break the server deletion process
             App::getInstance(true)->getLogger()->error('Failed to cleanup databases for server ID ' . $serverId . ': ' . $e->getMessage());
@@ -2500,7 +2498,6 @@ class ServersController
                 default:
                     throw new \Exception("Unsupported database type: {$databaseHost['database_type']}");
             }
-
         } catch (\PDOException $e) {
             throw new \Exception("Failed to delete database from host {$databaseHost['name']}: " . $e->getMessage());
         }

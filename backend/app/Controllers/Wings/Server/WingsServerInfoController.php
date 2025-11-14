@@ -517,7 +517,6 @@ class WingsServerInfoController
             if ($decodedTest === null) {
                 throw new \Exception('JSON validation failed after encoding');
             }
-
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to generate server configuration: ' . $e->getMessage(), 'CONFIG_ERROR', 500);
         }

@@ -152,7 +152,7 @@ class Subdomain
     /**
      * Create new subdomain record.
      */
-    public static function create(array $data): int|false
+    public static function create(array $data): int | false
     {
         $required = ['server_id', 'domain_id', 'spell_id', 'subdomain', 'record_type'];
         foreach ($required as $field) {

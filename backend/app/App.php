@@ -376,7 +376,7 @@ class App
      * @param Permissions|string $permission The permission node required to access this route
      * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
      */
-    public function registerAdminRoute(RouteCollection $routes, string $name, string $path, callable $controller, Permissions|string $permission, array $methods = ['GET']): void
+    public function registerAdminRoute(RouteCollection $routes, string $name, string $path, callable $controller, Permissions | string $permission, array $methods = ['GET']): void
     {
         $routes->add($name, new Route(
             $path,
@@ -516,7 +516,6 @@ class App
             if (file_exists(__DIR__ . '/../storage/config/.env')) {
                 $dotenv = \Dotenv\Dotenv::createImmutable(__DIR__ . '/../storage/config');
                 $dotenv->load();
-
             } else {
                 echo 'No .env file found';
                 exit;

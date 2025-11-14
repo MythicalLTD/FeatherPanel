@@ -38,14 +38,14 @@ namespace App\Services\Wings;
  */
 class WingsResponse
 {
-    private array|string $data;
+    private array | string $data;
     private int $statusCode;
     private bool $success;
 
     /**
      * Create a new WingsResponse instance.
      */
-    public function __construct(array|string $data, int $statusCode = 200)
+    public function __construct(array | string $data, int $statusCode = 200)
     {
         $this->data = $data;
         $this->statusCode = $statusCode;
@@ -63,7 +63,7 @@ class WingsResponse
     /**
      * Get the response data.
      */
-    public function getData(): array|string
+    public function getData(): array | string
     {
         return $this->data;
     }

@@ -53,5 +53,4 @@ return function (RouteCollection $routes): void {
         },
         '_middleware' => [],
     ]));
-
 };

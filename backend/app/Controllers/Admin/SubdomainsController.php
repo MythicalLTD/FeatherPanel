@@ -483,7 +483,7 @@ class SubdomainsController
         return ApiResponse::success([], 'Settings updated successfully');
     }
 
-    private function validateDomainPayload(array $payload, bool $isUpdate = false): bool|string
+    private function validateDomainPayload(array $payload, bool $isUpdate = false): bool | string
     {
         if (!$isUpdate || array_key_exists('domain', $payload)) {
             $domain = trim((string) ($payload['domain'] ?? ''));

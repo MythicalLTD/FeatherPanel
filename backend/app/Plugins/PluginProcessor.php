@@ -87,7 +87,6 @@ class PluginProcessor
             $logger->debug('Successfully initialized event processor for: ' . $identifier);
 
             return $instance;
-
         } catch (\Throwable $e) {
             $logger->error('Failed to initialize plugin event processor: ' . $e->getMessage(), false);
 
@@ -136,7 +135,6 @@ class PluginProcessor
 
             $processor->processEvents($event);
             $logger->debug('Successfully processed event for plugin: ' . $identifier);
-
         } catch (\Throwable $e) {
             $logger->error('Failed to process plugin event', false);
         }

@@ -37,7 +37,7 @@ class MailList
 {
     private static string $table = 'featherpanel_mail_list';
 
-    public static function create(array $data): int|false
+    public static function create(array $data): int | false
     {
         $required = ['queue_id', 'user_uuid'];
         foreach ($required as $field) {

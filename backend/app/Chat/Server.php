@@ -49,7 +49,7 @@ class Server
      *
      * @return int|false The new server's ID or false on failure
      */
-    public static function createServer(array $data): int|false
+    public static function createServer(array $data): int | false
     {
         // Required fields for server creation (description is optional)
         $required = [

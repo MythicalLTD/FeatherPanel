@@ -1678,7 +1678,6 @@ class SpellsController
                 App::getInstance(true)->getLogger()->error('Spell found but missing download URL: ' . json_encode($match));
 
                 return ApiResponse::error("Spell '$identifier' found but download URL is missing", 'SPELL_DOWNLOAD_URL_MISSING', 404);
-
             }
             $downloadUrl = 'https://api.featherpanel.com' . $match['latest_version']['download_url'];
             $fileContent = @file_get_contents($downloadUrl, false, $context);

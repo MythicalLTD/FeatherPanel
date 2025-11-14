@@ -49,7 +49,7 @@ class ServerDatabase
      *
      * @return int|false The new database's ID or false on failure
      */
-    public static function createServerDatabase(array $data): int|false
+    public static function createServerDatabase(array $data): int | false
     {
         // Required fields for server database creation
         $required = [

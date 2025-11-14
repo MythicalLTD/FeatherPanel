@@ -97,6 +97,5 @@ class PublicConfig extends ConfigFactory
             // User related settings
             ConfigInterface::USER_ALLOW_AVATAR_CHANGE => 'true',
         ];
-
     }
 }

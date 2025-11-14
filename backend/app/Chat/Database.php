@@ -209,8 +209,9 @@ class Database
     public static function markRecordAsDeleted(string $table, int $row): void
     {
         try {
-            $query = self::getPdoConnection()->query('UPDATE ' . $table . " SET deleted = 'true' WHERE id = " . $row);
-            $query->execute();
+            $stmt = self::getPdoConnection()->prepare('UPDATE ' . $table . " SET deleted = 'true' WHERE id = :id");
+            $stmt->bindParam(':id', $row, \PDO::PARAM_INT);
+            $stmt->execute();
         } catch (\Exception $e) {
             self::db_Error('Failed to mark record as deleted: ' . $e->getMessage());
 
@@ -228,9 +229,10 @@ class Database
     public static function getDeletedRecords(string $table): array
     {
         try {
-            $query = self::getPdoConnection()->query('SELECT * FROM ' . $table . " WHERE deleted = 'true'");
+            $stmt = self::getPdoConnection()->prepare('SELECT * FROM ' . $table . " WHERE deleted = 'true'");
+            $stmt->execute();
 
-            return $query->fetchAll(\PDO::FETCH_ASSOC);
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
         } catch (\Exception $e) {
             self::db_Error('Failed to get deleted records: ' . $e->getMessage());
 
@@ -247,8 +249,9 @@ class Database
     public static function restoreRecord(string $table, int $row): void
     {
         try {
-            $query = self::getPdoConnection()->query('UPDATE ' . $table . " SET deleted = 'false' WHERE id = " . $row);
-            $query->execute();
+            $stmt = self::getPdoConnection()->prepare('UPDATE ' . $table . " SET deleted = 'false' WHERE id = :id");
+            $stmt->bindParam(':id', $row, \PDO::PARAM_INT);
+            $stmt->execute();
         } catch (\Exception $e) {
             self::db_Error('Failed to restore record: ' . $e->getMessage());
 
@@ -265,9 +268,9 @@ class Database
     public static function deleteRecord(string $table, int $row): void
     {
         try {
-            $query = self::getPdoConnection()->query('DELETE FROM ' . $table . ' WHERE id = ' . $row);
-            $query->execute();
-
+            $stmt = self::getPdoConnection()->prepare('DELETE FROM ' . $table . ' WHERE id = :id');
+            $stmt->bindParam(':id', $row, \PDO::PARAM_INT);
+            $stmt->execute();
         } catch (\Exception $e) {
             self::db_Error('Failed to delete record: ' . $e->getMessage());
 
@@ -284,8 +287,9 @@ class Database
     public static function lockRecord(string $table, int $row): void
     {
         try {
-            $query = self::getPdoConnection()->query('UPDATE ' . $table . " SET locked = 'true' WHERE id = " . $row);
-            $query->execute();
+            $stmt = self::getPdoConnection()->prepare('UPDATE ' . $table . " SET locked = 'true' WHERE id = :id");
+            $stmt->bindParam(':id', $row, \PDO::PARAM_INT);
+            $stmt->execute();
         } catch (\Exception $e) {
             self::db_Error('Failed to lock record: ' . $e->getMessage());
 
@@ -302,8 +306,9 @@ class Database
     public static function unlockRecord(string $table, int $row): void
     {
         try {
-            $query = self::getPdoConnection()->query('UPDATE ' . $table . " SET locked = 'false' WHERE id = " . $row);
-            $query->execute();
+            $stmt = self::getPdoConnection()->prepare('UPDATE ' . $table . " SET locked = 'false' WHERE id = :id");
+            $stmt->bindParam(':id', $row, \PDO::PARAM_INT);
+            $stmt->execute();
         } catch (\Exception $e) {
             self::db_Error('Failed to unlock record: ' . $e->getMessage());
 
@@ -322,9 +327,12 @@ class Database
     public static function isLocked(string $table, int $row): bool
     {
         try {
-            $query = self::getPdoConnection()->query('SELECT locked FROM ' . $table . ' WHERE id = ' . $row);
+            $stmt = self::getPdoConnection()->prepare('SELECT locked FROM ' . $table . ' WHERE id = :id');
+            $stmt->bindParam(':id', $row, \PDO::PARAM_INT);
+            $stmt->execute();
+            $result = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-            return $query->fetch(\PDO::FETCH_ASSOC)['locked'] == 'true';
+            return isset($result['locked']) && $result['locked'] == 'true';
         } catch (\Exception $e) {
             self::db_Error('Failed to check for lock: ' . $e->getMessage());
 
@@ -395,8 +403,9 @@ class Database
     public static function requestSaveAndUnlock(string $table, int $row): void
     {
         try {
-            $query = self::getPdoConnection()->query('UPDATE ' . $table . " SET locked = 'false' WHERE id = " . $row);
-            $query->execute();
+            $stmt = self::getPdoConnection()->prepare('UPDATE ' . $table . " SET locked = 'false' WHERE id = :id");
+            $stmt->bindParam(':id', $row, \PDO::PARAM_INT);
+            $stmt->execute();
         } catch (\Exception $e) {
             self::db_Error('Failed to request save and unlock: ' . $e->getMessage());
 

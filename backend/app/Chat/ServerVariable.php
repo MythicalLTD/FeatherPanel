@@ -58,7 +58,7 @@ class ServerVariable
      *
      * @return int|false The new server variable's ID or false on failure
      */
-    public static function createServerVariable(array $data): int|false
+    public static function createServerVariable(array $data): int | false
     {
         $required = ['server_id', 'variable_id', 'variable_value'];
         foreach ($required as $field) {

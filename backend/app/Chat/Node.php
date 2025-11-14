@@ -138,7 +138,7 @@ class Node
      *
      * @return int|false The new node's ID or false on failure
      */
-    public static function createNode(array $data): int|false
+    public static function createNode(array $data): int | false
     {
         // Required fields for node creation
         $required = [
@@ -238,7 +238,7 @@ class Node
     /**
      * Alias for createNode method.
      */
-    public static function create(array $data): int|false
+    public static function create(array $data): int | false
     {
         return self::createNode($data);
     }

@@ -85,7 +85,7 @@ class Permission
         return (int) $stmt->fetchColumn();
     }
 
-    public static function createPermission(array $data): int|false
+    public static function createPermission(array $data): int | false
     {
         $required = ['role_id', 'permission'];
         foreach ($required as $field) {

@@ -97,7 +97,7 @@ class TimedTask
     }
 
     /** Create a new timed task. */
-    public static function create(array $data): int|false
+    public static function create(array $data): int | false
     {
         // Required minimal fields
         if (!isset($data['task_name']) || trim((string) $data['task_name']) === '') {

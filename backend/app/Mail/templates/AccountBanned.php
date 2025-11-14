@@ -120,6 +120,5 @@ class AccountBanned
         if ($mailID == false) {
             return;
         }
-
     }
 }

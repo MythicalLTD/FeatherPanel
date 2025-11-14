@@ -50,7 +50,7 @@ class ServerSchedule
      *
      * @return int|false The new schedule's ID or false on failure
      */
-    public static function createSchedule(array $data): int|false
+    public static function createSchedule(array $data): int | false
     {
         // Required fields for schedule creation
         $required = [

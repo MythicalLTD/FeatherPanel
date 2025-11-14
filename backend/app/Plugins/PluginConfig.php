@@ -138,7 +138,6 @@ class PluginConfig
             $app->getLogger()->debug('Done processing: ' . $config['name']);
 
             return true;
-
         } catch (\Exception $e) {
             $app->getLogger()->error('Error processing plugin config: ' . $e->getMessage());
 

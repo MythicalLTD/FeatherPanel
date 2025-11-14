@@ -561,7 +561,6 @@ class Users extends App implements CommandBuilder
         self::waitForInput();
 
         return false;
-
     }
 
     private static function banUserInteractive(array $user): void

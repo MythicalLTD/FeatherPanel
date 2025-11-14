@@ -163,7 +163,6 @@ class WingsTransferStatusController
         $logger->error('Server transfer failed: ' . $server['name'] . ' (UUID: ' . $uuid . ')' . ($error ? ' - ' . $error : ''));
 
         return ApiResponse::success([], 'Transfer status recorded: failed', 200);
-
     }
 
     /**

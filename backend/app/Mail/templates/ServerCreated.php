@@ -130,6 +130,5 @@ class ServerCreated
         if ($mailID == false) {
             return;
         }
-
     }
 }

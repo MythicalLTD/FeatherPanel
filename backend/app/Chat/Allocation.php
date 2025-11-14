@@ -214,7 +214,7 @@ class Allocation
     /**
      * Create a new allocation.
      */
-    public static function create(array $data): int|false
+    public static function create(array $data): int | false
     {
         $fields = ['node_id', 'ip', 'ip_alias', 'port', 'server_id', 'notes'];
         $insert = [];

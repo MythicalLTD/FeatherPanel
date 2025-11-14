@@ -174,7 +174,6 @@ class Settings extends App implements CommandBuilder
                 }
                 self::$cliApp->send('&c✗ Failed to update setting. Press any key to continue...');
                 self::waitForInput();
-
             } catch (\Exception $e) {
                 self::$cliApp->send('&c✗ Error updating setting: ' . $e->getMessage());
                 self::$cliApp->send('&7Press any key to continue...');

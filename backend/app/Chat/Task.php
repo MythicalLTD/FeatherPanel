@@ -49,7 +49,7 @@ class Task
      *
      * @return int|false The new task's ID or false on failure
      */
-    public static function createTask(array $data): int|false
+    public static function createTask(array $data): int | false
     {
         // Required fields for task creation
         $required = [
@@ -458,7 +458,6 @@ class Task
             $pdo->commit();
 
             return true;
-
         } catch (\Exception $e) {
             if (isset($pdo)) {
                 $pdo->rollBack();

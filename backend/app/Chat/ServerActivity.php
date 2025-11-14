@@ -58,7 +58,7 @@ class ServerActivity
      *
      * @return int|false The new activity's ID or false on failure
      */
-    public static function createActivity(array $data): int|false
+    public static function createActivity(array $data): int | false
     {
         // Required fields for activity creation
         $required = [

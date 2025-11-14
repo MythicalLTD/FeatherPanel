@@ -242,5 +242,4 @@ return function (RouteCollection $routes): void {
         'uuidShort', // Pass the server UUID for middleware
         ['GET']
     );
-
 };

@@ -80,7 +80,6 @@ class ProxyGenerator
             $logger->debug("Generated proxy class {$fullProxyClassName} for {$targetClass}");
 
             return $fullProxyClassName;
-
         } catch (\Throwable $e) {
             $logger->error("Failed to create proxy for {$targetClass}: " . $e->getMessage());
 

@@ -258,7 +258,6 @@ class DashboardController
                 $error = error_get_last();
                 $logger->warning('Failed to fetch latest version from API. Error: ' . ($error['message'] ?? 'Unknown error'));
             }
-
         } catch (\Exception $e) {
             // If version check fails, we'll just return the current version info
             // This ensures the dashboard still works even if the version API is down

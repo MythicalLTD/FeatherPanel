@@ -410,9 +410,9 @@ class ServerService
     public function compressFiles(string $serverUuid, string $root, array $files, string $name = '', string $extension = 'tar.gz'): WingsResponse
     {
         try {
-            // Ensure files is an array and not empty
-            if (empty($files) || !is_array($files)) {
-                return new WingsResponse(['error' => 'Files array cannot be empty'], 422);
+            // Ensure $files is an array
+            if (!is_array($files)) {
+                return new WingsResponse(['error' => 'Files must be provided as an array'], 422);
             }
 
             // Ensure all files are strings (file names only, not paths)

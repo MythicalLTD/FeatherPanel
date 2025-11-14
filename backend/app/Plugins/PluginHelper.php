@@ -87,7 +87,6 @@ class PluginHelper
             $logger->debug('Successfully loaded config for plugin: ' . $identifier);
 
             return $config;
-
         } catch (ParseException $e) {
             $logger->error('YAML parse error in plugin config: ' . $identifier . ' - ' . $e->getMessage());
 

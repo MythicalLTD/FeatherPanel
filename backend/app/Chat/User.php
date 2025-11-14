@@ -50,7 +50,7 @@ class User
      *
      * @return int|false The new user's ID or false on failure
      */
-    public static function createUser(array $data): int|false
+    public static function createUser(array $data): int | false
     {
         // Required fields for user creation
         $required = [

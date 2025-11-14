@@ -41,6 +41,5 @@ class AppDependencies implements Dependencies
         }
 
         return false;
-
     }
 }

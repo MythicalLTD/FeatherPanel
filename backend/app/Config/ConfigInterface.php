@@ -99,4 +99,14 @@ interface ConfigInterface
     public const SUBDOMAIN_CF_EMAIL = 'subdomain_cf_email';
     public const SUBDOMAIN_CF_API_KEY = 'subdomain_cf_api_key';
     public const SUBDOMAIN_MAX_PER_SERVER = 'subdomain_max_per_server';
+
+    /**
+     * FeatherCloud access.
+     */
+    public const FEATHERCLOUD_ACCESS_PUBLIC_KEY = 'feathercloud_access_public_key';
+    public const FEATHERCLOUD_ACCESS_PRIVATE_KEY = 'feathercloud_access_private_key';
+    public const FEATHERCLOUD_ACCESS_LAST_ROTATED = 'feathercloud_access_last_rotated';
+    public const FEATHERCLOUD_CLOUD_PUBLIC_KEY = 'feathercloud_cloud_public_key';
+    public const FEATHERCLOUD_CLOUD_PRIVATE_KEY = 'feathercloud_cloud_private_key';
+    public const FEATHERCLOUD_CLOUD_LAST_ROTATED = 'feathercloud_cloud_last_rotated';
 }

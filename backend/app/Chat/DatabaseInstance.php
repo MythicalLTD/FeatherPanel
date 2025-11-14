@@ -62,7 +62,7 @@ class DatabaseInstance
      *
      * @return int|false The new database's ID or false on failure
      */
-    public static function createDatabase(array $data): int|false
+    public static function createDatabase(array $data): int | false
     {
         // Required fields for database creation
         $required = [
