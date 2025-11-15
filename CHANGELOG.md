@@ -17,6 +17,7 @@
 - Added FeatherCloud handshake support, allowing seamless and secure linking of your panel to a FeatherCloud account!
 - Introduced FeatherPanel Zero Trust Security: servers are now automatically scanned for malware and threats, enhancing protection and peace of mind!
 - FeatherPanel Thread Intelligence Server (TIS): introduces advanced real-time malware and threat detection, empowering your panel with cutting-edge active protection and intelligent security analytics for all managed servers. Powerd by FeatherWings TIS and FeatherCloud TIS!
+- Added support for a FeatherPanel plugin export ignore file, allowing you to exclude packages and third-party dependencies that are used during plugin development but should not be included in the final exported plugin.
 
 ## v1.0.2 BETA
 

@@ -795,43 +795,6 @@ class PluginsController
         }
     }
 
-    #[OA\Get(
-        path: '/api/admin/plugins/{identifier}/export',
-        summary: 'Export addon',
-        description: 'Export an installed addon as a password-protected .fpa file for backup or distribution purposes.',
-        tags: ['Admin - Plugins'],
-        parameters: [
-            new OA\Parameter(
-                name: 'identifier',
-                in: 'path',
-                description: 'Addon identifier to export',
-                required: true,
-                schema: new OA\Schema(type: 'string')
-            ),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Addon exported successfully',
-                content: new OA\MediaType(
-                    mediaType: 'application/zip',
-                    schema: new OA\Schema(type: 'string', format: 'binary')
-                ),
-                headers: [
-                    new OA\Header(
-                        header: 'Content-Disposition',
-                        description: 'Attachment filename',
-                        schema: new OA\Schema(type: 'string', example: 'attachment; filename="addon-name.fpa"')
-                    ),
-                ]
-            ),
-            new OA\Response(response: 400, description: 'Bad request - Invalid addon identifier'),
-            new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
-            new OA\Response(response: 404, description: 'Addon not found'),
-            new OA\Response(response: 500, description: 'Internal server error - Failed to export addon'),
-        ]
-    )]
     public function export(Request $request, string $identifier): Response
     {
         try {
@@ -847,12 +810,39 @@ class PluginsController
             @mkdir($tempDir, 0755, true);
             $exportFile = $tempDir . '/' . $identifier . '.fpa';
             $pwd = self::PASSWORD;
+
+            // Parse .featherexport file for exclusions
+            $exclusions = $this->parseFeatherExportIgnore($pluginDir);
+
+            // Always exclude .featherexport itself from the export
+            $exclusions[] = '.featherexport';
+
+            // Build zip command with exclusions
             $zipCmd = sprintf(
                 'cd %s && zip -r -P %s %s *',
                 escapeshellarg($pluginDir),
                 escapeshellarg($pwd),
                 escapeshellarg($exportFile)
             );
+
+            // Add exclusion patterns
+            if (!empty($exclusions)) {
+                $exclusionArgs = [];
+                foreach ($exclusions as $pattern) {
+                    // Escape the pattern for shell but preserve glob characters
+                    $exclusionArgs[] = escapeshellarg($pattern);
+                }
+                if (!empty($exclusionArgs)) {
+                    $zipCmd = sprintf(
+                        'cd %s && zip -r -P %s %s * -x %s',
+                        escapeshellarg($pluginDir),
+                        escapeshellarg($pwd),
+                        escapeshellarg($exportFile),
+                        implode(' -x ', $exclusionArgs)
+                    );
+                }
+            }
+
             exec($zipCmd, $out, $code);
             if ($code !== 0 || !file_exists($exportFile)) {
                 @exec('rm -rf ' . escapeshellarg($tempDir));
@@ -1034,6 +1024,85 @@ class PluginsController
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to install from URL: ' . $e->getMessage(), 500);
         }
+    }
+
+    #[OA\Get(
+        path: '/api/admin/plugins/{identifier}/export',
+        summary: 'Export addon',
+        description: 'Export an installed addon as a password-protected .fpa file for backup or distribution purposes.',
+        tags: ['Admin - Plugins'],
+        parameters: [
+            new OA\Parameter(
+                name: 'identifier',
+                in: 'path',
+                description: 'Addon identifier to export',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Addon exported successfully',
+                content: new OA\MediaType(
+                    mediaType: 'application/zip',
+                    schema: new OA\Schema(type: 'string', format: 'binary')
+                ),
+                headers: [
+                    new OA\Header(
+                        header: 'Content-Disposition',
+                        description: 'Attachment filename',
+                        schema: new OA\Schema(type: 'string', example: 'attachment; filename="addon-name.fpa"')
+                    ),
+                ]
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid addon identifier'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'Addon not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to export addon'),
+        ]
+    )]
+    /**
+     * Parse .featherexport file to get exclusion patterns.
+     * Supports comments (lines starting with #), blank lines, and glob patterns.
+     *
+     * @return array<string> Array of exclusion patterns
+     */
+    private function parseFeatherExportIgnore(string $pluginDir): array
+    {
+        $ignoreFile = rtrim($pluginDir, '/') . '/.featherexport';
+        if (!file_exists($ignoreFile)) {
+            return [];
+        }
+
+        $patterns = [];
+        $lines = file($ignoreFile, FILE_IGNORE_NEW_LINES);
+        if ($lines === false) {
+            return [];
+        }
+
+        foreach ($lines as $line) {
+            // Trim whitespace
+            $line = trim($line);
+
+            // Skip empty lines and comments
+            if ($line === '' || strpos($line, '#') === 0) {
+                continue;
+            }
+
+            // Remove inline comments
+            $commentPos = strpos($line, '#');
+            if ($commentPos !== false) {
+                $line = trim(substr($line, 0, $commentPos));
+            }
+
+            if ($line !== '') {
+                $patterns[] = $line;
+            }
+        }
+
+        return $patterns;
     }
 
     /**
