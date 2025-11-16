@@ -367,8 +367,8 @@ import {
     DrawerFooter,
 } from '@/components/ui/drawer';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import TableComponent from '@/kit/TableComponent.vue';
-import type { TableColumn } from '@/kit/types';
+import TableComponent from '@/components/ui/feather-table/TableComponent.vue';
+import type { TableColumn } from '@/components/ui/feather-table/types';
 import { useToast } from 'vue-toastification';
 
 // Helper function to get default port based on database type

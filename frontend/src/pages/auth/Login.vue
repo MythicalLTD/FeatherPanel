@@ -174,11 +174,13 @@ async function handleDiscordLink(): Promise<void> {
                             console.error('Failed to sync user preferences:', prefError);
                         }
 
-                        // Redirect after a short delay
+                        // Redirect immediately (no delay needed with router)
                         const redirect = router.currentRoute.value.query.redirect as string;
-                        setTimeout(() => {
-                            window.location.href = redirect || '/';
-                        }, 1200);
+                        if (redirect && redirect.startsWith('/')) {
+                            router.replace(redirect);
+                        } else {
+                            router.replace('/');
+                        }
                     }
                 } catch (loginError) {
                     error.value = getErrorMessage(loginError);
@@ -227,11 +229,13 @@ async function handleDiscordLogin(token: string): Promise<void> {
                 // Don't block login if preferences fail to sync
             }
 
-            // Redirect after a short delay
+            // Redirect immediately (no delay needed with router)
             const redirect = router.currentRoute.value.query.redirect as string;
-            setTimeout(() => {
-                window.location.href = redirect || '/';
-            }, 1200);
+            if (redirect && redirect.startsWith('/')) {
+                router.replace(redirect);
+            } else {
+                router.replace('/');
+            }
         } else {
             error.value = getErrorMessage(res.data);
         }
@@ -318,11 +322,13 @@ async function onSubmit(e: Event) {
                 // Don't block login if preferences fail to sync
             }
 
-            // Optionally redirect after a short delay
+            // Redirect immediately (no delay needed with router)
             const redirect = router.currentRoute.value.query.redirect as string;
-            setTimeout(() => {
-                window.location.href = redirect || '/';
-            }, 1200);
+            if (redirect && redirect.startsWith('/')) {
+                router.replace(redirect);
+            } else {
+                router.replace('/');
+            }
         } else {
             error.value = getErrorMessage(res.data);
         }
@@ -351,7 +357,7 @@ async function onSubmit(e: Event) {
         <!-- Plugin Widgets: Before Form -->
         <WidgetRenderer v-if="widgetsBeforeForm.length > 0" :widgets="widgetsBeforeForm" />
 
-        <form @submit="onSubmit">
+        <form @submit.prevent="onSubmit">
             <div class="flex flex-col gap-6">
                 <div class="flex flex-col gap-4">
                     <div class="grid gap-3">

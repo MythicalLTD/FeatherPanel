@@ -1398,7 +1398,7 @@ CF_HOSTNAME=""
                 log_step "Setting up reverse proxy..."
                 
                 # Get domain for reverse proxy
-                local panel_domain=""
+                panel_domain=""
                 while [ -z "$panel_domain" ]; do
                     prompt "${BOLD}Enter Panel domain name${NC} ${BLUE}(e.g., panel.example.com)${NC}: " panel_domain
                 done

@@ -31,6 +31,7 @@ import Turnstile from 'vue-turnstile';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 const props = defineProps<{
@@ -40,6 +41,7 @@ import { useSettingsStore } from '@/stores/settings';
 
 const settingsStore = useSettingsStore();
 const { t: $t } = useI18n();
+const router = useRouter();
 
 onMounted(async () => {
     await settingsStore.fetchSettings();
@@ -194,9 +196,8 @@ async function onSubmit(e: Event) {
         });
         if (res.data && res.data.success) {
             success.value = res.data.message || 'Registration successful!';
-            setTimeout(() => {
-                window.location.href = '/';
-            }, 1200);
+            // Navigate immediately (no delay needed with router)
+            router.replace('/');
         } else {
             error.value = getErrorMessage(res.data);
         }
@@ -216,7 +217,7 @@ async function onSubmit(e: Event) {
         <!-- Plugin Widgets: Before Form -->
         <WidgetRenderer v-if="widgetsBeforeForm.length > 0" :widgets="widgetsBeforeForm" />
 
-        <form @submit="onSubmit">
+        <form @submit.prevent="onSubmit">
             <div class="flex flex-col gap-6">
                 <div class="flex flex-col gap-4">
                     <div class="flex flex-col md:flex-row gap-3">

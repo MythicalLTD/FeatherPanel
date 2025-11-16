@@ -174,8 +174,8 @@ const mountApp = async () => {
 };
 
 // Import plugin services
-import { pluginLoader } from './services/pluginLoader';
-import { pluginAPI } from './services/pluginAPI';
+import { pluginLoader } from './lib/pluginLoader';
+import { pluginAPI } from './lib/pluginAPI';
 
 // Load plugin CSS and JS
 const loadCustomResources = async () => {

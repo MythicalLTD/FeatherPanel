@@ -33,7 +33,7 @@ import type {
     SubdomainSettings,
     SubdomainSettingsPayload,
     ServerSubdomainPayload,
-} from '@/types/subdomain';
+} from '@/composables/types/subdomain';
 
 export async function fetchAdminSubdomains(
     params: { page?: number; limit?: number; search?: string; includeInactive?: boolean } = {},

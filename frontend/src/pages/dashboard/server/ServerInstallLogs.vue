@@ -177,7 +177,7 @@ import { useToast } from 'vue-toastification';
 import { useI18n } from 'vue-i18n';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
-import type { Server } from '@/types/server';
+import type { Server } from '@/composables/types/server';
 import Convert from 'ansi-to-html';
 
 const route = useRoute();

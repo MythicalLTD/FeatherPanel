@@ -183,11 +183,6 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/CloudManagement.vue'),
     },
     {
-        path: '/admin/feathercloud-zero-intelligence',
-        name: 'AdminFeatherCloudZeroIntelligence',
-        component: () => import('@/pages/admin/cloud/FeatherCloudZeroIntelligence.vue'),
-    },
-    {
         path: '/admin/dev/logs',
         name: 'AdminLogViewer',
         component: () => import('@/pages/admin/dev/LogViewer.vue'),

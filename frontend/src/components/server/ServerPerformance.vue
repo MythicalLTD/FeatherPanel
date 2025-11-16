@@ -155,7 +155,7 @@ import {
     Filler,
     type TooltipItem,
 } from 'chart.js';
-import type { Server, NetworkStats } from '@/types/server';
+import type { Server, NetworkStats } from '@/composables/types/server';
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);

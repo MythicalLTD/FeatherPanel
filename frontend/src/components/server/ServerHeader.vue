@@ -94,7 +94,7 @@ import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Power, RefreshCw, Square, Zap } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
-import type { Server } from '@/types/server';
+import type { Server } from '@/composables/types/server';
 
 defineOptions({
     name: 'ServerHeader',

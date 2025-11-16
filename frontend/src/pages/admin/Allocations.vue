@@ -635,8 +635,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import TableComponent from '@/kit/TableComponent.vue';
-import type { Allocation, Node, TableColumn } from '@/kit/types';
+import TableComponent from '@/components/ui/feather-table/TableComponent.vue';
+import type { Allocation, Node, TableColumn } from '@/components/ui/feather-table/types';
 import { useToast } from 'vue-toastification';
 
 const route = useRoute();

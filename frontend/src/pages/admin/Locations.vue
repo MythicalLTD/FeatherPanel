@@ -208,8 +208,7 @@
                 <div><b>Created At:</b> {{ selectedLocation.created_at }}</div>
                 <div><b>Updated At:</b> {{ selectedLocation.updated_at }}</div>
             </div>
-            <div class="p-4 flex justify-between">
-                <Button variant="secondary" @click="openCreateNodeDrawer(selectedLocation)">Create Node</Button>
+            <div class="p-4 flex justify-end">
                 <DrawerClose as-child>
                     <Button variant="outline" @click="closeView">Close</Button>
                 </DrawerClose>
@@ -280,41 +279,6 @@
             </form>
         </DrawerContent>
     </Drawer>
-
-    <!-- Create Node Drawer -->
-    <Drawer
-        :open="createNodeDrawerOpen"
-        @update:open="
-            (val) => {
-                if (!val) closeCreateNodeDrawer();
-            }
-        "
-    >
-        <DrawerContent>
-            <DrawerHeader>
-                <DrawerTitle>Create Node</DrawerTitle>
-                <DrawerDescription>Fill in the details to create a new node for this location.</DrawerDescription>
-            </DrawerHeader>
-            <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreateNode">
-                <label for="create-node-name" class="block mb-1 font-medium">Name</label>
-                <Input id="create-node-name" v-model="createNodeForm.name" label="Name" placeholder="Name" required />
-                <label for="create-node-fqdn" class="block mb-1 font-medium">FQDN</label>
-                <Input id="create-node-fqdn" v-model="createNodeForm.fqdn" label="FQDN" placeholder="FQDN" required />
-                <label for="create-node-token" class="block mb-1 font-medium">Token</label>
-                <Input
-                    id="create-node-token"
-                    v-model="createNodeForm.token"
-                    label="Token"
-                    placeholder="Token"
-                    required
-                />
-                <div class="flex justify-end gap-2 mt-4">
-                    <Button type="button" variant="outline" @click="closeCreateNodeDrawer">Cancel</Button>
-                    <Button type="submit" variant="default">Create</Button>
-                </div>
-            </form>
-        </DrawerContent>
-    </Drawer>
 </template>
 
 <script setup lang="ts">
@@ -359,8 +323,8 @@ import {
     DrawerClose,
 } from '@/components/ui/drawer';
 import { useRouter } from 'vue-router';
-import TableComponent from '@/kit/TableComponent.vue';
-import type { TableColumn } from '@/kit/types';
+import TableComponent from '@/components/ui/feather-table/TableComponent.vue';
+import type { TableColumn } from '@/components/ui/feather-table/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from 'vue-toastification';
 
@@ -410,13 +374,6 @@ const createDrawerOpen = ref(false);
 const createForm = ref({
     name: '',
     description: '',
-});
-const createNodeDrawerOpen = ref(false);
-const createNodeLocationId = ref<number | null>(null);
-const createNodeForm = ref({
-    name: '',
-    fqdn: '',
-    token: '',
 });
 
 // Table columns configuration
@@ -594,36 +551,5 @@ async function submitCreate() {
 
 function onViewNodes(location: Location) {
     router.push(`/admin/nodes?location_id=${location.id}`);
-}
-
-function openCreateNodeDrawer(location: Location) {
-    createNodeLocationId.value = location.id;
-    createNodeDrawerOpen.value = true;
-}
-
-async function submitCreateNode() {
-    if (!createNodeLocationId.value) return;
-    try {
-        const { data } = await axios.post(`/api/admin/nodes`, {
-            ...createNodeForm.value,
-            location_id: createNodeLocationId.value,
-        });
-        if (data && data.success) {
-            toast.success('Node created successfully');
-            closeCreateNodeDrawer();
-            await fetchLocations(); // Refresh locations to show new node
-        } else {
-            toast.error(data?.message || 'Failed to create node');
-        }
-    } catch (e: unknown) {
-        const errorMessage =
-            (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to create node';
-        toast.error(errorMessage);
-    }
-}
-
-function closeCreateNodeDrawer() {
-    createNodeDrawerOpen.value = false;
-    createNodeForm.value = { name: '', fqdn: '', token: '' };
 }
 </script>

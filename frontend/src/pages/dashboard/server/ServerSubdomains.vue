@@ -352,8 +352,8 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { RefreshCw, Network, Plus, Trash2, AlertTriangle } from 'lucide-vue-next';
-import { fetchServerSubdomains, createServerSubdomain, deleteServerSubdomain } from '@/services/subdomains';
-import type { SubdomainOverview } from '@/types/subdomain';
+import { fetchServerSubdomains, createServerSubdomain, deleteServerSubdomain } from '@/lib/subdomains';
+import type { SubdomainOverview } from '@/composables/types/subdomain';
 type ServerDomainOption = SubdomainOverview['domains'][number];
 type ServerSubdomainEntry = SubdomainOverview['subdomains'][number];
 

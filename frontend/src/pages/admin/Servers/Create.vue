@@ -1030,7 +1030,7 @@ import type {
     ApiSpellVariable,
     CreateForm,
     AxiosError,
-} from '@/types/admin/server';
+} from '@/composables/types/admin/server';
 
 const router = useRouter();
 const toast = useToast();

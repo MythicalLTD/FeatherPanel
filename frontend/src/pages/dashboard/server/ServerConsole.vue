@@ -899,7 +899,7 @@ import {
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import { useI18n } from 'vue-i18n';
-import type { Server, NetworkStats } from '@/types/server';
+import type { Server, NetworkStats } from '@/composables/types/server';
 import { useWingsWebSocket, type WingsStats } from '@/composables/useWingsWebSocket';
 import { useServerPermissions } from '@/composables/useServerPermissions';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';

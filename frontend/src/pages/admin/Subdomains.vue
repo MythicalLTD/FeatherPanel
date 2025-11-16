@@ -481,8 +481,8 @@ import { useI18n } from 'vue-i18n';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
-import TableComponent from '@/kit/TableComponent.vue';
-import type { TableColumn } from '@/kit/types';
+import TableComponent from '@/components/ui/feather-table/TableComponent.vue';
+import type { TableColumn } from '@/components/ui/feather-table/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -512,13 +512,13 @@ import {
     fetchAdminSubdomainSettings,
     updateAdminSubdomainSettings,
     fetchAdminSubdomainSpells,
-} from '@/services/subdomains';
+} from '@/lib/subdomains';
 import type {
     SubdomainAdminResponse,
     SubdomainDomain,
     SubdomainDomainPayload,
     SubdomainSettingsPayload,
-} from '@/types/subdomain';
+} from '@/composables/types/subdomain';
 interface DomainTableRow extends Record<string, unknown> {
     uuid: string;
     domain: string;

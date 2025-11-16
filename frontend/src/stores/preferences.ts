@@ -26,7 +26,7 @@ SOFTWARE.
 
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { preferencesService } from '@/services/preferences';
+import { preferencesService } from '@/lib/preferences';
 
 export const usePreferencesStore = defineStore('preferences', () => {
     const isLoading = ref(false);

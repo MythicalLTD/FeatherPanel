@@ -725,8 +725,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import TableComponent from '@/kit/TableComponent.vue';
-import type { TableColumn } from '@/kit/types';
+import TableComponent from '@/components/ui/feather-table/TableComponent.vue';
+import type { TableColumn } from '@/components/ui/feather-table/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from 'vue-toastification';
 

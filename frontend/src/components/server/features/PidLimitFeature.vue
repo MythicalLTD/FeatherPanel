@@ -80,7 +80,7 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import type { Server } from '@/types/server';
+import type { Server } from '@/composables/types/server';
 
 const props = defineProps<{
     isOpen: boolean;
