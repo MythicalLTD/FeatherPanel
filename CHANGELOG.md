@@ -7,6 +7,7 @@
 - Resolved an issue preventing plugins from registering their own dashboard pages.
 - Fixed an issue where the subdomain manager would fail if an allocation did not have an ip_alias and the allocation IP was not public.
 - Removed the "Set Primary" button from the server edit page to prevent user confusion and streamline the allocation management experience.
+- Improved session security by excluding "two_fa_key" from session responses.
 
 ### Added
 
