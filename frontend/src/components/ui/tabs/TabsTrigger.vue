@@ -22,6 +22,8 @@ const forwardedProps = useForwardProps(delegatedProps);
             )
         "
     >
-        <slot />
+        <span class="cursor-pointer transition-colors hover:text-foreground dark:hover:text-foreground">
+            <slot />
+        </span>
     </TabsTrigger>
 </template>
