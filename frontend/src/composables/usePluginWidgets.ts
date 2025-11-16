@@ -127,7 +127,7 @@ export interface WidgetsByPage {
 }
 
 const widgets = ref<WidgetsByPage>({});
-const loading = ref(false);
+const loading = ref(true);
 const error = ref<string | null>(null);
 
 /**

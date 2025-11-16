@@ -409,7 +409,7 @@ interface NodeStatus {
     error: string | null;
 }
 
-const loading = ref(false);
+const loading = ref(true);
 const error = ref<string | null>(null);
 const globalStats = ref<GlobalStats | null>(null);
 const nodes = ref<NodeStatus[]>([]);

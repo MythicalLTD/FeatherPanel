@@ -270,7 +270,7 @@ interface ApiResponse {
 }
 
 const activities = ref<ActivityItem[]>([]);
-const loading = ref(false);
+const loading = ref(true);
 const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const searchQuery = ref('');
 const currentPage = ref(1);

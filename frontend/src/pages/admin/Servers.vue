@@ -795,7 +795,7 @@ const pagination = ref({
     from: 0,
     to: 0,
 });
-const loading = ref(false);
+const loading = ref(true);
 const deleting = ref(false);
 const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const confirmDeleteRow = ref<string | null>(null);

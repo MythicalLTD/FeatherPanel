@@ -659,7 +659,7 @@ const nodeIPs = ref<string[]>([]);
 
 const allocations = ref<Allocation[]>([]);
 const searchQuery = ref('');
-const loading = ref(false);
+const loading = ref(true);
 const deleting = ref(false);
 const confirmDeleteRow = ref<number | null>(null);
 const selectedIds = ref<number[]>([]);

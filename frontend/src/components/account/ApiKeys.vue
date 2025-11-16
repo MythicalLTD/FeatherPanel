@@ -460,7 +460,7 @@ type ApiClient = {
 
 // State
 const apiClients = ref<ApiClient[]>([]);
-const loading = ref(false);
+const loading = ref(true);
 const error = ref<string | null>(null);
 const searchQuery = ref('');
 const showCreateModal = ref(false);

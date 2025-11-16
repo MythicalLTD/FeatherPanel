@@ -268,7 +268,7 @@ import { Chart as ChartJS, ArcElement, Title, Tooltip, Legend } from 'chart.js';
 ChartJS.register(ArcElement, Title, Tooltip, Legend);
 
 // State
-const loading = ref(false);
+const loading = ref(true);
 const error = ref<string | null>(null);
 const realmsOverview = ref({
     total_realms: 0,

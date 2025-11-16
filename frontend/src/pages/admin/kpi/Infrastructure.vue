@@ -469,7 +469,7 @@ interface AllocationUsageServer {
 }
 
 // State
-const loading = ref(false);
+const loading = ref(true);
 const error = ref<string | null>(null);
 const locationsOverview = ref<LocationOverview>({
     total_locations: 0,

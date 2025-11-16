@@ -94,7 +94,7 @@ import axios from "axios";
 
 // State
 const users = ref<User[]>([]);
-const loading = ref(false);
+const loading = ref(true);
 const message = ref<{ type: string; text: string } | null>(null);
 const pagination = ref({
   total: 0,

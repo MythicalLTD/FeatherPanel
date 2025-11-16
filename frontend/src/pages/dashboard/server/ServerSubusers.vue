@@ -512,7 +512,7 @@ const { t } = useI18n();
 const { isOwner: isServerOwner, isLoading: permissionsLoadingCheck } = useServerPermissions();
 
 // State
-const loading = ref(false);
+const loading = ref(true);
 const deletingId = ref<number | null>(null);
 const subusers = ref<Array<{ id: number; username?: string; email: string; permissions?: string[] }>>([]);
 const pagination = ref<{

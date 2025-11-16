@@ -52,7 +52,7 @@ const { t } = useI18n();
 const qrCodeUrl = ref('');
 const secret = ref('');
 const code = ref('');
-const loading = ref(false);
+const loading = ref(true);
 
 // Plugin widgets
 const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('auth-setup-two-factor');

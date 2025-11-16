@@ -194,7 +194,7 @@ const { hasPermission: hasServerPermission, isLoading: permissionsLoading } = us
 const canReadActivity = computed(() => hasServerPermission('activity.read'));
 
 const server = ref<Server | null>(null);
-const loading = ref(false);
+const loading = ref(true);
 const uploading = ref(false);
 const logs = ref<string[]>([]);
 const lastUpdated = ref<string>('');

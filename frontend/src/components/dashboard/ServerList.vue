@@ -2587,7 +2587,7 @@ interface Pagination {
 }
 
 const servers = ref<Server[]>([]);
-const loading = ref(false);
+const loading = ref(true);
 const error = ref<string | null>(null);
 const searchQuery = ref('');
 const currentPage = ref(1);

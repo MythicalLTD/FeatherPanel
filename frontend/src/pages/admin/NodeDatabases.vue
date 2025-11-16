@@ -421,7 +421,7 @@ const viewDatabase = ref<Database | null>(null);
 const confirmDeleteRow = ref<number | null>(null);
 const deleting = ref(false);
 const formLoading = ref(false);
-const loading = ref(false);
+const loading = ref(true);
 
 // Plugin widgets
 const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-node-databases');

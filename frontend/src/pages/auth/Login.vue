@@ -72,7 +72,7 @@ const form = ref({
     password: '',
     turnstile_token: '',
 });
-const loading = ref(false);
+const loading = ref(true);
 const error = ref('');
 const success = ref('');
 const discordLinkToken = ref<string | null>(null);

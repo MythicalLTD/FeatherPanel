@@ -49,7 +49,7 @@ interface StatusResp {
     };
 }
 
-const loading = ref(false);
+const loading = ref(true);
 const status = ref<StatusResp['data'] | null>(null);
 const migRunning = ref(false);
 const migOutput = ref('');

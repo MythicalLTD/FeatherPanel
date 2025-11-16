@@ -52,7 +52,7 @@ interface LogFilesResponse {
     };
 }
 
-const loading = ref(false);
+const loading = ref(true);
 const logs = ref('');
 const currentLogType = ref('app');
 const lines = ref(100);
