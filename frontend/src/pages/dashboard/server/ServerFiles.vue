@@ -12,10 +12,13 @@
             <div
                 v-if="isDraggingOver"
                 class="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-md"
+                style="pointer-events: auto"
                 @drop.prevent="handleDrop"
-                @dragover.prevent
+                @dragover.prevent="handleDragOver"
+                @dragenter.prevent="handleDragEnter"
+                @dragleave.prevent="handleDragLeave"
             >
-                <div class="text-center space-y-8 px-4">
+                <div class="text-center space-y-8 px-4" style="pointer-events: none">
                     <div class="relative inline-block">
                         <!-- Pulsing rings -->
                         <div class="absolute inset-0 -m-8">
@@ -50,7 +53,12 @@
             </div>
         </Transition>
 
-        <div class="space-y-6 pb-8" @dragenter.prevent="handleDragEnter" @dragover.prevent @drop.prevent="handleDrop">
+        <div
+            class="space-y-6 pb-8"
+            @dragenter.prevent="handleDragEnter"
+            @dragover.prevent="handleDragOver"
+            @drop.prevent="handleDrop"
+        >
             <!-- Plugin Widgets: Top of Page -->
             <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
 
@@ -2383,6 +2391,13 @@ const handleKeyboard = (e: KeyboardEvent) => {
 // Prevent drag overlay from closing unless user presses ESC or drops files
 const handleGlobalDragOver = (e: DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+
+    // Set drop effect for Chrome compatibility
+    if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
+    }
+
     // Keep the overlay visible while dragging
     if (e.dataTransfer?.types && e.dataTransfer.types.includes('Files')) {
         isDraggingOver.value = true;
@@ -3489,26 +3504,54 @@ const uploadFolder = async (files: File[]) => {
 };
 
 // Drag and drop handlers
-const handleDragEnter = async (e: DragEvent) => {
+const handleDragEnter = (e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     // Only show overlay if dragging files
     if (e.dataTransfer?.types && e.dataTransfer.types.includes('Files')) {
-        // Check if any folders are being dragged (early detection)
-        if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
-            try {
-                const hasFolders = await detectFolderInItems(e.dataTransfer.items);
-                if (hasFolders) {
-                    // Don't show overlay for folders
-                    toast.error(t('serverFiles.folderDragDropNotSupported'));
-                    return;
-                }
-            } catch {
-                // If detection fails, continue - we'll check again on drop
+        // Set drop effect and effect allowed for Chrome compatibility
+        if (e.dataTransfer) {
+            e.dataTransfer.dropEffect = 'copy';
+            // Chrome needs effectAllowed to be set
+            if (e.dataTransfer.effectAllowed === 'uninitialized' || e.dataTransfer.effectAllowed === 'all') {
+                e.dataTransfer.effectAllowed = 'copy';
             }
         }
+        // Show overlay immediately - folder detection happens on drop
         isDraggingOver.value = true;
+    }
+};
+
+// Handle dragover events - Chrome requires this to allow drops
+const handleDragOver = (e: DragEvent) => {
+    // CRITICAL: Chrome requires preventDefault on dragover to allow drops
+    e.preventDefault();
+    // Don't stop propagation - Chrome needs the event to bubble
+
+    // Set drop effect and effect allowed for Chrome compatibility
+    if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
+        // Chrome needs effectAllowed to be set
+        if (e.dataTransfer.effectAllowed === 'uninitialized' || e.dataTransfer.effectAllowed === 'all') {
+            e.dataTransfer.effectAllowed = 'copy';
+        }
+    }
+
+    // Keep overlay visible while dragging
+    if (e.dataTransfer?.types && e.dataTransfer.types.includes('Files')) {
+        isDraggingOver.value = true;
+    }
+};
+
+const handleDragLeave = (e: DragEvent) => {
+    // Only close overlay if we're leaving the main container (not just moving between child elements)
+    const relatedTarget = e.relatedTarget as HTMLElement | null;
+    const currentTarget = e.currentTarget as HTMLElement;
+
+    // Check if we're actually leaving the drop zone
+    if (!currentTarget.contains(relatedTarget)) {
+        isDraggingOver.value = false;
     }
 };
 
@@ -3556,7 +3599,7 @@ const processDroppedItems = async (items: DataTransferItemList): Promise<File[]>
         if (!item) continue;
 
         if (item.kind === 'file') {
-            // Check if it's a folder using File System Access API
+            // Chrome: Try File System Access API first (if available)
             const itemWithHandle = item as DataTransferItem & {
                 getAsFileSystemHandle?: () => Promise<FileSystemHandle | null>;
             };
@@ -3572,27 +3615,30 @@ const processDroppedItems = async (items: DataTransferItemList): Promise<File[]>
                         // This should not happen if detectFolderInItems worked, but as a safeguard
                         throw new Error('FOLDER_DETECTED');
                     } else if (handle && handle.kind === 'file') {
-                        // Regular file
+                        // Regular file via File System Access API
                         const fileHandle = handle as FileSystemFileHandle;
                         const file = await fileHandle.getFile();
                         files.push(file);
+                        continue; // Successfully got file, move to next item
                     }
                 } catch (error) {
                     if ((error as Error).message === 'FOLDER_DETECTED') {
                         throw error;
                     }
-                    // Fallback: try to get file directly
-                    const file = item.getAsFile();
-                    if (file) {
-                        files.push(file);
-                    }
+                    // If File System Access API fails, fall through to getAsFile()
                 }
-            } else {
-                // Fallback: try to get file directly
+            }
+
+            // Fallback: Use getAsFile() - works in all browsers including Chrome
+            // This is the most reliable method for Chrome
+            try {
                 const file = item.getAsFile();
                 if (file) {
                     files.push(file);
                 }
+            } catch (error) {
+                console.warn('Failed to get file from item:', error);
+                // Continue to next item
             }
         }
     }
@@ -3610,47 +3656,10 @@ const handleDrop = async (e: DragEvent) => {
         return;
     }
 
-    // FIRST: Check for folders BEFORE processing anything
-    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
-        try {
-            const hasFolders = await detectFolderInItems(e.dataTransfer.items);
-            if (hasFolders) {
-                toast.error(t('serverFiles.folderDragDropNotSupported'));
-                return;
-            }
-        } catch (error) {
-            // If detection fails, log but continue - we'll check again below
-            console.warn('Folder detection failed, will check files:', error);
-        }
-    }
-
     let filesToUpload: File[] = [];
 
-    // Try to process files using DataTransferItem API (modern browsers)
-    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
-        try {
-            filesToUpload = await processDroppedItems(e.dataTransfer.items);
-        } catch (error) {
-            // Check if error is about folder detection
-            if ((error as Error).message === 'FOLDER_DETECTED') {
-                toast.error(t('serverFiles.folderDragDropNotSupported'));
-                return;
-            }
-            console.error('Error processing dropped items:', error);
-            // Fallback to regular file list (but check for folders first)
-            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                // Check file list size - if dragging a single item and it's a folder,
-                // browsers might give us the folder's file list
-                // We can't detect this perfectly, but we can check for suspicious patterns
-                const fileList = Array.from(e.dataTransfer.files);
-
-                // If we have many files from a single drag, it might be a folder
-                // But we can't be 100% sure, so we'll allow it and warn if webkitRelativePath exists
-                filesToUpload = fileList;
-            }
-        }
-    } else if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        // Fallback: use regular file list (older browsers or simple file drops)
+    // Chrome: Prioritize dataTransfer.files - it's more reliable
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
         const fileList = Array.from(e.dataTransfer.files);
 
         // Check if any files have webkitRelativePath (indicates folder was dragged)
@@ -3668,39 +3677,49 @@ const handleDrop = async (e: DragEvent) => {
 
         filesToUpload = fileList;
     }
+    // Fallback: Try DataTransferItem API if files API didn't work
+    else if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+        try {
+            // Check for folders first
+            const hasFolders = await detectFolderInItems(e.dataTransfer.items);
+            if (hasFolders) {
+                toast.error(t('serverFiles.folderDragDropNotSupported'));
+                return;
+            }
+
+            // Process items
+            filesToUpload = await processDroppedItems(e.dataTransfer.items);
+        } catch (error) {
+            // Check if error is about folder detection
+            if ((error as Error).message === 'FOLDER_DETECTED') {
+                toast.error(t('serverFiles.folderDragDropNotSupported'));
+                return;
+            }
+            console.error('Error processing dropped items:', error);
+            toast.error(t('serverFiles.uploadError'));
+            return;
+        }
+    }
 
     if (filesToUpload.length === 0) {
+        toast.warning(t('serverFiles.noFilesToUpload'));
         return;
     }
 
-    // FINAL CHECK: Check if we have folder structure (webkitRelativePath)
-    // This happens when browsers process folders and give us their contents
-    const hasFolderStructure = filesToUpload.some(
-        (f) =>
-            (f as File & { webkitRelativePath?: string }).webkitRelativePath &&
-            (f as File & { webkitRelativePath?: string }).webkitRelativePath!.includes('/'),
-    );
-
-    if (hasFolderStructure) {
-        // This means a folder was dragged and browser gave us its contents
-        toast.error(t('serverFiles.folderDragDropNotSupported'));
-        return;
+    // Upload as individual files
+    if (filesToUpload.length === 1 && filesToUpload[0]) {
+        toast.info(t('serverFiles.uploadingFiles', { count: 1 }) + ` - ${filesToUpload[0].name}`);
     } else {
-        // Upload as individual files
-        if (filesToUpload.length === 1 && filesToUpload[0]) {
-            toast.info(t('serverFiles.uploadingFiles', { count: 1 }) + ` - ${filesToUpload[0].name}`);
-        } else {
-            toast.info(t('serverFiles.uploadingFiles', { count: filesToUpload.length }));
-        }
-
-        // Upload each file sequentially with progress tracking
-        for (const file of filesToUpload) {
-            await uploadDroppedFile(file);
-        }
-
-        // Refresh file list after all uploads
-        await refreshFiles();
+        toast.info(t('serverFiles.uploadingFiles', { count: filesToUpload.length }));
     }
+
+    // Upload each file sequentially with progress tracking
+    for (const file of filesToUpload) {
+        await uploadDroppedFile(file);
+    }
+
+    // Refresh file list after all uploads
+    await refreshFiles();
 };
 
 const uploadDroppedFile = async (file: File) => {

@@ -11,6 +11,7 @@
 - Resolved an issue preventing plugins from registering their own dashboard pages.
 - Fixed an issue where the subdomain manager would fail if an allocation did not have an ip_alias and the allocation IP was not public.
 - Improved session security by excluding "two_fa_key" from session responses.
+- Resolved issues preventing drag-and-drop file uploads from working in Chrome, ensuring seamless and reliable file uploads across all modern browsers.
 
 ### Added
 
