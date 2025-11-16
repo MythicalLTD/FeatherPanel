@@ -121,8 +121,8 @@
                                 <div class="flex justify-between items-center">
                                     <span class="text-sm text-muted-foreground">Used / Total</span>
                                     <span class="text-sm font-medium">
-                                        {{ formatBytes(globalStats.used_memory) }} /
-                                        {{ formatBytes(globalStats.total_memory) }}
+                                        {{ formatBytes(globalStats.used_memory, true) }} /
+                                        {{ formatBytes(globalStats.total_memory, true) }}
                                     </span>
                                 </div>
                                 <div class="w-full bg-muted rounded-full h-3">
@@ -158,8 +158,8 @@
                                 <div class="flex justify-between items-center">
                                     <span class="text-sm text-muted-foreground">Used / Total</span>
                                     <span class="text-sm font-medium">
-                                        {{ formatBytes(globalStats.used_disk) }} /
-                                        {{ formatBytes(globalStats.total_disk) }}
+                                        {{ formatBytes(globalStats.used_disk, true) }} /
+                                        {{ formatBytes(globalStats.total_disk, true) }}
                                     </span>
                                 </div>
                                 <div class="w-full bg-muted rounded-full h-3">
@@ -246,8 +246,8 @@
                                     <div class="flex justify-between items-center mb-2">
                                         <span class="text-sm font-medium">Memory</span>
                                         <span class="text-sm text-muted-foreground">
-                                            {{ formatBytes(node.utilization.memory_used) }} /
-                                            {{ formatBytes(node.utilization.memory_total) }}
+                                            {{ formatBytes(node.utilization.memory_used, true) }} /
+                                            {{ formatBytes(node.utilization.memory_total, true) }}
                                         </span>
                                     </div>
                                     <div class="w-full bg-muted rounded-full h-2">
@@ -265,8 +265,8 @@
                                     <div class="flex justify-between items-center mb-2">
                                         <span class="text-sm font-medium">Disk</span>
                                         <span class="text-sm text-muted-foreground">
-                                            {{ formatBytes(node.utilization.disk_used) }} /
-                                            {{ formatBytes(node.utilization.disk_total) }}
+                                            {{ formatBytes(node.utilization.disk_used, true) }} /
+                                            {{ formatBytes(node.utilization.disk_total, true) }}
                                         </span>
                                     </div>
                                     <div class="w-full bg-muted rounded-full h-2">
@@ -284,8 +284,8 @@
                                     <div class="flex justify-between items-center mb-2">
                                         <span class="text-sm font-medium">Swap</span>
                                         <span class="text-sm text-muted-foreground">
-                                            {{ formatBytes(node.utilization.swap_used) }} /
-                                            {{ formatBytes(node.utilization.swap_total) }}
+                                            {{ formatBytes(node.utilization.swap_used, true) }} /
+                                            {{ formatBytes(node.utilization.swap_total, true) }}
                                         </span>
                                     </div>
                                     <div class="w-full bg-muted rounded-full h-2">
@@ -371,6 +371,7 @@ import { Alert } from '@/components/ui/alert';
 import { RefreshCw, Server, Check, AlertTriangle, Cpu, MemoryStick, HardDrive } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
+import { formatBytes } from '@/lib/format';
 
 const toast = useToast();
 
@@ -464,13 +465,6 @@ function getDiskUsagePercent(): number {
     return (globalStats.value.used_disk / globalStats.value.total_disk) * 100;
 }
 
-function formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
 
 onMounted(async () => {
     // Fetch plugin widgets

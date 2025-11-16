@@ -974,7 +974,7 @@
                                         <div>
                                             <div class="text-sm font-medium text-muted-foreground">Memory</div>
                                             <div class="text-sm">
-                                                {{ formatBytes(systemInfoData.wings.system.memory_bytes) }}
+                                                {{ formatBytes(systemInfoData.wings.system.memory_bytes, true) }}
                                             </div>
                                         </div>
                                         <div>
@@ -1438,8 +1438,8 @@
                                             <div class="flex justify-between items-center">
                                                 <span class="text-sm text-muted-foreground">Used / Total</span>
                                                 <span class="text-sm font-medium">
-                                                    {{ formatBytes(utilizationData.utilization.memory_used) }} /
-                                                    {{ formatBytes(utilizationData.utilization.memory_total) }}
+                                                    {{ formatBytes(utilizationData.utilization.memory_used, true) }} /
+                                                    {{ formatBytes(utilizationData.utilization.memory_total, true) }}
                                                 </span>
                                             </div>
                                             <div class="w-full bg-muted rounded-full h-2">
@@ -1477,8 +1477,8 @@
                                             <div class="flex justify-between items-center">
                                                 <span class="text-sm text-muted-foreground">Used / Total</span>
                                                 <span class="text-sm font-medium">
-                                                    {{ formatBytes(utilizationData.utilization.disk_used) }} /
-                                                    {{ formatBytes(utilizationData.utilization.disk_total) }}
+                                                    {{ formatBytes(utilizationData.utilization.disk_used, true) }} /
+                                                    {{ formatBytes(utilizationData.utilization.disk_total, true) }}
                                                 </span>
                                             </div>
                                             <div class="w-full bg-muted rounded-full h-2">
@@ -1516,8 +1516,8 @@
                                             <div class="flex justify-between items-center">
                                                 <span class="text-sm text-muted-foreground">Used / Total</span>
                                                 <span class="text-sm font-medium">
-                                                    {{ formatBytes(utilizationData.utilization.swap_used) }} /
-                                                    {{ formatBytes(utilizationData.utilization.swap_total) }}
+                                                    {{ formatBytes(utilizationData.utilization.swap_used, true) }} /
+                                                    {{ formatBytes(utilizationData.utilization.swap_total, true) }}
                                                 </span>
                                             </div>
                                             <div class="w-full bg-muted rounded-full h-2">
@@ -1602,7 +1602,7 @@
                                             </div>
                                             <div class="text-center">
                                                 <div class="text-2xl font-bold">
-                                                    {{ formatBytes(dockerData.dockerDiskUsage.images_size) }}
+                                                    {{ formatBytes(dockerData.dockerDiskUsage.images_size, true) }}
                                                 </div>
                                                 <div class="text-sm text-muted-foreground">Images Size</div>
                                             </div>
@@ -1620,13 +1620,13 @@
                                             <div class="flex justify-between items-center p-3 bg-muted rounded-lg">
                                                 <span class="text-sm font-medium">Containers</span>
                                                 <span class="text-sm">{{
-                                                    formatBytes(dockerData.dockerDiskUsage.containers_size)
+                                                    formatBytes(dockerData.dockerDiskUsage.containers_size, true)
                                                 }}</span>
                                             </div>
                                             <div class="flex justify-between items-center p-3 bg-muted rounded-lg">
                                                 <span class="text-sm font-medium">Images</span>
                                                 <span class="text-sm">{{
-                                                    formatBytes(dockerData.dockerDiskUsage.images_size)
+                                                    formatBytes(dockerData.dockerDiskUsage.images_size, true)
                                                 }}</span>
                                             </div>
                                             <div class="flex justify-between items-center p-3 bg-muted rounded-lg">
@@ -1644,6 +1644,7 @@
                                                         dockerData.dockerDiskUsage.containers_size +
                                                             dockerData.dockerDiskUsage.images_size +
                                                             dockerData.dockerDiskUsage.build_cache_size,
+                                                        true,
                                                     )
                                                 }}</span>
                                             </div>
@@ -1675,7 +1676,7 @@
                                                         <div class="text-xs text-yellow-600 mt-2">
                                                             Build cache:
                                                             {{
-                                                                formatBytes(dockerData.dockerDiskUsage.build_cache_size)
+                                                                formatBytes(dockerData.dockerDiskUsage.build_cache_size, true)
                                                             }}
                                                             could also be reclaimed.
                                                         </div>
@@ -2726,6 +2727,7 @@ import { Switch } from '@/components/ui/switch';
 import TableComponent from '@/components/ui/feather-table/TableComponent.vue';
 import type { ApiResponse, TableColumn } from '@/components/ui/feather-table/types';
 import { useToast } from 'vue-toastification';
+import { formatBytes } from '@/lib/format';
 import { useSystemTerminal } from '@/composables/useSystemTerminal';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
@@ -3699,7 +3701,7 @@ async function pruneDockerImages() {
             const imagesDeleted = response.data.data.dockerPrune.ImagesDeleted || [];
 
             toast.success(
-                `Docker prune completed. Space reclaimed: ${formatBytes(spaceReclaimed)}. Images deleted: ${imagesDeleted ? imagesDeleted.length : 0}`,
+                `Docker prune completed. Space reclaimed: ${formatBytes(spaceReclaimed, true)}. Images deleted: ${imagesDeleted ? imagesDeleted.length : 0}`,
             );
 
             // Refresh Docker data
@@ -4126,13 +4128,6 @@ function formatSelfUpdateResult(result: Record<string, unknown> | null): string 
     }
 }
 
-function formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
 
 function isValidIPv4Address(value: string): boolean {
     if (!value) {

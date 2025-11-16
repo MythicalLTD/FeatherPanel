@@ -538,6 +538,7 @@ import {
 import { useServerPermissions } from '@/composables/useServerPermissions';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
+import { formatBytes } from '@/lib/format';
 
 import {
     Plus,
@@ -947,13 +948,6 @@ function formatDate(value?: string) {
     return new Date(value).toLocaleString();
 }
 
-function formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
 
 function getStatusVariant(isSuccessful: number, isLocked: number): BadgeVariants['variant'] {
     if (isLocked) return 'secondary';
