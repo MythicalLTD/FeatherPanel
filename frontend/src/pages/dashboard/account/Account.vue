@@ -43,7 +43,7 @@
                             <div class="block sm:hidden mb-4">
                                 <select
                                     v-model="activeTab"
-                                    class="w-full p-3 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                                    class="w-full p-3 rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm"
                                 >
                                     <option value="profile">{{ $t('account.profile') }}</option>
                                     <option value="settings">{{ $t('account.settings') }}</option>
