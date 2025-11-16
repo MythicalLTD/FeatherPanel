@@ -118,6 +118,8 @@
                                     <Button
                                         size="sm"
                                         variant="outline"
+                                        class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                        title="View spell details"
                                         data-umami-event="View spell"
                                         :data-umami-event-spell="(item as Spell).name"
                                         @click="onView(item as Spell)"
@@ -127,6 +129,8 @@
                                     <Button
                                         size="sm"
                                         variant="secondary"
+                                        class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                        title="Edit spell"
                                         data-umami-event="Edit spell"
                                         :data-umami-event-spell="(item as Spell).name"
                                         @click="onEdit(item as Spell)"
@@ -136,6 +140,8 @@
                                     <Button
                                         size="sm"
                                         variant="outline"
+                                        class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                        title="Export spell"
                                         data-umami-event="Export spell"
                                         :data-umami-event-spell="(item as Spell).name"
                                         @click="onExport(item as Spell)"
@@ -146,7 +152,9 @@
                                         <Button
                                             size="sm"
                                             variant="destructive"
+                                            class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                             :loading="deleting"
+                                            title="Confirm deletion"
                                             data-umami-event="Confirm delete spell"
                                             :data-umami-event-spell="(item as Spell).name"
                                             @click="confirmDelete(item as Spell)"
@@ -156,7 +164,9 @@
                                         <Button
                                             size="sm"
                                             variant="outline"
+                                            class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                             :disabled="deleting"
+                                            title="Cancel deletion"
                                             @click="onCancelDelete"
                                         >
                                             Cancel
@@ -166,6 +176,8 @@
                                         <Button
                                             size="sm"
                                             variant="destructive"
+                                            class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                            title="Delete spell"
                                             data-umami-event="Delete spell"
                                             :data-umami-event-spell="(item as Spell).name"
                                             @click="onDelete(item as Spell)"

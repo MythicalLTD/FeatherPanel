@@ -53,6 +53,8 @@
                             <Button
                                 size="sm"
                                 variant="outline"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="View location details"
                                 data-umami-event="View location"
                                 :data-umami-event-location="(item as Location).name"
                                 @click="onView(item as Location)"
@@ -62,6 +64,8 @@
                             <Button
                                 size="sm"
                                 variant="secondary"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Edit location"
                                 data-umami-event="Edit location"
                                 :data-umami-event-location="(item as Location).name"
                                 @click="onEdit(item as Location)"
@@ -71,6 +75,8 @@
                             <Button
                                 size="sm"
                                 variant="secondary"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="View location nodes"
                                 data-umami-event="View location nodes"
                                 :data-umami-event-location="(item as Location).name"
                                 @click="onViewNodes(item as Location)"
@@ -81,14 +87,23 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                     :loading="deleting"
+                                    title="Confirm deletion"
                                     data-umami-event="Confirm delete location"
                                     :data-umami-event-location="(item as Location).name"
                                     @click="confirmDelete(item as Location)"
                                 >
                                     Confirm Delete
                                 </Button>
-                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    :disabled="deleting"
+                                    title="Cancel deletion"
+                                    @click="onCancelDelete"
+                                >
                                     Cancel
                                 </Button>
                             </template>
@@ -96,6 +111,8 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    title="Delete location"
                                     data-umami-event="Delete location"
                                     :data-umami-event-location="(item as Location).name"
                                     @click="onDelete(item as Location)"

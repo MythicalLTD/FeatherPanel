@@ -99,6 +99,8 @@
                             <Button
                                 size="sm"
                                 variant="outline"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="View node details"
                                 data-umami-event="View node"
                                 :data-umami-event-node="(item as Node).name"
                                 @click="onView(item as Node)"
@@ -108,6 +110,8 @@
                             <Button
                                 size="sm"
                                 variant="secondary"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Edit node"
                                 data-umami-event="Edit node"
                                 :data-umami-event-node="(item as Node).name"
                                 @click="onEdit(item as Node)"
@@ -117,7 +121,8 @@
                             <Button
                                 size="sm"
                                 variant="outline"
-                                title="Manage Databases"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Manage node databases"
                                 data-umami-event="Manage node databases"
                                 :data-umami-event-node="(item as Node).name"
                                 @click="onDatabases(item as Node)"
@@ -127,7 +132,8 @@
                             <Button
                                 size="sm"
                                 variant="outline"
-                                title="Manage Allocations"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Manage node allocations"
                                 data-umami-event="Manage node allocations"
                                 :data-umami-event-node="(item as Node).name"
                                 @click="onAllocations(item as Node)"
@@ -138,14 +144,23 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                     :loading="deleting"
+                                    title="Confirm deletion"
                                     data-umami-event="Confirm delete node"
                                     :data-umami-event-node="(item as Node).name"
                                     @click="confirmDelete(item as Node)"
                                 >
                                     Confirm Delete
                                 </Button>
-                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    :disabled="deleting"
+                                    title="Cancel deletion"
+                                    @click="onCancelDelete"
+                                >
                                     Cancel
                                 </Button>
                             </template>
@@ -153,6 +168,8 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    title="Delete node"
                                     data-umami-event="Delete node"
                                     :data-umami-event-node="(item as Node).name"
                                     @click="onDelete(item as Node)"

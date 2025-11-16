@@ -119,6 +119,8 @@
                             <Button
                                 size="sm"
                                 variant="outline"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="View image details"
                                 data-umami-event="View image"
                                 :data-umami-event-image="(item as unknown as Image).name"
                                 @click="onView(item as unknown as Image)"
@@ -128,6 +130,8 @@
                             <Button
                                 size="sm"
                                 variant="secondary"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Edit image"
                                 data-umami-event="Edit image"
                                 :data-umami-event-image="(item as unknown as Image).name"
                                 @click="onEdit(item as unknown as Image)"
@@ -137,6 +141,8 @@
                             <Button
                                 size="sm"
                                 variant="outline"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Copy image URL"
                                 data-umami-event="Copy image URL"
                                 :data-umami-event-image="(item as unknown as Image).name"
                                 @click="onCopyUrl(item as unknown as Image)"
@@ -147,12 +153,21 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                     :loading="deleting"
+                                    title="Confirm deletion"
                                     @click="confirmDelete(item as unknown as Image)"
                                 >
                                     Confirm Delete
                                 </Button>
-                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    :disabled="deleting"
+                                    title="Cancel deletion"
+                                    @click="onCancelDelete"
+                                >
                                     Cancel
                                 </Button>
                             </template>
@@ -160,7 +175,11 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                     :disabled="deleting"
+                                    title="Delete image"
+                                    data-umami-event="Delete image"
+                                    :data-umami-event-image="(item as unknown as Image).name"
                                     @click="onDelete(item as unknown as Image)"
                                 >
                                     <Trash2 :size="16" />

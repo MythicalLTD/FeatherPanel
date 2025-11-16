@@ -131,7 +131,8 @@
                                 <Button
                                     size="sm"
                                     variant="outline"
-                                    class="flex-1 sm:flex-none"
+                                    class="flex-1 sm:flex-none hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    title="View redirect link"
                                     data-umami-event="View redirect link"
                                     :data-umami-event-link="(item as unknown as RedirectLink).name"
                                     @click="onView(item as unknown as RedirectLink)"
@@ -141,7 +142,8 @@
                                 <Button
                                     size="sm"
                                     variant="secondary"
-                                    class="flex-1 sm:flex-none"
+                                    class="flex-1 sm:flex-none hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    title="Edit redirect link"
                                     data-umami-event="Edit redirect link"
                                     :data-umami-event-link="(item as unknown as RedirectLink).name"
                                     @click="onEdit(item as unknown as RedirectLink)"
@@ -151,7 +153,8 @@
                                 <Button
                                     size="sm"
                                     variant="outline"
-                                    class="flex-1 sm:flex-none"
+                                    class="flex-1 sm:flex-none hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    title="Copy redirect URL"
                                     data-umami-event="Copy redirect URL"
                                     :data-umami-event-link="(item as unknown as RedirectLink).name"
                                     @click="onCopyUrl(item as unknown as RedirectLink)"
@@ -164,8 +167,9 @@
                                     <Button
                                         size="sm"
                                         variant="destructive"
+                                        class="flex-1 sm:flex-none hover:scale-110 hover:shadow-md transition-all duration-200"
                                         :loading="deleting"
-                                        class="flex-1 sm:flex-none"
+                                        title="Confirm deletion"
                                         data-umami-event="Confirm delete redirect link"
                                         :data-umami-event-link="(item as unknown as RedirectLink).name"
                                         @click="confirmDelete(item as unknown as RedirectLink)"
@@ -176,8 +180,9 @@
                                     <Button
                                         size="sm"
                                         variant="outline"
+                                        class="flex-1 sm:flex-none hover:scale-110 hover:shadow-md transition-all duration-200"
                                         :disabled="deleting"
-                                        class="flex-1 sm:flex-none"
+                                        title="Cancel deletion"
                                         @click="onCancelDelete"
                                     >
                                         Cancel
@@ -187,8 +192,9 @@
                                     <Button
                                         size="sm"
                                         variant="destructive"
+                                        class="w-full sm:w-auto hover:scale-110 hover:shadow-md transition-all duration-200"
                                         :disabled="deleting"
-                                        class="w-full sm:w-auto"
+                                        title="Delete redirect link"
                                         data-umami-event="Delete redirect link"
                                         :data-umami-event-link="(item as unknown as RedirectLink).name"
                                         @click="onDelete(item as unknown as RedirectLink)"

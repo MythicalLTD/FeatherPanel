@@ -123,7 +123,7 @@
                 <div
                     v-for="(item, index) in paginatedData"
                     :key="getItemKey(item, index)"
-                    class="bg-card rounded-lg border p-4 shadow-sm hover:shadow-md transition-shadow"
+                    class="bg-card rounded-lg border p-4 shadow-sm hover:shadow-lg hover:scale-[1.02] hover:border-primary/20 transition-all duration-200 cursor-pointer"
                 >
                     <!-- Main Content -->
                     <div class="space-y-3">
@@ -230,7 +230,7 @@
                             <TableRow
                                 v-for="(item, index) in paginatedData"
                                 :key="getItemKey(item, index)"
-                                class="cursor-pointer hover:bg-muted/50 transition-colors"
+                                class="cursor-pointer hover:bg-muted/70 hover:shadow-sm transition-all duration-200 group"
                             >
                                 <TableCell
                                     v-for="column in visibleColumnDefinitions"

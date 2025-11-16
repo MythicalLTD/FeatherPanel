@@ -68,6 +68,8 @@
                             <Button
                                 size="sm"
                                 variant="outline"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="View user details"
                                 data-umami-event="View user"
                                 :data-umami-event-user="(item as ApiUser).username"
                                 @click="onView(item as ApiUser)"
@@ -77,6 +79,8 @@
                             <Button
                                 size="sm"
                                 variant="secondary"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Edit user"
                                 data-umami-event="Edit user"
                                 :data-umami-event-user="(item as ApiUser).username"
                                 @click="onEdit(item as ApiUser)"
@@ -87,14 +91,23 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                     :loading="deleting"
+                                    title="Confirm deletion"
                                     data-umami-event="Confirm delete user"
                                     :data-umami-event-user="(item as ApiUser).username"
                                     @click="confirmDelete(item as ApiUser)"
                                 >
                                     Confirm Delete
                                 </Button>
-                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    :disabled="deleting"
+                                    title="Cancel deletion"
+                                    @click="onCancelDelete"
+                                >
                                     Cancel
                                 </Button>
                             </template>
@@ -102,6 +115,8 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    title="Delete user"
                                     data-umami-event="Delete user"
                                     :data-umami-event-user="(item as ApiUser).username"
                                     @click="onDelete(item as ApiUser)"

@@ -239,7 +239,8 @@
                                         <Button
                                             size="sm"
                                             variant="default"
-                                            class="w-full justify-center"
+                                            class="w-full justify-center hover:scale-105 hover:shadow-md transition-all duration-200"
+                                            title="Configure plugin"
                                             @click.stop="openPluginConfig(plugin)"
                                         >
                                             <Settings class="h-4 w-4 mr-2" />
@@ -249,7 +250,8 @@
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                class="w-full justify-center"
+                                                class="w-full justify-center hover:scale-110 hover:shadow-md transition-all duration-200"
+                                                title="View plugin information"
                                                 @click.stop="viewPluginInfo(plugin)"
                                             >
                                                 <Info class="h-4 w-4" />
@@ -257,7 +259,8 @@
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                class="w-full justify-center"
+                                                class="w-full justify-center hover:scale-110 hover:shadow-md transition-all duration-200"
+                                                title="Export plugin"
                                                 @click.stop="onExport(plugin)"
                                             >
                                                 <Download class="h-4 w-4" />
@@ -265,7 +268,8 @@
                                             <Button
                                                 size="sm"
                                                 variant="destructive"
-                                                class="w-full justify-center"
+                                                class="w-full justify-center hover:scale-110 hover:shadow-md transition-all duration-200"
+                                                title="Uninstall plugin"
                                                 @click.stop="requestUninstall(plugin)"
                                             >
                                                 <Trash2 class="h-4 w-4" />
@@ -282,7 +286,11 @@
                             </div>
                             <h3 class="text-lg font-semibold mb-2">No Plugins Installed</h3>
                             <p class="text-muted-foreground mb-4">No plugins are currently installed on your system.</p>
-                            <Button @click="fetchPlugins">
+                            <Button
+                                class="hover:scale-105 hover:shadow-md transition-all duration-200"
+                                title="Refresh plugins list"
+                                @click="fetchPlugins"
+                            >
                                 <RefreshCw class="h-4 w-4 mr-2" />
                                 Refresh
                             </Button>
@@ -367,9 +375,15 @@
                         <div v-else-if="onlineError" class="text-center py-8">
                             <AlertCircle class="h-8 w-8 mx-auto mb-2 text-destructive" />
                             <p class="text-destructive">{{ onlineError }}</p>
-                            <Button size="sm" variant="outline" class="mt-2" @click="fetchOnlineAddons()"
-                                >Try Again</Button
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                class="mt-2 hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Retry loading online plugins"
+                                @click="fetchOnlineAddons()"
                             >
+                                Try Again
+                            </Button>
                         </div>
                         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <Card
@@ -507,7 +521,8 @@
                                                 :href="addon.premium_link || '#'"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                class="w-full bg-linear-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white"
+                                                class="w-full bg-linear-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 hover:scale-105 hover:shadow-md transition-all duration-200 text-white"
+                                                title="Purchase premium plugin"
                                             >
                                                 Purchase Plugin
                                             </Button>
@@ -515,8 +530,13 @@
                                         <template v-else>
                                             <Button
                                                 size="sm"
-                                                class="w-full"
+                                                class="w-full hover:scale-105 hover:shadow-md transition-all duration-200"
                                                 :disabled="installingOnlineId === addon.identifier"
+                                                :title="
+                                                    installingOnlineId === addon.identifier
+                                                        ? 'Installing...'
+                                                        : 'Install plugin'
+                                                "
                                                 @click="openOnlineInstallDialog(addon)"
                                             >
                                                 <div

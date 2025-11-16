@@ -321,7 +321,12 @@ onMounted(() => {
                         <div class="flex flex-wrap gap-3 mt-6">
                             <Dialog v-model:open="hashCheckDialogOpen">
                                 <DialogTrigger as-child>
-                                    <Button variant="outline" size="lg">
+                                    <Button
+                                        variant="outline"
+                                        size="lg"
+                                        class="hover:scale-105 hover:shadow-md transition-all duration-200"
+                                        title="Check file hashes against threat intelligence"
+                                    >
                                         <Search class="mr-2 h-4 w-4" />
                                         Check Hashes
                                     </Button>
@@ -344,7 +349,14 @@ onMounted(() => {
                                                 placeholder="Enter hashes here, one per line..."
                                             />
                                         </div>
-                                        <Button :loading="checkingHashes" @click="checkHashes"> Check Hashes </Button>
+                                        <Button
+                                            class="hover:scale-105 hover:shadow-md transition-all duration-200"
+                                            :loading="checkingHashes"
+                                            title="Check entered hashes"
+                                            @click="checkHashes"
+                                        >
+                                            Check Hashes
+                                        </Button>
                                         <div
                                             v-if="hashCheckResults.length > 0"
                                             class="space-y-2 max-h-[300px] overflow-y-auto"
@@ -381,7 +393,12 @@ onMounted(() => {
 
                             <Dialog v-model:open="serverCheckDialogOpen">
                                 <DialogTrigger as-child>
-                                    <Button variant="outline" size="lg">
+                                    <Button
+                                        variant="outline"
+                                        size="lg"
+                                        class="hover:scale-105 hover:shadow-md transition-all duration-200"
+                                        title="Check server status in threat intelligence system"
+                                    >
                                         <ShieldCheck class="mr-2 h-4 w-4" />
                                         Check Server Status
                                     </Button>
@@ -410,20 +427,33 @@ onMounted(() => {
                                                             </span>
                                                         </div>
                                                     </div>
-                                                    <Button variant="ghost" size="sm" @click="clearServerSelection">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                                        title="Clear server selection"
+                                                        @click="clearServerSelection"
+                                                    >
                                                         <X class="h-4 w-4" />
                                                     </Button>
                                                 </div>
                                             </div>
-                                            <Button v-else variant="outline" class="w-full mt-2" @click="selectServer">
+                                            <Button
+                                                v-else
+                                                variant="outline"
+                                                class="w-full mt-2 hover:scale-105 hover:shadow-md transition-all duration-200"
+                                                title="Select a server to check"
+                                                @click="selectServer"
+                                            >
                                                 <Server class="mr-2 h-4 w-4" />
                                                 Select Server
                                             </Button>
                                         </div>
                                         <Button
+                                            class="w-full hover:scale-105 hover:shadow-md transition-all duration-200"
                                             :loading="checkingServer"
                                             :disabled="!selectedServer || !selectedServer.node?.id"
-                                            class="w-full"
+                                            title="Check selected server status"
                                             @click="checkServerStatus"
                                         >
                                             Check Server Status

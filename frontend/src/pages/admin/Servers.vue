@@ -157,6 +157,8 @@
                             <Button
                                 size="sm"
                                 variant="outline"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="View server details"
                                 data-umami-event="View server"
                                 :data-umami-event-server="(item as ApiServer).name"
                                 @click="onView(item as ApiServer)"
@@ -166,6 +168,8 @@
                             <Button
                                 size="sm"
                                 variant="secondary"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Edit server"
                                 data-umami-event="Edit server"
                                 :data-umami-event-server="(item as ApiServer).name"
                                 @click="onEdit(item as ApiServer)"
@@ -175,10 +179,11 @@
                             <Button
                                 size="sm"
                                 variant="outline"
-                                class="border-primary/50 text-primary hover:bg-primary/10 transition-all duration-300"
+                                class="border-primary/50 text-primary hover:bg-primary/10 hover:scale-110 hover:shadow-md transition-all duration-200"
                                 :class="{
                                     'animate-pulse': scanningServers.has((item as ApiServer).uuid),
                                 }"
+                                title="Scan server for issues"
                                 data-umami-event="Scan server"
                                 :data-umami-event-server="(item as ApiServer).name"
                                 :disabled="scanningServers.has((item as ApiServer).uuid)"
@@ -195,7 +200,9 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                     :loading="deleting"
+                                    title="Confirm deletion"
                                     data-umami-event="Confirm delete server"
                                     :data-umami-event-server="(item as ApiServer).name"
                                     @click="confirmDelete(item as ApiServer, false)"
@@ -205,15 +212,23 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
-                                    class="bg-red-700 hover:bg-red-800 dark:bg-red-800 dark:hover:bg-red-900"
+                                    class="bg-red-700 hover:bg-red-800 dark:bg-red-800 dark:hover:bg-red-900 hover:scale-110 hover:shadow-md transition-all duration-200"
                                     :loading="deleting"
+                                    title="Hard delete server (permanent)"
                                     data-umami-event="Hard delete server"
                                     :data-umami-event-server="(item as ApiServer).name"
                                     @click="onHardDelete(item as ApiServer)"
                                 >
                                     Hard Delete
                                 </Button>
-                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    :disabled="deleting"
+                                    title="Cancel deletion"
+                                    @click="onCancelDelete"
+                                >
                                     Cancel
                                 </Button>
                             </template>
@@ -221,6 +236,8 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    title="Delete server"
                                     data-umami-event="Delete server"
                                     :data-umami-event-server="(item as ApiServer).name"
                                     @click="onDelete(item as ApiServer)"

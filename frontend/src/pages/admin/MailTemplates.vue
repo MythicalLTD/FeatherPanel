@@ -156,6 +156,8 @@
                             <Button
                                 size="sm"
                                 variant="outline"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Preview mail template"
                                 data-umami-event="Preview mail template"
                                 :data-umami-event-template="(item as unknown as MailTemplate).name"
                                 @click="onPreview(item as unknown as MailTemplate)"
@@ -165,6 +167,8 @@
                             <Button
                                 size="sm"
                                 variant="secondary"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Edit mail template"
                                 data-umami-event="Edit mail template"
                                 :data-umami-event-template="(item as unknown as MailTemplate).name"
                                 @click="onEdit(item as unknown as MailTemplate)"
@@ -176,14 +180,23 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                     :loading="deleting"
+                                    title="Confirm deletion"
                                     data-umami-event="Confirm delete mail template"
                                     :data-umami-event-template="(item as unknown as MailTemplate).name"
                                     @click="confirmDelete(item as unknown as MailTemplate)"
                                 >
                                     Confirm Delete
                                 </Button>
-                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    :disabled="deleting"
+                                    title="Cancel deletion"
+                                    @click="onCancelDelete"
+                                >
                                     Cancel
                                 </Button>
                             </template>
@@ -191,7 +204,9 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                     :disabled="deleting"
+                                    title="Delete mail template"
                                     data-umami-event="Delete mail template"
                                     :data-umami-event-template="(item as unknown as MailTemplate).name"
                                     @click="onDelete(item as unknown as MailTemplate)"

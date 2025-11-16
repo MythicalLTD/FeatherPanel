@@ -47,6 +47,7 @@
                             <Button
                                 size="sm"
                                 variant="outline"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                 data-umami-event="View realm"
                                 :data-umami-event-realm="(item as Realm).name"
                                 @click="onView(item as Realm)"
@@ -56,6 +57,7 @@
                             <Button
                                 size="sm"
                                 variant="secondary"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                 data-umami-event="Edit realm"
                                 :data-umami-event-realm="(item as Realm).name"
                                 @click="onEdit(item as Realm)"
@@ -65,6 +67,7 @@
                             <Button
                                 size="sm"
                                 variant="secondary"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                 data-umami-event="View realm spells"
                                 :data-umami-event-realm="(item as Realm).name"
                                 @click="onViewSpells(item as Realm)"
@@ -75,14 +78,23 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                     :loading="deleting"
+                                    title="Confirm deletion"
                                     data-umami-event="Confirm delete realm"
                                     :data-umami-event-realm="(item as Realm).name"
                                     @click="confirmDelete(item as Realm)"
                                 >
                                     Confirm Delete
                                 </Button>
-                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    :disabled="deleting"
+                                    title="Cancel deletion"
+                                    @click="onCancelDelete"
+                                >
                                     Cancel
                                 </Button>
                             </template>
@@ -90,6 +102,8 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    title="Delete realm"
                                     data-umami-event="Delete realm"
                                     :data-umami-event-realm="(item as Realm).name"
                                     @click="onDelete(item as Realm)"

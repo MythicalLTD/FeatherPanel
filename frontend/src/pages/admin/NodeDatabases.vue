@@ -76,6 +76,8 @@
                             <Button
                                 size="sm"
                                 variant="outline"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="View database details"
                                 data-umami-event="View node database"
                                 :data-umami-event-database="(item as unknown as Database).name"
                                 @click="onView(item as unknown as Database)"
@@ -85,6 +87,8 @@
                             <Button
                                 size="sm"
                                 variant="secondary"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Edit database"
                                 data-umami-event="Edit node database"
                                 :data-umami-event-database="(item as unknown as Database).name"
                                 @click="onEdit(item as unknown as Database)"
@@ -94,7 +98,8 @@
                             <Button
                                 size="sm"
                                 variant="outline"
-                                title="Check Health"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Check database health"
                                 data-umami-event="Check database health"
                                 :data-umami-event-database="(item as unknown as Database).name"
                                 @click="onHealthCheck(item as unknown as Database)"
@@ -105,14 +110,23 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                     :loading="deleting"
+                                    title="Confirm deletion"
                                     data-umami-event="Confirm delete node database"
                                     :data-umami-event-database="(item as unknown as Database).name"
                                     @click="confirmDelete(item as unknown as Database)"
                                 >
                                     Confirm Delete
                                 </Button>
-                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    :disabled="deleting"
+                                    title="Cancel deletion"
+                                    @click="onCancelDelete"
+                                >
                                     Cancel
                                 </Button>
                             </template>
@@ -120,6 +134,8 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    title="Delete database"
                                     data-umami-event="Delete node database"
                                     :data-umami-event-database="(item as unknown as Database).name"
                                     @click="onDelete(item as unknown as Database)"

@@ -60,6 +60,8 @@
                             <Button
                                 size="sm"
                                 variant="outline"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="View role details"
                                 data-umami-event="View role"
                                 :data-umami-event-role="(item as Role).name"
                                 @click="onView(item as Role)"
@@ -69,6 +71,8 @@
                             <Button
                                 size="sm"
                                 variant="secondary"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Edit role"
                                 data-umami-event="Edit role"
                                 :data-umami-event-role="(item as Role).name"
                                 @click="onEdit(item as Role)"
@@ -78,7 +82,8 @@
                             <Button
                                 size="sm"
                                 variant="outline"
-                                :title="'Manage Permissions'"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Manage role permissions"
                                 data-umami-event="Manage role permissions"
                                 :data-umami-event-role="(item as Role).name"
                                 @click="openPermissionsDrawer(item as Role)"
@@ -89,14 +94,23 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                     :loading="deleting"
+                                    title="Confirm deletion"
                                     data-umami-event="Confirm delete role"
                                     :data-umami-event-role="(item as Role).name"
                                     @click="confirmDelete(item as Role)"
                                 >
                                     Confirm Delete
                                 </Button>
-                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    :disabled="deleting"
+                                    title="Cancel deletion"
+                                    @click="onCancelDelete"
+                                >
                                     Cancel
                                 </Button>
                             </template>
@@ -104,6 +118,8 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    title="Delete role"
                                     data-umami-event="Delete role"
                                     :data-umami-event-role="(item as Role).name"
                                     @click="onDelete(item as Role)"

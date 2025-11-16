@@ -19,6 +19,8 @@
 - Introduced FeatherPanel Zero Trust Security: servers are now automatically scanned for malware and threats, enhancing protection and peace of mind!
 - FeatherPanel Thread Intelligence Server (TIS): introduces advanced real-time malware and threat detection, empowering your panel with cutting-edge active protection and intelligent security analytics for all managed servers. Powerd by FeatherWings TIS and FeatherCloud TIS!
 - Added support for a FeatherPanel plugin export ignore file, allowing you to exclude packages and third-party dependencies that are used during plugin development but should not be included in the final exported plugin.
+- Add cursor pointer to non-disabled buttons to improve UI clarity. by @puttydotexe
+- Introduced context-aware tooltips for various admin actions throughout FeatherPanel menus, providing clearer guidance and an improved user experience!
 
 ### Improved
 - Improved how user emails are fetched: they now use a dedicated paginated route to avoid excessive memory usage and return results more efficiently.

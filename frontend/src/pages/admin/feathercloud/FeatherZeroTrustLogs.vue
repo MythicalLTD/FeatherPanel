@@ -241,7 +241,13 @@ onMounted(() => {
                                     <option value="failed">Failed</option>
                                 </select>
                             </div>
-                            <Button variant="outline" size="sm" @click="fetchLogs">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Refresh logs"
+                                @click="fetchLogs"
+                            >
                                 Refresh
                             </Button>
                         </div>
@@ -334,6 +340,8 @@ onMounted(() => {
                                 <Button
                                     variant="outline"
                                     size="sm"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    title="View log details"
                                     @click="viewDetails((item as Record<string, unknown>).execution_id as string)"
                                 >
                                     <Eye class="h-4 w-4 mr-1" />

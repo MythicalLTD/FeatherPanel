@@ -119,13 +119,31 @@ SOFTWARE.
 
                     <template #cell-actions="{ item }">
                         <div v-if="isDomainTableRow(item)" class="flex justify-end gap-2">
-                            <Button size="sm" variant="ghost" @click="viewDomain(item.uuid)">
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="View subdomain"
+                                @click="viewDomain(item.uuid)"
+                            >
                                 {{ t('adminSubdomains.view') }}
                             </Button>
-                            <Button size="sm" variant="ghost" @click="openEditDialog(item.uuid)">
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Edit subdomain"
+                                @click="openEditDialog(item.uuid)"
+                            >
                                 {{ t('adminSubdomains.edit') }}
                             </Button>
-                            <Button size="sm" variant="destructive" @click="confirmDelete(item.uuid, item.domain)">
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Delete subdomain"
+                                @click="confirmDelete(item.uuid, item.domain)"
+                            >
                                 {{ t('common.delete') }}
                             </Button>
                         </div>

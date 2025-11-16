@@ -191,7 +191,13 @@ onMounted(() => {
                     </div>
                     <div class="relative z-10">
                         <div class="flex items-center gap-4 mb-6">
-                            <Button variant="ghost" size="sm" @click="router.push('/admin/feathercloud/featherzerotrust/logs')">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                title="Return to logs list"
+                                @click="router.push('/admin/feathercloud/featherzerotrust/logs')"
+                            >
                                 <ArrowLeft class="h-4 w-4 mr-2" />
                                 Back to Logs
                             </Button>
@@ -227,7 +233,12 @@ onMounted(() => {
                 <!-- Error State -->
                 <div v-else-if="!executionLog" class="text-center py-12">
                     <p class="text-muted-foreground mb-4">No execution log found</p>
-                    <Button variant="outline" @click="router.push('/admin/feathercloud/featherzerotrust/logs')">
+                    <Button
+                        variant="outline"
+                        class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                        title="Return to logs list"
+                        @click="router.push('/admin/feathercloud/featherzerotrust/logs')"
+                    >
                         <ArrowLeft class="h-4 w-4 mr-2" />
                         Back to Logs
                     </Button>

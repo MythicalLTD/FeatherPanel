@@ -133,6 +133,7 @@
                             <Button
                                 variant="outline"
                                 size="sm"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                 :disabled="nodeHealthStatus !== 'healthy'"
                                 :title="
                                     nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'View allocation details'
@@ -146,6 +147,7 @@
                             <Button
                                 variant="secondary"
                                 size="sm"
+                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                 :disabled="nodeHealthStatus !== 'healthy'"
                                 :title="nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'Edit allocation'"
                                 data-umami-event="Edit allocation"
@@ -158,18 +160,22 @@
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                     :loading="deleting"
                                     :disabled="nodeHealthStatus !== 'healthy'"
-                                    :title="
-                                        nodeHealthStatus !== 'healthy'
-                                            ? 'Node is unhealthy'
-                                            : 'Confirm delete allocation'
-                                    "
+                                    :title="nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'Confirm deletion'"
                                     @click="confirmDelete(item as unknown as Allocation)"
                                 >
                                     Confirm Delete
                                 </Button>
-                                <Button size="sm" variant="outline" :disabled="deleting" @click="onCancelDelete">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    :disabled="deleting"
+                                    title="Cancel deletion"
+                                    @click="onCancelDelete"
+                                >
                                     Cancel
                                 </Button>
                             </template>
@@ -177,6 +183,7 @@
                                 <Button
                                     variant="destructive"
                                     size="sm"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                     :disabled="nodeHealthStatus !== 'healthy'"
                                     :title="nodeHealthStatus !== 'healthy' ? 'Node is unhealthy' : 'Delete allocation'"
                                     @click="onDelete(item as unknown as Allocation)"
