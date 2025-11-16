@@ -44,14 +44,25 @@
                     v-model="searchQuery"
                     :placeholder="$t('account.activity.searchPlaceholder')"
                     class="pl-10"
-                    @input="handleSearch"
+                    @keyup.enter="handleSearch"
                 />
             </div>
 
             <!-- Activity Count -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <p class="text-sm text-muted-foreground text-center sm:text-left">
-                    {{ $t('account.activity.totalActivities', { count: totalActivities }) }}
+                    <span v-if="pagination">
+                        {{
+                            $t('table.showingRecords', {
+                                from: pagination.from,
+                                to: pagination.to,
+                                total: pagination.total_records,
+                            })
+                        }}
+                    </span>
+                    <span v-else>
+                        {{ $t('account.activity.totalActivities', { count: totalActivities }) }}
+                    </span>
                 </p>
                 <Button
                     variant="outline"
@@ -110,8 +121,48 @@
                 </div>
             </div>
 
+            <!-- Pagination -->
+            <div v-if="pagination && pagination.total_pages > 1" class="flex items-center justify-between gap-4 pt-4">
+                <div class="text-sm text-muted-foreground">
+                    {{ $t('table.page') }} {{ pagination.current_page }} {{ $t('table.of') }}
+                    {{ pagination.total_pages }}
+                </div>
+                <div class="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="!pagination.has_prev"
+                        @click="changePage(pagination.current_page - 1)"
+                    >
+                        <ChevronLeft class="h-4 w-4" />
+                    </Button>
+                    <div class="flex items-center gap-1">
+                        <Button
+                            v-for="page in visiblePages"
+                            :key="page"
+                            :variant="page === pagination.current_page ? 'default' : 'outline'"
+                            size="sm"
+                            @click="changePage(page)"
+                        >
+                            {{ page }}
+                        </Button>
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="!pagination.has_next"
+                        @click="changePage(pagination.current_page + 1)"
+                    >
+                        <ChevronRight class="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+
             <!-- Empty State -->
-            <div v-else class="text-center py-12">
+            <div
+                v-if="filteredActivities.length === 0 && (!pagination || pagination.total_records === 0)"
+                class="text-center py-12"
+            >
                 <div class="mx-auto h-12 w-12 text-muted-foreground mb-4">
                     <Activity class="h-12 w-12" />
                 </div>
@@ -124,6 +175,21 @@
                             ? $t('account.activity.tryDifferentSearch')
                             : $t('account.activity.noActivitiesDescription')
                     }}
+                </p>
+            </div>
+
+            <div
+                v-if="filteredActivities.length === 0 && pagination && pagination.total_records > 0"
+                class="text-center py-12"
+            >
+                <div class="mx-auto h-12 w-12 text-muted-foreground mb-4">
+                    <Search class="h-12 w-12" />
+                </div>
+                <h3 class="text-sm font-medium text-muted-foreground mb-2">
+                    {{ $t('account.activity.noSearchResults') }}
+                </h3>
+                <p class="text-xs text-muted-foreground">
+                    {{ $t('account.activity.tryDifferentSearch') }}
                 </p>
             </div>
         </div>
@@ -158,20 +224,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useSessionStore } from '@/stores/session';
-import { Search, RefreshCw, Clock, Globe, Activity } from 'lucide-vue-next';
+import { Search, RefreshCw, Clock, Globe, Activity, ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import axios from 'axios';
 
 const { t } = useI18n();
-const sessionStore = useSessionStore();
 
-type Activity = {
+type ActivityItem = {
     id: number;
     user_uuid: string;
     name: string;
@@ -181,43 +245,92 @@ type Activity = {
     updated_at: string;
 };
 
-const activities = ref<Activity[]>([]);
+interface PaginationInfo {
+    current_page: number;
+    per_page: number;
+    total_records: number;
+    total_pages: number;
+    has_next: boolean;
+    has_prev: boolean;
+    from: number;
+    to: number;
+}
+
+interface ApiResponse {
+    success: boolean;
+    data: {
+        activities: ActivityItem[];
+        pagination: PaginationInfo;
+        search: {
+            query: string;
+            has_results: boolean;
+        };
+    };
+    message?: string;
+}
+
+const activities = ref<ActivityItem[]>([]);
 const loading = ref(false);
 const message = ref<{ type: 'success' | 'error'; text: string } | null>(null);
 const searchQuery = ref('');
+const currentPage = ref(1);
+const pageSize = ref(10);
+const pagination = ref<PaginationInfo | null>(null);
 
 // Plugin widgets
 const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('account');
 const widgetsTop = computed(() => getWidgets('account', 'activity-top'));
 const widgetsBottom = computed(() => getWidgets('account', 'activity-bottom'));
 
-const totalActivities = computed(() => activities.value.length);
+const totalActivities = computed(() => pagination.value?.total_records ?? activities.value.length);
 
-const filteredActivities = computed(() => {
-    if (!searchQuery.value) return activities.value;
+const filteredActivities = computed(() => activities.value);
 
-    const query = searchQuery.value.toLowerCase();
-    return activities.value.filter(
-        (activity) =>
-            activity.name.toLowerCase().includes(query) ||
-            (activity.context && activity.context.toLowerCase().includes(query)) ||
-            (activity.ip_address && activity.ip_address.toLowerCase().includes(query)),
-    );
+const visiblePages = computed(() => {
+    if (!pagination.value) return [];
+    const pages: number[] = [];
+    const total = pagination.value.total_pages;
+    const current = pagination.value.current_page;
+
+    // Always show first page
+    pages.push(1);
+
+    // Show pages around current page
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+        if (!pages.includes(i)) pages.push(i);
+    }
+
+    // Always show last page
+    if (total > 1 && !pages.includes(total)) {
+        pages.push(total);
+    }
+
+    return pages.sort((a, b) => a - b);
 });
 
-async function fetchActivity() {
+async function fetchActivity(page: number = currentPage.value) {
     loading.value = true;
     message.value = null;
 
     try {
-        // First ensure we have a valid session
-        await sessionStore.checkSessionOrRedirect();
+        const params = new URLSearchParams({
+            page: page.toString(),
+            limit: pageSize.value.toString(),
+        });
 
-        const { data } = await axios.get('/api/user/session');
-        if (data && data.success && data.data && data.data.activity) {
-            activities.value = data.data.activity.data || [];
+        if (searchQuery.value.trim()) {
+            params.append('search', searchQuery.value.trim());
+        }
+
+        const response = await axios.get<ApiResponse>(`/api/user/activities?${params.toString()}`);
+
+        if (response.data.success && response.data.data) {
+            activities.value = response.data.data.activities;
+            pagination.value = response.data.data.pagination;
+            currentPage.value = page;
         } else {
             activities.value = [];
+            pagination.value = null;
         }
     } catch (error) {
         console.error('Error fetching activity:', error);
@@ -226,13 +339,22 @@ async function fetchActivity() {
             text: t('account.activity.fetchError'),
         };
         activities.value = [];
+        pagination.value = null;
     } finally {
         loading.value = false;
     }
 }
 
+const changePage = (page: number) => {
+    if (page < 1 || (pagination.value && page > pagination.value.total_pages)) {
+        return;
+    }
+    fetchActivity(page);
+};
+
 function handleSearch() {
-    // Search is handled by the computed filteredActivities
+    currentPage.value = 1;
+    fetchActivity(1);
 }
 
 function formatDate(dateString: string): string {
@@ -264,6 +386,17 @@ function formatDate(dateString: string): string {
         return dateString;
     }
 }
+
+// Watch for search query changes with debounce
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+watch(searchQuery, () => {
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+    searchTimeout = setTimeout(() => {
+        handleSearch();
+    }, 500);
+});
 
 onMounted(async () => {
     await fetchActivity();

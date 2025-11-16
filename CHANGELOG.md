@@ -19,6 +19,10 @@
 - FeatherPanel Thread Intelligence Server (TIS): introduces advanced real-time malware and threat detection, empowering your panel with cutting-edge active protection and intelligent security analytics for all managed servers. Powerd by FeatherWings TIS and FeatherCloud TIS!
 - Added support for a FeatherPanel plugin export ignore file, allowing you to exclude packages and third-party dependencies that are used during plugin development but should not be included in the final exported plugin.
 
+### Improved
+- Improved how user emails are fetched: they now use a dedicated paginated route to avoid excessive memory usage and return results more efficiently.
+- Activity fetching is now significantly optimized and has its own dedicated route, dramatically reducing memory usage when retrieving user activity data.
+
 ## v1.0.2 BETA
 
 ### Added

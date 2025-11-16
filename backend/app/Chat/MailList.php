@@ -145,6 +145,53 @@ class MailList
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    public static function getByUserUuidPaginated(string $userUuid, ?string $search = null, int $limit = 10, int $offset = 0): array
+    {
+        $pdo = Database::getPdoConnection();
+        $sql = 'SELECT ml.id, ml.queue_id, mq.subject, mq.body, mq.status, mq.created_at 
+                FROM ' . self::$table . ' ml
+                INNER JOIN featherpanel_mail_queue mq ON ml.queue_id = mq.id
+                WHERE ml.user_uuid = :user_uuid';
+        $params = ['user_uuid' => $userUuid];
+
+        if ($search !== null && trim($search) !== '') {
+            $sql .= ' AND (mq.subject LIKE :search OR mq.body LIKE :search)';
+            $params['search'] = '%' . $search . '%';
+        }
+
+        $sql .= ' ORDER BY mq.created_at DESC LIMIT :limit OFFSET :offset';
+        $stmt = $pdo->prepare($sql);
+
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindValue('offset', $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public static function getCountByUserUuid(string $userUuid, ?string $search = null): int
+    {
+        $pdo = Database::getPdoConnection();
+        $sql = 'SELECT COUNT(*) 
+                FROM ' . self::$table . ' ml
+                INNER JOIN featherpanel_mail_queue mq ON ml.queue_id = mq.id
+                WHERE ml.user_uuid = :user_uuid';
+        $params = ['user_uuid' => $userUuid];
+
+        if ($search !== null && trim($search) !== '') {
+            $sql .= ' AND (mq.subject LIKE :search OR mq.body LIKE :search)';
+            $params['search'] = '%' . $search . '%';
+        }
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     public static function deleteAllMailListsByUserId(string $userUuid): bool
     {
         $pdo = Database::getPdoConnection();

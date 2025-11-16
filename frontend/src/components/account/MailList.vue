@@ -26,10 +26,26 @@
         <div class="space-y-3">
             <div class="relative">
                 <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input v-model="searchQuery" :placeholder="$t('account.mail.searchPlaceholder')" class="pl-10" />
+                <Input
+                    v-model="searchQuery"
+                    :placeholder="$t('account.mail.searchPlaceholder')"
+                    class="pl-10"
+                    @keyup.enter="handleSearch"
+                />
             </div>
             <div class="text-sm text-muted-foreground text-center">
-                {{ $t('account.mail.totalMails', { count: filteredMails.length }) }}
+                <span v-if="pagination">
+                    {{
+                        $t('table.showingRecords', {
+                            from: pagination.from,
+                            to: pagination.to,
+                            total: pagination.total_records,
+                        })
+                    }}
+                </span>
+                <span v-else>
+                    {{ $t('account.mail.totalMails', { count: filteredMails.length }) }}
+                </span>
             </div>
         </div>
 
@@ -130,8 +146,47 @@
             </DialogContent>
         </Dialog>
 
+        <!-- Pagination -->
+        <div v-if="pagination && pagination.total_pages > 1" class="flex items-center justify-between gap-4">
+            <div class="text-sm text-muted-foreground">
+                {{ $t('table.page') }} {{ pagination.current_page }} {{ $t('table.of') }} {{ pagination.total_pages }}
+            </div>
+            <div class="flex items-center gap-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    :disabled="!pagination.has_prev"
+                    @click="changePage(pagination.current_page - 1)"
+                >
+                    <ChevronLeft class="h-4 w-4" />
+                </Button>
+                <div class="flex items-center gap-1">
+                    <Button
+                        v-for="page in visiblePages"
+                        :key="page"
+                        :variant="page === pagination.current_page ? 'default' : 'outline'"
+                        size="sm"
+                        @click="changePage(page)"
+                    >
+                        {{ page }}
+                    </Button>
+                </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    :disabled="!pagination.has_next"
+                    @click="changePage(pagination.current_page + 1)"
+                >
+                    <ChevronRight class="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
+
         <!-- Empty States -->
-        <div v-if="!loading && !error && mails.length === 0" class="flex items-center justify-center py-12">
+        <div
+            v-if="!loading && !error && mails.length === 0 && (!pagination || pagination.total_records === 0)"
+            class="flex items-center justify-center py-12"
+        >
             <div class="text-center">
                 <Mail class="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                 <p class="text-foreground mb-1">{{ $t('account.mail.noMails') }}</p>
@@ -140,7 +195,7 @@
         </div>
 
         <div
-            v-if="!loading && !error && filteredMails.length === 0 && mails.length > 0"
+            v-if="!loading && !error && mails.length === 0 && pagination && pagination.total_records > 0"
             class="flex items-center justify-center py-12"
         >
             <div class="text-center">
@@ -180,9 +235,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useSessionStore } from '@/stores/session';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -194,12 +249,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Search, RefreshCw, Clock, Mail, AlertCircle } from 'lucide-vue-next';
+import { Search, RefreshCw, Clock, Mail, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
 const { t: $t } = useI18n();
-const sessionStore = useSessionStore();
 
 // Types
 interface MailItem {
@@ -210,6 +264,30 @@ interface MailItem {
     created_at: string;
 }
 
+interface PaginationInfo {
+    current_page: number;
+    per_page: number;
+    total_records: number;
+    total_pages: number;
+    has_next: boolean;
+    has_prev: boolean;
+    from: number;
+    to: number;
+}
+
+interface ApiResponse {
+    success: boolean;
+    data: {
+        mails: MailItem[];
+        pagination: PaginationInfo;
+        search: {
+            query: string;
+            has_results: boolean;
+        };
+    };
+    message?: string;
+}
+
 // Reactive state
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -217,6 +295,9 @@ const searchQuery = ref('');
 const mails = ref<MailItem[]>([]);
 const mailModalOpen = ref(false);
 const selectedMail = ref<MailItem | null>(null);
+const currentPage = ref(1);
+const pageSize = ref(10);
+const pagination = ref<PaginationInfo | null>(null);
 
 // Plugin widgets
 const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('account');
@@ -224,37 +305,75 @@ const widgetsTop = computed(() => getWidgets('account', 'mail-top'));
 const widgetsBottom = computed(() => getWidgets('account', 'mail-bottom'));
 
 // Computed properties
-const filteredMails = computed(() => {
-    if (!searchQuery.value.trim()) {
-        return mails.value;
+const filteredMails = computed(() => mails.value);
+
+const visiblePages = computed(() => {
+    if (!pagination.value) return [];
+    const pages: number[] = [];
+    const total = pagination.value.total_pages;
+    const current = pagination.value.current_page;
+
+    // Always show first page
+    pages.push(1);
+
+    // Show pages around current page
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+        if (!pages.includes(i)) pages.push(i);
     }
 
-    const query = searchQuery.value.toLowerCase();
-    return mails.value.filter(
-        (mail) => mail.subject?.toLowerCase().includes(query) || mail.body?.toLowerCase().includes(query),
-    );
+    // Always show last page
+    if (total > 1 && !pages.includes(total)) {
+        pages.push(total);
+    }
+
+    return pages.sort((a, b) => a - b);
 });
 
 // Methods
-const fetchMails = async () => {
+const fetchMails = async (page: number = currentPage.value) => {
     loading.value = true;
     error.value = null;
 
     try {
-        await sessionStore.checkSessionOrRedirect();
-        const response = await sessionStore.getSession();
+        const params = new URLSearchParams({
+            page: page.toString(),
+            limit: pageSize.value.toString(),
+        });
 
-        if (response?.mails?.data) {
-            mails.value = response.mails.data;
+        if (searchQuery.value.trim()) {
+            params.append('search', searchQuery.value.trim());
+        }
+
+        const response = await axios.get<ApiResponse>(`/api/user/mails?${params.toString()}`);
+
+        if (response.data.success && response.data.data) {
+            mails.value = response.data.data.mails;
+            pagination.value = response.data.data.pagination;
+            currentPage.value = page;
         } else {
             mails.value = [];
+            pagination.value = null;
         }
     } catch (err) {
         console.error('Failed to fetch mails:', err);
         error.value = $t('account.mail.fetchError');
+        mails.value = [];
+        pagination.value = null;
     } finally {
         loading.value = false;
     }
+};
+
+const changePage = (page: number) => {
+    if (page < 1 || (pagination.value && page > pagination.value.total_pages)) {
+        return;
+    }
+    fetchMails(page);
+};
+
+const handleSearch = () => {
+    currentPage.value = 1;
+    fetchMails(1);
 };
 
 const openMailModal = (mail: MailItem) => {
@@ -363,6 +482,17 @@ const formatDate = (dateString: string) => {
         return 'Unknown';
     }
 };
+
+// Watch for search query changes with debounce
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+watch(searchQuery, () => {
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+    searchTimeout = setTimeout(() => {
+        handleSearch();
+    }, 500);
+});
 
 // Lifecycle
 onMounted(async () => {

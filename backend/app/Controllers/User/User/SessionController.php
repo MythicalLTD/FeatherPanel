@@ -34,7 +34,6 @@ use App\App;
 use App\Chat\User;
 use App\Chat\Activity;
 use App\Chat\MailList;
-use App\Chat\MailQueue;
 use App\Chat\Permission;
 use App\Chat\UserPreference;
 use App\Helpers\ApiResponse;
@@ -75,14 +74,6 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'user_info', type: 'object', description: 'User information'),
         new OA\Property(property: 'permissions', type: 'array', items: new OA\Items(type: 'string'), description: 'User permissions'),
         new OA\Property(property: 'preferences', ref: '#/components/schemas/UserPreferences', description: 'User preferences'),
-        new OA\Property(property: 'activity', type: 'object', properties: [
-            new OA\Property(property: 'count', type: 'integer', description: 'Number of activities'),
-            new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'), description: 'Activity data'),
-        ]),
-        new OA\Property(property: 'mails', type: 'object', properties: [
-            new OA\Property(property: 'count', type: 'integer', description: 'Number of mails'),
-            new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'), description: 'Mail data'),
-        ]),
     ]
 )]
 #[OA\Schema(
@@ -277,20 +268,6 @@ class SessionController
         $permissions = Permission::getPermissionsByRoleId($user['role_id']);
         $permissions = array_column($permissions, 'permission');
 
-        $activity = Activity::getActivitiesByUser($user['uuid']);
-
-        $mailList = MailList::getByUserUuid($user['uuid']);
-        $queueIds = array_column($mailList, 'queue_id');
-        $mailQueues = MailQueue::getByIds($queueIds);
-        $user['mails'] = [];
-        foreach ($queueIds as $queueId) {
-            if (isset($mailQueues[$queueId])) {
-                $mail = $mailQueues[$queueId];
-                unset($mail['id'], $mail['user_uuid'], $mail['deleted'], $mail['locked'], $mail['updated_at']);
-                $user['mails'][] = $mail;
-            }
-        }
-
         // Load user preferences
         $preferences = UserPreference::getPreferences($user['uuid']);
 
@@ -298,14 +275,6 @@ class SessionController
             'user_info' => $user,
             'permissions' => $permissions,
             'preferences' => $preferences,
-            'activity' => [
-                'count' => count($activity),
-                'data' => $activity,
-            ],
-            'mails' => [
-                'count' => count($user['mails']),
-                'data' => $user['mails'],
-            ],
         ], 'Session retrieved', 200);
     }
 
@@ -478,5 +447,255 @@ class SessionController
         return ApiResponse::success([
             'preferences' => $updatedPreferences,
         ], 'Preferences updated successfully', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/user/mails',
+        summary: 'Get user mails with pagination',
+        description: 'Retrieve paginated mail list for the current user with optional search functionality.',
+        tags: ['User - Session'],
+        parameters: [
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                description: 'Page number (default: 1)',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
+            ),
+            new OA\Parameter(
+                name: 'limit',
+                in: 'query',
+                description: 'Number of records per page (default: 10, max: 100)',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 10)
+            ),
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                description: 'Search query to filter mails by subject or body',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Mails retrieved successfully',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'mails', type: 'array', items: new OA\Items(type: 'object'), description: 'Array of mail items'),
+                        new OA\Property(property: 'pagination', type: 'object', properties: [
+                            new OA\Property(property: 'current_page', type: 'integer'),
+                            new OA\Property(property: 'per_page', type: 'integer'),
+                            new OA\Property(property: 'total_records', type: 'integer'),
+                            new OA\Property(property: 'total_pages', type: 'integer'),
+                            new OA\Property(property: 'has_next', type: 'boolean'),
+                            new OA\Property(property: 'has_prev', type: 'boolean'),
+                            new OA\Property(property: 'from', type: 'integer'),
+                            new OA\Property(property: 'to', type: 'integer'),
+                        ]),
+                        new OA\Property(property: 'search', type: 'object', properties: [
+                            new OA\Property(property: 'query', type: 'string'),
+                            new OA\Property(property: 'has_results', type: 'boolean'),
+                        ]),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve mails'),
+        ]
+    )]
+    public function getMails(Request $request): Response
+    {
+        $user = AuthMiddleware::getCurrentUser($request);
+        if ($user == null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
+        $page = (int) $request->query->get('page', 1);
+        $limit = (int) $request->query->get('limit', 10);
+        $search = $request->query->get('search', '');
+
+        // Validate pagination parameters
+        if ($page < 1) {
+            $page = 1;
+        }
+        if ($limit < 1) {
+            $limit = 10;
+        }
+        if ($limit > 100) {
+            $limit = 100;
+        }
+
+        $offset = ($page - 1) * $limit;
+        $searchQuery = $search && trim($search) !== '' ? trim($search) : null;
+
+        // Fetch paginated mails
+        $mailList = MailList::getByUserUuidPaginated($user['uuid'], $searchQuery, $limit, $offset);
+        $total = MailList::getCountByUserUuid($user['uuid'], $searchQuery);
+
+        // Process mails to format them properly
+        $mails = [];
+        foreach ($mailList as $mail) {
+            $mailData = [
+                'id' => (int) $mail['id'],
+                'subject' => $mail['subject'] ?? '',
+                'body' => $mail['body'] ?? '',
+                'status' => $mail['status'] ?? 'pending',
+                'created_at' => $mail['created_at'] ?? '',
+            ];
+            $mails[] = $mailData;
+        }
+
+        // Calculate pagination metadata
+        $totalPages = ceil($total / $limit);
+        $from = $total > 0 ? ($page - 1) * $limit + 1 : 0;
+        $to = min($from + $limit - 1, $total);
+
+        return ApiResponse::success([
+            'mails' => $mails,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total_records' => $total,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
+                'from' => $from,
+                'to' => $to,
+            ],
+            'search' => [
+                'query' => $searchQuery ?? '',
+                'has_results' => count($mails) > 0,
+            ],
+        ], 'Mails retrieved successfully', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/user/activities',
+        summary: 'Get user activities with pagination',
+        description: 'Retrieve paginated activity list for the current user with optional search functionality.',
+        tags: ['User - Session'],
+        parameters: [
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                description: 'Page number (default: 1)',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
+            ),
+            new OA\Parameter(
+                name: 'limit',
+                in: 'query',
+                description: 'Number of records per page (default: 10, max: 100)',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 10)
+            ),
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                description: 'Search query to filter activities by name, context, or IP address',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Activities retrieved successfully',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'activities', type: 'array', items: new OA\Items(type: 'object'), description: 'Array of activity items'),
+                        new OA\Property(property: 'pagination', type: 'object', properties: [
+                            new OA\Property(property: 'current_page', type: 'integer'),
+                            new OA\Property(property: 'per_page', type: 'integer'),
+                            new OA\Property(property: 'total_records', type: 'integer'),
+                            new OA\Property(property: 'total_pages', type: 'integer'),
+                            new OA\Property(property: 'has_next', type: 'boolean'),
+                            new OA\Property(property: 'has_prev', type: 'boolean'),
+                            new OA\Property(property: 'from', type: 'integer'),
+                            new OA\Property(property: 'to', type: 'integer'),
+                        ]),
+                        new OA\Property(property: 'search', type: 'object', properties: [
+                            new OA\Property(property: 'query', type: 'string'),
+                            new OA\Property(property: 'has_results', type: 'boolean'),
+                        ]),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid authentication token'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to retrieve activities'),
+        ]
+    )]
+    public function getActivities(Request $request): Response
+    {
+        $user = AuthMiddleware::getCurrentUser($request);
+        if ($user == null) {
+            return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
+        $page = (int) $request->query->get('page', 1);
+        $limit = (int) $request->query->get('limit', 10);
+        $search = $request->query->get('search', '');
+
+        // Validate pagination parameters
+        if ($page < 1) {
+            $page = 1;
+        }
+        if ($limit < 1) {
+            $limit = 10;
+        }
+        if ($limit > 100) {
+            $limit = 100;
+        }
+
+        $offset = ($page - 1) * $limit;
+        $searchQuery = $search && trim($search) !== '' ? trim($search) : null;
+
+        // Fetch paginated activities
+        $activities = Activity::getActivitiesByUserPaginated($user['uuid'], $searchQuery, $limit, $offset);
+        $total = Activity::getCountByUserUuid($user['uuid'], $searchQuery);
+
+        // Process activities to format them properly
+        $formattedActivities = [];
+        foreach ($activities as $activity) {
+            $activityData = [
+                'id' => (int) $activity['id'],
+                'user_uuid' => $activity['user_uuid'] ?? '',
+                'name' => $activity['name'] ?? '',
+                'context' => $activity['context'] ?? null,
+                'ip_address' => $activity['ip_address'] ?? null,
+                'created_at' => $activity['created_at'] ?? '',
+                'updated_at' => $activity['updated_at'] ?? '',
+            ];
+            $formattedActivities[] = $activityData;
+        }
+
+        // Calculate pagination metadata
+        $totalPages = ceil($total / $limit);
+        $from = $total > 0 ? ($page - 1) * $limit + 1 : 0;
+        $to = min($from + $limit - 1, $total);
+
+        return ApiResponse::success([
+            'activities' => $formattedActivities,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total_records' => $total,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
+                'from' => $from,
+                'to' => $to,
+            ],
+            'search' => [
+                'query' => $searchQuery ?? '',
+                'has_results' => count($formattedActivities) > 0,
+            ],
+        ], 'Activities retrieved successfully', 200);
     }
 }

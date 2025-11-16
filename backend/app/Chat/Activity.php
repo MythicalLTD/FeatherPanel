@@ -68,6 +68,47 @@ class Activity
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    public static function getActivitiesByUserPaginated(string $userUuid, ?string $search = null, int $limit = 10, int $offset = 0): array
+    {
+        $pdo = Database::getPdoConnection();
+        $sql = 'SELECT * FROM ' . self::$table . ' WHERE user_uuid = :user_uuid';
+        $params = ['user_uuid' => $userUuid];
+
+        if ($search !== null && trim($search) !== '') {
+            $sql .= ' AND (name LIKE :search OR context LIKE :search OR ip_address LIKE :search)';
+            $params['search'] = '%' . $search . '%';
+        }
+
+        $sql .= ' ORDER BY created_at DESC LIMIT :limit OFFSET :offset';
+        $stmt = $pdo->prepare($sql);
+
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindValue('offset', $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public static function getCountByUserUuid(string $userUuid, ?string $search = null): int
+    {
+        $pdo = Database::getPdoConnection();
+        $sql = 'SELECT COUNT(*) FROM ' . self::$table . ' WHERE user_uuid = :user_uuid';
+        $params = ['user_uuid' => $userUuid];
+
+        if ($search !== null && trim($search) !== '') {
+            $sql .= ' AND (name LIKE :search OR context LIKE :search OR ip_address LIKE :search)';
+            $params['search'] = '%' . $search . '%';
+        }
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     public static function getAllActivities(): array
     {
         $pdo = Database::getPdoConnection();

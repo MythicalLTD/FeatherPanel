@@ -81,6 +81,24 @@ return function (RouteCollection $routes): void {
     );
     App::getInstance(true)->registerAuthRoute(
         $routes,
+        'mails-get',
+        '/api/user/mails',
+        function (Request $request) {
+            return (new SessionController())->getMails($request);
+        },
+        ['GET']
+    );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
+        'activities-get',
+        '/api/user/activities',
+        function (Request $request) {
+            return (new SessionController())->getActivities($request);
+        },
+        ['GET']
+    );
+    App::getInstance(true)->registerAuthRoute(
+        $routes,
         'discord-unlink',
         '/api/user/auth/discord/unlink',
         function (Request $request) {
