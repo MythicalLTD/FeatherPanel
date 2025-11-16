@@ -34,7 +34,7 @@ import { useSettingsStore } from '@/stores/settings';
 import VueQrcode from 'vue-qrcode';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { UserInfo, useSessionStore } from '@/stores/session';
+import { useSessionStore, type UserInfo } from '@/stores/session';
 import { useToast } from 'vue-toastification';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
