@@ -1676,7 +1676,10 @@
                                                         <div class="text-xs text-yellow-600 mt-2">
                                                             Build cache:
                                                             {{
-                                                                formatBytes(dockerData.dockerDiskUsage.build_cache_size, true)
+                                                                formatBytes(
+                                                                    dockerData.dockerDiskUsage.build_cache_size,
+                                                                    true,
+                                                                )
                                                             }}
                                                             could also be reclaimed.
                                                         </div>
@@ -4127,7 +4130,6 @@ function formatSelfUpdateResult(result: Record<string, unknown> | null): string 
         return String(result);
     }
 }
-
 
 function isValidIPv4Address(value: string): boolean {
     if (!value) {

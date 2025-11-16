@@ -2108,7 +2108,6 @@ function addDataPoint(dataArray: Array<{ timestamp: number; value: number }>, ti
     }
 }
 
-
 // Command History Functions
 function loadCommandHistory(): void {
     try {

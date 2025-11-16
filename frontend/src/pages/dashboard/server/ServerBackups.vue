@@ -948,7 +948,6 @@ function formatDate(value?: string) {
     return new Date(value).toLocaleString();
 }
 
-
 function getStatusVariant(isSuccessful: number, isLocked: number): BadgeVariants['variant'] {
     if (isLocked) return 'secondary';
     if (isSuccessful) return 'default';

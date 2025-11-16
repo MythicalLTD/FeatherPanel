@@ -258,7 +258,6 @@ function getLastNumericValue(data: Array<{ timestamp: number; value: number }>):
     return lastEntry.value;
 }
 
-
 function formatMebibytes(value: number): string {
     if (value >= 1024) {
         return `${(value / 1024).toFixed(1)} GiB`;

@@ -465,7 +465,6 @@ function getDiskUsagePercent(): number {
     return (globalStats.value.used_disk / globalStats.value.total_disk) * 100;
 }
 
-
 onMounted(async () => {
     // Fetch plugin widgets
     await fetchPluginWidgets();

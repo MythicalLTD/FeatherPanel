@@ -28,9 +28,7 @@ export function formatBytes(bytes: number, longBytes: boolean = false): string {
     if (bytes === 0) return longBytes ? '0 Bytes' : '0 B';
 
     const k = 1024;
-    const sizes = longBytes
-        ? ['Bytes', 'KB', 'MB', 'GB', 'TB']
-        : ['B', 'KB', 'MB', 'GB', 'TB'];
+    const sizes = longBytes ? ['Bytes', 'KB', 'MB', 'GB', 'TB'] : ['B', 'KB', 'MB', 'GB', 'TB'];
 
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     const value = (bytes / Math.pow(k, i)).toFixed(2);
