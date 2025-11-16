@@ -45,7 +45,7 @@ export default defineConfig({
     ],
     resolve: {
         alias: {
-            '@': fileURLToPath(new URL('./src', import.meta.url))
+            '@': fileURLToPath(new URL('./src', import.meta.url)),
         },
     },
     server: {
@@ -84,6 +84,20 @@ export default defineConfig({
         sourcemap: true,
         assetsInlineLimit: 0,
         chunkSizeWarningLimit: 120000,
+        rollupOptions: {
+            onwarn(warning, warn) {
+                // Suppress eval warnings from Rolldown
+                if (
+                    warning.code === 'EVAL' ||
+                    warning.message?.includes('eval') ||
+                    warning.message?.includes('Use of direct `eval`')
+                ) {
+                    return;
+                }
+                // Use default warning handler for other warnings
+                warn(warning);
+            },
+        },
     },
     optimizeDeps: {
         include: ['vue', 'vue-router', 'pinia', 'vue-i18n'],

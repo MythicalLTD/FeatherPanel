@@ -1,5 +1,7 @@
+packages: []
+
 onlyBuiltDependencies:
-  - '@scarf/scarf'
-  - '@tailwindcss/oxide'
-  - esbuild
-  - vue-demi
+    - '@scarf/scarf'
+    - '@tailwindcss/oxide'
+    - esbuild
+    - vue-demi

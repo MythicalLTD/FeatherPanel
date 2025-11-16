@@ -32,6 +32,7 @@
 - Moved layout and organization-related controls (such as sorting, filtering, and view toggles) into a new "View Layout" dropdown for a cleaner and less cluttered user interface.
 - Fixed a significant layout shift on the user information tab in the admin panel by adding a minimum height tab switching is now smooth and avoids jarring jumps.
 - Polished the design of authentication pages for a more professional and visually appealing user experience.
+- Now using Rolldown Vite as the compiler for faster build times and improved overall usage experience.
 
 ## v1.0.2 BETA
 
