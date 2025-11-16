@@ -2,11 +2,14 @@
 
 ## v1.0.3 BETA
 
+### Removed
+- Removed the "Set Primary" button from the server edit page to prevent user confusion and streamline the allocation management experience.
+- Removed the "Create Node" option from the Locations page, as it was just a legacy placeholder left over from the original panel build.
+
 ### Fixed
 
 - Resolved an issue preventing plugins from registering their own dashboard pages.
 - Fixed an issue where the subdomain manager would fail if an allocation did not have an ip_alias and the allocation IP was not public.
-- Removed the "Set Primary" button from the server edit page to prevent user confusion and streamline the allocation management experience.
 - Improved session security by excluding "two_fa_key" from session responses.
 
 ### Added
@@ -28,6 +31,7 @@
 - Cleaned up the session response: password hashes and unnecessary data are no longer included.
 - Moved layout and organization-related controls (such as sorting, filtering, and view toggles) into a new "View Layout" dropdown for a cleaner and less cluttered user interface.
 - Fixed a significant layout shift on the user information tab in the admin panel by adding a minimum height tab switching is now smooth and avoids jarring jumps.
+- Polished the design of authentication pages for a more professional and visually appealing user experience.
 
 ## v1.0.2 BETA
 
