@@ -22,6 +22,7 @@
 ### Improved
 - Improved how user emails are fetched: they now use a dedicated paginated route to avoid excessive memory usage and return results more efficiently.
 - Activity fetching is now significantly optimized and has its own dedicated route, dramatically reducing memory usage when retrieving user activity data.
+- Cleaned up the session response: password hashes and unnecessary data are no longer included.
 
 ## v1.0.2 BETA
 
