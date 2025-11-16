@@ -299,8 +299,8 @@ import {
     DrawerClose,
 } from '@/components/ui/drawer';
 import { useRouter } from 'vue-router';
-import TableComponent from '@/kit/TableComponent.vue';
-import type { TableColumn } from '@/kit/types';
+import TableComponent from '@/components/ui/feather-table/TableComponent.vue';
+import type { TableColumn } from '@/components/ui/feather-table/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from 'vue-toastification';
 

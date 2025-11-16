@@ -541,8 +541,8 @@ import {
 } from '@/components/ui/drawer';
 import { type Ref } from 'vue';
 import Permissions from '@/lib/permissions';
-import TableComponent from '@/kit/TableComponent.vue';
-import type { TableColumn } from '@/kit/types';
+import TableComponent from '@/components/ui/feather-table/TableComponent.vue';
+import type { TableColumn } from '@/components/ui/feather-table/types';
 import { useToast } from 'vue-toastification';
 
 type Role = {

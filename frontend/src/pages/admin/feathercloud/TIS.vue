@@ -28,10 +28,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import TableComponent from '@/kit/TableComponent.vue';
+import TableComponent from '@/components/ui/feather-table/TableComponent.vue';
 import SelectionModal from '@/components/ui/selection-modal/SelectionModal.vue';
 import { useSelectionModal } from '@/composables/useSelectionModal';
-import type { TableColumn } from '@/kit/types';
+import type { TableColumn } from '@/components/ui/feather-table/types';
 import {
     ShieldCheck,
     Database,
