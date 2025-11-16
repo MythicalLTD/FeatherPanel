@@ -518,7 +518,7 @@ import type {
     SubdomainDomain,
     SubdomainDomainPayload,
     SubdomainSettingsPayload,
-} from '@/types/subdomain';
+} from '@/composables/types/subdomain';
 interface DomainTableRow extends Record<string, unknown> {
     uuid: string;
     domain: string;

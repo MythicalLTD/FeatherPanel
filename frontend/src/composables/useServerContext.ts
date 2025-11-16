@@ -27,7 +27,7 @@ SOFTWARE.
 import { ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
-import type { Server } from '@/types/server';
+import type { Server } from '@/composables/types/server';
 
 const currentServer = ref<Server | null>(null);
 const isLoading = ref(false);

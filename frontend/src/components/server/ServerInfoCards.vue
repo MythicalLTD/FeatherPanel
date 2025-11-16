@@ -91,7 +91,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Wifi, Clock, Fingerprint, Copy, Check } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
-import type { Server } from '@/types/server';
+import type { Server } from '@/composables/types/server';
 import { computed, ref } from 'vue';
 
 const { t } = useI18n();

@@ -1367,7 +1367,7 @@ import type {
     SubmitData,
     AxiosError,
     TransferStatus,
-} from '@/types/admin/server';
+} from '@/composables/types/admin/server';
 
 const router = useRouter();
 const route = useRoute();

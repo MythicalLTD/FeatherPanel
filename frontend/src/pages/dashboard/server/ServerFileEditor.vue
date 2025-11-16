@@ -704,7 +704,7 @@ import { useSettingsStore } from '@/stores/settings';
 import { useServerPermissions } from '@/composables/useServerPermissions';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
-import type { Server } from '@/types/server';
+import type { Server } from '@/composables/types/server';
 
 const route = useRoute();
 const router = useRouter();
