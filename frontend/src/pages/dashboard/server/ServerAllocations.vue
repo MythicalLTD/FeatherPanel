@@ -383,7 +383,7 @@ const canUpdateAllocations = computed(() => hasServerPermission('allocation.upda
 const canDeleteAllocations = computed(() => hasServerPermission('allocation.delete'));
 
 // State
-const loading = ref(false);
+const loading = ref(true);
 const deletingAllocation = ref<number | null>(null);
 const settingPrimary = ref<number | null>(null);
 const autoAllocating = ref(false);

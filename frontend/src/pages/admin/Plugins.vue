@@ -1240,7 +1240,7 @@ const sessionStore = useSessionStore();
 const router = useRouter();
 
 // State
-const loading = ref(false);
+const loading = ref(true);
 const message = ref<{ type: 'error' | 'success'; text: string } | null>(null);
 const plugins = ref<Plugin[]>([]);
 const activeTab = ref<'installed' | 'online'>('installed');

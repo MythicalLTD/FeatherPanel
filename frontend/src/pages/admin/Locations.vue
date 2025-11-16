@@ -359,7 +359,7 @@ const pagination = ref({
     from: 0,
     to: 0,
 });
-const loading = ref(false);
+const loading = ref(true);
 const deleting = ref(false);
 const confirmDeleteRow = ref<number | null>(null);
 const selectedLocation = ref<Location | null>(null);

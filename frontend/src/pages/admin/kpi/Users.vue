@@ -359,7 +359,7 @@ interface SecurityStats {
 }
 
 // State
-const loading = ref(false);
+const loading = ref(true);
 const error = ref<string | null>(null);
 const overview = ref<OverviewStats>({
     total: 0,

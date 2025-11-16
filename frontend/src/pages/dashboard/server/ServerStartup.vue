@@ -683,7 +683,7 @@ const hasAnyStartupPermission = computed(
     () => canUpdateStartup.value || canUpdateDockerImage.value || canChangeSpell.value,
 );
 
-const loading = ref(false);
+const loading = ref(true);
 const saving = ref(false);
 const error = ref<string | null>(null);
 interface ServerResponse {

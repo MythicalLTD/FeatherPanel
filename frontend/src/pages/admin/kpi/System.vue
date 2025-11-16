@@ -186,7 +186,7 @@ interface MailQueueItem {
 }
 
 // State
-const loading = ref(false);
+const loading = ref(true);
 const error = ref<string | null>(null);
 const mailQueue = ref({
     total_queued: 0,

@@ -1387,7 +1387,7 @@ const breadcrumbs = [
 ];
 
 // Loading states
-const loading = ref(false);
+const loading = ref(true);
 const submitting = ref(false);
 
 // Plugin widgets

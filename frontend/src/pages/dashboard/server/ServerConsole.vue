@@ -1057,7 +1057,7 @@ function onAuthSuccessCallback(isRefresh: boolean): void {
 }
 
 const server = ref<Server | null>(null);
-const loading = ref(false);
+const loading = ref(true);
 const networkStats = ref<NetworkStats>({
     upload: '0 B',
     download: '0 B',

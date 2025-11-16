@@ -649,7 +649,7 @@ const { hasPermission: hasServerPermission, isLoading: permissionsLoading } = us
 const canViewActivities = computed(() => hasServerPermission('activity.read'));
 
 const activities = ref<ActivityItem[]>([]);
-const loading = ref(false);
+const loading = ref(true);
 const searchQuery = ref('');
 const selectedEventFilter = ref('all');
 const server = ref<{ name: string } | null>(null);

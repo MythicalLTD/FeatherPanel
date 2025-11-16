@@ -590,7 +590,7 @@ const canDownloadBackups = computed(() => hasServerPermission('backup.download')
 const canDeleteBackups = computed(() => hasServerPermission('backup.delete'));
 
 const backups = ref<BackupItem[]>([]);
-const loading = ref(false);
+const loading = ref(true);
 const searchQuery = ref('');
 const server = ref<{ name: string } | null>(null);
 const serverInfo = ref<{ backup_limit: number } | null>(null);

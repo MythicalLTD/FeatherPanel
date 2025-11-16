@@ -669,7 +669,7 @@ const canDeleteSchedules = computed(() => hasServerPermission('schedule.delete')
 
 const tasks = ref<TaskItem[]>([]);
 const schedule = ref<ScheduleItem | null>(null);
-const loading = ref(false);
+const loading = ref(true);
 const creating = ref(false);
 const updating = ref(false);
 

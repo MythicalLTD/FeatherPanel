@@ -859,7 +859,7 @@ const canViewPassword = computed(() => hasServerPermission('database.view_passwo
 
 const databases = ref<DatabaseItem[]>([]);
 const availableHosts = ref<DatabaseHost[]>([]);
-const loading = ref(false);
+const loading = ref(true);
 const creating = ref(false);
 const searchQuery = ref('');
 const server = ref<{ name: string } | null>(null);

@@ -596,7 +596,7 @@ const canReinstallServer = computed(() => hasServerPermission('settings.reinstal
 const hasAnySettingsPermission = computed(() => canRenameServer.value || canReinstallServer.value);
 
 // State
-const loading = ref(false);
+const loading = ref(true);
 const saving = ref(false);
 const reinstalling = ref(false);
 const error = ref<string | null>(null);

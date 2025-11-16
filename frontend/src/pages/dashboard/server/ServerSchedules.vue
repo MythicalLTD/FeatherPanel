@@ -697,7 +697,7 @@ const canUpdateSchedules = computed(() => hasServerPermission('schedule.update')
 const canDeleteSchedules = computed(() => hasServerPermission('schedule.delete'));
 
 const schedules = ref<ScheduleItem[]>([]);
-const loading = ref(false);
+const loading = ref(true);
 const creating = ref(false);
 const updating = ref(false);
 const searchQuery = ref('');

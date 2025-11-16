@@ -1986,7 +1986,7 @@ const canArchiveFiles = computed(() => hasServerPermission('file.archive'));
 
 // Server and loading state
 const server = ref<Server | null>(null);
-const loading = ref(false);
+const loading = ref(true);
 
 const uploading = ref(false);
 const pulling = ref(false);
