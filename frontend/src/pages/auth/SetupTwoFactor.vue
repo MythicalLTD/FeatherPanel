@@ -116,6 +116,12 @@ async function verify2FA(e: Event) {
         });
         if (res.data && res.data.success) {
             toast.success(t('api_errors.TWO_FACTOR_ENABLED_SUCCESS'));
+
+            // Redirect after a short delay
+            const redirect = router.currentRoute.value.query.redirect as string;
+            setTimeout(() => {
+                window.location.href = redirect || '/';
+            }, 1200);
         } else {
             toast.error(t(`api_errors.${res.data.code}`) || t('api_errors.INVALID_CODE'));
         }
