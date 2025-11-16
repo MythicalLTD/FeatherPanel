@@ -45,7 +45,7 @@ const router = useRouter();
 
 const email = ref<string>((router.currentRoute.value.query.email as string) || '');
 const code = ref('');
-const loading = ref(true);
+const loading = ref(false);
 const error = ref('');
 const success = ref('');
 const form = ref({

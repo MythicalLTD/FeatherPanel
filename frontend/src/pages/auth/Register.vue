@@ -56,7 +56,7 @@ const form = ref({
     password: '',
     turnstile_token: '',
 });
-const loading = ref(true);
+const loading = ref(false);
 const error = ref('');
 const success = ref('');
 
