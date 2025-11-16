@@ -34,11 +34,12 @@ import { useSettingsStore } from '@/stores/settings';
 import VueQrcode from 'vue-qrcode';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { useSessionStore } from '@/stores/session';
+import { UserInfo, useSessionStore } from '@/stores/session';
 import { useToast } from 'vue-toastification';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
+const user = computed<UserInfo | null>(() => sessionStore.user);
 const settingsStore = useSettingsStore();
 const sessionStore = useSessionStore();
 const toast = useToast();
@@ -139,7 +140,7 @@ async function verify2FA(e: Event) {
                     <div class="flex flex-col gap-4">
                         <div class="text-center text-sm flex justify-center">
                             <vue-qrcode
-                                :value="`otpauth://totp/NaysKutzu?secret=${secret}&issuer=${settingsStore.settings?.app_name}`"
+                                :value="`otpauth://totp/${user?.email}?secret=${secret}&issuer=${settingsStore.settings?.app_name}`"
                                 type="image/png"
                                 :color="{ dark: '#000000', light: '#ffffff' }"
                             />
