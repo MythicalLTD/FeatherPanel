@@ -280,7 +280,6 @@ function handleKeydown(event: KeyboardEvent) {
     }
 }
 
-
 function toggleSystemInfo() {
     showSystemInfo.value = !showSystemInfo.value;
 }

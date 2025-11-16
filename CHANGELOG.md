@@ -12,6 +12,7 @@
 - Fixed an issue where the subdomain manager would fail if an allocation did not have an ip_alias and the allocation IP was not public.
 - Improved session security by excluding "two_fa_key" from session responses.
 - Resolved issues preventing drag-and-drop file uploads from working in Chrome, ensuring seamless and reliable file uploads across all modern browsers.
+- QR code now uses the authenticated user's email to ensure correct account association. by @puttydotexe 
 
 ### Added
 
@@ -25,6 +26,8 @@
 - Added support for a FeatherPanel plugin export ignore file, allowing you to exclude packages and third-party dependencies that are used during plugin development but should not be included in the final exported plugin.
 - Add cursor pointer to non-disabled buttons to improve UI clarity. by @puttydotexe
 - Introduced context-aware tooltips for various admin actions throughout FeatherPanel menus, providing clearer guidance and an improved user experience!
+- Two-factor setup now redirects to the intended page after successful verification (short delay for UX). by @puttydotexe 
+- OTP input updated to allow numeric entry with autocomplete for easier entry on devices. by  @puttydotexe
 
 ### Improved
 - Improved how user emails are fetched: they now use a dedicated paginated route to avoid excessive memory usage and return results more efficiently.
