@@ -34,11 +34,12 @@ import { useSettingsStore } from '@/stores/settings';
 import VueQrcode from 'vue-qrcode';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { useSessionStore } from '@/stores/session';
+import { useSessionStore, type UserInfo } from '@/stores/session';
 import { useToast } from 'vue-toastification';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
+const user = computed<UserInfo | null>(() => sessionStore.user);
 const settingsStore = useSettingsStore();
 const sessionStore = useSessionStore();
 const toast = useToast();
@@ -115,6 +116,12 @@ async function verify2FA(e: Event) {
         });
         if (res.data && res.data.success) {
             toast.success(t('api_errors.TWO_FACTOR_ENABLED_SUCCESS'));
+
+            // Redirect after a short delay
+            const redirect = router.currentRoute.value.query.redirect as string;
+            setTimeout(() => {
+                window.location.href = redirect || '/';
+            }, 1200);
         } else {
             toast.error(t(`api_errors.${res.data.code}`) || t('api_errors.INVALID_CODE'));
         }
@@ -139,7 +146,7 @@ async function verify2FA(e: Event) {
                     <div class="flex flex-col gap-4">
                         <div class="text-center text-sm flex justify-center">
                             <vue-qrcode
-                                :value="`otpauth://totp/NaysKutzu?secret=${secret}&issuer=${settingsStore.settings?.app_name}`"
+                                :value="`otpauth://totp/${user?.email}?secret=${secret}&issuer=${settingsStore.settings?.app_name}`"
                                 type="image/png"
                                 :color="{ dark: '#000000', light: '#ffffff' }"
                             />
@@ -154,7 +161,11 @@ async function verify2FA(e: Event) {
                             <Input
                                 id="code"
                                 v-model="code"
-                                type="password"
+                                type="text"
+                                autocomplete="one-time-code"
+                                name="otp"
+                                inputmode="numeric"
+                                @input="code = code.replace(/\D/g, '')"
                                 :placeholder="t('api_errors.TWO_FACTOR_CODE_PLACEHOLDER')"
                                 required
                             />
