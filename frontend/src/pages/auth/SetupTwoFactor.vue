@@ -161,7 +161,11 @@ async function verify2FA(e: Event) {
                             <Input
                                 id="code"
                                 v-model="code"
-                                type="password"
+                                type="text"
+                                autocomplete="one-time-code"
+                                name="otp"
+                                inputmode="numeric"
+                                @input="code = code.replace(/\D/g, '')"
                                 :placeholder="t('api_errors.TWO_FACTOR_CODE_PLACEHOLDER')"
                                 required
                             />
