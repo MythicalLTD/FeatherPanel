@@ -921,6 +921,7 @@ import PidLimitFeature from '@/components/server/features/PidLimitFeature.vue';
 import { detectFeature } from '@/components/server/features/featureDetector';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
+import { formatBytes } from '@/lib/format';
 
 // XTerm.js imports
 import { Terminal as XTerm } from '@xterm/xterm';
@@ -2107,13 +2108,6 @@ function addDataPoint(dataArray: Array<{ timestamp: number; value: number }>, ti
     }
 }
 
-function formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
 
 // Command History Functions
 function loadCommandHistory(): void {

@@ -24,9 +24,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+export function formatBytes(bytes: number, longBytes: boolean = false): string {
+    if (bytes === 0) return longBytes ? '0 Bytes' : '0 B';
 
-export function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
+    const k = 1024;
+    const sizes = longBytes
+        ? ['Bytes', 'KB', 'MB', 'GB', 'TB']
+        : ['B', 'KB', 'MB', 'GB', 'TB'];
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const value = (bytes / Math.pow(k, i)).toFixed(2);
+
+    return `${parseFloat(value)} ${sizes[i]}`;
 }

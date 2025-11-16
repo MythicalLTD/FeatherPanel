@@ -156,6 +156,7 @@ import {
     type TooltipItem,
 } from 'chart.js';
 import type { Server, NetworkStats } from '@/composables/types/server';
+import { formatBytes } from '@/lib/format';
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
@@ -257,18 +258,6 @@ function getLastNumericValue(data: Array<{ timestamp: number; value: number }>):
     return lastEntry.value;
 }
 
-function formatBytes(value: number): string {
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    let size = value;
-    let unitIndex = 0;
-
-    while (size >= 1024 && unitIndex < units.length - 1) {
-        size /= 1024;
-        unitIndex += 1;
-    }
-
-    return `${size.toFixed(1)} ${units[unitIndex]}`;
-}
 
 function formatMebibytes(value: number): string {
     if (value >= 1024) {
