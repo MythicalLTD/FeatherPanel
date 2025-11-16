@@ -830,13 +830,12 @@ export function useNavigation() {
         const groupConfig: Record<string, () => string> = {
             overview: () => t('navGroups.overview'),
             overviewFeatherCloud: () => 'Overview · FeatherCloud Suite',
-            feathercloudSecurity: () => 'Security · FeatherCloud',
             users: () => t('navGroups.userManagement'),
             networking: () => t('navGroups.networking'),
             infrastructure: () => t('navGroups.infrastructure'),
             content: () => t('navGroups.content'),
             system: () => t('navGroups.system'),
-            security: () => 'Security',
+            feathercloudSecurity: () => 'Security · FeatherCloud',
             plugins: () => t('navGroups.plugins'),
         };
 

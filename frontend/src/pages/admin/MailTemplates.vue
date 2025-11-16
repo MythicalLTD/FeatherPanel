@@ -380,7 +380,7 @@
                     <DrawerDescription>Preview for template: {{ previewTemplate.name }}</DrawerDescription>
                 </DrawerHeader>
 
-                <div class="px-6 pb-6">
+                <div class="px-6 pb-6 min-h-[400px]">
                     <div class="space-y-4">
                         <div>
                             <Label class="text-sm font-medium">Subject</Label>

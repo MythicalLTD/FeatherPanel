@@ -25,7 +25,7 @@
 - Activity fetching is now significantly optimized and has its own dedicated route, dramatically reducing memory usage when retrieving user activity data.
 - Cleaned up the session response: password hashes and unnecessary data are no longer included.
 - Moved layout and organization-related controls (such as sorting, filtering, and view toggles) into a new "View Layout" dropdown for a cleaner and less cluttered user interface.
-
+- Fixed a significant layout shift on the user information tab in the admin panel by adding a minimum height tab switching is now smooth and avoids jarring jumps.
 
 ## v1.0.2 BETA
 

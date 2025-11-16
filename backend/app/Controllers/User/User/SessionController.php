@@ -271,8 +271,7 @@ class SessionController
         // Load user preferences
         $preferences = UserPreference::getPreferences($user['uuid']);
 
-		unset($user['password']);
-		unset($user['two_fa_key']);
+        unset($user['password'], $user['two_fa_key']);
 
         return ApiResponse::success([
             'user_info' => $user,

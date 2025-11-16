@@ -400,7 +400,7 @@
                         </div>
                     </div>
                 </div>
-                <section class="px-6 pb-6">
+                <section class="px-6 pb-6 min-h-[500px]">
                     <Tabs default-value="details">
                         <TabsList class="mb-4">
                             <TabsTrigger value="details">Details</TabsTrigger>

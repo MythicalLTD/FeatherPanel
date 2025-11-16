@@ -661,7 +661,7 @@
                     </DrawerDescription>
                 </DrawerHeader>
 
-                <div class="px-4 sm:px-6 pt-4 sm:pt-6">
+                <div class="px-4 sm:px-6 pt-4 sm:pt-6 min-h-[500px]">
                     <!-- Loading State -->
                     <div v-if="configLoading" class="flex items-center justify-center py-8">
                         <div class="flex items-center gap-3">

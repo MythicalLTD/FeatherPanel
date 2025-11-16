@@ -228,7 +228,7 @@
                     <DrawerDescription>Viewing details for image: {{ selectedImage.name }}</DrawerDescription>
                 </DrawerHeader>
 
-                <div class="px-6 pb-6 space-y-6">
+                <div class="px-6 pb-6 space-y-6 min-h-[400px]">
                     <div class="flex justify-center">
                         <div class="w-64 h-64 rounded-lg overflow-hidden border">
                             <img
