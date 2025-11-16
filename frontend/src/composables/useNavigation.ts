@@ -56,6 +56,7 @@ import {
     ShieldCheck,
     Cloud,
     Bot,
+    Package,
 } from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
 import Permissions from '@/lib/permissions';
@@ -521,6 +522,17 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith('/admin/feathercloud-ai-agent'),
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_STATISTICS_VIEW,
+                group: 'overviewFeatherCloud',
+            },
+            {
+                id: 'admin-feathercloud-plugins',
+                name: 'FeatherCloud Marketplace',
+                title: 'FeatherCloud Marketplace',
+                url: '/admin/feathercloud/plugins',
+                icon: Package,
+                isActive: currentPath.value.startsWith('/admin/feathercloud/plugins'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_PLUGINS_VIEW,
                 group: 'overviewFeatherCloud',
             },
             {

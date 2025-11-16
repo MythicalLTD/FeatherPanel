@@ -41,11 +41,31 @@ interface AppPlugin
 
     /**
      * Process the plugin install.
+     * Called when the plugin is first installed.
      */
     public static function pluginInstall(): void;
 
     /**
      * Process the plugin uninstall.
+     * Called when the plugin is being uninstalled.
      */
     public static function pluginUninstall(): void;
+
+    /**
+     * Optional: Process the plugin update.
+     * Called when the plugin is updated to a new version.
+     * This method is OPTIONAL and not part of the interface to maintain backward compatibility.
+     * Plugins can optionally implement this method to handle update-specific logic.
+     *
+     * @param string|null $oldVersion The previous version of the plugin (e.g., "1.0.0")
+     * @param string|null $newVersion The new version being installed (e.g., "1.0.1")
+     *
+     * @example
+     * public static function pluginUpdate(?string $oldVersion, ?string $newVersion): void
+     * {
+     *     // Handle update logic here
+     *     // Migrate data, update configurations, etc.
+     * }
+     */
+    // public static function pluginUpdate(?string $oldVersion, ?string $newVersion): void;
 }

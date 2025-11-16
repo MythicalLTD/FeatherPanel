@@ -32,7 +32,6 @@ namespace App\Controllers\Admin;
 
 use App\App;
 use App\Chat\Activity;
-use App\Chat\Database;
 use App\Helpers\ApiResponse;
 use App\Plugins\PluginConfig;
 use OpenApi\Attributes as OA;
@@ -65,35 +64,6 @@ use Symfony\Component\HttpFoundation\Response;
     ]
 )]
 #[OA\Schema(
-    schema: 'OnlineAddon',
-    type: 'object',
-    properties: [
-        new OA\Property(property: 'id', type: 'integer', description: 'Addon ID'),
-        new OA\Property(property: 'identifier', type: 'string', description: 'Addon identifier'),
-        new OA\Property(property: 'name', type: 'string', description: 'Addon display name'),
-        new OA\Property(property: 'description', type: 'string', description: 'Addon description'),
-        new OA\Property(property: 'icon', type: 'string', description: 'Addon icon URL'),
-        new OA\Property(property: 'website', type: 'string', description: 'Addon website URL'),
-        new OA\Property(property: 'author', type: 'string', description: 'Addon author'),
-        new OA\Property(property: 'author_email', type: 'string', description: 'Author email'),
-        new OA\Property(property: 'maintainers', type: 'array', items: new OA\Items(type: 'string'), description: 'Addon maintainers'),
-        new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'string'), description: 'Addon tags'),
-        new OA\Property(property: 'verified', type: 'boolean', description: 'Whether addon is verified'),
-        new OA\Property(property: 'premium', type: 'integer', description: 'Whether addon is premium (0 = free, 1 = premium)'),
-        new OA\Property(property: 'premium_link', type: 'string', description: 'Purchase link for premium addon'),
-        new OA\Property(property: 'premium_price', type: 'string', description: 'Price for premium addon in EUR'),
-        new OA\Property(property: 'downloads', type: 'integer', description: 'Download count'),
-        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
-        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
-        new OA\Property(property: 'latest_version', type: 'object', properties: [
-            new OA\Property(property: 'version', type: 'string', description: 'Latest version number'),
-            new OA\Property(property: 'download_url', type: 'string', description: 'Download URL'),
-            new OA\Property(property: 'file_size', type: 'integer', description: 'File size in bytes'),
-            new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Version creation timestamp'),
-        ]),
-    ]
-)]
-#[OA\Schema(
     schema: 'PluginSettingUpdate',
     type: 'object',
     required: ['key', 'value'],
@@ -111,14 +81,6 @@ use Symfony\Component\HttpFoundation\Response;
     ]
 )]
 #[OA\Schema(
-    schema: 'OnlineInstall',
-    type: 'object',
-    required: ['identifier'],
-    properties: [
-        new OA\Property(property: 'identifier', type: 'string', description: 'Addon identifier to install', pattern: '^[a-zA-Z0-9_\\-]+$'),
-    ]
-)]
-#[OA\Schema(
     schema: 'UrlInstall',
     type: 'object',
     required: ['url'],
@@ -126,20 +88,8 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'url', type: 'string', description: 'URL to download addon from', format: 'uri'),
     ]
 )]
-#[OA\Schema(
-    schema: 'MigrationResult',
-    type: 'object',
-    properties: [
-        new OA\Property(property: 'executed', type: 'integer', description: 'Number of migrations executed'),
-        new OA\Property(property: 'skipped', type: 'integer', description: 'Number of migrations skipped'),
-        new OA\Property(property: 'failed', type: 'integer', description: 'Number of migrations failed'),
-        new OA\Property(property: 'lines', type: 'array', items: new OA\Items(type: 'string'), description: 'Migration execution log'),
-    ]
-)]
 class PluginsController
 {
-    public const PASSWORD = 'featherpanel_development_kit_2025_addon_password';
-
     #[OA\Get(
         path: '/api/admin/plugins',
         summary: 'Get all installed plugins',
@@ -461,264 +411,6 @@ class PluginsController
         }
     }
 
-    #[OA\Get(
-        path: '/api/admin/plugins/online/list',
-        summary: 'Get online addons list',
-        description: 'Retrieve a paginated list of available addons from the FeatherPanel packages API with search functionality.',
-        tags: ['Admin - Plugins'],
-        parameters: [
-            new OA\Parameter(
-                name: 'q',
-                in: 'query',
-                description: 'Search query to filter addons',
-                required: false,
-                schema: new OA\Schema(type: 'string')
-            ),
-            new OA\Parameter(
-                name: 'page',
-                in: 'query',
-                description: 'Page number for pagination',
-                required: false,
-                schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
-            ),
-            new OA\Parameter(
-                name: 'per_page',
-                in: 'query',
-                description: 'Number of addons per page',
-                required: false,
-                schema: new OA\Schema(type: 'integer', minimum: 1, default: 20)
-            ),
-        ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Online addons retrieved successfully',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'addons', type: 'array', items: new OA\Items(ref: '#/components/schemas/OnlineAddon')),
-                        new OA\Property(property: 'pagination', type: 'object', description: 'Pagination metadata'),
-                    ]
-                )
-            ),
-            new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
-            new OA\Response(response: 500, description: 'Internal server error - Failed to fetch online addons or invalid response'),
-        ]
-    )]
-    public function onlineList(Request $request): Response
-    {
-        try {
-            // New official packages API
-            $base = 'https://api.featherpanel.com/packages';
-            $q = trim((string) ($request->query->get('q') ?? ''));
-            $page = (int) ($request->query->get('page') ?? 1);
-            $perPage = (int) ($request->query->get('per_page') ?? 20);
-            $query = [];
-            if ($q !== '') {
-                $query['search'] = $q;
-            }
-            if ($page > 0) {
-                $query['page'] = (string) $page;
-            }
-            if ($perPage > 0) {
-                $query['per_page'] = (string) $perPage;
-            }
-            $url = $base . (!empty($query) ? ('?' . http_build_query($query)) : '');
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 10,
-                    'ignore_errors' => true,
-                ],
-            ]);
-            $response = @file_get_contents($url, false, $context);
-            if ($response === false) {
-                return ApiResponse::error('Failed to fetch online addon list', 'ONLINE_LIST_FETCH_FAILED', 500);
-            }
-
-            $data = json_decode($response, true);
-            if (!is_array($data) || !isset($data['data']['packages']) || !is_array($data['data']['packages'])) {
-                return ApiResponse::error('Invalid response from online addon list', 'ONLINE_LIST_INVALID', 500);
-            }
-
-            $packages = $data['data']['packages'];
-            $addons = array_map(static function (array $pkg): array {
-                $latest = $pkg['latest_version'] ?? [];
-                $downloadUrl = isset($latest['download_url']) ? ('https://api.featherpanel.com' . $latest['download_url']) : null;
-
-                $iconUrl = $pkg['icon_url'];
-                // If iconUrl is set and not empty, ensure it is https
-                if (!empty($iconUrl) && is_string($iconUrl)) {
-                    if (strpos($iconUrl, 'http://') === 0) {
-                        $iconUrl = 'https://' . substr($iconUrl, 7);
-                    }
-                }
-
-                return [
-                    // Basic identity
-                    'id' => $pkg['id'] ?? null,
-                    'identifier' => $pkg['name'] ?? '',
-                    'name' => $pkg['display_name'] ?? ($pkg['name'] ?? ''),
-                    'description' => $pkg['description'] ?? null,
-                    'icon' => $iconUrl,
-                    'website' => $pkg['website'] ?? null,
-                    // Authors/maintainers
-                    'author' => $pkg['author'] ?? null,
-                    'author_email' => $pkg['author_email'] ?? null,
-                    'maintainers' => $pkg['maintainers'] ?? [],
-                    // Meta
-                    'tags' => $pkg['tags'] ?? [],
-                    'verified' => isset($pkg['verified']) ? (int) $pkg['verified'] === 1 : false,
-                    'premium' => isset($pkg['premium']) ? (int) $pkg['premium'] : 0,
-                    'premium_link' => $pkg['premium_link'] ?? null,
-                    'premium_price' => $pkg['premium_price'] ?? null,
-                    'downloads' => $pkg['downloads'] ?? 0,
-                    'created_at' => $pkg['created_at'] ?? null,
-                    'updated_at' => $pkg['updated_at'] ?? null,
-                    // Latest version
-                    'latest_version' => [
-                        'version' => $latest['version'] ?? null,
-                        'download_url' => $downloadUrl,
-                        'file_size' => $latest['file_size'] ?? null,
-                        'created_at' => $latest['created_at'] ?? null,
-                    ],
-                ];
-            }, $packages);
-
-            $pagination = $data['data']['pagination'] ?? null;
-
-            return ApiResponse::success([
-                'addons' => $addons,
-                'pagination' => $pagination,
-            ], 'Online addons fetched', 200);
-        } catch (\Exception $e) {
-            return ApiResponse::error('Failed to fetch online addons: ' . $e->getMessage(), 500);
-        }
-    }
-
-    #[OA\Post(
-        path: '/api/admin/plugins/online/install',
-        summary: 'Install addon from online registry',
-        description: 'Download and install an addon from the FeatherPanel packages API. Downloads the latest version and extracts it to the addons directory.',
-        tags: ['Admin - Plugins'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(ref: '#/components/schemas/OnlineInstall')
-        ),
-        responses: [
-            new OA\Response(
-                response: 201,
-                description: 'Addon installed successfully',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'identifier', type: 'string', description: 'Installed addon identifier'),
-                    ]
-                )
-            ),
-            new OA\Response(response: 400, description: 'Bad request - Invalid identifier format'),
-            new OA\Response(response: 401, description: 'Unauthorized'),
-            new OA\Response(
-                response: 402,
-                description: 'Payment Required - Premium addon must be purchased',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'premium_link', type: 'string', description: 'Purchase link for premium addon'),
-                        new OA\Property(property: 'premium_price', type: 'string', description: 'Price in EUR'),
-                    ]
-                )
-            ),
-            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
-            new OA\Response(response: 404, description: 'Package not found in registry'),
-            new OA\Response(response: 409, description: 'Conflict - Addon already installed'),
-            new OA\Response(response: 422, description: 'Unprocessable Entity - Failed to extract addon package or migrations failed'),
-            new OA\Response(response: 500, description: 'Internal server error - Failed to install addon or download failed'),
-        ]
-    )]
-    public function onlineInstall(Request $request): Response
-    {
-        try {
-            $body = json_decode($request->getContent(), true);
-            $identifier = $body['identifier'] ?? null;
-            if (!$identifier || !preg_match('/^[a-zA-Z0-9_\-]+$/', (string) $identifier)) {
-                return ApiResponse::error('Invalid identifier', 'INVALID_IDENTIFIER', 400);
-            }
-
-            if (!defined('APP_ADDONS_DIR')) {
-                define('APP_ADDONS_DIR', dirname(__DIR__, 3) . '/storage/addons');
-            }
-
-            // Ensure addons dir exists
-            if (!is_dir(APP_ADDONS_DIR) && !@mkdir(APP_ADDONS_DIR, 0755, true)) {
-                return ApiResponse::error('Failed to prepare addons directory', 'ADDONS_DIR_CREATE_FAILED', 500);
-            }
-
-            // Fetch package metadata to get download URL from the new API
-            $metaUrl = 'https://api.featherpanel.com/packages';
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 15,
-                    'ignore_errors' => true,
-                ],
-            ]);
-            $metaResp = @file_get_contents($metaUrl, false, $context);
-            if ($metaResp === false) {
-                return ApiResponse::error('Failed to query packages API', 'PACKAGES_API_FAILED', 500);
-            }
-            $meta = json_decode($metaResp, true);
-            $packages = is_array($meta) && isset($meta['data']['packages']) && is_array($meta['data']['packages']) ? $meta['data']['packages'] : [];
-            $match = null;
-            foreach ($packages as $pkg) {
-                if (($pkg['name'] ?? '') === $identifier) {
-                    $match = $pkg;
-                    break;
-                }
-            }
-            if (!$match || !isset($match['latest_version']['download_url'])) {
-                return ApiResponse::error('Package not found in registry', 'PACKAGE_NOT_FOUND', 404);
-            }
-
-            // Check if addon is premium
-            $isPremium = isset($match['premium']) && (int) $match['premium'] === 1;
-            if ($isPremium) {
-                $premiumLink = $match['premium_link'] ?? null;
-
-                return ApiResponse::error(
-                    'This is a premium addon and must be purchased',
-                    'PREMIUM_ADDON_PURCHASE_REQUIRED',
-                    402,
-                    [
-                        'premium_link' => $premiumLink,
-                        'premium_price' => $match['premium_price'] ?? null,
-                    ]
-                );
-            }
-            $downloadUrl = 'https://api.featherpanel.com' . $match['latest_version']['download_url'];
-            $fileContent = @file_get_contents($downloadUrl, false, $context);
-            if ($fileContent === false) {
-                return ApiResponse::error('Failed to download addon package', 'ADDON_DOWNLOAD_FAILED', 500);
-            }
-
-            $tempFile = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true) . '.fpa';
-            file_put_contents($tempFile, $fileContent);
-
-            // Extract
-            $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true);
-            @mkdir($tempDir, 0755, true);
-            $pwd = self::PASSWORD;
-            $unzipCommand = sprintf('unzip -P %s %s -d %s', escapeshellarg($pwd), escapeshellarg($tempFile), escapeshellarg($tempDir));
-            exec($unzipCommand, $out, $code);
-            @unlink($tempFile);
-            if ($code !== 0) {
-                @exec('rm -rf ' . escapeshellarg($tempDir));
-
-                return ApiResponse::error('Failed to extract addon package', 'ADDON_EXTRACT_FAILED', 422);
-            }
-
-            return $this->performAddonInstall($tempDir, $identifier);
-        } catch (\Exception $e) {
-            return ApiResponse::error('Failed to install addon: ' . $e->getMessage(), 500);
-        }
-    }
-
     #[OA\Post(
         path: '/api/admin/plugins/{identifier}/uninstall',
         summary: 'Uninstall addon',
@@ -809,7 +501,7 @@ class PluginsController
             $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true);
             @mkdir($tempDir, 0755, true);
             $exportFile = $tempDir . '/' . $identifier . '.fpa';
-            $pwd = self::PASSWORD;
+            $pwd = CloudPluginsController::PASSWORD;
 
             // Parse .featherexport file for exclusions
             $exclusions = $this->parseFeatherExportIgnore($pluginDir);
@@ -936,7 +628,7 @@ class PluginsController
             // Extract
             $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true);
             @mkdir($tempDir, 0755, true);
-            $pwd = self::PASSWORD;
+            $pwd = CloudPluginsController::PASSWORD;
             $unzipCommand = sprintf('unzip -P %s %s -d %s', escapeshellarg($pwd), escapeshellarg($tempFile), escapeshellarg($tempDir));
             exec($unzipCommand, $out, $code);
             @unlink($tempFile);
@@ -946,7 +638,7 @@ class PluginsController
                 return ApiResponse::error('Failed to extract addon package', 'ADDON_EXTRACT_FAILED', 422);
             }
 
-            return $this->performAddonInstall($tempDir, null);
+            return CloudPluginsController::getInstance()->performAddonInstall($tempDir, null);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to upload install addon: ' . $e->getMessage(), 500);
         }
@@ -1010,7 +702,7 @@ class PluginsController
 
             $tempDir = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true);
             @mkdir($tempDir, 0755, true);
-            $pwd = self::PASSWORD;
+            $pwd = CloudPluginsController::PASSWORD;
             $unzipCommand = sprintf('unzip -P %s %s -d %s', escapeshellarg($pwd), escapeshellarg($tempFile), escapeshellarg($tempDir));
             exec($unzipCommand, $out, $code);
             @unlink($tempFile);
@@ -1020,7 +712,7 @@ class PluginsController
                 return ApiResponse::error('Failed to extract addon package', 'ADDON_EXTRACT_FAILED', 422);
             }
 
-            return $this->performAddonInstall($tempDir, null);
+            return CloudPluginsController::getInstance()->performAddonInstall($tempDir, null);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to install from URL: ' . $e->getMessage(), 500);
         }
@@ -1103,214 +795,5 @@ class PluginsController
         }
 
         return $patterns;
-    }
-
-    /**
-     * Execute addon-provided SQL migrations from the addon's Migrations directory.
-     * Each script will be recorded in featherpanel_migrations with a unique key
-     * in the form addon:{identifier}:{filename} to avoid collisions.
-     *
-     * @return array{executed:int,skipped:int,failed:int,lines:string[]}
-     */
-    private function runAddonMigrations(string $identifier, string $pluginDir): array
-    {
-        $lines = [];
-        $executed = 0;
-        $skipped = 0;
-        $failed = 0;
-
-        try {
-            $dir = rtrim($pluginDir, '/') . '/Migrations';
-            if (!is_dir($dir)) {
-                $lines[] = 'No migrations directory for addon: ' . $identifier;
-
-                return compact('executed', 'skipped', 'failed', 'lines');
-            }
-
-            // Connect to database using env loaded by kernel
-            $db = new Database(
-                $_ENV['DATABASE_HOST'] ?? '127.0.0.1',
-                $_ENV['DATABASE_DATABASE'] ?? '',
-                $_ENV['DATABASE_USER'] ?? '',
-                $_ENV['DATABASE_PASSWORD'] ?? '',
-                (int) ($_ENV['DATABASE_PORT'] ?? 3306)
-            );
-            $pdo = $db->getPdo();
-
-            // Ensure migrations table exists
-            $migrationsSql = "CREATE TABLE IF NOT EXISTS `featherpanel_migrations` (
-				`id` INT NOT NULL AUTO_INCREMENT COMMENT 'The id of the migration!',
-				`script` TEXT NOT NULL COMMENT 'The script to be migrated!',
-				`migrated` ENUM('true','false') NOT NULL DEFAULT 'true' COMMENT 'Did we migrate this already?',
-				`date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'The date from when this was executed!',
-				PRIMARY KEY (`id`)
-			) ENGINE = InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT = 'The migrations table is table where save the sql migrations!';";
-            $pdo->exec($migrationsSql);
-
-            $files = scandir($dir) ?: [];
-            $migrationFiles = array_values(array_filter($files, static function ($file) use ($dir) {
-                return $file !== '.' && $file !== '..' && pathinfo($file, PATHINFO_EXTENSION) === 'sql' && is_file($dir . '/' . $file);
-            }));
-
-            foreach ($migrationFiles as $file) {
-                $path = $dir . '/' . $file;
-                $sql = @file_get_contents($path);
-                $scriptKey = 'addon:' . $identifier . ':' . $file;
-                if ($sql === false) {
-                    $lines[] = '⏭️  Skipped (unreadable): ' . $file;
-                    ++$skipped;
-                    continue;
-                }
-                $stmt = $pdo->prepare("SELECT COUNT(*) FROM featherpanel_migrations WHERE script = :script AND migrated = 'true'");
-                $stmt->execute(['script' => $scriptKey]);
-                if ((int) $stmt->fetchColumn() > 0) {
-                    $lines[] = '⏭️  Skipped (already executed): ' . $file;
-                    ++$skipped;
-                    continue;
-                }
-                try {
-                    $pdo->exec($sql);
-                    $ins = $pdo->prepare('INSERT INTO featherpanel_migrations (script, migrated) VALUES (:script, :migrated)');
-                    $ins->execute(['script' => $scriptKey, 'migrated' => 'true']);
-                    $lines[] = '✅ Executed: ' . $file;
-                    ++$executed;
-                } catch (\Exception $ex) {
-                    $lines[] = '❌ Failed: ' . $file . ' -> ' . $ex->getMessage();
-                    ++$failed;
-                }
-            }
-        } catch (\Exception $e) {
-            $lines[] = '❌ Migration error: ' . $e->getMessage();
-            ++$failed;
-        }
-
-        return compact('executed', 'skipped', 'failed', 'lines');
-    }
-
-    /**
-     * Perform the common installation routine given an extracted addon temp directory.
-     * Handles identifier resolution (from conf.yml if not provided), copying files,
-     * exposing public assets, running migrations, and calling the install hook.
-     */
-    private function performAddonInstall(string $tempDir, ?string $identifier = null): Response
-    {
-        try {
-            if (!defined('APP_ADDONS_DIR')) {
-                define('APP_ADDONS_DIR', dirname(__DIR__, 3) . '/storage/addons');
-            }
-            if (!is_dir(APP_ADDONS_DIR) && !@mkdir(APP_ADDONS_DIR, 0755, true)) {
-                @exec('rm -rf ' . escapeshellarg($tempDir));
-
-                return ApiResponse::error('Failed to prepare addons directory', 'ADDONS_DIR_CREATE_FAILED', 500);
-            }
-
-            $configFile = rtrim($tempDir, '/') . '/conf.yml';
-            if (!file_exists($configFile)) {
-                @exec('rm -rf ' . escapeshellarg($tempDir));
-
-                return ApiResponse::error('Invalid addon: missing conf.yml', 'ADDON_INVALID', 422);
-            }
-
-            if ($identifier === null) {
-                try {
-                    $conf = \Symfony\Component\Yaml\Yaml::parseFile($configFile);
-                    $identifier = $conf['plugin']['identifier'] ?? null;
-                } catch (\Throwable $t) {
-                    @exec('rm -rf ' . escapeshellarg($tempDir));
-
-                    return ApiResponse::error('Failed to parse conf.yml', 'ADDON_CONF_PARSE_FAILED', 422);
-                }
-            }
-
-            if (!$identifier || !preg_match('/^[a-z0-9_\-]+$/', (string) $identifier)) {
-                @exec('rm -rf ' . escapeshellarg($tempDir));
-
-                return ApiResponse::error('Invalid addon identifier in conf.yml', 'ADDON_IDENTIFIER_INVALID', 422);
-            }
-
-            $pluginDir = APP_ADDONS_DIR . '/' . $identifier;
-            if (file_exists($pluginDir)) {
-                @exec('rm -rf ' . escapeshellarg($tempDir));
-
-                return ApiResponse::error('Addon already installed', 'ADDON_EXISTS', 409);
-            }
-            if (!@mkdir($pluginDir, 0755, true)) {
-                @exec('rm -rf ' . escapeshellarg($tempDir));
-
-                return ApiResponse::error('Failed to create addon directory', 'ADDON_DIR_FAILED', 500);
-            }
-
-            $copyCmd = sprintf('cp -r %s/* %s', escapeshellarg($tempDir), escapeshellarg($pluginDir));
-            exec($copyCmd);
-            @exec('rm -rf ' . escapeshellarg($tempDir));
-
-            // Expose public assets at public/addons/{identifier} using ln -s (fallback to copy)
-            $pluginPublic = $pluginDir . '/Public';
-            $publicAddonsBase = dirname(__DIR__, 3) . '/public/addons';
-            if (is_dir($pluginPublic)) {
-                if (!is_dir($publicAddonsBase)) {
-                    @mkdir($publicAddonsBase, 0755, true);
-                }
-                $linkPath = $publicAddonsBase . '/' . $identifier;
-                @exec('rm -rf ' . escapeshellarg($linkPath));
-                $lnCmd = 'ln -s ' . escapeshellarg($pluginPublic) . ' ' . escapeshellarg($linkPath);
-                exec($lnCmd, $lnOut, $lnCode);
-                if ($lnCode !== 0) {
-                    @mkdir($linkPath, 0755, true);
-                    $copyPubCmd = sprintf('cp -r %s/* %s', escapeshellarg($pluginPublic), escapeshellarg($linkPath));
-                    exec($copyPubCmd);
-                }
-            }
-
-            // Expose Frontend/Components at public/components/{identifier} using ln -s (fallback to copy)
-            $pluginComponents = $pluginDir . '/Frontend/Components';
-            if (is_dir($pluginComponents)) {
-                $publicComponentsBase = dirname(__DIR__, 3) . '/public/components';
-
-                // Create /public/components directory if it doesn't exist
-                if (!is_dir($publicComponentsBase)) {
-                    @mkdir($publicComponentsBase, 0755, true);
-                }
-
-                // Create symlink at /public/components/{identifier}
-                $linkPath = $publicComponentsBase . '/' . $identifier;
-                @exec('rm -rf ' . escapeshellarg($linkPath));
-                $lnCmd = 'ln -s ' . escapeshellarg($pluginComponents) . ' ' . escapeshellarg($linkPath);
-                exec($lnCmd, $lnOut, $lnCode);
-
-                // Fallback to copy if symlink fails
-                if ($lnCode !== 0) {
-                    @mkdir($linkPath, 0755, true);
-                    $copyCmd = sprintf('cp -r %s/* %s', escapeshellarg($pluginComponents), escapeshellarg($linkPath));
-                    exec($copyCmd);
-                }
-            }
-
-            // Run migrations
-            $migrationResult = $this->runAddonMigrations($identifier, $pluginDir);
-            if ($migrationResult['failed'] > 0) {
-                return ApiResponse::error('Addon migrations failed', 'ADDON_MIGRATION_FAILED', 422, [
-                    'output' => implode("\n", $migrationResult['lines'] ?? []),
-                ]);
-            }
-
-            // Optional: call plugin install hook if present
-            $phpFiles = glob($pluginDir . '/*.php') ?: [];
-            if (!empty($phpFiles)) {
-                require_once $phpFiles[0];
-                $className = basename($phpFiles[0], '.php');
-                $namespace = 'App\\Addons\\' . $identifier;
-                $full = $namespace . '\\' . $className;
-                if (class_exists($full) && method_exists($full, 'pluginInstall')) {
-                    $full::pluginInstall();
-                }
-            }
-
-            return ApiResponse::success(['identifier' => $identifier], 'Addon installed successfully', 201);
-        } catch (\Exception $e) {
-            @exec('rm -rf ' . escapeshellarg($tempDir));
-
-            return ApiResponse::error('Failed to finalize addon install: ' . $e->getMessage(), 500);
-        }
     }
 }

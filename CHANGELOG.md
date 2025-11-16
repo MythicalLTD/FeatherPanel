@@ -28,6 +28,7 @@
 - Introduced context-aware tooltips for various admin actions throughout FeatherPanel menus, providing clearer guidance and an improved user experience!
 - Two-factor setup now redirects to the intended page after successful verification (short delay for UX). by @puttydotexe 
 - OTP input updated to allow numeric entry with autocomplete for easier entry on devices. by  @puttydotexe
+- Brand new plugin marketplace system with powerful update support! The marketplace now offers advanced search and filtering options (search by tags, verified status, sorting, and more), making it much easier to discover exactly what you need. The system now enforces compatibility and permission checks, preventing users from installing plugins that are incompatible with their panel version or missing required dependencies, for a safer and smoother experience.
 
 ### Improved
 - Improved how user emails are fetched: they now use a dedicated paginated route to avoid excessive memory usage and return results more efficiently.

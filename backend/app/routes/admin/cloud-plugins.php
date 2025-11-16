@@ -30,116 +30,82 @@
 
 use App\App;
 use App\Permissions;
-use App\Controllers\Admin\PluginsController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Admin\CloudPluginsController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-plugins',
-        '/api/admin/plugins',
+        'admin-cloud-plugins-list',
+        '/api/admin/plugins/online/list',
         function (Request $request) {
-            return (new PluginsController())->index($request);
+            return (new CloudPluginsController())->list($request);
         },
         Permissions::ADMIN_PLUGINS_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-plugins-config',
-        '/api/admin/plugins/{identifier}/config',
-        function (Request $request, array $args) {
-            $identifier = $args['identifier'] ?? null;
-            if (!$identifier || !is_string($identifier)) {
-                return \App\Helpers\ApiResponse::error('Missing or invalid identifier', 'INVALID_IDENTIFIER', 400);
-            }
-
-            return (new PluginsController())->getConfig($request, $identifier);
+        'admin-cloud-plugins-popular',
+        '/api/admin/plugins/online/popular',
+        function (Request $request) {
+            return (new CloudPluginsController())->popular($request);
         },
         Permissions::ADMIN_PLUGINS_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-plugins-settings-set',
-        '/api/admin/plugins/{identifier}/settings/set',
+        'admin-cloud-plugins-show',
+        '/api/admin/plugins/online/{identifier}',
         function (Request $request, array $args) {
             $identifier = $args['identifier'] ?? null;
             if (!$identifier || !is_string($identifier)) {
                 return \App\Helpers\ApiResponse::error('Missing or invalid identifier', 'INVALID_IDENTIFIER', 400);
             }
 
-            return (new PluginsController())->setSettings($request, $identifier);
+            return (new CloudPluginsController())->show($request, $identifier);
         },
-        Permissions::ADMIN_PLUGINS_MANAGE,
-        ['POST']
+        Permissions::ADMIN_PLUGINS_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-plugins-settings-remove',
-        '/api/admin/plugins/{identifier}/settings/remove',
+        'admin-cloud-plugins-check',
+        '/api/admin/plugins/online/{identifier}/check',
         function (Request $request, array $args) {
             $identifier = $args['identifier'] ?? null;
             if (!$identifier || !is_string($identifier)) {
                 return \App\Helpers\ApiResponse::error('Missing or invalid identifier', 'INVALID_IDENTIFIER', 400);
             }
 
-            return (new PluginsController())->removeSettings($request, $identifier);
+            return (new CloudPluginsController())->checkRequirements($request, $identifier);
         },
-        Permissions::ADMIN_PLUGINS_MANAGE,
-        ['POST']
+        Permissions::ADMIN_PLUGINS_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-plugins-uninstall',
-        '/api/admin/plugins/{identifier}/uninstall',
+        'admin-cloud-plugins-tag',
+        '/api/admin/plugins/online/tag/{tag}',
         function (Request $request, array $args) {
-            $identifier = $args['identifier'] ?? null;
-            if (!$identifier || !is_string($identifier)) {
-                return \App\Helpers\ApiResponse::error('Missing or invalid identifier', 'INVALID_IDENTIFIER', 400);
+            $tag = $args['tag'] ?? null;
+            if (!$tag || !is_string($tag)) {
+                return \App\Helpers\ApiResponse::error('Missing or invalid tag', 'INVALID_TAG', 400);
             }
 
-            return (new PluginsController())->uninstall($request, $identifier);
+            return (new CloudPluginsController())->searchByTag($request, $tag);
         },
-        Permissions::ADMIN_PLUGINS_MANAGE,
-        ['POST']
+        Permissions::ADMIN_PLUGINS_VIEW,
     );
 
     App::getInstance(true)->registerAdminRoute(
         $routes,
-        'admin-plugins-export',
-        '/api/admin/plugins/{identifier}/export',
-        function (Request $request, array $args) {
-            $identifier = $args['identifier'] ?? null;
-            if (!$identifier || !is_string($identifier)) {
-                return \App\Helpers\ApiResponse::error('Missing or invalid identifier', 'INVALID_IDENTIFIER', 400);
-            }
-
-            return (new PluginsController())->export($request, $identifier);
-        },
-        Permissions::ADMIN_PLUGINS_MANAGE,
-    );
-
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-plugins-upload-install',
-        '/api/admin/plugins/upload/install',
+        'admin-cloud-plugins-install',
+        '/api/admin/plugins/online/install',
         function (Request $request) {
-            return (new PluginsController())->uploadInstall($request);
-        },
-        Permissions::ADMIN_PLUGINS_MANAGE,
-        ['POST']
-    );
-
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-plugins-upload-install-url',
-        '/api/admin/plugins/upload/install-url',
-        function (Request $request) {
-            return (new PluginsController())->uploadInstallFromUrl($request);
+            return (new CloudPluginsController())->install($request);
         },
         Permissions::ADMIN_PLUGINS_MANAGE,
         ['POST']

@@ -1269,6 +1269,17 @@ class {$className} implements AppPlugin
     /**
      * @inheritDoc
      */
+    public static function pluginUpdate(?string \$oldVersion, ?string \$newVersion): void
+    {
+        // Plugin update logic
+        // Migrate data, update configurations, etc.
+        // \$oldVersion contains the previous version (e.g., '1.0.0')
+        // \$newVersion contains the new version being installed (e.g., '1.0.1')
+    }
+
+    /**
+     * @inheritDoc
+     */
     public static function pluginUninstall(): void
     {
         // Plugin uninstallation logic

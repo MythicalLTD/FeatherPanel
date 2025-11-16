@@ -34,14 +34,6 @@
                             Manage installed plugins and their configurations
                         </p>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <Tabs v-model="activeTab" class="w-full sm:w-auto">
-                            <TabsList class="grid w-full grid-cols-2 sm:inline-flex">
-                                <TabsTrigger value="installed" class="text-xs sm:text-sm">Installed</TabsTrigger>
-                                <TabsTrigger value="online" class="text-xs sm:text-sm">Online</TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                    </div>
                 </div>
 
                 <!-- Banner -->
@@ -60,575 +52,256 @@
                     </div>
                 </div>
 
-                <Tabs v-model="activeTab">
-                    <TabsContent value="installed">
-                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-4">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    class="w-full sm:w-auto"
-                                    data-umami-event="Refresh plugins"
-                                    @click="fetchPlugins"
-                                >
-                                    <RefreshCw class="h-4 w-4 mr-2" />
-                                    Refresh
-                                </Button>
-                                <label class="inline-block w-full sm:w-auto">
-                                    <Button
-                                        variant="outline"
-                                        as="span"
-                                        class="w-full sm:w-auto"
-                                        data-umami-event="Upload plugin"
-                                    >
-                                        <Upload class="h-4 w-4 mr-2" />
-                                        <span class="hidden sm:inline">Upload Plugin (.fpa)</span>
-                                        <span class="sm:hidden">Upload (.fpa)</span>
-                                    </Button>
-                                    <input type="file" accept=".fpa" class="hidden" @change="onUploadPlugin" />
-                                </label>
-                            </div>
-                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                                <Input
-                                    v-model="installUrl"
-                                    placeholder="Install from URL (.fpa)"
-                                    class="w-full sm:w-72"
-                                />
-                                <Button
-                                    :disabled="installingFromUrl || !installUrl"
-                                    class="w-full sm:w-auto"
-                                    data-umami-event="Install plugin from URL"
-                                    :data-umami-event-url="installUrl"
-                                    @click="openUrlInstallDialog"
-                                >
-                                    <CloudDownload class="h-4 w-4 mr-2" />
-                                    <span class="hidden sm:inline">{{
-                                        installingFromUrl ? 'Installing...' : 'Install URL'
-                                    }}</span>
-                                    <span class="sm:hidden">{{ installingFromUrl ? 'Installing...' : 'Install' }}</span>
-                                </Button>
-                            </div>
-                        </div>
-
-                        <div
-                            v-if="plugins.length > 0"
-                            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
-                        >
-                            <Card
-                                v-for="plugin in plugins"
-                                :key="plugin.identifier"
-                                class="group hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col"
-                                @click="openPluginConfig(plugin)"
-                            >
-                                <div class="p-4 sm:p-6 flex flex-col flex-1">
-                                    <!-- Header Section -->
-                                    <div class="flex items-start gap-3 mb-3">
-                                        <div
-                                            class="h-12 w-12 rounded-lg bg-linear-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden shrink-0 border border-primary/10"
-                                        >
-                                            <img
-                                                v-if="plugin.icon"
-                                                :src="plugin.icon"
-                                                :alt="plugin.name || plugin.identifier"
-                                                class="h-8 w-8 object-contain"
-                                            />
-                                            <component
-                                                :is="getPluginIcon(plugin)"
-                                                v-else
-                                                class="h-6 w-6 text-primary"
-                                            />
-                                        </div>
-                                        <div class="min-w-0 flex-1">
-                                            <h3 class="font-semibold text-base sm:text-lg truncate mb-0.5">
-                                                {{ plugin.name || plugin.identifier }}
-                                            </h3>
-                                            <p class="text-xs text-muted-foreground truncate mb-1">
-                                                {{ plugin.identifier }}
-                                            </p>
-                                            <Badge variant="secondary" class="text-xs">
-                                                v{{ plugin.version || 'Unknown' }}
-                                            </Badge>
-                                        </div>
-                                    </div>
-
-                                    <!-- Description -->
-                                    <p class="text-sm text-muted-foreground mb-4 line-clamp-2 min-h-10">
-                                        {{ plugin.description || 'No description available' }}
-                                    </p>
-
-                                    <!-- Metadata Section -->
-                                    <div class="space-y-2.5 mb-4 flex-1">
-                                        <div v-if="plugin.author" class="flex items-center gap-2 text-sm">
-                                            <User class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                            <span class="truncate text-muted-foreground">{{ plugin.author }}</span>
-                                        </div>
-
-                                        <!-- Flags and Target in same row -->
-                                        <div class="flex flex-wrap items-center gap-1.5">
-                                            <Badge v-if="plugin.target" variant="outline" class="text-xs">
-                                                {{ plugin.target }}
-                                            </Badge>
-                                            <Badge
-                                                v-for="flag in plugin.flags"
-                                                :key="flag"
-                                                variant="secondary"
-                                                class="text-xs"
-                                            >
-                                                {{ flag }}
-                                            </Badge>
-                                        </div>
-
-                                        <div v-if="plugin.website" class="flex items-center gap-2 text-sm">
-                                            <Globe class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                            <a
-                                                :href="plugin.website"
-                                                target="_blank"
-                                                class="text-primary hover:underline text-xs truncate"
-                                                @click.stop
-                                            >
-                                                Visit Website
-                                            </a>
-                                        </div>
-
-                                        <!-- Status Alerts -->
-                                        <div
-                                            v-if="plugin.unmetDependencies && plugin.unmetDependencies.length > 0"
-                                            class="rounded-md border p-2.5 text-xs border-yellow-500/30 bg-yellow-500/10 dark:bg-yellow-500/5"
-                                        >
-                                            <div class="font-medium text-yellow-800 dark:text-yellow-600 mb-1.5">
-                                                Missing Dependencies
-                                            </div>
-                                            <div class="flex flex-wrap gap-1">
-                                                <Badge
-                                                    v-for="dep in plugin.unmetDependencies"
-                                                    :key="dep"
-                                                    variant="outline"
-                                                    class="text-[10px] border-yellow-600/30 bg-yellow-100/50 dark:bg-yellow-900/20"
-                                                >
-                                                    {{ dep }}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                        <div
-                                            v-else-if="plugin.missingConfigs && plugin.missingConfigs.length > 0"
-                                            class="rounded-md border p-2.5 text-xs border-blue-500/30 bg-blue-500/10 dark:bg-blue-500/5"
-                                        >
-                                            <div class="font-medium text-blue-800 dark:text-blue-600 mb-1.5">
-                                                Needs Configuration
-                                            </div>
-                                            <div class="flex flex-wrap gap-1">
-                                                <Badge
-                                                    v-for="cfg in plugin.missingConfigs"
-                                                    :key="String(cfg)"
-                                                    variant="outline"
-                                                    class="text-[10px] border-blue-600/30 bg-blue-100/50 dark:bg-blue-900/20"
-                                                >
-                                                    {{ String(cfg) }}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                        <div
-                                            v-else-if="plugin.loaded === false"
-                                            class="rounded-md border border-muted bg-muted/30 p-2.5 text-xs text-muted-foreground"
-                                        >
-                                            <span class="font-medium">Not loaded</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Actions Section -->
-                                    <div class="flex flex-col gap-2 mt-auto pt-4 border-t border-border/50">
-                                        <Button
-                                            size="sm"
-                                            variant="default"
-                                            class="w-full justify-center hover:scale-105 hover:shadow-md transition-all duration-200"
-                                            title="Configure plugin"
-                                            @click.stop="openPluginConfig(plugin)"
-                                        >
-                                            <Settings class="h-4 w-4 mr-2" />
-                                            Configure
-                                        </Button>
-                                        <div class="grid grid-cols-3 gap-2">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                class="w-full justify-center hover:scale-110 hover:shadow-md transition-all duration-200"
-                                                title="View plugin information"
-                                                @click.stop="viewPluginInfo(plugin)"
-                                            >
-                                                <Info class="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                class="w-full justify-center hover:scale-110 hover:shadow-md transition-all duration-200"
-                                                title="Export plugin"
-                                                @click.stop="onExport(plugin)"
-                                            >
-                                                <Download class="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="destructive"
-                                                class="w-full justify-center hover:scale-110 hover:shadow-md transition-all duration-200"
-                                                title="Uninstall plugin"
-                                                @click.stop="requestUninstall(plugin)"
-                                            >
-                                                <Trash2 class="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </Card>
-                        </div>
-
-                        <div v-else class="text-center py-12">
-                            <div class="h-24 w-24 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                                <Puzzle class="h-12 w-12 text-muted-foreground" />
-                            </div>
-                            <h3 class="text-lg font-semibold mb-2">No Plugins Installed</h3>
-                            <p class="text-muted-foreground mb-4">No plugins are currently installed on your system.</p>
+                <div>
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-4">
+                        <div class="flex flex-wrap items-center gap-2">
                             <Button
-                                class="hover:scale-105 hover:shadow-md transition-all duration-200"
-                                title="Refresh plugins list"
+                                variant="outline"
+                                class="w-full sm:w-auto"
+                                data-umami-event="Refresh plugins"
                                 @click="fetchPlugins"
                             >
                                 <RefreshCw class="h-4 w-4 mr-2" />
                                 Refresh
                             </Button>
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="online">
-                        <!-- Publish Banner (dismissible) -->
-                        <div v-if="showPluginsOnlineBanner" class="mb-4">
-                            <div
-                                class="rounded-xl p-5 bg-linear-to-r from-indigo-600 via-purple-600 to-fuchsia-600 text-white shadow relative"
-                            >
-                                <button
-                                    class="absolute top-3 right-3 text-white/80 hover:text-white text-xs underline"
-                                    @click="dismissPluginsOnlineBanner"
+                            <label class="inline-block w-full sm:w-auto">
+                                <Button
+                                    variant="outline"
+                                    as="span"
+                                    class="w-full sm:w-auto"
+                                    data-umami-event="Upload plugin"
                                 >
-                                    Dismiss
-                                </button>
-                                <div class="flex flex-col gap-3">
-                                    <div class="text-lg font-semibold leading-snug">Built a plugin?</div>
-                                    <p class="text-white/90 text-sm">
-                                        Share it with the community on our cloud platform. Our team aims to review and
-                                        publish within 48 hours.
-                                    </p>
-                                    <div class="flex items-center gap-2">
-                                        <Button
-                                            as="a"
-                                            href="https://cloud.mythical.systems"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            size="sm"
-                                            class="bg-white text-indigo-700 hover:bg-white/90"
-                                        >
-                                            Publish Plugin
-                                        </Button>
-                                        <Button
-                                            as="a"
-                                            href="https://cloud.mythical.systems"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            size="sm"
-                                            variant="secondary"
-                                            class="bg-white/15 hover:bg-white/20 text-white"
-                                        >
-                                            Learn more
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
+                                    <Upload class="h-4 w-4 mr-2" />
+                                    <span class="hidden sm:inline">Upload Plugin (.fpa)</span>
+                                    <span class="sm:hidden">Upload (.fpa)</span>
+                                </Button>
+                                <input type="file" accept=".fpa" class="hidden" @change="onUploadPlugin" />
+                            </label>
                         </div>
-                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
-                            <div class="flex items-center gap-2">
-                                <div class="relative flex-1 sm:flex-none">
-                                    <Input
-                                        v-model="onlineSearch"
-                                        placeholder="Search online addons..."
-                                        class="pr-10 w-full sm:w-64"
-                                        @keyup.enter="submitOnlineSearch"
-                                    />
-                                    <button
-                                        class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
-                                        @click="submitOnlineSearch"
-                                    >
-                                        <CloudDownload class="h-4 w-4" />
-                                    </button>
-                                </div>
-                            </div>
-                            <div v-if="onlinePagination" class="text-xs text-muted-foreground text-center sm:text-left">
-                                Page {{ currentOnlinePage }} / {{ onlinePagination.total_pages }} •
-                                {{ onlinePagination.total_records }} results
-                            </div>
-                        </div>
-
-                        <div v-if="onlineLoading" class="flex items-center justify-center py-8">
-                            <div class="flex items-center gap-3">
-                                <div
-                                    class="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"
-                                ></div>
-                                <span class="text-muted-foreground">Loading online addons...</span>
-                            </div>
-                        </div>
-                        <div v-else-if="onlineError" class="text-center py-8">
-                            <AlertCircle class="h-8 w-8 mx-auto mb-2 text-destructive" />
-                            <p class="text-destructive">{{ onlineError }}</p>
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                            <Input v-model="installUrl" placeholder="Install from URL (.fpa)" class="w-full sm:w-72" />
                             <Button
-                                size="sm"
-                                variant="outline"
-                                class="mt-2 hover:scale-110 hover:shadow-md transition-all duration-200"
-                                title="Retry loading online plugins"
-                                @click="fetchOnlineAddons()"
+                                :disabled="installingFromUrl || !installUrl"
+                                class="w-full sm:w-auto"
+                                data-umami-event="Install plugin from URL"
+                                :data-umami-event-url="installUrl"
+                                @click="openUrlInstallDialog"
                             >
-                                Try Again
+                                <CloudDownload class="h-4 w-4 mr-2" />
+                                <span class="hidden sm:inline">{{
+                                    installingFromUrl ? 'Installing...' : 'Install URL'
+                                }}</span>
+                                <span class="sm:hidden">{{ installingFromUrl ? 'Installing...' : 'Install' }}</span>
                             </Button>
                         </div>
-                        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <Card
-                                v-for="addon in onlineAddons"
-                                :key="addon.identifier"
-                                class="hover:shadow-lg transition-all duration-200 flex flex-col"
-                            >
-                                <div class="p-4 sm:p-5 flex flex-col flex-1">
-                                    <!-- Header Section -->
-                                    <div class="flex items-start gap-3 mb-3">
-                                        <div
-                                            class="h-12 w-12 rounded-lg bg-linear-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden shrink-0 border border-primary/10"
-                                        >
-                                            <img
-                                                v-if="addon.icon"
-                                                :src="addon.icon"
-                                                :alt="addon.name"
-                                                class="h-8 w-8 object-contain"
-                                            />
-                                            <Puzzle v-else class="h-5 w-5 text-muted-foreground" />
-                                        </div>
-                                        <div class="min-w-0 flex-1">
-                                            <h3 class="font-semibold text-base truncate mb-0.5">{{ addon.name }}</h3>
-                                            <p class="text-xs text-muted-foreground truncate mb-1">
-                                                {{ addon.identifier }}
-                                            </p>
-                                            <div class="flex items-center gap-1.5 flex-wrap">
-                                                <Badge
-                                                    v-if="addon.latest_version?.version"
-                                                    variant="secondary"
-                                                    class="text-xs"
-                                                >
-                                                    v{{ addon.latest_version.version }}
-                                                </Badge>
-                                                <Badge
-                                                    v-if="addon.verified"
-                                                    variant="secondary"
-                                                    class="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700"
-                                                >
-                                                    ✓ Verified
-                                                </Badge>
-                                                <Badge
-                                                    v-else
-                                                    variant="outline"
-                                                    class="text-xs border-yellow-500/50 text-yellow-700 dark:text-yellow-500"
-                                                >
-                                                    Unverified
-                                                </Badge>
-                                                <Badge
-                                                    v-if="addon.premium === 1"
-                                                    class="text-xs bg-linear-to-r from-yellow-500 to-amber-600 text-white border-0"
-                                                >
-                                                    Premium
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                    </div>
+                    </div>
 
-                                    <!-- Description -->
-                                    <p class="text-sm text-muted-foreground mb-3 line-clamp-2 min-h-10">
-                                        {{ addon.description || 'No description available' }}
-                                    </p>
-
-                                    <!-- Warning for unverified -->
+                    <div
+                        v-if="plugins.length > 0"
+                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+                    >
+                        <Card
+                            v-for="plugin in plugins"
+                            :key="plugin.identifier"
+                            class="group hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col"
+                            @click="openPluginConfig(plugin)"
+                        >
+                            <div class="p-4 sm:p-6 flex flex-col flex-1">
+                                <!-- Header Section -->
+                                <div class="flex items-start gap-3 mb-3">
                                     <div
-                                        v-if="!addon.verified"
-                                        class="mb-3 text-xs text-yellow-700 dark:text-yellow-600 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 rounded-md p-2"
+                                        class="h-12 w-12 rounded-lg bg-linear-to-br from-primary/10 to-primary/5 flex items-center justify-center overflow-hidden shrink-0 border border-primary/10"
                                     >
-                                        ⚠️ Unverified addon - review source before installing
+                                        <img
+                                            v-if="plugin.icon"
+                                            :src="plugin.icon"
+                                            :alt="plugin.name || plugin.identifier"
+                                            class="h-8 w-8 object-contain"
+                                        />
+                                        <component :is="getPluginIcon(plugin)" v-else class="h-6 w-6 text-primary" />
                                     </div>
-
-                                    <!-- Premium Price -->
-                                    <div v-if="addon.premium === 1 && addon.premium_price" class="mb-3">
-                                        <div
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-linear-to-r from-yellow-500/10 to-amber-600/10 border border-yellow-500/30"
-                                        >
-                                            <span class="text-base font-bold text-yellow-700 dark:text-yellow-500"
-                                                >€{{ addon.premium_price }}</span
-                                            >
-                                            <span class="text-xs text-muted-foreground">EUR</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Metadata Section -->
-                                    <div class="space-y-2 mb-3 flex-1">
-                                        <div v-if="addon.author" class="flex items-center gap-2 text-sm">
-                                            <User class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                            <span class="truncate text-muted-foreground">{{ addon.author }}</span>
-                                        </div>
-
-                                        <!-- Tags -->
-                                        <div v-if="addon.tags && addon.tags.length > 0" class="flex flex-wrap gap-1">
-                                            <Badge
-                                                v-for="tag in addon.tags.slice(0, 3)"
-                                                :key="tag"
-                                                variant="outline"
-                                                class="text-xs"
-                                            >
-                                                #{{ tag }}
-                                            </Badge>
-                                            <Badge v-if="addon.tags.length > 3" variant="outline" class="text-xs">
-                                                +{{ addon.tags.length - 3 }}
-                                            </Badge>
-                                        </div>
-
-                                        <!-- Stats -->
-                                        <div class="flex items-center justify-between text-xs text-muted-foreground">
-                                            <span v-if="addon.downloads">
-                                                <CloudDownload class="h-3 w-3 inline mr-1" />{{ addon.downloads }}
-                                                downloads
-                                            </span>
-                                            <a
-                                                v-if="addon.website"
-                                                :href="addon.website"
-                                                target="_blank"
-                                                class="text-primary hover:underline flex items-center gap-1"
-                                            >
-                                                <Globe class="h-3 w-3" />
-                                                Website
-                                            </a>
-                                        </div>
-                                    </div>
-
-                                    <!-- Actions Section -->
-                                    <div class="mt-auto pt-3 border-t border-border/50">
-                                        <template v-if="installedIds.has(addon.identifier)">
-                                            <Button size="sm" variant="outline" disabled class="w-full">
-                                                ✓ Installed
-                                            </Button>
-                                        </template>
-                                        <template v-else-if="addon.premium === 1">
-                                            <Button
-                                                size="sm"
-                                                as="a"
-                                                :href="addon.premium_link || '#'"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                class="w-full bg-linear-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 hover:scale-105 hover:shadow-md transition-all duration-200 text-white"
-                                                title="Purchase premium plugin"
-                                            >
-                                                Purchase Plugin
-                                            </Button>
-                                        </template>
-                                        <template v-else>
-                                            <Button
-                                                size="sm"
-                                                class="w-full hover:scale-105 hover:shadow-md transition-all duration-200"
-                                                :disabled="installingOnlineId === addon.identifier"
-                                                :title="
-                                                    installingOnlineId === addon.identifier
-                                                        ? 'Installing...'
-                                                        : 'Install plugin'
-                                                "
-                                                @click="openOnlineInstallDialog(addon)"
-                                            >
-                                                <div
-                                                    v-if="installingOnlineId === addon.identifier"
-                                                    class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
-                                                ></div>
-                                                {{
-                                                    installingOnlineId === addon.identifier
-                                                        ? 'Installing...'
-                                                        : 'Install Plugin'
-                                                }}
-                                            </Button>
-                                        </template>
+                                    <div class="min-w-0 flex-1">
+                                        <h3 class="font-semibold text-base sm:text-lg truncate mb-0.5">
+                                            {{ plugin.name || plugin.identifier }}
+                                        </h3>
+                                        <p class="text-xs text-muted-foreground truncate mb-1">
+                                            {{ plugin.identifier }}
+                                        </p>
+                                        <Badge variant="secondary" class="text-xs">
+                                            v{{ plugin.version || 'Unknown' }}
+                                        </Badge>
                                     </div>
                                 </div>
-                            </Card>
-                        </div>
 
-                        <div
-                            v-if="onlinePagination && onlinePagination.total_pages > 1 && onlineAddons.length > 0"
-                            class="mt-6 flex justify-center"
-                        >
-                            <div class="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    :disabled="currentOnlinePage === 1 || onlineLoading"
-                                    @click="changeOnlinePage(currentOnlinePage - 1)"
-                                >
-                                    <ChevronLeft class="h-4 w-4 mr-1" />
-                                    Previous
-                                </Button>
-                                <template
-                                    v-for="(page, index) in getVisibleOnlinePages()"
-                                    :key="`addon-page-${page}-${index}`"
-                                >
-                                    <span
-                                        v-if="typeof page === 'string'"
-                                        class="px-2 text-sm text-muted-foreground select-none"
-                                    >
-                                        &hellip;
-                                    </span>
-                                    <Button
-                                        v-else
-                                        size="sm"
-                                        :variant="page === currentOnlinePage ? 'default' : 'outline'"
-                                        :disabled="page === currentOnlinePage"
-                                        @click="changeOnlinePage(page)"
-                                    >
-                                        {{ page }}
-                                    </Button>
-                                </template>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    :disabled="
-                                        !onlinePagination ||
-                                        currentOnlinePage === onlinePagination.total_pages ||
-                                        onlineLoading
-                                    "
-                                    @click="changeOnlinePage(currentOnlinePage + 1)"
-                                >
-                                    Next
-                                    <ChevronRight class="h-4 w-4 ml-1" />
-                                </Button>
-                            </div>
-                        </div>
-                    </TabsContent>
-                </Tabs>
-
-                <!-- Plugins help cards under the tabs -->
-                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <Card>
-                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-                            <Globe class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                            <div>
-                                <div class="font-semibold text-foreground mb-1">Online Repository</div>
-                                <p>
-                                    Like spells, there's an online repo with community plugins and even paid options.
-                                    Browse and install directly from the Online tab.
+                                <!-- Description -->
+                                <p class="text-sm text-muted-foreground mb-4 line-clamp-2 min-h-10">
+                                    {{ plugin.description || 'No description available' }}
                                 </p>
+
+                                <!-- Metadata Section -->
+                                <div class="space-y-2.5 mb-4 flex-1">
+                                    <div v-if="plugin.author" class="flex items-center gap-2 text-sm">
+                                        <User class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                        <span class="truncate text-muted-foreground">{{ plugin.author }}</span>
+                                    </div>
+
+                                    <!-- Flags and Target in same row -->
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        <Badge v-if="plugin.target" variant="outline" class="text-xs">
+                                            {{ plugin.target }}
+                                        </Badge>
+                                        <Badge
+                                            v-for="flag in plugin.flags"
+                                            :key="flag"
+                                            variant="secondary"
+                                            class="text-xs"
+                                        >
+                                            {{ flag }}
+                                        </Badge>
+                                    </div>
+
+                                    <div v-if="plugin.website" class="flex items-center gap-2 text-sm">
+                                        <Globe class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                        <a
+                                            :href="plugin.website"
+                                            target="_blank"
+                                            class="text-primary hover:underline text-xs truncate"
+                                            @click.stop
+                                        >
+                                            Visit Website
+                                        </a>
+                                    </div>
+
+                                    <!-- Status Alerts -->
+                                    <div
+                                        v-if="plugin.unmetDependencies && plugin.unmetDependencies.length > 0"
+                                        class="rounded-md border p-2.5 text-xs border-yellow-500/30 bg-yellow-500/10 dark:bg-yellow-500/5"
+                                    >
+                                        <div class="font-medium text-yellow-800 dark:text-yellow-600 mb-1.5">
+                                            Missing Dependencies
+                                        </div>
+                                        <div class="flex flex-wrap gap-1">
+                                            <Badge
+                                                v-for="dep in plugin.unmetDependencies"
+                                                :key="dep"
+                                                variant="outline"
+                                                class="text-[10px] border-yellow-600/30 bg-yellow-100/50 dark:bg-yellow-900/20"
+                                            >
+                                                {{ dep }}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                    <div
+                                        v-else-if="plugin.missingConfigs && plugin.missingConfigs.length > 0"
+                                        class="rounded-md border p-2.5 text-xs border-blue-500/30 bg-blue-500/10 dark:bg-blue-500/5"
+                                    >
+                                        <div class="font-medium text-blue-800 dark:text-blue-600 mb-1.5">
+                                            Needs Configuration
+                                        </div>
+                                        <div class="flex flex-wrap gap-1">
+                                            <Badge
+                                                v-for="cfg in plugin.missingConfigs"
+                                                :key="String(cfg)"
+                                                variant="outline"
+                                                class="text-[10px] border-blue-600/30 bg-blue-100/50 dark:bg-blue-900/20"
+                                            >
+                                                {{ String(cfg) }}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                    <div
+                                        v-else-if="plugin.loaded === false"
+                                        class="rounded-md border border-muted bg-muted/30 p-2.5 text-xs text-muted-foreground"
+                                    >
+                                        <span class="font-medium">Not loaded</span>
+                                    </div>
+                                </div>
+
+                                <!-- Actions Section -->
+                                <div class="flex flex-col gap-2 mt-auto pt-4 border-t border-border/50">
+                                    <Button
+                                        size="sm"
+                                        variant="default"
+                                        class="w-full justify-center hover:scale-105 hover:shadow-md transition-all duration-200"
+                                        title="Configure plugin"
+                                        @click.stop="openPluginConfig(plugin)"
+                                    >
+                                        <Settings class="h-4 w-4 mr-2" />
+                                        Configure
+                                    </Button>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            class="w-full justify-center hover:scale-110 hover:shadow-md transition-all duration-200"
+                                            title="View plugin information"
+                                            @click.stop="viewPluginInfo(plugin)"
+                                        >
+                                            <Info class="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            class="w-full justify-center hover:scale-110 hover:shadow-md transition-all duration-200"
+                                            title="Export plugin"
+                                            @click.stop="onExport(plugin)"
+                                        >
+                                            <Download class="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            class="w-full justify-center hover:scale-110 hover:shadow-md transition-all duration-200"
+                                            title="Uninstall plugin"
+                                            @click.stop="requestUninstall(plugin)"
+                                        >
+                                            <Trash2 class="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
+                        </Card>
+                    </div>
+
+                    <div v-else class="text-center py-12">
+                        <div class="h-24 w-24 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                            <Puzzle class="h-12 w-12 text-muted-foreground" />
                         </div>
-                    </Card>
+                        <h3 class="text-lg font-semibold mb-2">No Plugins Installed</h3>
+                        <p class="text-muted-foreground mb-4">No plugins are currently installed on your system.</p>
+                        <Button
+                            class="hover:scale-105 hover:shadow-md transition-all duration-200"
+                            title="Refresh plugins list"
+                            @click="fetchPlugins"
+                        >
+                            <RefreshCw class="h-4 w-4 mr-2" />
+                            Refresh
+                        </Button>
+                    </div>
+                </div>
+
+                <!-- Plugins help cards -->
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <Card>
                         <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
                             <Upload class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                             <div>
                                 <div class="font-semibold text-foreground mb-1">Install & Upload</div>
                                 <p>
-                                    Install from the repo or upload .fpa files via the GUI. You can also install via a
-                                    direct URL. Use the Installed tab actions to configure or export.
+                                    Upload .fpa files via the GUI or install via a direct URL. Use the actions below to
+                                    configure, export, or uninstall plugins.
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+                    <Card>
+                        <div class="p-4 flex items-start gap-3 text-sm text-muted-foreground">
+                            <Settings class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                            <div>
+                                <div class="font-semibold text-foreground mb-1">Configuration</div>
+                                <p>
+                                    Click on any plugin card to configure its settings. Plugins may require specific
+                                    configuration values to function properly.
                                 </p>
                             </div>
                         </div>
@@ -639,9 +312,8 @@
                             <div>
                                 <div class="font-semibold text-foreground mb-1">Security & Liability</div>
                                 <p>
-                                    Only trust plugins from our official online repo. Installing third‑party code can be
-                                    risky (panel corruption or system compromise). FeatherPanel and its team are not
-                                    liable for what you install or develop.
+                                    Installing third‑party plugins can be risky (panel corruption or system compromise).
+                                    FeatherPanel and its team are not liable for what you install or develop.
                                 </p>
                             </div>
                         </div>
@@ -652,9 +324,8 @@
                             <div>
                                 <div class="font-semibold text-foreground mb-1">A careful reminder</div>
                                 <p>
-                                    The world can be dangerous—always review documentation and source before installing,
-                                    even for plugins from our repo. Keep backups and test changes in a safe environment
-                                    first.
+                                    Always review documentation and source before installing plugins. Keep backups and
+                                    test changes in a safe environment first.
                                 </p>
                             </div>
                         </div>
@@ -991,38 +662,6 @@
             </DrawerContent>
         </Drawer>
 
-        <!-- Confirm Online Install Dialog -->
-        <Dialog v-model:open="confirmOnlineOpen">
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Install Addon</DialogTitle>
-                    <DialogDescription>
-                        {{ selectedAddonForInstall?.name }} ({{ selectedAddonForInstall?.identifier }})
-                    </DialogDescription>
-                </DialogHeader>
-                <div v-if="selectedAddonForInstall && !selectedAddonForInstall.verified" class="text-sm">
-                    <div class="text-yellow-700">
-                        Warning: This addon is not verified. Installing unverified addons can be unsafe.
-                    </div>
-                </div>
-                <DialogFooter>
-                    <DialogClose as-child>
-                        <Button variant="outline">Cancel</Button>
-                    </DialogClose>
-                    <Button
-                        :disabled="installingOnlineId === selectedAddonForInstall?.identifier"
-                        @click="proceedOnlineInstall"
-                    >
-                        <div
-                            v-if="installingOnlineId === selectedAddonForInstall?.identifier"
-                            class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
-                        ></div>
-                        Install
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-
         <!-- Confirm Uninstall Dialog -->
         <Dialog v-model:open="confirmUninstallOpen">
             <DialogContent>
@@ -1118,7 +757,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useSessionStore } from '@/stores/session';
 import { useRouter } from 'vue-router';
 import {
@@ -1134,8 +773,6 @@ import {
     CloudDownload,
     Download,
     Save,
-    ChevronLeft,
-    ChevronRight,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -1150,7 +787,6 @@ import {
     DrawerClose,
 } from '@/components/ui/drawer';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Dialog,
     DialogContent,
@@ -1201,39 +837,6 @@ interface PluginConfig {
     settings: Record<string, string>;
     configSchema?: ConfigField[];
 }
-interface OnlineAddon {
-    id: number;
-    identifier: string;
-    name: string;
-    description?: string;
-    icon?: string | null;
-    website?: string | null;
-    author?: string | null;
-    author_email?: string | null;
-    maintainers: string[];
-    tags: string[];
-    verified: boolean;
-    downloads: number;
-    premium: number; // 0 = free, 1 = premium
-    premium_link?: string | null;
-    premium_price?: string | null;
-    created_at?: string | null;
-    updated_at?: string | null;
-    latest_version: {
-        version?: string | null;
-        download_url?: string | null;
-        file_size?: number | null;
-        created_at?: string | null;
-    };
-}
-
-type OnlinePagination = {
-    current_page: number;
-    total_pages: number;
-    total_records: number;
-};
-
-type OnlinePaginationItem = number | 'ellipsis-left' | 'ellipsis-right';
 
 // Stores
 const sessionStore = useSessionStore();
@@ -1243,9 +846,7 @@ const router = useRouter();
 const loading = ref(true);
 const message = ref<{ type: 'error' | 'success'; text: string } | null>(null);
 const plugins = ref<Plugin[]>([]);
-const activeTab = ref<'installed' | 'online'>('installed');
 const banner = ref<{ type: 'success' | 'warning' | 'error' | 'info'; text: string } | null>(null);
-const showPluginsOnlineBanner = ref(true);
 
 // Drawer states
 const configDrawerOpen = ref(false);
@@ -1261,13 +862,10 @@ const pluginConfig = ref<PluginConfig | null>(null);
 const savingSetting = ref(false);
 const installUrl = ref('');
 const installingFromUrl = ref(false);
-const installedIds = computed<Set<string>>(() => new Set(plugins.value.map((p) => p.identifier)));
 // Dialog states and selections
-const confirmOnlineOpen = ref(false);
 const confirmUninstallOpen = ref(false);
 const confirmUrlOpen = ref(false);
 const confirmUploadOpen = ref(false);
-const selectedAddonForInstall = ref<OnlineAddon | null>(null);
 const selectedPluginForUninstall = ref<Plugin | null>(null);
 const pendingUploadFile = ref<File | null>(null);
 
@@ -1288,6 +886,72 @@ const getPluginIcon = (_plugin: Plugin) => {
     return Settings;
 };
 
+/**
+ * Parse API error response and return a user-friendly error message
+ */
+const parseApiError = async (response: Response): Promise<string> => {
+    try {
+        const errorData = await response.json();
+
+        // Check for detailed error message
+        if (errorData.message && typeof errorData.message === 'string') {
+            // Map common error codes to user-friendly messages
+            const errorCode = errorData.error_code || '';
+            const baseMessage = errorData.message;
+
+            const errorMessages: Record<string, string> = {
+                INVALID_URL:
+                    'The URL you provided is invalid. Please check that it starts with http:// or https:// and is a valid link.',
+                INVALID_IDENTIFIER:
+                    'The plugin identifier is invalid. It should only contain letters, numbers, underscores, and hyphens.',
+                ADDON_EXISTS: 'This plugin is already installed. Please uninstall it first if you want to reinstall.',
+                ADDON_NOT_FOUND: 'The plugin could not be found in the repository.',
+                ADDON_DOWNLOAD_FAILED:
+                    'Failed to download the plugin. Please check your internet connection and try again.',
+                ADDON_EXTRACT_FAILED: 'Failed to extract the plugin package. The file may be corrupted.',
+                ADDON_INVALID: 'The plugin package is invalid or missing required files.',
+                ADDON_CONF_PARSE_FAILED: 'Failed to read the plugin configuration file. The plugin may be corrupted.',
+                ADDON_IDENTIFIER_INVALID: 'The plugin has an invalid identifier in its configuration.',
+                ADDON_DIR_FAILED: 'Failed to create the plugin directory. Please check file permissions.',
+                ADDON_MIGRATION_FAILED:
+                    'The plugin installation failed during database migration. Check the error details.',
+                ADDONS_DIR_CREATE_FAILED: 'Failed to create the plugins directory. Please check file permissions.',
+                PACKAGES_API_FAILED:
+                    'Failed to connect to the plugin repository. Please check your internet connection.',
+                PREMIUM_ADDON_PURCHASE_REQUIRED: 'This is a premium plugin and must be purchased before installation.',
+                ONLINE_LIST_FETCH_FAILED: 'Failed to load the plugin list. Please check your internet connection.',
+                ONLINE_LIST_INVALID: 'Received invalid data from the plugin repository. Please try again later.',
+                SETTING_REMOVE_FAILED: 'Failed to remove the plugin setting.',
+                SETTING_SET_FAILED: 'Failed to save the plugin setting.',
+            };
+
+            // Return mapped message if available, otherwise use the API message
+            if (errorCode && errorMessages[errorCode]) {
+                return errorMessages[errorCode];
+            }
+
+            // If the API message is already user-friendly, use it
+            if (baseMessage && baseMessage.length > 0 && !baseMessage.includes('HTTP')) {
+                return baseMessage;
+            }
+        }
+
+        // Check for errors array with details
+        if (Array.isArray(errorData.errors) && errorData.errors.length > 0) {
+            const firstError = errorData.errors[0];
+            if (firstError.detail && typeof firstError.detail === 'string') {
+                return firstError.detail;
+            }
+        }
+
+        // Fallback to status text
+        return `An error occurred (${response.status}): ${response.statusText || 'Unknown error'}`;
+    } catch {
+        // If we can't parse the error, return a generic message
+        return `An error occurred (${response.status}): ${response.statusText || 'Unknown error'}`;
+    }
+};
+
 // Methods
 const fetchPlugins = async () => {
     loading.value = true;
@@ -1299,7 +963,8 @@ const fetchPlugins = async () => {
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            const errorMessage = await parseApiError(response);
+            throw new Error(errorMessage);
         }
 
         const data = await response.json();
@@ -1450,7 +1115,8 @@ const saveAllSettings = async () => {
             });
 
             if (!response.ok) {
-                throw new Error(`Failed to save setting ${key}: HTTP ${response.status}`);
+                const errorMessage = await parseApiError(response);
+                throw new Error(`Failed to save setting "${key}": ${errorMessage}`);
             }
         });
 
@@ -1495,7 +1161,10 @@ const performUpload = async () => {
             credentials: 'include',
             body: form,
         });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+        if (!resp.ok) {
+            const errorMessage = await parseApiError(resp);
+            throw new Error(errorMessage);
+        }
         await fetchPlugins();
         message.value = { type: 'success', text: 'Plugin installed successfully' };
         banner.value = { type: 'success', text: 'Plugin installed successfully' };
@@ -1505,194 +1174,15 @@ const performUpload = async () => {
             window.location.reload();
         }, 1500);
     } catch (e) {
-        message.value = { type: 'error', text: e instanceof Error ? e.message : 'Upload failed' };
-        banner.value = { type: 'error', text: e instanceof Error ? e.message : 'Upload failed' };
+        const errorMessage = e instanceof Error ? e.message : 'Failed to upload and install plugin';
+        message.value = { type: 'error', text: errorMessage };
+        banner.value = { type: 'error', text: errorMessage };
     } finally {
         confirmUploadOpen.value = false;
         pendingUploadFile.value = null;
         const inputs = document.querySelectorAll('input[type="file"][accept=".fpa"]');
         inputs.forEach((i) => ((i as HTMLInputElement).value = ''));
     }
-};
-
-// Online addons
-const onlineAddons = ref<OnlineAddon[]>([]);
-const onlineLoading = ref(false);
-const onlineError = ref<string | null>(null);
-const installingOnlineId = ref<string | null>(null);
-const onlinePagination = ref<OnlinePagination | null>(null);
-const currentOnlinePage = ref(1);
-const ONLINE_ADDONS_PER_PAGE = 20;
-const onlineSearch = ref('');
-
-function isOnlinePagination(value: unknown): value is OnlinePagination {
-    if (!value || typeof value !== 'object') {
-        return false;
-    }
-
-    const record = value as Record<string, unknown>;
-
-    return (
-        typeof record.current_page === 'number' &&
-        typeof record.total_pages === 'number' &&
-        typeof record.total_records === 'number'
-    );
-}
-
-const fetchOnlineAddons = async (page = currentOnlinePage.value) => {
-    onlineLoading.value = true;
-    onlineError.value = null;
-
-    const params = new URLSearchParams({
-        page: String(page),
-        per_page: String(ONLINE_ADDONS_PER_PAGE),
-    });
-
-    if (onlineSearch.value) {
-        params.set('q', onlineSearch.value);
-    }
-
-    try {
-        const resp = await fetch(`/api/admin/plugins/online/list?${params.toString()}`, { credentials: 'include' });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
-        const data = await resp.json();
-        onlineAddons.value = Array.isArray(data.data?.addons) ? (data.data.addons as OnlineAddon[]) : [];
-
-        const paginationData = data.data?.pagination;
-        if (isOnlinePagination(paginationData)) {
-            onlinePagination.value = paginationData;
-            currentOnlinePage.value = paginationData.current_page;
-        } else {
-            onlinePagination.value = null;
-            currentOnlinePage.value = page;
-        }
-    } catch (e) {
-        onlineError.value = e instanceof Error ? e.message : 'Failed to load online addons';
-    } finally {
-        onlineLoading.value = false;
-    }
-};
-const onlineInstall = async (identifier: string) => {
-    installingOnlineId.value = identifier;
-    try {
-        const resp = await fetch('/api/admin/plugins/online/install', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ identifier }),
-        });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
-        await fetchPlugins();
-        message.value = { type: 'success', text: `Installed ${identifier}` };
-        banner.value = { type: 'success', text: `Installed ${identifier} successfully` };
-
-        // Reload page to load plugin CSS/JS
-        setTimeout(() => {
-            window.location.reload();
-        }, 1500);
-    } catch (e) {
-        message.value = { type: 'error', text: e instanceof Error ? e.message : 'Install failed' };
-        banner.value = { type: 'error', text: e instanceof Error ? e.message : 'Install failed' };
-    } finally {
-        installingOnlineId.value = null;
-    }
-};
-
-const openOnlineInstallDialog = (addon: OnlineAddon) => {
-    selectedAddonForInstall.value = addon;
-    confirmOnlineOpen.value = true;
-};
-const proceedOnlineInstall = async () => {
-    if (!selectedAddonForInstall.value) return;
-    await onlineInstall(selectedAddonForInstall.value.identifier);
-    confirmOnlineOpen.value = false;
-    selectedAddonForInstall.value = null;
-};
-
-function getVisibleOnlinePages(): OnlinePaginationItem[] {
-    const paginationState = onlinePagination.value;
-
-    if (!paginationState) {
-        return [];
-    }
-
-    const totalPages = paginationState.total_pages;
-    const currentPage = currentOnlinePage.value;
-
-    if (totalPages <= 5) {
-        return Array.from({ length: totalPages }, (_, index) => (index + 1) as OnlinePaginationItem);
-    }
-
-    const pages = new Set<number>();
-    pages.add(1);
-    pages.add(totalPages);
-    pages.add(currentPage);
-
-    if (currentPage > 1) {
-        pages.add(currentPage - 1);
-    }
-
-    if (currentPage < totalPages) {
-        pages.add(currentPage + 1);
-    }
-
-    if (currentPage <= 3) {
-        for (let pageNumber = 2; pageNumber <= Math.min(4, totalPages - 1); pageNumber += 1) {
-            pages.add(pageNumber);
-        }
-    } else if (currentPage >= totalPages - 2) {
-        for (let pageNumber = Math.max(totalPages - 3, 2); pageNumber <= totalPages - 1; pageNumber += 1) {
-            pages.add(pageNumber);
-        }
-    }
-
-    const sortedPages = Array.from(pages)
-        .filter((pageNumber) => pageNumber >= 1 && pageNumber <= totalPages)
-        .sort((a, b) => a - b);
-
-    const visible: OnlinePaginationItem[] = [];
-    let hasLeftEllipsis = false;
-    let hasRightEllipsis = false;
-    let previousNumber: number | null = null;
-
-    for (const pageNumber of sortedPages) {
-        if (previousNumber !== null && pageNumber - previousNumber > 1) {
-            if (pageNumber > currentPage) {
-                if (!hasRightEllipsis) {
-                    visible.push('ellipsis-right');
-                    hasRightEllipsis = true;
-                }
-            } else if (!hasLeftEllipsis) {
-                visible.push('ellipsis-left');
-                hasLeftEllipsis = true;
-            }
-        }
-
-        visible.push(pageNumber as OnlinePaginationItem);
-        previousNumber = pageNumber;
-    }
-
-    return visible;
-}
-
-function changeOnlinePage(page: number) {
-    if (onlineLoading.value) {
-        return;
-    }
-
-    const paginationState = onlinePagination.value;
-    const totalPages = paginationState?.total_pages ?? page;
-
-    if (page < 1 || page > totalPages || page === currentOnlinePage.value) {
-        return;
-    }
-
-    fetchOnlineAddons(page);
-}
-
-const submitOnlineSearch = () => {
-    currentOnlinePage.value = 1;
-    fetchOnlineAddons(1);
 };
 
 const installFromUrl = async () => {
@@ -1705,7 +1195,10 @@ const installFromUrl = async () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: installUrl.value }),
         });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+        if (!resp.ok) {
+            const errorMessage = await parseApiError(resp);
+            throw new Error(errorMessage);
+        }
         const data = await resp.json();
         await fetchPlugins();
         message.value = { type: 'success', text: `Installed ${data.data?.identifier || 'plugin'}` };
@@ -1717,8 +1210,9 @@ const installFromUrl = async () => {
             window.location.reload();
         }, 1500);
     } catch (e) {
-        message.value = { type: 'error', text: e instanceof Error ? e.message : 'Install from URL failed' };
-        banner.value = { type: 'error', text: e instanceof Error ? e.message : 'Install from URL failed' };
+        const errorMessage = e instanceof Error ? e.message : 'Failed to install plugin from URL';
+        message.value = { type: 'error', text: errorMessage };
+        banner.value = { type: 'error', text: errorMessage };
     } finally {
         installingFromUrl.value = false;
         confirmUrlOpen.value = false;
@@ -1729,17 +1223,6 @@ const openUrlInstallDialog = () => {
     if (!installUrl.value) return;
     confirmUrlOpen.value = true;
 };
-
-const dismissPluginsOnlineBanner = () => {
-    showPluginsOnlineBanner.value = false;
-    localStorage.setItem('featherpanel_plugins_online_banner_dismissed', 'true');
-};
-
-watch(activeTab, (value) => {
-    if (value === 'online') {
-        submitOnlineSearch();
-    }
-});
 
 // Uninstall plugin
 const requestUninstall = (plugin: Plugin) => {
@@ -1752,7 +1235,10 @@ const onUninstall = async (plugin: Plugin) => {
             method: 'POST',
             credentials: 'include',
         });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+        if (!resp.ok) {
+            const errorMessage = await parseApiError(resp);
+            throw new Error(errorMessage);
+        }
         await fetchPlugins();
         message.value = { type: 'success', text: 'Plugin uninstalled' };
         banner.value = { type: 'success', text: `${plugin.name || plugin.identifier} uninstalled` };
@@ -1762,8 +1248,9 @@ const onUninstall = async (plugin: Plugin) => {
             window.location.reload();
         }, 1500);
     } catch (e) {
-        message.value = { type: 'error', text: e instanceof Error ? e.message : 'Uninstall failed' };
-        banner.value = { type: 'error', text: e instanceof Error ? e.message : 'Uninstall failed' };
+        const errorMessage = e instanceof Error ? e.message : 'Failed to uninstall plugin';
+        message.value = { type: 'error', text: errorMessage };
+        banner.value = { type: 'error', text: errorMessage };
     } finally {
         confirmUninstallOpen.value = false;
         selectedPluginForUninstall.value = null;
@@ -1777,7 +1264,10 @@ const onExport = async (plugin: Plugin) => {
             method: 'GET',
             credentials: 'include',
         });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+        if (!resp.ok) {
+            const errorMessage = await parseApiError(resp);
+            throw new Error(errorMessage);
+        }
         const blob = await resp.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1788,7 +1278,8 @@ const onExport = async (plugin: Plugin) => {
         a.remove();
         URL.revokeObjectURL(url);
     } catch (e) {
-        message.value = { type: 'error', text: e instanceof Error ? e.message : 'Export failed' };
+        const errorMessage = e instanceof Error ? e.message : 'Failed to export plugin';
+        message.value = { type: 'error', text: errorMessage };
     }
 };
 // Lifecycle
@@ -1796,10 +1287,7 @@ onMounted(async () => {
     const ok = await sessionStore.checkSessionOrRedirect(router);
     if (!ok) return;
 
-    const dismissed = localStorage.getItem('featherpanel_plugins_online_banner_dismissed');
-    showPluginsOnlineBanner.value = dismissed !== 'true';
-
-    await Promise.all([fetchPlugins(), fetchOnlineAddons()]);
+    await fetchPlugins();
 });
 </script>
 
