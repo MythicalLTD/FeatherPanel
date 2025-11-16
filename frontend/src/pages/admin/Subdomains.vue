@@ -512,7 +512,7 @@ import {
     fetchAdminSubdomainSettings,
     updateAdminSubdomainSettings,
     fetchAdminSubdomainSpells,
-} from '@/services/subdomains';
+} from '@/lib/subdomains';
 import type {
     SubdomainAdminResponse,
     SubdomainDomain,

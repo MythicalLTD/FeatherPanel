@@ -70,8 +70,8 @@ export interface FeatherPanelPlugin {
 }
 
 // Import types from plugin services
-import type { PluginAPI } from '../services/pluginAPI';
-import type { pluginLoader } from '../services/pluginLoader';
+import type { PluginAPI } from '../lib/pluginAPI';
+import type { pluginLoader } from '../lib/pluginLoader';
 
 // Global plugin registry
 declare global {
