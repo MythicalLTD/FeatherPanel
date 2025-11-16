@@ -49,86 +49,70 @@
 
         <!-- Search and Filters -->
         <div class="flex flex-col gap-4">
-            <div class="relative flex-1">
-                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                    v-model="searchQuery"
-                    :placeholder="$t('servers.searchPlaceholder')"
-                    class="pl-10"
-                    @input="handleSearch"
-                />
-            </div>
-            <div v-if="!isMobile" class="flex items-center gap-2 overflow-x-auto pb-2">
-                <Button
-                    :variant="viewMode === 'folders' ? 'default' : 'outline'"
-                    size="sm"
-                    class="shrink-0"
-                    @click="viewMode = 'folders'"
-                >
-                    <FolderOpen class="h-4 w-4 mr-2" />
-                    <span class="hidden lg:inline">{{ $t('servers.folderView') }}</span>
-                    <span class="lg:hidden">{{ $t('servers.folderView') }}</span>
-                </Button>
-                <Button
-                    :variant="viewMode === 'list' ? 'default' : 'outline'"
-                    size="sm"
-                    class="shrink-0"
-                    @click="viewMode = 'list'"
-                >
-                    <List class="h-4 w-4 mr-2" />
-                    <span class="hidden lg:inline">{{ $t('servers.listView') }}</span>
-                    <span class="lg:hidden">{{ $t('servers.listView') }}</span>
-                </Button>
-                <Button
-                    :variant="viewMode === 'table' ? 'default' : 'outline'"
-                    size="sm"
-                    class="shrink-0"
-                    @click="viewMode = 'table'"
-                >
-                    <Table class="h-4 w-4 mr-2" />
-                    <span class="hidden lg:inline">{{ $t('servers.tableView') }}</span>
-                    <span class="lg:hidden">{{ $t('servers.tableView') }}</span>
-                </Button>
-                <Button
-                    :variant="viewMode === 'compact' ? 'default' : 'outline'"
-                    size="sm"
-                    class="shrink-0"
-                    @click="viewMode = 'compact'"
-                >
-                    <Grid3X3 class="h-4 w-4 mr-2" />
-                    <span class="hidden lg:inline">{{ $t('servers.compactView') }}</span>
-                    <span class="lg:hidden">{{ $t('servers.compactView') }}</span>
-                </Button>
-                <Button
-                    :variant="viewMode === 'detailed' ? 'default' : 'outline'"
-                    size="sm"
-                    class="shrink-0"
-                    @click="viewMode = 'detailed'"
-                >
-                    <LayoutGrid class="h-4 w-4 mr-2" />
-                    <span class="hidden lg:inline">{{ $t('servers.detailedView') }}</span>
-                    <span class="lg:hidden">{{ $t('servers.detailedView') }}</span>
-                </Button>
-                <Button
-                    :variant="viewMode === 'status-grouped' ? 'default' : 'outline'"
-                    size="sm"
-                    class="shrink-0"
-                    @click="viewMode = 'status-grouped'"
-                >
-                    <Layers class="h-4 w-4 mr-2" />
-                    <span class="hidden lg:inline">{{ $t('servers.statusGroupedView') }}</span>
-                    <span class="lg:hidden">{{ $t('servers.statusGroupedView') }}</span>
-                </Button>
-                <Button
-                    :variant="viewMode === 'minimal' ? 'default' : 'outline'"
-                    size="sm"
-                    class="shrink-0"
-                    @click="viewMode = 'minimal'"
-                >
-                    <Minimize2 class="h-4 w-4 mr-2" />
-                    <span class="hidden lg:inline">{{ $t('servers.minimalView') }}</span>
-                    <span class="lg:hidden">{{ $t('servers.minimalView') }}</span>
-                </Button>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <div class="relative flex-1">
+                    <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        v-model="searchQuery"
+                        :placeholder="$t('servers.searchPlaceholder')"
+                        class="pl-10"
+                        @input="handleSearch"
+                    />
+                </div>
+                <div v-if="!isMobile" class="w-full sm:w-auto">
+                    <Select v-model="viewMode">
+                        <SelectTrigger class="w-full sm:w-[220px]">
+                            <div class="flex items-center gap-2 flex-1 min-w-0">
+                                <component :is="getViewModeIcon(viewMode)" class="h-4 w-4 shrink-0" />
+                                <SelectValue :placeholder="$t('servers.selectView')" class="flex-1" />
+                            </div>
+                        </SelectTrigger>
+                        <SelectContent class="w-[220px]">
+                            <SelectItem value="folders">
+                                <div class="flex items-center gap-2">
+                                    <FolderOpen class="h-4 w-4 shrink-0" />
+                                    <span>{{ $t('servers.folderView') }}</span>
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="list">
+                                <div class="flex items-center gap-2">
+                                    <List class="h-4 w-4 shrink-0" />
+                                    <span>{{ $t('servers.listView') }}</span>
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="table">
+                                <div class="flex items-center gap-2">
+                                    <Table class="h-4 w-4 shrink-0" />
+                                    <span>{{ $t('servers.tableView') }}</span>
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="compact">
+                                <div class="flex items-center gap-2">
+                                    <Grid3X3 class="h-4 w-4 shrink-0" />
+                                    <span>{{ $t('servers.compactView') }}</span>
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="detailed">
+                                <div class="flex items-center gap-2">
+                                    <LayoutGrid class="h-4 w-4 shrink-0" />
+                                    <span>{{ $t('servers.detailedView') }}</span>
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="status-grouped">
+                                <div class="flex items-center gap-2">
+                                    <Layers class="h-4 w-4 shrink-0" />
+                                    <span>{{ $t('servers.statusGroupedView') }}</span>
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="minimal">
+                                <div class="flex items-center gap-2">
+                                    <Minimize2 class="h-4 w-4 shrink-0" />
+                                    <span>{{ $t('servers.minimalView') }}</span>
+                                </div>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
         </div>
 
@@ -2485,6 +2469,7 @@ import {
 } from 'lucide-vue-next';
 import axios from 'axios';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
     ContextMenu,
     ContextMenuContent,
@@ -3431,6 +3416,27 @@ function getStatusBgColor(status: string): string {
             return 'bg-red-600';
         default:
             return 'bg-gray-400';
+    }
+}
+
+function getViewModeIcon(mode: string) {
+    switch (mode) {
+        case 'folders':
+            return FolderOpen;
+        case 'list':
+            return List;
+        case 'table':
+            return Table;
+        case 'compact':
+            return Grid3X3;
+        case 'detailed':
+            return LayoutGrid;
+        case 'status-grouped':
+            return Layers;
+        case 'minimal':
+            return Minimize2;
+        default:
+            return FolderOpen;
     }
 }
 </script>

@@ -23,6 +23,8 @@
 - Improved how user emails are fetched: they now use a dedicated paginated route to avoid excessive memory usage and return results more efficiently.
 - Activity fetching is now significantly optimized and has its own dedicated route, dramatically reducing memory usage when retrieving user activity data.
 - Cleaned up the session response: password hashes and unnecessary data are no longer included.
+- Moved layout and organization-related controls (such as sorting, filtering, and view toggles) into a new "View Layout" dropdown for a cleaner and less cluttered user interface.
+
 
 ## v1.0.2 BETA
 

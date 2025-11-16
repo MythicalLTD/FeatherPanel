@@ -362,7 +362,7 @@ class ServerLogsController
                 $logContent = $logData;
             } else {
                 // Try to convert to JSON if it's an object
-                $logContent = json_encode($logData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+                $logContent = json_encode($logData ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
             }
 
             if (empty($logContent) || trim($logContent) === '') {
