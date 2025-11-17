@@ -1608,7 +1608,13 @@ async function submitCreate() {
         return;
     }
 
+    // Prevent submitting another server creation if one is already running.
+    if (submitting.value) {
+        return;
+    }
+
     submitting.value = true;
+
     try {
         // Convert string IDs back to numbers for API
         const submitData = {
@@ -1636,11 +1642,17 @@ async function submitCreate() {
         };
 
         const { data } = await axios.put('/api/admin/servers', submitData);
+
         if (data && data.success) {
             toast.success('Server created successfully!');
             setTimeout(() => {
+                // We need to change the submitting state back to false as we break out of the function in future logic, thus skipping the finally block.
+                submitting.value = false;
                 router.push('/admin/servers');
             }, 1500);
+
+            // Break out of the function to prevent the submit state from being reset and again allowing another submittion.
+            return;
         } else {
             toast.error(data?.message || 'Failed to create server.');
         }
