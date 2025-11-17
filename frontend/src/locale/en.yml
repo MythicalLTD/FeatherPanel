@@ -2514,7 +2514,7 @@ api_errors:
     TWO_FACTOR_SECRET_LABEL: 'Secret'
     TWO_FACTOR_VERIFY_BUTTON: 'Verify'
     TWO_FACTOR_LOADING: 'Loading...'
-    TWO_FACTOR_SUCCESS: 'Two-factor authentication enabled!'
+    TWO_FACTOR_SUCCESS: 'Two-factor authentication success!'
     TWO_FACTOR_ERROR: 'An error occurred during 2FA setup.'
 alerts:
     registration_success_title: 'Registration Successful!'
