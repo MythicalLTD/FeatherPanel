@@ -98,6 +98,11 @@ auth:
     cleaningUp: 'Cleaning up...'
     redirectDelay: 'Taking longer than expected?'
     continueToLogin: 'Continue to Login'
+    # Discord OAuth
+    loginWithDiscord: 'Login with Discord'
+    discordLinkTokenInvalid: 'Invalid Discord link token'
+    discordAccountLinked: 'Discord account linked successfully! Logging in...'
+    discordLinkPrompt: 'Enter your credentials below to link your Discord account'
 
 account:
     title: 'Account Settings'
@@ -2503,6 +2508,7 @@ api_errors:
     TOKEN_REQUIRED: 'A reset token is required.'
     INVALID_TOKEN: 'This password reset link is invalid or has expired.'
     LOADING: 'Loading...'
+    FORGOT_PASSWORD_SUCCESS: 'Password reset link sent successfully. Please check your email.'
     TWO_FACTOR_ENABLED_SUCCESS: 'Two-factor authentication enabled!'
     TWO_FACTOR_ALREADY_ENABLED: 'Two-factor authentication is already enabled.'
     TWO_FACTOR_SETUP_FAILED: 'Failed to load 2FA setup.'

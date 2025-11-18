@@ -57,7 +57,7 @@ onMounted(async () => {
     if (linkToken) {
         discordLinkToken.value = linkToken;
         // Show link account message - user needs to enter credentials
-        success.value = 'Enter your credentials below to link your Discord account';
+        success.value = $t('auth.discordLinkPrompt');
     }
 });
 
@@ -125,7 +125,7 @@ function onDiscordLogin() {
 
 async function handleDiscordLink(): Promise<void> {
     if (!discordLinkToken.value) {
-        error.value = 'Invalid Discord link token';
+        error.value = $t('auth.discordLinkTokenInvalid');
         return;
     }
 
@@ -140,7 +140,7 @@ async function handleDiscordLink(): Promise<void> {
             headers: { 'Content-Type': 'application/json' },
         });
         if (res.data && res.data.success) {
-            success.value = 'Discord account linked successfully! Logging in...';
+            success.value = $t('auth.discordAccountLinked');
 
             // Clear the link token so normal login can proceed
             discordLinkToken.value = null;
@@ -158,7 +158,7 @@ async function handleDiscordLink(): Promise<void> {
                         headers: { 'Content-Type': 'application/json' },
                     });
                     if (loginRes.data && loginRes.data.success) {
-                        success.value = loginRes.data.message || 'Login successful! Redirecting...';
+                        success.value = loginRes.data.message || $t('auth.loginSuccess');
 
                         // Load and sync user preferences after successful login
                         try {
@@ -206,7 +206,7 @@ async function handleDiscordLogin(token: string): Promise<void> {
             headers: { 'Content-Type': 'application/json' },
         });
         if (res.data && res.data.success) {
-            success.value = res.data.message || 'Login successful! Redirecting...';
+            success.value = res.data.message || $t('auth.loginSuccess');
 
             // Load and sync user preferences after successful login
             try {
@@ -299,7 +299,7 @@ async function onSubmit(e: Event) {
             headers: { 'Content-Type': 'application/json' },
         });
         if (res.data && res.data.success) {
-            success.value = res.data.message || 'Login successful! Redirecting...';
+            success.value = res.data.message || $t('auth.loginSuccess');
 
             // Load and sync user preferences after successful login
             try {
@@ -386,13 +386,14 @@ async function onSubmit(e: Event) {
                     <div v-if="error" class="text-center text-sm text-red-500">{{ error }}</div>
                     <div v-if="success" class="text-center text-sm text-green-500">{{ success }}</div>
                     <div v-if="settingsStore.smtpEnabled" class="text-center text-sm">
-                        <router-link
-                            to="/auth/forgot-password"
-                            class="underline underline-offset-4"
+                        <button
+                            type="button"
+                            class="underline underline-offset-4 cursor-pointer bg-transparent border-none p-0 text-inherit"
                             data-umami-event="Forgot password link"
+                            @click="router.push({ name: 'ForgotPassword' })"
                         >
                             {{ $t('auth.forgotPassword') }}
-                        </router-link>
+                        </button>
                     </div>
                     <div v-if="settingsStore.discordOAuthEnabled" class="text-center">
                         <Button
@@ -412,18 +413,19 @@ async function onSubmit(e: Event) {
                                     d="M20.317 4.369a19.791 19.791 0 00-4.885-1.515.07.07 0 00-.075.035 13.812 13.812 0 00-.605 1.246 18.016 18.016 0 00-5.427 0 12.217 12.217 0 00-.617-1.246.064.064 0 00-.075-.035c-1.724.285-3.362.83-4.885 1.515a.06.06 0 00-.024.022C.533 8.059-.32 11.591.099 15.08a.078.078 0 00.028.055 20.53 20.53 0 006.104 3.108.073.073 0 00.078-.023c.472-.651.889-1.341 1.246-2.065a.07.07 0 00-.038-.094 13.235 13.235 0 01-1.885-.884.07.07 0 01-.007-.117c.126-.094.252-.192.374-.291a.06.06 0 01.061-.011c3.927 1.792 8.18 1.792 12.061 0a.062.062 0 01.063.008c.122.099.248.197.374.291a.07.07 0 01-.006.117 12.298 12.298 0 01-1.885.883.07.07 0 00-.038.095c.36.723.777 1.413 1.246 2.064a.073.073 0 00.078.023 20.477 20.477 0 006.105-3.107.075.075 0 00.028-.055c.5-4.101-.838-7.597-3.548-10.692a.061.061 0 00-.024-.023zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.949-2.418 2.157-2.418 1.222 0 2.172 1.101 2.157 2.418 0 1.334-.949 2.419-2.157 2.419zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.948-2.418 2.157-2.418 1.221 0 2.171 1.101 2.157 2.418 0 1.334-.936 2.419-2.157 2.419z"
                                 />
                             </svg>
-                            <span>Login with Discord</span>
+                            <span>{{ $t('auth.loginWithDiscord') }}</span>
                         </Button>
                     </div>
                     <div v-if="settingsStore.registrationEnabled" class="text-center text-sm">
                         {{ $t('auth.noAccount') }}
-                        <router-link
-                            to="/auth/register"
-                            class="underline underline-offset-4"
+                        <button
+                            type="button"
+                            class="underline underline-offset-4 cursor-pointer bg-transparent border-none p-0 text-inherit"
                             data-umami-event="Register link"
+                            @click="router.push({ name: 'Register' })"
                         >
                             {{ $t('auth.register') }}
-                        </router-link>
+                        </button>
                     </div>
                 </div>
             </div>

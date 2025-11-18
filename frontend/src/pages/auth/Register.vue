@@ -195,7 +195,7 @@ async function onSubmit(e: Event) {
             headers: { 'Content-Type': 'application/json' },
         });
         if (res.data && res.data.success) {
-            success.value = res.data.message || 'Registration successful!';
+            success.value = res.data.message || $t('auth.registrationSuccess');
             // Navigate immediately (no delay needed with router)
             router.replace('/');
         } else {
@@ -291,13 +291,14 @@ async function onSubmit(e: Event) {
                     <div v-if="success" class="text-center text-sm text-green-500">{{ success }}</div>
                     <div class="text-center text-sm">
                         {{ $t('auth.alreadyAccount') }}
-                        <router-link
-                            to="/auth/login"
-                            class="underline underline-offset-4"
+                        <button
+                            type="button"
+                            class="underline underline-offset-4 cursor-pointer bg-transparent border-none p-0 text-inherit"
                             data-umami-event="Login link"
+                            @click="router.push({ name: 'Login' })"
                         >
                             {{ $t('auth.login') }}
-                        </router-link>
+                        </button>
                     </div>
                 </div>
             </div>

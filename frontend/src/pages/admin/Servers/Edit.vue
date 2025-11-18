@@ -1301,13 +1301,21 @@
                         <Badge v-if="String(item.id) === String(form.node_id)" variant="secondary" class="text-xs">
                             Current Node
                         </Badge>
-                        <Badge v-else-if="getNodeHealthStatus(item) === 'unhealthy'" variant="destructive" class="text-xs">
+                        <Badge
+                            v-else-if="getNodeHealthStatus(item) === 'unhealthy'"
+                            variant="destructive"
+                            class="text-xs"
+                        >
                             Unhealthy
                         </Badge>
                         <Badge v-else-if="getNodeHealthStatus(item) === 'unknown'" variant="outline" class="text-xs">
                             Unknown
                         </Badge>
-                        <Badge v-else-if="getNodeHealthStatus(item) === 'healthy'" variant="default" class="text-xs bg-green-600 hover:bg-green-700">
+                        <Badge
+                            v-else-if="getNodeHealthStatus(item) === 'healthy'"
+                            variant="default"
+                            class="text-xs bg-green-600 hover:bg-green-700"
+                        >
                             Healthy
                         </Badge>
                         <div v-if="isSelected && !isDisabled" class="shrink-0 ml-2 sm:ml-4">
@@ -2392,7 +2400,9 @@ function selectTransferDestinationNode(node: ApiNode) {
             } else if (healthStatus === 'unhealthy') {
                 toast.warning('Cannot transfer to an unhealthy node. Please choose a healthy node.');
             } else if (healthStatus === 'unknown') {
-                toast.warning('Node health status is unknown. Please wait for health check to complete or choose a different node.');
+                toast.warning(
+                    'Node health status is unknown. Please wait for health check to complete or choose a different node.',
+                );
             }
 
             return;

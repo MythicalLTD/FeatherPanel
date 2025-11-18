@@ -120,7 +120,11 @@ async function verify2FA(e: Event) {
             // Redirect after a short delay
             const redirect = router.currentRoute.value.query.redirect as string;
             setTimeout(() => {
-                window.location.href = redirect || '/';
+                if (redirect && redirect.startsWith('/')) {
+                    router.replace(redirect);
+                } else {
+                    router.replace('/');
+                }
             }, 1200);
         } else {
             toast.error(t(`api_errors.${res.data.code}`) || t('api_errors.INVALID_CODE'));

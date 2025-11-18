@@ -13,6 +13,7 @@
 - Improved session security by excluding "two_fa_key" from session responses.
 - Resolved issues preventing drag-and-drop file uploads from working in Chrome, ensuring seamless and reliable file uploads across all modern browsers.
 - QR code now uses the authenticated user's email to ensure correct account association. by @puttydotexe 
+- Fixed an issue where clicking auth page links (such as register or login) would cause a full application reload due to broken redirects, providing a smoother navigation experience. by @nayskutzu
 
 ### Added
 

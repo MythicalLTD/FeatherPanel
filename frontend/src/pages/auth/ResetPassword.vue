@@ -70,7 +70,7 @@ onMounted(async () => {
 
     const token = route.query.token as string;
     if (!token) {
-        error.value = 'Token is required.';
+        error.value = $t('auth.tokenRequired');
         loading.value = false;
         return;
     }
@@ -82,20 +82,17 @@ onMounted(async () => {
         if (res.data && res.data.success) {
             tokenValid.value = true;
         } else {
-            error.value = res.data?.message || 'Invalid token.';
+            error.value = res.data?.message || $t('auth.invalidToken');
         }
     } catch (err: unknown) {
         if (typeof err === 'object' && err !== null && 'response' in err) {
             const e = err as { response?: { data?: { error_message?: string; message?: string } }; message?: string };
             error.value =
-                e.response?.data?.error_message ||
-                e.response?.data?.message ||
-                e.message ||
-                'An unknown error occurred. Please try again.';
+                e.response?.data?.error_message || e.response?.data?.message || e.message || $t('auth.unknownError');
         } else if (typeof err === 'string') {
             error.value = err;
         } else {
-            error.value = 'An unknown error occurred. Please try again.';
+            error.value = $t('auth.unknownError');
         }
     } finally {
         loading.value = false;
@@ -173,8 +170,8 @@ async function onSubmit(e: Event) {
             headers: { 'Content-Type': 'application/json' },
         });
         if (res.data && res.data.success) {
-            success.value = res.data.message || 'Password reset successful.';
-            router.push('/auth/login');
+            success.value = res.data.message || $t('auth.passwordResetSuccess');
+            router.replace('/auth/login');
         } else {
             error.value = getErrorMessage(res.data);
         }
@@ -224,13 +221,14 @@ async function onSubmit(e: Event) {
                         <div v-if="success" class="text-center text-sm text-green-500">{{ success }}</div>
                         <div class="text-center text-sm">
                             {{ $t('auth.remembered') }}
-                            <router-link
-                                to="/auth/login"
-                                class="underline underline-offset-4"
+                            <button
+                                type="button"
+                                class="underline underline-offset-4 cursor-pointer bg-transparent border-none p-0 text-inherit"
                                 data-umami-event="Login link"
+                                @click="router.push({ name: 'Login' })"
                             >
                                 {{ $t('auth.login') }}
-                            </router-link>
+                            </button>
                         </div>
                     </div>
                 </div>

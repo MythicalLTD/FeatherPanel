@@ -66,7 +66,11 @@
                                 'opacity-50': isItemDisabled?.(item),
                             }"
                         >
-                            <slot :item="item" :isSelected="isSelected(item)" :isDisabled="isItemDisabled?.(item) ?? false">
+                            <slot
+                                :item="item"
+                                :isSelected="isSelected(item)"
+                                :isDisabled="isItemDisabled?.(item) ?? false"
+                            >
                                 <!-- Default item display -->
                                 <div class="flex items-center justify-between">
                                     <div class="flex-1 min-w-0">
