@@ -58,11 +58,15 @@
                         <div
                             v-for="item in items"
                             :key="getItemKey(item)"
-                            @click="selectItem(item)"
-                            class="p-3 sm:p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors touch-manipulation"
-                            :class="{ 'bg-primary/5 border-l-4 border-l-primary': isSelected(item) }"
+                            @click="!isItemDisabled?.(item) && selectItem(item)"
+                            class="p-3 sm:p-4 transition-colors touch-manipulation"
+                            :class="{
+                                'bg-primary/5 border-l-4 border-l-primary': isSelected(item),
+                                'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800': !isItemDisabled?.(item),
+                                'opacity-50': isItemDisabled?.(item),
+                            }"
                         >
-                            <slot :item="item" :isSelected="isSelected(item)">
+                            <slot :item="item" :isSelected="isSelected(item)" :isDisabled="isItemDisabled?.(item) ?? false">
                                 <!-- Default item display -->
                                 <div class="flex items-center justify-between">
                                     <div class="flex-1 min-w-0">
@@ -168,6 +172,7 @@ interface Props {
     pageSize: number;
     selectedItem: any;
     searchQuery: string;
+    isItemDisabled?: (item: any) => boolean;
 }
 
 interface Emits {
