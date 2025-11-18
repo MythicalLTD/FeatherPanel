@@ -38,6 +38,7 @@
 - Fixed a significant layout shift on the user information tab in the admin panel by adding a minimum height tab switching is now smooth and avoids jarring jumps.
 - Polished the design of authentication pages for a more professional and visually appealing user experience.
 - Now using Rolldown Vite as the compiler for faster build times and improved overall usage experience.
+- Server transfer node destination selection will now prevent selecting of the servers current node and any unhealth node. by @puttydotexe
 
 ## v1.0.2 BETA
 
