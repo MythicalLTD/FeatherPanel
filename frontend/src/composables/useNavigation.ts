@@ -54,7 +54,6 @@ import {
     Crown,
     Activity,
     ShieldCheck,
-    Cloud,
     Bot,
     Package,
 } from 'lucide-vue-next';
@@ -501,18 +500,6 @@ export function useNavigation() {
                 permission: Permissions.ADMIN_STATISTICS_VIEW,
                 group: 'overviewFeatherCloud',
             },
-            {
-                id: 'admin-featherpanel-cloud',
-                name: 'FeatherPanel Cloud Storage',
-                title: 'FeatherPanel Cloud Storage',
-                url: '/admin/featherpanel-cloud',
-                icon: Cloud,
-                isActive: currentPath.value.startsWith('/admin/featherpanel-cloud'),
-                category: 'admin' as const,
-                permission: Permissions.ADMIN_STATISTICS_VIEW,
-                group: 'overviewFeatherCloud',
-            },
-
             {
                 id: 'admin-feathercloud-ai-agent',
                 name: 'FeatherCloud AI Agent',

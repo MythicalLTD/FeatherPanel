@@ -51,11 +51,14 @@ SOFTWARE.
                         <CardDescription>{{ t('adminSubdomains.tutorialDescription') }}</CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-4 text-sm text-muted-foreground">
-                        <ol class="list-decimal space-y-2 pl-5">
-                            <li>{{ t('adminSubdomains.tutorialSteps.credentials') }}</li>
-                            <li>{{ t('adminSubdomains.tutorialSteps.domain') }}</li>
-                            <li>{{ t('adminSubdomains.tutorialSteps.mappings') }}</li>
-                        </ol>
+                        <div class="flex items-start gap-3">
+                            <Globe class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                            <ol class="list-decimal space-y-2 pl-2 flex-1">
+                                <li>{{ t('adminSubdomains.tutorialSteps.credentials') }}</li>
+                                <li>{{ t('adminSubdomains.tutorialSteps.domain') }}</li>
+                                <li>{{ t('adminSubdomains.tutorialSteps.mappings') }}</li>
+                            </ol>
+                        </div>
                         <p class="text-xs text-muted-foreground">
                             {{ t('adminSubdomains.tutorialNote') }}
                         </p>
@@ -83,7 +86,7 @@ SOFTWARE.
                     <template #header-actions>
                         <div class="flex flex-col sm:flex-row gap-2">
                             <Button variant="outline" size="sm" class="w-full sm:w-auto" @click="refreshDomains">
-                                <RefreshCw class="mr-2 h-4 w-4" />
+                                <RefreshCw class="h-4 w-4 mr-2" />
                                 {{ t('common.refresh') }}
                             </Button>
                             <Button
@@ -92,7 +95,7 @@ SOFTWARE.
                                 data-umami-event="create-subdomain-domain"
                                 @click="openCreateDialog"
                             >
-                                <Plus class="mr-2 h-4 w-4" />
+                                <Plus class="h-4 w-4 mr-2" />
                                 {{ t('adminSubdomains.newDomain') }}
                             </Button>
                         </div>
@@ -121,21 +124,21 @@ SOFTWARE.
                         <div v-if="isDomainTableRow(item)" class="flex justify-end gap-2">
                             <Button
                                 size="sm"
-                                variant="ghost"
+                                variant="outline"
                                 class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                 title="View subdomain"
                                 @click="viewDomain(item.uuid)"
                             >
-                                {{ t('adminSubdomains.view') }}
+                                <Eye :size="16" />
                             </Button>
                             <Button
                                 size="sm"
-                                variant="ghost"
+                                variant="secondary"
                                 class="hover:scale-110 hover:shadow-md transition-all duration-200"
                                 title="Edit subdomain"
                                 @click="openEditDialog(item.uuid)"
                             >
-                                {{ t('adminSubdomains.edit') }}
+                                <Pencil :size="16" />
                             </Button>
                             <Button
                                 size="sm"
@@ -144,7 +147,7 @@ SOFTWARE.
                                 title="Delete subdomain"
                                 @click="confirmDelete(item.uuid, item.domain)"
                             >
-                                {{ t('common.delete') }}
+                                <Trash2 :size="16" />
                             </Button>
                         </div>
                     </template>
@@ -154,7 +157,10 @@ SOFTWARE.
 
                 <Card class="border-muted">
                     <CardHeader>
-                        <CardTitle>{{ t('adminSubdomains.settingsTitle') }}</CardTitle>
+                        <div class="flex items-center gap-2">
+                            <Settings class="h-5 w-5 text-muted-foreground" />
+                            <CardTitle>{{ t('adminSubdomains.settingsTitle') }}</CardTitle>
+                        </div>
                         <CardDescription>{{ t('adminSubdomains.settingsDescription') }}</CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-6">
@@ -210,9 +216,14 @@ SOFTWARE.
     <Dialog :open="manageDialogOpen" @update:open="handleDialogToggle">
         <DialogContent class="sm:max-w-3xl overflow-visible p-0">
             <DialogHeader class="px-6 pt-6">
-                <DialogTitle class="text-2xl font-semibold">
-                    {{ dialogMode === 'edit' ? t('adminSubdomains.editDomain') : t('adminSubdomains.createDomain') }}
-                </DialogTitle>
+                <div class="flex items-center gap-2">
+                    <Globe class="h-5 w-5 text-muted-foreground" />
+                    <DialogTitle class="text-2xl font-semibold">
+                        {{
+                            dialogMode === 'edit' ? t('adminSubdomains.editDomain') : t('adminSubdomains.createDomain')
+                        }}
+                    </DialogTitle>
+                </div>
                 <DialogDescription class="text-sm text-muted-foreground">
                     {{ t('adminSubdomains.drawerDescription') }}
                 </DialogDescription>
@@ -341,10 +352,14 @@ SOFTWARE.
                 </div>
                 <Separator />
                 <div class="flex items-center justify-between">
-                    <h3 class="text-sm font-medium text-foreground">{{ t('adminSubdomains.mappingsTitle') }}</h3>
-                    <Button size="sm" variant="outline" @click="addMapping">{{
-                        t('adminSubdomains.addMapping')
-                    }}</Button>
+                    <div class="flex items-center gap-2">
+                        <Cloud class="h-4 w-4 text-muted-foreground" />
+                        <h3 class="text-sm font-medium text-foreground">{{ t('adminSubdomains.mappingsTitle') }}</h3>
+                    </div>
+                    <Button size="sm" variant="outline" @click="addMapping">
+                        <Plus class="h-4 w-4 mr-2" />
+                        {{ t('adminSubdomains.addMapping') }}
+                    </Button>
                 </div>
                 <div class="space-y-3">
                     <div
@@ -435,9 +450,12 @@ SOFTWARE.
     <Dialog v-model:open="detailsDialog.open">
         <DialogContent class="max-w-2xl">
             <DialogHeader>
-                <DialogTitle>{{
-                    t('adminSubdomains.domainDetailsTitle', { domain: detailsDialog.domain?.domain })
-                }}</DialogTitle>
+                <div class="flex items-center gap-2">
+                    <Eye class="h-5 w-5 text-muted-foreground" />
+                    <DialogTitle>{{
+                        t('adminSubdomains.domainDetailsTitle', { domain: detailsDialog.domain?.domain })
+                    }}</DialogTitle>
+                </div>
                 <DialogDescription>{{ t('adminSubdomains.domainDetailsDescription') }}</DialogDescription>
             </DialogHeader>
             <div class="space-y-4">
@@ -500,7 +518,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, RefreshCw } from 'lucide-vue-next';
+import { Plus, RefreshCw, Eye, Pencil, Trash2, Globe, Settings, Cloud } from 'lucide-vue-next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     fetchAdminSubdomains,
