@@ -1274,7 +1274,7 @@
             description="Choose a node to transfer this server to"
             item-type="node"
             search-placeholder="Search nodes by name or FQDN..."
-            :items="transferNodeModal.state.value.items"
+            :items="availableTransferNodes"
             :loading="transferNodeModal.state.value.loading"
             :current-page="transferNodeModal.state.value.currentPage"
             :total-pages="transferNodeModal.state.value.totalPages"
@@ -1282,6 +1282,7 @@
             :page-size="20"
             :selected-item="transferNodeModal.state.value.selectedItem"
             :search-query="transferNodeModal.state.value.searchQuery"
+            :is-item-disabled="isNodeDisabled"
             @update:open="transferNodeModal.closeModal"
             @search="transferNodeModal.handleSearch"
             @search-query-update="transferNodeModal.handleSearchQueryUpdate"
@@ -1289,14 +1290,29 @@
             @select="transferNodeModal.selectItem"
             @confirm="selectTransferDestinationNode(transferNodeModal.confirmSelection())"
         >
-            <template #default="{ item, isSelected }">
-                <div class="flex items-center justify-between">
+            <template #default="{ item, isSelected, isDisabled }">
+                <div class="relative flex items-center justify-between">
                     <div class="flex-1 min-w-0">
                         <h4 class="font-medium truncate text-sm sm:text-base">{{ item.name }}</h4>
                         <p class="text-xs sm:text-sm text-muted-foreground truncate">{{ item.fqdn || 'No FQDN' }}</p>
                     </div>
-                    <div v-if="isSelected" class="shrink-0 ml-2 sm:ml-4">
-                        <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    <div class="flex items-center gap-2">
+                        <!-- TODO: Maybe these should use the status dots instead? -->
+                        <Badge v-if="String(item.id) === String(form.node_id)" variant="secondary" class="text-xs">
+                            Current Node
+                        </Badge>
+                        <Badge v-else-if="getNodeHealthStatus(item) === 'unhealthy'" variant="destructive" class="text-xs">
+                            Unhealthy
+                        </Badge>
+                        <Badge v-else-if="getNodeHealthStatus(item) === 'unknown'" variant="outline" class="text-xs">
+                            Unknown
+                        </Badge>
+                        <Badge v-else-if="getNodeHealthStatus(item) === 'healthy'" variant="default" class="text-xs bg-green-600 hover:bg-green-700">
+                            Healthy
+                        </Badge>
+                        <div v-if="isSelected && !isDisabled" class="shrink-0 ml-2 sm:ml-4">
+                            <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                        </div>
                     </div>
                 </div>
             </template>
@@ -1329,7 +1345,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
@@ -1769,10 +1785,98 @@ const isTransferring = computed(() => form.value.status === 'transferring');
 const transferStatusInterval = ref<number | null>(null);
 
 // Transfer node modal - exclude current node
-const transferNodeAdditionalParams = computed(() => ({
-    exclude_node_id: form.value.node_id || null,
-}));
+const transferNodeAdditionalParams = computed(() => ({ exclude_node_id: form.value.node_id || null }));
 const transferNodeModal = useSelectionModal('/api/admin/nodes', 20, 'search', 'page', transferNodeAdditionalParams);
+
+const availableTransferNodes = computed(() => transferNodeModal.state.value.items);
+const nodeHealthStatuses = ref<Record<number, 'healthy' | 'unhealthy' | 'unknown'>>({});
+const checkingNodeHealth = ref<Set<number>>(new Set());
+const healthCheckInterval = ref<number | null>(null);
+
+// Most of this logic was taken from the allocations page, perhaps in the future this should be abstracted out into a helper function.
+async function checkNodeHealth(nodeId: number): Promise<'healthy' | 'unhealthy' | 'unknown'> {
+    if (checkingNodeHealth.value.has(nodeId)) {
+        return nodeHealthStatuses.value[nodeId] || 'unknown';
+    }
+
+    checkingNodeHealth.value.add(nodeId);
+    nodeHealthStatuses.value[nodeId] = 'unknown';
+
+    try {
+        const response = await axios.get(`/api/wings/admin/node/${nodeId}/system`);
+        const isHealthy = response.data.success;
+        nodeHealthStatuses.value[nodeId] = isHealthy ? 'healthy' : 'unhealthy';
+        return nodeHealthStatuses.value[nodeId];
+    } catch {
+        nodeHealthStatuses.value[nodeId] = 'unhealthy';
+        return 'unhealthy';
+    } finally {
+        checkingNodeHealth.value.delete(nodeId);
+    }
+}
+
+const isNodeDisabled = (node: ApiNode) => {
+    // Disable the provided node if it matches the servers current node.
+    if (String(node.id) === String(form.value.node_id)) {
+        return true;
+    }
+
+    const healthStatus = nodeHealthStatuses.value[node.id];
+
+    // Disable the provided node if the health check returned either an unhealthy or unknown state.
+    return healthStatus === 'unhealthy' || healthStatus === 'unknown';
+};
+
+const getNodeHealthStatus = (node: ApiNode): 'healthy' | 'unhealthy' | 'unknown' => {
+    return nodeHealthStatuses.value[node.id] || 'unknown';
+};
+
+async function checkNodeHealthStates() {
+    const nodes = availableTransferNodes.value;
+    if (!nodes || nodes.length === 0) return;
+
+    const healthChecks = nodes.map((node) => {
+        // Skip if the node health state is already being checked.
+        if (checkingNodeHealth.value.has(node.id)) {
+            return Promise.resolve();
+        }
+
+        return checkNodeHealth(node.id);
+    });
+
+    await Promise.all(healthChecks);
+}
+
+// Check all the nodes health states when the available nodes for transfer changes.
+watch(
+    () => availableTransferNodes.value,
+    async () => {
+        await checkNodeHealthStates();
+    },
+    { immediate: false },
+);
+
+// Check health when modal opens and periodicly check whilst it's open.
+watch(
+    () => transferNodeModal.state.value.isOpen,
+    async (isOpen) => {
+        if (isOpen) {
+            // Trigger an initial health check of all nodes when the model is opened.
+            await checkNodeHealthStates();
+
+            // Recheck the nodes health state every 10 seconds.
+            healthCheckInterval.value = window.setInterval(() => {
+                checkNodeHealthStates();
+            }, 10000);
+        } else {
+            // Clear the repeating health state check when the model is closed.
+            if (healthCheckInterval.value !== null) {
+                clearInterval(healthCheckInterval.value);
+                healthCheckInterval.value = null;
+            }
+        }
+    },
+);
 
 // Load server data for editing
 async function loadServerData() {
@@ -2277,10 +2381,26 @@ function openTransferDialog() {
     transferDialogOpen.value = true;
 }
 
+// Sanity check for selecting a transfer destination node.
 function selectTransferDestinationNode(node: ApiNode) {
     if (node && node.id) {
+        if (isNodeDisabled(node)) {
+            const healthStatus = getNodeHealthStatus(node);
+
+            if (String(node.id) === String(form.value.node_id)) {
+                toast.warning('Cannot select the current node. Please choose a different node.');
+            } else if (healthStatus === 'unhealthy') {
+                toast.warning('Cannot transfer to an unhealthy node. Please choose a healthy node.');
+            } else if (healthStatus === 'unknown') {
+                toast.warning('Node health status is unknown. Please wait for health check to complete or choose a different node.');
+            }
+
+            return;
+        }
+
         transferDestinationNodeId.value = String(node.id);
         transferDestinationNode.value = node;
+
         transferNodeModal.closeModal();
     }
 }
@@ -2386,8 +2506,13 @@ onMounted(async () => {
     }
 });
 
-// Cleanup interval on unmount
+// Cleanup intervals on unmount
 onUnmounted(() => {
     stopTransferStatusPolling();
+
+    if (healthCheckInterval.value !== null) {
+        clearInterval(healthCheckInterval.value);
+        healthCheckInterval.value = null;
+    }
 });
 </script>
