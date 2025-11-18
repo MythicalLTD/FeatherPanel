@@ -105,9 +105,13 @@ async function verify2FA(e: Event) {
                         <Input
                             id="code"
                             v-model="code"
-                            type="password"
+                            type="text"
+                            autocomplete="one-time-code"
+                            name="otp"
+                            inputmode="numeric"
                             :placeholder="t('api_errors.TWO_FACTOR_CODE_PLACEHOLDER')"
                             required
+                            @input="code = code.replace(/\D/g, '')"
                         />
                     </div>
                     <div v-if="settingsStore.turnstile_enabled" class="grid gap-3">
