@@ -83,6 +83,9 @@ router.beforeEach(async (to, from, next) => {
             const { usePreferencesStore } = await import('@/stores/preferences');
             const preferencesStore = usePreferencesStore();
 
+            // Initialize the store (set up listeners and load lastSyncTime)
+            preferencesStore.initialize();
+
             // Only load if not already synced recently (within last 5 minutes)
             const lastSync = preferencesStore.lastSyncTime;
             const fiveMinutes = 5 * 60 * 1000;

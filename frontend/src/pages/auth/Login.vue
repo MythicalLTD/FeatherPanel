@@ -162,6 +162,9 @@ async function handleDiscordLink(): Promise<void> {
 
                         // Load and sync user preferences after successful login
                         try {
+                            // Initialize the store (set up listeners and load lastSyncTime)
+                            preferencesStore.initialize();
+
                             const hasLocalStorage = preferencesStore.hasLocalStorage();
                             if (hasLocalStorage) {
                                 await preferencesStore.migrateLocalStorage();
@@ -210,6 +213,9 @@ async function handleDiscordLogin(token: string): Promise<void> {
 
             // Load and sync user preferences after successful login
             try {
+                // Initialize the store (set up listeners and load lastSyncTime)
+                preferencesStore.initialize();
+
                 // Check if user has preferences in localStorage that need to be synced
                 const hasLocalStorage = preferencesStore.hasLocalStorage();
 
@@ -303,6 +309,9 @@ async function onSubmit(e: Event) {
 
             // Load and sync user preferences after successful login
             try {
+                // Initialize the store (set up listeners and load lastSyncTime)
+                preferencesStore.initialize();
+
                 // Check if user has preferences in localStorage that need to be synced
                 const hasLocalStorage = preferencesStore.hasLocalStorage();
 

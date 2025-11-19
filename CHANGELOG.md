@@ -5,6 +5,7 @@
 ### Removed
 - Removed the "Set Primary" button from the server edit page to prevent user confusion and streamline the allocation management experience.
 - Removed the "Create Node" option from the Locations page, as it was just a legacy placeholder left over from the original panel build.
+- Retired the legacy "FeatherCli" in anticipation of an all-new, much faster and more powerful CLI tool that will be released in a dedicated repository!
 
 ### Fixed
 
@@ -14,6 +15,7 @@
 - Resolved issues preventing drag-and-drop file uploads from working in Chrome, ensuring seamless and reliable file uploads across all modern browsers.
 - QR code now uses the authenticated user's email to ensure correct account association. by @puttydotexe 
 - Fixed an issue where clicking auth page links (such as register or login) would cause a full application reload due to broken redirects, providing a smoother navigation experience. by @nayskutzu
+- Fixed an issue that could cause your customizations to be lost if localStorage failed to sync properly! by @nayskutzu
 
 ### Added
 
@@ -30,6 +32,7 @@
 - Two-factor setup now redirects to the intended page after successful verification (short delay for UX). by @puttydotexe 
 - OTP input updated to allow numeric entry with autocomplete for easier entry on devices. by  @puttydotexe
 - Brand new plugin marketplace system with powerful update support! The marketplace now offers advanced search and filtering options (search by tags, verified status, sorting, and more), making it much easier to discover exactly what you need. The system now enforces compatibility and permission checks, preventing users from installing plugins that are incompatible with their panel version or missing required dependencies, for a safer and smoother experience.
+- Introduced a powerful notification service that allows administrators to send beautiful, informative messages to all users. by @nayskutzu
 
 ### Improved
 - Improved how user emails are fetched: they now use a dedicated paginated route to avoid excessive memory usage and return results more efficiently.

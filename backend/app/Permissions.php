@@ -238,6 +238,16 @@ class Permissions
     /** Manage FeatherZeroTrust */
     public const ADMIN_FEATHERZEROTRUST_MANAGE = 'admin.featherzerotrust.manage';
 
+    // Admin Notifications Permissions
+    /** View notifications */
+    public const ADMIN_NOTIFICATIONS_VIEW = 'admin.notifications.view';
+    /** Create new notifications */
+    public const ADMIN_NOTIFICATIONS_CREATE = 'admin.notifications.create';
+    /** Edit existing notifications */
+    public const ADMIN_NOTIFICATIONS_EDIT = 'admin.notifications.edit';
+    /** Delete notifications */
+    public const ADMIN_NOTIFICATIONS_DELETE = 'admin.notifications.delete';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -699,6 +709,30 @@ class Permissions
                 'value' => self::ADMIN_FEATHERZEROTRUST_MANAGE,
                 'category' => 'Admin FeatherZeroTrust',
                 'description' => 'Manage FeatherZeroTrust',
+            ],
+            [
+                'constant' => 'ADMIN_NOTIFICATIONS_VIEW',
+                'value' => self::ADMIN_NOTIFICATIONS_VIEW,
+                'category' => 'Admin Notifications',
+                'description' => 'View notifications',
+            ],
+            [
+                'constant' => 'ADMIN_NOTIFICATIONS_CREATE',
+                'value' => self::ADMIN_NOTIFICATIONS_CREATE,
+                'category' => 'Admin Notifications',
+                'description' => 'Create new notifications',
+            ],
+            [
+                'constant' => 'ADMIN_NOTIFICATIONS_EDIT',
+                'value' => self::ADMIN_NOTIFICATIONS_EDIT,
+                'category' => 'Admin Notifications',
+                'description' => 'Edit existing notifications',
+            ],
+            [
+                'constant' => 'ADMIN_NOTIFICATIONS_DELETE',
+                'value' => self::ADMIN_NOTIFICATIONS_DELETE,
+                'category' => 'Admin Notifications',
+                'description' => 'Delete notifications',
             ],
         ];
     }

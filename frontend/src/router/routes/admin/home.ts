@@ -128,6 +128,11 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/DatabaseManagement.vue'),
     },
     {
+        path: '/admin/notifications',
+        name: 'AdminNotifications',
+        component: () => import('@/pages/admin/Notifications.vue'),
+    },
+    {
         path: '/admin/api-keys',
         name: 'AdminApiKeys',
         component: () => import('@/pages/admin/ApiKeys.vue'),

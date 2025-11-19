@@ -122,3 +122,9 @@ ADMIN_FEATHERZEROTRUST_VIEW=admin.featherzerotrust.view | Admin FeatherZeroTrust
 ADMIN_FEATHERZEROTRUST_SCAN=admin.featherzerotrust.scan | Admin FeatherZeroTrust | Run scans with FeatherZeroTrust
 ADMIN_FEATHERZEROTRUST_CONFIGURE=admin.featherzerotrust.configure | Admin FeatherZeroTrust | Configure FeatherZeroTrust settings
 ADMIN_FEATHERZEROTRUST_MANAGE=admin.featherzerotrust.manage | Admin FeatherZeroTrust | Manage FeatherZeroTrust
+
+# Notifications Permissions
+ADMIN_NOTIFICATIONS_VIEW=admin.notifications.view | Admin Notifications | View notifications
+ADMIN_NOTIFICATIONS_CREATE=admin.notifications.create | Admin Notifications | Create new notifications
+ADMIN_NOTIFICATIONS_EDIT=admin.notifications.edit | Admin Notifications | Edit existing notifications
+ADMIN_NOTIFICATIONS_DELETE=admin.notifications.delete | Admin Notifications | Delete notifications

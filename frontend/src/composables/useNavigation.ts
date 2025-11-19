@@ -56,6 +56,7 @@ import {
     ShieldCheck,
     Bot,
     Package,
+    Bell,
 } from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
 import Permissions from '@/lib/permissions';
@@ -590,6 +591,17 @@ export function useNavigation() {
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_REDIRECT_LINKS_VIEW,
                 group: 'content',
+            },
+            {
+                id: 'admin-notifications',
+                name: t('nav.notifications'),
+                title: t('nav.notifications'),
+                url: '/admin/notifications',
+                icon: Bell,
+                isActive: currentPath.value.startsWith('/admin/notifications'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_NOTIFICATIONS_VIEW,
+                group: 'users',
             },
         ];
 

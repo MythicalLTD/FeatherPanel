@@ -32,6 +32,7 @@ export const containerClass = 'w-full h-full';
 import AppSidebar from '@/components/AppSidebar.vue';
 import AppFooter from '@/components/AppFooter.vue';
 import MacDock from '@/components/MacDock.vue';
+import NotificationBanner from '@/components/NotificationBanner.vue';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -226,6 +227,8 @@ watchEffect(() => {
                 </div>
             </header>
             <br />
+            <!-- Notification Banner - Above page content -->
+            <NotificationBanner />
             <div class="flex flex-1 flex-col gap-4 p-3 sm:p-4 pt-0">
                 <slot />
             </div>

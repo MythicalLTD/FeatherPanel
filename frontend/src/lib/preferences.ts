@@ -77,17 +77,19 @@ class PreferencesService {
 
     /**
      * Save the entire localStorage to the backend
-     * Excludes branding-related keys to prevent them from being synced
+     * Excludes branding-related keys and tracking keys to prevent them from being synced
      */
     async saveLocalStorage(): Promise<boolean> {
         const storage = this.getLocalStorage();
 
-        // Remove branding and system keys from storage before saving to backend
+        // Remove branding, system, and tracking keys from storage before saving to backend
         const preferencesToSave = { ...storage };
         delete preferencesToSave.appName;
         delete preferencesToSave.appLogoDark;
         delete preferencesToSave.appLogoWhite;
         delete preferencesToSave.telemetry;
+        delete preferencesToSave.__localStorage_lastModified;
+        delete preferencesToSave.__lastSyncTime;
 
         return await this.updatePreferences(preferencesToSave);
     }

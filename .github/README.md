@@ -67,13 +67,13 @@ _Last updated: 2025-11-16T20:47:09.714Z_
 
 ---
 
-## 🧪 Testing Development Builds
+## 🧪 Installing FeatherPanel
 
-**For advanced users and contributors only:**
+**Curious to try it out? This build is for testers and adventurous users:**
 
 ```bash
-# Install Alpha Build (Development)
-curl -sSL https://get.featherpanel.com/canary.sh | bash
+# Install Beta Build!
+curl -sSL https://get.featherpanel.com/beta.sh | bash
 ```
 
 **⚡ After installation:**
