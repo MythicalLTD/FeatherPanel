@@ -40,6 +40,7 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
+use App\Plugins\Events\Events\SubdomainsEvent;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Subdomain\CloudflareSubdomainService;
 
@@ -157,6 +158,26 @@ class SubdomainsController
 
         $totalPages = (int) ceil($total / $limit);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                SubdomainsEvent::onSubdomainDomainsRetrieved(),
+                [
+                    'domains' => $domains,
+                    'pagination' => [
+                        'page' => $page,
+                        'limit' => $limit,
+                        'total' => $total,
+                    ],
+                    'filters' => [
+                        'search' => $search,
+                        'includeInactive' => $includeInactive,
+                    ],
+                ]
+            );
+        }
+
         return ApiResponse::success([
             'domains' => $domains,
             'pagination' => [
@@ -201,6 +222,18 @@ class SubdomainsController
 
         $domain['subdomain_count'] = Subdomain::count(['domain_id' => $domain['id']]);
         $domain['subdomains'] = Subdomain::getByDomainId((int) $domain['id']);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                SubdomainsEvent::onSubdomainDomainRetrieved(),
+                [
+                    'domain_uuid' => $uuid,
+                    'domain_data' => $domain,
+                ]
+            );
+        }
 
         return ApiResponse::success(['domain' => $domain], 'Domain retrieved successfully');
     }
@@ -268,6 +301,19 @@ class SubdomainsController
 
         $this->logActivity($request, 'create_subdomain_domain', 'Created subdomain domain: ' . $payload['domain']);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $createdDomain = SubdomainDomain::getDomainWithSpellsByUuid($domain['uuid']);
+            $eventManager->emit(
+                SubdomainsEvent::onSubdomainDomainCreated(),
+                [
+                    'domain_data' => $createdDomain,
+                    'created_by' => $request->get('user'),
+                ]
+            );
+        }
+
         return ApiResponse::success([
             'domain' => SubdomainDomain::getDomainWithSpellsByUuid($domain['uuid']),
         ], 'Domain created successfully', Response::HTTP_CREATED);
@@ -320,11 +366,27 @@ class SubdomainsController
             ], $domain['spells']);
         }
 
+        $oldDomain = $domain;
         if (!SubdomainDomain::updateDomainByUuid($uuid, $payload, $spells)) {
             return ApiResponse::error('Failed to update domain', 'DOMAIN_UPDATE_FAILED', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
         $this->logActivity($request, 'update_subdomain_domain', 'Updated subdomain domain: ' . ($payload['domain'] ?? $domain['domain']));
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $updatedDomain = SubdomainDomain::getDomainWithSpellsByUuid($uuid);
+            $eventManager->emit(
+                SubdomainsEvent::onSubdomainDomainUpdated(),
+                [
+                    'domain_uuid' => $uuid,
+                    'old_data' => $oldDomain,
+                    'new_data' => $updatedDomain,
+                    'updated_by' => $request->get('user'),
+                ]
+            );
+        }
 
         return ApiResponse::success([
             'domain' => SubdomainDomain::getDomainWithSpellsByUuid($uuid),
@@ -360,6 +422,19 @@ class SubdomainsController
         }
 
         $this->logActivity($request, 'delete_subdomain_domain', 'Deleted subdomain domain: ' . $domain['domain']);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                SubdomainsEvent::onSubdomainDomainDeleted(),
+                [
+                    'domain_uuid' => $uuid,
+                    'domain_data' => $domain,
+                    'deleted_by' => $request->get('user'),
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Domain deleted successfully');
     }
@@ -428,6 +503,18 @@ class SubdomainsController
     {
         $domain = SubdomainDomain::getDomainWithSpellsByUuid($uuid);
         if (!$domain) {
+            // Emit error event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    SubdomainsEvent::onSubdomainDomainNotFound(),
+                    [
+                        'domain_uuid' => $uuid,
+                        'error_message' => 'Domain not found',
+                    ]
+                );
+            }
+
             return ApiResponse::error('Domain not found', 'DOMAIN_NOT_FOUND', Response::HTTP_NOT_FOUND);
         }
 
@@ -479,6 +566,22 @@ class SubdomainsController
         }
 
         $this->logActivity($request, 'update_subdomain_settings', 'Updated subdomain manager settings');
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                SubdomainsEvent::onSubdomainSettingsUpdated(),
+                [
+                    'settings' => [
+                        'cloudflare_email' => $email,
+                        'cloudflare_api_key_set' => $apiKey !== '',
+                        'max_subdomains_per_server' => $max,
+                    ],
+                    'updated_by' => $request->get('user'),
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Settings updated successfully');
     }

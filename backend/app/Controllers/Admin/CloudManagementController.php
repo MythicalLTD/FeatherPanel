@@ -38,6 +38,7 @@ use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\CloudManagementEvent;
 
 #[OA\Schema(
     schema: 'FeatherCloudCredentialPair',
@@ -98,7 +99,7 @@ class CloudManagementController
         $cloudPrivate = $config->getSetting(ConfigInterface::FEATHERCLOUD_ACCESS_PRIVATE_KEY, '');
         $cloudRotated = $config->getSetting(ConfigInterface::FEATHERCLOUD_ACCESS_LAST_ROTATED, null);
 
-        return ApiResponse::success([
+        $credentials = [
             'panel_credentials' => [
                 'public_key' => $panelPublic,
                 'private_key' => $panelPrivate,
@@ -109,7 +110,20 @@ class CloudManagementController
                 'private_key' => $cloudPrivate,
                 'last_rotated_at' => $cloudRotated,
             ],
-        ], 'Cloud credentials fetched successfully', 200);
+        ];
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                CloudManagementEvent::onCloudCredentialsRetrieved(),
+                [
+                    'credentials' => $credentials,
+                ]
+            );
+        }
+
+        return ApiResponse::success($credentials, 'Cloud credentials fetched successfully', 200);
     }
 
     #[OA\Put(
@@ -169,6 +183,22 @@ class CloudManagementController
                 'context' => 'Panel-issued FeatherCloud credentials were updated',
                 'ip_address' => CloudFlareRealIP::getRealIP(),
             ]);
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    CloudManagementEvent::onPanelCredentialsStored(),
+                    [
+                        'credentials' => [
+                            'public_key' => $publicKey,
+                            'private_key' => '[REDACTED]',
+                            'last_rotated_at' => $timestamp,
+                        ],
+                        'stored_by' => $user,
+                    ]
+                );
+            }
 
             return $this->show($request);
         } catch (\Throwable $exception) {
@@ -236,6 +266,22 @@ class CloudManagementController
                 'ip_address' => CloudFlareRealIP::getRealIP(),
             ]);
 
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    CloudManagementEvent::onCloudCredentialsStored(),
+                    [
+                        'credentials' => [
+                            'public_key' => $publicKey,
+                            'private_key' => '[REDACTED]',
+                            'last_rotated_at' => $timestamp,
+                        ],
+                        'stored_by' => $user,
+                    ]
+                );
+            }
+
             return $this->show($request);
         } catch (\Throwable $exception) {
             $this->app->getLogger()->error('Failed to store FeatherCloud-issued credentials: ' . $exception->getMessage());
@@ -288,6 +334,18 @@ class CloudManagementController
                 'context' => 'FeatherCloud → Panel credentials were rotated, Panel → FeatherCloud keys cleared',
                 'ip_address' => CloudFlareRealIP::getRealIP(),
             ]);
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    CloudManagementEvent::onCloudCredentialsRotated(),
+                    [
+                        'credential_type' => 'panel',
+                        'rotated_by' => $user,
+                    ]
+                );
+            }
 
             return $this->show($request);
         } catch (\Throwable $exception) {

@@ -3,46 +3,48 @@
 ## v1.0.3 BETA
 
 ### Removed
-- Removed the "Set Primary" button from the server edit page to prevent user confusion and streamline the allocation management experience.
-- Removed the "Create Node" option from the Locations page, as it was just a legacy placeholder left over from the original panel build.
-- Retired the legacy "FeatherCli" in anticipation of an all-new, much faster and more powerful CLI tool that will be released in a dedicated repository!
+- Removed the "Set Primary" button from the server edit page to prevent user confusion and streamline the allocation management experience. by @nayskutzu
+- Removed the "Create Node" option from the Locations page, as it was just a legacy placeholder left over from the original panel build. by @nayskutzu
+- Retired the legacy "FeatherCli" in anticipation of an all-new, much faster and more powerful CLI tool that will be released in a dedicated repository! by @nayskutzu
+- Cleaned up outdated FeatherPanel SEO metadata to ensure a cleaner user experience and eliminate unnecessary empty branding. by @nayskutzu
 
 ### Fixed
 
-- Resolved an issue preventing plugins from registering their own dashboard pages.
-- Fixed an issue where the subdomain manager would fail if an allocation did not have an ip_alias and the allocation IP was not public.
-- Improved session security by excluding "two_fa_key" from session responses.
-- Resolved issues preventing drag-and-drop file uploads from working in Chrome, ensuring seamless and reliable file uploads across all modern browsers.
+- Resolved an issue preventing plugins from registering their own dashboard pages. by @nayskutzu
+- Fixed an issue where the subdomain manager would fail if an allocation did not have an ip_alias and the allocation IP was not public. by @nayskutzu
+- Improved session security by excluding "two_fa_key" from session responses. by @nayskutzu
+- Resolved issues preventing drag-and-drop file uploads from working in Chrome, ensuring seamless and reliable file uploads across all modern browsers. by @nayskutzu
 - QR code now uses the authenticated user's email to ensure correct account association. by @puttydotexe 
 - Fixed an issue where clicking auth page links (such as register or login) would cause a full application reload due to broken redirects, providing a smoother navigation experience. by @nayskutzu
 - Fixed an issue that could cause your customizations to be lost if localStorage failed to sync properly! by @nayskutzu
 
 ### Added
 
-- The migration CLI now fully supports running plugin-provided migrations, enabling seamless updates and database changes for all your plugins!
-- The migration interface in the admin panel now fully supports executing migrations provided by plugins, enabling streamlined database updates for all installed plugins!
-- Added support for specifying public IPv4 and IPv6 addresses on nodes, enhancing subdomain manager functionality and enabling broader networking capabilities.
-- Significantly expanded plugin widget customization options power users and plugin developers can now personalize widgets to their heart's content!
-- Added FeatherCloud handshake support, allowing seamless and secure linking of your panel to a FeatherCloud account!
-- Introduced FeatherPanel Zero Trust Security: servers are now automatically scanned for malware and threats, enhancing protection and peace of mind!
-- FeatherPanel Thread Intelligence Server (TIS): introduces advanced real-time malware and threat detection, empowering your panel with cutting-edge active protection and intelligent security analytics for all managed servers. Powerd by FeatherWings TIS and FeatherCloud TIS!
-- Added support for a FeatherPanel plugin export ignore file, allowing you to exclude packages and third-party dependencies that are used during plugin development but should not be included in the final exported plugin.
+- The migration CLI now fully supports running plugin-provided migrations, enabling seamless updates and database changes for all your plugins! by @nayskutzu
+- The migration interface in the admin panel now fully supports executing migrations provided by plugins, enabling streamlined database updates for all installed plugins! by @nayskutzu
+- Added support for specifying public IPv4 and IPv6 addresses on nodes, enhancing subdomain manager functionality and enabling broader networking capabilities. by @nayskutzu
+- Significantly expanded plugin widget customization options power users and plugin developers can now personalize widgets to their heart's content! by @nayskutzu
+- Added FeatherCloud handshake support, allowing seamless and secure linking of your panel to a FeatherCloud account! by @nayskutzu
+- Introduced FeatherPanel Zero Trust Security: servers are now automatically scanned for malware and threats, enhancing protection and peace of mind! by @nayskutzu
+- FeatherPanel Thread Intelligence Server (TIS): introduces advanced real-time malware and threat detection, empowering your panel with cutting-edge active protection and intelligent security analytics for all managed servers. Powerd by FeatherWings TIS and FeatherCloud TIS! by @nayskutzu
+- Added support for a FeatherPanel plugin export ignore file, allowing you to exclude packages and third-party dependencies that are used during plugin development but should not be included in the final exported plugin. by @nayskutzu
 - Add cursor pointer to non-disabled buttons to improve UI clarity. by @puttydotexe
-- Introduced context-aware tooltips for various admin actions throughout FeatherPanel menus, providing clearer guidance and an improved user experience!
+- Introduced context-aware tooltips for various admin actions throughout FeatherPanel menus, providing clearer guidance and an improved user experience! by @nayskutzu
 - Two-factor setup now redirects to the intended page after successful verification (short delay for UX). by @puttydotexe 
 - OTP input updated to allow numeric entry with autocomplete for easier entry on devices. by  @puttydotexe
-- Brand new plugin marketplace system with powerful update support! The marketplace now offers advanced search and filtering options (search by tags, verified status, sorting, and more), making it much easier to discover exactly what you need. The system now enforces compatibility and permission checks, preventing users from installing plugins that are incompatible with their panel version or missing required dependencies, for a safer and smoother experience.
+- Brand new plugin marketplace system with powerful update support! The marketplace now offers advanced search and filtering options (search by tags, verified status, sorting, and more), making it much easier to discover exactly what you need. The system now enforces compatibility and permission checks, preventing users from installing plugins that are incompatible with their panel version or missing required dependencies, for a safer and smoother experience. by @nayskutzu
 - Introduced a powerful notification service that allows administrators to send beautiful, informative messages to all users. by @nayskutzu
 
 ### Improved
-- Improved how user emails are fetched: they now use a dedicated paginated route to avoid excessive memory usage and return results more efficiently.
-- Activity fetching is now significantly optimized and has its own dedicated route, dramatically reducing memory usage when retrieving user activity data.
-- Cleaned up the session response: password hashes and unnecessary data are no longer included.
-- Moved layout and organization-related controls (such as sorting, filtering, and view toggles) into a new "View Layout" dropdown for a cleaner and less cluttered user interface.
-- Fixed a significant layout shift on the user information tab in the admin panel by adding a minimum height tab switching is now smooth and avoids jarring jumps.
-- Polished the design of authentication pages for a more professional and visually appealing user experience.
-- Now using Rolldown Vite as the compiler for faster build times and improved overall usage experience.
+- Improved how user emails are fetched: they now use a dedicated paginated route to avoid excessive memory usage and return results more efficiently. by @nayskutzu
+- Activity fetching is now significantly optimized and has its own dedicated route, dramatically reducing memory usage when retrieving user activity data. by @nayskutzu
+- Cleaned up the session response: password hashes and unnecessary data are no longer included. by @nayskutzu
+- Moved layout and organization-related controls (such as sorting, filtering, and view toggles) into a new "View Layout" dropdown for a cleaner and less cluttered user interface. by @nayskutzu
+- Fixed a significant layout shift on the user information tab in the admin panel by adding a minimum height tab switching is now smooth and avoids jarring jumps. by @nayskutzu
+- Polished the design of authentication pages for a more professional and visually appealing user experience. by @nayskutzu
+- Now using Rolldown Vite as the compiler for faster build times and improved overall usage experience. by @nayskutzu
 - Server transfer node destination selection will now prevent selecting of the servers current node and any unhealth node. by @puttydotexe
+- index.html is now automatically compressed and minified during production builds, delivering noticeably faster load times and a more responsive panel experience. by @nayskutzu
 
 ## v1.0.2 BETA
 

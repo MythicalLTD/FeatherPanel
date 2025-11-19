@@ -35,6 +35,7 @@ use App\Chat\Node;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
+use App\Plugins\Events\Events\TISEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -96,6 +97,18 @@ class TISController
                 }
             }
 
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    TISEvent::onTISStatsRetrieved(),
+                    [
+                        'nodes' => $allStats,
+                        'totals' => $totalStats,
+                    ]
+                );
+            }
+
             return ApiResponse::success([
                 'nodes' => $allStats,
                 'totals' => $totalStats,
@@ -146,6 +159,18 @@ class TISController
                     return ApiResponse::error('Failed to retrieve hashes from node', 'TIS_ERROR', 500);
                 }
 
+                // Emit event
+                global $eventManager;
+                if (isset($eventManager) && $eventManager !== null) {
+                    $eventManager->emit(
+                        TISEvent::onTISHashesRetrieved(),
+                        [
+                            'node_id' => (int) $nodeId,
+                            'hashes' => $response->getData(),
+                        ]
+                    );
+                }
+
                 return ApiResponse::success($response->getData(), 'Hashes retrieved successfully');
             }
 
@@ -179,6 +204,18 @@ class TISController
                 } catch (\Exception $e) {
                     App::getInstance(true)->getLogger()->error("Failed to get hashes from node {$node['id']}: " . $e->getMessage());
                 }
+            }
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    TISEvent::onTISHashesRetrieved(),
+                    [
+                        'hashes' => $allHashes,
+                        'nodes_queried' => count($nodes),
+                    ]
+                );
             }
 
             return ApiResponse::success($allHashes, 'Hashes retrieved successfully');
@@ -238,6 +275,19 @@ class TISController
                 return ApiResponse::error('Failed to check server status', 'TIS_ERROR', 500);
             }
 
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    TISEvent::onTISServerChecked(),
+                    [
+                        'server_uuid' => $serverUuid,
+                        'node_id' => (int) $nodeId,
+                        'server_status' => $response->getData(),
+                    ]
+                );
+            }
+
             return ApiResponse::success($response->getData(), 'Server status retrieved successfully');
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to check server status: ' . $e->getMessage(), 'TIS_CHECK_ERROR', 500);
@@ -283,6 +333,19 @@ class TISController
                     return ApiResponse::error('Failed to check hashes', 'TIS_ERROR', 500);
                 }
 
+                // Emit event
+                global $eventManager;
+                if (isset($eventManager) && $eventManager !== null) {
+                    $eventManager->emit(
+                        TISEvent::onTISHashesChecked(),
+                        [
+                            'node_id' => (int) $nodeId,
+                            'hashes' => $hashes,
+                            'matches' => $response->getData(),
+                        ]
+                    );
+                }
+
                 return ApiResponse::success($response->getData(), 'Hashes checked successfully');
             }
 
@@ -316,6 +379,20 @@ class TISController
                 } catch (\Exception $e) {
                     App::getInstance(true)->getLogger()->error("Failed to check hashes on node {$node['id']}: " . $e->getMessage());
                 }
+            }
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    TISEvent::onTISHashesChecked(),
+                    [
+                        'hashes' => $hashes,
+                        'matches' => $allMatches,
+                        'totalChecked' => count($hashes),
+                        'nodes_queried' => count($nodes),
+                    ]
+                );
             }
 
             return ApiResponse::success([

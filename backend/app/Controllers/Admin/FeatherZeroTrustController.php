@@ -43,6 +43,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\FeatherZeroTrust\Configuration;
 use App\Services\FeatherZeroTrust\WebhookService;
+use App\Plugins\Events\Events\FeatherZeroTrustEvent;
 use App\Services\FeatherZeroTrust\SuspensionService;
 
 class FeatherZeroTrustController
@@ -57,8 +58,20 @@ class FeatherZeroTrustController
     {
         try {
             $config = new Configuration();
+            $configData = $config->getAll();
 
-            return ApiResponse::success($config->getAll(), 'Configuration retrieved successfully');
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    FeatherZeroTrustEvent::onFeatherZeroTrustConfigRetrieved(),
+                    [
+                        'config' => $configData,
+                    ]
+                );
+            }
+
+            return ApiResponse::success($configData, 'Configuration retrieved successfully');
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to retrieve configuration: ' . $e->getMessage(), 'CONFIG_ERROR', 500);
         }
@@ -80,13 +93,29 @@ class FeatherZeroTrustController
             }
 
             $config = new Configuration();
+            $oldConfig = $config->getAll();
             $success = $config->update($data);
 
             if (!$success) {
                 return ApiResponse::error('Failed to update configuration', 'UPDATE_ERROR', 500);
             }
 
-            return ApiResponse::success($config->getAll(), 'Configuration updated successfully');
+            $newConfig = $config->getAll();
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    FeatherZeroTrustEvent::onFeatherZeroTrustConfigUpdated(),
+                    [
+                        'old_config' => $oldConfig,
+                        'new_config' => $newConfig,
+                        'updated_by' => $request->get('user'),
+                    ]
+                );
+            }
+
+            return ApiResponse::success($newConfig, 'Configuration updated successfully');
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to update configuration: ' . $e->getMessage(), 'CONFIG_UPDATE_ERROR', 500);
         }
@@ -146,6 +175,20 @@ class FeatherZeroTrustController
             // Create scanner
             $scanner = new Scanner($wings, $config);
 
+            // Emit scan started event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    FeatherZeroTrustEvent::onFeatherZeroTrustScanStarted(),
+                    [
+                        'server_uuid' => $serverUuid,
+                        'directory' => $directory,
+                        'max_depth' => $maxDepth,
+                        'started_by' => $request->get('user'),
+                    ]
+                );
+            }
+
             // Perform scan
             $results = $scanner->scanServer($serverUuid, $directory, $maxDepth);
 
@@ -170,6 +213,19 @@ class FeatherZeroTrustController
                     // Don't fail the request if webhook fails
                     App::getInstance(true)->getLogger()->warning('Failed to send FeatherZeroTrust webhook: ' . $e->getMessage());
                 }
+            }
+
+            // Emit scan completed event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    FeatherZeroTrustEvent::onFeatherZeroTrustScanCompleted(),
+                    [
+                        'server_uuid' => $serverUuid,
+                        'scan_results' => $results,
+                        'detections_count' => $detectionsCount,
+                    ]
+                );
             }
 
             return ApiResponse::success($results, 'Server scan completed successfully');

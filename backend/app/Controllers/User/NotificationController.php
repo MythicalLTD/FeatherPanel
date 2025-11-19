@@ -36,6 +36,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\NotificationsEvent;
 
 #[OA\Schema(
     schema: 'UserNotification',
@@ -156,6 +157,19 @@ class NotificationController
 
         if (!$dismissed) {
             return ApiResponse::error('Failed to dismiss notification', 'DISMISS_FAILED', 500);
+        }
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                NotificationsEvent::onNotificationDismissed(),
+                [
+                    'notification_id' => $id,
+                    'user_id' => $userId,
+                    'user' => $currentUser,
+                ]
+            );
         }
 
         return ApiResponse::success([], 'Notification dismissed successfully', 200);

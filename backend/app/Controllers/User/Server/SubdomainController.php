@@ -42,6 +42,7 @@ use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
+use App\Plugins\Events\Events\SubdomainsEvent;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Subdomain\CloudflareSubdomainService;
 
@@ -331,6 +332,23 @@ class SubdomainController
             'subdomain' => $label,
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $created = Subdomain::getByDomainAndLabel((int) $domain['id'], $label);
+            if ($created) {
+                $eventManager->emit(
+                    SubdomainsEvent::onSubdomainCreated(),
+                    [
+                        'subdomain_uuid' => $created['uuid'],
+                        'subdomain_data' => $created,
+                        'server_data' => $server,
+                        'user' => $request->attributes->get('user'),
+                    ]
+                );
+            }
+        }
+
         $created = Subdomain::getByDomainAndLabel((int) $domain['id'], $label);
         $formatted = null;
         if ($created) {
@@ -417,6 +435,20 @@ class SubdomainController
             'domain' => $domain['domain'],
             'subdomain' => $subdomain['subdomain'],
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                SubdomainsEvent::onSubdomainDeleted(),
+                [
+                    'subdomain_uuid' => $uuid,
+                    'subdomain_data' => $subdomain,
+                    'server_data' => $server,
+                    'user' => $request->attributes->get('user'),
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Subdomain deleted successfully');
     }

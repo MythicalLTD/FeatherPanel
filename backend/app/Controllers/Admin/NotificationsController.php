@@ -37,6 +37,7 @@ use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\NotificationsEvent;
 
 #[OA\Schema(
     schema: 'Notification',
@@ -175,6 +176,26 @@ class NotificationsController
         $from = $total > 0 ? (($page - 1) * $limit) + 1 : 0;
         $to = min($page * $limit, $total);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                NotificationsEvent::onNotificationsRetrieved(),
+                [
+                    'notifications' => $notifications,
+                    'pagination' => [
+                        'page' => $page,
+                        'limit' => $limit,
+                        'total' => $total,
+                    ],
+                    'filters' => [
+                        'search' => $search,
+                        'type' => $type,
+                    ],
+                ]
+            );
+        }
+
         return ApiResponse::success([
             'notifications' => $notifications,
             'pagination' => [
@@ -233,7 +254,31 @@ class NotificationsController
         $notification = Notification::getNotificationById($id);
 
         if (!$notification) {
+            // Emit error event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    NotificationsEvent::onNotificationNotFound(),
+                    [
+                        'notification_id' => $id,
+                        'error_message' => 'Notification not found',
+                    ]
+                );
+            }
+
             return ApiResponse::error('Notification not found', 'NOTIFICATION_NOT_FOUND', 404);
+        }
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                NotificationsEvent::onNotificationRetrieved(),
+                [
+                    'notification_id' => $id,
+                    'notification_data' => $notification,
+                ]
+            );
         }
 
         return ApiResponse::success([
@@ -342,6 +387,20 @@ class NotificationsController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $notification = Notification::getNotificationById($notificationId);
+            $eventManager->emit(
+                NotificationsEvent::onNotificationCreated(),
+                [
+                    'notification_id' => $notificationId,
+                    'notification_data' => $notification,
+                    'created_by' => $currentUser,
+                ]
+            );
+        }
+
         return ApiResponse::success([
             'notification_id' => $notificationId,
         ], 'Notification created successfully', 201);
@@ -438,6 +497,7 @@ class NotificationsController
             return ApiResponse::error('is_sticky must be a boolean', 'INVALID_DATA_TYPE', 400);
         }
 
+        $oldNotification = $notification;
         $updated = Notification::updateNotification($id, $data);
 
         if (!$updated) {
@@ -452,6 +512,21 @@ class NotificationsController
             'context' => 'Updated notification: ' . ($data['title'] ?? $notification['title']),
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $updatedNotification = Notification::getNotificationById($id);
+            $eventManager->emit(
+                NotificationsEvent::onNotificationUpdated(),
+                [
+                    'notification_id' => $id,
+                    'old_data' => $oldNotification,
+                    'new_data' => $updatedNotification,
+                    'updated_by' => $currentUser,
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Notification updated successfully', 200);
     }
@@ -513,6 +588,19 @@ class NotificationsController
             'context' => 'Deleted notification: ' . $notification['title'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                NotificationsEvent::onNotificationDeleted(),
+                [
+                    'notification_id' => $id,
+                    'notification_data' => $notification,
+                    'deleted_by' => $currentUser,
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Notification deleted successfully', 200);
     }

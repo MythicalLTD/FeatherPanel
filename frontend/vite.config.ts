@@ -25,11 +25,36 @@ SOFTWARE.
 */
 
 import { fileURLToPath, URL } from 'node:url';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import vueDevTools from 'vite-plugin-vue-devtools';
 import ViteYaml from '@modyfi/vite-plugin-yaml';
 import tailwindcss from '@tailwindcss/vite';
+// @ts-expect-error - html-minifier-terser doesn't have type definitions
+import { minify } from 'html-minifier-terser';
+
+// HTML minification plugin
+function htmlMinifyPlugin(): Plugin {
+    return {
+        name: 'html-minify',
+        enforce: 'post',
+        apply: 'build',
+        async transformIndexHtml(html: string) {
+            return await minify(html, {
+                collapseWhitespace: true,
+                removeComments: false, // Keep comments for placeholders
+                removeRedundantAttributes: true,
+                removeScriptTypeAttributes: true,
+                removeStyleLinkTypeAttributes: true,
+                useShortDoctype: true,
+                minifyCSS: true,
+                minifyJS: true,
+                removeEmptyAttributes: true,
+                removeOptionalTags: false, // Keep optional tags for compatibility
+            });
+        },
+    };
+}
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -42,6 +67,7 @@ export default defineConfig({
         vue({}),
         vueDevTools(),
         tailwindcss(),
+        htmlMinifyPlugin(),
     ],
     resolve: {
         alias: {
