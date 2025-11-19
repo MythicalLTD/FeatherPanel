@@ -286,13 +286,22 @@ class ServerFilesController
             // Get the raw file content
             $fileContent = $response->getRawBody();
 
-            // Check if file content is empty
-            if (empty($fileContent)) {
-                if (is_array($response->getData()) && isset($response->getData()['error'])) {
-                    return ApiResponse::error('File content error: ' . $response->getData()['error'], 'FILE_CONTENT_ERROR', 500);
-                }
+            // Check if there's an actual error in the response data (not just empty content)
+            // Empty files are valid and should be allowed
+            if (is_array($response->getData()) && isset($response->getData()['error'])) {
+                return ApiResponse::error('File content error: ' . $response->getData()['error'], 'FILE_CONTENT_ERROR', 500);
+            }
 
-                return ApiResponse::error('File content is empty or could not be retrieved', 'EMPTY_FILE_CONTENT', 500);
+            // If fileContent is null (not just empty string), it might indicate an error
+            // But if it's an empty string, that's a valid empty file
+            if ($fileContent === null) {
+                // Check if response indicates an error
+                $responseData = $response->getData();
+                if (is_array($responseData) && (isset($responseData['error']) || isset($responseData['error_message']))) {
+                    return ApiResponse::error('File content could not be retrieved', 'FILE_CONTENT_ERROR', 500);
+                }
+                // If no error indicated, treat as empty file
+                $fileContent = '';
             }
 
             // Determine content type based on file extension
@@ -1479,9 +1488,16 @@ class ServerFilesController
             // Get the raw file content
             $fileContent = $response->getRawBody();
 
-            // Check if file content is empty
-            if (empty($fileContent)) {
-                return ApiResponse::error('File content is empty or could not be retrieved', 'EMPTY_FILE_CONTENT', 500);
+            // Empty files are valid - only return error if content is null (indicating an actual error)
+            // If fileContent is null (not just empty string), it might indicate an error
+            if ($fileContent === null) {
+                // Check if response indicates an error
+                $responseData = $response->getData();
+                if (is_array($responseData) && (isset($responseData['error']) || isset($responseData['error_message']))) {
+                    return ApiResponse::error('File content could not be retrieved', 'FILE_CONTENT_ERROR', 500);
+                }
+                // If no error indicated, treat as empty file
+                $fileContent = '';
             }
 
             // Get filename from path

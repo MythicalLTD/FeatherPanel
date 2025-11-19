@@ -605,10 +605,10 @@
 
             <!-- Monaco Editor -->
             <MonacoFileEditor
-                v-else-if="!loading && fileContent !== null && server"
+                v-else-if="!loading && fileContent !== null && fileContent !== undefined && server"
                 :file-name="fileName || 'unknown.txt'"
                 :file-path="filePath || '/'"
-                :content="fileContent || ''"
+                :content="fileContent ?? ''"
                 :readonly="readonly"
                 @save="handleSave"
                 @close="handleClose"
@@ -1191,16 +1191,27 @@ const loadFileContent = async () => {
 
         // Handle different response types (matching ServerFiles pattern)
         if (typeof response.data === 'string') {
+            // Empty strings are valid - allow them
             fileContent.value = response.data;
         } else if (response.data && typeof response.data === 'object') {
-            if (response.data.content) {
-                fileContent.value = response.data.content;
-            } else if (response.data.data) {
-                fileContent.value = response.data.data;
+            if (response.data.content !== undefined && response.data.content !== null) {
+                // Handle empty strings in content field
+                fileContent.value = String(response.data.content);
+            } else if (response.data.data !== undefined && response.data.data !== null) {
+                // Handle empty strings in data field
+                fileContent.value = String(response.data.data);
+            } else if (response.data.success === false) {
+                // If API explicitly says it failed, throw error
+                throw new Error(response.data.message || 'Failed to load file');
             } else {
-                fileContent.value = JSON.stringify(response.data, null, 2);
+                // Empty object or unknown structure - treat as empty file
+                fileContent.value = '';
             }
+        } else if (response.data === null || response.data === undefined) {
+            // API returned null/undefined - treat as empty file (valid)
+            fileContent.value = '';
         } else {
+            // Fallback: convert to string, defaulting to empty string
             fileContent.value = String(response.data || '');
         }
 
@@ -1224,7 +1235,26 @@ const loadFileContent = async () => {
         }
     } catch (error) {
         console.error('Error loading file:', error);
-        const err = error as { response?: { data?: { message?: string } } };
+        const err = error as {
+            response?: { status?: number; data?: { message?: string; success?: boolean } };
+            message?: string;
+        };
+
+        // Check if it's a 404 or "file not found" error - might be a new empty file
+        const errorMessage = err.response?.data?.message || err.message || '';
+        const isNotFoundError =
+            err.response?.status === 404 ||
+            errorMessage.toLowerCase().includes('not found') ||
+            errorMessage.toLowerCase().includes('file not found');
+
+        // If it's a 404, treat as empty file (newly created files might not exist yet)
+        if (isNotFoundError) {
+            fileContent.value = '';
+            loading.value = false;
+            return;
+        }
+
+        // For other errors, show error and redirect
         toast(err.response?.data?.message || t('fileEditor.loadError'), { type: TYPE.ERROR });
         router.push({
             name: 'ServerFiles',

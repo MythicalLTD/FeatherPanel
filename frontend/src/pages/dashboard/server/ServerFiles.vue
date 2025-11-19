@@ -3091,8 +3091,13 @@ const isArchive = (file: FileItem) => {
     const mime = file.mime?.toLowerCase();
 
     // Exclude certain MIME types that would realisticly never be unarchived via the file manager.
-    const archiveExceptions = ['application/java-archive', 'application/jar', 'application/jar-archive', 'application/x-java-archive'];
-    if (mime && archiveExceptions.some(ex => mime.includes(ex))) return false;
+    const archiveExceptions = [
+        'application/java-archive',
+        'application/jar',
+        'application/jar-archive',
+        'application/x-java-archive',
+    ];
+    if (mime && archiveExceptions.some((ex) => mime.includes(ex))) return false;
 
     // Check by extension (including weird ones)
     const archiveExtensions = ['zip', 'tar', 'gz', 'tgz', '7z', 'rar', 'bz2', 'xz', 'lzma', 'cab', 'iso', 'dmg'];

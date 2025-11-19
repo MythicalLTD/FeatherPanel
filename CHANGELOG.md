@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.0.4 BETA
+
+### Added
+
+- Allow compression of files in the right click context menu. by @puttydotexe
+
+### Fixed
+
+- Fixed an issue that prevented empty files from being edited, ensuring seamless editing regardless of file size. by @nayskutzu
+
 ## v1.0.3 BETA
 
 ### Removed
