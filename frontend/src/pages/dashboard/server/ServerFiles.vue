@@ -769,6 +769,16 @@
                                                     {{ t('serverFiles.extract') }}
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
+                                                    v-if="
+                                                        canArchiveFiles &&
+                                                        (!selectedFiles.length || selectedFiles.includes(file.name))
+                                                    "
+                                                    @click="compressSelected(file)"
+                                                >
+                                                    <Archive class="h-4 w-4 mr-2" />
+                                                    {{ t('serverFiles.compress') }}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
                                                     v-if="canUpdateFiles"
                                                     @click="changePermissions(file)"
                                                 >
@@ -962,6 +972,16 @@
                                         >
                                             <Archive class="h-4 w-4 mr-2" />
                                             {{ t('serverFiles.extract') }}
+                                        </ContextMenuItem>
+                                        <ContextMenuItem
+                                            v-if="
+                                                canArchiveFiles &&
+                                                (!selectedFiles.length || selectedFiles.includes(file.name))
+                                            "
+                                            @click="compressSelected(file)"
+                                        >
+                                            <Archive class="h-4 w-4 mr-2" />
+                                            {{ t('serverFiles.compress') }}
                                         </ContextMenuItem>
                                         <ContextMenuItem v-if="canUpdateFiles" @click="changePermissions(file)">
                                             <Settings class="h-4 w-4 mr-2" />
@@ -1492,7 +1512,7 @@
                 <div class="space-y-4">
                     <div class="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
                         <p class="text-sm text-orange-600 dark:text-orange-400">
-                            {{ t('serverFiles.compressingFilesFromCurrent', { count: selectedFiles.length }) }}
+                            {{ t('serverFiles.compressingFilesFromCurrent', { count: compressionTargets.length }) }}
                         </p>
                     </div>
                     <div class="space-y-2">
@@ -1528,7 +1548,7 @@
                     <div class="space-y-2">
                         <Label class="text-sm font-medium">{{ t('serverFiles.selectedFilesLabel') }}</Label>
                         <div class="max-h-32 overflow-y-auto p-2 rounded-md bg-muted text-sm">
-                            <div v-for="file in selectedFiles" :key="file" class="py-1 font-mono text-xs">
+                            <div v-for="file in compressionTargets" :key="file" class="py-1 font-mono text-xs">
                                 {{ file }}
                             </div>
                         </div>
@@ -2059,6 +2079,7 @@ const copyDestination = ref('');
 const moveDestination = ref('');
 const compressArchiveName = ref('');
 const compressArchiveType = ref('tar.gz');
+const compressionTargets = ref<string[]>([]);
 
 // For range selection with Shift+Click
 const lastSelectedIndex = ref<number>(-1);
@@ -3069,6 +3090,10 @@ const isArchive = (file: FileItem) => {
     const ext = file.name.split('.').pop()?.toLowerCase();
     const mime = file.mime?.toLowerCase();
 
+    // Exclude certain MIME types that would realisticly never be unarchived via the file manager.
+    const archiveExceptions = ['application/java-archive', 'application/jar', 'application/jar-archive', 'application/x-java-archive'];
+    if (mime && archiveExceptions.some(ex => mime.includes(ex))) return false;
+
     // Check by extension (including weird ones)
     const archiveExtensions = ['zip', 'tar', 'gz', 'tgz', '7z', 'rar', 'bz2', 'xz', 'lzma', 'cab', 'iso', 'dmg'];
     if (ext && archiveExtensions.includes(ext)) return true;
@@ -3915,11 +3940,19 @@ const confirmDeleteProceed = async () => {
 
 // Mass copy disabled by design
 
-const compressSelected = () => {
-    if (selectedFiles.value.length === 0) {
+const compressSelected = (file?: FileItem) => {
+    let filesToCompress: string[] = [];
+
+    if (selectedFiles.value.length > 0) {
+        filesToCompress = [...selectedFiles.value];
+    } else if (file) {
+        filesToCompress = [file.name];
+    } else {
         toast.error(t('serverFiles.noFilesSelected'));
         return;
     }
+
+    compressionTargets.value = filesToCompress;
     // Reset dialog state
     compressArchiveName.value = '';
     compressArchiveType.value = 'tar.gz';
@@ -3927,7 +3960,7 @@ const compressSelected = () => {
 };
 
 const confirmCompress = async () => {
-    if (selectedFiles.value.length === 0) {
+    if (compressionTargets.value.length === 0) {
         toast.error(t('serverFiles.noFilesSelected'));
         return;
     }
@@ -3936,15 +3969,16 @@ const confirmCompress = async () => {
     try {
         const response = await axios.post(`/api/user/servers/${route.params.uuidShort}/compress-files`, {
             root: currentPath.value,
-            files: selectedFiles.value,
+            files: compressionTargets.value,
             name: compressArchiveName.value || undefined,
             extension: compressArchiveType.value,
         });
 
         if (response.data.success) {
-            toast.success(t('serverFiles.filesCompressed', { count: selectedFiles.value.length }));
+            toast.success(t('serverFiles.filesCompressed', { count: compressionTargets.value.length }));
             showCompressDialog.value = false;
             clearSelection();
+            compressionTargets.value = [];
             refreshFiles();
         } else {
             toast.error(response.data.message || t('serverFiles.compressError'));
@@ -3955,6 +3989,9 @@ const confirmCompress = async () => {
         toast.error(err.response?.data?.message || t('serverFiles.compressError'));
     } finally {
         loading.value = false;
+        if (!showCompressDialog.value) {
+            compressionTargets.value = [];
+        }
     }
 };
 
