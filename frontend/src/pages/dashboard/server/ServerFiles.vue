@@ -41,7 +41,7 @@
                     </div>
                     <div class="space-y-3">
                         <h2
-                            class="text-5xl font-black bg-linear-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent drop-shadow-sm"
+                            class="text-5xl font-black bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent drop-shadow-sm"
                             style="line-height: 1.2"
                         >
                             🔥 {{ t('serverFiles.dropItHot') }} 🔥
