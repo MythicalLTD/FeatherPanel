@@ -491,15 +491,29 @@ export function useNavigation() {
                 group: 'system',
             },
             {
+                id: 'admin-feathercloud-marketplace',
+                name: 'Marketplace',
+                title: 'FeatherCloud Marketplace',
+                url: '/admin/feathercloud/marketplace',
+                icon: Package,
+                isActive:
+                    currentPath.value.startsWith('/admin/feathercloud/marketplace') ||
+                    currentPath.value.startsWith('/admin/feathercloud/plugins') ||
+                    currentPath.value.startsWith('/admin/feathercloud/spells'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_PLUGINS_VIEW,
+                group: 'feathercloud',
+            },
+            {
                 id: 'admin-cloud-management',
-                name: 'FeatherCloud Cloud',
+                name: 'Cloud',
                 title: 'FeatherCloud Cloud',
                 url: '/admin/cloud-management',
                 icon: Key,
                 isActive: currentPath.value.startsWith('/admin/cloud-management'),
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_STATISTICS_VIEW,
-                group: 'overviewFeatherCloud',
+                group: 'feathercloud',
             },
             {
                 id: 'admin-feathercloud-ai-agent',
@@ -510,68 +524,29 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith('/admin/feathercloud-ai-agent'),
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_STATISTICS_VIEW,
-                group: 'overviewFeatherCloud',
-            },
-            {
-                id: 'admin-feathercloud-marketplace',
-                name: 'FeatherCloud Marketplace',
-                title: 'FeatherCloud Marketplace',
-                url: '/admin/feathercloud/marketplace',
-                icon: Package,
-                isActive:
-                    currentPath.value.startsWith('/admin/feathercloud/marketplace') ||
-                    currentPath.value.startsWith('/admin/feathercloud/plugins') ||
-                    currentPath.value.startsWith('/admin/feathercloud/spells'),
-                category: 'admin' as const,
-                permission: Permissions.ADMIN_PLUGINS_VIEW,
-                group: 'overviewFeatherCloud',
+                group: 'feathercloud',
             },
             {
                 id: 'admin-tis',
-                name: 'TIS',
-                title: 'Thread Intelligence Server',
+                name: 'FeatherCloud TIS',
+                title: 'FeatherCloud TIS',
                 url: '/admin/feathercloud/tis',
                 icon: ShieldCheck,
                 isActive: currentPath.value.startsWith('/admin/feathercloud/tis'),
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_TIS_VIEW,
-                group: 'feathercloudSecurity',
+                group: 'feathercloud',
             },
             {
                 id: 'admin-featherzerotrust',
-                name: 'FeatherZeroTrust',
-                title: 'FeatherZeroTrust Scanner',
+                name: 'FeatherCloud ZeroTrust',
+                title: 'FeatherCloud ZeroTrust',
                 url: '/admin/feathercloud/featherzerotrust',
                 icon: ShieldCheck,
-                isActive:
-                    currentPath.value.startsWith('/admin/feathercloud/featherzerotrust') &&
-                    !currentPath.value.startsWith('/admin/feathercloud/featherzerotrust/config') &&
-                    !currentPath.value.startsWith('/admin/feathercloud/featherzerotrust/logs'),
+                isActive: currentPath.value.startsWith('/admin/feathercloud/featherzerotrust'),
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_FEATHERZEROTRUST_VIEW,
-                group: 'feathercloudSecurity',
-            },
-            {
-                id: 'admin-featherzerotrust-config',
-                name: 'FeatherZeroTrust Config',
-                title: 'FeatherZeroTrust Configuration',
-                url: '/admin/feathercloud/featherzerotrust/config',
-                icon: Settings,
-                isActive: currentPath.value.startsWith('/admin/feathercloud/featherzerotrust/config'),
-                category: 'admin' as const,
-                permission: Permissions.ADMIN_FEATHERZEROTRUST_CONFIGURE,
-                group: 'feathercloudSecurity',
-            },
-            {
-                id: 'admin-featherzerotrust-logs',
-                name: 'FeatherZeroTrust Logs',
-                title: 'FeatherZeroTrust Execution Logs',
-                url: '/admin/feathercloud/featherzerotrust/logs',
-                icon: FileText,
-                isActive: currentPath.value.startsWith('/admin/feathercloud/featherzerotrust/logs'),
-                category: 'admin' as const,
-                permission: Permissions.ADMIN_FEATHERZEROTRUST_VIEW,
-                group: 'feathercloudSecurity',
+                group: 'feathercloud',
             },
             {
                 id: 'admin-database-management',
@@ -843,13 +818,12 @@ export function useNavigation() {
         // Define group order and labels
         const groupConfig: Record<string, () => string> = {
             overview: () => t('navGroups.overview'),
-            overviewFeatherCloud: () => 'Overview · FeatherCloud Suite',
+            feathercloud: () => 'FeatherCloud',
             users: () => t('navGroups.userManagement'),
             networking: () => t('navGroups.networking'),
             infrastructure: () => t('navGroups.infrastructure'),
             content: () => t('navGroups.content'),
             system: () => t('navGroups.system'),
-            feathercloudSecurity: () => 'Security · FeatherCloud',
             plugins: () => t('navGroups.plugins'),
         };
 

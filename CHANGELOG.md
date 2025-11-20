@@ -6,6 +6,7 @@
 
 - Relocated the export plugin functionality to the Developer Plugin SDK page, ensuring only developers can export plugins and preventing unintended or unauthorized sharing. by @nayskutzu
 - Moved the online spells directory into the FeatherPanel Marketplace for improved visibility and easier access. by @nayskutzu
+- Added dedicated admin sidebar routes for Zero Trust Security and Thread Intelligence Server (TIS), making these advanced protections and analytics easier to access for administrators. by @nayskutzu
 
 ### Added
 

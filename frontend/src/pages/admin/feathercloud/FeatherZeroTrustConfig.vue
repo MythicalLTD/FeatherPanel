@@ -203,17 +203,17 @@ onMounted(() => {
 
                             <div class="flex items-center justify-between p-4 border rounded-lg">
                                 <div class="flex-1">
-                                    <label class="text-sm font-medium cursor-pointer" for="enabled">Enabled</label>
+                                    <label for="enabled" class="text-sm font-medium cursor-pointer">Enabled</label>
                                     <p class="text-xs text-muted-foreground mt-1">
                                         Enable or disable FeatherZeroTrust scanning
                                     </p>
                                 </div>
-                                <label class="relative inline-flex items-center cursor-pointer" for="enabled">
-                                    <input id="enabled" v-model="config.enabled" type="checkbox" class="sr-only peer" />
-                                    <div
-                                        class="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"
-                                    ></div>
-                                </label>
+                                <input
+                                    id="enabled"
+                                    v-model="config.enabled"
+                                    type="checkbox"
+                                    class="h-5 w-5 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer"
+                                />
                             </div>
 
                             <div>
@@ -258,24 +258,19 @@ onMounted(() => {
 
                             <div class="flex items-center justify-between p-4 border rounded-lg">
                                 <div class="flex-1">
-                                    <label class="text-sm font-medium cursor-pointer" for="auto_suspend"
+                                    <label for="auto_suspend" class="text-sm font-medium cursor-pointer"
                                         >Auto Suspend</label
                                     >
                                     <p class="text-xs text-muted-foreground mt-1">
                                         Automatically suspend servers with detections
                                     </p>
                                 </div>
-                                <label class="relative inline-flex items-center cursor-pointer" for="auto_suspend">
-                                    <input
-                                        id="auto_suspend"
-                                        v-model="config.auto_suspend"
-                                        type="checkbox"
-                                        class="sr-only peer"
-                                    />
-                                    <div
-                                        class="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"
-                                    ></div>
-                                </label>
+                                <input
+                                    id="auto_suspend"
+                                    v-model="config.auto_suspend"
+                                    type="checkbox"
+                                    class="h-5 w-5 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer"
+                                />
                             </div>
                         </div>
 
@@ -285,22 +280,17 @@ onMounted(() => {
 
                             <div class="flex items-center justify-between p-4 border rounded-lg">
                                 <div class="flex-1">
-                                    <label class="text-sm font-medium cursor-pointer" for="webhook_enabled"
+                                    <label for="webhook_enabled" class="text-sm font-medium cursor-pointer"
                                         >Webhook Enabled</label
                                     >
                                     <p class="text-xs text-muted-foreground mt-1">Send notifications via webhook</p>
                                 </div>
-                                <label class="relative inline-flex items-center cursor-pointer" for="webhook_enabled">
-                                    <input
-                                        id="webhook_enabled"
-                                        v-model="config.webhook_enabled"
-                                        type="checkbox"
-                                        class="sr-only peer"
-                                    />
-                                    <div
-                                        class="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"
-                                    ></div>
-                                </label>
+                                <input
+                                    id="webhook_enabled"
+                                    v-model="config.webhook_enabled"
+                                    type="checkbox"
+                                    class="h-5 w-5 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer"
+                                />
                             </div>
 
                             <div v-if="config.webhook_enabled">
