@@ -16,6 +16,7 @@
 - Unleash your creativity with full Accent Color customization—easily personalize the app’s primary color scheme to reflect your individual style! by @nayskutzu
 - Introduced a sleek and consistent custom scrollbar for both side panels and the entire app, elevating the overall user experience. by @nayskutzu
 - Added an automated FeatherTrust scan report button to the FeatherZero Trust page, enabling instant access to security scan reports with a single click! by @nayskutzu
+- Introduced FeatherAI, an intelligent AI-powered chatbot assistant built into FeatherPanel, enabling users to get instant help, perform actions, and receive expert guidance right within the app. by @nayskutzu
 
 ### Fixed
 

@@ -3255,12 +3255,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer.git",
-                "reference": "61a7496712d388a016ffb152c3382892861690e9"
+                "reference": "ad732c2e9299c9743f9c55ae53cc0e7642ab1155"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/61a7496712d388a016ffb152c3382892861690e9",
-                "reference": "61a7496712d388a016ffb152c3382892861690e9",
+                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/ad732c2e9299c9743f9c55ae53cc0e7642ab1155",
+                "reference": "ad732c2e9299c9743f9c55ae53cc0e7642ab1155",
                 "shasum": ""
             },
             "require": {
@@ -3350,7 +3350,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-11-20T15:05:44+00:00"
+            "time": "2025-11-20T15:15:16+00:00"
         },
         {
             "name": "myclabs/deep-copy",

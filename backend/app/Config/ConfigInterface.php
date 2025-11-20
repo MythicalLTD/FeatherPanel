@@ -109,4 +109,17 @@ interface ConfigInterface
     public const FEATHERCLOUD_CLOUD_PUBLIC_KEY = 'feathercloud_cloud_public_key';
     public const FEATHERCLOUD_CLOUD_PRIVATE_KEY = 'feathercloud_cloud_private_key';
     public const FEATHERCLOUD_CLOUD_LAST_ROTATED = 'feathercloud_cloud_last_rotated';
+
+    /**
+     * Chatbot AI Settings.
+     */
+    public const CHATBOT_AI_PROVIDER = 'chatbot_ai_provider';
+    public const CHATBOT_GOOGLE_AI_API_KEY = 'chatbot_google_ai_api_key';
+    public const CHATBOT_GOOGLE_AI_MODEL = 'chatbot_google_ai_model';
+    public const CHATBOT_OPENROUTER_API_KEY = 'chatbot_openrouter_api_key';
+    public const CHATBOT_OPENROUTER_MODEL = 'chatbot_openrouter_model';
+    public const CHATBOT_OPENAI_API_KEY = 'chatbot_openai_api_key';
+    public const CHATBOT_OPENAI_MODEL = 'chatbot_openai_model';
+    public const CHATBOT_SYSTEM_PROMPT = 'chatbot_system_prompt';
+    public const CHATBOT_USER_PROMPT = 'chatbot_user_prompt';
 }

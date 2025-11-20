@@ -91,6 +91,9 @@ class SettingsController
     private $sensitiveSettings = [
         ConfigInterface::SMTP_PASS,
         ConfigInterface::TURNSTILE_KEY_PRIV,
+        ConfigInterface::CHATBOT_GOOGLE_AI_API_KEY,
+        ConfigInterface::CHATBOT_OPENROUTER_API_KEY,
+        ConfigInterface::CHATBOT_OPENAI_API_KEY,
         // Add other sensitive settings here
     ];
     private $settingsCategories = [
@@ -164,6 +167,22 @@ class SettingsController
                 ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE,
                 ConfigInterface::SERVER_ALLOW_SUBUSERS,
                 ConfigInterface::SERVER_ALLOW_SCHEDULES,
+            ],
+        ],
+        'chatbot' => [
+            'name' => 'Chatbot',
+            'description' => 'AI chatbot configuration settings',
+            'icon' => 'bot',
+            'settings' => [
+                ConfigInterface::CHATBOT_AI_PROVIDER,
+                ConfigInterface::CHATBOT_SYSTEM_PROMPT,
+                ConfigInterface::CHATBOT_USER_PROMPT,
+                ConfigInterface::CHATBOT_GOOGLE_AI_API_KEY,
+                ConfigInterface::CHATBOT_GOOGLE_AI_MODEL,
+                ConfigInterface::CHATBOT_OPENROUTER_API_KEY,
+                ConfigInterface::CHATBOT_OPENROUTER_MODEL,
+                ConfigInterface::CHATBOT_OPENAI_API_KEY,
+                ConfigInterface::CHATBOT_OPENAI_MODEL,
             ],
         ],
     ];
@@ -502,6 +521,104 @@ class SettingsController
                 'options' => ['true', 'false'],
                 'category' => 'servers',
             ],
+            ConfigInterface::CHATBOT_AI_PROVIDER => [
+                'name' => ConfigInterface::CHATBOT_AI_PROVIDER,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_AI_PROVIDER, 'basic'),
+                'description' => 'AI provider for the chatbot',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'basic',
+                'validation' => 'required|string|max:255',
+                'options' => ['basic', 'google_gemini', 'openrouter', 'openai'],
+                'category' => 'chatbot',
+            ],
+            ConfigInterface::CHATBOT_GOOGLE_AI_API_KEY => [
+                'name' => ConfigInterface::CHATBOT_GOOGLE_AI_API_KEY,
+                'value' => $this->maskSensitiveSetting(ConfigInterface::CHATBOT_GOOGLE_AI_API_KEY, ''),
+                'description' => 'Google AI Studio API key for Gemini',
+                'type' => 'password',
+                'required' => false,
+                'placeholder' => 'Enter API key to change',
+                'sensitive' => true,
+                'category' => 'chatbot',
+            ],
+            ConfigInterface::CHATBOT_GOOGLE_AI_MODEL => [
+                'name' => ConfigInterface::CHATBOT_GOOGLE_AI_MODEL,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_GOOGLE_AI_MODEL, 'gemini-2.5-flash'),
+                'description' => 'Google Gemini model to use (e.g., gemini-2.5-flash, gemini-2.5-pro)',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'gemini-2.5-flash',
+                'validation' => 'string|max:255',
+                'options' => [],
+                'category' => 'chatbot',
+            ],
+            ConfigInterface::CHATBOT_OPENROUTER_API_KEY => [
+                'name' => ConfigInterface::CHATBOT_OPENROUTER_API_KEY,
+                'value' => $this->maskSensitiveSetting(ConfigInterface::CHATBOT_OPENROUTER_API_KEY, ''),
+                'description' => 'OpenRouter API key',
+                'type' => 'password',
+                'required' => false,
+                'placeholder' => 'Enter API key to change',
+                'sensitive' => true,
+                'category' => 'chatbot',
+            ],
+            ConfigInterface::CHATBOT_OPENROUTER_MODEL => [
+                'name' => ConfigInterface::CHATBOT_OPENROUTER_MODEL,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_OPENROUTER_MODEL, 'openai/gpt-4o-mini'),
+                'description' => 'OpenRouter model to use (e.g., openai/gpt-4o-mini, anthropic/claude-3-haiku)',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'openai/gpt-4o-mini',
+                'validation' => 'string|max:255',
+                'options' => [],
+                'category' => 'chatbot',
+            ],
+            ConfigInterface::CHATBOT_OPENAI_API_KEY => [
+                'name' => ConfigInterface::CHATBOT_OPENAI_API_KEY,
+                'value' => $this->maskSensitiveSetting(ConfigInterface::CHATBOT_OPENAI_API_KEY, ''),
+                'description' => 'OpenAI API key',
+                'type' => 'password',
+                'required' => false,
+                'placeholder' => 'Enter API key to change',
+                'sensitive' => true,
+                'category' => 'chatbot',
+            ],
+            ConfigInterface::CHATBOT_OPENAI_MODEL => [
+                'name' => ConfigInterface::CHATBOT_OPENAI_MODEL,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_OPENAI_MODEL, 'gpt-4o-mini'),
+                'description' => 'OpenAI model to use (e.g., gpt-4o-mini, gpt-4o, gpt-3.5-turbo)',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'gpt-4o-mini',
+                'validation' => 'string|max:255',
+                'options' => [],
+                'category' => 'chatbot',
+            ],
+            ConfigInterface::CHATBOT_SYSTEM_PROMPT => [
+                'name' => ConfigInterface::CHATBOT_SYSTEM_PROMPT,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_SYSTEM_PROMPT, ''),
+                'description' => 'System prompt to prepend to all messages (optional)',
+                'type' => 'textarea',
+                'required' => false,
+                'placeholder' => 'You are a helpful assistant for FeatherPanel...',
+                'validation' => 'string|max:1000',
+                'max_length' => 1000,
+                'options' => [],
+                'category' => 'chatbot',
+            ],
+            ConfigInterface::CHATBOT_USER_PROMPT => [
+                'name' => ConfigInterface::CHATBOT_USER_PROMPT,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_USER_PROMPT, ''),
+                'description' => 'User context prompt to append to all messages (optional)',
+                'type' => 'textarea',
+                'required' => false,
+                'placeholder' => 'User is an admin with full access...',
+                'validation' => 'string|max:1000',
+                'max_length' => 1000,
+                'options' => [],
+                'category' => 'chatbot',
+            ],
         ];
     }
 
@@ -781,8 +898,10 @@ class SettingsController
                 return ApiResponse::error("Setting {$setting} is required", 400);
             }
 
-            if (!empty($value) && strlen($value) > 255) {
-                return ApiResponse::error("Setting {$setting} value is too long (max 255 characters)", 400);
+            // Get max length from setting config, default to 255
+            $maxLength = $settingConfig['max_length'] ?? 255;
+            if (!empty($value) && strlen($value) > $maxLength) {
+                return ApiResponse::error("Setting {$setting} value is too long (max {$maxLength} characters)", 400);
             }
 
             $app->getLogger()->debug("Updating setting: {$setting} with value: " . ($this->isSensitiveSetting($setting) ? '[MASKED]' : $value));

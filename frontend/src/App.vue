@@ -26,12 +26,14 @@
 import { defineComponent, ref, onMounted, onUnmounted } from 'vue';
 import DebugPanel from './components/DebugPanel.vue';
 import GlobalContextMenu from './components/GlobalContextMenu.vue';
+import ChatbotWidget from './components/ai/ChatbotWidget.vue';
 
 export default defineComponent({
     name: 'App',
     components: {
         DebugPanel,
         GlobalContextMenu,
+        ChatbotWidget,
     },
     setup() {
         const debugPanel = ref<InstanceType<typeof DebugPanel> | null>(null);
@@ -105,5 +107,8 @@ export default defineComponent({
 
         <!-- Global Context Menu -->
         <GlobalContextMenu ref="globalContextMenu" />
+
+        <!-- AI Chatbot Widget -->
+        <ChatbotWidget />
     </div>
 </template>
