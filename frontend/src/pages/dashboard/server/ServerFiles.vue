@@ -221,7 +221,7 @@
             <!-- Hidden Search Results Warning -->
             <Card
                 v-if="filteredFiles.length === 0 && searchQuery && hiddenMatchesExist"
-                class="border-2 border-orange-500/30 bg-linear-to-r from-orange-500/5 to-orange-500/10 shadow-sm"
+                class="border-2 border-orange-500/30 bg-gradient-to-r from-orange-500/5 to-orange-500/10 shadow-sm"
             >
                 <CardContent class="p-4">
                     <div class="flex items-start gap-4">
