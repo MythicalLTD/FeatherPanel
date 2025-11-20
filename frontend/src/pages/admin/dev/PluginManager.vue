@@ -33,7 +33,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from 'vue-toastification';
-import { Database, Terminal, Clock, Plus, Upload } from 'lucide-vue-next';
+import { Database, Terminal, Clock, Plus, Upload, Download } from 'lucide-vue-next';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -697,6 +697,33 @@ watch(
     { immediate: false },
 );
 
+const exportPlugin = async (plugin: Plugin) => {
+    try {
+        const resp = await fetch(`/api/admin/plugins/${plugin.identifier}/export`, {
+            method: 'GET',
+            credentials: 'include',
+        });
+        if (!resp.ok) {
+            const errorData = await resp.json();
+            throw new Error(errorData.message || 'Failed to export plugin');
+        }
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${plugin.identifier}.fpa`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast.success(`Plugin ${plugin.name} exported successfully`);
+    } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : 'Failed to export plugin';
+        toast.error(errorMessage);
+        console.error('Export error:', e);
+    }
+};
+
 onMounted(() => {
     fetchPlugins();
     loadCreationOptions();
@@ -827,6 +854,16 @@ onMounted(() => {
                                 @click="editPlugin(plugin)"
                             >
                                 Edit
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                data-umami-event="Export plugin"
+                                :data-umami-event-plugin="plugin.name"
+                                @click="exportPlugin(plugin)"
+                            >
+                                <Download :size="14" class="mr-1" />
+                                Export
                             </Button>
 
                             <!-- Plugin-specific Create Action Dropdown -->

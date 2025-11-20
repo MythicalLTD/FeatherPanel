@@ -35,6 +35,7 @@ use App\Chat\Activity;
 use App\Helpers\ApiResponse;
 use App\Plugins\PluginConfig;
 use OpenApi\Attributes as OA;
+use App\Config\ConfigInterface;
 use App\Plugins\PluginSettings;
 use App\Plugins\PluginDependencies;
 use App\CloudFlare\CloudFlareRealIP;
@@ -490,6 +491,12 @@ class PluginsController
     public function export(Request $request, string $identifier): Response
     {
         try {
+            // Restrict export to developer mode only
+            $config = App::getInstance(true)->getConfig();
+            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+                return ApiResponse::error('Plugin export is only available in developer mode', 'DEVELOPER_MODE_REQUIRED', 403);
+            }
+
             if (!defined('APP_ADDONS_DIR')) {
                 define('APP_ADDONS_DIR', dirname(__DIR__, 3) . '/storage/addons');
             }

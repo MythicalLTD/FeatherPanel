@@ -2,6 +2,10 @@
 
 ## v1.0.4 BETA
 
+### Improved
+
+- Relocated the export plugin functionality to the Developer Plugin SDK page, ensuring only developers can export plugins and preventing unintended or unauthorized sharing. by @nayskutzu
+
 ### Added
 
 - Allow compression of files in the right click context menu. by @puttydotexe

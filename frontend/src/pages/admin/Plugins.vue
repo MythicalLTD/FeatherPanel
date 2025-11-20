@@ -229,7 +229,7 @@
                                         <Settings class="h-4 w-4 mr-2" />
                                         Configure
                                     </Button>
-                                    <div class="grid grid-cols-3 gap-2">
+                                    <div class="grid grid-cols-2 gap-2">
                                         <Button
                                             size="sm"
                                             variant="outline"
@@ -238,15 +238,6 @@
                                             @click.stop="viewPluginInfo(plugin)"
                                         >
                                             <Info class="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            class="w-full justify-center hover:scale-110 hover:shadow-md transition-all duration-200"
-                                            title="Export plugin"
-                                            @click.stop="onExport(plugin)"
-                                        >
-                                            <Download class="h-4 w-4" />
                                         </Button>
                                         <Button
                                             size="sm"
@@ -771,7 +762,6 @@ import {
     Trash2,
     Upload,
     CloudDownload,
-    Download,
     Save,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
@@ -1257,31 +1247,6 @@ const onUninstall = async (plugin: Plugin) => {
     }
 };
 
-// Export plugin
-const onExport = async (plugin: Plugin) => {
-    try {
-        const resp = await fetch(`/api/admin/plugins/${plugin.identifier}/export`, {
-            method: 'GET',
-            credentials: 'include',
-        });
-        if (!resp.ok) {
-            const errorMessage = await parseApiError(resp);
-            throw new Error(errorMessage);
-        }
-        const blob = await resp.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${plugin.identifier}.fpa`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-    } catch (e) {
-        const errorMessage = e instanceof Error ? e.message : 'Failed to export plugin';
-        message.value = { type: 'error', text: errorMessage };
-    }
-};
 // Lifecycle
 onMounted(async () => {
     const ok = await sessionStore.checkSessionOrRedirect(router);
