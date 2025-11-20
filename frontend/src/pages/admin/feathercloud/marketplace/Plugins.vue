@@ -1,5 +1,10 @@
 <template>
-    <DashboardLayout :breadcrumbs="[{ text: 'Plugins', isCurrent: true, href: '/admin/plugins' }]">
+    <DashboardLayout
+        :breadcrumbs="[
+            { text: 'Marketplace', href: '/admin/feathercloud/marketplace' },
+            { text: 'Plugins', isCurrent: true, href: '/admin/feathercloud/plugins' },
+        ]"
+    >
         <div class="min-h-screen bg-background">
             <div class="p-4 sm:p-6">
                 <!-- Header -->
@@ -9,6 +14,12 @@
                         <p class="text-sm sm:text-base text-muted-foreground">
                             Browse and install plugins from the online repository
                         </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <Button variant="outline" size="sm" @click="router.push('/admin/feathercloud/marketplace')">
+                            <ArrowLeft class="h-4 w-4 mr-2" />
+                            Back to Marketplace
+                        </Button>
                     </div>
                 </div>
 
@@ -989,6 +1000,7 @@ import {
     X,
     Info,
     RefreshCw,
+    ArrowLeft,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';

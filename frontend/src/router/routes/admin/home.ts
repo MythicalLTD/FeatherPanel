@@ -183,6 +183,11 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/cloud/FeatherCloudAiAgent.vue'),
     },
     {
+        path: '/admin/feathercloud/marketplace',
+        name: 'AdminFeatherCloudMarketplace',
+        component: () => import('@/pages/admin/feathercloud/marketplace/Index.vue'),
+    },
+    {
         path: '/admin/feathercloud/plugins',
         name: 'AdminFeatherCloudPlugins',
         component: () => import('@/pages/admin/feathercloud/marketplace/Plugins.vue'),

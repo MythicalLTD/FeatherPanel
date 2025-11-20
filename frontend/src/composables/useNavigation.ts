@@ -513,12 +513,15 @@ export function useNavigation() {
                 group: 'overviewFeatherCloud',
             },
             {
-                id: 'admin-feathercloud-plugins',
+                id: 'admin-feathercloud-marketplace',
                 name: 'FeatherCloud Marketplace',
                 title: 'FeatherCloud Marketplace',
-                url: '/admin/feathercloud/plugins',
+                url: '/admin/feathercloud/marketplace',
                 icon: Package,
-                isActive: currentPath.value.startsWith('/admin/feathercloud/plugins'),
+                isActive:
+                    currentPath.value.startsWith('/admin/feathercloud/marketplace') ||
+                    currentPath.value.startsWith('/admin/feathercloud/plugins') ||
+                    currentPath.value.startsWith('/admin/feathercloud/spells'),
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_PLUGINS_VIEW,
                 group: 'overviewFeatherCloud',

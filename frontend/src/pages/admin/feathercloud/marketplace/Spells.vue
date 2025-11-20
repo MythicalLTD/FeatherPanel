@@ -1,8 +1,8 @@
 <template>
     <DashboardLayout
         :breadcrumbs="[
-            { text: 'Spells', href: '/admin/spells' },
-            { text: 'Marketplace', isCurrent: true, href: '/admin/feathercloud/spells' },
+            { text: 'Marketplace', href: '/admin/feathercloud/marketplace' },
+            { text: 'Spells', isCurrent: true, href: '/admin/feathercloud/spells' },
         ]"
     >
         <div class="min-h-screen bg-background">
@@ -14,6 +14,12 @@
                         <p class="text-sm sm:text-base text-muted-foreground">
                             Browse and install spells from the online repository
                         </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <Button variant="outline" size="sm" @click="router.push('/admin/feathercloud/marketplace')">
+                            <ArrowLeft class="h-4 w-4 mr-2" />
+                            Back to Marketplace
+                        </Button>
                     </div>
                 </div>
 
@@ -477,7 +483,7 @@
 // SOFTWARE.
 
 import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -503,12 +509,14 @@ import {
     ChevronRight,
     User,
     Globe,
+    ArrowLeft,
 } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 
 const toast = useToast();
 const route = useRoute();
+const router = useRouter();
 
 type OnlineSpell = {
     id: number;

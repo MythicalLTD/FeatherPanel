@@ -10,6 +10,7 @@
 ### Added
 
 - Allow compression of files in the right click context menu. by @puttydotexe
+- Introduced a brand new Marketplace hub, allowing you to easily choose between installing spells, plugins, or AI agents, all from one unified area. by @nayskutzu
 
 ### Fixed
 
