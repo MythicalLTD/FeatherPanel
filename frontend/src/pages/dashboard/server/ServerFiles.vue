@@ -31,7 +31,7 @@
                         </div>
                         <!-- Icon container -->
                         <div
-                            class="relative p-12 rounded-full bg-linear-to-br from-primary/30 via-primary/20 to-primary/10 border-4 border-dashed border-primary shadow-2xl shadow-primary/20"
+                            class="relative p-12 rounded-full bg-gradient-to-br from-primary/30 via-primary/20 to-primary/10 border-4 border-dashed border-primary shadow-2xl shadow-primary/20"
                         >
                             <Upload
                                 class="h-20 w-20 text-primary drop-shadow-lg"
@@ -41,7 +41,7 @@
                     </div>
                     <div class="space-y-3">
                         <h2
-                            class="text-5xl font-black bg-linear-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent drop-shadow-sm"
+                            class="text-5xl font-black bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent drop-shadow-sm"
                             style="line-height: 1.2"
                         >
                             🔥 {{ t('serverFiles.dropItHot') }} 🔥
@@ -73,7 +73,7 @@
                         <Badge
                             v-if="activeUploads.some((u) => u.status === 'uploading')"
                             variant="outline"
-                            class="text-sm px-3 py-1.5 bg-linear-to-r from-green-500/20 to-green-500/10 text-green-600 dark:text-green-400 border-green-500/30 animate-pulse"
+                            class="text-sm px-3 py-1.5 bg-gradient-to-r from-green-500/20 to-green-500/10 text-green-600 dark:text-green-400 border-green-500/30 animate-pulse"
                         >
                             <Upload class="h-3.5 w-3.5 mr-2 animate-bounce" />
                             {{
@@ -221,7 +221,7 @@
             <!-- Hidden Search Results Warning -->
             <Card
                 v-if="filteredFiles.length === 0 && searchQuery && hiddenMatchesExist"
-                class="border-2 border-orange-500/30 bg-linear-to-r from-orange-500/5 to-orange-500/10 shadow-sm"
+                class="border-2 border-orange-500/30 bg-gradient-to-r from-orange-500/5 to-orange-500/10 shadow-sm"
             >
                 <CardContent class="p-4">
                     <div class="flex items-start gap-4">
@@ -269,7 +269,7 @@
             <!-- Active Uploads Card -->
             <Card
                 v-if="activeUploads.length > 0"
-                class="border-2 border-green-500/30 bg-linear-to-r from-green-500/5 to-green-500/10 shadow-sm"
+                class="border-2 border-green-500/30 bg-gradient-to-r from-green-500/5 to-green-500/10 shadow-sm"
             >
                 <CardContent class="p-4">
                     <div class="space-y-3">
