@@ -34,6 +34,17 @@
                             Manage installed plugins and their configurations
                         </p>
                     </div>
+                    <div class="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            data-umami-event="Open plugins marketplace"
+                            @click="router.push('/admin/feathercloud/plugins')"
+                        >
+                            <CloudDownload class="h-4 w-4 mr-2" />
+                            Browse Marketplace
+                        </Button>
+                    </div>
                 </div>
 
                 <!-- Banner -->

@@ -5,6 +5,7 @@
 ### Improved
 
 - Relocated the export plugin functionality to the Developer Plugin SDK page, ensuring only developers can export plugins and preventing unintended or unauthorized sharing. by @nayskutzu
+- Moved the online spells directory into the FeatherPanel Marketplace for improved visibility and easier access. by @nayskutzu
 
 ### Added
 
@@ -13,6 +14,7 @@
 ### Fixed
 
 - Fixed an issue that prevented empty files from being edited, ensuring seamless editing regardless of file size. by @nayskutzu
+- Fixed an issue where attempting to install premium plugins would get stuck on the details page instead of displaying an appropriate message. by @nayskutzu
 
 ## v1.0.3 BETA
 

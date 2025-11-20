@@ -655,17 +655,30 @@
                     <DialogClose as-child>
                         <Button variant="outline">Close</Button>
                     </DialogClose>
-                    <Button
-                        v-if="packageDetails && !installedIds.has(packageDetails.package.identifier)"
-                        :disabled="installingOnlineId === packageDetails.package.identifier"
-                        @click="openOnlineInstallDialog(packageDetails.package)"
-                    >
-                        <div
-                            v-if="installingOnlineId === packageDetails.package.identifier"
-                            class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
-                        ></div>
-                        Install Plugin
-                    </Button>
+                    <template v-if="packageDetails && !installedIds.has(packageDetails.package.identifier)">
+                        <Button
+                            v-if="packageDetails.package.premium === 1"
+                            as="a"
+                            :href="packageDetails.package.premium_link || '#'"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="bg-linear-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 hover:scale-105 hover:shadow-md transition-all duration-200 text-white"
+                            title="Purchase premium plugin"
+                        >
+                            Purchase
+                        </Button>
+                        <Button
+                            v-else
+                            :disabled="installingOnlineId === packageDetails.package.identifier"
+                            @click="openOnlineInstallDialog(packageDetails.package)"
+                        >
+                            <div
+                                v-if="installingOnlineId === packageDetails.package.identifier"
+                                class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                            ></div>
+                            Install Plugin
+                        </Button>
+                    </template>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
