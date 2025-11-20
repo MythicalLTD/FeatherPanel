@@ -281,3 +281,139 @@ body.has-custom-background::before {
     max-height: calc(80vh - 120px);
     /* Account for header/footer */
 }
+
+/* Custom Scrollbar Styles - Global Application */
+/* Webkit browsers (Chrome, Safari, Edge) */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.4 0 0) oklch(0.15 0 0);
+}
+
+/* Light mode scrollbar (Firefox) */
+:root:not(.dark) * {
+    scrollbar-color: oklch(0.6 0 0) oklch(0.97 0 0);
+}
+
+/* Dark mode scrollbar (Firefox) */
+:root.dark *,
+.dark * {
+    scrollbar-color: oklch(0.5 0 0) oklch(0.15 0 0);
+}
+
+/* Webkit scrollbar - applies to all elements */
+*::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+    background: oklch(0.15 0 0);
+    border-radius: 10px;
+}
+
+/* Light mode track */
+:root:not(.dark) *::-webkit-scrollbar-track {
+    background: oklch(0.97 0 0);
+}
+
+/* Dark mode track */
+:root.dark *::-webkit-scrollbar-track,
+.dark *::-webkit-scrollbar-track {
+    background: oklch(0.15 0 0);
+}
+
+/* Scrollbar thumb */
+*::-webkit-scrollbar-thumb {
+    background: oklch(0.5 0 0);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+/* Light mode thumb */
+:root:not(.dark) *::-webkit-scrollbar-thumb {
+    background: oklch(0.6 0 0);
+    border-color: oklch(0.97 0 0);
+}
+
+/* Dark mode thumb */
+:root.dark *::-webkit-scrollbar-thumb,
+.dark *::-webkit-scrollbar-thumb {
+    background: oklch(0.5 0 0);
+    border-color: oklch(0.15 0 0);
+}
+
+/* Hover state */
+*::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.6 0 0);
+}
+
+:root:not(.dark) *::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.5 0 0);
+}
+
+:root.dark *::-webkit-scrollbar-thumb:hover,
+.dark *::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.6 0 0);
+}
+
+/* Active state - use primary color */
+*::-webkit-scrollbar-thumb:active {
+    background: var(--primary);
+}
+
+/* Corner (where horizontal and vertical scrollbars meet) */
+*::-webkit-scrollbar-corner {
+    background: oklch(0.15 0 0);
+}
+
+:root:not(.dark) *::-webkit-scrollbar-corner {
+    background: oklch(0.97 0 0);
+}
+
+:root.dark *::-webkit-scrollbar-corner,
+.dark *::-webkit-scrollbar-corner {
+    background: oklch(0.15 0 0);
+}
+
+/* Custom scrollbar variants */
+.scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    border: 1px solid transparent;
+}
+
+.scrollbar-thick::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+}
+
+.scrollbar-thick::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+}
+
+/* Scrollbar with primary color accent */
+.scrollbar-primary::-webkit-scrollbar-thumb {
+    background: var(--primary) !important;
+}
+
+.scrollbar-primary::-webkit-scrollbar-thumb:hover {
+    background: var(--primary) !important;
+    opacity: 0.9;
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}

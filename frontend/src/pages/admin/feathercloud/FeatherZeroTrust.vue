@@ -134,6 +134,10 @@ function goToConfig() {
     router.push('/admin/feathercloud/featherzerotrust/config');
 }
 
+function goToLogs() {
+    router.push('/admin/feathercloud/featherzerotrust/logs');
+}
+
 function startFakeProgress() {
     scanProgress.value = {
         message: 'Initializing scan...',
@@ -322,6 +326,15 @@ async function performScan() {
                                     class="mr-2 h-4 w-4 transition-transform duration-300 group-hover:rotate-90"
                                 />
                                 Configuration
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                class="transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                                @click="goToLogs"
+                            >
+                                <Eye class="mr-2 h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
+                                View Automated make Scan History
                             </Button>
                             <div
                                 v-if="scanning"

@@ -138,7 +138,7 @@
                                                 Spells
                                             </h3>
                                             <p class="text-sm text-muted-foreground leading-relaxed">
-                                                Server templates to run specific games and applications on Pterodactyl
+                                                Server templates to run specific games and applications on FeatherPanel
                                             </p>
                                         </div>
                                     </div>
