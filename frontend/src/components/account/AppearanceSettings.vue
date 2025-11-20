@@ -30,6 +30,64 @@
                     {{ isDark ? $t('account.lightMode') : $t('account.darkMode') }}
                 </Button>
             </div>
+
+            <!-- Base Color Theme Selector -->
+            <div class="space-y-3">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">{{ $t('account.baseColorTheme') }}</label>
+                    <p class="text-xs text-muted-foreground">{{ $t('account.baseColorThemeDescription') }}</p>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    <button
+                        v-for="theme in availableColorThemes"
+                        :key="theme"
+                        class="flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all duration-200 hover:scale-105 touch-manipulation capitalize"
+                        :class="[
+                            currentColorTheme === theme
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border hover:border-primary/50',
+                        ]"
+                        :data-umami-event="`Change color theme to ${theme}`"
+                        @click="handleColorThemeChange(theme)"
+                    >
+                        <div
+                            class="w-12 h-12 rounded-lg border-2 transition-all"
+                            :class="[currentColorTheme === theme ? 'border-primary scale-110' : 'border-border']"
+                            :style="getThemeColorStyle(theme)"
+                        ></div>
+                        <span class="text-sm font-medium text-center">{{ theme }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Accent Color Selector -->
+            <div class="space-y-3">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">{{ $t('account.accentColor') }}</label>
+                    <p class="text-xs text-muted-foreground">{{ $t('account.accentColorDescription') }}</p>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+                    <button
+                        v-for="accent in availableAccentColors"
+                        :key="accent"
+                        class="flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all duration-200 hover:scale-105 touch-manipulation capitalize"
+                        :class="[
+                            currentAccentColor === accent
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border hover:border-primary/50',
+                        ]"
+                        :data-umami-event="`Change accent color to ${accent}`"
+                        @click="handleAccentColorChange(accent)"
+                    >
+                        <div
+                            class="w-10 h-10 rounded-lg border-2 transition-all"
+                            :class="[currentAccentColor === accent ? 'border-primary scale-110' : 'border-border']"
+                            :style="getAccentColorStyle(accent)"
+                        ></div>
+                        <span class="text-xs font-medium text-center">{{ accent }}</span>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Background Settings -->
@@ -446,6 +504,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Sun, Moon, Upload, RotateCcw, Eye, EyeOff, PanelLeft } from 'lucide-vue-next';
 import { useTheme } from '@/composables/useTheme';
+import { useColorTheme, type ColorTheme, type AccentColor } from '@/composables/useColorTheme';
 import { useLanguage } from '@/composables/useLanguage';
 import { useSidebarState, type SidebarVisibility } from '@/composables/useSidebarState';
 import { useBackground } from '@/composables/useBackground';
@@ -454,6 +513,14 @@ import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
 const { t: $t } = useI18n();
 const { isDark, toggleTheme, setTheme } = useTheme();
+const {
+    currentColorTheme,
+    currentAccentColor,
+    setColorTheme,
+    setAccentColor,
+    availableThemes: availableColorThemes,
+    availableAccentColors,
+} = useColorTheme();
 const { currentLanguage, availableLanguages, changeLanguage } = useLanguage();
 const { sidebarVisibility, updateSidebarVisibility: originalUpdateSidebarVisibility } = useSidebarState();
 const {
@@ -689,12 +756,115 @@ const handleContextMenuQuickActionsChange = (
 };
 
 // Theme functions (using shared theme composable)
-const { applyTheme } = useTheme();
 
 // Wrapped theme toggle
 const handleToggleTheme = () => {
     toggleTheme();
+    // Reapply color theme after theme change
+    setTimeout(() => {
+        setColorTheme(currentColorTheme.value);
+    }, 100);
     // Auto-sync will handle backend update every 5 minutes
+};
+
+// Handle color theme change
+const handleColorThemeChange = (theme: ColorTheme) => {
+    setColorTheme(theme);
+    // Force immediate style recalculation
+    requestAnimationFrame(() => {
+        // Access offsetHeight to trigger style recalculation
+        void document.documentElement.offsetHeight;
+    });
+    // Auto-sync will handle backend update every 5 minutes
+};
+
+// Handle accent color change
+const handleAccentColorChange = (accent: AccentColor) => {
+    setAccentColor(accent);
+    // Force immediate style recalculation
+    requestAnimationFrame(() => {
+        // Access offsetHeight to trigger style recalculation
+        void document.documentElement.offsetHeight;
+    });
+    // Auto-sync will handle backend update every 5 minutes
+};
+
+// Get theme color style for preview (using actual oklch values)
+const getThemeColorStyle = (theme: ColorTheme): Record<string, string> => {
+    // Use a gradient showing both light and dark variants for better visibility
+    const themeColorMap: Record<ColorTheme, { light: string; dark: string }> = {
+        neutral: {
+            light: 'oklch(0.97 0 0)',
+            dark: 'oklch(0.269 0 0)',
+        },
+        stone: {
+            light: 'oklch(0.968 0.007 247.896)',
+            dark: 'oklch(0.279 0.041 260.031)',
+        },
+        zinc: {
+            light: 'oklch(0.967 0.003 264.542)',
+            dark: 'oklch(0.278 0.033 256.848)',
+        },
+        gray: {
+            light: 'oklch(0.97 0 0)',
+            dark: 'oklch(0.269 0 0)',
+        },
+        slate: {
+            light: 'oklch(0.968 0.007 247.896)',
+            dark: 'oklch(0.279 0.041 260.031)',
+        },
+    };
+
+    const lightColor = themeColorMap[theme].light;
+    const darkColor = themeColorMap[theme].dark;
+
+    // Create a gradient showing both variants
+    return {
+        background: `linear-gradient(135deg, ${lightColor} 0%, ${darkColor} 100%)`,
+    };
+};
+
+// Get accent color style for preview (using actual oklch values)
+const getAccentColorStyle = (accent: AccentColor): Record<string, string> => {
+    const accentColorMap: Record<AccentColor, { light: string; dark: string }> = {
+        default: {
+            light: 'oklch(0.205 0 0)',
+            dark: 'oklch(0.985 0 0)',
+        },
+        blue: {
+            light: 'oklch(0.522 0.177 251.116)',
+            dark: 'oklch(0.696 0.17 251.116)',
+        },
+        red: {
+            light: 'oklch(0.577 0.245 27.325)',
+            dark: 'oklch(0.704 0.191 22.216)',
+        },
+        rose: {
+            light: 'oklch(0.646 0.222 16.439)',
+            dark: 'oklch(0.645 0.246 16.439)',
+        },
+        orange: {
+            light: 'oklch(0.7 0.15 70)',
+            dark: 'oklch(0.769 0.188 70.08)',
+        },
+        green: {
+            light: 'oklch(0.6 0.118 184.704)',
+            dark: 'oklch(0.696 0.17 184.704)',
+        },
+        yellow: {
+            light: 'oklch(0.828 0.189 84.429)',
+            dark: 'oklch(0.828 0.189 84.429)',
+        },
+        violet: {
+            light: 'oklch(0.488 0.243 264.376)',
+            dark: 'oklch(0.488 0.243 264.376)',
+        },
+    };
+
+    const colorValue = isDark.value ? accentColorMap[accent].dark : accentColorMap[accent].light;
+    return {
+        backgroundColor: colorValue,
+    };
 };
 
 // Wrapped language change
@@ -770,8 +940,9 @@ const resetAllSettings = () => {
     // Reset theme
     setTheme(false);
 
-    // Reset theme color
-    applyTheme(false);
+    // Reset color theme
+    setColorTheme('neutral');
+    setAccentColor('default');
 
     // Reset background
     resetBackground();

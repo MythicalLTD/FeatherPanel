@@ -12,6 +12,8 @@
 
 - Allow compression of files in the right click context menu. by @puttydotexe
 - Introduced a brand new Marketplace hub, allowing you to easily choose between installing spells, plugins, or AI agents, all from one unified area. by @nayskutzu
+- Empower users with complete theme customization easily personalize the entire look and feel of FeatherPanel to match your unique style! by @nayskutzu
+- Unleash your creativity with full Accent Color customization—easily personalize the app’s primary color scheme to reflect your individual style! by @nayskutzu
 
 ### Fixed
 

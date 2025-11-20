@@ -149,6 +149,13 @@ const initializeBackground = () => {
 // Mount the app with error boundary and performance monitoring
 const mountApp = async () => {
     try {
+        // Initialize color theme before mounting
+        if (typeof window !== 'undefined') {
+            // Import and initialize color theme
+            const { useColorTheme } = await import('./composables/useColorTheme');
+            useColorTheme(); // This will trigger initialization
+        }
+
         // Initialize background settings before mounting
         initializeBackground();
 
