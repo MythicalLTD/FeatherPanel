@@ -89,7 +89,7 @@
         "typescript-eslint": "^8.47.0",
         "vaul-vue": "^0.4.1",
         "vee-validate": "^4.15.1",
-        "vite": "npm:rolldown-vite@^7.2.6",
+        "vite": "npm:rolldown-vite@^7.2.7",
         "vite-plugin-vue-devtools": "^8.0.5",
         "vue": "^3.5.24",
         "vue-animejs": "^2.1.1",

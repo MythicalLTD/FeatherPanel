@@ -68,7 +68,7 @@
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
                     <button
-                        v-for="accent in availableAccentColors"
+                        v-for="accent in availableAccentColors.filter((a) => a !== 'custom')"
                         :key="accent"
                         class="flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all duration-200 hover:scale-105 touch-manipulation capitalize"
                         :class="[
@@ -86,6 +86,38 @@
                         ></div>
                         <span class="text-xs font-medium text-center">{{ accent }}</span>
                     </button>
+                </div>
+
+                <!-- Custom Color Picker -->
+                <div class="space-y-2 pt-2">
+                    <label class="text-sm font-medium">{{ $t('account.customColor') }}</label>
+                    <div class="flex items-center gap-3">
+                        <div class="flex-1 flex items-center gap-2">
+                            <input
+                                type="color"
+                                :value="customColorHex"
+                                class="h-10 w-20 rounded-lg border-2 border-border cursor-pointer"
+                                @input="handleCustomColorChange"
+                            />
+                            <input
+                                type="text"
+                                :value="customColorHex"
+                                placeholder="#000000"
+                                class="flex-1 px-3 py-2 rounded-lg border border-input bg-background text-foreground text-sm"
+                                @input="handleCustomColorHexChange"
+                                @blur="handleCustomColorHexBlur"
+                            />
+                        </div>
+                        <Button
+                            v-if="currentAccentColor === 'custom'"
+                            variant="outline"
+                            size="sm"
+                            @click="handleResetCustomColor"
+                        >
+                            {{ $t('account.reset') }}
+                        </Button>
+                    </div>
+                    <p class="text-xs text-muted-foreground">{{ $t('account.customColorDescription') }}</p>
                 </div>
             </div>
         </div>
@@ -520,6 +552,7 @@ const {
     setAccentColor,
     availableThemes: availableColorThemes,
     availableAccentColors,
+    setCustomColor,
 } = useColorTheme();
 const { currentLanguage, availableLanguages, changeLanguage } = useLanguage();
 const { sidebarVisibility, updateSidebarVisibility: originalUpdateSidebarVisibility } = useSidebarState();
@@ -859,12 +892,134 @@ const getAccentColorStyle = (accent: AccentColor): Record<string, string> => {
             light: 'oklch(0.488 0.243 264.376)',
             dark: 'oklch(0.488 0.243 264.376)',
         },
+        cyan: {
+            light: 'oklch(0.6 0.15 200)',
+            dark: 'oklch(0.696 0.17 200)',
+        },
+        emerald: {
+            light: 'oklch(0.6 0.12 160)',
+            dark: 'oklch(0.696 0.17 160)',
+        },
+        indigo: {
+            light: 'oklch(0.522 0.177 270)',
+            dark: 'oklch(0.696 0.17 270)',
+        },
+        pink: {
+            light: 'oklch(0.646 0.222 350)',
+            dark: 'oklch(0.645 0.246 350)',
+        },
+        teal: {
+            light: 'oklch(0.6 0.12 180)',
+            dark: 'oklch(0.696 0.17 180)',
+        },
+        sky: {
+            light: 'oklch(0.6 0.15 220)',
+            dark: 'oklch(0.696 0.17 220)',
+        },
+        lime: {
+            light: 'oklch(0.7 0.15 120)',
+            dark: 'oklch(0.769 0.188 120)',
+        },
+        amber: {
+            light: 'oklch(0.75 0.15 75)',
+            dark: 'oklch(0.769 0.188 75)',
+        },
+        fuchsia: {
+            light: 'oklch(0.646 0.222 320)',
+            dark: 'oklch(0.645 0.246 320)',
+        },
+        custom: {
+            light: customColorHex.value || '#3b82f6',
+            dark: customColorHex.value || '#3b82f6',
+        },
     };
+
+    if (accent === 'custom') {
+        // For custom, use hex directly
+        return {
+            backgroundColor: customColorHex.value || '#3b82f6',
+        };
+    }
 
     const colorValue = isDark.value ? accentColorMap[accent].dark : accentColorMap[accent].light;
     return {
         backgroundColor: colorValue,
     };
+};
+
+// Custom color state
+const customColorHex = ref<string>('#3b82f6');
+
+// Load custom color on mount
+onMounted(() => {
+    const savedCustom = localStorage.getItem('custom-accent-color');
+    if (savedCustom) {
+        try {
+            const custom = JSON.parse(savedCustom);
+            // Convert oklch to hex for display (simplified - extract from computed style)
+            const tempEl = document.createElement('div');
+            tempEl.style.color = custom.light;
+            document.body.appendChild(tempEl);
+            const computed = window.getComputedStyle(tempEl).color;
+            document.body.removeChild(tempEl);
+            // Convert rgb to hex
+            const rgbMatch = computed.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+            if (rgbMatch && rgbMatch[1] && rgbMatch[2] && rgbMatch[3]) {
+                const r = rgbMatch[1];
+                const g = rgbMatch[2];
+                const b = rgbMatch[3];
+                customColorHex.value = `#${parseInt(r).toString(16).padStart(2, '0')}${parseInt(g).toString(16).padStart(2, '0')}${parseInt(b).toString(16).padStart(2, '0')}`;
+            }
+        } catch {
+            // Ignore
+        }
+    }
+});
+
+// Handle custom color change
+const handleCustomColorChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    const hex = target.value;
+    customColorHex.value = hex;
+    setCustomColor(hex);
+    requestAnimationFrame(() => {
+        void document.documentElement.offsetHeight;
+    });
+};
+
+// Handle custom color hex input
+const handleCustomColorHexChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    let hex = target.value.trim();
+    if (!hex.startsWith('#')) {
+        hex = '#' + hex;
+    }
+    if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+        customColorHex.value = hex;
+        setCustomColor(hex);
+        requestAnimationFrame(() => {
+            void document.documentElement.offsetHeight;
+        });
+    }
+};
+
+// Handle custom color hex blur (validate and apply)
+const handleCustomColorHexBlur = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    let hex = target.value.trim();
+    if (!hex.startsWith('#')) {
+        hex = '#' + hex;
+    }
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+        // Reset to current value if invalid
+        target.value = customColorHex.value;
+    }
+};
+
+// Reset custom color
+const handleResetCustomColor = () => {
+    customColorHex.value = '#3b82f6';
+    setAccentColor('default');
 };
 
 // Wrapped language change

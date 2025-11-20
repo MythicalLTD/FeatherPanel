@@ -27,7 +27,25 @@ SOFTWARE.
 import { ref, onMounted, readonly } from 'vue';
 
 export type ColorTheme = 'neutral' | 'stone' | 'zinc' | 'gray' | 'slate';
-export type AccentColor = 'default' | 'blue' | 'red' | 'rose' | 'orange' | 'green' | 'yellow' | 'violet';
+export type AccentColor =
+    | 'default'
+    | 'blue'
+    | 'red'
+    | 'rose'
+    | 'orange'
+    | 'green'
+    | 'yellow'
+    | 'violet'
+    | 'cyan'
+    | 'emerald'
+    | 'indigo'
+    | 'pink'
+    | 'teal'
+    | 'sky'
+    | 'lime'
+    | 'amber'
+    | 'fuchsia'
+    | 'custom';
 
 // Color theme definitions based on shadcn-vue theming
 const colorThemes: Record<ColorTheme, { light: Record<string, string>; dark: Record<string, string> }> = {
@@ -463,11 +481,172 @@ const accentColors: Record<AccentColor, { light: Record<string, string>; dark: R
             '--ring': 'oklch(0.488 0.243 264.376)',
         },
     },
+    cyan: {
+        light: {
+            '--primary': 'oklch(0.6 0.15 200)',
+            '--primary-foreground': 'oklch(0.985 0 0)',
+            '--accent': 'oklch(0.97 0.007 200)',
+            '--accent-foreground': 'oklch(0.6 0.15 200)',
+            '--ring': 'oklch(0.6 0.15 200)',
+        },
+        dark: {
+            '--primary': 'oklch(0.696 0.17 200)',
+            '--primary-foreground': 'oklch(0.145 0 0)',
+            '--accent': 'oklch(0.269 0.033 200)',
+            '--accent-foreground': 'oklch(0.696 0.17 200)',
+            '--ring': 'oklch(0.696 0.17 200)',
+        },
+    },
+    emerald: {
+        light: {
+            '--primary': 'oklch(0.6 0.12 160)',
+            '--primary-foreground': 'oklch(0.985 0 0)',
+            '--accent': 'oklch(0.97 0.007 160)',
+            '--accent-foreground': 'oklch(0.6 0.12 160)',
+            '--ring': 'oklch(0.6 0.12 160)',
+        },
+        dark: {
+            '--primary': 'oklch(0.696 0.17 160)',
+            '--primary-foreground': 'oklch(0.145 0 0)',
+            '--accent': 'oklch(0.269 0.033 160)',
+            '--accent-foreground': 'oklch(0.696 0.17 160)',
+            '--ring': 'oklch(0.696 0.17 160)',
+        },
+    },
+    indigo: {
+        light: {
+            '--primary': 'oklch(0.522 0.177 270)',
+            '--primary-foreground': 'oklch(0.985 0 0)',
+            '--accent': 'oklch(0.97 0.007 270)',
+            '--accent-foreground': 'oklch(0.522 0.177 270)',
+            '--ring': 'oklch(0.522 0.177 270)',
+        },
+        dark: {
+            '--primary': 'oklch(0.696 0.17 270)',
+            '--primary-foreground': 'oklch(0.145 0 0)',
+            '--accent': 'oklch(0.269 0.033 270)',
+            '--accent-foreground': 'oklch(0.696 0.17 270)',
+            '--ring': 'oklch(0.696 0.17 270)',
+        },
+    },
+    pink: {
+        light: {
+            '--primary': 'oklch(0.646 0.222 350)',
+            '--primary-foreground': 'oklch(0.985 0 0)',
+            '--accent': 'oklch(0.97 0.007 350)',
+            '--accent-foreground': 'oklch(0.646 0.222 350)',
+            '--ring': 'oklch(0.646 0.222 350)',
+        },
+        dark: {
+            '--primary': 'oklch(0.645 0.246 350)',
+            '--primary-foreground': 'oklch(0.145 0 0)',
+            '--accent': 'oklch(0.269 0.033 350)',
+            '--accent-foreground': 'oklch(0.645 0.246 350)',
+            '--ring': 'oklch(0.645 0.246 350)',
+        },
+    },
+    teal: {
+        light: {
+            '--primary': 'oklch(0.6 0.12 180)',
+            '--primary-foreground': 'oklch(0.985 0 0)',
+            '--accent': 'oklch(0.97 0.007 180)',
+            '--accent-foreground': 'oklch(0.6 0.12 180)',
+            '--ring': 'oklch(0.6 0.12 180)',
+        },
+        dark: {
+            '--primary': 'oklch(0.696 0.17 180)',
+            '--primary-foreground': 'oklch(0.145 0 0)',
+            '--accent': 'oklch(0.269 0.033 180)',
+            '--accent-foreground': 'oklch(0.696 0.17 180)',
+            '--ring': 'oklch(0.696 0.17 180)',
+        },
+    },
+    sky: {
+        light: {
+            '--primary': 'oklch(0.6 0.15 220)',
+            '--primary-foreground': 'oklch(0.985 0 0)',
+            '--accent': 'oklch(0.97 0.007 220)',
+            '--accent-foreground': 'oklch(0.6 0.15 220)',
+            '--ring': 'oklch(0.6 0.15 220)',
+        },
+        dark: {
+            '--primary': 'oklch(0.696 0.17 220)',
+            '--primary-foreground': 'oklch(0.145 0 0)',
+            '--accent': 'oklch(0.269 0.033 220)',
+            '--accent-foreground': 'oklch(0.696 0.17 220)',
+            '--ring': 'oklch(0.696 0.17 220)',
+        },
+    },
+    lime: {
+        light: {
+            '--primary': 'oklch(0.7 0.15 120)',
+            '--primary-foreground': 'oklch(0.145 0 0)',
+            '--accent': 'oklch(0.97 0.007 120)',
+            '--accent-foreground': 'oklch(0.7 0.15 120)',
+            '--ring': 'oklch(0.7 0.15 120)',
+        },
+        dark: {
+            '--primary': 'oklch(0.769 0.188 120)',
+            '--primary-foreground': 'oklch(0.145 0 0)',
+            '--accent': 'oklch(0.269 0.033 120)',
+            '--accent-foreground': 'oklch(0.769 0.188 120)',
+            '--ring': 'oklch(0.769 0.188 120)',
+        },
+    },
+    amber: {
+        light: {
+            '--primary': 'oklch(0.75 0.15 75)',
+            '--primary-foreground': 'oklch(0.145 0 0)',
+            '--accent': 'oklch(0.97 0.007 75)',
+            '--accent-foreground': 'oklch(0.75 0.15 75)',
+            '--ring': 'oklch(0.75 0.15 75)',
+        },
+        dark: {
+            '--primary': 'oklch(0.769 0.188 75)',
+            '--primary-foreground': 'oklch(0.145 0 0)',
+            '--accent': 'oklch(0.269 0.033 75)',
+            '--accent-foreground': 'oklch(0.769 0.188 75)',
+            '--ring': 'oklch(0.769 0.188 75)',
+        },
+    },
+    fuchsia: {
+        light: {
+            '--primary': 'oklch(0.646 0.222 320)',
+            '--primary-foreground': 'oklch(0.985 0 0)',
+            '--accent': 'oklch(0.97 0.007 320)',
+            '--accent-foreground': 'oklch(0.646 0.222 320)',
+            '--ring': 'oklch(0.646 0.222 320)',
+        },
+        dark: {
+            '--primary': 'oklch(0.645 0.246 320)',
+            '--primary-foreground': 'oklch(0.145 0 0)',
+            '--accent': 'oklch(0.269 0.033 320)',
+            '--accent-foreground': 'oklch(0.645 0.246 320)',
+            '--ring': 'oklch(0.645 0.246 320)',
+        },
+    },
+    custom: {
+        light: {
+            '--primary': 'oklch(0.522 0.177 251.116)',
+            '--primary-foreground': 'oklch(0.985 0 0)',
+            '--accent': 'oklch(0.97 0.007 251.116)',
+            '--accent-foreground': 'oklch(0.522 0.177 251.116)',
+            '--ring': 'oklch(0.522 0.177 251.116)',
+        },
+        dark: {
+            '--primary': 'oklch(0.696 0.17 251.116)',
+            '--primary-foreground': 'oklch(0.145 0 0)',
+            '--accent': 'oklch(0.269 0.033 251.116)',
+            '--accent-foreground': 'oklch(0.696 0.17 251.116)',
+            '--ring': 'oklch(0.696 0.17 251.116)',
+        },
+    },
 };
 
 // Global color theme state
 const currentColorTheme = ref<ColorTheme>('neutral');
 const currentAccentColor = ref<AccentColor>('default');
+const customColor = ref<{ light: string; dark: string } | null>(null);
 
 // Apply color theme to document
 const applyColorTheme = (theme: ColorTheme, isDarkMode?: boolean) => {
@@ -530,6 +709,84 @@ ${darkRules}
     );
 };
 
+// Convert hex/rgb to oklch
+const hexToOklch = (hex: string): string => {
+    // Remove # if present
+    hex = hex.replace('#', '');
+
+    // Parse hex to RGB
+    const r = parseInt(hex.substring(0, 2), 16) / 255;
+    const g = parseInt(hex.substring(2, 4), 16) / 255;
+    const b = parseInt(hex.substring(4, 6), 16) / 255;
+
+    // Convert RGB to linear RGB
+    const toLinear = (c: number) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+    const rLinear = toLinear(r);
+    const gLinear = toLinear(g);
+    const bLinear = toLinear(b);
+
+    // Convert to XYZ (D65)
+    const x = rLinear * 0.4124564 + gLinear * 0.3575761 + bLinear * 0.1804375;
+    const y = rLinear * 0.2126729 + gLinear * 0.7151522 + bLinear * 0.072175;
+    const z = rLinear * 0.0193339 + gLinear * 0.119192 + bLinear * 0.9503041;
+
+    // Convert XYZ to Lab
+    const xn = x / 0.95047;
+    const yn = y / 1.0;
+    const zn = z / 1.08883;
+
+    const fx = xn > 0.008856 ? Math.pow(xn, 1 / 3) : 7.787 * xn + 16 / 116;
+    const fy = yn > 0.008856 ? Math.pow(yn, 1 / 3) : 7.787 * yn + 16 / 116;
+    const fz = zn > 0.008856 ? Math.pow(zn, 1 / 3) : 7.787 * zn + 16 / 116;
+
+    const l = 116 * fy - 16;
+    const a = 500 * (fx - fy);
+    const bLab = 200 * (fy - fz);
+
+    // Convert Lab to LCH
+    const c = Math.sqrt(a * a + bLab * bLab);
+    const h = Math.atan2(bLab, a) * (180 / Math.PI);
+    const hNormalized = h < 0 ? h + 360 : h;
+
+    // Convert to OKLCH (simplified conversion)
+    const lOk = l / 100;
+    const cOk = c / 150; // Approximate chroma scaling
+    const hOk = hNormalized;
+
+    return `oklch(${lOk.toFixed(3)} ${cOk.toFixed(3)} ${hOk.toFixed(1)})`;
+};
+
+// Generate accent colors from a base color
+const generateAccentColors = (baseColor: string, isDark: boolean): Record<string, string> => {
+    // Parse oklch
+    const match = baseColor.match(/oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)/);
+    if (!match || !match[1] || !match[2] || !match[3]) {
+        // Fallback if not oklch format
+        return accentColors.default[isDark ? 'dark' : 'light'];
+    }
+
+    const l = match[1];
+    const c = match[2];
+    const h = match[3];
+    const lightness = parseFloat(l);
+    const chroma = parseFloat(c);
+    const hue = parseFloat(h);
+
+    // Generate variants
+    const primaryDark = isDark ? lightness : Math.min(0.7, lightness + 0.15);
+    const accentLight = isDark ? 0.269 : 0.97;
+    const accentChroma = isDark ? 0.033 : 0.007;
+    const ringLight = lightness;
+
+    return {
+        '--primary': `oklch(${primaryDark.toFixed(3)} ${chroma.toFixed(3)} ${hue.toFixed(1)})`,
+        '--primary-foreground': isDark ? 'oklch(0.145 0 0)' : 'oklch(0.985 0 0)',
+        '--accent': `oklch(${accentLight.toFixed(3)} ${accentChroma.toFixed(3)} ${hue.toFixed(1)})`,
+        '--accent-foreground': `oklch(${primaryDark.toFixed(3)} ${chroma.toFixed(3)} ${hue.toFixed(1)})`,
+        '--ring': `oklch(${ringLight.toFixed(3)} ${chroma.toFixed(3)} ${hue.toFixed(1)})`,
+    };
+};
+
 // Apply accent color
 const applyAccentColor = (accent: AccentColor, isDarkMode?: boolean) => {
     if (typeof window === 'undefined' || !document.documentElement) {
@@ -544,7 +801,16 @@ const applyAccentColor = (accent: AccentColor, isDarkMode?: boolean) => {
 
     // Force synchronous update by directly updating the style element
     const themeColors = isDark ? colorThemes[currentColorTheme.value].dark : colorThemes[currentColorTheme.value].light;
-    const accentColorsToApply = isDark ? accentColors[accent].dark : accentColors[accent].light;
+
+    // Get accent colors - use custom if available, otherwise use predefined
+    let accentColorsToApply: Record<string, string>;
+    if (accent === 'custom' && customColor.value) {
+        accentColorsToApply = isDark
+            ? generateAccentColors(customColor.value.dark, true)
+            : generateAccentColors(customColor.value.light, false);
+    } else {
+        accentColorsToApply = isDark ? accentColors[accent].dark : accentColors[accent].light;
+    }
 
     // Create or update a style element for theme overrides with high specificity
     let styleElement = document.getElementById('color-theme-override');
@@ -555,8 +821,17 @@ const applyAccentColor = (accent: AccentColor, isDarkMode?: boolean) => {
     }
 
     // Build CSS rules with !important to override default CSS
-    const lightColors = { ...colorThemes[currentColorTheme.value].light, ...accentColors[accent].light };
-    const darkColors = { ...colorThemes[currentColorTheme.value].dark, ...accentColors[accent].dark };
+    const lightAccentColors =
+        accent === 'custom' && customColor.value
+            ? generateAccentColors(customColor.value.light, false)
+            : accentColors[accent].light;
+    const darkAccentColors =
+        accent === 'custom' && customColor.value
+            ? generateAccentColors(customColor.value.dark, true)
+            : accentColors[accent].dark;
+
+    const lightColors = { ...colorThemes[currentColorTheme.value].light, ...lightAccentColors };
+    const darkColors = { ...colorThemes[currentColorTheme.value].dark, ...darkAccentColors };
 
     const lightRules = Object.entries(lightColors)
         .map(([property, value]) => `    ${property}: ${value} !important;`)
@@ -614,20 +889,42 @@ const initializeColorTheme = () => {
 
     // Load accent color
     const savedAccent = localStorage.getItem('accent-color');
-    if (
-        savedAccent &&
-        (savedAccent === 'default' ||
-            savedAccent === 'blue' ||
-            savedAccent === 'red' ||
-            savedAccent === 'rose' ||
-            savedAccent === 'orange' ||
-            savedAccent === 'green' ||
-            savedAccent === 'yellow' ||
-            savedAccent === 'violet')
-    ) {
+    const validAccentColors: AccentColor[] = [
+        'default',
+        'blue',
+        'red',
+        'rose',
+        'orange',
+        'green',
+        'yellow',
+        'violet',
+        'cyan',
+        'emerald',
+        'indigo',
+        'pink',
+        'teal',
+        'sky',
+        'lime',
+        'amber',
+        'fuchsia',
+        'custom',
+    ];
+    if (savedAccent && validAccentColors.includes(savedAccent as AccentColor)) {
         currentAccentColor.value = savedAccent as AccentColor;
     } else {
         currentAccentColor.value = 'default';
+    }
+
+    // Load custom color if accent is custom
+    if (currentAccentColor.value === 'custom') {
+        const savedCustomColor = localStorage.getItem('custom-accent-color');
+        if (savedCustomColor) {
+            try {
+                customColor.value = JSON.parse(savedCustomColor);
+            } catch {
+                customColor.value = null;
+            }
+        }
     }
 
     const isDark = document.documentElement.classList.contains('dark');
@@ -671,6 +968,48 @@ export function useColorTheme() {
         applyAccentColor(accent, isDark);
     };
 
+    // Set custom color
+    const setCustomColor = (hexColor: string) => {
+        const lightOklch = hexToOklch(hexColor);
+        // For dark mode, adjust lightness
+        const darkMatch = lightOklch.match(/oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)/);
+        let darkOklch = lightOklch;
+        if (darkMatch && darkMatch[1] && darkMatch[2] && darkMatch[3]) {
+            const l = darkMatch[1];
+            const c = darkMatch[2];
+            const h = darkMatch[3];
+            const lightness = parseFloat(l);
+            const chroma = parseFloat(c);
+            const hue = parseFloat(h);
+            // Increase lightness for dark mode
+            const darkLightness = Math.min(0.7, lightness + 0.15);
+            darkOklch = `oklch(${darkLightness.toFixed(3)} ${chroma.toFixed(3)} ${hue.toFixed(1)})`;
+        }
+
+        customColor.value = {
+            light: lightOklch,
+            dark: darkOklch,
+        };
+
+        localStorage.setItem('custom-accent-color', JSON.stringify(customColor.value));
+        currentAccentColor.value = 'custom';
+        const isDark = document.documentElement.classList.contains('dark');
+        applyAccentColor('custom', isDark);
+    };
+
+    // Get custom color (returns hex)
+    const getCustomColor = (): string | null => {
+        if (!customColor.value) return null;
+
+        // Convert oklch to hex (simplified - use current theme)
+        const isDark = document.documentElement.classList.contains('dark');
+        const oklch = isDark ? customColor.value.dark : customColor.value.light;
+
+        // For now, return the oklch value - we'll need a proper converter
+        // But for the color picker, we can extract RGB from computed style
+        return oklch;
+    };
+
     // Setup listener on mount
     onMounted(() => {
         setupThemeListener();
@@ -693,6 +1032,19 @@ export function useColorTheme() {
             'green',
             'yellow',
             'violet',
+            'cyan',
+            'emerald',
+            'indigo',
+            'pink',
+            'teal',
+            'sky',
+            'lime',
+            'amber',
+            'fuchsia',
+            'custom',
         ] as AccentColor[],
+        setCustomColor,
+        getCustomColor,
+        hexToOklch,
     };
 }
