@@ -269,7 +269,7 @@
             <!-- Active Uploads Card -->
             <Card
                 v-if="activeUploads.length > 0"
-                class="border-2 border-green-500/30 bg-linear-to-r from-green-500/5 to-green-500/10 shadow-sm"
+                class="border-2 border-green-500/30 bg-gradient-to-r from-green-500/5 to-green-500/10 shadow-sm"
             >
                 <CardContent class="p-4">
                     <div class="space-y-3">
