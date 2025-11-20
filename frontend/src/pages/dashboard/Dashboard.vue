@@ -3,7 +3,7 @@
         <div class="flex flex-col gap-6">
             <!-- Plugin Widgets: Top of Page -->
             <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
-				
+
             <!-- Plugin Widgets: Before Server List -->
             <WidgetRenderer v-if="widgetsBeforeServerList.length > 0" :widgets="widgetsBeforeServerList" />
 

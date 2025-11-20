@@ -23,7 +23,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { useMediaQuery } from '@vueuse/core';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Maximize2 } from 'lucide-vue-next';
 import ChatbotInterface from './ChatbotInterface.vue';
@@ -31,6 +32,10 @@ import ChatbotDialog from './ChatbotDialog.vue';
 
 const isOpen = ref(false);
 const isDialogOpen = ref(false);
+
+// Hide chatbot on mobile devices (screens smaller than 768px)
+const isMobile = useMediaQuery('(max-width: 767px)');
+const isDesktop = computed(() => !isMobile.value);
 
 const toggleChat = () => {
     isOpen.value = !isOpen.value;
@@ -69,7 +74,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="fixed bottom-6 right-6 z-50">
+P    <!-- Only show chatbot widget on desktop devices -->
+    <div v-if="isDesktop" class="fixed bottom-6 right-6 z-50">
         <!-- Floating Widget Button -->
         <div v-if="!isOpen" class="relative">
             <!-- Pulse animation ring -->
