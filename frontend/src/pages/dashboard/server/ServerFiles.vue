@@ -31,7 +31,7 @@
                         </div>
                         <!-- Icon container -->
                         <div
-                            class="relative p-12 rounded-full bg-linear-to-br from-primary/30 via-primary/20 to-primary/10 border-4 border-dashed border-primary shadow-2xl shadow-primary/20"
+                            class="relative p-12 rounded-full bg-gradient-to-br from-primary/30 via-primary/20 to-primary/10 border-4 border-dashed border-primary shadow-2xl shadow-primary/20"
                         >
                             <Upload
                                 class="h-20 w-20 text-primary drop-shadow-lg"
