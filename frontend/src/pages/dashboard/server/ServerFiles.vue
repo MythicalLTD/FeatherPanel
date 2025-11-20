@@ -73,7 +73,7 @@
                         <Badge
                             v-if="activeUploads.some((u) => u.status === 'uploading')"
                             variant="outline"
-                            class="text-sm px-3 py-1.5 bg-linear-to-r from-green-500/20 to-green-500/10 text-green-600 dark:text-green-400 border-green-500/30 animate-pulse"
+                            class="text-sm px-3 py-1.5 bg-gradient-to-r from-green-500/20 to-green-500/10 text-green-600 dark:text-green-400 border-green-500/30 animate-pulse"
                         >
                             <Upload class="h-3.5 w-3.5 mr-2 animate-bounce" />
                             {{
