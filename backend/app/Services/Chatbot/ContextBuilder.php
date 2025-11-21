@@ -74,11 +74,15 @@ class ContextBuilder
             $userPermissions = array_column($permissions, 'permission');
         }
 
-        // User Information (basic info only - no sensitive data)
+        // User Information (sanitized - no sensitive tokens or passwords)
         $context[] = '## User Information';
         $context[] = "Username: {$user['username']}";
         $context[] = "User UUID: {$user['uuid']}";
-        // Note: Email and other sensitive information are NOT included for security
+        $context[] = "User ID: {$user['id']}";
+
+        if (isset($user['email'])) {
+            $context[] = "Email: {$user['email']}";
+        }
 
         if (isset($user['first_name']) || isset($user['last_name'])) {
             $name = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
@@ -87,7 +91,19 @@ class ContextBuilder
             }
         }
 
-        // User Role/Permissions (only mention if admin)
+        if (isset($user['avatar']) && !empty($user['avatar'])) {
+            $context[] = "Avatar: {$user['avatar']}";
+        }
+
+        if (isset($user['two_fa_enabled'])) {
+            $context[] = '2FA Enabled: ' . ($user['two_fa_enabled'] === 'true' ? 'Yes' : 'No');
+        }
+
+        if (isset($user['last_seen'])) {
+            $context[] = "Last Seen: {$user['last_seen']}";
+        }
+
+        // User Role/Permissions
         if ($isAdmin) {
             $context[] = 'Role: Administrator (Full Access)';
         } else {
@@ -100,6 +116,8 @@ class ContextBuilder
                 }
             }
         }
+
+        // Note: Sensitive fields like remember_token, password, two_fa_key, etc. are NOT included for security
 
         // Get User's Servers (only servers they have access to)
         $servers = $this->getUserServers($user['id']);
@@ -134,9 +152,50 @@ class ContextBuilder
                     $context[] = "- Spell/Type: {$server['spell']['name']}";
                 }
 
-                // Only include port if user has access to allocations
-                if (isset($server['allocation']['port']) && ($isAdmin || isset($server['is_subuser']))) {
-                    $context[] = "- Port: {$server['allocation']['port']}";
+                // Server Resource Limits
+                if (isset($server['memory'])) {
+                    $memoryMB = (int) $server['memory'];
+                    $memoryGB = round($memoryMB / 1024, 2);
+                    $context[] = "- Memory Limit: {$memoryMB} MB ({$memoryGB} GB)";
+                }
+
+                if (isset($server['swap'])) {
+                    $swapMB = (int) $server['swap'];
+                    $swapGB = round($swapMB / 1024, 2);
+                    $context[] = "- Swap Limit: {$swapMB} MB ({$swapGB} GB)";
+                }
+
+                if (isset($server['disk'])) {
+                    $diskMB = (int) $server['disk'];
+                    $diskGB = round($diskMB / 1024, 2);
+                    $context[] = "- Disk Limit: {$diskMB} MB ({$diskGB} GB)";
+                }
+
+                if (isset($server['cpu'])) {
+                    $context[] = "- CPU Limit: {$server['cpu']}%";
+                }
+
+                if (isset($server['io'])) {
+                    $context[] = "- IO Limit: {$server['io']}";
+                }
+
+                // Allocation Information (IP and Port)
+                if (isset($server['allocation'])) {
+                    $allocation = $server['allocation'];
+                    if (isset($allocation['ip'])) {
+                        $ipInfo = $allocation['ip'];
+                        if (isset($allocation['ip_alias']) && !empty($allocation['ip_alias'])) {
+                            $ipInfo .= " (Alias: {$allocation['ip_alias']})";
+                        }
+                        $context[] = "- IP Address: {$ipInfo}";
+                    }
+                    if (isset($allocation['port'])) {
+                        $context[] = "- Port: {$allocation['port']}";
+                        // Show connection info if both IP and port are available
+                        if (isset($allocation['ip'])) {
+                            $context[] = "- Connection: {$allocation['ip']}:{$allocation['port']}";
+                        }
+                    }
                 }
 
                 if (isset($server['is_subuser']) && $server['is_subuser']) {
@@ -217,6 +276,64 @@ class ContextBuilder
 
                     if (isset($server['spell']['name'])) {
                         $context[] = "Spell/Type: {$server['spell']['name']}";
+                    }
+
+                    // Server Resource Limits
+                    if (isset($serverData['memory'])) {
+                        $memoryMB = (int) $serverData['memory'];
+                        $memoryGB = round($memoryMB / 1024, 2);
+                        $context[] = "Memory Limit: {$memoryMB} MB ({$memoryGB} GB)";
+                    }
+
+                    if (isset($serverData['swap'])) {
+                        $swapMB = (int) $serverData['swap'];
+                        $swapGB = round($swapMB / 1024, 2);
+                        $context[] = "Swap Limit: {$swapMB} MB ({$swapGB} GB)";
+                    }
+
+                    if (isset($serverData['disk'])) {
+                        $diskMB = (int) $serverData['disk'];
+                        $diskGB = round($diskMB / 1024, 2);
+                        $context[] = "Disk Limit: {$diskMB} MB ({$diskGB} GB)";
+                    }
+
+                    if (isset($serverData['cpu'])) {
+                        $context[] = "CPU Limit: {$serverData['cpu']}%";
+                    }
+
+                    if (isset($serverData['io'])) {
+                        $context[] = "IO Limit: {$serverData['io']}";
+                    }
+
+                    // Allocation Information (IP and Port)
+                    if (isset($serverData['allocation_id'])) {
+                        $allocation = Allocation::getAllocationById((int) $serverData['allocation_id']);
+                        if ($allocation) {
+                            if (isset($allocation['ip'])) {
+                                $ipInfo = $allocation['ip'];
+                                if (isset($allocation['ip_alias']) && !empty($allocation['ip_alias'])) {
+                                    $ipInfo .= " (Alias: {$allocation['ip_alias']})";
+                                }
+                                $context[] = "IP Address: {$ipInfo}";
+                            }
+                            if (isset($allocation['port'])) {
+                                $context[] = "Port: {$allocation['port']}";
+                                // Show connection info if both IP and port are available
+                                if (isset($allocation['ip'])) {
+                                    $context[] = "Connection: {$allocation['ip']}:{$allocation['port']}";
+                                }
+                            }
+                        }
+                    }
+
+                    // Startup Command
+                    if (isset($serverData['startup']) && !empty($serverData['startup'])) {
+                        $context[] = "Startup Command: {$serverData['startup']}";
+                    }
+
+                    // Docker Image
+                    if (isset($serverData['image']) && !empty($serverData['image'])) {
+                        $context[] = "Docker Image: {$serverData['image']}";
                     }
 
                     // Fetch server logs if server is running or starting
@@ -332,11 +449,30 @@ class ContextBuilder
                     'name' => $spell['name'] ?? null,
                 ];
 
-                // Add allocation info
+                // Add allocation info (IP, port, alias)
                 $allocation = Allocation::getAllocationById($server['allocation_id']);
                 $server['allocation'] = [
+                    'ip' => $allocation['ip'] ?? null,
+                    'ip_alias' => $allocation['ip_alias'] ?? null,
                     'port' => $allocation['port'] ?? null,
                 ];
+
+                // Add server resource limits
+                if (isset($server['memory'])) {
+                    $server['memory'] = (int) $server['memory'];
+                }
+                if (isset($server['swap'])) {
+                    $server['swap'] = (int) $server['swap'];
+                }
+                if (isset($server['disk'])) {
+                    $server['disk'] = (int) $server['disk'];
+                }
+                if (isset($server['cpu'])) {
+                    $server['cpu'] = (int) $server['cpu'];
+                }
+                if (isset($server['io'])) {
+                    $server['io'] = (int) $server['io'];
+                }
             }
 
             return $allServers;

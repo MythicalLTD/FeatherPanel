@@ -74,7 +74,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-P    <!-- Only show chatbot widget on desktop devices -->
+    <!-- Only show chatbot widget on desktop devices -->
     <div v-if="isDesktop" class="fixed bottom-6 right-6 z-50">
         <!-- Floating Widget Button -->
         <div v-if="!isOpen" class="relative">
