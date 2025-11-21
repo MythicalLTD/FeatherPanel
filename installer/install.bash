@@ -343,26 +343,58 @@ setup_qemu_emulation() {
         return 0
     fi
     
+    # Ensure Docker is installed before setting up QEMU
+    if ! command -v docker >/dev/null 2>&1; then
+        log_warn "Docker is not installed yet. QEMU setup will be skipped for now."
+        log_warn "QEMU will be set up after Docker installation."
+        return 0
+    fi
+    
+    # Wait for Docker daemon to be ready (in case it was just installed)
+    log_info "Waiting for Docker daemon to be ready..."
+    local max_attempts=10
+    local attempt=0
+    while [ $attempt -lt $max_attempts ]; do
+        if sudo docker info >/dev/null 2>&1; then
+            break
+        fi
+        attempt=$((attempt + 1))
+        sleep 1
+    done
+    
+    if ! sudo docker info >/dev/null 2>&1; then
+        log_warn "Docker daemon is not ready. QEMU setup will be skipped."
+        log_warn "You may need to manually run: docker run --rm --privileged tonistiigi/binfmt --install all"
+        return 1
+    fi
+    
     log_info "ARM architecture detected: $arch"
     log_info "Setting up QEMU emulation for running amd64 containers..."
     
-    # Install QEMU static binaries and binfmt support
-    install_packages qemu qemu-user-static binfmt-support
-    
-    # Register binfmt interpreters for cross-platform support
-    if command -v update-binfmts >/dev/null 2>&1; then
-        log_info "Registering binfmt interpreters for amd64 emulation..."
-        sudo update-binfmts --enable qemu-x86_64 >/dev/null 2>&1 || true
-        sudo update-binfmts --enable qemu-i386 >/dev/null 2>&1 || true
+    # Check if QEMU interpreters are already registered
+    if [ -f /proc/sys/fs/binfmt_misc/qemu-x86_64 ] && [ -f /proc/sys/fs/binfmt_misc/qemu-i386 ]; then
+        log_info "QEMU binfmt interpreters are already registered"
+        return 0
     fi
     
-    # Ensure QEMU static binaries are registered in the kernel
-    # Docker will automatically use binfmt_misc for emulation
-    if [ -f /proc/sys/fs/binfmt_misc/qemu-x86_64 ] || [ -f /proc/sys/fs/binfmt_misc/qemu-i386 ]; then
-        log_info "QEMU binfmt interpreters are registered in the kernel"
+    # Use Docker's binfmt tool to properly set up QEMU emulation
+    # This is the recommended method for Docker containers
+    log_info "Installing QEMU binfmt interpreters using Docker's binfmt tool..."
+    if sudo docker run --rm --privileged tonistiigi/binfmt --install all >> "$LOG_FILE" 2>&1; then
+        log_success "QEMU binfmt interpreters installed successfully"
+        
+        # Verify installation
+        sleep 1
+        if [ -f /proc/sys/fs/binfmt_misc/qemu-x86_64 ]; then
+            log_info "Verified: QEMU x86_64 interpreter is registered"
+        fi
+        if [ -f /proc/sys/fs/binfmt_misc/qemu-i386 ]; then
+            log_info "Verified: QEMU i386 interpreter is registered"
+        fi
     else
-        log_warn "QEMU binfmt interpreters may need manual registration"
-        log_info "Docker should still handle emulation automatically"
+        log_error "Failed to install QEMU binfmt interpreters"
+        log_warn "You may need to manually run: docker run --rm --privileged tonistiigi/binfmt --install all"
+        return 1
     fi
     
     log_success "QEMU emulation setup complete. Docker will use emulation to run amd64 containers on ARM."
@@ -1972,18 +2004,6 @@ CF_HOSTNAME=""
                 fi
             fi
 
-            # Setup QEMU emulation for ARM systems to run amd64 containers
-            ARCH=$(uname -m)
-            if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
-                if [ "$FORCE_ARM" = true ]; then
-                    log_warn "ARM architecture detected: $ARCH (--force-arm flag set)"
-                else
-                    log_info "ARM architecture detected: $ARCH"
-                    log_info "FeatherPanel will run on ARM using QEMU emulation for amd64 containers."
-                fi
-                setup_qemu_emulation
-            fi
-
             # Unified access method selection
             ACCESS_METHOD=""
             # Env override for access method
@@ -2117,6 +2137,18 @@ CF_HOSTNAME=""
             sudo usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
                 log_success "Docker installed. You may need to re-login for group changes to take effect."
                 fi
+                
+            # Setup QEMU emulation for ARM systems to run amd64 containers (must be after Docker is installed)
+            ARCH=$(uname -m)
+            if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
+                if [ "$FORCE_ARM" = true ]; then
+                    log_warn "ARM architecture detected: $ARCH (--force-arm flag set)"
+                else
+                    log_info "ARM architecture detected: $ARCH"
+                    log_info "FeatherPanel will run on ARM using QEMU emulation for amd64 containers."
+                fi
+                setup_qemu_emulation
+            fi
                 
             sudo mkdir -p /var/www/featherpanel
             cd /var/www/featherpanel || exit 1
