@@ -2057,7 +2057,90 @@ CF_HOSTNAME=""
             fi
 
             print_banner
+            
+            # Check architecture before starting containers
+            ARCH=$(uname -m)
+            if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
+                log_error "ARM architecture detected: $ARCH"
+                echo ""
+                draw_hr
+                echo -e "${RED}${BOLD}⚠️  CRITICAL: ARM Architecture Not Supported${NC}"
+                draw_hr
+                echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
+                echo -e "${YELLOW}The containers will fail to start with 'exec format error'.${NC}"
+                echo ""
+                echo -e "${BLUE}What you can do:${NC}"
+                echo -e "  ${GREEN}•${NC} Install FeatherWings on this ARM server (fully supported)"
+                echo -e "  ${GREEN}•${NC} Install FeatherPanel on an x86_64/amd64 server"
+                echo -e "  ${GREEN}•${NC} Use FeatherWings on ARM and connect to Panel on x86_64"
+                echo ""
+                draw_hr
+                echo -e "${RED}Installation cannot continue. Please use an x86_64/amd64 system for the Panel.${NC}"
+                exit 1
+            fi
+            
             if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." sudo docker compose up -d; then
+                log_error "Failed to start FeatherPanel stack"
+                echo ""
+                draw_hr
+                echo -e "${RED}${BOLD}Container Start Failure${NC}"
+                draw_hr
+                
+                # Check Docker logs for common errors
+                log_info "Checking Docker container logs..."
+                if command -v docker >/dev/null 2>&1; then
+                    cd /var/www/featherpanel || true
+                    CONTAINER_LOGS=$(sudo docker compose logs --tail=50 2>&1 || sudo docker-compose logs --tail=50 2>&1 || echo "")
+                    
+                    if echo "$CONTAINER_LOGS" | grep -qi "exec format error"; then
+                        echo -e "${RED}${BOLD}Detected: Exec Format Error${NC}"
+                        echo -e "${YELLOW}This typically means the Docker image architecture doesn't match your system.${NC}"
+                        ARCH=$(uname -m)
+                        echo -e "${YELLOW}Your system architecture: ${BOLD}$ARCH${NC}"
+                        echo -e "${YELLOW}FeatherPanel Docker images only support x86_64/amd64 architecture.${NC}"
+                        echo ""
+                        echo -e "${BLUE}Solution:${NC} Use an x86_64/amd64 system for FeatherPanel installation."
+                    elif echo "$CONTAINER_LOGS" | grep -qi "no space left"; then
+                        echo -e "${RED}${BOLD}Detected: No Space Left on Device${NC}"
+                        echo -e "${YELLOW}Your system is out of disk space.${NC}"
+                        echo -e "${BLUE}Solution:${NC} Free up disk space and try again."
+                    elif echo "$CONTAINER_LOGS" | grep -qi "permission denied"; then
+                        echo -e "${RED}${BOLD}Detected: Permission Denied${NC}"
+                        echo -e "${YELLOW}Docker permission issue detected.${NC}"
+                        echo -e "${BLUE}Solution:${NC} Ensure Docker is properly configured and you have permissions."
+                    else
+                        echo -e "${YELLOW}Container logs (last 20 lines):${NC}"
+                        echo "$CONTAINER_LOGS" | tail -20
+                    fi
+                fi
+                
+                echo ""
+                draw_hr
+                echo -e "${BLUE}For more details, check:${NC}"
+                echo -e "  ${CYAN}•${NC} Docker logs: ${BOLD}sudo docker compose -f /var/www/featherpanel/docker-compose.yml logs${NC}"
+                echo -e "  ${CYAN}•${NC} Container status: ${BOLD}sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps${NC}"
+                echo -e "  ${CYAN}•${NC} Installation log: ${BOLD}$LOG_FILE${NC}"
+                draw_hr
+                upload_logs_on_fail
+                exit 1
+            fi
+            
+            # Verify containers are actually running
+            sleep 2
+            if ! sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps | grep -q "Up"; then
+                log_error "Containers started but are not running"
+                echo ""
+                draw_hr
+                echo -e "${RED}${BOLD}Container Status Check Failed${NC}"
+                draw_hr
+                log_info "Container status:"
+                sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps
+                echo ""
+                log_info "Recent container logs:"
+                sudo docker compose -f /var/www/featherpanel/docker-compose.yml logs --tail=30
+                echo ""
+                draw_hr
+                upload_logs_on_fail
                 exit 1
             fi
 
@@ -2242,9 +2325,65 @@ CF_HOSTNAME=""
                 # Ensure Panel is running
                 if ! sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps | grep -q "Up"; then
                     log_info "Ensuring FeatherPanel containers are running..."
-                    if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." \
-                        bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
-                        log_warn "Failed to start FeatherPanel. Please check manually."
+                    
+                    # Check architecture
+                    ARCH=$(uname -m)
+                    if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
+                        log_error "ARM architecture detected: $ARCH"
+                        echo ""
+                        draw_hr
+                        echo -e "${RED}${BOLD}⚠️  CRITICAL: ARM Architecture Not Supported${NC}"
+                        draw_hr
+                        echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
+                        echo -e "${YELLOW}The containers will fail to start with 'exec format error'.${NC}"
+                        echo ""
+                        echo -e "${BLUE}What you can do:${NC}"
+                        echo -e "  ${GREEN}•${NC} Install FeatherWings on this ARM server (fully supported)"
+                        echo -e "  ${GREEN}•${NC} Install FeatherPanel on an x86_64/amd64 server"
+                        echo ""
+                        draw_hr
+                        log_warn "Cannot start FeatherPanel on ARM architecture. Reverse proxy configured but Panel will not run."
+                    else
+                        if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." \
+                            bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
+                            log_error "Failed to start FeatherPanel stack"
+                            echo ""
+                            draw_hr
+                            echo -e "${RED}${BOLD}Container Start Failure${NC}"
+                            draw_hr
+                            
+                            # Check Docker logs for common errors
+                            log_info "Checking Docker container logs..."
+                            cd /var/www/featherpanel || true
+                            CONTAINER_LOGS=$(sudo docker compose logs --tail=50 2>&1 || sudo docker-compose logs --tail=50 2>&1 || echo "")
+                            
+                            if echo "$CONTAINER_LOGS" | grep -qi "exec format error"; then
+                                echo -e "${RED}${BOLD}Detected: Exec Format Error${NC}"
+                                echo -e "${YELLOW}This typically means the Docker image architecture doesn't match your system.${NC}"
+                                echo -e "${YELLOW}Your system architecture: ${BOLD}$ARCH${NC}"
+                                echo -e "${YELLOW}FeatherPanel Docker images only support x86_64/amd64 architecture.${NC}"
+                            elif echo "$CONTAINER_LOGS" | grep -qi "no space left"; then
+                                echo -e "${RED}${BOLD}Detected: No Space Left on Device${NC}"
+                                echo -e "${YELLOW}Your system is out of disk space.${NC}"
+                            else
+                                echo -e "${YELLOW}Container logs (last 20 lines):${NC}"
+                                echo "$CONTAINER_LOGS" | tail -20
+                            fi
+                            
+                            echo ""
+                            draw_hr
+                            log_warn "Failed to start FeatherPanel. Reverse proxy is configured but Panel is not running."
+                            log_info "Check logs: sudo docker compose -f /var/www/featherpanel/docker-compose.yml logs"
+                        else
+                            # Verify containers are actually running
+                            sleep 2
+                            if ! sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps | grep -q "Up"; then
+                                log_error "Containers started but are not running"
+                                log_info "Container status:"
+                                sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps
+                                log_warn "Panel containers failed to start. Check Docker logs for details."
+                            fi
+                        fi
                     fi
                 else
                     log_info "FeatherPanel containers are already running."
@@ -2379,7 +2518,87 @@ CF_HOSTNAME=""
                 exit 1
             fi
 
+            # Check architecture before starting containers
+            ARCH=$(uname -m)
+            if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
+                log_error "ARM architecture detected: $ARCH"
+                echo ""
+                draw_hr
+                echo -e "${RED}${BOLD}⚠️  CRITICAL: ARM Architecture Not Supported${NC}"
+                draw_hr
+                echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
+                echo -e "${YELLOW}The containers will fail to start with 'exec format error'.${NC}"
+                echo ""
+                echo -e "${BLUE}What you can do:${NC}"
+                echo -e "  ${GREEN}•${NC} Install FeatherWings on this ARM server (fully supported)"
+                echo -e "  ${GREEN}•${NC} Install FeatherPanel on an x86_64/amd64 server"
+                echo -e "  ${GREEN}•${NC} Use FeatherWings on ARM and connect to Panel on x86_64"
+                echo ""
+                draw_hr
+                echo -e "${RED}Update cannot continue. Please use an x86_64/amd64 system for the Panel.${NC}"
+                upload_logs_on_fail
+                exit 1
+            fi
+            
             if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
+                log_error "Failed to start FeatherPanel stack"
+                echo ""
+                draw_hr
+                echo -e "${RED}${BOLD}Container Start Failure${NC}"
+                draw_hr
+                
+                # Check Docker logs for common errors
+                log_info "Checking Docker container logs..."
+                cd /var/www/featherpanel || true
+                CONTAINER_LOGS=$(sudo docker compose logs --tail=50 2>&1 || sudo docker-compose logs --tail=50 2>&1 || echo "")
+                
+                if echo "$CONTAINER_LOGS" | grep -qi "exec format error"; then
+                    echo -e "${RED}${BOLD}Detected: Exec Format Error${NC}"
+                    echo -e "${YELLOW}This typically means the Docker image architecture doesn't match your system.${NC}"
+                    ARCH=$(uname -m)
+                    echo -e "${YELLOW}Your system architecture: ${BOLD}$ARCH${NC}"
+                    echo -e "${YELLOW}FeatherPanel Docker images only support x86_64/amd64 architecture.${NC}"
+                    echo ""
+                    echo -e "${BLUE}Solution:${NC} Use an x86_64/amd64 system for FeatherPanel installation."
+                elif echo "$CONTAINER_LOGS" | grep -qi "no space left"; then
+                    echo -e "${RED}${BOLD}Detected: No Space Left on Device${NC}"
+                    echo -e "${YELLOW}Your system is out of disk space.${NC}"
+                    echo -e "${BLUE}Solution:${NC} Free up disk space and try again."
+                elif echo "$CONTAINER_LOGS" | grep -qi "permission denied"; then
+                    echo -e "${RED}${BOLD}Detected: Permission Denied${NC}"
+                    echo -e "${YELLOW}Docker permission issue detected.${NC}"
+                    echo -e "${BLUE}Solution:${NC} Ensure Docker is properly configured and you have permissions."
+                else
+                    echo -e "${YELLOW}Container logs (last 20 lines):${NC}"
+                    echo "$CONTAINER_LOGS" | tail -20
+                fi
+                
+                echo ""
+                draw_hr
+                echo -e "${BLUE}For more details, check:${NC}"
+                echo -e "  ${CYAN}•${NC} Docker logs: ${BOLD}sudo docker compose -f /var/www/featherpanel/docker-compose.yml logs${NC}"
+                echo -e "  ${CYAN}•${NC} Container status: ${BOLD}sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps${NC}"
+                echo -e "  ${CYAN}•${NC} Installation log: ${BOLD}$LOG_FILE${NC}"
+                draw_hr
+                upload_logs_on_fail
+                exit 1
+            fi
+            
+            # Verify containers are actually running
+            sleep 2
+            if ! sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps | grep -q "Up"; then
+                log_error "Containers started but are not running"
+                echo ""
+                draw_hr
+                echo -e "${RED}${BOLD}Container Status Check Failed${NC}"
+                draw_hr
+                log_info "Container status:"
+                sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps
+                echo ""
+                log_info "Recent container logs:"
+                sudo docker compose -f /var/www/featherpanel/docker-compose.yml logs --tail=30
+                echo ""
+                draw_hr
                 upload_logs_on_fail
                 exit 1
             fi
