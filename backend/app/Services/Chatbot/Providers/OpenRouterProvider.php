@@ -39,12 +39,16 @@ class OpenRouterProvider implements ProviderInterface
     private $app;
     private $apiKey;
     private $model;
+    private $temperature;
+    private $maxTokens;
 
-    public function __construct(string $apiKey, string $model)
+    public function __construct(string $apiKey, string $model, float $temperature = 0.7, int $maxTokens = 2048)
     {
         $this->app = App::getInstance(true);
         $this->apiKey = $apiKey;
         $this->model = $model;
+        $this->temperature = $temperature;
+        $this->maxTokens = $maxTokens;
     }
 
     /**
@@ -90,8 +94,8 @@ class OpenRouterProvider implements ProviderInterface
             $payload = [
                 'model' => $this->model,
                 'messages' => $messages,
-                'temperature' => 0.7,
-                'max_tokens' => 2048,
+                'temperature' => $this->temperature,
+                'max_tokens' => $this->maxTokens,
             ];
 
             $client = new Client([

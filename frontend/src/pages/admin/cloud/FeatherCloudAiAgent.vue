@@ -27,8 +27,11 @@ import DashboardLayout, { type BreadcrumbEntry } from '@/layouts/DashboardLayout
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import {
-    Bot,
     Mic,
     Server,
     Database,
@@ -36,11 +39,26 @@ import {
     BarChart3,
     Terminal,
     MessageSquare,
-    Settings,
+    Settings as SettingsIcon,
     Sparkles,
     ShieldCheck,
     Zap,
+    Save,
+    AlertCircle,
+    ChevronDown,
 } from 'lucide-vue-next';
+import { useAdminSettingsStore, type Setting } from '@/stores/adminSettings';
+import { onMounted, ref } from 'vue';
+import { useToast } from 'vue-toastification';
+
+const adminSettingsStore = useAdminSettingsStore();
+const toast = useToast();
+
+const loading = ref(true);
+const saving = ref(false);
+const chatbotSettings = ref<Record<string, Setting> | null>(null);
+const originalSettings = ref<Record<string, Setting> | null>(null);
+const showSettings = ref(false);
 
 const breadcrumbs: BreadcrumbEntry[] = [
     { text: 'Dashboard', href: '/admin' },
@@ -56,7 +74,7 @@ const heroContent = {
     title: 'FeatherCloud AI Agent',
     subtitle:
         'Give your panel a voice-enabled copilot that can launch servers, patch configs, build databases, and brief administrators on everything happening in the last 30 days.',
-    primaryCta: 'Request Pilot Access',
+    primaryCta: 'Configure Settings',
     secondaryCta: 'Explore Capability Roadmap',
     highlights: [
         'Natural language playbooks for server control, file edits, and command execution.',
@@ -69,17 +87,17 @@ const agentHighlights = [
     {
         id: 'cmd',
         icon: Terminal,
-        text: '“Start realm 42’s tournament servers and send status to Discord.”',
+        text: '"Start realm 42\'s tournament servers and send status to Discord."',
     },
     {
         id: 'db',
         icon: Database,
-        text: '“Create a MariaDB instance for ArcadeCraft with nightly retention.”',
+        text: '"Create a MariaDB instance for ArcadeCraft with nightly retention."',
     },
     {
         id: 'admin',
         icon: Users,
-        text: '“List suspended users and draft emails requesting compliance updates.”',
+        text: '"List suspended users and draft emails requesting compliance updates."',
     },
 ];
 
@@ -96,7 +114,7 @@ const capabilityCards = [
         title: 'File & config automation',
         description:
             'Modify configuration files, upload templates, or restore previous versions while logging every change.',
-        icon: Settings,
+        icon: SettingsIcon,
     },
     {
         id: 'database-ops',
@@ -252,11 +270,115 @@ const assurance = [
             'New skills roll out weekly—covering provisioning, compliance, analytics, and marketplace add-ons.',
     },
 ];
+
+const fetchChatbotSettings = async () => {
+    loading.value = true;
+    try {
+        await adminSettingsStore.fetchSettings();
+        const chatbotCategory = adminSettingsStore.getSettingsByCategory('chatbot');
+
+        if (chatbotCategory && chatbotCategory.settings) {
+            chatbotSettings.value = JSON.parse(JSON.stringify(chatbotCategory.settings));
+            originalSettings.value = JSON.parse(JSON.stringify(chatbotCategory.settings));
+        } else {
+            toast.error('Chatbot settings not found');
+        }
+    } catch (error) {
+        console.error('Error fetching chatbot settings:', error);
+        toast.error('Failed to load chatbot settings');
+    } finally {
+        loading.value = false;
+    }
+};
+
+const saveSettings = async () => {
+    if (!chatbotSettings.value || !originalSettings.value) return;
+
+    const settingsToUpdate: Record<string, string | number | boolean> = {};
+
+    Object.entries(chatbotSettings.value).forEach(([key, setting]: [string, Setting]) => {
+        const originalSetting = originalSettings.value?.[key];
+
+        // Skip if value hasn't changed
+        if (originalSetting && originalSetting.value === setting.value) {
+            return;
+        }
+
+        // For sensitive settings (password type), only update if user actually entered something new
+        if ('sensitive' in setting && setting.sensitive && setting.type === 'password') {
+            // If the value is still masked (••••••••) or empty, don't update
+            if (setting.value === '••••••••' || setting.value === '') {
+                return;
+            }
+        }
+
+        settingsToUpdate[key] = setting.value;
+    });
+
+    // If no settings changed, show message and return
+    if (Object.keys(settingsToUpdate).length === 0) {
+        toast.info('No changes detected');
+        return;
+    }
+
+    saving.value = true;
+    try {
+        const result = await adminSettingsStore.saveSettings(settingsToUpdate);
+
+        if (result.success) {
+            // Update the original settings with the new values
+            Object.entries(settingsToUpdate).forEach(([key, value]) => {
+                if (originalSettings.value && originalSettings.value[key]) {
+                    originalSettings.value[key].value = value;
+                }
+                if (chatbotSettings.value && chatbotSettings.value[key]) {
+                    chatbotSettings.value[key].value = value;
+                }
+            });
+
+            toast.success('Chatbot settings saved successfully');
+            // Reload settings to get updated values
+            await fetchChatbotSettings();
+        } else {
+            toast.error(result.message || 'Failed to save settings');
+        }
+    } catch (error) {
+        console.error('Error saving settings:', error);
+        toast.error('Failed to save settings');
+    } finally {
+        saving.value = false;
+    }
+};
+
+const resetSettings = () => {
+    if (!originalSettings.value) return;
+    chatbotSettings.value = JSON.parse(JSON.stringify(originalSettings.value));
+    toast.info('Settings reset to saved values');
+};
+
+const getSettingValue = (key: string): string | number | boolean => {
+    if (!chatbotSettings.value || !chatbotSettings.value[key]) return '';
+    return chatbotSettings.value[key].value;
+};
+
+const updateSettingValue = (key: string, value: string | number | boolean) => {
+    if (!chatbotSettings.value || !chatbotSettings.value[key]) return;
+    chatbotSettings.value[key].value = value;
+};
+
+const toggleSettings = () => {
+    showSettings.value = !showSettings.value;
+};
+
+onMounted(() => {
+    void fetchChatbotSettings();
+});
 </script>
 
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="min-h-screen space-y-10 pb-12">
+            <!-- Hero Section -->
             <section
                 class="relative overflow-hidden rounded-3xl border border-border/70 bg-card p-6 sm:p-10 shadow-xl shadow-primary/10"
             >
@@ -299,14 +421,22 @@ const assurance = [
                             </p>
                         </div>
                         <div class="flex flex-wrap gap-3">
-                            <Button size="lg" :disabled="true" class="gap-2">
-                                <Bot class="h-4 w-4" />
-                                {{ heroContent.primaryCta }}
-                            </Button>
-                            <Button variant="secondary" size="lg" :disabled="true" class="gap-2">
-                                <BarChart3 class="h-4 w-4" />
-                                {{ heroContent.secondaryCta }}
-                            </Button>
+                            <template v-if="getSettingValue('chatbot_enabled') === 'true'">
+                                <Button size="lg" class="gap-2" @click="toggleSettings">
+                                    <SettingsIcon class="h-4 w-4" />
+                                    {{ heroContent.primaryCta }}
+                                </Button>
+                                <Button variant="secondary" size="lg" :disabled="true" class="gap-2">
+                                    <BarChart3 class="h-4 w-4" />
+                                    {{ heroContent.secondaryCta }}
+                                </Button>
+                            </template>
+                            <template v-else>
+                                <Button size="lg" class="gap-2" @click="toggleSettings">
+                                    <Sparkles class="h-4 w-4" />
+                                    Join Private Testing
+                                </Button>
+                            </template>
                         </div>
                         <div class="grid gap-3 sm:grid-cols-2">
                             <div
@@ -360,12 +490,12 @@ const assurance = [
                                 <p class="text-sm font-semibold text-foreground">Sample commands</p>
                                 <ul class="mt-2 space-y-2 text-xs text-muted-foreground">
                                     <li>
-                                        “Agent, create five event servers for Realm Echo and deploy the latest mod
-                                        pack.”
+                                        "Agent, create five event servers for Realm Echo and deploy the latest mod
+                                        pack."
                                     </li>
-                                    <li>“Voice mode: show me database growth and usage KPIs for the last 30 days.”</li>
+                                    <li>"Voice mode: show me database growth and usage KPIs for the last 30 days."</li>
                                     <li>
-                                        “Generate a compliance report and email it to the Mythical Systems audit list.”
+                                        "Generate a compliance report and email it to the Mythical Systems audit list."
                                     </li>
                                 </ul>
                             </div>
@@ -374,6 +504,432 @@ const assurance = [
                 </div>
             </section>
 
+            <!-- Settings Configuration Section -->
+            <section
+                v-if="showSettings"
+                class="relative overflow-hidden rounded-3xl border border-border/70 bg-card p-6 sm:p-10 shadow-xl shadow-primary/10"
+            >
+                <div class="relative space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-foreground">Chatbot Configuration</h2>
+                            <p class="text-sm text-muted-foreground mt-1">
+                                Configure and customize your AI chatbot assistant
+                            </p>
+                        </div>
+                        <Button variant="ghost" size="sm" @click="toggleSettings">
+                            <ChevronDown class="h-4 w-4" />
+                        </Button>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div v-if="loading" class="flex items-center justify-center py-12">
+                        <div class="text-center">
+                            <div
+                                class="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent mx-auto mb-4"
+                            ></div>
+                            <h3 class="text-lg font-semibold mb-2">Loading Settings</h3>
+                            <p class="text-muted-foreground">Please wait while we fetch your configuration...</p>
+                        </div>
+                    </div>
+
+                    <!-- Settings Form -->
+                    <form v-else-if="chatbotSettings" class="space-y-8" @submit.prevent="saveSettings">
+                        <!-- Enable/Disable Toggle -->
+                        <div class="rounded-2xl border border-border/70 bg-muted/40 p-6">
+                            <div class="flex items-center justify-between">
+                                <div class="space-y-1 flex-1">
+                                    <Label class="text-base font-semibold text-foreground">Enable Chatbot</Label>
+                                    <p class="text-sm text-muted-foreground">
+                                        Enable or disable the AI chatbot feature for all users
+                                    </p>
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    class="h-5 w-5 rounded border-border bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer"
+                                    :checked="getSettingValue('chatbot_enabled') === 'true'"
+                                    @change="
+                                        updateSettingValue(
+                                            'chatbot_enabled',
+                                            ($event.target as HTMLInputElement).checked ? 'true' : 'false',
+                                        )
+                                    "
+                                />
+                            </div>
+                        </div>
+
+                        <!-- General Settings -->
+                        <div class="space-y-6">
+                            <div>
+                                <h3 class="text-lg font-semibold text-foreground mb-4">General Settings</h3>
+                                <div class="grid gap-6 md:grid-cols-2">
+                                    <!-- AI Provider -->
+                                    <div class="space-y-3">
+                                        <Label for="chatbot_ai_provider" class="text-sm font-medium">
+                                            AI Provider
+                                        </Label>
+                                        <p class="text-xs text-muted-foreground">
+                                            Select the AI provider to use for chatbot responses
+                                        </p>
+                                        <Select
+                                            :model-value="String(getSettingValue('chatbot_ai_provider'))"
+                                            @update:model-value="
+                                                (val) => {
+                                                    const value =
+                                                        typeof val === 'string' ? val : val?.toString() || 'basic';
+                                                    updateSettingValue('chatbot_ai_provider', value);
+                                                }
+                                            "
+                                        >
+                                            <SelectTrigger class="w-full">
+                                                <SelectValue placeholder="Select AI provider" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="basic">Basic (No AI)</SelectItem>
+                                                <SelectItem value="google_gemini">Google Gemini</SelectItem>
+                                                <SelectItem value="openai">OpenAI</SelectItem>
+                                                <SelectItem value="openrouter">OpenRouter</SelectItem>
+                                                <SelectItem value="ollama">Ollama (Self-hosted)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <!-- Temperature -->
+                                    <div class="space-y-3">
+                                        <Label for="chatbot_temperature" class="text-sm font-medium">Temperature</Label>
+                                        <p class="text-xs text-muted-foreground">
+                                            Controls randomness (0.0 = focused, 1.0 = creative)
+                                        </p>
+                                        <Input
+                                            id="chatbot_temperature"
+                                            type="number"
+                                            min="0"
+                                            max="1"
+                                            step="0.1"
+                                            placeholder="0.7"
+                                            class="w-full"
+                                            :model-value="Number(chatbotSettings.chatbot_temperature?.value ?? 0.7)"
+                                            @update:model-value="
+                                                (val: string | number) =>
+                                                    updateSettingValue('chatbot_temperature', Number(val))
+                                            "
+                                        />
+                                    </div>
+
+                                    <!-- Max Tokens -->
+                                    <div class="space-y-3">
+                                        <Label for="chatbot_max_tokens" class="text-sm font-medium">Max Tokens</Label>
+                                        <p class="text-xs text-muted-foreground">
+                                            Maximum tokens in responses (1-8192)
+                                        </p>
+                                        <Input
+                                            id="chatbot_max_tokens"
+                                            type="number"
+                                            min="1"
+                                            max="8192"
+                                            placeholder="2048"
+                                            class="w-full"
+                                            :model-value="Number(chatbotSettings.chatbot_max_tokens?.value ?? 2048)"
+                                            @update:model-value="
+                                                (val: string | number) =>
+                                                    updateSettingValue('chatbot_max_tokens', Number(val))
+                                            "
+                                        />
+                                    </div>
+
+                                    <!-- Max History -->
+                                    <div class="space-y-3">
+                                        <Label for="chatbot_max_history" class="text-sm font-medium">Max History</Label>
+                                        <p class="text-xs text-muted-foreground">Previous messages in context (1-50)</p>
+                                        <Input
+                                            id="chatbot_max_history"
+                                            type="number"
+                                            min="1"
+                                            max="50"
+                                            placeholder="10"
+                                            class="w-full"
+                                            :model-value="Number(chatbotSettings.chatbot_max_history?.value ?? 10)"
+                                            @update:model-value="
+                                                (val: string | number) =>
+                                                    updateSettingValue('chatbot_max_history', Number(val))
+                                            "
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Provider-Specific Settings -->
+                            <div
+                                v-if="
+                                    getSettingValue('chatbot_ai_provider') !== 'basic' &&
+                                    getSettingValue('chatbot_ai_provider') !== ''
+                                "
+                                class="rounded-2xl border border-border/70 bg-muted/40 p-6 space-y-6"
+                            >
+                                <div class="flex items-center gap-2">
+                                    <Badge variant="outline">
+                                        {{
+                                            getSettingValue('chatbot_ai_provider') === 'google_gemini'
+                                                ? 'Google Gemini'
+                                                : getSettingValue('chatbot_ai_provider') === 'openai'
+                                                  ? 'OpenAI'
+                                                  : getSettingValue('chatbot_ai_provider') === 'openrouter'
+                                                    ? 'OpenRouter'
+                                                    : 'Ollama'
+                                        }}
+                                    </Badge>
+                                </div>
+
+                                <!-- Google Gemini -->
+                                <template v-if="getSettingValue('chatbot_ai_provider') === 'google_gemini'">
+                                    <div class="grid gap-6 md:grid-cols-2">
+                                        <div class="space-y-3">
+                                            <Label for="chatbot_google_ai_api_key" class="text-sm font-medium">
+                                                Google AI API Key
+                                            </Label>
+                                            <Input
+                                                id="chatbot_google_ai_api_key"
+                                                type="password"
+                                                placeholder="Enter API key to change"
+                                                class="w-full"
+                                                :model-value="
+                                                    String(chatbotSettings.chatbot_google_ai_api_key?.value ?? '')
+                                                "
+                                                @update:model-value="
+                                                    (val: string | number) =>
+                                                        updateSettingValue('chatbot_google_ai_api_key', String(val))
+                                                "
+                                            />
+                                        </div>
+                                        <div class="space-y-3">
+                                            <Label for="chatbot_google_ai_model" class="text-sm font-medium">
+                                                Gemini Model
+                                            </Label>
+                                            <Input
+                                                id="chatbot_google_ai_model"
+                                                type="text"
+                                                placeholder="gemini-2.5-flash"
+                                                class="w-full"
+                                                :model-value="
+                                                    String(chatbotSettings.chatbot_google_ai_model?.value ?? '')
+                                                "
+                                                @update:model-value="
+                                                    (val: string | number) =>
+                                                        updateSettingValue('chatbot_google_ai_model', String(val))
+                                                "
+                                            />
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- OpenAI -->
+                                <template v-if="getSettingValue('chatbot_ai_provider') === 'openai'">
+                                    <div class="grid gap-6 md:grid-cols-2">
+                                        <div class="space-y-3">
+                                            <Label for="chatbot_openai_api_key" class="text-sm font-medium">
+                                                OpenAI API Key
+                                            </Label>
+                                            <Input
+                                                id="chatbot_openai_api_key"
+                                                type="password"
+                                                placeholder="Enter API key to change"
+                                                class="w-full"
+                                                :model-value="
+                                                    String(chatbotSettings.chatbot_openai_api_key?.value ?? '')
+                                                "
+                                                @update:model-value="
+                                                    (val: string | number) =>
+                                                        updateSettingValue('chatbot_openai_api_key', String(val))
+                                                "
+                                            />
+                                        </div>
+                                        <div class="space-y-3">
+                                            <Label for="chatbot_openai_model" class="text-sm font-medium">
+                                                OpenAI Model
+                                            </Label>
+                                            <Input
+                                                id="chatbot_openai_model"
+                                                type="text"
+                                                placeholder="gpt-4o-mini"
+                                                class="w-full"
+                                                :model-value="String(chatbotSettings.chatbot_openai_model?.value ?? '')"
+                                                @update:model-value="
+                                                    (val: string | number) =>
+                                                        updateSettingValue('chatbot_openai_model', String(val))
+                                                "
+                                            />
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- OpenRouter -->
+                                <template v-if="getSettingValue('chatbot_ai_provider') === 'openrouter'">
+                                    <div class="grid gap-6 md:grid-cols-2">
+                                        <div class="space-y-3">
+                                            <Label for="chatbot_openrouter_api_key" class="text-sm font-medium">
+                                                OpenRouter API Key
+                                            </Label>
+                                            <Input
+                                                id="chatbot_openrouter_api_key"
+                                                type="password"
+                                                placeholder="Enter API key to change"
+                                                class="w-full"
+                                                :model-value="
+                                                    String(chatbotSettings.chatbot_openrouter_api_key?.value ?? '')
+                                                "
+                                                @update:model-value="
+                                                    (val: string | number) =>
+                                                        updateSettingValue('chatbot_openrouter_api_key', String(val))
+                                                "
+                                            />
+                                        </div>
+                                        <div class="space-y-3">
+                                            <Label for="chatbot_openrouter_model" class="text-sm font-medium">
+                                                OpenRouter Model
+                                            </Label>
+                                            <Input
+                                                id="chatbot_openrouter_model"
+                                                type="text"
+                                                placeholder="openai/gpt-4o-mini"
+                                                class="w-full"
+                                                :model-value="
+                                                    String(chatbotSettings.chatbot_openrouter_model?.value ?? '')
+                                                "
+                                                @update:model-value="
+                                                    (val: string | number) =>
+                                                        updateSettingValue('chatbot_openrouter_model', String(val))
+                                                "
+                                            />
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Ollama -->
+                                <template v-if="getSettingValue('chatbot_ai_provider') === 'ollama'">
+                                    <div class="grid gap-6 md:grid-cols-2">
+                                        <div class="space-y-3">
+                                            <Label for="chatbot_ollama_base_url" class="text-sm font-medium">
+                                                Ollama Base URL
+                                            </Label>
+                                            <Input
+                                                id="chatbot_ollama_base_url"
+                                                type="text"
+                                                placeholder="http://localhost:11434"
+                                                class="w-full"
+                                                :model-value="
+                                                    String(chatbotSettings.chatbot_ollama_base_url?.value ?? '')
+                                                "
+                                                @update:model-value="
+                                                    (val: string | number) =>
+                                                        updateSettingValue('chatbot_ollama_base_url', String(val))
+                                                "
+                                            />
+                                        </div>
+                                        <div class="space-y-3">
+                                            <Label for="chatbot_ollama_model" class="text-sm font-medium">
+                                                Ollama Model
+                                            </Label>
+                                            <Input
+                                                id="chatbot_ollama_model"
+                                                type="text"
+                                                placeholder="llama3.2"
+                                                class="w-full"
+                                                :model-value="String(chatbotSettings.chatbot_ollama_model?.value ?? '')"
+                                                @update:model-value="
+                                                    (val: string | number) =>
+                                                        updateSettingValue('chatbot_ollama_model', String(val))
+                                                "
+                                            />
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Custom Prompts -->
+                            <div class="space-y-6">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-foreground mb-4">Custom Prompts</h3>
+                                    <div class="grid gap-6">
+                                        <div class="space-y-3">
+                                            <Label for="chatbot_system_prompt" class="text-sm font-medium">
+                                                System Prompt (Optional)
+                                            </Label>
+                                            <p class="text-xs text-muted-foreground">
+                                                Custom system prompt to prepend to all messages (max 1000 characters)
+                                            </p>
+                                            <Textarea
+                                                id="chatbot_system_prompt"
+                                                placeholder="You are a helpful assistant for FeatherPanel..."
+                                                rows="4"
+                                                class="w-full"
+                                                :maxlength="1000"
+                                                :model-value="
+                                                    String(chatbotSettings.chatbot_system_prompt?.value ?? '')
+                                                "
+                                                @update:model-value="
+                                                    (val: string | number) =>
+                                                        updateSettingValue('chatbot_system_prompt', String(val))
+                                                "
+                                            />
+                                        </div>
+                                        <div class="space-y-3">
+                                            <Label for="chatbot_user_prompt" class="text-sm font-medium">
+                                                User Context Prompt (Optional)
+                                            </Label>
+                                            <p class="text-xs text-muted-foreground">
+                                                User context prompt to append to all messages (max 1000 characters)
+                                            </p>
+                                            <Textarea
+                                                id="chatbot_user_prompt"
+                                                placeholder="User is an admin with full access..."
+                                                rows="4"
+                                                class="w-full"
+                                                :maxlength="1000"
+                                                :model-value="String(chatbotSettings.chatbot_user_prompt?.value ?? '')"
+                                                @update:model-value="
+                                                    (val: string | number) =>
+                                                        updateSettingValue('chatbot_user_prompt', String(val))
+                                                "
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div
+                                class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-6 border-t"
+                            >
+                                <Button type="button" variant="outline" class="w-full sm:w-auto" @click="resetSettings">
+                                    Reset
+                                </Button>
+                                <Button type="submit" :disabled="saving" class="w-full sm:w-auto">
+                                    <Save v-if="!saving" class="h-4 w-4 mr-2" />
+                                    <div
+                                        v-else
+                                        class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                                    ></div>
+                                    {{ saving ? 'Saving...' : 'Save Changes' }}
+                                </Button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Error State -->
+                    <div v-else class="flex flex-col items-center justify-center py-12 text-center">
+                        <div class="text-red-500 mb-4">
+                            <AlertCircle class="h-12 w-12 mx-auto" />
+                        </div>
+                        <h3 class="text-lg font-medium text-muted-foreground mb-2">Failed to load settings</h3>
+                        <p class="text-sm text-muted-foreground max-w-sm">
+                            Unable to load chatbot settings. Please try again later.
+                        </p>
+                        <Button class="mt-4" @click="fetchChatbotSettings">Try Again</Button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Capability Cards -->
             <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <Card
                     v-for="capability in capabilityCards"
@@ -397,6 +953,7 @@ const assurance = [
                 </Card>
             </section>
 
+            <!-- Action Library & Workflow -->
             <section class="grid gap-6 lg:grid-cols-2">
                 <Card class="border border-border/70 bg-background/95">
                     <CardHeader>
@@ -455,12 +1012,13 @@ const assurance = [
                 </Card>
             </section>
 
+            <!-- Roadmap & Trust -->
             <section class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
                 <Card class="border border-border/70 bg-background/95">
                     <CardHeader>
                         <CardTitle class="text-xl font-semibold text-foreground">Roadmap</CardTitle>
                         <CardDescription class="text-sm text-muted-foreground">
-                            See what’s live today and what’s arriving next for the FeatherCloud AI Agent.
+                            See what's live today and what's arriving next for the FeatherCloud AI Agent.
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-5">
@@ -520,6 +1078,7 @@ const assurance = [
 </template>
 
 <style scoped>
+/* Hero Animations */
 .hero-blob {
     position: absolute;
     border-radius: 9999px;

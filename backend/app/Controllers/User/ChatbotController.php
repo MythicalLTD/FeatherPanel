@@ -88,6 +88,14 @@ class ChatbotController
             return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
         }
 
+        // Check if chatbot is enabled
+        $app = App::getInstance(true);
+        $config = $app->getConfig();
+        $enabled = $config->getSetting(\App\Config\ConfigInterface::CHATBOT_ENABLED, 'true');
+        if ($enabled !== 'true') {
+            return ApiResponse::error('The AI chatbot is currently disabled by the administrator.', 'CHATBOT_DISABLED', 403);
+        }
+
         $data = json_decode($request->getContent(), true);
 
         if (!isset($data['message']) || empty(trim($data['message']))) {

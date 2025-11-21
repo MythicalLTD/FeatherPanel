@@ -96,6 +96,13 @@ class PublicConfig extends ConfigFactory
 
             // User related settings
             ConfigInterface::USER_ALLOW_AVATAR_CHANGE => 'true',
+
+            // Chatbot related settings
+            ConfigInterface::CHATBOT_ENABLED => 'false',
+            ConfigInterface::CHATBOT_AI_PROVIDER => 'basic',
+            ConfigInterface::CHATBOT_TEMPERATURE => '0.7',
+            ConfigInterface::CHATBOT_MAX_TOKENS => '2048',
+            ConfigInterface::CHATBOT_MAX_HISTORY => '10',
         ];
     }
 }

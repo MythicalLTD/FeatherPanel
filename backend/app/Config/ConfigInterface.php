@@ -113,13 +113,19 @@ interface ConfigInterface
     /**
      * Chatbot AI Settings.
      */
+    public const CHATBOT_ENABLED = 'chatbot_enabled';
     public const CHATBOT_AI_PROVIDER = 'chatbot_ai_provider';
+    public const CHATBOT_TEMPERATURE = 'chatbot_temperature';
+    public const CHATBOT_MAX_TOKENS = 'chatbot_max_tokens';
+    public const CHATBOT_MAX_HISTORY = 'chatbot_max_history';
     public const CHATBOT_GOOGLE_AI_API_KEY = 'chatbot_google_ai_api_key';
     public const CHATBOT_GOOGLE_AI_MODEL = 'chatbot_google_ai_model';
     public const CHATBOT_OPENROUTER_API_KEY = 'chatbot_openrouter_api_key';
     public const CHATBOT_OPENROUTER_MODEL = 'chatbot_openrouter_model';
     public const CHATBOT_OPENAI_API_KEY = 'chatbot_openai_api_key';
     public const CHATBOT_OPENAI_MODEL = 'chatbot_openai_model';
+    public const CHATBOT_OLLAMA_BASE_URL = 'chatbot_ollama_base_url';
+    public const CHATBOT_OLLAMA_MODEL = 'chatbot_ollama_model';
     public const CHATBOT_SYSTEM_PROMPT = 'chatbot_system_prompt';
     public const CHATBOT_USER_PROMPT = 'chatbot_user_prompt';
 }

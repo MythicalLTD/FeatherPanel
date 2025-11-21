@@ -29,13 +29,18 @@ import { Button } from '@/components/ui/button';
 import { MessageSquare, Maximize2 } from 'lucide-vue-next';
 import ChatbotInterface from './ChatbotInterface.vue';
 import ChatbotDialog from './ChatbotDialog.vue';
+import { useSettingsStore } from '@/stores/settings';
 
+const settingsStore = useSettingsStore();
 const isOpen = ref(false);
 const isDialogOpen = ref(false);
 
 // Hide chatbot on mobile devices (screens smaller than 768px)
 const isMobile = useMediaQuery('(max-width: 767px)');
 const isDesktop = computed(() => !isMobile.value);
+
+// Check if chatbot is enabled
+const isChatbotEnabled = computed(() => settingsStore.chatbotEnabled);
 
 const toggleChat = () => {
     isOpen.value = !isOpen.value;
@@ -64,7 +69,9 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
     }
 };
 
-onMounted(() => {
+onMounted(async () => {
+    // Fetch settings to check if chatbot is enabled
+    await settingsStore.fetchSettings();
     document.addEventListener('keydown', handleKeyboardShortcut);
 });
 
@@ -74,8 +81,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <!-- Only show chatbot widget on desktop devices -->
-    <div v-if="isDesktop" class="fixed bottom-6 right-6 z-50">
+    <!-- Only show chatbot widget on desktop devices and if chatbot is enabled -->
+    <div v-if="isDesktop && isChatbotEnabled" class="fixed bottom-6 right-6 z-50">
         <!-- Floating Widget Button -->
         <div v-if="!isOpen" class="relative">
             <!-- Pulse animation ring -->

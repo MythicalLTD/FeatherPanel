@@ -190,5 +190,10 @@ export const useSettingsStore = defineStore('settings', {
          * User-related settings
          */
         userAllowAvatarChange: (state) => getBooleanSetting(state, 'user_allow_avatar_change'),
+
+        /**
+         * Chatbot-related settings
+         */
+        chatbotEnabled: (state) => getBooleanSetting(state, 'chatbot_enabled'),
     },
 });

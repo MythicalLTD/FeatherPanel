@@ -34,25 +34,25 @@ use App\App;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 
-class OpenAIProvider implements ProviderInterface
+class OllamaProvider implements ProviderInterface
 {
     private $app;
-    private $apiKey;
+    private $baseUrl;
     private $model;
     private $temperature;
     private $maxTokens;
 
-    public function __construct(string $apiKey, string $model, float $temperature = 0.7, int $maxTokens = 2048)
+    public function __construct(string $baseUrl, string $model, float $temperature = 0.7, int $maxTokens = 2048)
     {
         $this->app = App::getInstance(true);
-        $this->apiKey = $apiKey;
-        $this->model = $model;
+        $this->baseUrl = rtrim($baseUrl, '/');
+        $this->model = trim($model);
         $this->temperature = $temperature;
         $this->maxTokens = $maxTokens;
     }
 
     /**
-     * Process a user message and generate a response using OpenAI API.
+     * Process a user message and generate a response using Ollama API.
      *
      * @param string $message User's message
      * @param array $history Chat history
@@ -63,9 +63,9 @@ class OpenAIProvider implements ProviderInterface
     public function processMessage(string $message, array $history, string $systemPrompt = ''): array
     {
         try {
-            $url = 'https://api.openai.com/v1/chat/completions';
+            $url = "{$this->baseUrl}/api/chat";
 
-            // Build messages array
+            // Build conversation messages
             $messages = [];
 
             // Add system prompt if provided
@@ -76,11 +76,12 @@ class OpenAIProvider implements ProviderInterface
                 ];
             }
 
-            // Add history messages
+            // Add history messages (only last 10 to avoid token limits)
             $recentHistory = array_slice($history, -10);
             foreach ($recentHistory as $msg) {
+                $role = $msg['role'] === 'user' ? 'user' : 'assistant';
                 $messages[] = [
-                    'role' => $msg['role'],
+                    'role' => $role,
                     'content' => $msg['content'],
                 ];
             }
@@ -94,19 +95,21 @@ class OpenAIProvider implements ProviderInterface
             $payload = [
                 'model' => $this->model,
                 'messages' => $messages,
-                'temperature' => $this->temperature,
-                'max_tokens' => $this->maxTokens,
+                'stream' => false,
+                'options' => [
+                    'temperature' => $this->temperature,
+                    'num_predict' => $this->maxTokens,
+                ],
             ];
 
             $client = new Client([
-                'timeout' => 30,
-                'verify' => true,
+                'timeout' => 60, // Ollama can be slower, especially for large models
+                'verify' => false, // Ollama typically runs locally without SSL
             ]);
 
             $response = $client->post($url, [
                 'headers' => [
                     'Content-Type' => 'application/json',
-                    'Authorization' => 'Bearer ' . $this->apiKey,
                 ],
                 'json' => $payload,
             ]);
@@ -117,47 +120,64 @@ class OpenAIProvider implements ProviderInterface
             if ($httpCode !== 200) {
                 $errorDetails = '';
                 $errorData = json_decode($responseBody, true);
-                if (isset($errorData['error']['message'])) {
-                    $errorDetails = ': ' . $errorData['error']['message'];
+                if (isset($errorData['error'])) {
+                    $errorDetails = ': ' . (is_string($errorData['error']) ? $errorData['error'] : json_encode($errorData['error']));
                 }
 
-                $this->app->getLogger()->error("OpenAI API HTTP error: {$httpCode} - Response: {$responseBody}");
+                $this->app->getLogger()->error("Ollama API HTTP error: {$httpCode} - Model: {$this->model} - URL: {$url} - Response: {$responseBody}");
+
+                $errorMessage = "Error from Ollama API (HTTP {$httpCode})";
+                if ($httpCode === 404) {
+                    $errorMessage .= ". Model '{$this->model}' not found. Please ensure the model is pulled: ollama pull {$this->model}";
+                } elseif ($httpCode === 401 || $httpCode === 403) {
+                    $errorMessage .= '. Unauthorized access. Please check your Ollama configuration.';
+                } else {
+                    $errorMessage .= $errorDetails;
+                }
 
                 return [
-                    'response' => "Error from OpenAI API (HTTP {$httpCode}){$errorDetails}",
-                    'model' => 'OpenAI (Error)',
+                    'response' => $errorMessage,
+                    'model' => 'Ollama (Error)',
                 ];
             }
 
             $data = json_decode($responseBody, true);
-            if (!isset($data['choices'][0]['message']['content'])) {
-                $this->app->getLogger()->error("OpenAI API unexpected response: {$responseBody}");
+            if (!isset($data['message']['content'])) {
+                $this->app->getLogger()->error("Ollama API unexpected response: {$responseBody}");
 
                 return [
-                    'response' => 'Unexpected response from OpenAI. Please try again.',
-                    'model' => 'OpenAI (Error)',
+                    'response' => 'Unexpected response from Ollama. Please try again.',
+                    'model' => 'Ollama (Error)',
                 ];
             }
 
-            $responseText = $data['choices'][0]['message']['content'];
+            $responseText = $data['message']['content'];
 
             return [
                 'response' => $responseText,
-                'model' => "OpenAI {$this->model}",
+                'model' => "Ollama {$this->model}",
             ];
         } catch (GuzzleException $e) {
-            $this->app->getLogger()->error('OpenAI API exception: ' . $e->getMessage());
+            $this->app->getLogger()->error('Ollama API exception: ' . $e->getMessage());
+
+            // Check if it's a connection error
+            if (strpos($e->getMessage(), 'Connection refused') !== false || strpos($e->getMessage(), 'Failed to connect') !== false) {
+                return [
+                    'response' => "Cannot connect to Ollama server at {$this->baseUrl}. Please ensure Ollama is running and the URL is correct.",
+                    'model' => 'Ollama (Error)',
+                ];
+            }
 
             return [
-                'response' => "Error connecting to OpenAI: {$e->getMessage()}",
-                'model' => 'OpenAI (Error)',
+                'response' => "Error connecting to Ollama: {$e->getMessage()}",
+                'model' => 'Ollama (Error)',
             ];
         } catch (\Exception $e) {
-            $this->app->getLogger()->error('OpenAI API exception: ' . $e->getMessage());
+            $this->app->getLogger()->error('Ollama API exception: ' . $e->getMessage());
 
             return [
                 'response' => 'Error: ' . $e->getMessage(),
-                'model' => 'OpenAI (Error)',
+                'model' => 'Ollama (Error)',
             ];
         }
     }

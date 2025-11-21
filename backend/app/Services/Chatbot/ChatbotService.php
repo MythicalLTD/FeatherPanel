@@ -34,6 +34,7 @@ use App\App;
 use App\Chat\UserPreference;
 use App\Config\ConfigInterface;
 use App\Services\Chatbot\Providers\BasicProvider;
+use App\Services\Chatbot\Providers\OllamaProvider;
 use App\Services\Chatbot\Providers\OpenAIProvider;
 use App\Services\Chatbot\Providers\ProviderInterface;
 use App\Services\Chatbot\Providers\OpenRouterProvider;
@@ -64,7 +65,24 @@ class ChatbotService
      */
     public function processMessage(string $message, array $history, array $user, array $pageContext = []): array
     {
+        // Check if chatbot is enabled
+        $enabled = $this->config->getSetting(ConfigInterface::CHATBOT_ENABLED, 'true');
+        if ($enabled !== 'true') {
+            return [
+                'response' => 'The AI chatbot is currently disabled by the administrator.',
+                'model' => 'FeatherPanel AI (Disabled)',
+            ];
+        }
+
         $provider = $this->config->getSetting(ConfigInterface::CHATBOT_AI_PROVIDER, 'basic');
+
+        // Get chatbot configuration
+        $temperature = (float) $this->config->getSetting(ConfigInterface::CHATBOT_TEMPERATURE, '0.7');
+        $maxTokens = (int) $this->config->getSetting(ConfigInterface::CHATBOT_MAX_TOKENS, '2048');
+        $maxHistory = (int) $this->config->getSetting(ConfigInterface::CHATBOT_MAX_HISTORY, '10');
+
+        // Limit history to configured max
+        $history = array_slice($history, -$maxHistory);
 
         // Build comprehensive system prompt
         $contextBuilder = new ContextBuilder();
@@ -106,7 +124,7 @@ class ChatbotService
         $userPreferences = UserPreference::getPreferences($user['uuid'] ?? '');
 
         // Get provider instance
-        $providerInstance = $this->getProvider($provider, $userPreferences);
+        $providerInstance = $this->getProvider($provider, $userPreferences, $temperature, $maxTokens);
 
         if (!$providerInstance) {
             // Determine which provider failed and return appropriate error
@@ -117,6 +135,8 @@ class ChatbotService
                 $errorMessage = 'OpenRouter API key is not configured. Please configure it in admin settings or your user preferences.';
             } elseif ($provider === 'openai') {
                 $errorMessage = 'OpenAI API key is not configured. Please configure it in admin settings or your user preferences.';
+            } elseif ($provider === 'ollama') {
+                $errorMessage = 'Ollama base URL is not configured. Please configure it in admin settings.';
             }
 
             return [
@@ -134,10 +154,12 @@ class ChatbotService
      *
      * @param string $provider Provider name
      * @param array $userPreferences User preferences for API keys
+     * @param float $temperature Temperature setting
+     * @param int $maxTokens Max tokens setting
      *
      * @return ProviderInterface|null Provider instance or null if invalid
      */
-    private function getProvider(string $provider, array $userPreferences): ?ProviderInterface
+    private function getProvider(string $provider, array $userPreferences, float $temperature = 0.7, int $maxTokens = 2048): ?ProviderInterface
     {
         switch ($provider) {
             case 'google_gemini':
@@ -148,7 +170,7 @@ class ChatbotService
                 }
                 $model = $this->config->getSetting(ConfigInterface::CHATBOT_GOOGLE_AI_MODEL, 'gemini-2.5-flash');
 
-                return new GoogleGeminiProvider($apiKey, $model);
+                return new GoogleGeminiProvider($apiKey, $model, $temperature, $maxTokens);
 
             case 'openrouter':
                 $userApiKey = $userPreferences['chatbot_openrouter_api_key'] ?? null;
@@ -158,7 +180,7 @@ class ChatbotService
                 }
                 $model = $this->config->getSetting(ConfigInterface::CHATBOT_OPENROUTER_MODEL, 'openai/gpt-4o-mini');
 
-                return new OpenRouterProvider($apiKey, $model);
+                return new OpenRouterProvider($apiKey, $model, $temperature, $maxTokens);
 
             case 'openai':
                 $userApiKey = $userPreferences['chatbot_openai_api_key'] ?? null;
@@ -168,7 +190,16 @@ class ChatbotService
                 }
                 $model = $this->config->getSetting(ConfigInterface::CHATBOT_OPENAI_MODEL, 'gpt-4o-mini');
 
-                return new OpenAIProvider($apiKey, $model);
+                return new OpenAIProvider($apiKey, $model, $temperature, $maxTokens);
+
+            case 'ollama':
+                $baseUrl = $this->config->getSetting(ConfigInterface::CHATBOT_OLLAMA_BASE_URL, 'http://localhost:11434');
+                if (empty($baseUrl)) {
+                    return null;
+                }
+                $model = $this->config->getSetting(ConfigInterface::CHATBOT_OLLAMA_MODEL, 'llama3.2');
+
+                return new OllamaProvider($baseUrl, $model, $temperature, $maxTokens);
 
             case 'basic':
             default:

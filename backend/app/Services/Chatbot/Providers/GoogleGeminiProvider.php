@@ -39,12 +39,16 @@ class GoogleGeminiProvider implements ProviderInterface
     private $app;
     private $apiKey;
     private $model;
+    private $temperature;
+    private $maxTokens;
 
-    public function __construct(string $apiKey, string $model)
+    public function __construct(string $apiKey, string $model, float $temperature = 0.7, int $maxTokens = 2048)
     {
         $this->app = App::getInstance(true);
         $this->apiKey = $apiKey;
         $this->model = trim($model);
+        $this->temperature = $temperature;
+        $this->maxTokens = $maxTokens;
     }
 
     /**
@@ -83,10 +87,10 @@ class GoogleGeminiProvider implements ProviderInterface
             $payload = [
                 'contents' => $contents,
                 'generationConfig' => [
-                    'temperature' => 0.7,
+                    'temperature' => $this->temperature,
                     'topK' => 40,
                     'topP' => 0.95,
-                    'maxOutputTokens' => 2048,
+                    'maxOutputTokens' => $this->maxTokens,
                 ],
             ];
 
