@@ -31,13 +31,14 @@
 namespace App\Services\Chatbot\Tools;
 
 use App\App;
+use App\Chat\Allocation;
 use App\Chat\Node;
 use App\Chat\Server;
-use App\Chat\Subdomain;
-use App\Chat\Allocation;
 use App\Chat\ServerActivity;
+use App\Chat\Subdomain;
 use App\Chat\SubdomainDomain;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\SubdomainsEvent;
 use App\Services\Subdomain\CloudflareSubdomainService;
 
 /**
@@ -196,6 +197,20 @@ class DeleteSubdomainTool implements ToolInterface
                     'subdomain' => $subdomain['subdomain'],
                 ]),
             ]);
+        }
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                SubdomainsEvent::onSubdomainDeleted(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'subdomain_uuid' => $subdomain['uuid'],
+                    'subdomain_data' => $subdomain,
+                    'server_data' => $server,
+                ]
+            );
         }
 
         return [

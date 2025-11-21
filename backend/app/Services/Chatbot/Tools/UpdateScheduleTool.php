@@ -36,6 +36,7 @@ use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerEvent;
 
 /**
  * Tool to update a schedule for a server.
@@ -219,6 +220,19 @@ class UpdateScheduleTool implements ToolInterface
                     'updated_fields' => array_keys($updateData),
                 ]),
             ]);
+        }
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerScheduleUpdated(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'schedule_id' => $updatedSchedule['id'],
+                ]
+            );
         }
 
         $cronExpression = sprintf(

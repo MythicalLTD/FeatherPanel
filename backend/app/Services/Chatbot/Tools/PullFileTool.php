@@ -34,13 +34,13 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\ServerActivity;
-use App\Plugins\Events\Events\ServerEvent;
 use App\Helpers\ServerGateway;
+use App\Services\Wings\Wings;
 
 /**
- * Tool to update server settings.
+ * Tool to download a file from a URL to the server.
  */
-class UpdateServerTool implements ToolInterface
+class PullFileTool implements ToolInterface
 {
 	private $app;
 
@@ -59,7 +59,7 @@ class UpdateServerTool implements ToolInterface
 		if (!$serverIdentifier && isset($pageContext['server'])) {
 			$contextServer = $pageContext['server'];
 			$serverUuidShort = $contextServer['uuidShort'] ?? null;
-
+			
 			if ($serverUuidShort) {
 				$server = Server::getServerByUuidShort($serverUuidShort);
 			}
@@ -68,11 +68,11 @@ class UpdateServerTool implements ToolInterface
 		// Resolve server if identifier provided
 		if ($serverIdentifier && !$server) {
 			$server = Server::getServerByUuid($serverIdentifier);
-
+			
 			if (!$server) {
 				$server = Server::getServerByUuidShort($serverIdentifier);
 			}
-
+			
 			if (!$server) {
 				$servers = Server::searchServers(
 					page: 1,
@@ -90,7 +90,7 @@ class UpdateServerTool implements ToolInterface
 			return [
 				'success' => false,
 				'error' => 'Server not found. Please specify a server UUID or name, or ensure you are viewing a server page.',
-				'action_type' => 'update_server',
+				'action_type' => 'pull_file',
 			];
 		}
 
@@ -99,103 +99,114 @@ class UpdateServerTool implements ToolInterface
 			return [
 				'success' => false,
 				'error' => 'Access denied to server',
-				'action_type' => 'update_server',
+				'action_type' => 'pull_file',
 			];
 		}
 
-		// Prepare update data (only name and description)
-		$updateData = [];
+		// Get URL and root path
+		$url = $params['url'] ?? null;
+		$root = $params['root'] ?? '/';
+		$fileName = $params['file_name'] ?? null;
+		$foreground = isset($params['foreground']) ? (bool) $params['foreground'] : false;
+		$useHeader = isset($params['use_header']) ? (bool) $params['use_header'] : true;
 
-		if (isset($params['name'])) {
-			$name = trim($params['name']);
-			if (empty($name)) {
-				return [
-					'success' => false,
-					'error' => 'Server name cannot be empty',
-					'action_type' => 'update_server',
-				];
-			}
-			if (strlen($name) > 255) {
-				return [
-					'success' => false,
-					'error' => 'Server name is too long (max 255 characters)',
-					'action_type' => 'update_server',
-				];
-			}
-			$updateData['name'] = $name;
-		}
-
-		if (isset($params['description'])) {
-			$description = trim($params['description']);
-			if (strlen($description) > 1000) {
-				return [
-					'success' => false,
-					'error' => 'Server description is too long (max 1000 characters)',
-					'action_type' => 'update_server',
-				];
-			}
-			$updateData['description'] = $description;
-		}
-
-		if (empty($updateData)) {
+		if (!$url) {
 			return [
 				'success' => false,
-				'error' => 'No valid fields to update. You can update: name, description',
-				'action_type' => 'update_server',
+				'error' => 'URL is required',
+				'action_type' => 'pull_file',
 			];
 		}
 
-		// Update server
-		if (!Server::updateServerById($server['id'], $updateData)) {
+		// Validate URL format
+		if (!filter_var($url, FILTER_VALIDATE_URL)) {
 			return [
 				'success' => false,
-				'error' => 'Failed to update server',
-				'action_type' => 'update_server',
+				'error' => 'Invalid URL format',
+				'action_type' => 'pull_file',
 			];
 		}
 
-		// Get updated server
-		$updatedServer = Server::getServerById($server['id']);
-
-		// Log activity
+		// Get node
 		$node = Node::getNodeById($server['node_id']);
-		if ($node) {
+		if (!$node) {
+			return [
+				'success' => false,
+				'error' => 'Node not found',
+				'action_type' => 'pull_file',
+			];
+		}
+
+		// Pull file via Wings
+		try {
+			$wings = new Wings(
+				$node['fqdn'],
+				$node['daemonListen'],
+				$node['scheme'],
+				$node['daemon_token'],
+				30
+			);
+
+			$response = $wings->getServer()->pullFile(
+				$server['uuid'],
+				$url,
+				$root,
+				$fileName,
+				$foreground,
+				$useHeader
+			);
+
+			if (!$response->isSuccessful()) {
+				return [
+					'success' => false,
+					'error' => 'Failed to pull file: ' . $response->getError(),
+					'action_type' => 'pull_file',
+				];
+			}
+
+			$responseData = $response->getData();
+			$pullId = $responseData['id'] ?? null;
+
+			// Log activity
 			ServerActivity::createActivity([
 				'server_id' => $server['id'],
 				'node_id' => $server['node_id'],
 				'user_id' => $user['id'],
-				'event' => 'server_updated',
+				'event' => 'file_pulled',
 				'metadata' => json_encode([
-					'updated_fields' => array_keys($updateData),
+					'url' => $url,
+					'root' => $root,
+					'file_name' => $fileName,
+					'foreground' => $foreground,
 				]),
 			]);
-		}
 
-		// Emit event
-		global $eventManager;
-		if (isset($eventManager) && $eventManager !== null) {
-			$eventManager->emit(
-				ServerEvent::onServerUpdated(),
-				[
-					'user_uuid' => $user['uuid'],
-					'server_uuid' => $server['uuid'],
-				]
-			);
+			return [
+				'success' => true,
+				'action_type' => 'pull_file',
+				'server_name' => $server['name'],
+				'url' => $url,
+				'root' => $root,
+				'file_name' => $fileName,
+				'pull_id' => $pullId,
+				'foreground' => $foreground,
+				'message' => $foreground 
+					? "File downloaded from '{$url}' to '{$root}' on server '{$server['name']}'"
+					: "File download initiated from '{$url}' to '{$root}' on server '{$server['name']}' (running in background)",
+			];
+		} catch (\Exception $e) {
+			$this->app->getLogger()->error("PullFileTool error: " . $e->getMessage());
+			return [
+				'success' => false,
+				'error' => 'Failed to pull file: ' . $e->getMessage(),
+				'action_type' => 'pull_file',
+			];
 		}
-
-		return [
-			'success' => true,
-			'action_type' => 'update_server',
-			'server_id' => $updatedServer['id'],
-			'server_name' => $updatedServer['name'],
-			'updated_fields' => array_keys($updateData),
-			'message' => "Server '{$updatedServer['name']}' updated successfully",
-		];
 	}
 
 	public function getDescription(): string
 	{
-		return 'Update server information. Can update name and description. Requires at least one field to update.';
+		return 'Download a file from a URL to the server. Can run in foreground (wait for completion) or background (async).';
 	}
 
 	public function getParameters(): array
@@ -203,8 +214,12 @@ class UpdateServerTool implements ToolInterface
 		return [
 			'server_uuid' => 'Server UUID (optional, can use server_name instead)',
 			'server_name' => 'Server name (optional, can use server_uuid instead)',
-			'name' => 'Server name (optional)',
-			'description' => 'Server description (optional)',
+			'url' => 'URL to download from (required)',
+			'root' => 'Destination directory path (optional, default: /)',
+			'file_name' => 'Custom filename (optional, uses URL filename if not provided)',
+			'foreground' => 'Run in foreground and wait for completion (optional, boolean, default: false)',
+			'use_header' => 'Use headers for download (optional, boolean, default: true)',
 		];
 	}
 }
+

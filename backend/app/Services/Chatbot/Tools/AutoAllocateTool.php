@@ -31,12 +31,13 @@
 namespace App\Services\Chatbot\Tools;
 
 use App\App;
+use App\Chat\Allocation;
 use App\Chat\Node;
 use App\Chat\Server;
-use App\Chat\Allocation;
 use App\Chat\ServerActivity;
-use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerEvent;
+use App\Services\Wings\Wings;
 
 /**
  * Tool to auto-allocate a free allocation to a server.
@@ -182,6 +183,19 @@ class AutoAllocateTool implements ToolInterface
                     'allocation_port' => $updatedAllocation['port'],
                 ]),
             ]);
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerEvent::onServerAllocationCreated(),
+                    [
+                        'user_uuid' => $user['uuid'],
+                        'server_uuid' => $server['uuid'],
+                        'allocation_id' => $updatedAllocation['id'],
+                    ]
+                );
+            }
         }
 
         return [

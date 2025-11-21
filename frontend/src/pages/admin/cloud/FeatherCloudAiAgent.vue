@@ -614,6 +614,7 @@ onMounted(() => {
                                                 <SelectItem value="openai">OpenAI</SelectItem>
                                                 <SelectItem value="openrouter">OpenRouter</SelectItem>
                                                 <SelectItem value="ollama">Ollama (Self-hosted)</SelectItem>
+                                                <SelectItem value="grok">Grok (xAI)</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -699,7 +700,9 @@ onMounted(() => {
                                                   ? 'OpenAI'
                                                   : getSettingValue('chatbot_ai_provider') === 'openrouter'
                                                     ? 'OpenRouter'
-                                                    : 'Ollama'
+                                                    : getSettingValue('chatbot_ai_provider') === 'grok'
+                                                      ? 'Grok (xAI)'
+                                                      : 'Ollama'
                                         }}
                                     </Badge>
                                 </div>
@@ -862,6 +865,41 @@ onMounted(() => {
                                                 @update:model-value="
                                                     (val: string | number) =>
                                                         updateSettingValue('chatbot_ollama_model', String(val))
+                                                "
+                                            />
+                                        </div>
+                                    </div>
+                                </template>
+                                <!-- Grok (xAI) -->
+                                <template v-if="getSettingValue('chatbot_ai_provider') === 'grok'">
+                                    <div class="space-y-4">
+                                        <div class="space-y-2">
+                                            <Label for="chatbot_grok_api_key" class="text-sm font-medium">
+                                                xAI (Grok) API Key
+                                            </Label>
+                                            <Input
+                                                id="chatbot_grok_api_key"
+                                                type="password"
+                                                :model-value="
+                                                    String(chatbotSettings.chatbot_grok_api_key?.value ?? '')
+                                                "
+                                                @update:model-value="
+                                                    (val: string | number) =>
+                                                        updateSettingValue('chatbot_grok_api_key', String(val))
+                                                "
+                                            />
+                                        </div>
+                                        <div class="space-y-2">
+                                            <Label for="chatbot_grok_model" class="text-sm font-medium">
+                                                xAI (Grok) Model
+                                            </Label>
+                                            <Input
+                                                id="chatbot_grok_model"
+                                                :model-value="String(chatbotSettings.chatbot_grok_model?.value ?? '')"
+                                                placeholder="grok-2-1212"
+                                                @update:model-value="
+                                                    (val: string | number) =>
+                                                        updateSettingValue('chatbot_grok_model', String(val))
                                                 "
                                             />
                                         </div>

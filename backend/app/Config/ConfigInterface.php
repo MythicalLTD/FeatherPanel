@@ -126,6 +126,8 @@ interface ConfigInterface
     public const CHATBOT_OPENAI_MODEL = 'chatbot_openai_model';
     public const CHATBOT_OLLAMA_BASE_URL = 'chatbot_ollama_base_url';
     public const CHATBOT_OLLAMA_MODEL = 'chatbot_ollama_model';
+    public const CHATBOT_GROK_API_KEY = 'chatbot_grok_api_key';
+    public const CHATBOT_GROK_MODEL = 'chatbot_grok_model';
     public const CHATBOT_SYSTEM_PROMPT = 'chatbot_system_prompt';
     public const CHATBOT_USER_PROMPT = 'chatbot_user_prompt';
 }

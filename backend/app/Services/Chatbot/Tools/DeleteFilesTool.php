@@ -34,13 +34,14 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\ServerActivity;
-use App\Plugins\Events\Events\ServerEvent;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerFilesEvent;
+use App\Services\Wings\Wings;
 
 /**
- * Tool to update server settings.
+ * Tool to delete files or directories on the server.
  */
-class UpdateServerTool implements ToolInterface
+class DeleteFilesTool implements ToolInterface
 {
 	private $app;
 
@@ -59,7 +60,7 @@ class UpdateServerTool implements ToolInterface
 		if (!$serverIdentifier && isset($pageContext['server'])) {
 			$contextServer = $pageContext['server'];
 			$serverUuidShort = $contextServer['uuidShort'] ?? null;
-
+			
 			if ($serverUuidShort) {
 				$server = Server::getServerByUuidShort($serverUuidShort);
 			}
@@ -68,11 +69,11 @@ class UpdateServerTool implements ToolInterface
 		// Resolve server if identifier provided
 		if ($serverIdentifier && !$server) {
 			$server = Server::getServerByUuid($serverIdentifier);
-
+			
 			if (!$server) {
 				$server = Server::getServerByUuidShort($serverIdentifier);
 			}
-
+			
 			if (!$server) {
 				$servers = Server::searchServers(
 					page: 1,
@@ -90,7 +91,7 @@ class UpdateServerTool implements ToolInterface
 			return [
 				'success' => false,
 				'error' => 'Server not found. Please specify a server UUID or name, or ensure you are viewing a server page.',
-				'action_type' => 'update_server',
+				'action_type' => 'delete_files',
 			];
 		}
 
@@ -99,103 +100,108 @@ class UpdateServerTool implements ToolInterface
 			return [
 				'success' => false,
 				'error' => 'Access denied to server',
-				'action_type' => 'update_server',
+				'action_type' => 'delete_files',
 			];
 		}
 
-		// Prepare update data (only name and description)
-		$updateData = [];
+		// Get files and root path
+		$files = $params['files'] ?? null;
+		$root = $params['root'] ?? '/';
 
-		if (isset($params['name'])) {
-			$name = trim($params['name']);
-			if (empty($name)) {
-				return [
-					'success' => false,
-					'error' => 'Server name cannot be empty',
-					'action_type' => 'update_server',
-				];
-			}
-			if (strlen($name) > 255) {
-				return [
-					'success' => false,
-					'error' => 'Server name is too long (max 255 characters)',
-					'action_type' => 'update_server',
-				];
-			}
-			$updateData['name'] = $name;
-		}
-
-		if (isset($params['description'])) {
-			$description = trim($params['description']);
-			if (strlen($description) > 1000) {
-				return [
-					'success' => false,
-					'error' => 'Server description is too long (max 1000 characters)',
-					'action_type' => 'update_server',
-				];
-			}
-			$updateData['description'] = $description;
-		}
-
-		if (empty($updateData)) {
+		if (!$files) {
 			return [
 				'success' => false,
-				'error' => 'No valid fields to update. You can update: name, description',
-				'action_type' => 'update_server',
+				'error' => 'Files array is required',
+				'action_type' => 'delete_files',
 			];
 		}
 
-		// Update server
-		if (!Server::updateServerById($server['id'], $updateData)) {
+		if (!is_array($files) || empty($files)) {
 			return [
 				'success' => false,
-				'error' => 'Failed to update server',
-				'action_type' => 'update_server',
+				'error' => 'Files must be a non-empty array',
+				'action_type' => 'delete_files',
 			];
 		}
 
-		// Get updated server
-		$updatedServer = Server::getServerById($server['id']);
-
-		// Log activity
+		// Get node
 		$node = Node::getNodeById($server['node_id']);
-		if ($node) {
+		if (!$node) {
+			return [
+				'success' => false,
+				'error' => 'Node not found',
+				'action_type' => 'delete_files',
+			];
+		}
+
+		// Delete files via Wings
+		try {
+			$wings = new Wings(
+				$node['fqdn'],
+				$node['daemonListen'],
+				$node['scheme'],
+				$node['daemon_token'],
+				30
+			);
+
+			$response = $wings->getServer()->deleteFiles($server['uuid'], $root, $files);
+
+			if (!$response->isSuccessful()) {
+				return [
+					'success' => false,
+					'error' => 'Failed to delete files: ' . $response->getError(),
+					'action_type' => 'delete_files',
+				];
+			}
+
+			// Log activity
 			ServerActivity::createActivity([
 				'server_id' => $server['id'],
 				'node_id' => $server['node_id'],
 				'user_id' => $user['id'],
-				'event' => 'server_updated',
+				'event' => 'files_deleted',
 				'metadata' => json_encode([
-					'updated_fields' => array_keys($updateData),
+					'root' => $root,
+					'files' => $files,
+					'file_count' => count($files),
 				]),
 			]);
-		}
 
-		// Emit event
-		global $eventManager;
-		if (isset($eventManager) && $eventManager !== null) {
-			$eventManager->emit(
-				ServerEvent::onServerUpdated(),
-				[
-					'user_uuid' => $user['uuid'],
-					'server_uuid' => $server['uuid'],
-				]
-			);
-		}
+			// Emit event
+			global $eventManager;
+			if (isset($eventManager) && $eventManager !== null) {
+				$eventManager->emit(
+					ServerFilesEvent::onServerFilesDeleted(),
+					[
+						'user_uuid' => $user['uuid'],
+						'server_uuid' => $server['uuid'],
+						'files' => $files,
+					]
+				);
+			}
 
-		return [
-			'success' => true,
-			'action_type' => 'update_server',
-			'server_id' => $updatedServer['id'],
-			'server_name' => $updatedServer['name'],
-			'updated_fields' => array_keys($updateData),
-			'message' => "Server '{$updatedServer['name']}' updated successfully",
-		];
+			return [
+				'success' => true,
+				'action_type' => 'delete_files',
+				'server_name' => $server['name'],
+				'root' => $root,
+				'files' => $files,
+				'file_count' => count($files),
+				'message' => "Deleted " . count($files) . " file(s) from '{$root}' on server '{$server['name']}'",
+			];
+		} catch (\Exception $e) {
+			$this->app->getLogger()->error("DeleteFilesTool error: " . $e->getMessage());
+			return [
+				'success' => false,
+				'error' => 'Failed to delete files: ' . $e->getMessage(),
+				'action_type' => 'delete_files',
+			];
+		}
 	}
 
 	public function getDescription(): string
 	{
-		return 'Update server information. Can update name and description. Requires at least one field to update.';
+		return 'Delete files or directories on the server. Requires files array and root path. This action cannot be undone.';
 	}
 
 	public function getParameters(): array
@@ -203,8 +209,9 @@ class UpdateServerTool implements ToolInterface
 		return [
 			'server_uuid' => 'Server UUID (optional, can use server_name instead)',
 			'server_name' => 'Server name (optional, can use server_uuid instead)',
-			'name' => 'Server name (optional)',
-			'description' => 'Server description (optional)',
+			'files' => 'Array of file/directory paths to delete (required)',
+			'root' => 'Root directory path (optional, default: /)',
 		];
 	}
 }
+

@@ -31,12 +31,13 @@
 namespace App\Services\Chatbot\Tools;
 
 use App\App;
+use App\Chat\Allocation;
 use App\Chat\Node;
 use App\Chat\Server;
-use App\Chat\Allocation;
 use App\Chat\ServerActivity;
-use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerAllocationEvent;
+use App\Services\Wings\Wings;
 
 /**
  * Tool to delete an allocation from a server.
@@ -183,6 +184,19 @@ class DeleteAllocationTool implements ToolInterface
                     'allocation_port' => $allocation['port'],
                 ]),
             ]);
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerAllocationEvent::onServerAllocationDeleted(),
+                    [
+                        'user_uuid' => $user['uuid'],
+                        'server_uuid' => $server['uuid'],
+                        'allocation_id' => $allocationId,
+                    ]
+                );
+            }
         }
 
         return [

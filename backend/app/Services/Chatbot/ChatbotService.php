@@ -40,6 +40,7 @@ use App\Services\Chatbot\Providers\OpenAIProvider;
 use App\Services\Chatbot\Providers\ProviderInterface;
 use App\Services\Chatbot\Providers\OpenRouterProvider;
 use App\Services\Chatbot\Providers\GoogleGeminiProvider;
+use App\Services\Chatbot\Providers\GrokProvider;
 
 class ChatbotService
 {
@@ -55,7 +56,7 @@ class ChatbotService
     /**
      * Process a user message and generate a response.
      *
-     * Supports multiple AI providers: basic, google_gemini, openrouter, openai
+     * Supports multiple AI providers: basic, google_gemini, openrouter, openai, ollama, grok
      *
      * @param string $message User's message
      * @param array $history Chat history (array of ['role' => 'user'|'assistant', 'content' => string])
@@ -138,6 +139,8 @@ class ChatbotService
                 $errorMessage = 'OpenAI API key is not configured. Please configure it in admin settings or your user preferences.';
             } elseif ($provider === 'ollama') {
                 $errorMessage = 'Ollama base URL is not configured. Please configure it in admin settings.';
+            } elseif ($provider === 'grok') {
+                $errorMessage = 'xAI (Grok) API key is not configured. Please configure it in admin settings or your user preferences.';
             }
 
             return [
@@ -318,6 +321,16 @@ class ChatbotService
                 $model = $this->config->getSetting(ConfigInterface::CHATBOT_OPENAI_MODEL, 'gpt-4o-mini');
 
                 return new OpenAIProvider($apiKey, $model, $temperature, $maxTokens);
+
+            case 'grok':
+                $userApiKey = $userPreferences['chatbot_grok_api_key'] ?? null;
+                $apiKey = $userApiKey ?: $this->config->getSetting(ConfigInterface::CHATBOT_GROK_API_KEY, '');
+                if (empty($apiKey)) {
+                    return null;
+                }
+                $model = $this->config->getSetting(ConfigInterface::CHATBOT_GROK_MODEL, 'grok-2-1212');
+
+                return new GrokProvider($apiKey, $model, $temperature, $maxTokens);
 
             case 'ollama':
                 $baseUrl = $this->config->getSetting(ConfigInterface::CHATBOT_OLLAMA_BASE_URL, 'http://localhost:11434');

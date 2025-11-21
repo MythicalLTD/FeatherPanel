@@ -94,6 +94,7 @@ class SettingsController
         ConfigInterface::CHATBOT_GOOGLE_AI_API_KEY,
         ConfigInterface::CHATBOT_OPENROUTER_API_KEY,
         ConfigInterface::CHATBOT_OPENAI_API_KEY,
+        ConfigInterface::CHATBOT_GROK_API_KEY,
         // Add other sensitive settings here
     ];
     private $settingsCategories = [
@@ -189,6 +190,8 @@ class SettingsController
                 ConfigInterface::CHATBOT_OPENAI_MODEL,
                 ConfigInterface::CHATBOT_OLLAMA_BASE_URL,
                 ConfigInterface::CHATBOT_OLLAMA_MODEL,
+                ConfigInterface::CHATBOT_GROK_API_KEY,
+                ConfigInterface::CHATBOT_GROK_MODEL,
             ],
         ],
     ];
@@ -546,7 +549,7 @@ class SettingsController
                 'required' => true,
                 'placeholder' => 'basic',
                 'validation' => 'required|string|max:255',
-                'options' => ['basic', 'google_gemini', 'openrouter', 'openai', 'ollama'],
+                'options' => ['basic', 'google_gemini', 'openrouter', 'openai', 'ollama', 'grok'],
                 'category' => 'chatbot',
             ],
             ConfigInterface::CHATBOT_TEMPERATURE => [
@@ -687,6 +690,28 @@ class SettingsController
                 'type' => 'text',
                 'required' => false,
                 'placeholder' => 'llama3.2',
+                'validation' => 'string|max:255',
+                'options' => [],
+                'category' => 'chatbot',
+            ],
+            ConfigInterface::CHATBOT_GROK_API_KEY => [
+                'name' => ConfigInterface::CHATBOT_GROK_API_KEY,
+                'value' => $this->maskSensitiveSetting(ConfigInterface::CHATBOT_GROK_API_KEY, ''),
+                'description' => 'xAI (Grok) API key',
+                'type' => 'password',
+                'required' => false,
+                'placeholder' => 'xai-...',
+                'validation' => 'string|max:255',
+                'options' => [],
+                'category' => 'chatbot',
+            ],
+            ConfigInterface::CHATBOT_GROK_MODEL => [
+                'name' => ConfigInterface::CHATBOT_GROK_MODEL,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CHATBOT_GROK_MODEL, 'grok-2-1212'),
+                'description' => 'xAI (Grok) model to use (e.g., grok-2-1212, grok-beta, grok-vision-beta)',
+                'type' => 'text',
+                'required' => false,
+                'placeholder' => 'grok-2-1212',
                 'validation' => 'string|max:255',
                 'options' => [],
                 'category' => 'chatbot',

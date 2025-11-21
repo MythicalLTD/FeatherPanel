@@ -31,12 +31,13 @@
 namespace App\Services\Chatbot\Tools;
 
 use App\App;
-use App\Chat\Node;
 use App\Chat\Backup;
+use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\ServerActivity;
-use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerBackupEvent;
+use App\Services\Wings\Wings;
 
 /**
  * Tool to create a backup for a server.
@@ -207,6 +208,24 @@ class CreateBackupTool implements ToolInterface
                 'backup_name' => $backupName,
             ]),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerBackupEvent::onServerBackupCreated(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'backup_uuid' => $backupUuid,
+                    'backup_data' => [
+                        'id' => $backupId,
+                        'uuid' => $backupUuid,
+                        'name' => $backupName,
+                    ],
+                ]
+            );
+        }
 
         return [
             'success' => true,

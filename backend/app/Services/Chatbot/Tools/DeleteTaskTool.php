@@ -32,11 +32,12 @@ namespace App\Services\Chatbot\Tools;
 
 use App\App;
 use App\Chat\Node;
-use App\Chat\Task;
 use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
+use App\Chat\Task;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerEvent;
 
 /**
  * Tool to delete a task from a schedule.
@@ -195,6 +196,20 @@ class DeleteTaskTool implements ToolInterface
                     'sequence_id' => $task['sequence_id'],
                 ]),
             ]);
+        }
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerTaskDeleted(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'schedule_id' => $schedule['id'],
+                    'task_id' => $taskId,
+                ]
+            );
         }
 
         return [

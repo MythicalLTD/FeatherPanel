@@ -36,6 +36,7 @@ use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Chat\ServerDatabase;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerEvent;
 
 /**
  * Tool to update a database for a server.
@@ -183,6 +184,19 @@ class UpdateDatabaseTool implements ToolInterface
                     'updated_fields' => array_keys($updateData),
                 ]),
             ]);
+        }
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerDatabaseUpdated(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'database_id' => $updatedDatabase['id'],
+                ]
+            );
         }
 
         return [

@@ -31,12 +31,13 @@
 namespace App\Services\Chatbot\Tools;
 
 use App\App;
+use App\Chat\DatabaseInstance;
 use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Chat\ServerDatabase;
-use App\Chat\DatabaseInstance;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerEvent;
 
 /**
  * Tool to delete a database for a server.
@@ -184,6 +185,19 @@ class DeleteDatabaseTool implements ToolInterface
                     'username' => $database['username'],
                 ]),
             ]);
+        }
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerDatabaseDeleted(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'database_id' => $database['id'],
+                ]
+            );
         }
 
         return [

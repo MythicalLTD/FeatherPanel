@@ -36,6 +36,7 @@ use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerEvent;
 
 /**
  * Tool to delete a schedule for a server.
@@ -171,6 +172,19 @@ class DeleteScheduleTool implements ToolInterface
                     'schedule_name' => $schedule['name'],
                 ]),
             ]);
+        }
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerScheduleDeleted(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'schedule_id' => $schedule['id'],
+                ]
+            );
         }
 
         return [

@@ -34,8 +34,9 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\ServerActivity;
-use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerEvent;
+use App\Services\Wings\Wings;
 
 /**
  * Tool to perform server power actions (start, stop, restart, kill).
@@ -192,6 +193,19 @@ class ServerPowerActionTool implements ToolInterface
                 'action' => $action,
             ]),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerPowerAction(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'action' => $action,
+                ]
+            );
+        }
 
         $actionPast = match ($action) {
             'start' => 'started',

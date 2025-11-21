@@ -32,12 +32,13 @@ namespace App\Services\Chatbot\Tools;
 
 use App\App;
 use App\Chat\Node;
-use App\Chat\Task;
 use App\Chat\Server;
 use App\Chat\ServerActivity;
 use App\Chat\ServerSchedule;
-use App\Helpers\ServerGateway;
+use App\Chat\Task;
 use App\Config\ConfigInterface;
+use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerEvent;
 
 /**
  * Tool to create a schedule for a server.
@@ -313,6 +314,19 @@ class CreateScheduleTool implements ToolInterface
                     'tasks_created' => count($createdTasks),
                 ]),
             ]);
+        }
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerScheduleCreated(),
+                [
+                    'user_uuid' => $user['uuid'],
+                    'server_uuid' => $server['uuid'],
+                    'schedule_id' => $scheduleId,
+                ]
+            );
         }
 
         $cronExpression = sprintf(

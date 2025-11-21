@@ -31,10 +31,11 @@
 namespace App\Services\Chatbot\Tools;
 
 use App\App;
+use App\Chat\DatabaseInstance;
 use App\Chat\Server;
 use App\Chat\ServerDatabase;
-use App\Chat\DatabaseInstance;
 use App\Helpers\ServerGateway;
+use App\Plugins\Events\Events\ServerEvent;
 
 /**
  * Tool to create a database for a server.
@@ -182,6 +183,19 @@ class CreateDatabaseTool implements ToolInterface
                     'error' => 'Failed to create server database record',
                     'success' => false,
                 ];
+            }
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerEvent::onServerDatabaseCreated(),
+                    [
+                        'user_uuid' => $user['uuid'],
+                        'server_uuid' => $server['uuid'],
+                        'database_id' => $databaseId,
+                    ]
+                );
             }
 
             return [
