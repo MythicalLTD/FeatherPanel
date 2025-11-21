@@ -11,6 +11,7 @@ fi
 # Parse command-line arguments
 SKIP_OS_CHECK=false
 FORCE_ARM=false
+SKIP_INSTALL_CHECK=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -22,17 +23,22 @@ while [[ $# -gt 0 ]]; do
             FORCE_ARM=true
             shift
             ;;
+        --skip-install-check)
+            SKIP_INSTALL_CHECK=true
+            shift
+            ;;
         --help|-h)
             echo "FeatherPanel Installer"
             echo ""
             echo "Usage: $0 [OPTIONS]"
             echo ""
             echo "Options:"
-            echo "  --skip-os-check    Skip OS version compatibility checks"
-            echo "  --force-arm        Bypass ARM architecture warnings and checks"
-            echo "  --help, -h         Show this help message"
+            echo "  --skip-os-check        Skip OS version compatibility checks"
+            echo "  --force-arm            Bypass ARM architecture warnings and checks"
+            echo "  --skip-install-check   Skip check for existing installation"
+            echo "  --help, -h             Show this help message"
             echo ""
-            echo "Warning: Using --skip-os-check or --force-arm may result in"
+            echo "Warning: Using --skip-os-check, --force-arm, or --skip-install-check may result in"
             echo "unsupported configurations. Use at your own risk."
             exit 0
             ;;
@@ -1996,12 +2002,95 @@ CF_HOSTNAME=""
         # Handle operations based on component and action
         if [ "$COMPONENT_TYPE" = "0" ] && [ "$INST_TYPE" = "0" ]; then
             # Panel Install
-            if [ -f /var/www/featherpanel/.installed ]; then
-                read -r -p "FeatherPanel appears to be already installed. Do you want to reinstall? (y/n): " reinstall
-                if [ "$reinstall" != "y" ]; then
-                    echo "Exiting installation."
-                    exit 0
+            # Check if FeatherPanel is already installed (unless skip flag is set)
+            if [ "$SKIP_INSTALL_CHECK" = false ]; then
+                INSTALLED=false
+                
+                # Check for .installed file
+                if [ -f /var/www/featherpanel/.installed ]; then
+                    INSTALLED=true
                 fi
+                
+                # Check for docker-compose.yml
+                if [ -f /var/www/featherpanel/docker-compose.yml ]; then
+                    INSTALLED=true
+                fi
+                
+                # Check if containers are running
+                if command -v docker >/dev/null 2>&1; then
+                    if sudo docker ps --format '{{.Names}}' 2>/dev/null | grep -q "featherpanel_backend\|featherpanel_frontend\|featherpanel_mysql\|featherpanel_redis"; then
+                        INSTALLED=true
+                    fi
+                fi
+                
+                if [ "$INSTALLED" = true ]; then
+                    if [ -t 1 ]; then clear; fi
+                    print_banner
+                    draw_hr
+                    echo -e "${YELLOW}${BOLD}⚠️  FeatherPanel Already Installed${NC}"
+                    draw_hr
+                    echo ""
+                    echo -e "${BLUE}FeatherPanel appears to be already installed on this system.${NC}"
+                    echo ""
+                    echo -e "${BLUE}Detected installation indicators:${NC}"
+                    [ -f /var/www/featherpanel/.installed ] && echo -e "  ${GREEN}✓${NC} Installation marker file exists"
+                    [ -f /var/www/featherpanel/docker-compose.yml ] && echo -e "  ${GREEN}✓${NC} docker-compose.yml found"
+                    if command -v docker >/dev/null 2>&1 && sudo docker ps --format '{{.Names}}' 2>/dev/null | grep -q "featherpanel"; then
+                        echo -e "  ${GREEN}✓${NC} FeatherPanel containers are running"
+                    fi
+                    echo ""
+                    echo -e "${YELLOW}What would you like to do?${NC}"
+                    echo -e "  ${GREEN}[1]${NC} Update existing installation (recommended)"
+                    echo -e "  ${YELLOW}[2]${NC} Reinstall (will stop and remove existing containers)"
+                    echo -e "  ${RED}[3]${NC} Exit and keep current installation"
+                    echo ""
+                    draw_hr
+                    reinstall_choice=""
+                    while [[ ! "$reinstall_choice" =~ ^[123]$ ]]; do
+                        prompt "${BOLD}Enter choice${NC} ${BLUE}(1/2/3)${NC}: " reinstall_choice
+                        if [[ ! "$reinstall_choice" =~ ^[123]$ ]]; then
+                            echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}1${NC}, ${YELLOW}2${NC}, or ${YELLOW}3${NC}."; sleep 1
+                        fi
+                    done
+                    
+                    case $reinstall_choice in
+                        1)
+                            echo ""
+                            echo -e "${GREEN}To update FeatherPanel, please run the installer again and select:${NC}"
+                            echo -e "  ${CYAN}•${NC} Component: ${BOLD}Panel${NC} (option 0)"
+                            echo -e "  ${CYAN}•${NC} Operation: ${BOLD}Update Panel${NC} (option 2)"
+                            echo ""
+                            echo -e "${BLUE}Or use: ${BOLD}FP_COMPONENT=panel FP_ACTION=update $0${NC}"
+                            echo ""
+                            exit 0
+                            ;;
+                        2)
+                            echo ""
+                            log_warn "Reinstalling will stop and remove existing containers."
+                            confirm_reinstall=""
+                            prompt "${BOLD}${RED}Are you sure you want to reinstall?${NC} ${BLUE}(type 'yes' to confirm)${NC}: " confirm_reinstall
+                            if [ "$confirm_reinstall" != "yes" ]; then
+                                echo -e "${GREEN}Reinstallation cancelled.${NC}"
+                                exit 0
+                            fi
+                            log_info "Proceeding with reinstallation..."
+                            # Stop and remove existing containers before reinstalling
+                            if [ -f /var/www/featherpanel/docker-compose.yml ] && command -v docker >/dev/null 2>&1; then
+                                log_info "Stopping existing FeatherPanel containers..."
+                                cd /var/www/featherpanel && sudo docker compose down -v >/dev/null 2>&1 || true
+                            fi
+                            # Remove .installed marker to allow fresh installation
+                            sudo rm -f /var/www/featherpanel/.installed
+                            # Continue with installation (will overwrite)
+                            ;;
+                        3)
+                            echo -e "${GREEN}Exiting. Current installation will remain unchanged.${NC}"
+                            exit 0
+                            ;;
+                    esac
+                fi
+            else
+                log_warn "Installation check skipped via --skip-install-check flag"
             fi
 
             # Unified access method selection
@@ -2144,8 +2233,33 @@ CF_HOSTNAME=""
                 if [ "$FORCE_ARM" = true ]; then
                     log_warn "ARM architecture detected: $ARCH (--force-arm flag set)"
                 else
+                    if [ -t 1 ]; then clear; fi
+                    print_banner
+                    draw_hr
+                    echo -e "${YELLOW}${BOLD}⚠️  ARM Architecture Detected${NC}"
+                    draw_hr
+                    echo ""
+                    echo -e "${YELLOW}${BOLD}IMPORTANT NOTICE:${NC}"
+                    echo -e "${BLUE}FeatherPanel does ${BOLD}not${NC} natively run on ARM architecture.${NC}"
+                    echo ""
+                    echo -e "${BLUE}To allow FeatherPanel to run on your ARM system, the installer will:${NC}"
+                    echo -e "  ${CYAN}•${NC} Install QEMU virtualization and emulation packages"
+                    echo -e "  ${CYAN}•${NC} Configure Docker to use emulation for amd64 containers"
+                    echo -e "  ${CYAN}•${NC} Run FeatherPanel containers through emulation"
+                    echo ""
+                    echo -e "${YELLOW}${BOLD}Performance Notice:${NC}"
+                    echo -e "${YELLOW}Running FeatherPanel through emulation will result in:${NC}"
+                    echo -e "  ${YELLOW}•${NC} Slower container startup times"
+                    echo -e "  ${YELLOW}•${NC} Higher CPU and memory usage"
+                    echo -e "  ${YELLOW}•${NC} Reduced overall performance compared to native amd64 systems"
+                    echo ""
+                    echo -e "${GREEN}${BOLD}Recommendation:${NC}"
+                    echo -e "${GREEN}For better performance, please use an AMD64/x86_64 CPU type.${NC}"
+                    echo ""
+                    draw_hr
+                    echo ""
                     log_info "ARM architecture detected: $ARCH"
-                    log_info "FeatherPanel will run on ARM using QEMU emulation for amd64 containers."
+                    log_info "Proceeding with QEMU emulation setup..."
                 fi
                 setup_qemu_emulation
             fi
@@ -2620,6 +2734,7 @@ CF_HOSTNAME=""
                     log_warn "ARM architecture detected: $ARCH (--force-arm flag set)"
                 else
                     log_info "ARM architecture detected: $ARCH - using QEMU emulation"
+                    log_warn "Note: FeatherPanel runs through emulation on ARM. Consider using AMD64/x86_64 for better performance."
                 fi
                 setup_qemu_emulation
             fi
