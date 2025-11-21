@@ -334,6 +334,41 @@ install_packages() {
     fi
 }
 
+# Function to setup QEMU emulation for running amd64 containers on ARM systems
+setup_qemu_emulation() {
+    local arch=$(uname -m)
+    
+    # Only setup QEMU on ARM systems
+    if [[ "$arch" != "aarch64" ]] && [[ "$arch" != "arm64" ]] && [[ "$arch" != "armv7l" ]] && [[ "$arch" != "armv6l" ]]; then
+        return 0
+    fi
+    
+    log_info "ARM architecture detected: $arch"
+    log_info "Setting up QEMU emulation for running amd64 containers..."
+    
+    # Install QEMU static binaries and binfmt support
+    install_packages qemu qemu-user-static binfmt-support
+    
+    # Register binfmt interpreters for cross-platform support
+    if command -v update-binfmts >/dev/null 2>&1; then
+        log_info "Registering binfmt interpreters for amd64 emulation..."
+        sudo update-binfmts --enable qemu-x86_64 >/dev/null 2>&1 || true
+        sudo update-binfmts --enable qemu-i386 >/dev/null 2>&1 || true
+    fi
+    
+    # Ensure QEMU static binaries are registered in the kernel
+    # Docker will automatically use binfmt_misc for emulation
+    if [ -f /proc/sys/fs/binfmt_misc/qemu-x86_64 ] || [ -f /proc/sys/fs/binfmt_misc/qemu-i386 ]; then
+        log_info "QEMU binfmt interpreters are registered in the kernel"
+    else
+        log_warn "QEMU binfmt interpreters may need manual registration"
+        log_info "Docker should still handle emulation automatically"
+    fi
+    
+    log_success "QEMU emulation setup complete. Docker will use emulation to run amd64 containers on ARM."
+    log_info "Note: Container startup may be slower on ARM due to emulation overhead."
+}
+
 # Prompt helpers that work even when the script is piped (stdin not a TTY)
 prompt() {
     local message="$1"; local __varname="$2"
@@ -1937,40 +1972,16 @@ CF_HOSTNAME=""
                 fi
             fi
 
-            # Check for ARM architecture
+            # Setup QEMU emulation for ARM systems to run amd64 containers
             ARCH=$(uname -m)
-            ARM_CONTINUE=false
             if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
                 if [ "$FORCE_ARM" = true ]; then
-                    ARM_CONTINUE=true
-                    log_warn "ARM architecture check bypassed via --force-arm flag"
+                    log_warn "ARM architecture detected: $ARCH (--force-arm flag set)"
                 else
-                    if [ -t 1 ]; then clear; fi
-                    print_banner
-                    draw_hr
-                    echo -e "${BOLD}${YELLOW}ARM Architecture Detected${NC}"
-                    draw_hr
-                    echo -e "${RED}${BOLD}WARNING:${NC} FeatherPanel (web interface) does not support ARM architecture due to dependency limitations."
-                    echo -e ""
-                    echo -e "${BLUE}However, FeatherWings (game server daemon) fully supports ARM architecture.${NC}"
-                    echo -e ""
-                    echo -e "${YELLOW}What you can do:${NC}"
-                    echo -e "  ${GREEN}•${NC} Install FeatherWings on this ARM server (fully supported)"
-                    echo -e "  ${GREEN}•${NC} Install FeatherPanel on an x86_64/amd64 server and connect Wings to it"
-                    echo -e ""
-                    echo -e "${BLUE}To bypass this check, use: ${BOLD}--force-arm${NC}"
-                    echo ""
-                    draw_hr
-                    continue_anyway=""
-                    prompt "${BOLD}Do you want to continue anyway?${NC} ${BLUE}(y/n)${NC}: " continue_anyway
-                    if [[ ! "$continue_anyway" =~ ^[yY]$ ]]; then
-                        echo -e "${YELLOW}Installation cancelled.${NC}"
-                        echo -e "${BLUE}Consider installing FeatherWings instead, or use an x86_64/amd64 server for the Panel.${NC}"
-                        exit 0
-                    fi
-                    ARM_CONTINUE=true
-                    log_warn "User chose to continue with Panel installation on ARM architecture (may not work)"
+                    log_info "ARM architecture detected: $ARCH"
+                    log_info "FeatherPanel will run on ARM using QEMU emulation for amd64 containers."
                 fi
+                setup_qemu_emulation
             fi
 
             # Unified access method selection
@@ -2124,46 +2135,13 @@ CF_HOSTNAME=""
 
             print_banner
             
-            # Check architecture before starting containers
+            # Setup QEMU emulation for ARM systems if needed (already done earlier, but ensure it's set)
             ARCH=$(uname -m)
             if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
-                if [ "$FORCE_ARM" = true ] || [ "$ARM_CONTINUE" = true ]; then
-                    if [ "$FORCE_ARM" = true ]; then
-                        log_warn "ARM architecture check bypassed via --force-arm flag"
-                    else
-                        log_warn "Continuing with ARM architecture (user previously confirmed)"
-                    fi
-                    echo ""
-                    draw_hr
-                    echo -e "${YELLOW}${BOLD}⚠️  Warning: ARM Architecture${NC}"
-                    draw_hr
-                    echo -e "${YELLOW}You are attempting to start FeatherPanel on ARM architecture ($ARCH)${NC}"
-                    echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
-                    echo -e "${YELLOW}The containers will likely fail to start with 'exec format error'.${NC}"
-                    echo ""
-                    echo -e "${BLUE}Continuing with container startup at your own risk...${NC}"
-                    echo ""
-                    draw_hr
-                    sleep 2
+                if [ "$FORCE_ARM" = true ]; then
+                    log_warn "ARM architecture detected: $ARCH (--force-arm flag set)"
                 else
-                    log_error "ARM architecture detected: $ARCH"
-                    echo ""
-                    draw_hr
-                    echo -e "${RED}${BOLD}⚠️  CRITICAL: ARM Architecture Not Supported${NC}"
-                    draw_hr
-                    echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
-                    echo -e "${YELLOW}The containers will fail to start with 'exec format error'.${NC}"
-                    echo ""
-                    echo -e "${BLUE}What you can do:${NC}"
-                    echo -e "  ${GREEN}•${NC} Install FeatherWings on this ARM server (fully supported)"
-                    echo -e "  ${GREEN}•${NC} Install FeatherPanel on an x86_64/amd64 server"
-                    echo -e "  ${GREEN}•${NC} Use FeatherWings on ARM and connect to Panel on x86_64"
-                    echo ""
-                    echo -e "${BLUE}To bypass this check, use: ${BOLD}--force-arm${NC}"
-                    echo ""
-                    draw_hr
-                    echo -e "${RED}Installation cannot continue. Please use an x86_64/amd64 system for the Panel.${NC}"
-                    exit 1
+                    log_info "ARM architecture detected: $ARCH - using QEMU emulation"
                 fi
             fi
             
@@ -2182,12 +2160,12 @@ CF_HOSTNAME=""
                     
                     if echo "$CONTAINER_LOGS" | grep -qi "exec format error"; then
                         echo -e "${RED}${BOLD}Detected: Exec Format Error${NC}"
-                        echo -e "${YELLOW}This typically means the Docker image architecture doesn't match your system.${NC}"
+                        echo -e "${YELLOW}This typically means QEMU emulation is not properly configured.${NC}"
                         ARCH=$(uname -m)
                         echo -e "${YELLOW}Your system architecture: ${BOLD}$ARCH${NC}"
-                        echo -e "${YELLOW}FeatherPanel Docker images only support x86_64/amd64 architecture.${NC}"
                         echo ""
-                        echo -e "${BLUE}Solution:${NC} Use an x86_64/amd64 system for FeatherPanel installation."
+                        echo -e "${BLUE}Solution:${NC} Ensure QEMU and binfmt-support are installed and properly configured."
+                        echo -e "${BLUE}Try:${NC} sudo apt-get install -y qemu qemu-user-static binfmt-support"
                     elif echo "$CONTAINER_LOGS" | grep -qi "no space left"; then
                         echo -e "${RED}${BOLD}Detected: No Space Left on Device${NC}"
                         echo -e "${YELLOW}Your system is out of disk space.${NC}"
@@ -2414,51 +2392,21 @@ CF_HOSTNAME=""
                 if ! sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps | grep -q "Up"; then
                     log_info "Ensuring FeatherPanel containers are running..."
                     
-                    # Check architecture
-                    ARCH=$(uname -m)
-                    if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
-                        if [ "$FORCE_ARM" = true ] || [ "$ARM_CONTINUE" = true ]; then
+                        # Check architecture - QEMU emulation should already be set up
+                        ARCH=$(uname -m)
+                        if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
                             if [ "$FORCE_ARM" = true ]; then
-                                log_warn "ARM architecture check bypassed via --force-arm flag"
+                                log_warn "ARM architecture detected: $ARCH (--force-arm flag set)"
                             else
-                                log_warn "Continuing with ARM architecture (user previously confirmed)"
+                                log_info "ARM architecture detected: $ARCH - using QEMU emulation"
                             fi
-                            echo ""
-                            draw_hr
-                            echo -e "${YELLOW}${BOLD}⚠️  Warning: ARM Architecture${NC}"
-                            draw_hr
-                            echo -e "${YELLOW}You are attempting to start FeatherPanel on ARM architecture ($ARCH)${NC}"
-                            echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
-                            echo -e "${YELLOW}The containers will likely fail to start with 'exec format error'.${NC}"
-                            echo ""
-                            echo -e "${BLUE}Continuing with container startup at your own risk...${NC}"
-                            echo ""
-                            draw_hr
-                            sleep 2
-                            # Try to start anyway
+                            # Try to start anyway (QEMU should be configured)
                             if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." \
                                 bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
-                                log_warn "Failed to start FeatherPanel on ARM. Reverse proxy configured but Panel is not running."
+                                log_warn "Failed to start FeatherPanel. Reverse proxy configured but Panel is not running."
+                                log_info "Ensure QEMU emulation is properly configured."
                             fi
                         else
-                            log_error "ARM architecture detected: $ARCH"
-                            echo ""
-                            draw_hr
-                            echo -e "${RED}${BOLD}⚠️  CRITICAL: ARM Architecture Not Supported${NC}"
-                            draw_hr
-                            echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
-                            echo -e "${YELLOW}The containers will fail to start with 'exec format error'.${NC}"
-                            echo ""
-                            echo -e "${BLUE}What you can do:${NC}"
-                            echo -e "  ${GREEN}•${NC} Install FeatherWings on this ARM server (fully supported)"
-                            echo -e "  ${GREEN}•${NC} Install FeatherPanel on an x86_64/amd64 server"
-                            echo ""
-                            echo -e "${BLUE}To bypass this check, use: ${BOLD}--force-arm${NC}"
-                            echo ""
-                            draw_hr
-                            log_warn "Cannot start FeatherPanel on ARM architecture. Reverse proxy configured but Panel will not run."
-                        fi
-                    else
                         if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." \
                             bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
                             log_error "Failed to start FeatherPanel stack"
@@ -2474,9 +2422,9 @@ CF_HOSTNAME=""
                             
                             if echo "$CONTAINER_LOGS" | grep -qi "exec format error"; then
                                 echo -e "${RED}${BOLD}Detected: Exec Format Error${NC}"
-                                echo -e "${YELLOW}This typically means the Docker image architecture doesn't match your system.${NC}"
+                                echo -e "${YELLOW}This typically means QEMU emulation is not properly configured.${NC}"
                                 echo -e "${YELLOW}Your system architecture: ${BOLD}$ARCH${NC}"
-                                echo -e "${YELLOW}FeatherPanel Docker images only support x86_64/amd64 architecture.${NC}"
+                                echo -e "${BLUE}Solution:${NC} Ensure QEMU and binfmt-support are installed."
                             elif echo "$CONTAINER_LOGS" | grep -qi "no space left"; then
                                 echo -e "${RED}${BOLD}Detected: No Space Left on Device${NC}"
                                 echo -e "${YELLOW}Your system is out of disk space.${NC}"
@@ -2633,44 +2581,15 @@ CF_HOSTNAME=""
                 exit 1
             fi
 
-            # Check architecture before starting containers
+            # Setup QEMU emulation for ARM systems if needed
             ARCH=$(uname -m)
             if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
                 if [ "$FORCE_ARM" = true ]; then
-                    log_warn "ARM architecture check bypassed via --force-arm flag"
-                    echo ""
-                    draw_hr
-                    echo -e "${YELLOW}${BOLD}⚠️  Warning: ARM Check Bypassed${NC}"
-                    draw_hr
-                    echo -e "${YELLOW}You are attempting to update FeatherPanel on ARM architecture ($ARCH)${NC}"
-                    echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
-                    echo -e "${YELLOW}The containers will likely fail to start with 'exec format error'.${NC}"
-                    echo ""
-                    echo -e "${BLUE}Continuing with update at your own risk...${NC}"
-                    echo ""
-                    draw_hr
-                    sleep 2
+                    log_warn "ARM architecture detected: $ARCH (--force-arm flag set)"
                 else
-                    log_error "ARM architecture detected: $ARCH"
-                    echo ""
-                    draw_hr
-                    echo -e "${RED}${BOLD}⚠️  CRITICAL: ARM Architecture Not Supported${NC}"
-                    draw_hr
-                    echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
-                    echo -e "${YELLOW}The containers will fail to start with 'exec format error'.${NC}"
-                    echo ""
-                    echo -e "${BLUE}What you can do:${NC}"
-                    echo -e "  ${GREEN}•${NC} Install FeatherWings on this ARM server (fully supported)"
-                    echo -e "  ${GREEN}•${NC} Install FeatherPanel on an x86_64/amd64 server"
-                    echo -e "  ${GREEN}•${NC} Use FeatherWings on ARM and connect to Panel on x86_64"
-                    echo ""
-                    echo -e "${BLUE}To bypass this check, use: ${BOLD}--force-arm${NC}"
-                    echo ""
-                    draw_hr
-                    echo -e "${RED}Update cannot continue. Please use an x86_64/amd64 system for the Panel.${NC}"
-                    upload_logs_on_fail
-                    exit 1
+                    log_info "ARM architecture detected: $ARCH - using QEMU emulation"
                 fi
+                setup_qemu_emulation
             fi
             
             if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
@@ -2687,12 +2606,12 @@ CF_HOSTNAME=""
                 
                 if echo "$CONTAINER_LOGS" | grep -qi "exec format error"; then
                     echo -e "${RED}${BOLD}Detected: Exec Format Error${NC}"
-                    echo -e "${YELLOW}This typically means the Docker image architecture doesn't match your system.${NC}"
+                    echo -e "${YELLOW}This typically means QEMU emulation is not properly configured.${NC}"
                     ARCH=$(uname -m)
                     echo -e "${YELLOW}Your system architecture: ${BOLD}$ARCH${NC}"
-                    echo -e "${YELLOW}FeatherPanel Docker images only support x86_64/amd64 architecture.${NC}"
                     echo ""
-                    echo -e "${BLUE}Solution:${NC} Use an x86_64/amd64 system for FeatherPanel installation."
+                    echo -e "${BLUE}Solution:${NC} Ensure QEMU and binfmt-support are installed and properly configured."
+                    echo -e "${BLUE}Try:${NC} sudo apt-get install -y qemu qemu-user-static binfmt-support"
                 elif echo "$CONTAINER_LOGS" | grep -qi "no space left"; then
                     echo -e "${RED}${BOLD}Detected: No Space Left on Device${NC}"
                     echo -e "${YELLOW}Your system is out of disk space.${NC}"
