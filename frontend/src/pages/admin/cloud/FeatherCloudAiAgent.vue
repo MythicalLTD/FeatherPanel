@@ -880,9 +880,7 @@ onMounted(() => {
                                             <Input
                                                 id="chatbot_grok_api_key"
                                                 type="password"
-                                                :model-value="
-                                                    String(chatbotSettings.chatbot_grok_api_key?.value ?? '')
-                                                "
+                                                :model-value="String(chatbotSettings.chatbot_grok_api_key?.value ?? '')"
                                                 @update:model-value="
                                                     (val: string | number) =>
                                                         updateSettingValue('chatbot_grok_api_key', String(val))

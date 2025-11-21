@@ -31,11 +31,11 @@
 namespace App\Services\Chatbot\Tools;
 
 use App\App;
-use App\Chat\Allocation;
 use App\Chat\Node;
 use App\Chat\Server;
-use App\Chat\ServerActivity;
 use App\Chat\Subdomain;
+use App\Chat\Allocation;
+use App\Chat\ServerActivity;
 use App\Chat\SubdomainDomain;
 use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\SubdomainsEvent;

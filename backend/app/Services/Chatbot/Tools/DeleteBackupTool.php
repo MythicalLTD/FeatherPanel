@@ -31,13 +31,13 @@
 namespace App\Services\Chatbot\Tools;
 
 use App\App;
-use App\Chat\Backup;
 use App\Chat\Node;
+use App\Chat\Backup;
 use App\Chat\Server;
 use App\Chat\ServerActivity;
+use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerBackupEvent;
-use App\Services\Wings\Wings;
 
 /**
  * Tool to delete a backup for a server.
@@ -215,7 +215,7 @@ class DeleteBackupTool implements ToolInterface
         global $eventManager;
         if (isset($eventManager) && $eventManager !== null) {
             $eventManager->emit(
-                \App\Plugins\Events\Events\ServerBackupEvent::onServerBackupDeleted(),
+                ServerBackupEvent::onServerBackupDeleted(),
                 [
                     'user_uuid' => $user['uuid'],
                     'server_uuid' => $server['uuid'],

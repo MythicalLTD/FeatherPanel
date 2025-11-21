@@ -34,13 +34,13 @@ use App\App;
 use App\Chat\UserPreference;
 use App\Config\ConfigInterface;
 use App\Services\Chatbot\Tools\ToolHandler;
+use App\Services\Chatbot\Providers\GrokProvider;
 use App\Services\Chatbot\Providers\BasicProvider;
 use App\Services\Chatbot\Providers\OllamaProvider;
 use App\Services\Chatbot\Providers\OpenAIProvider;
 use App\Services\Chatbot\Providers\ProviderInterface;
 use App\Services\Chatbot\Providers\OpenRouterProvider;
 use App\Services\Chatbot\Providers\GoogleGeminiProvider;
-use App\Services\Chatbot\Providers\GrokProvider;
 
 class ChatbotService
 {

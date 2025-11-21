@@ -163,4 +163,3 @@ class GrokProvider implements ProviderInterface
         }
     }
 }
-

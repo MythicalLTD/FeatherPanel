@@ -34,9 +34,9 @@ use App\App;
 use App\Chat\Node;
 use App\Chat\Server;
 use App\Chat\ServerActivity;
+use App\Services\Wings\Wings;
 use App\Helpers\ServerGateway;
 use App\Plugins\Events\Events\ServerEvent;
-use App\Services\Wings\Wings;
 
 /**
  * Tool to perform server power actions (start, stop, restart, kill).
