@@ -1939,29 +1939,38 @@ CF_HOSTNAME=""
 
             # Check for ARM architecture
             ARCH=$(uname -m)
+            ARM_CONTINUE=false
             if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
-                if [ -t 1 ]; then clear; fi
-                print_banner
-                draw_hr
-                echo -e "${BOLD}${YELLOW}ARM Architecture Detected${NC}"
-                draw_hr
-                echo -e "${RED}${BOLD}WARNING:${NC} FeatherPanel (web interface) does not support ARM architecture due to dependency limitations."
-                echo -e ""
-                echo -e "${BLUE}However, FeatherWings (game server daemon) fully supports ARM architecture.${NC}"
-                echo -e ""
-                echo -e "${YELLOW}What you can do:${NC}"
-                echo -e "  ${GREEN}•${NC} Install FeatherWings on this ARM server (fully supported)"
-                echo -e "  ${GREEN}•${NC} Install FeatherPanel on an x86_64/amd64 server and connect Wings to it"
-                echo -e ""
-                draw_hr
-                continue_anyway=""
-                prompt "${BOLD}Do you want to continue anyway?${NC} ${BLUE}(y/n)${NC}: " continue_anyway
-                if [[ ! "$continue_anyway" =~ ^[yY]$ ]]; then
-                    echo -e "${YELLOW}Installation cancelled.${NC}"
-                    echo -e "${BLUE}Consider installing FeatherWings instead, or use an x86_64/amd64 server for the Panel.${NC}"
-                    exit 0
+                if [ "$FORCE_ARM" = true ]; then
+                    ARM_CONTINUE=true
+                    log_warn "ARM architecture check bypassed via --force-arm flag"
+                else
+                    if [ -t 1 ]; then clear; fi
+                    print_banner
+                    draw_hr
+                    echo -e "${BOLD}${YELLOW}ARM Architecture Detected${NC}"
+                    draw_hr
+                    echo -e "${RED}${BOLD}WARNING:${NC} FeatherPanel (web interface) does not support ARM architecture due to dependency limitations."
+                    echo -e ""
+                    echo -e "${BLUE}However, FeatherWings (game server daemon) fully supports ARM architecture.${NC}"
+                    echo -e ""
+                    echo -e "${YELLOW}What you can do:${NC}"
+                    echo -e "  ${GREEN}•${NC} Install FeatherWings on this ARM server (fully supported)"
+                    echo -e "  ${GREEN}•${NC} Install FeatherPanel on an x86_64/amd64 server and connect Wings to it"
+                    echo -e ""
+                    echo -e "${BLUE}To bypass this check, use: ${BOLD}--force-arm${NC}"
+                    echo ""
+                    draw_hr
+                    continue_anyway=""
+                    prompt "${BOLD}Do you want to continue anyway?${NC} ${BLUE}(y/n)${NC}: " continue_anyway
+                    if [[ ! "$continue_anyway" =~ ^[yY]$ ]]; then
+                        echo -e "${YELLOW}Installation cancelled.${NC}"
+                        echo -e "${BLUE}Consider installing FeatherWings instead, or use an x86_64/amd64 server for the Panel.${NC}"
+                        exit 0
+                    fi
+                    ARM_CONTINUE=true
+                    log_warn "User chose to continue with Panel installation on ARM architecture (may not work)"
                 fi
-                log_warn "User chose to continue with Panel installation on ARM architecture (may not work)"
             fi
 
             # Unified access method selection
@@ -2118,11 +2127,15 @@ CF_HOSTNAME=""
             # Check architecture before starting containers
             ARCH=$(uname -m)
             if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
-                if [ "$FORCE_ARM" = true ]; then
-                    log_warn "ARM architecture check bypassed via --force-arm flag"
+                if [ "$FORCE_ARM" = true ] || [ "$ARM_CONTINUE" = true ]; then
+                    if [ "$FORCE_ARM" = true ]; then
+                        log_warn "ARM architecture check bypassed via --force-arm flag"
+                    else
+                        log_warn "Continuing with ARM architecture (user previously confirmed)"
+                    fi
                     echo ""
                     draw_hr
-                    echo -e "${YELLOW}${BOLD}⚠️  Warning: ARM Check Bypassed${NC}"
+                    echo -e "${YELLOW}${BOLD}⚠️  Warning: ARM Architecture${NC}"
                     draw_hr
                     echo -e "${YELLOW}You are attempting to start FeatherPanel on ARM architecture ($ARCH)${NC}"
                     echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
@@ -2404,11 +2417,15 @@ CF_HOSTNAME=""
                     # Check architecture
                     ARCH=$(uname -m)
                     if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
-                        if [ "$FORCE_ARM" = true ]; then
-                            log_warn "ARM architecture check bypassed via --force-arm flag"
+                        if [ "$FORCE_ARM" = true ] || [ "$ARM_CONTINUE" = true ]; then
+                            if [ "$FORCE_ARM" = true ]; then
+                                log_warn "ARM architecture check bypassed via --force-arm flag"
+                            else
+                                log_warn "Continuing with ARM architecture (user previously confirmed)"
+                            fi
                             echo ""
                             draw_hr
-                            echo -e "${YELLOW}${BOLD}⚠️  Warning: ARM Check Bypassed${NC}"
+                            echo -e "${YELLOW}${BOLD}⚠️  Warning: ARM Architecture${NC}"
                             draw_hr
                             echo -e "${YELLOW}You are attempting to start FeatherPanel on ARM architecture ($ARCH)${NC}"
                             echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
