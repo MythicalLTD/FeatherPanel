@@ -22,6 +22,7 @@
 
 - Fixed an issue that prevented empty files from being edited, ensuring seamless editing regardless of file size. by @nayskutzu
 - Fixed an issue where attempting to install premium plugins would get stuck on the details page instead of displaying an appropriate message. by @nayskutzu
+- Fixed missing pagination UI and incorrect pagination display for server backups, schedules, tasks, and databases. All pages now properly display pagination controls with accurate "Showing X-Y of Z" information and page navigation when there are more items than the per-page limit. by @nayskutzu
 
 ## v1.0.3 BETA
 

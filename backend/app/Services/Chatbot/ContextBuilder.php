@@ -336,8 +336,14 @@ class ContextBuilder
                         $context[] = "Docker Image: {$serverData['image']}";
                     }
 
-                    // Fetch server logs if server is running or starting
-                    if (in_array(strtolower($serverStatus), ['running', 'starting'])) {
+                    // Fetch server logs if:
+                    // 1. Server is running or starting (to see current activity)
+                    // 2. User is on logs page (to see logs regardless of status)
+                    // 3. User is on console page (to see console output)
+                    $shouldFetchLogs = in_array(strtolower($serverStatus), ['running', 'starting', 'stopping', 'stopped']);
+                    $isOnLogsPage = isset($pageContext['page']) && in_array(strtolower($pageContext['page']), ['logs', 'console']);
+
+                    if ($shouldFetchLogs || $isOnLogsPage) {
                         $serverLogs = $this->getServerLogs($serverData);
                         if (!empty($serverLogs)) {
                             $context[] = '';

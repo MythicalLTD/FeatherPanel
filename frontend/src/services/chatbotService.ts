@@ -56,12 +56,22 @@ export interface ChatRequest {
     pageContext?: PageContext;
 }
 
+export interface ToolExecution {
+    success: boolean;
+    action_type: string;
+    error?: string;
+    message?: string;
+    is_destructive?: boolean;
+    [key: string]: unknown;
+}
+
 export interface ChatResponse {
     success: boolean;
     data?: {
         response: string;
         model?: string;
         conversation_id?: number;
+        tool_executions?: ToolExecution[];
     };
     error?: boolean;
     error_message?: string;
@@ -94,7 +104,7 @@ export async function sendChatMessage(
     history: ChatMessage[] = [],
     pageContext?: PageContext,
     conversationId?: number,
-): Promise<{ response: string; model?: string; conversationId?: number }> {
+): Promise<{ response: string; model?: string; conversationId?: number; toolExecutions?: ToolExecution[] }> {
     try {
         const response = await axios.post<ChatResponse>('/api/user/chatbot/chat', {
             message,
@@ -111,6 +121,7 @@ export async function sendChatMessage(
                 response: response.data.data.response,
                 model: response.data.data.model,
                 conversationId: response.data.data.conversation_id,
+                toolExecutions: response.data.data.tool_executions,
             };
         }
 

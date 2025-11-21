@@ -271,6 +271,35 @@
                             <p class="text-sm">{{ t('serverBackups.noResultsFound') }}</p>
                         </div>
                     </div>
+
+                    <!-- Pagination -->
+                    <div
+                        v-if="pagination.total_records > pagination.per_page"
+                        class="flex items-center justify-between gap-3 pt-4 border-t mt-4"
+                    >
+                        <div class="text-xs text-muted-foreground">
+                            Showing {{ pagination.from }}-{{ pagination.to }} of {{ pagination.total_records }}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                :disabled="!pagination.has_prev || loading"
+                                @click="fetchBackups(pagination.current_page - 1)"
+                            >
+                                <ChevronLeft class="h-4 w-4" />
+                            </Button>
+                            <div class="text-sm px-2">{{ pagination.current_page }} / {{ pagination.total_pages }}</div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                :disabled="!pagination.has_next || loading"
+                                @click="fetchBackups(pagination.current_page + 1)"
+                            >
+                                <ChevronRight class="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -556,6 +585,8 @@ import {
     Calendar,
     FileX,
     RefreshCw,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';

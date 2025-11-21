@@ -46,10 +46,12 @@ import {
     Save,
     AlertCircle,
     ChevronDown,
+    RefreshCw,
 } from 'lucide-vue-next';
 import { useAdminSettingsStore, type Setting } from '@/stores/adminSettings';
 import { onMounted, ref } from 'vue';
 import { useToast } from 'vue-toastification';
+import axios from 'axios';
 
 const adminSettingsStore = useAdminSettingsStore();
 const toast = useToast();
@@ -59,6 +61,8 @@ const saving = ref(false);
 const chatbotSettings = ref<Record<string, Setting> | null>(null);
 const originalSettings = ref<Record<string, Setting> | null>(null);
 const showSettings = ref(false);
+const systemPrompt = ref<string>('');
+const loadingSystemPrompt = ref(false);
 
 const breadcrumbs: BreadcrumbEntry[] = [
     { text: 'Dashboard', href: '/admin' },
@@ -368,6 +372,26 @@ const updateSettingValue = (key: string, value: string | number | boolean) => {
 
 const toggleSettings = () => {
     showSettings.value = !showSettings.value;
+    if (showSettings.value && !systemPrompt.value) {
+        void fetchSystemPrompt();
+    }
+};
+
+const fetchSystemPrompt = async () => {
+    loadingSystemPrompt.value = true;
+    try {
+        const response = await axios.get('/api/admin/settings/chatbot/system-prompt');
+        if (response.data && response.data.success) {
+            systemPrompt.value = response.data.data.system_prompt || '';
+        } else {
+            toast.error('Failed to load system prompt');
+        }
+    } catch (error) {
+        console.error('Error fetching system prompt:', error);
+        toast.error('Failed to load system prompt');
+    } finally {
+        loadingSystemPrompt.value = false;
+    }
 };
 
 onMounted(() => {
@@ -843,6 +867,49 @@ onMounted(() => {
                                         </div>
                                     </div>
                                 </template>
+                            </div>
+
+                            <!-- AI Core System Prompt -->
+                            <div class="space-y-6">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-foreground mb-4">AI Core System Prompt</h3>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between">
+                                            <Label for="ai_core_system_prompt" class="text-sm font-medium">
+                                                Core System Prompt (Read-Only)
+                                            </Label>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                :disabled="loadingSystemPrompt"
+                                                @click="fetchSystemPrompt"
+                                            >
+                                                <RefreshCw
+                                                    :class="['h-4 w-4', loadingSystemPrompt && 'animate-spin']"
+                                                />
+                                            </Button>
+                                        </div>
+                                        <p class="text-xs text-muted-foreground">
+                                            The core system prompt that defines the AI assistant's behavior and
+                                            capabilities. This is read-only and loaded from the system configuration.
+                                        </p>
+                                        <div v-if="loadingSystemPrompt" class="flex items-center justify-center py-8">
+                                            <div
+                                                class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"
+                                            ></div>
+                                        </div>
+                                        <Textarea
+                                            v-else
+                                            id="ai_core_system_prompt"
+                                            :model-value="systemPrompt"
+                                            rows="20"
+                                            class="w-full font-mono text-xs bg-muted/50 border-border/70"
+                                            readonly
+                                            disabled
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Custom Prompts -->

@@ -243,6 +243,35 @@
                     v-if="!loading && tasks.length > 0 && widgetsAfterTasksList.length > 0"
                     :widgets="widgetsAfterTasksList"
                 />
+
+                <!-- Pagination -->
+                <div
+                    v-if="!loading && tasks.length > 0 && pagination.total > pagination.per_page"
+                    class="flex items-center justify-between gap-3 pt-4 border-t mt-4"
+                >
+                    <div class="text-xs text-muted-foreground">
+                        Showing {{ pagination.from }}-{{ pagination.to }} of {{ pagination.total }}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="pagination.current_page <= 1 || loading"
+                            @click="fetchTasks(pagination.current_page - 1)"
+                        >
+                            <ChevronLeft class="h-4 w-4" />
+                        </Button>
+                        <div class="text-sm px-2">{{ pagination.current_page }} / {{ pagination.last_page }}</div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="pagination.current_page >= pagination.last_page || loading"
+                            @click="fetchTasks(pagination.current_page + 1)"
+                        >
+                            <ChevronRight class="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
             </div>
 
             <!-- Plugin Widgets: Bottom of Page -->
@@ -620,7 +649,18 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Plus, Pencil, Trash2, Loader2, ListCheck, ChevronUp, ChevronDown } from 'lucide-vue-next';
+import {
+    ArrowLeft,
+    Plus,
+    Pencil,
+    Trash2,
+    Loader2,
+    ListCheck,
+    ChevronUp,
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+} from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
@@ -672,6 +712,14 @@ const schedule = ref<ScheduleItem | null>(null);
 const loading = ref(true);
 const creating = ref(false);
 const updating = ref(false);
+const pagination = ref({
+    current_page: 1,
+    per_page: 20,
+    total: 0,
+    last_page: 1,
+    from: 0,
+    to: 0,
+});
 
 // Drawer states
 const createDrawerOpen = ref(false);
@@ -766,14 +814,26 @@ async function fetchSchedule() {
     }
 }
 
-async function fetchTasks() {
+async function fetchTasks(page = pagination.value.current_page) {
     try {
         loading.value = true;
         const { data } = await axios.get(
             `/api/user/servers/${route.params.uuidShort}/schedules/${route.params.scheduleId}/tasks`,
+            {
+                params: { page, per_page: pagination.value.per_page },
+            },
         );
         if (data.success) {
             tasks.value = data.data.data || [];
+            const p = data.data.pagination;
+            pagination.value = {
+                current_page: p.current_page,
+                per_page: p.per_page,
+                total: p.total,
+                last_page: p.last_page,
+                from: p.from,
+                to: p.to,
+            };
         } else {
             toast.error(data.message || t('serverTasks.failedToFetch'));
         }

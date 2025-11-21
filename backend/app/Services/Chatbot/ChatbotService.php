@@ -33,6 +33,7 @@ namespace App\Services\Chatbot;
 use App\App;
 use App\Chat\UserPreference;
 use App\Config\ConfigInterface;
+use App\Services\Chatbot\Tools\ToolHandler;
 use App\Services\Chatbot\Providers\BasicProvider;
 use App\Services\Chatbot\Providers\OllamaProvider;
 use App\Services\Chatbot\Providers\OpenAIProvider;
@@ -145,8 +146,134 @@ class ChatbotService
             ];
         }
 
-        // Process message through provider
-        return $providerInstance->processMessage($fullMessage, $history, $systemPrompt);
+        // Initialize tool handler
+        $toolHandler = new ToolHandler();
+
+        // Add tool information to system prompt
+        $toolsInfo = $this->formatToolsForPrompt($toolHandler);
+        $systemPrompt .= "\n\n## Available Tools\n{$toolsInfo}";
+
+        // Process message with tool calling support (max 3 iterations to avoid loops)
+        $maxToolIterations = 3;
+        $toolIterations = 0;
+        $currentMessage = $fullMessage;
+        $currentHistory = $history;
+        $finalResponse = '';
+        $toolExecutions = []; // Store tool execution results for frontend
+
+        while ($toolIterations < $maxToolIterations) {
+            // Process message through provider
+            $result = $providerInstance->processMessage($currentMessage, $currentHistory, $systemPrompt);
+            $response = $result['response'];
+
+            // Check for tool calls
+            $toolCalls = $toolHandler->parseToolCalls($response);
+
+            if (empty($toolCalls)) {
+                // No tool calls, return final response
+                $finalResponse = $toolHandler->removeToolCalls($response);
+                break;
+            }
+
+            // Execute tool calls
+            $toolResults = [];
+            foreach ($toolCalls as $toolCall) {
+                $toolResult = $toolHandler->executeTool(
+                    $toolCall['tool'],
+                    $toolCall['params'],
+                    $user,
+                    $pageContext
+                );
+
+                // Store tool execution for frontend (if it's an action tool)
+                if (is_array($toolResult['data']) && isset($toolResult['data']['action_type'])) {
+                    $toolExecutions[] = $toolResult['data'];
+                }
+
+                $toolResults[] = [
+                    'tool' => $toolCall['tool'],
+                    'result' => $toolHandler->formatToolResult($toolCall['tool'], $toolResult),
+                ];
+            }
+
+            // Format tool results for next iteration
+            $toolResultsText = "Tool execution completed. Here are the results:\n\n";
+            foreach ($toolResults as $tr) {
+                $toolResultsText .= "=== {$tr['tool']} ===\n{$tr['result']}\n\n";
+            }
+            $toolResultsText .= "\nCRITICAL INSTRUCTIONS:\n";
+            $toolResultsText .= "- You MUST provide clear, specific feedback to the user about what happened\n";
+            $toolResultsText .= "- If an action succeeded, confirm what was done with specific details (e.g., 'I've created a backup named [backup_name] for server [server_name]')\n";
+            $toolResultsText .= "- Include relevant information from the tool results (names, IDs, timestamps, etc.)\n";
+            $toolResultsText .= "- If an action failed, explain the error clearly\n";
+            $toolResultsText .= "- Never just say 'I'll do that' or 'done' without explaining what actually happened\n";
+            $toolResultsText .= '- Be conversational and helpful - the user wants to know what you did for them';
+
+            // Remove tool calls from response and add to history
+            $cleanResponse = $toolHandler->removeToolCalls($response);
+            $currentHistory[] = [
+                'role' => 'assistant',
+                'content' => $cleanResponse,
+            ];
+
+            // Add tool results as user message for next iteration
+            $currentMessage = $toolResultsText;
+            $currentHistory[] = [
+                'role' => 'user',
+                'content' => $toolResultsText,
+            ];
+
+            ++$toolIterations;
+            $finalResponse = $cleanResponse; // Store in case we hit max iterations
+        }
+
+        // If we still have tool calls after max iterations, append a note
+        if ($toolIterations >= $maxToolIterations) {
+            $remainingCalls = $toolHandler->parseToolCalls($response);
+            if (!empty($remainingCalls)) {
+                $finalResponse .= "\n\n[Note: Maximum tool call iterations reached. Some tools may not have been executed.]";
+            }
+        }
+
+        return [
+            'response' => trim($finalResponse),
+            'model' => $result['model'] ?? 'FeatherPanel AI',
+            'tool_executions' => $toolExecutions, // Include tool execution results for frontend
+        ];
+    }
+
+    /**
+     * Format tools information for system prompt.
+     *
+     * @param ToolHandler $toolHandler Tool handler instance
+     *
+     * @return string Formatted tools information
+     */
+    private function formatToolsForPrompt(ToolHandler $toolHandler): string
+    {
+        $tools = $toolHandler->getAvailableTools();
+        $text = "You have access to the following tools to retrieve real-time data and perform actions:\n\n";
+
+        foreach ($tools as $tool) {
+            $text .= "### {$tool['name']}\n";
+            $text .= "Description: {$tool['description']}\n";
+            $text .= "Parameters:\n";
+            foreach ($tool['parameters'] as $param => $desc) {
+                $text .= "  - {$param}: {$desc}\n";
+            }
+            $text .= "\n";
+            $text .= "To use this tool, include in your response:\n";
+            $text .= "TOOL_CALL: {$tool['name']} {\"param1\": \"value1\", \"param2\": \"value2\"}\n\n";
+        }
+
+        $text .= "IMPORTANT:\n";
+        $text .= "- Use tools when you need real-time data (e.g., server activities, database credentials)\n";
+        $text .= "- Do NOT include all data in your initial response - use tools to fetch what's needed\n";
+        $text .= "- You can call multiple tools in one response\n";
+        $text .= "- Tool results will be provided in your next context\n";
+        $text .= "- Always provide a natural language response along with tool calls\n";
+
+        return $text;
     }
 
     /**

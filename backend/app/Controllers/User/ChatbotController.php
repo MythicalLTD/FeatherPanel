@@ -179,6 +179,7 @@ class ChatbotController
                 'response' => $result['response'],
                 'model' => $result['model'] ?? 'FeatherPanel AI',
                 'conversation_id' => $conversation['id'],
+                'tool_executions' => $result['tool_executions'] ?? [], // Include tool execution results
             ], 'Message processed successfully');
         } catch (\Exception $e) {
             App::getInstance(true)->getLogger()->error('Chatbot error: ' . $e->getMessage());

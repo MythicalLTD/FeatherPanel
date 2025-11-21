@@ -554,7 +554,7 @@ class Task
      */
     public static function validateAction(string $action): bool
     {
-        $validActions = ['power', 'backup', 'command', 'restart', 'kill', 'install', 'update'];
+        $validActions = ['power', 'backup', 'command', 'restart', 'kill', 'install', 'update', 'start', 'stop'];
 
         return in_array($action, $validActions);
     }

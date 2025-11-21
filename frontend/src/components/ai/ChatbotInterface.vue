@@ -701,6 +701,21 @@ const sendMessage = async () => {
             await loadConversations();
         }
 
+        // Handle tool executions - show notifications for actions
+        if (result.toolExecutions && result.toolExecutions.length > 0) {
+            for (const toolExec of result.toolExecutions) {
+                if (toolExec.success) {
+                    // Show success notification
+                    const message = toolExec.message || `Action '${toolExec.action_type}' completed successfully`;
+                    showActionNotification(message, 'success');
+                } else {
+                    // Show error notification
+                    const errorMsg = toolExec.error || `Action '${toolExec.action_type}' failed`;
+                    showActionNotification(errorMsg, 'error');
+                }
+            }
+        }
+
         // Remove loading message
         const loadingIndex = messages.value.findIndex((m) => m.id === loadingMessage.id);
         if (loadingIndex !== -1) {

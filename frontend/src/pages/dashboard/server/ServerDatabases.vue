@@ -206,6 +206,35 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Pagination -->
+                    <div
+                        v-if="pagination.total > pagination.per_page"
+                        class="flex items-center justify-between gap-3 pt-4 border-t mt-4"
+                    >
+                        <div class="text-xs text-muted-foreground">
+                            Showing {{ pagination.from }}-{{ pagination.to }} of {{ pagination.total }}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                :disabled="pagination.current_page <= 1 || loading"
+                                @click="fetchDatabases(pagination.current_page - 1)"
+                            >
+                                <ChevronLeft class="h-4 w-4" />
+                            </Button>
+                            <div class="text-sm px-2">{{ pagination.current_page }} / {{ pagination.last_page }}</div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                :disabled="pagination.current_page >= pagination.last_page || loading"
+                                @click="fetchDatabases(pagination.current_page + 1)"
+                            >
+                                <ChevronRight class="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -807,6 +836,8 @@ import {
     EyeOff,
     Copy,
     AlertTriangle,
+    ChevronLeft,
+    ChevronRight,
     Database,
     RefreshCw,
     User,
@@ -967,7 +998,15 @@ async function fetchDatabases(page = pagination.value.current_page) {
         }
 
         databases.value = databasesResponse.data.data.data || [];
-        pagination.value = databasesResponse.data.data.pagination;
+        const p = databasesResponse.data.data.pagination;
+        pagination.value = {
+            current_page: p.current_page,
+            per_page: p.per_page,
+            total: p.total,
+            last_page: p.last_page,
+            from: p.from,
+            to: p.to,
+        };
     } catch (error: unknown) {
         if (error && typeof error === 'object' && 'response' in error) {
             const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };

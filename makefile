@@ -109,6 +109,10 @@ release:
 	@cd $(BACKEND_DIR) && $(COMPOSER) dump-autoload
 	@cd $(BACKEND_DIR) && $(COMPOSER) install --optimize-autoloader
 	@echo -e "${GREEN}${CHECK} Build complete${NC}\n"
+
+	@echo -e "${PURPLE}${INFO} Updating README file with code stats...${NC}"
+	@node count.js --update-readme
+	@echo -e "${GREEN}${CHECK} README updated with code statistics${NC}\n"
 	
 	@echo -e "${GREEN}${ROCKET} Release build successful!${NC}\n"
 lint: 

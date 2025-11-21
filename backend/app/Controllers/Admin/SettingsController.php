@@ -1015,6 +1015,55 @@ class SettingsController
         ], 'Settings updated successfully', 200);
     }
 
+    /**
+     * Get the AI system prompt from the system-prompt.txt file.
+     *
+     * @param Request $request The HTTP request
+     *
+     * @return Response The HTTP response
+     */
+    #[OA\Get(
+        path: '/api/admin/settings/chatbot/system-prompt',
+        summary: 'Get AI system prompt',
+        description: 'Retrieve the AI system prompt from the system-prompt.txt file.',
+        tags: ['Admin - Settings'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'System prompt retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'system_prompt', type: 'string', description: 'The system prompt content'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Admin access required'),
+            new OA\Response(response: 404, description: 'Not found - System prompt file not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to read system prompt'),
+        ]
+    )]
+    public function getSystemPrompt(Request $request): Response
+    {
+        // Path relative to app directory: app/Services/Chatbot/system-prompt.txt
+        // From app/Controllers/Admin/ we need to go up 2 levels to app/, then into Services/Chatbot/
+        $systemPromptPath = __DIR__ . '/../../Services/Chatbot/system-prompt.txt';
+
+        if (!file_exists($systemPromptPath)) {
+            return ApiResponse::error('System prompt file not found', 'FILE_NOT_FOUND', 404);
+        }
+
+        $systemPrompt = file_get_contents($systemPromptPath);
+
+        if ($systemPrompt === false) {
+            return ApiResponse::error('Failed to read system prompt file', 'READ_ERROR', 500);
+        }
+
+        return ApiResponse::success([
+            'system_prompt' => $systemPrompt,
+        ]);
+    }
+
     private function organizeSettingsByCategory(): array
     {
         $organized = [];

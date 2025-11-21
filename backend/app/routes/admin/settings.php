@@ -85,4 +85,14 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_SETTINGS_EDIT,
         ['PATCH']
     );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-settings-chatbot-system-prompt',
+        '/api/admin/settings/chatbot/system-prompt',
+        function (Request $request) {
+            return (new SettingsController())->getSystemPrompt($request);
+        },
+        Permissions::ADMIN_SETTINGS_VIEW,
+        ['GET']
+    );
 };
