@@ -8,6 +8,42 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+# Parse command-line arguments
+SKIP_OS_CHECK=false
+FORCE_ARM=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --skip-os-check)
+            SKIP_OS_CHECK=true
+            shift
+            ;;
+        --force-arm)
+            FORCE_ARM=true
+            shift
+            ;;
+        --help|-h)
+            echo "FeatherPanel Installer"
+            echo ""
+            echo "Usage: $0 [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --skip-os-check    Skip OS version compatibility checks"
+            echo "  --force-arm        Bypass ARM architecture warnings and checks"
+            echo "  --help, -h         Show this help message"
+            echo ""
+            echo "Warning: Using --skip-os-check or --force-arm may result in"
+            echo "unsupported configurations. Use at your own risk."
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
 LOG_DIR=/var/www/featherpanel
 LOG_FILE=$LOG_DIR/install.log
 
@@ -1684,18 +1720,39 @@ if [ -f /etc/os-release ]; then
     fi
     
     if [ "$SUPPORTED" = false ]; then
-        log_error "Unsupported OS or version: $OS $OS_VERSION"
-        echo -e "${RED}${BOLD}This installer only supports:${NC}"
-        echo -e "  ${GREEN}•${NC} Debian 11, 12, or 13"
-        echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, or 25.04"
-        echo -e ""
-        echo -e "${YELLOW}Your system: $OS $OS_VERSION${NC}"
-        support_hint
-        exit 1
+        if [ "$SKIP_OS_CHECK" = true ]; then
+            log_warn "OS check skipped via --skip-os-check flag"
+            echo ""
+            draw_hr
+            echo -e "${YELLOW}${BOLD}⚠️  Warning: OS Check Skipped${NC}"
+            draw_hr
+            echo -e "${YELLOW}You are using an unsupported OS: $OS $OS_VERSION${NC}"
+            echo -e "${YELLOW}This installer officially supports:${NC}"
+            echo -e "  ${GREEN}•${NC} Debian 11, 12, or 13"
+            echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, or 25.04"
+            echo ""
+            echo -e "${BLUE}Continuing with installation at your own risk...${NC}"
+            echo ""
+            draw_hr
+            sleep 3
+            # Still check EOL status even if skipping OS check
+            check_eol_status "$OS" "$OS_VERSION" || true
+        else
+            log_error "Unsupported OS or version: $OS $OS_VERSION"
+            echo -e "${RED}${BOLD}This installer only supports:${NC}"
+            echo -e "  ${GREEN}•${NC} Debian 11, 12, or 13"
+            echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, or 25.04"
+            echo -e ""
+            echo -e "${YELLOW}Your system: $OS $OS_VERSION${NC}"
+            echo ""
+            echo -e "${BLUE}To bypass this check, use: ${BOLD}--skip-os-check${NC}"
+            support_hint
+            exit 1
+        fi
+    else
+        # Check EOL status for supported OS
+        check_eol_status "$OS" "$OS_VERSION"
     fi
-    
-    # Check EOL status for supported OS
-    check_eol_status "$OS" "$OS_VERSION"
     
     # Display EOL warnings if needed
     if [ "$EOL_STATUS" = "eol" ]; then
@@ -2061,22 +2118,40 @@ CF_HOSTNAME=""
             # Check architecture before starting containers
             ARCH=$(uname -m)
             if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
-                log_error "ARM architecture detected: $ARCH"
-                echo ""
-                draw_hr
-                echo -e "${RED}${BOLD}⚠️  CRITICAL: ARM Architecture Not Supported${NC}"
-                draw_hr
-                echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
-                echo -e "${YELLOW}The containers will fail to start with 'exec format error'.${NC}"
-                echo ""
-                echo -e "${BLUE}What you can do:${NC}"
-                echo -e "  ${GREEN}•${NC} Install FeatherWings on this ARM server (fully supported)"
-                echo -e "  ${GREEN}•${NC} Install FeatherPanel on an x86_64/amd64 server"
-                echo -e "  ${GREEN}•${NC} Use FeatherWings on ARM and connect to Panel on x86_64"
-                echo ""
-                draw_hr
-                echo -e "${RED}Installation cannot continue. Please use an x86_64/amd64 system for the Panel.${NC}"
-                exit 1
+                if [ "$FORCE_ARM" = true ]; then
+                    log_warn "ARM architecture check bypassed via --force-arm flag"
+                    echo ""
+                    draw_hr
+                    echo -e "${YELLOW}${BOLD}⚠️  Warning: ARM Check Bypassed${NC}"
+                    draw_hr
+                    echo -e "${YELLOW}You are attempting to start FeatherPanel on ARM architecture ($ARCH)${NC}"
+                    echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
+                    echo -e "${YELLOW}The containers will likely fail to start with 'exec format error'.${NC}"
+                    echo ""
+                    echo -e "${BLUE}Continuing with container startup at your own risk...${NC}"
+                    echo ""
+                    draw_hr
+                    sleep 2
+                else
+                    log_error "ARM architecture detected: $ARCH"
+                    echo ""
+                    draw_hr
+                    echo -e "${RED}${BOLD}⚠️  CRITICAL: ARM Architecture Not Supported${NC}"
+                    draw_hr
+                    echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
+                    echo -e "${YELLOW}The containers will fail to start with 'exec format error'.${NC}"
+                    echo ""
+                    echo -e "${BLUE}What you can do:${NC}"
+                    echo -e "  ${GREEN}•${NC} Install FeatherWings on this ARM server (fully supported)"
+                    echo -e "  ${GREEN}•${NC} Install FeatherPanel on an x86_64/amd64 server"
+                    echo -e "  ${GREEN}•${NC} Use FeatherWings on ARM and connect to Panel on x86_64"
+                    echo ""
+                    echo -e "${BLUE}To bypass this check, use: ${BOLD}--force-arm${NC}"
+                    echo ""
+                    draw_hr
+                    echo -e "${RED}Installation cannot continue. Please use an x86_64/amd64 system for the Panel.${NC}"
+                    exit 1
+                fi
             fi
             
             if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." sudo docker compose up -d; then
@@ -2329,20 +2404,43 @@ CF_HOSTNAME=""
                     # Check architecture
                     ARCH=$(uname -m)
                     if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
-                        log_error "ARM architecture detected: $ARCH"
-                        echo ""
-                        draw_hr
-                        echo -e "${RED}${BOLD}⚠️  CRITICAL: ARM Architecture Not Supported${NC}"
-                        draw_hr
-                        echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
-                        echo -e "${YELLOW}The containers will fail to start with 'exec format error'.${NC}"
-                        echo ""
-                        echo -e "${BLUE}What you can do:${NC}"
-                        echo -e "  ${GREEN}•${NC} Install FeatherWings on this ARM server (fully supported)"
-                        echo -e "  ${GREEN}•${NC} Install FeatherPanel on an x86_64/amd64 server"
-                        echo ""
-                        draw_hr
-                        log_warn "Cannot start FeatherPanel on ARM architecture. Reverse proxy configured but Panel will not run."
+                        if [ "$FORCE_ARM" = true ]; then
+                            log_warn "ARM architecture check bypassed via --force-arm flag"
+                            echo ""
+                            draw_hr
+                            echo -e "${YELLOW}${BOLD}⚠️  Warning: ARM Check Bypassed${NC}"
+                            draw_hr
+                            echo -e "${YELLOW}You are attempting to start FeatherPanel on ARM architecture ($ARCH)${NC}"
+                            echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
+                            echo -e "${YELLOW}The containers will likely fail to start with 'exec format error'.${NC}"
+                            echo ""
+                            echo -e "${BLUE}Continuing with container startup at your own risk...${NC}"
+                            echo ""
+                            draw_hr
+                            sleep 2
+                            # Try to start anyway
+                            if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." \
+                                bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
+                                log_warn "Failed to start FeatherPanel on ARM. Reverse proxy configured but Panel is not running."
+                            fi
+                        else
+                            log_error "ARM architecture detected: $ARCH"
+                            echo ""
+                            draw_hr
+                            echo -e "${RED}${BOLD}⚠️  CRITICAL: ARM Architecture Not Supported${NC}"
+                            draw_hr
+                            echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
+                            echo -e "${YELLOW}The containers will fail to start with 'exec format error'.${NC}"
+                            echo ""
+                            echo -e "${BLUE}What you can do:${NC}"
+                            echo -e "  ${GREEN}•${NC} Install FeatherWings on this ARM server (fully supported)"
+                            echo -e "  ${GREEN}•${NC} Install FeatherPanel on an x86_64/amd64 server"
+                            echo ""
+                            echo -e "${BLUE}To bypass this check, use: ${BOLD}--force-arm${NC}"
+                            echo ""
+                            draw_hr
+                            log_warn "Cannot start FeatherPanel on ARM architecture. Reverse proxy configured but Panel will not run."
+                        fi
                     else
                         if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." \
                             bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
@@ -2521,23 +2619,41 @@ CF_HOSTNAME=""
             # Check architecture before starting containers
             ARCH=$(uname -m)
             if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
-                log_error "ARM architecture detected: $ARCH"
-                echo ""
-                draw_hr
-                echo -e "${RED}${BOLD}⚠️  CRITICAL: ARM Architecture Not Supported${NC}"
-                draw_hr
-                echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
-                echo -e "${YELLOW}The containers will fail to start with 'exec format error'.${NC}"
-                echo ""
-                echo -e "${BLUE}What you can do:${NC}"
-                echo -e "  ${GREEN}•${NC} Install FeatherWings on this ARM server (fully supported)"
-                echo -e "  ${GREEN}•${NC} Install FeatherPanel on an x86_64/amd64 server"
-                echo -e "  ${GREEN}•${NC} Use FeatherWings on ARM and connect to Panel on x86_64"
-                echo ""
-                draw_hr
-                echo -e "${RED}Update cannot continue. Please use an x86_64/amd64 system for the Panel.${NC}"
-                upload_logs_on_fail
-                exit 1
+                if [ "$FORCE_ARM" = true ]; then
+                    log_warn "ARM architecture check bypassed via --force-arm flag"
+                    echo ""
+                    draw_hr
+                    echo -e "${YELLOW}${BOLD}⚠️  Warning: ARM Check Bypassed${NC}"
+                    draw_hr
+                    echo -e "${YELLOW}You are attempting to update FeatherPanel on ARM architecture ($ARCH)${NC}"
+                    echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
+                    echo -e "${YELLOW}The containers will likely fail to start with 'exec format error'.${NC}"
+                    echo ""
+                    echo -e "${BLUE}Continuing with update at your own risk...${NC}"
+                    echo ""
+                    draw_hr
+                    sleep 2
+                else
+                    log_error "ARM architecture detected: $ARCH"
+                    echo ""
+                    draw_hr
+                    echo -e "${RED}${BOLD}⚠️  CRITICAL: ARM Architecture Not Supported${NC}"
+                    draw_hr
+                    echo -e "${YELLOW}FeatherPanel Docker images do not support ARM architecture.${NC}"
+                    echo -e "${YELLOW}The containers will fail to start with 'exec format error'.${NC}"
+                    echo ""
+                    echo -e "${BLUE}What you can do:${NC}"
+                    echo -e "  ${GREEN}•${NC} Install FeatherWings on this ARM server (fully supported)"
+                    echo -e "  ${GREEN}•${NC} Install FeatherPanel on an x86_64/amd64 server"
+                    echo -e "  ${GREEN}•${NC} Use FeatherWings on ARM and connect to Panel on x86_64"
+                    echo ""
+                    echo -e "${BLUE}To bypass this check, use: ${BOLD}--force-arm${NC}"
+                    echo ""
+                    draw_hr
+                    echo -e "${RED}Update cannot continue. Please use an x86_64/amd64 system for the Panel.${NC}"
+                    upload_logs_on_fail
+                    exit 1
+                fi
             fi
             
             if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
