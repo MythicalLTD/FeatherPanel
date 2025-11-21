@@ -46,7 +46,6 @@ services:
   backend:
     image: ghcr.io/mythicalltd/featherpanel-backend:latest
     container_name: featherpanel_backend
-    platform: linux/amd64
     restart: unless-stopped
     environment:
       - DATABASE_HOST=mysql
@@ -77,7 +76,6 @@ services:
   frontend:
     image: ghcr.io/mythicalltd/featherpanel-frontend:latest
     container_name: featherpanel_frontend
-    platform: linux/amd64
     restart: unless-stopped
     volumes: []
     depends_on:

@@ -340,14 +340,26 @@ install_packages() {
     fi
 }
 
-# Function to setup QEMU emulation for running amd64 containers on ARM systems
+# Function to setup QEMU emulation for running amd64 containers on unsupported ARM systems
+# Note: ARM64 (aarch64) is now natively supported, so QEMU is only needed for older ARM architectures
 setup_qemu_emulation() {
     local arch=$(uname -m)
     
-    # Only setup QEMU on ARM systems
-    if [[ "$arch" != "aarch64" ]] && [[ "$arch" != "arm64" ]] && [[ "$arch" != "armv7l" ]] && [[ "$arch" != "armv6l" ]]; then
+    # ARM64 is natively supported - no QEMU needed
+    if [[ "$arch" == "aarch64" ]] || [[ "$arch" == "arm64" ]]; then
+        log_info "ARM64 architecture detected: $arch"
+        log_info "Native ARM64 Docker images are available - no emulation needed."
         return 0
     fi
+    
+    # Only setup QEMU for older unsupported ARM architectures (armv7, armv6)
+    if [[ "$arch" != "armv7l" ]] && [[ "$arch" != "armv6l" ]]; then
+        return 0
+    fi
+    
+    log_warn "Unsupported ARM architecture detected: $arch"
+    log_warn "FeatherPanel only provides native images for amd64 and arm64 (aarch64)."
+    log_warn "QEMU emulation will be used, which may result in reduced performance."
     
     # Ensure Docker is installed before setting up QEMU
     if ! command -v docker >/dev/null 2>&1; then
@@ -374,8 +386,7 @@ setup_qemu_emulation() {
         return 1
     fi
     
-    log_info "ARM architecture detected: $arch"
-    log_info "Setting up QEMU emulation for running amd64 containers..."
+    log_info "Setting up QEMU emulation for running amd64 containers on $arch..."
     
     # Check if QEMU interpreters are already registered
     if [ -f /proc/sys/fs/binfmt_misc/qemu-x86_64 ] && [ -f /proc/sys/fs/binfmt_misc/qemu-i386 ]; then
@@ -403,8 +414,8 @@ setup_qemu_emulation() {
         return 1
     fi
     
-    log_success "QEMU emulation setup complete. Docker will use emulation to run amd64 containers on ARM."
-    log_info "Note: Container startup may be slower on ARM due to emulation overhead."
+    log_success "QEMU emulation setup complete. Docker will use emulation to run amd64 containers on $arch."
+    log_info "Note: Container startup may be slower due to emulation overhead."
 }
 
 # Prompt helpers that work even when the script is piped (stdin not a TTY)
@@ -2227,20 +2238,24 @@ CF_HOSTNAME=""
                 log_success "Docker installed. You may need to re-login for group changes to take effect."
                 fi
                 
-            # Setup QEMU emulation for ARM systems to run amd64 containers (must be after Docker is installed)
+            # Check ARM architecture and handle accordingly
             ARCH=$(uname -m)
-            if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
+            if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]]; then
+                log_info "ARM64 architecture detected: $ARCH"
+                log_success "Native ARM64 Docker images are available - no emulation needed."
+            elif [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
                 if [ "$FORCE_ARM" = true ]; then
-                    log_warn "ARM architecture detected: $ARCH (--force-arm flag set)"
+                    log_warn "Unsupported ARM architecture detected: $ARCH (--force-arm flag set)"
                 else
                     if [ -t 1 ]; then clear; fi
                     print_banner
                     draw_hr
-                    echo -e "${YELLOW}${BOLD}⚠️  ARM Architecture Detected${NC}"
+                    echo -e "${YELLOW}${BOLD}⚠️  Unsupported ARM Architecture Detected${NC}"
                     draw_hr
                     echo ""
                     echo -e "${YELLOW}${BOLD}IMPORTANT NOTICE:${NC}"
-                    echo -e "${BLUE}FeatherPanel does ${BOLD}not${NC} natively run on ARM architecture.${NC}"
+                    echo -e "${BLUE}FeatherPanel provides native images for ${BOLD}amd64${NC} and ${BOLD}arm64 (aarch64)${NC} only.${NC}"
+                    echo -e "${BLUE}Your system architecture (${BOLD}$ARCH${NC}) is not natively supported.${NC}"
                     echo ""
                     echo -e "${BLUE}To allow FeatherPanel to run on your ARM system, the installer will:${NC}"
                     echo -e "  ${CYAN}•${NC} Install QEMU virtualization and emulation packages"
@@ -2251,14 +2266,14 @@ CF_HOSTNAME=""
                     echo -e "${YELLOW}Running FeatherPanel through emulation will result in:${NC}"
                     echo -e "  ${YELLOW}•${NC} Slower container startup times"
                     echo -e "  ${YELLOW}•${NC} Higher CPU and memory usage"
-                    echo -e "  ${YELLOW}•${NC} Reduced overall performance compared to native amd64 systems"
+                    echo -e "  ${YELLOW}•${NC} Reduced overall performance compared to native systems"
                     echo ""
                     echo -e "${GREEN}${BOLD}Recommendation:${NC}"
-                    echo -e "${GREEN}For better performance, please use an AMD64/x86_64 CPU type.${NC}"
+                    echo -e "${GREEN}For better performance, please use an AMD64/x86_64 or ARM64 (aarch64) CPU.${NC}"
                     echo ""
                     draw_hr
                     echo ""
-                    log_info "ARM architecture detected: $ARCH"
+                    log_info "Unsupported ARM architecture detected: $ARCH"
                     log_info "Proceeding with QEMU emulation setup..."
                 fi
                 setup_qemu_emulation
@@ -2281,13 +2296,15 @@ CF_HOSTNAME=""
 
             print_banner
             
-            # Setup QEMU emulation for ARM systems if needed (already done earlier, but ensure it's set)
+            # Check ARM architecture (native ARM64 is supported, no emulation needed)
             ARCH=$(uname -m)
-            if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
+            if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]]; then
+                log_info "ARM64 architecture detected: $ARCH - native images available"
+            elif [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
                 if [ "$FORCE_ARM" = true ]; then
-                    log_warn "ARM architecture detected: $ARCH (--force-arm flag set)"
+                    log_warn "Unsupported ARM architecture detected: $ARCH (--force-arm flag set)"
                 else
-                    log_info "ARM architecture detected: $ARCH - using QEMU emulation"
+                    log_info "Unsupported ARM architecture detected: $ARCH - QEMU emulation will be used"
                 fi
             fi
             
@@ -2538,13 +2555,20 @@ CF_HOSTNAME=""
                 if ! sudo docker compose -f /var/www/featherpanel/docker-compose.yml ps | grep -q "Up"; then
                     log_info "Ensuring FeatherPanel containers are running..."
                     
-                        # Check architecture - QEMU emulation should already be set up
+                        # Check architecture - ARM64 is natively supported
                         ARCH=$(uname -m)
-                        if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
+                        if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]]; then
+                            log_info "ARM64 architecture detected: $ARCH - native images available"
+                            # Try to start with native images
+                            if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." \
+                                bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
+                                log_warn "Failed to start FeatherPanel. Reverse proxy configured but Panel is not running."
+                            fi
+                        elif [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
                             if [ "$FORCE_ARM" = true ]; then
-                                log_warn "ARM architecture detected: $ARCH (--force-arm flag set)"
+                                log_warn "Unsupported ARM architecture detected: $ARCH (--force-arm flag set)"
                             else
-                                log_info "ARM architecture detected: $ARCH - using QEMU emulation"
+                                log_info "Unsupported ARM architecture detected: $ARCH - QEMU emulation will be used"
                             fi
                             # Try to start anyway (QEMU should be configured)
                             if ! run_with_spinner "Starting FeatherPanel stack" "FeatherPanel stack started." \
@@ -2727,14 +2751,17 @@ CF_HOSTNAME=""
                 exit 1
             fi
 
-            # Setup QEMU emulation for ARM systems if needed
+            # Check ARM architecture - ARM64 is natively supported
             ARCH=$(uname -m)
-            if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
+            if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]]; then
+                log_info "ARM64 architecture detected: $ARCH"
+                log_success "Native ARM64 Docker images are available - no emulation needed."
+            elif [[ "$ARCH" == "armv7l" ]] || [[ "$ARCH" == "armv6l" ]]; then
                 if [ "$FORCE_ARM" = true ]; then
-                    log_warn "ARM architecture detected: $ARCH (--force-arm flag set)"
+                    log_warn "Unsupported ARM architecture detected: $ARCH (--force-arm flag set)"
                 else
-                    log_info "ARM architecture detected: $ARCH - using QEMU emulation"
-                    log_warn "Note: FeatherPanel runs through emulation on ARM. Consider using AMD64/x86_64 for better performance."
+                    log_info "Unsupported ARM architecture detected: $ARCH - using QEMU emulation"
+                    log_warn "Note: FeatherPanel runs through emulation on unsupported ARM. Consider using AMD64/x86_64 or ARM64 for better performance."
                 fi
                 setup_qemu_emulation
             fi
