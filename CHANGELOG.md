@@ -7,6 +7,12 @@
 - Relocated the export plugin functionality to the Developer Plugin SDK page, ensuring only developers can export plugins and preventing unintended or unauthorized sharing. by @nayskutzu
 - Moved the online spells directory into the FeatherPanel Marketplace for improved visibility and easier access. by @nayskutzu
 - Added dedicated admin sidebar routes for Zero Trust Security and Thread Intelligence Server (TIS), making these advanced protections and analytics easier to access for administrators. by @nayskutzu
+- Enhanced installer UI with automatic screen clearing between menus for a cleaner, more professional appearance. by @nayskutzu
+- Improved Cloudflare Tunnel configuration - the installer now properly merges ingress rules instead of overwriting them, allowing multiple hostnames to coexist on the same tunnel without conflicts. by @nayskutzu
+- Better DNS record handling - the installer now checks for existing DNS records and updates them instead of creating duplicates when configuring Cloudflare Tunnel. by @nayskutzu
+- Streamlined installation flow - domain is now requested immediately when selecting Nginx or Apache, allowing for faster SSL certificate creation and reverse proxy setup. by @nayskutzu
+- Removed redundant prompts - Cloudflare-related messages and credential prompts no longer appear when users select Nginx or Apache, providing a cleaner installation experience. by @nayskutzu
+- Improved error handling and logging throughout the installer for better diagnostics and troubleshooting. by @nayskutzu
 
 ### Added
 
@@ -17,16 +23,27 @@
 - Introduced a sleek and consistent custom scrollbar for both side panels and the entire app, elevating the overall user experience. by @nayskutzu
 - Added an automated FeatherTrust scan report button to the FeatherZero Trust page, enabling instant access to security scan reports with a single click! by @nayskutzu
 - Introduced FeatherAI, an intelligent AI-powered chatbot assistant built into FeatherPanel, enabling users to get instant help, perform actions, and receive expert guidance right within the app. by @nayskutzu
+- Added global `featherpanel` CLI command that wraps `docker exec -it featherpanel_backend php cli` with all arguments, making it easy to run CLI commands system-wide (e.g., `featherpanel help`, `featherpanel users list`). The command is automatically installed during Panel installation and updated during Panel updates. by @nayskutzu
+- Unified access method selection menu - users now see all options (Cloudflare Tunnel, Nginx, Apache, Direct Access) in a single menu instead of multiple prompts, providing a cleaner and more intuitive installation experience. by @nayskutzu
+- Automatic SSL certificate setup during initial installation - when selecting Nginx or Apache, users can now create SSL certificates immediately and have the reverse proxy automatically configured with HTTPS, eliminating the need to manually configure SSL later. by @nayskutzu
+- Smart Cloudflare Tunnel management - tunnels now use unique names based on hostname to prevent conflicts when installing on multiple servers. The installer intelligently detects existing tunnels and offers to reuse them or create new ones, preventing accidental overwrites. by @nayskutzu
+- Automatic Certbot plugin installation - when users select Nginx or Apache during installation, the installer automatically installs the corresponding Certbot plugin without prompting, streamlining the SSL setup process.  by @nayskutzu
 
 ### Fixed
 
 - Fixed an issue that prevented empty files from being edited, ensuring seamless editing regardless of file size. by @nayskutzu
 - Fixed an issue where attempting to install premium plugins would get stuck on the details page instead of displaying an appropriate message. by @nayskutzu
 - Fixed missing pagination UI and incorrect pagination display for server backups, schedules, tasks, and databases. All pages now properly display pagination controls with accurate "Showing X-Y of Z" information and page navigation when there are more items than the per-page limit. by @nayskutzu
+- Fixed issue where SSL certificates were created but nginx/apache wasn't automatically configured to use them on port 443. by @nayskutzu
+- Fixed Cloudflare Tunnel overwrite issue - installing on multiple servers with the same tunnel name no longer overwrites existing tunnel configurations. by @nayskutzu
+- Fixed redundant plugin selection prompt - users who selected Nginx or Apache no longer see the Certbot plugin selection menu again during SSL setup. by @nayskutzu
+- Fixed variable scope issues in the installer script to prevent potential bugs. by @nayskutzu
+- Fixed shellcheck warnings and errors for improved code quality and reliability. by @nayskutzu
 
 ## v1.0.3 BETA
 
 ### Removed
+
 - Removed the "Set Primary" button from the server edit page to prevent user confusion and streamline the allocation management experience. by @nayskutzu
 - Removed the "Create Node" option from the Locations page, as it was just a legacy placeholder left over from the original panel build. by @nayskutzu
 - Retired the legacy "FeatherCli" in anticipation of an all-new, much faster and more powerful CLI tool that will be released in a dedicated repository! by @nayskutzu
@@ -38,7 +55,7 @@
 - Fixed an issue where the subdomain manager would fail if an allocation did not have an ip_alias and the allocation IP was not public. by @nayskutzu
 - Improved session security by excluding "two_fa_key" from session responses. by @nayskutzu
 - Resolved issues preventing drag-and-drop file uploads from working in Chrome, ensuring seamless and reliable file uploads across all modern browsers. by @nayskutzu
-- QR code now uses the authenticated user's email to ensure correct account association. by @puttydotexe 
+- QR code now uses the authenticated user's email to ensure correct account association. by @puttydotexe
 - Fixed an issue where clicking auth page links (such as register or login) would cause a full application reload due to broken redirects, providing a smoother navigation experience. by @nayskutzu
 - Fixed an issue that could cause your customizations to be lost if localStorage failed to sync properly! by @nayskutzu
 
@@ -54,12 +71,13 @@
 - Added support for a FeatherPanel plugin export ignore file, allowing you to exclude packages and third-party dependencies that are used during plugin development but should not be included in the final exported plugin. by @nayskutzu
 - Add cursor pointer to non-disabled buttons to improve UI clarity. by @puttydotexe
 - Introduced context-aware tooltips for various admin actions throughout FeatherPanel menus, providing clearer guidance and an improved user experience! by @nayskutzu
-- Two-factor setup now redirects to the intended page after successful verification (short delay for UX). by @puttydotexe 
-- OTP input updated to allow numeric entry with autocomplete for easier entry on devices. by  @puttydotexe
+- Two-factor setup now redirects to the intended page after successful verification (short delay for UX). by @puttydotexe
+- OTP input updated to allow numeric entry with autocomplete for easier entry on devices. by @puttydotexe
 - Brand new plugin marketplace system with powerful update support! The marketplace now offers advanced search and filtering options (search by tags, verified status, sorting, and more), making it much easier to discover exactly what you need. The system now enforces compatibility and permission checks, preventing users from installing plugins that are incompatible with their panel version or missing required dependencies, for a safer and smoother experience. by @nayskutzu
 - Introduced a powerful notification service that allows administrators to send beautiful, informative messages to all users. by @nayskutzu
 
 ### Improved
+
 - Improved how user emails are fetched: they now use a dedicated paginated route to avoid excessive memory usage and return results more efficiently. by @nayskutzu
 - Activity fetching is now significantly optimized and has its own dedicated route, dramatically reducing memory usage when retrieving user activity data. by @nayskutzu
 - Cleaned up the session response: password hashes and unnecessary data are no longer included. by @nayskutzu
@@ -73,6 +91,7 @@
 ## v1.0.2 BETA
 
 ### Added
+
 - Added an enhanced editor specifically for Minecraft server.properties files, allowing for easier configuration and improved editing experience.
 - Added an enhanced editor specifically for Paper Spigot spigot.yml files, allowing for easier configuration and improved editing experience.
 - Added an enhanced editor specifically for Paper bukkit.yml files, allowing for easier configuration and improved editing experience.
@@ -84,6 +103,7 @@
 - The panel now updates itself automatically whenever FeatherPanel is restarted this ensures you’re always running the latest version without manual intervention. This feature can be disabled in your docker-compose.yml if desired.
 
 ### Fixed
+
 - Fixed an issue where attempting to delete an allocated port (in either admin or user mode) could result in an error or database rejection.
 - Introduced seamless pagination to the Spells page for improved navigation and usability
 - Added seamless pagination to the Plugins page for improved navigation and user experience
@@ -96,6 +116,7 @@
 - Error reporting and warnings are now automatically silenced in production mode for a cleaner user experience.
 
 ### Improved
+
 - Reduced excessive and unnecessary log output from the admin dashboard page for a cleaner log experience
 - Significantly enhanced the installer for both updates and first-time setups, making the process smoother, more intuitive, and user-friendly!
 
@@ -279,7 +300,7 @@
 
 ### Improved
 
-- Significantly enhanced the overall UI experience, bringing smoother interactions, sharper visuals, and a more cohesive feel—special thanks to @Tweenty_ for the design magic!
+- Significantly enhanced the overall UI experience, bringing smoother interactions, sharper visuals, and a more cohesive feel—special thanks to @Tweenty\_ for the design magic!
 
 ## v0.0.7-Alpha
 
