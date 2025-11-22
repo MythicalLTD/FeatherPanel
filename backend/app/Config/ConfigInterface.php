@@ -43,6 +43,17 @@ interface ConfigInterface
     public const APP_LOGO_DARK = 'app_logo_dark';
     public const APP_SUPPORT_URL = 'app_support_url';
     /**
+     * Social Media Links.
+     */
+    public const LINKEDIN_URL = 'linkedin_url';
+    public const TELEGRAM_URL = 'telegram_url';
+    public const TIKTOK_URL = 'tiktok_url';
+    public const TWITTER_URL = 'twitter_url';
+    public const WHATSAPP_URL = 'whatsapp_url';
+    public const YOUTUBE_URL = 'youtube_url';
+    public const WEBSITE_URL = 'website_url';
+    public const STATUS_PAGE_URL = 'status_page_url';
+    /**
      * Turnstile.
      */
     public const TURNSTILE_ENABLED = 'turnstile_enabled';

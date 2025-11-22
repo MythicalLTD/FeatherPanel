@@ -218,21 +218,19 @@ onUnmounted(() => {
             >
                 <component :is="getTypeIcon(notification.type)" class="h-4 w-4" />
 
-                <div class="flex-1 min-w-0 pr-8">
-                    <AlertTitle class="font-semibold mb-2 text-foreground">
-                        {{ notification.title }}
-                    </AlertTitle>
-                    <AlertDescription class="markdown-notification-content text-foreground/90">
-                        <!-- eslint-disable-next-line vue/no-v-html -->
-                        <div v-html="renderMarkdown(notification.message_markdown)"></div>
-                    </AlertDescription>
-                </div>
+                <AlertTitle class="font-semibold mb-2 text-foreground pr-8">
+                    {{ notification.title }}
+                </AlertTitle>
+                <AlertDescription class="markdown-notification-content text-foreground/90 pr-8">
+                    <!-- eslint-disable-next-line vue/no-v-html -->
+                    <div v-html="renderMarkdown(notification.message_markdown)"></div>
+                </AlertDescription>
 
                 <Button
                     v-if="notification.is_dismissible"
                     variant="ghost"
                     size="icon"
-                    class="absolute top-2 right-2 h-6 w-6 opacity-70 hover:opacity-100"
+                    class="absolute top-2 right-2 h-6 w-6 opacity-70 hover:opacity-100 z-10"
                     :disabled="dismissing.has(notification.id)"
                     @click="dismissNotification(notification)"
                 >

@@ -68,6 +68,16 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::APP_LOGO_DARK => 'https://cdn.mythical.systems/featherpanel/logo.png',
             ConfigInterface::APP_SUPPORT_URL => 'https://discord.mythical.systems',
 
+            // Social Media Links
+            ConfigInterface::LINKEDIN_URL => '',
+            ConfigInterface::TELEGRAM_URL => '',
+            ConfigInterface::TIKTOK_URL => '',
+            ConfigInterface::TWITTER_URL => '',
+            ConfigInterface::WHATSAPP_URL => '',
+            ConfigInterface::YOUTUBE_URL => '',
+            ConfigInterface::WEBSITE_URL => '',
+            ConfigInterface::STATUS_PAGE_URL => '',
+
             // Turnstile settings
             ConfigInterface::TURNSTILE_ENABLED => 'false',
             ConfigInterface::TURNSTILE_KEY_PUB => 'XXXX',

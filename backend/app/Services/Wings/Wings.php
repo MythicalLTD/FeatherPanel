@@ -30,9 +30,9 @@
 
 namespace App\Services\Wings;
 
-use App\Services\Wings\Services\ConfigService;
 use App\Services\Wings\Services\JwtService;
 use App\Services\Wings\Services\TISService;
+use App\Services\Wings\Services\ConfigService;
 use App\Services\Wings\Services\DockerService;
 use App\Services\Wings\Services\ServerService;
 use App\Services\Wings\Services\SystemService;

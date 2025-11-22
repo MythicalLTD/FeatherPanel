@@ -35,7 +35,12 @@
                             {{ versionInfo.current.type }}
                         </span>
                     </div>
-                    <p class="text-muted-foreground mb-3">{{ versionInfo.current.description }}</p>
+                    <!-- eslint-disable vue/no-v-html -->
+                    <div
+                        class="text-muted-foreground mb-3 prose prose-sm dark:prose-invert max-w-none"
+                        v-html="renderMarkdown(versionInfo.current.description)"
+                    ></div>
+                    <!-- eslint-enable vue/no-v-html -->
                     <div class="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                         <span class="flex items-center gap-1">
                             <span class="w-2 h-2 rounded-full bg-green-500"></span>
@@ -127,10 +132,15 @@
                                 {{ versionInfo.latest.version }}
                             </span>
                         </div>
-                        <p class="text-emerald-700 dark:text-emerald-300 mb-3">
+                        <div class="text-emerald-700 dark:text-emerald-300 mb-3">
                             <strong>{{ versionInfo.latest.release_name }}</strong> -
-                            {{ versionInfo.latest.description }}
-                        </p>
+                            <!-- eslint-disable vue/no-v-html -->
+                            <span
+                                class="prose prose-sm dark:prose-invert max-w-none"
+                                v-html="renderMarkdown(versionInfo.latest.description)"
+                            ></span>
+                            <!-- eslint-enable vue/no-v-html -->
+                        </div>
                         <div class="flex flex-wrap items-center gap-4 text-sm text-emerald-600 dark:text-emerald-400">
                             <span class="flex items-center gap-1">
                                 <span class="w-2 h-2 rounded-full bg-green-500"></span>
@@ -244,6 +254,8 @@ import { Card } from '@/components/ui/card';
 import { Sparkles, AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Rocket } from 'lucide-vue-next';
 import { useDashboardStore } from '@/stores/dashboard';
 import ChangelogSection from './ChangelogSection.vue';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 
 const dashboardStore = useDashboardStore();
 
@@ -308,4 +320,43 @@ function hasCurrentVersionChangelog(version: VersionData | null): boolean {
             (Array.isArray(version.changelog_removed) && version.changelog_removed.length > 0),
     );
 }
+
+const renderMarkdown = (markdown: string | null | undefined): string => {
+    if (!markdown) return '';
+    try {
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+        });
+        const html = marked.parse(markdown) as string;
+        return DOMPurify.sanitize(html, {
+            ALLOWED_TAGS: [
+                'p',
+                'br',
+                'strong',
+                'em',
+                'u',
+                's',
+                'code',
+                'pre',
+                'a',
+                'ul',
+                'ol',
+                'li',
+                'h1',
+                'h2',
+                'h3',
+                'h4',
+                'h5',
+                'h6',
+                'blockquote',
+            ],
+            ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
+            ALLOW_DATA_ATTR: false,
+        });
+    } catch (error) {
+        console.error('Markdown parsing error:', error);
+        return markdown || '';
+    }
+};
 </script>

@@ -29,6 +29,9 @@
 - Smart Cloudflare Tunnel management - tunnels now use unique names based on hostname to prevent conflicts when installing on multiple servers. The installer intelligently detects existing tunnels and offers to reuse them or create new ones, preventing accidental overwrites. by @nayskutzu
 - Automatic Certbot plugin installation - when users select Nginx or Apache during installation, the installer automatically installs the corresponding Certbot plugin without prompting, streamlining the SSL setup process.  by @nayskutzu
 - Added an advanced Wings configuration file editor in the admin area, enabling effortless direct editing and management of Wings daemon settings. by @nayskutzu
+- Release notes are now written in markdown, enabling enhanced formatting and a more visually appealing presentation. by @nayskutzu
+- Added a stylish and dedicated section to display user social links on navbar, making it easy to connect and showcase your online presence. by @nayskutzu
+- Introduced a feature that lets you pin your favorite pages for easy access—quickly save and revisit the places you care about most! by @nayskutzu
 
 ### Fixed
 
@@ -40,6 +43,7 @@
 - Fixed redundant plugin selection prompt - users who selected Nginx or Apache no longer see the Certbot plugin selection menu again during SSL setup. by @nayskutzu
 - Fixed variable scope issues in the installer script to prevent potential bugs. by @nayskutzu
 - Fixed shellcheck warnings and errors for improved code quality and reliability. by @nayskutzu
+- Fixed an issue where the "Validate Server" and "Create Folder" buttons would incorrectly appear in the node folder view within the server list.
 
 ## v1.0.3 BETA
 

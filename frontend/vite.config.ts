@@ -120,6 +120,14 @@ export default defineConfig({
                 ) {
                     return;
                 }
+                // Suppress vue-i18n currentInstance warning (harmless - vue-i18n falls back to getCurrentInstance)
+                if (
+                    warning.code === 'IMPORT_IS_UNDEFINED' &&
+                    warning.message?.includes('currentInstance') &&
+                    warning.message?.includes('vue-i18n')
+                ) {
+                    return;
+                }
                 // Use default warning handler for other warnings
                 warn(warning);
             },

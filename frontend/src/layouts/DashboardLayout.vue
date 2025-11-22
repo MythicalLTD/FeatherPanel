@@ -33,6 +33,7 @@ import AppSidebar from '@/components/AppSidebar.vue';
 import AppFooter from '@/components/AppFooter.vue';
 import MacDock from '@/components/MacDock.vue';
 import NotificationBanner from '@/components/NotificationBanner.vue';
+import HeaderActions from '@/components/HeaderActions.vue';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -224,6 +225,7 @@ watchEffect(() => {
                             </template>
                         </BreadcrumbList>
                     </Breadcrumb>
+                    <HeaderActions />
                 </div>
             </header>
             <br />

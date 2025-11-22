@@ -7,7 +7,7 @@
                 <p class="text-sm text-muted-foreground">{{ $t('servers.description') }}</p>
             </div>
             <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
-                <div class="flex flex-wrap gap-2">
+                <div v-if="viewMode === 'folders'" class="flex flex-wrap gap-2">
                     <Button
                         v-if="!isMobile"
                         variant="outline"

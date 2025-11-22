@@ -43,93 +43,92 @@ use App\Services\Wings\WingsConnection;
  */
 class ConfigService
 {
-	private WingsConnection $connection;
+    private WingsConnection $connection;
 
-	/**
-	 * Create a new ConfigService instance.
-	 */
-	public function __construct(WingsConnection $connection)
-	{
-		$this->connection = $connection;
-	}
+    /**
+     * Create a new ConfigService instance.
+     */
+    public function __construct(WingsConnection $connection)
+    {
+        $this->connection = $connection;
+    }
 
-	/**
-	 * Get the raw Wings configuration file as YAML.
-	 *
-	 * @return string The raw YAML configuration
-	 */
-	public function getConfig(): string
-	{
-		$headers = [
-			'Accept' => 'application/x-yaml, text/yaml, application/json',
-		];
+    /**
+     * Get the raw Wings configuration file as YAML.
+     *
+     * @return string The raw YAML configuration
+     */
+    public function getConfig(): string
+    {
+        $headers = [
+            'Accept' => 'application/x-yaml, text/yaml, application/json',
+        ];
 
-		return $this->connection->getRaw('/api/config', $headers);
-	}
+        return $this->connection->getRaw('/api/config', $headers);
+    }
 
-	/**
-	 * Replace the entire Wings configuration file.
-	 *
-	 * Wings API expects:
-	 * {
-	 *   "content": "yaml content here",
-	 *   "restart": true/false
-	 * }
-	 *
-	 * @param string $yamlContent The complete YAML configuration content
-	 * @param bool $restart Whether to restart Wings after update (default: false)
-	 *
-	 * @return array The response data
-	 */
-	public function putConfig(string $yamlContent, bool $restart = false): array
-	{
-		$headers = [
-			'Content-Type' => 'application/json',
-		];
+    /**
+     * Replace the entire Wings configuration file.
+     *
+     * Wings API expects:
+     * {
+     *   "content": "yaml content here",
+     *   "restart": true/false
+     * }
+     *
+     * @param string $yamlContent The complete YAML configuration content
+     * @param bool $restart Whether to restart Wings after update (default: false)
+     *
+     * @return array The response data
+     */
+    public function putConfig(string $yamlContent, bool $restart = false): array
+    {
+        $headers = [
+            'Content-Type' => 'application/json',
+        ];
 
-		$data = [
-			'content' => $yamlContent,
-			'restart' => $restart,
-		];
+        $data = [
+            'content' => $yamlContent,
+            'restart' => $restart,
+        ];
 
-		return $this->connection->put('/api/config', $data, $headers);
-	}
+        return $this->connection->put('/api/config', $data, $headers);
+    }
 
-	/**
-	 * Patch specific configuration values using dot notation.
-	 *
-	 * Wings API expects:
-	 * {
-	 *   "updates": {
-	 *     "api.port": 8080,
-	 *     "system.timezone": "UTC"
-	 *   },
-	 *   "restart": true/false
-	 * }
-	 *
-	 * @param array $updates Associative array of config paths to values (e.g., ['api.port' => 8080])
-	 * @param bool $restart Whether to restart Wings after update (default: false)
-	 *
-	 * @return array The response data
-	 */
-	public function patchConfig(array $updates, bool $restart = false): array
-	{
-		$data = [
-			'updates' => $updates,
-			'restart' => $restart,
-		];
+    /**
+     * Patch specific configuration values using dot notation.
+     *
+     * Wings API expects:
+     * {
+     *   "updates": {
+     *     "api.port": 8080,
+     *     "system.timezone": "UTC"
+     *   },
+     *   "restart": true/false
+     * }
+     *
+     * @param array $updates Associative array of config paths to values (e.g., ['api.port' => 8080])
+     * @param bool $restart Whether to restart Wings after update (default: false)
+     *
+     * @return array The response data
+     */
+    public function patchConfig(array $updates, bool $restart = false): array
+    {
+        $data = [
+            'updates' => $updates,
+            'restart' => $restart,
+        ];
 
-		return $this->connection->patch('/api/config/patch', $data);
-	}
+        return $this->connection->patch('/api/config/patch', $data);
+    }
 
-	/**
-	 * Get the configuration schema.
-	 *
-	 * @return array The configuration schema
-	 */
-	public function getConfigSchema(): array
-	{
-		return $this->connection->get('/api/config/schema');
-	}
+    /**
+     * Get the configuration schema.
+     *
+     * @return array The configuration schema
+     */
+    public function getConfigSchema(): array
+    {
+        return $this->connection->get('/api/config/schema');
+    }
 }
-
