@@ -8,8 +8,10 @@ WORKDIR /var/www/html
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TERM=xterm
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies with BuildKit cache mount
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     git \
     curl \
     libpng-dev \
@@ -33,12 +35,12 @@ RUN apt-get update && apt-get install -y \
     cron \
     pkg-config \
     libsasl2-dev \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions, including PostgreSQL support
 # Note: pdo, json, openssl, curl, fileinfo, xml, dom, sodium, exif, pcntl, opcache are built-in
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
         pdo_mysql \
         pdo_pgsql \
@@ -49,11 +51,13 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         intl \
         bcmath
 
-# Install Redis extension
-RUN pecl install redis && docker-php-ext-enable redis
+# Install Redis extension with BuildKit cache mount
+RUN --mount=type=cache,target=/tmp/pecl-cache \
+    pecl install redis && docker-php-ext-enable redis
 
-# Install MongoDB extension
-RUN pecl install mongodb && docker-php-ext-enable mongodb
+# Install MongoDB extension with BuildKit cache mount
+RUN --mount=type=cache,target=/tmp/pecl-cache \
+    pecl install mongodb && docker-php-ext-enable mongodb
 
 # Reset environment variables
 ENV DEBIAN_FRONTEND=
@@ -61,11 +65,15 @@ ENV DEBIAN_FRONTEND=
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy application files with correct ownership
-COPY --chown=www-data:www-data . .
+# Copy only composer files first for better caching
+COPY --chown=www-data:www-data composer.json composer.lock ./
 
-# Install PHP dependencies
-RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader
+# Install PHP dependencies with BuildKit cache mount
+RUN --mount=type=cache,target=/root/.composer/cache \
+    COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
+
+# Copy remaining application files with correct ownership
+COPY --chown=www-data:www-data . .
 
 # Configure PHP (based on health check recommendations)
 RUN echo 'memory_limit = -1\n\

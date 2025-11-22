@@ -36,6 +36,14 @@ jobs:
             echo "tag=latest" >> $GITHUB_OUTPUT
           fi
 
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ./backend/storage/packages
+          key: ${{ runner.os }}-composer-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
@@ -56,8 +64,12 @@ jobs:
           context: ./backend
           platforms: linux/amd64,linux/arm64
           push: true
-          cache-from: type=registry,ref=ghcr.io/mythicalltd/featherpanel-backend:buildcache
-          cache-to: type=registry,ref=ghcr.io/mythicalltd/featherpanel-backend:buildcache,mode=max
+          cache-from: |
+            type=registry,ref=ghcr.io/mythicalltd/featherpanel-backend:buildcache
+            type=gha
+          cache-to: |
+            type=registry,ref=ghcr.io/mythicalltd/featherpanel-backend:buildcache,mode=max
+            type=gha,mode=max
           tags: |
             ghcr.io/mythicalltd/featherpanel-backend:latest
             ghcr.io/mythicalltd/featherpanel-backend:${{ steps.version.outputs.tag }}
@@ -86,6 +98,14 @@ jobs:
             echo "tag=latest" >> $GITHUB_OUTPUT
           fi
 
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ./frontend/node_modules
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
@@ -106,8 +126,12 @@ jobs:
           context: ./frontend
           platforms: linux/amd64,linux/arm64
           push: true
-          cache-from: type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontend:buildcache
-          cache-to: type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontend:buildcache,mode=max
+          cache-from: |
+            type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontend:buildcache
+            type=gha
+          cache-to: |
+            type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontend:buildcache,mode=max
+            type=gha,mode=max
           tags: |
             ghcr.io/mythicalltd/featherpanel-frontend:latest
             ghcr.io/mythicalltd/featherpanel-frontend:${{ steps.version.outputs.tag }}
