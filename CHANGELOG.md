@@ -28,6 +28,7 @@
 - Automatic SSL certificate setup during initial installation - when selecting Nginx or Apache, users can now create SSL certificates immediately and have the reverse proxy automatically configured with HTTPS, eliminating the need to manually configure SSL later. by @nayskutzu
 - Smart Cloudflare Tunnel management - tunnels now use unique names based on hostname to prevent conflicts when installing on multiple servers. The installer intelligently detects existing tunnels and offers to reuse them or create new ones, preventing accidental overwrites. by @nayskutzu
 - Automatic Certbot plugin installation - when users select Nginx or Apache during installation, the installer automatically installs the corresponding Certbot plugin without prompting, streamlining the SSL setup process.  by @nayskutzu
+- Added an advanced Wings configuration file editor in the admin area, enabling effortless direct editing and management of Wings daemon settings. by @nayskutzu
 
 ### Fixed
 

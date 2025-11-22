@@ -837,7 +837,7 @@
                 </form>
                 <div v-else class="p-4 space-y-4 overflow-y-auto max-h-[calc(100vh-200px)]">
                     <Tabs v-model="viewActiveTab" class="w-full">
-                        <TabsList class="grid w-full grid-cols-8">
+                        <TabsList class="grid w-full grid-cols-9">
                             <TabsTrigger value="overview">Overview</TabsTrigger>
                             <TabsTrigger value="system">System Info</TabsTrigger>
                             <TabsTrigger value="utilization">Utilization</TabsTrigger>
@@ -846,6 +846,7 @@
                             <TabsTrigger value="diagnostics">Diagnostics</TabsTrigger>
                             <TabsTrigger value="self-update">Self-Update</TabsTrigger>
                             <TabsTrigger value="terminal">Terminal</TabsTrigger>
+                            <TabsTrigger value="wings-config">Wings Config</TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="overview" class="space-y-4 mt-4">
@@ -2655,6 +2656,157 @@
                                 </CardContent>
                             </Card>
                         </TabsContent>
+
+                        <TabsContent value="wings-config" class="space-y-4 mt-4">
+                            <!-- Wings Configuration Editor -->
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle class="text-lg flex items-center gap-2">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                                            />
+                                        </svg>
+                                        Wings Configuration
+                                    </CardTitle>
+                                    <CardDescription>
+                                        View and edit the Wings daemon configuration file directly
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent class="space-y-4">
+                                    <div v-if="wingsConfigLoading" class="flex items-center justify-center py-8">
+                                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                    </div>
+
+                                    <div v-else-if="wingsConfigError" class="space-y-4">
+                                        <Alert variant="destructive">
+                                            <div class="space-y-3">
+                                                <div class="font-medium">Failed to load Wings configuration</div>
+                                                <div class="text-sm">{{ wingsConfigError }}</div>
+                                            </div>
+                                        </Alert>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            :loading="wingsConfigLoading"
+                                            @click="fetchWingsConfig"
+                                        >
+                                            Retry
+                                        </Button>
+                                    </div>
+
+                                    <div v-else-if="wingsConfigContent !== null" class="space-y-4">
+                                        <div class="flex items-center justify-between">
+                                            <div class="text-sm text-muted-foreground">
+                                                Configuration file from Wings daemon
+                                            </div>
+                                            <div class="flex gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    :disabled="wingsConfigSaving"
+                                                    @click="fetchWingsConfig"
+                                                >
+                                                    <RefreshCw :size="16" class="mr-2" />
+                                                    Reload
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    :disabled="wingsConfigSaving || !wingsConfigDirty"
+                                                    @click="resetWingsConfig"
+                                                >
+                                                    Reset
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <div class="space-y-2">
+                                            <Label class="text-sm font-medium">Configuration (YAML)</Label>
+                                            <textarea
+                                                v-model="wingsConfigContent"
+                                                class="w-full h-96 p-3 text-xs font-mono bg-muted border rounded-md resize-none"
+                                                :disabled="wingsConfigSaving"
+                                                @input="wingsConfigDirty = true"
+                                            ></textarea>
+                                            <p class="text-xs text-muted-foreground">
+                                                Edit the YAML configuration directly. Changes will be saved to Wings.
+                                            </p>
+                                        </div>
+
+                                        <div
+                                            class="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg"
+                                        >
+                                            <svg
+                                                class="h-5 w-5 text-yellow-600 dark:text-yellow-400 shrink-0"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                                />
+                                            </svg>
+                                            <div class="flex-1">
+                                                <div class="text-sm font-semibold text-yellow-800 dark:text-yellow-200">
+                                                    Configuration Warning
+                                                </div>
+                                                <p class="mt-1 text-xs text-yellow-700 dark:text-yellow-300">
+                                                    Invalid configuration may cause Wings to fail to start. Always
+                                                    review changes carefully. Consider backing up the configuration
+                                                    before making changes.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center justify-between p-3 bg-muted rounded-lg">
+                                            <div class="flex items-center gap-4">
+                                                <div class="flex items-center gap-2">
+                                                    <input
+                                                        id="wings-config-restart"
+                                                        v-model="wingsConfigRestart"
+                                                        type="checkbox"
+                                                        :disabled="wingsConfigSaving"
+                                                        class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-700"
+                                                    />
+                                                    <Label class="text-sm font-medium" for="wings-config-restart"
+                                                        >Restart Wings after save</Label
+                                                    >
+                                                </div>
+                                            </div>
+                                            <Button
+                                                size="sm"
+                                                :loading="wingsConfigSaving"
+                                                :disabled="!wingsConfigDirty || wingsConfigSaving"
+                                                @click="saveWingsConfig"
+                                            >
+                                                <svg
+                                                    v-if="!wingsConfigSaving"
+                                                    class="h-4 w-4 mr-2"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M5 13l4 4L19 7"
+                                                    />
+                                                </svg>
+                                                Save Configuration
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
                     </Tabs>
 
                     <DrawerFooter>
@@ -2920,6 +3072,14 @@ const dockerPruning = ref(false);
 const networkLoading = ref(false);
 const networkData = ref<NetworkResponse | null>(null);
 const networkError = ref<string | null>(null);
+
+// Wings Config state
+const wingsConfigLoading = ref(false);
+const wingsConfigContent = ref<string | null>(null);
+const wingsConfigError = ref<string | null>(null);
+const wingsConfigSaving = ref(false);
+const wingsConfigDirty = ref(false);
+const wingsConfigRestart = ref(false);
 
 // Diagnostics state
 const diagnosticsOptions = reactive({
@@ -3407,6 +3567,7 @@ async function onView(node: Node) {
         fetchUtilizationInfo(node),
         fetchDockerInfo(node),
         fetchNetworkInfo(node),
+        fetchWingsConfig(),
     ]);
 }
 function closeDrawer() {
@@ -3425,6 +3586,10 @@ function closeDrawer() {
     dockerError.value = null;
     networkData.value = null;
     networkError.value = null;
+    wingsConfigContent.value = null;
+    wingsConfigError.value = null;
+    wingsConfigDirty.value = false;
+    wingsConfigRestart.value = false;
 }
 
 function getLocationName(id: number | undefined) {
@@ -4156,5 +4321,79 @@ function isValidIPv6Address(value: string): boolean {
     } catch {
         return false;
     }
+}
+
+// Wings Config functions
+async function fetchWingsConfig(): Promise<void> {
+    if (!drawerNode.value) {
+        return;
+    }
+
+    wingsConfigLoading.value = true;
+    wingsConfigError.value = null;
+
+    try {
+        const response = await axios.get<ApiResponse<{ config: string }>>(
+            `/api/admin/nodes/${drawerNode.value.id}/config`,
+        );
+
+        if (!response.data.success || !response.data.data) {
+            throw new Error(response.data.message || 'Failed to fetch Wings configuration');
+        }
+
+        wingsConfigContent.value = response.data.data.config;
+        wingsConfigDirty.value = false;
+    } catch (e) {
+        const err = e as { response?: { data?: { message?: string } }; message?: string };
+        const message = err.response?.data?.message || err.message || 'Failed to fetch Wings configuration';
+        wingsConfigError.value = message;
+        toast.error(message);
+    } finally {
+        wingsConfigLoading.value = false;
+    }
+}
+
+async function saveWingsConfig(): Promise<void> {
+    if (!drawerNode.value || !wingsConfigContent.value || !wingsConfigDirty.value) {
+        return;
+    }
+
+    wingsConfigSaving.value = true;
+
+    try {
+        const response = await axios.put<ApiResponse<{ config: string; result: Record<string, unknown> }>>(
+            `/api/admin/nodes/${drawerNode.value.id}/config`,
+            {
+                config: wingsConfigContent.value,
+                restart: wingsConfigRestart.value,
+            },
+        );
+
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Failed to save Wings configuration');
+        }
+
+        wingsConfigDirty.value = false;
+        toast.success(
+            wingsConfigRestart.value
+                ? 'Configuration saved and Wings will restart'
+                : 'Configuration saved successfully',
+        );
+    } catch (e) {
+        const err = e as { response?: { data?: { message?: string } }; message?: string };
+        const message = err.response?.data?.message || err.message || 'Failed to save Wings configuration';
+        toast.error(message);
+    } finally {
+        wingsConfigSaving.value = false;
+    }
+}
+
+function resetWingsConfig(): void {
+    if (!drawerNode.value) {
+        return;
+    }
+
+    wingsConfigDirty.value = false;
+    fetchWingsConfig();
 }
 </script>
