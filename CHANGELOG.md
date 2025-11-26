@@ -6,6 +6,7 @@
 
 - Improved TOTP page by fixing Cloudflare Turnstile integration and correcting displayed text. by @nayskutzu
 - Added missing Cloudflare Turnstile verification to the account update page for improved security. by @nayskutzu
+- Resolved an issue where commands could not be sent unless the server was running, ensuring smoother server management. by @nayskutzu
 
 ### Added
 

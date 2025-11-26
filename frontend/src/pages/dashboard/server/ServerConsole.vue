@@ -2243,7 +2243,7 @@ async function sendCommand(): Promise<void> {
     if (!commandInput.value.trim() || sendingCommand.value) return;
 
     // Check if server is running
-    if (server.value?.status !== 'running') {
+    if (server.value?.status !== 'running' && server.value?.status !== 'starting') {
         toast.error(t('serverConsole.serverMustBeRunning'));
         return;
     }
