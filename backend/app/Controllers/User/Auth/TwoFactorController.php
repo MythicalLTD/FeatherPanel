@@ -272,7 +272,6 @@ class TwoFactorController
     )]
     public function post(Request $request): Response
     {
-        $app = App::getInstance(true);
         $data = json_decode($request->getContent(), true);
 
         // Find user by email (from login step)

@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.5 BETA
+
+### Fixed
+
+- Improved TOTP page by fixing Cloudflare Turnstile integration and correcting displayed text. by @nayskutzu
+
 ## v1.0.4 BETA
 
 ### Improved

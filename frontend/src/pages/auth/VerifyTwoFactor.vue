@@ -29,14 +29,11 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import Turnstile from 'vue-turnstile';
-import { useSettingsStore } from '@/stores/settings';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
-const settingsStore = useSettingsStore();
 const props = defineProps<{
     class?: HTMLAttributes['class'];
 }>();
@@ -48,10 +45,6 @@ const code = ref('');
 const loading = ref(false);
 const error = ref('');
 const success = ref('');
-const form = ref({
-    turnstile_token: '',
-    code: '',
-});
 
 // Plugin widgets
 const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('auth-verify-two-factor');
@@ -74,10 +67,9 @@ async function verify2FA(e: Event) {
         const res = await axios.post('/api/user/auth/two-factor', {
             email: email.value,
             code: code.value,
-            turnstile_token: form.value.turnstile_token,
         });
         if (res.data && res.data.success) {
-            success.value = t('api_errors.TWO_FACTOR_ENABLED_SUCCESS');
+            success.value = t('api_errors.TWO_FACTOR_SUCCESS');
             setTimeout(() => router.replace('/dashboard'), 1200);
         } else {
             error.value = t(`api_errors.${res.data.error_code}`) || t('api_errors.INVALID_CODE');
@@ -112,12 +104,6 @@ async function verify2FA(e: Event) {
                             :placeholder="t('api_errors.TWO_FACTOR_CODE_PLACEHOLDER')"
                             required
                             @input="code = code.replace(/\D/g, '')"
-                        />
-                    </div>
-                    <div v-if="settingsStore.turnstile_enabled" class="grid gap-3">
-                        <Turnstile
-                            v-model="form.turnstile_token"
-                            :site-key="settingsStore.turnstile_key_pub as string"
                         />
                     </div>
                     <Button
