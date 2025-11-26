@@ -222,12 +222,6 @@ class Permissions
     /** Delete subdomains */
     public const ADMIN_SUBDOMAINS_DELETE = 'admin.subdomains.delete';
 
-    // Admin TIS Permissions
-    /** View TIS statistics and hashes */
-    public const ADMIN_TIS_VIEW = 'admin.tis.view';
-    /** Manage TIS settings */
-    public const ADMIN_TIS_MANAGE = 'admin.tis.manage';
-
     // Admin FeatherZeroTrust Permissions
     /** View FeatherZeroTrust scanner */
     public const ADMIN_FEATHERZEROTRUST_VIEW = 'admin.featherzerotrust.view';
@@ -673,18 +667,6 @@ class Permissions
                 'value' => self::ADMIN_SUBDOMAINS_DELETE,
                 'category' => 'Admin Subdomains',
                 'description' => 'Delete subdomains',
-            ],
-            [
-                'constant' => 'ADMIN_TIS_VIEW',
-                'value' => self::ADMIN_TIS_VIEW,
-                'category' => 'Admin TIS',
-                'description' => 'View TIS statistics and hashes',
-            ],
-            [
-                'constant' => 'ADMIN_TIS_MANAGE',
-                'value' => self::ADMIN_TIS_MANAGE,
-                'category' => 'Admin TIS',
-                'description' => 'Manage TIS settings',
             ],
             [
                 'constant' => 'ADMIN_FEATHERZEROTRUST_VIEW',

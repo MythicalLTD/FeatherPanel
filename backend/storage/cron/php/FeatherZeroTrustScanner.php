@@ -47,7 +47,7 @@ use App\Services\FeatherZeroTrust\SuspensionService;
  * FeatherZeroTrustScanner - Cron task for scanning servers with FeatherZeroTrust.
  *
  * This cron job runs periodically and scans servers for suspicious files.
- * It uses the FeatherZeroTrust scanner to detect malicious files and submits hashes to TIS.
+ * It uses the FeatherZeroTrust scanner to detect malicious files and stores suspicious hashes in the FeatherPanel database.
  */
 class FeatherZeroTrustScanner implements TimeTask
 {

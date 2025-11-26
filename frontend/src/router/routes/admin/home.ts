@@ -175,12 +175,12 @@ const adminRoutes: RouteRecordRaw[] = [
     {
         path: '/admin/featherpanel-cloud',
         name: 'AdminFeatherPanelCloud',
-        component: () => import('@/pages/admin/cloud/FeatherPanelCloud.vue'),
+        component: () => import('@/pages/admin/feathercloud/FeatherPanelCloud.vue'),
     },
     {
-        path: '/admin/feathercloud-ai-agent',
+        path: '/admin/featherpanel-ai-agent',
         name: 'AdminFeatherCloudAiAgent',
-        component: () => import('@/pages/admin/cloud/FeatherCloudAiAgent.vue'),
+        component: () => import('@/pages/admin/FeatherAiAgent.vue'),
     },
     {
         path: '/admin/feathercloud/marketplace',
@@ -223,29 +223,14 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/dev/PluginManager.vue'),
     },
     {
-        path: '/admin/feathercloud/tis',
-        name: 'AdminTIS',
-        component: () => import('@/pages/admin/feathercloud/TIS.vue'),
-    },
-    {
-        path: '/admin/feathercloud/featherzerotrust',
+        path: '/admin/featherzerotrust',
         name: 'AdminFeatherZeroTrust',
-        component: () => import('@/pages/admin/feathercloud/FeatherZeroTrust.vue'),
+        component: () => import('@/pages/admin/featherzerotrust/FeatherZeroTrust.vue'),
     },
     {
-        path: '/admin/feathercloud/featherzerotrust/config',
-        name: 'AdminFeatherZeroTrustConfig',
-        component: () => import('@/pages/admin/feathercloud/FeatherZeroTrustConfig.vue'),
-    },
-    {
-        path: '/admin/feathercloud/featherzerotrust/logs',
-        name: 'AdminFeatherZeroTrustLogs',
-        component: () => import('@/pages/admin/feathercloud/FeatherZeroTrustLogs.vue'),
-    },
-    {
-        path: '/admin/feathercloud/featherzerotrust/logs/:executionId',
+        path: '/admin/featherzerotrust/logs/:executionId',
         name: 'AdminFeatherZeroTrustLogDetails',
-        component: () => import('@/pages/admin/feathercloud/FeatherZeroTrustLogDetails.vue'),
+        component: () => import('@/pages/admin/featherzerotrust/FeatherZeroTrustLogDetails.vue'),
     },
     {
         path: '/admin/:pathMatch(.*)*',

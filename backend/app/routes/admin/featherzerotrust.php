@@ -109,4 +109,108 @@ return function (RouteCollection $routes): void {
         },
         Permissions::ADMIN_FEATHERZEROTRUST_VIEW,
     );
+
+    // Get suspicious file hashes
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-featherzerotrust-hashes',
+        '/api/admin/featherzerotrust/hashes',
+        function (Request $request) {
+            return (new FeatherZeroTrustController())->getHashes($request);
+        },
+        Permissions::ADMIN_FEATHERZEROTRUST_VIEW,
+    );
+
+    // Get hash statistics
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-featherzerotrust-hashes-stats',
+        '/api/admin/featherzerotrust/hashes/stats',
+        function (Request $request) {
+            return (new FeatherZeroTrustController())->getHashStats($request);
+        },
+        Permissions::ADMIN_FEATHERZEROTRUST_VIEW,
+    );
+
+    // Check hashes against database
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-featherzerotrust-hashes-check',
+        '/api/admin/featherzerotrust/hashes/check',
+        function (Request $request) {
+            return (new FeatherZeroTrustController())->checkHashes($request);
+        },
+        Permissions::ADMIN_FEATHERZEROTRUST_VIEW,
+        ['POST'],
+    );
+
+    // Add hash manually
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-featherzerotrust-hashes-add',
+        '/api/admin/featherzerotrust/hashes',
+        function (Request $request) {
+            return (new FeatherZeroTrustController())->addHash($request);
+        },
+        Permissions::ADMIN_FEATHERZEROTRUST_MANAGE,
+        ['POST'],
+    );
+
+    // Confirm hash as malicious
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-featherzerotrust-hashes-confirm',
+        '/api/admin/featherzerotrust/hashes/{hash}/confirm',
+        function (Request $request, array $args) {
+            $hash = $args['hash'] ?? null;
+            if (!$hash || !is_string($hash)) {
+                return ApiResponse::error('Missing or invalid hash', 'INVALID_HASH', 400);
+            }
+
+            return (new FeatherZeroTrustController())->confirmHash($request, $hash);
+        },
+        Permissions::ADMIN_FEATHERZEROTRUST_MANAGE,
+        ['PUT'],
+    );
+
+    // Bulk confirm hashes
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-featherzerotrust-hashes-bulk-confirm',
+        '/api/admin/featherzerotrust/hashes/bulk/confirm',
+        function (Request $request) {
+            return (new FeatherZeroTrustController())->bulkConfirmHashes($request);
+        },
+        Permissions::ADMIN_FEATHERZEROTRUST_MANAGE,
+        ['POST'],
+    );
+
+    // Bulk delete hashes
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-featherzerotrust-hashes-bulk-delete',
+        '/api/admin/featherzerotrust/hashes/bulk/delete',
+        function (Request $request) {
+            return (new FeatherZeroTrustController())->bulkDeleteHashes($request);
+        },
+        Permissions::ADMIN_FEATHERZEROTRUST_MANAGE,
+        ['POST'],
+    );
+
+    // Delete hash
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-featherzerotrust-hashes-delete',
+        '/api/admin/featherzerotrust/hashes/{hash}',
+        function (Request $request, array $args) {
+            $hash = $args['hash'] ?? null;
+            if (!$hash || !is_string($hash)) {
+                return ApiResponse::error('Missing or invalid hash', 'INVALID_HASH', 400);
+            }
+
+            return (new FeatherZeroTrustController())->deleteHash($request, $hash);
+        },
+        Permissions::ADMIN_FEATHERZEROTRUST_MANAGE,
+        ['DELETE'],
+    );
 };

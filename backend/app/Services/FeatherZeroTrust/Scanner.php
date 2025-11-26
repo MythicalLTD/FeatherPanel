@@ -31,19 +31,19 @@
 namespace App\Services\FeatherZeroTrust;
 
 use App\App;
+use App\Chat\Node;
+use App\Chat\Server;
 use App\Services\Wings\Wings;
-use App\Services\Wings\Services\TISService;
 use App\Services\Wings\Services\ServerService;
 
 /**
  * FeatherZeroTrust Scanner for server file scanning.
  *
- * Scans servers through Wings API and interacts with TIS for hash tracking.
+ * Scans servers through Wings API and stores suspicious file hashes in FeatherPanel database.
  */
 class Scanner
 {
     private Wings $wings;
-    private TISService $tis;
     private ServerService $serverService;
     private FileAnalyzer $analyzer;
     private Configuration $config;
@@ -59,7 +59,6 @@ class Scanner
     public function __construct(Wings $wings, ?Configuration $config = null)
     {
         $this->wings = $wings;
-        $this->tis = $wings->getTIS();
         $this->serverService = $wings->getServer();
         $this->config = $config ?? new Configuration();
         $configData = $this->config->getAll();
@@ -83,18 +82,7 @@ class Scanner
         $errors = [];
 
         try {
-            // Check server status first
-            $serverStatus = $this->tis->checkServer($serverUuid);
-            $statusData = $serverStatus->getData();
-
-            if (isset($statusData['flagged']) && $statusData['flagged'] === false) {
-                // Server is clean, proceed with scan
-            } else {
-                // Server is already flagged, log but continue
-                App::getInstance(true)->getLogger()->warning("Server {$serverUuid} is already flagged in TIS");
-            }
-
-            // Get confirmed hashes from TIS
+            // Get confirmed hashes from local database
             $confirmedHashes = $this->getConfirmedHashes();
 
             // Scan directory recursively
@@ -255,8 +243,8 @@ class Scanner
                             $detection['reason'] .= '; ' . $contentAnalysis['reason'];
                         }
 
-                        // Submit hash to TIS
-                        $this->submitHashToTIS($serverUuid, $hash, $fileName, $detection['detection_type'], $filePath, $fileSize);
+                        // Submit hash to local database
+                        $this->submitHashToDatabase($serverUuid, $hash, $fileName, $detection['detection_type'], $filePath, $fileSize);
                     } catch (\Exception $e) {
                         $detection['hash_error'] = $e->getMessage();
                         App::getInstance(true)->getLogger()->warning("Failed to process file {$filePath}: " . $e->getMessage());
@@ -318,7 +306,7 @@ class Scanner
     }
 
     /**
-     * Submit hash to TIS.
+     * Submit hash to local database.
      *
      * @param string $serverUuid Server UUID
      * @param string $hash SHA-256 hash
@@ -327,7 +315,7 @@ class Scanner
      * @param string $filePath File path
      * @param int $fileSize File size
      */
-    private function submitHashToTIS(
+    private function submitHashToDatabase(
         string $serverUuid,
         string $hash,
         string $fileName,
@@ -336,50 +324,44 @@ class Scanner
         int $fileSize,
     ): void {
         try {
+            // Get server information for metadata
+            $server = Server::getServerByUuid($serverUuid);
+            $serverName = $server['name'] ?? null;
+            $nodeId = $server['node_id'] ?? null;
+            $nodeName = null;
+
+            if ($nodeId) {
+                $node = Node::getNodeById((int) $nodeId);
+                $nodeName = $node['name'] ?? null;
+            }
+
             $metadata = [
                 'file_path' => $filePath,
                 'file_size' => $fileSize,
                 'detected_at' => time(),
                 'detected_by' => 'featherzerotrust-scanner',
+                'server_name' => $serverName,
+                'node_id' => $nodeId,
+                'node_name' => $nodeName,
             ];
 
-            $this->tis->submitHash($hash, $fileName, $detectionType, $serverUuid, $metadata);
+            SuspiciousFileHashService::submitHash($hash, $fileName, $detectionType, $serverUuid, $metadata);
         } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Failed to submit hash to TIS: ' . $e->getMessage());
+            App::getInstance(true)->getLogger()->error('Failed to submit hash to database: ' . $e->getMessage());
         }
     }
 
     /**
-     * Get confirmed malicious hashes from TIS.
+     * Get confirmed malicious hashes from local database.
      *
      * @return array<string, mixed> Hash map of confirmed hashes
      */
     private function getConfirmedHashes(): array
     {
         try {
-            $response = $this->tis->getHashes();
-
-            if (!$response->isSuccessful()) {
-                return [];
-            }
-
-            $hashes = $response->getData();
-
-            if (!is_array($hashes)) {
-                return [];
-            }
-
-            $hashMap = [];
-
-            foreach ($hashes as $hash) {
-                if (isset($hash['hash'])) {
-                    $hashMap[$hash['hash']] = $hash;
-                }
-            }
-
-            return $hashMap;
+            return SuspiciousFileHashService::getHashesMap(true);
         } catch (\Exception $e) {
-            App::getInstance(true)->getLogger()->error('Failed to get confirmed hashes from TIS: ' . $e->getMessage());
+            App::getInstance(true)->getLogger()->error('Failed to get confirmed hashes from database: ' . $e->getMessage());
 
             return [];
         }

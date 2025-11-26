@@ -11,6 +11,7 @@
 ### Added
 
 - Added seamless integration with Perplexity AI, allowing you to use advanced AI-powered chat capabilities right within FeatherPanel.
+- Refactored the Zero Trust system for greater clarity and user-friendliness, making security features easier to understand and configure for beginners. by @nayskutzu
 
 ### Improved
 

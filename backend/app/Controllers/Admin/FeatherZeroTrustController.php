@@ -45,6 +45,7 @@ use App\Services\FeatherZeroTrust\Configuration;
 use App\Services\FeatherZeroTrust\WebhookService;
 use App\Plugins\Events\Events\FeatherZeroTrustEvent;
 use App\Services\FeatherZeroTrust\SuspensionService;
+use App\Services\FeatherZeroTrust\SuspiciousFileHashService;
 
 class FeatherZeroTrustController
 {
@@ -413,6 +414,272 @@ class FeatherZeroTrustController
             ], 'Execution log retrieved successfully');
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to retrieve execution log: ' . $e->getMessage(), 'LOG_DETAILS_ERROR', 500);
+        }
+    }
+
+    #[OA\Get(
+        path: '/api/admin/featherzerotrust/hashes',
+        summary: 'Get suspicious file hashes',
+        description: 'Retrieve suspicious file hashes from the database.',
+        tags: ['Admin - FeatherZeroTrust'],
+        parameters: [
+            new OA\Parameter(
+                name: 'confirmed_only',
+                in: 'query',
+                description: 'Only return confirmed malicious hashes',
+                required: false,
+                schema: new OA\Schema(type: 'boolean')
+            ),
+        ],
+    )]
+    public function getHashes(Request $request): Response
+    {
+        try {
+            $confirmedOnly = $request->query->get('confirmed_only') === 'true' || $request->query->get('confirmed_only') === '1';
+
+            $hashes = SuspiciousFileHashService::getHashes($confirmedOnly);
+
+            return ApiResponse::success($hashes, 'Hashes retrieved successfully');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to retrieve hashes: ' . $e->getMessage(), 'HASHES_ERROR', 500);
+        }
+    }
+
+    #[OA\Get(
+        path: '/api/admin/featherzerotrust/hashes/stats',
+        summary: 'Get hash statistics',
+        description: 'Retrieve statistics about suspicious file hashes in the database.',
+        tags: ['Admin - FeatherZeroTrust'],
+    )]
+    public function getHashStats(Request $request): Response
+    {
+        try {
+            $stats = SuspiciousFileHashService::getStats();
+
+            return ApiResponse::success($stats, 'Hash statistics retrieved successfully');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to retrieve hash statistics: ' . $e->getMessage(), 'STATS_ERROR', 500);
+        }
+    }
+
+    #[OA\Post(
+        path: '/api/admin/featherzerotrust/hashes/check',
+        summary: 'Check hashes against database',
+        description: 'Check multiple hashes against the suspicious file hash database.',
+        tags: ['Admin - FeatherZeroTrust'],
+    )]
+    public function checkHashes(Request $request): Response
+    {
+        try {
+            $data = json_decode($request->getContent(), true);
+
+            if (!isset($data['hashes']) || !is_array($data['hashes'])) {
+                return ApiResponse::error('Missing or invalid hashes array', 'INVALID_HASHES', 400);
+            }
+
+            $hashes = $data['hashes'];
+            $confirmedOnly = $data['confirmed_only'] ?? false;
+
+            if (count($hashes) > 1000) {
+                return ApiResponse::error('Maximum 1000 hashes per request', 'TOO_MANY_HASHES', 400);
+            }
+
+            $matches = SuspiciousFileHashService::checkHashes($hashes, $confirmedOnly);
+
+            return ApiResponse::success([
+                'matches' => $matches,
+                'totalChecked' => count($hashes),
+                'matchesFound' => count($matches),
+            ], 'Hashes checked successfully');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to check hashes: ' . $e->getMessage(), 'CHECK_HASHES_ERROR', 500);
+        }
+    }
+
+    #[OA\Put(
+        path: '/api/admin/featherzerotrust/hashes/{hash}/confirm',
+        summary: 'Confirm hash as malicious',
+        description: 'Mark a hash as confirmed malicious.',
+        tags: ['Admin - FeatherZeroTrust'],
+    )]
+    public function confirmHash(Request $request, string $hash): Response
+    {
+        try {
+            $success = SuspiciousFileHashService::confirmMalicious($hash);
+
+            if (!$success) {
+                return ApiResponse::error('Failed to confirm hash', 'CONFIRM_ERROR', 500);
+            }
+
+            return ApiResponse::success(['hash' => $hash], 'Hash confirmed as malicious');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to confirm hash: ' . $e->getMessage(), 'CONFIRM_ERROR', 500);
+        }
+    }
+
+    #[OA\Post(
+        path: '/api/admin/featherzerotrust/hashes',
+        summary: 'Add hash manually',
+        description: 'Manually add a suspicious file hash to the database.',
+        tags: ['Admin - FeatherZeroTrust'],
+    )]
+    public function addHash(Request $request): Response
+    {
+        try {
+            $data = json_decode($request->getContent(), true);
+
+            if (!isset($data['hash']) || empty($data['hash'])) {
+                return ApiResponse::error('Missing hash field', 'MISSING_HASH', 400);
+            }
+
+            if (!isset($data['file_name']) || empty($data['file_name'])) {
+                return ApiResponse::error('Missing file_name field', 'MISSING_FILE_NAME', 400);
+            }
+
+            if (!isset($data['detection_type']) || empty($data['detection_type'])) {
+                return ApiResponse::error('Missing detection_type field', 'MISSING_DETECTION_TYPE', 400);
+            }
+
+            // Validate hash format (should be SHA-256, 64 hex characters)
+            $hash = trim($data['hash']);
+            if (!preg_match('/^[a-f0-9]{64}$/i', $hash)) {
+                return ApiResponse::error('Invalid hash format. Must be a valid SHA-256 hash (64 hexadecimal characters)', 'INVALID_HASH_FORMAT', 400);
+            }
+
+            $metadata = [
+                'file_path' => $data['file_path'] ?? null,
+                'file_size' => isset($data['file_size']) ? (int) $data['file_size'] : null,
+                'server_name' => $data['server_name'] ?? null,
+                'node_id' => isset($data['node_id']) ? (int) $data['node_id'] : null,
+                'added_by' => 'manual',
+                'added_at' => time(),
+            ];
+
+            $success = SuspiciousFileHashService::submitHash(
+                $hash,
+                $data['file_name'],
+                $data['detection_type'],
+                $data['server_uuid'] ?? null,
+                $metadata
+            );
+
+            if (!$success) {
+                return ApiResponse::error('Failed to add hash', 'ADD_ERROR', 500);
+            }
+
+            // If confirmed_malicious is set, mark it as confirmed
+            if (isset($data['confirmed_malicious']) && $data['confirmed_malicious'] === true) {
+                SuspiciousFileHashService::confirmMalicious($hash);
+            }
+
+            return ApiResponse::success(['hash' => $hash], 'Hash added successfully');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to add hash: ' . $e->getMessage(), 'ADD_ERROR', 500);
+        }
+    }
+
+    #[OA\Post(
+        path: '/api/admin/featherzerotrust/hashes/bulk/confirm',
+        summary: 'Confirm multiple hashes as malicious',
+        description: 'Mark multiple hashes as confirmed malicious.',
+        tags: ['Admin - FeatherZeroTrust'],
+    )]
+    public function bulkConfirmHashes(Request $request): Response
+    {
+        try {
+            $data = json_decode($request->getContent(), true);
+
+            if (!isset($data['hashes']) || !is_array($data['hashes'])) {
+                return ApiResponse::error('Missing or invalid hashes array', 'INVALID_HASHES', 400);
+            }
+
+            $hashes = $data['hashes'];
+            $confirmed = 0;
+            $failed = [];
+
+            foreach ($hashes as $hash) {
+                if (!is_string($hash) || empty($hash)) {
+                    continue;
+                }
+
+                $success = SuspiciousFileHashService::confirmMalicious($hash);
+                if ($success) {
+                    ++$confirmed;
+                } else {
+                    $failed[] = $hash;
+                }
+            }
+
+            return ApiResponse::success([
+                'confirmed' => $confirmed,
+                'failed' => $failed,
+                'total' => count($hashes),
+            ], "Confirmed {$confirmed} out of " . count($hashes) . ' hashes');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to confirm hashes: ' . $e->getMessage(), 'BULK_CONFIRM_ERROR', 500);
+        }
+    }
+
+    #[OA\Post(
+        path: '/api/admin/featherzerotrust/hashes/bulk/delete',
+        summary: 'Delete multiple hashes',
+        description: 'Delete multiple hashes from the database.',
+        tags: ['Admin - FeatherZeroTrust'],
+    )]
+    public function bulkDeleteHashes(Request $request): Response
+    {
+        try {
+            $data = json_decode($request->getContent(), true);
+
+            if (!isset($data['hashes']) || !is_array($data['hashes'])) {
+                return ApiResponse::error('Missing or invalid hashes array', 'INVALID_HASHES', 400);
+            }
+
+            $hashes = $data['hashes'];
+            $deleted = 0;
+            $failed = [];
+
+            foreach ($hashes as $hash) {
+                if (!is_string($hash) || empty($hash)) {
+                    continue;
+                }
+
+                $success = SuspiciousFileHashService::deleteHash($hash);
+                if ($success) {
+                    ++$deleted;
+                } else {
+                    $failed[] = $hash;
+                }
+            }
+
+            return ApiResponse::success([
+                'deleted' => $deleted,
+                'failed' => $failed,
+                'total' => count($hashes),
+            ], "Deleted {$deleted} out of " . count($hashes) . ' hashes');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to delete hashes: ' . $e->getMessage(), 'BULK_DELETE_ERROR', 500);
+        }
+    }
+
+    #[OA\Delete(
+        path: '/api/admin/featherzerotrust/hashes/{hash}',
+        summary: 'Delete hash',
+        description: 'Delete a hash from the database.',
+        tags: ['Admin - FeatherZeroTrust'],
+    )]
+    public function deleteHash(Request $request, string $hash): Response
+    {
+        try {
+            $success = SuspiciousFileHashService::deleteHash($hash);
+
+            if (!$success) {
+                return ApiResponse::error('Failed to delete hash', 'DELETE_ERROR', 500);
+            }
+
+            return ApiResponse::success(['hash' => $hash], 'Hash deleted successfully');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to delete hash: ' . $e->getMessage(), 'DELETE_ERROR', 500);
         }
     }
 }

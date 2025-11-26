@@ -215,12 +215,6 @@ class Permissions {
     /** Delete subdomains */
     public static ADMIN_SUBDOMAINS_DELETE = 'admin.subdomains.delete';
 
-    // Admin TIS Permissions
-    /** View TIS statistics and hashes */
-    public static ADMIN_TIS_VIEW = 'admin.tis.view';
-    /** Manage TIS settings */
-    public static ADMIN_TIS_MANAGE = 'admin.tis.manage';
-
     // Admin FeatherZeroTrust Permissions
     /** View FeatherZeroTrust scanner */
     public static ADMIN_FEATHERZEROTRUST_VIEW = 'admin.featherzerotrust.view';
@@ -316,8 +310,6 @@ class Permissions {
             { constant: 'ADMIN_SUBDOMAINS_CREATE', value: Permissions.ADMIN_SUBDOMAINS_CREATE, category: 'Admin Subdomains', description: 'Create new subdomains' },
             { constant: 'ADMIN_SUBDOMAINS_EDIT', value: Permissions.ADMIN_SUBDOMAINS_EDIT, category: 'Admin Subdomains', description: 'Edit subdomains' },
             { constant: 'ADMIN_SUBDOMAINS_DELETE', value: Permissions.ADMIN_SUBDOMAINS_DELETE, category: 'Admin Subdomains', description: 'Delete subdomains' },
-            { constant: 'ADMIN_TIS_VIEW', value: Permissions.ADMIN_TIS_VIEW, category: 'Admin TIS', description: 'View TIS statistics and hashes' },
-            { constant: 'ADMIN_TIS_MANAGE', value: Permissions.ADMIN_TIS_MANAGE, category: 'Admin TIS', description: 'Manage TIS settings' },
             { constant: 'ADMIN_FEATHERZEROTRUST_VIEW', value: Permissions.ADMIN_FEATHERZEROTRUST_VIEW, category: 'Admin FeatherZeroTrust', description: 'View FeatherZeroTrust scanner' },
             { constant: 'ADMIN_FEATHERZEROTRUST_SCAN', value: Permissions.ADMIN_FEATHERZEROTRUST_SCAN, category: 'Admin FeatherZeroTrust', description: 'Run scans with FeatherZeroTrust' },
             { constant: 'ADMIN_FEATHERZEROTRUST_CONFIGURE', value: Permissions.ADMIN_FEATHERZEROTRUST_CONFIGURE, category: 'Admin FeatherZeroTrust', description: 'Configure FeatherZeroTrust settings' },

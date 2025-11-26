@@ -23,21 +23,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import DashboardLayout from '@/layouts/DashboardLayout.vue';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Drawer,
+    DrawerClose,
+    DrawerContent,
+    DrawerDescription,
+    DrawerHeader,
+    DrawerTitle,
+} from '@/components/ui/drawer';
 import TableComponent from '@/components/ui/feather-table/TableComponent.vue';
 import type { TableColumn } from '@/components/ui/feather-table/types';
-import { Clock, Server, AlertTriangle, CheckCircle, XCircle, ArrowLeft, FileText } from 'lucide-vue-next';
+import { Clock, Server, AlertTriangle, CheckCircle, XCircle, Eye, FileText } from 'lucide-vue-next';
 import axios from 'axios';
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useToast } from 'vue-toastification';
-import { useRouter, useRoute } from 'vue-router';
 
 const toast = useToast();
-const router = useRouter();
-const route = useRoute();
 
 interface CronLog {
     id: number;
@@ -59,7 +63,6 @@ interface CronLog {
             errors: number;
             error?: string;
         }>;
-        total_nodes?: number;
     } | null;
     error_message: string | null;
 }
@@ -81,17 +84,57 @@ interface ScanLog {
     scanned_at: string;
 }
 
+interface ApiResponse {
+    success: boolean;
+    data: {
+        logs: CronLog[];
+        pagination: {
+            current_page: number;
+            per_page: number;
+            total_records: number;
+            total_pages: number;
+            has_next: boolean;
+            has_prev: boolean;
+            from: number;
+            to: number;
+        };
+    };
+}
+
+interface LogDetailsResponse {
+    success: boolean;
+    data: {
+        execution: CronLog;
+        scan_logs: ScanLog[];
+    };
+}
+
 const loading = ref(true);
+const logs = ref<CronLog[]>([]);
+const pagination = ref({
+    page: 1,
+    pageSize: 25,
+    total: 0,
+    hasNext: false,
+    hasPrev: false,
+    from: 0,
+    to: 0,
+});
+
+const drawerOpen = ref(false);
+const detailsLoading = ref(false);
 const executionLog = ref<CronLog | null>(null);
 const scanLogs = ref<ScanLog[]>([]);
 
-const executionId = computed(() => route.params.executionId as string);
-
-const breadcrumbs = computed(() => [
-    { text: 'FeatherZeroTrust', href: '/admin/feathercloud/featherzerotrust' },
-    { text: 'Execution Logs', href: '/admin/feathercloud/featherzerotrust/logs' },
-    { text: 'Details', isCurrent: true },
-]);
+const tableColumns: TableColumn[] = [
+    { key: 'execution_id', label: 'Execution ID', searchable: true },
+    { key: 'started_at', label: 'Started At' },
+    { key: 'completed_at', label: 'Completed At' },
+    { key: 'status', label: 'Status' },
+    { key: 'stats', label: 'Statistics' },
+    { key: 'duration', label: 'Duration' },
+    { key: 'actions', label: 'Actions' },
+];
 
 const scanLogsColumns: TableColumn[] = [
     { key: 'server_name', label: 'Server', searchable: true },
@@ -102,32 +145,66 @@ const scanLogsColumns: TableColumn[] = [
     { key: 'duration', label: 'Duration' },
 ];
 
-async function fetchLogDetails(): Promise<void> {
+async function fetchLogs(): Promise<void> {
     loading.value = true;
     try {
-        const { data } = await axios.get<{
-            success: boolean;
-            data: {
-                execution: CronLog;
-                scan_logs: ScanLog[];
+        const params: Record<string, string | number> = {
+            page: pagination.value.page,
+            limit: pagination.value.pageSize,
+        };
+
+        const { data } = await axios.get<ApiResponse>('/api/admin/featherzerotrust/logs', { params });
+
+        if (data.success && data.data) {
+            logs.value = data.data.logs;
+            const pag = data.data.pagination;
+            pagination.value = {
+                page: pag.current_page,
+                pageSize: pag.per_page,
+                total: pag.total_records,
+                hasNext: pag.has_next,
+                hasPrev: pag.has_prev,
+                from: pag.from,
+                to: pag.to,
             };
-        }>(`/api/admin/featherzerotrust/logs/${executionId.value}`);
+        }
+    } catch (error: unknown) {
+        const errorMessage =
+            (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to fetch execution logs';
+        toast.error(errorMessage);
+    } finally {
+        loading.value = false;
+    }
+}
+
+async function fetchLogDetails(executionId: string): Promise<void> {
+    detailsLoading.value = true;
+    drawerOpen.value = true;
+    try {
+        const { data } = await axios.get<LogDetailsResponse>(`/api/admin/featherzerotrust/logs/${executionId}`);
 
         if (data.success && data.data) {
             executionLog.value = data.data.execution;
             scanLogs.value = data.data.scan_logs || [];
         } else {
             toast.error('Failed to load execution log details');
+            drawerOpen.value = false;
         }
     } catch (error: unknown) {
         const errorMessage =
             (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
             'Failed to fetch execution log details';
         toast.error(errorMessage);
-        router.push('/admin/feathercloud/featherzerotrust/logs');
+        drawerOpen.value = false;
     } finally {
-        loading.value = false;
+        detailsLoading.value = false;
     }
+}
+
+function changePage(page: number): void {
+    pagination.value.page = page;
+    void fetchLogs();
 }
 
 function getStatusVariant(status: string): 'default' | 'secondary' | 'destructive' {
@@ -171,57 +248,137 @@ function formatDate(dateString: string | null): string {
     return new Date(dateString).toLocaleString();
 }
 
+function getDuration(item: Record<string, unknown>): string {
+    return (item.duration as string) || 'N/A';
+}
+
+function viewDetails(executionId: string): void {
+    void fetchLogDetails(executionId);
+}
+
+function closeDrawer(): void {
+    drawerOpen.value = false;
+    executionLog.value = null;
+    scanLogs.value = [];
+}
+
 onMounted(() => {
-    void fetchLogDetails();
+    void fetchLogs();
 });
 </script>
 
 <template>
-    <DashboardLayout :breadcrumbs="breadcrumbs">
-        <div class="min-h-screen bg-background">
-            <div class="space-y-6 p-6">
-                <!-- Hero Section -->
-                <div
-                    class="relative overflow-hidden rounded-3xl border border-border/70 bg-card p-8 sm:p-10 shadow-xl shadow-primary/10"
-                >
-                    <div class="absolute inset-0 pointer-events-none">
-                        <div
-                            class="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent"
-                        ></div>
-                    </div>
-                    <div class="relative z-10">
-                        <div class="flex items-center gap-4 mb-6">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                class="hover:scale-110 hover:shadow-md transition-all duration-200"
-                                title="Return to logs list"
-                                @click="router.push('/admin/feathercloud/featherzerotrust/logs')"
+    <div class="space-y-6">
+        <!-- Loading State -->
+        <div v-if="loading" class="flex items-center justify-center py-12">
+            <div class="flex items-center gap-3">
+                <div class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+                <span class="text-muted-foreground">Loading execution logs...</span>
+            </div>
+        </div>
+
+        <!-- Logs Table -->
+        <div v-else>
+            <TableComponent
+                title="Execution Logs"
+                description="Cron job execution history"
+                :columns="tableColumns"
+                :data="logs as unknown as Record<string, unknown>[]"
+                :server-side-pagination="true"
+                :total-records="pagination.total"
+                :total-pages="Math.ceil(pagination.total / pagination.pageSize)"
+                :current-page="pagination.page"
+                :has-next="pagination.hasNext"
+                :has-prev="pagination.hasPrev"
+                :from="pagination.from"
+                :to="pagination.to"
+                @page-change="changePage"
+            >
+                <template #cell-execution_id="{ item }">
+                    <span class="text-xs font-mono bg-muted px-2 py-1 rounded">
+                        {{ (item as unknown as CronLog).execution_id }}
+                    </span>
+                </template>
+
+                <template #cell-started_at="{ item }">
+                    <div class="text-sm">{{ formatDate((item as unknown as CronLog).started_at) }}</div>
+                </template>
+
+                <template #cell-completed_at="{ item }">
+                    <div class="text-sm">{{ formatDate((item as unknown as CronLog).completed_at) }}</div>
+                </template>
+
+                <template #cell-status="{ item }">
+                    <Badge
+                        :variant="getStatusVariant((item as unknown as CronLog).status)"
+                        class="flex items-center gap-1.5 w-fit"
+                    >
+                        <component :is="getStatusIcon((item as unknown as CronLog).status)" class="h-3 w-3" />
+                        {{ (item as unknown as CronLog).status }}
+                    </Badge>
+                </template>
+
+                <template #cell-stats="{ item }">
+                    <div class="flex flex-col gap-1 text-sm">
+                        <div class="flex items-center gap-2">
+                            <Server class="h-3 w-3 text-muted-foreground" />
+                            <span>{{ (item as unknown as CronLog).total_servers_scanned }} servers</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <AlertTriangle class="h-3 w-3 text-destructive" />
+                            <span class="text-destructive"
+                                >{{ (item as unknown as CronLog).total_detections }} detections</span
                             >
-                                <ArrowLeft class="h-4 w-4 mr-2" />
-                                Back to Logs
-                            </Button>
                         </div>
-                        <div class="flex items-center gap-4">
-                            <div class="p-4 rounded-2xl bg-primary/10 border border-primary/20">
-                                <FileText class="h-10 w-10 text-primary" />
-                            </div>
-                            <div class="flex-1">
-                                <Badge variant="secondary" class="mb-2 border-primary/30 bg-primary/10 text-primary">
-                                    Execution Details
-                                </Badge>
-                                <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Execution Log</h1>
-                                <p class="text-muted-foreground mt-2">
-                                    Detailed execution log for:
-                                    <code class="text-xs font-mono bg-muted px-2 py-1 rounded">{{ executionId }}</code>
-                                </p>
-                            </div>
+                        <div v-if="(item as unknown as CronLog).total_errors > 0" class="flex items-center gap-2">
+                            <XCircle class="h-3 w-3 text-orange-500" />
+                            <span class="text-orange-500">{{ (item as unknown as CronLog).total_errors }} errors</span>
                         </div>
+                    </div>
+                </template>
+
+                <template #cell-duration="{ item }">
+                    <div class="text-sm font-mono">
+                        {{ formatDuration((item as unknown as CronLog).details?.duration_seconds) }}
+                    </div>
+                </template>
+
+                <template #cell-actions="{ item }">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                        title="View log details"
+                        @click="viewDetails((item as unknown as CronLog).execution_id)"
+                    >
+                        <Eye class="h-4 w-4 mr-1" />
+                        View Details
+                    </Button>
+                </template>
+            </TableComponent>
+        </div>
+    </div>
+
+    <!-- Log Details Drawer -->
+    <Drawer :open="drawerOpen" @update:open="(val: boolean) => !val && closeDrawer()">
+        <DrawerContent class="max-h-[90vh] overflow-hidden flex flex-col">
+            <DrawerHeader class="border-b">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-primary/10">
+                        <FileText class="h-5 w-5 text-primary" />
+                    </div>
+                    <div class="flex-1">
+                        <DrawerTitle>Execution Log Details</DrawerTitle>
+                        <DrawerDescription v-if="executionLog">
+                            Execution ID: {{ executionLog.execution_id }}
+                        </DrawerDescription>
                     </div>
                 </div>
+            </DrawerHeader>
 
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
                 <!-- Loading State -->
-                <div v-if="loading" class="flex items-center justify-center py-12">
+                <div v-if="detailsLoading" class="flex items-center justify-center py-12">
                     <div class="flex items-center gap-3">
                         <div
                             class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"
@@ -230,22 +387,8 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <!-- Error State -->
-                <div v-else-if="!executionLog" class="text-center py-12">
-                    <p class="text-muted-foreground mb-4">No execution log found</p>
-                    <Button
-                        variant="outline"
-                        class="hover:scale-110 hover:shadow-md transition-all duration-200"
-                        title="Return to logs list"
-                        @click="router.push('/admin/feathercloud/featherzerotrust/logs')"
-                    >
-                        <ArrowLeft class="h-4 w-4 mr-2" />
-                        Back to Logs
-                    </Button>
-                </div>
-
                 <!-- Execution Details -->
-                <div v-else class="space-y-6">
+                <div v-else-if="executionLog" class="space-y-6">
                     <!-- Summary Card -->
                     <Card class="border border-border/70 shadow-lg">
                         <CardHeader>
@@ -371,7 +514,9 @@ onMounted(() => {
                         <CardHeader>
                             <CardTitle>Server Scan Logs</CardTitle>
                             <CardDescription>
-                                Individual server scan results ({{ scanLogs.length }} server{{ scanLogs.length !== 1 ? 's' : '' }})
+                                Individual server scan results ({{ scanLogs.length }} server{{
+                                    scanLogs.length !== 1 ? 's' : ''
+                                }})
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -380,55 +525,70 @@ onMounted(() => {
                                 description="Individual server scan results"
                                 :columns="scanLogsColumns"
                                 :data="
-                                    (scanLogs.map((log) => ({
+                                    scanLogs.map((log) => ({
                                         ...log,
                                         duration: formatDuration(log.duration_seconds),
-                                    })) as unknown) as Record<string, unknown>[]
+                                    })) as unknown as Record<string, unknown>[]
                                 "
                                 :server-side-pagination="false"
                             >
                                 <template #cell-server_name="{ item }">
                                     <div>
-                                        <div class="font-medium">{{ (item as Record<string, unknown>).server_name || 'Unknown' }}</div>
-                                        <code class="text-xs text-muted-foreground">{{
-                                            (item as Record<string, unknown>).server_uuid
-                                        }}</code>
+                                        <div class="font-medium">
+                                            {{ (item as unknown as ScanLog).server_name || 'Unknown' }}
+                                        </div>
+                                        <span class="text-xs font-mono text-muted-foreground">
+                                            {{ (item as unknown as ScanLog).server_uuid }}
+                                        </span>
                                     </div>
                                 </template>
 
                                 <template #cell-status="{ item }">
                                     <Badge
-                                        :variant="getStatusVariant((item as Record<string, unknown>).status as string)"
+                                        :variant="getStatusVariant((item as unknown as ScanLog).status)"
                                         class="flex items-center gap-1.5 w-fit"
                                     >
-                                        <component :is="getStatusIcon((item as Record<string, unknown>).status as string)" class="h-3 w-3" />
-                                        {{ (item as Record<string, unknown>).status }}
+                                        <component
+                                            :is="getStatusIcon((item as unknown as ScanLog).status)"
+                                            class="h-3 w-3"
+                                        />
+                                        {{ (item as unknown as ScanLog).status }}
                                     </Badge>
                                 </template>
 
                                 <template #cell-files_scanned="{ item }">
                                     <div class="text-sm font-mono">
-                                        {{ ((item as Record<string, unknown>).files_scanned || 0).toLocaleString() }}
+                                        {{ ((item as unknown as ScanLog).files_scanned || 0).toLocaleString() }}
                                     </div>
                                 </template>
 
                                 <template #cell-detections_count="{ item }">
                                     <div
                                         class="text-sm font-semibold"
-                                        :class="((item as Record<string, unknown>).detections_count as number) > 0 ? 'text-destructive' : ''"
+                                        :class="
+                                            ((item as unknown as ScanLog).detections_count as number) > 0
+                                                ? 'text-destructive'
+                                                : ''
+                                        "
                                     >
-                                        {{ (item as Record<string, unknown>).detections_count }}
+                                        {{ (item as unknown as ScanLog).detections_count }}
                                     </div>
                                 </template>
 
                                 <template #cell-duration="{ item }">
-                                    <div class="text-sm font-mono">{{ (item as Record<string, unknown>).duration }}</div>
+                                    <span class="text-sm font-mono">{{ getDuration(item) }}</span>
                                 </template>
                             </TableComponent>
                         </CardContent>
                     </Card>
                 </div>
             </div>
-        </div>
-    </DashboardLayout>
+
+            <div class="border-t p-4 flex justify-end">
+                <DrawerClose as-child>
+                    <Button variant="outline" @click="closeDrawer">Close</Button>
+                </DrawerClose>
+            </div>
+        </DrawerContent>
+    </Drawer>
 </template>
