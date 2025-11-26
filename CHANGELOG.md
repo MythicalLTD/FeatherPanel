@@ -5,6 +5,7 @@
 ### Fixed
 
 - Improved TOTP page by fixing Cloudflare Turnstile integration and correcting displayed text. by @nayskutzu
+- Added missing Cloudflare Turnstile verification to the account update page for improved security. by @nayskutzu
 
 ## v1.0.4 BETA
 

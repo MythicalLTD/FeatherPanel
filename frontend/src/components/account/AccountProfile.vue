@@ -84,21 +84,31 @@
                 </FormItem>
             </div>
 
-            <div class="flex gap-3 pt-4">
-                <Button type="submit" :disabled="isSubmitting" class="min-w-[120px]" data-umami-event="Profile update">
-                    <span v-if="isSubmitting">{{ $t('account.saving') }}</span>
-                    <span v-else>{{ $t('account.saveChanges') }}</span>
-                </Button>
+            <div class="space-y-4 pt-4">
+                <div v-if="settingsStore.turnstile_enabled" class="flex justify-start">
+                    <Turnstile v-model="turnstileToken" :site-key="settingsStore.turnstile_key_pub as string" />
+                </div>
+                <div class="flex gap-3">
+                    <Button
+                        type="submit"
+                        :disabled="isSubmitting"
+                        class="min-w-[120px]"
+                        data-umami-event="Profile update"
+                    >
+                        <span v-if="isSubmitting">{{ $t('account.saving') }}</span>
+                        <span v-else>{{ $t('account.saveChanges') }}</span>
+                    </Button>
 
-                <Button
-                    type="button"
-                    variant="outline"
-                    :disabled="isSubmitting"
-                    data-umami-event="Reset profile form"
-                    @click="resetForm"
-                >
-                    {{ $t('account.reset') }}
-                </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        :disabled="isSubmitting"
+                        data-umami-event="Reset profile form"
+                        @click="resetForm"
+                    >
+                        {{ $t('account.reset') }}
+                    </Button>
+                </div>
             </div>
         </form>
 
@@ -145,6 +155,7 @@ import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import axios from 'axios';
 import { useSettingsStore } from '@/stores/settings';
+import Turnstile from 'vue-turnstile';
 
 const { t: $t } = useI18n();
 const sessionStore = useSessionStore();
@@ -177,6 +188,7 @@ const isSubmitting = ref(false);
 const loading = ref(true);
 const avatarFile = ref<File | null>(null);
 const isUploadingAvatar = ref(false);
+const turnstileToken = ref<string>('');
 
 // Plugin widgets
 const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('account');
@@ -220,6 +232,14 @@ const handleAvatarClear = () => {
 // Handle form submission
 const handleSubmit = async () => {
     try {
+        // If Turnstile is enabled, ensure we have a token before submitting
+        if (settingsStore.turnstile_enabled) {
+            if (!turnstileToken.value || turnstileToken.value.trim() === '') {
+                toast.error($t('api_errors.TURNSTILE_TOKEN_REQUIRED'));
+                return;
+            }
+        }
+
         isSubmitting.value = true;
 
         // Prepare data for API - only include fields that have been changed
@@ -281,8 +301,14 @@ const handleSubmit = async () => {
             submitData.password = formData.value.password;
         }
 
-        // Check if anything was actually changed
-        if (Object.keys(submitData).length === 0) {
+        // Include Turnstile token when enabled
+        if (settingsStore.turnstile_enabled) {
+            submitData.turnstile_token = turnstileToken.value;
+        }
+
+        // Check if anything was actually changed (excluding Turnstile token)
+        const changedKeys = Object.keys(submitData).filter((key) => key !== 'turnstile_token');
+        if (changedKeys.length === 0) {
             toast.info($t('account.noChanges'));
             return;
         }
