@@ -27,7 +27,18 @@ import DashboardLayout, { type BreadcrumbEntry } from '@/layouts/DashboardLayout
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CalendarClock, Cloud, Database, HardDrive, Lock, Rocket, ShieldCheck, Sparkles } from 'lucide-vue-next';
+import {
+    AlertTriangle,
+    CalendarClock,
+    Cloud,
+    Database,
+    HardDrive,
+    Lock,
+    Rocket,
+    ShieldCheck,
+    Sparkles,
+    Zap,
+} from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
 
 interface FeatureCard {
@@ -229,6 +240,104 @@ const workflowSteps = [
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="min-h-screen space-y-10 pb-12">
+            <!-- Experimental Notice Banner -->
+            <Card
+                class="border-2 border-amber-500/50 bg-linear-to-br from-amber-500/10 via-amber-500/5 to-transparent shadow-lg"
+            >
+                <CardContent class="p-6">
+                    <div class="flex items-start gap-4">
+                        <div class="shrink-0 p-3 rounded-xl bg-amber-500/20 border border-amber-500/30">
+                            <AlertTriangle class="h-6 w-6 text-amber-500" />
+                        </div>
+                        <div class="flex-1 space-y-4">
+                            <div>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <Badge variant="outline" class="bg-amber-500/20 text-amber-600 border-amber-500/40">
+                                        Experimental Feature
+                                    </Badge>
+                                    <Badge variant="outline" class="bg-blue-500/20 text-blue-600 border-blue-500/40">
+                                        Coming Soon
+                                    </Badge>
+                                </div>
+                                <h3 class="text-lg font-bold text-foreground mb-1">
+                                    This page is experimental - Full features are not yet implemented
+                                </h3>
+                                <p class="text-sm text-muted-foreground">
+                                    FeatherPanel Cloud is currently in active development. The features listed below are
+                                    planned and will be available soon.
+                                </p>
+                            </div>
+                            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                <div
+                                    class="flex items-start gap-3 p-3 rounded-lg bg-background/60 border border-border/50"
+                                >
+                                    <Zap class="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                                    <div>
+                                        <p class="text-sm font-semibold text-foreground">Paid Plugin Marketplace</p>
+                                        <p class="text-xs text-muted-foreground">
+                                            Download and install paid plugins directly from the panel
+                                        </p>
+                                    </div>
+                                </div>
+                                <div
+                                    class="flex items-start gap-3 p-3 rounded-lg bg-background/60 border border-border/50"
+                                >
+                                    <ShieldCheck class="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                                    <div>
+                                        <p class="text-sm font-semibold text-foreground">
+                                            Thread Intelligence Database
+                                        </p>
+                                        <p class="text-xs text-muted-foreground">
+                                            Access online threat intelligence databases for enhanced security
+                                        </p>
+                                    </div>
+                                </div>
+                                <div
+                                    class="flex items-start gap-3 p-3 rounded-lg bg-background/60 border border-border/50"
+                                >
+                                    <AlertTriangle class="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
+                                    <div>
+                                        <p class="text-sm font-semibold text-foreground">Cross-Host Reporting</p>
+                                        <p class="text-xs text-muted-foreground">
+                                            See warnings when users or servers are reported by other hosts for
+                                            suspicious activity (e.g., crypto mining)
+                                        </p>
+                                    </div>
+                                </div>
+                                <div
+                                    class="flex items-start gap-3 p-3 rounded-lg bg-background/60 border border-border/50"
+                                >
+                                    <Sparkles class="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                                    <div>
+                                        <p class="text-sm font-semibold text-foreground">FeatherAI Integration</p>
+                                        <p class="text-xs text-muted-foreground">
+                                            Use FeatherPanel's built-in AI model instead of external API keys
+                                        </p>
+                                    </div>
+                                </div>
+                                <div
+                                    class="flex items-start gap-3 p-3 rounded-lg bg-background/60 border border-border/50 sm:col-span-2 lg:col-span-1"
+                                >
+                                    <Rocket class="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                                    <div>
+                                        <p class="text-sm font-semibold text-foreground">And Much More</p>
+                                        <p class="text-xs text-muted-foreground">
+                                            Additional cloud-powered features and integrations coming soon
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pt-3 border-t border-border/50">
+                                <p class="text-xs text-muted-foreground italic">
+                                    <strong>Example:</strong> If Host X reports a user with email, username, or name for
+                                    crypto mining, you'll see a warning when viewing that user's page indicating that 1
+                                    or more hosts have reported this user for crypto mining activity.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
             <section
                 class="relative overflow-hidden rounded-3xl border border-border/70 bg-card p-6 sm:p-10 shadow-xl shadow-primary/10"
             >

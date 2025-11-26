@@ -31,7 +31,23 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from 'vue-toastification';
-import { Copy, RefreshCw, LockKeyhole, Eye, EyeOff, Key, PlugZap, ShieldCheck, BarChart3 } from 'lucide-vue-next';
+import {
+    AlertTriangle,
+    BarChart3,
+    Copy,
+    Eye,
+    EyeOff,
+    Key,
+    LockKeyhole,
+    PlugZap,
+    RefreshCw,
+    Rocket,
+    ShieldCheck,
+    Sparkles,
+    X,
+    Zap,
+} from 'lucide-vue-next';
+// Dialog removed - using Teleport for full-screen overlay
 
 interface CredentialPair {
     publicKey: string;
@@ -82,6 +98,7 @@ const revealManualPanel = ref<boolean>(false);
 const revealManualCloud = ref<boolean>(false);
 const isSavingManual = ref<boolean>(false);
 const isSavingCloud = ref<boolean>(false);
+const showExperimentalDialog = ref<boolean>(false);
 
 const hasPanelKeys = computed(() => Boolean(keys.panelCredentials.publicKey && keys.panelCredentials.privateKey));
 const hasCloudKeys = computed(() => Boolean(keys.cloudCredentials.publicKey && keys.cloudCredentials.privateKey));
@@ -210,9 +227,22 @@ const saveCloudKeys = async (): Promise<void> => {
     }
 };
 
+const EXPERIMENTAL_DIALOG_DISMISSED_KEY = 'feathercloud-experimental-dialog-dismissed';
+
 onMounted(() => {
     void fetchKeys();
+
+    // Show experimental dialog if not dismissed
+    const isDismissed = localStorage.getItem(EXPERIMENTAL_DIALOG_DISMISSED_KEY);
+    if (!isDismissed) {
+        showExperimentalDialog.value = true;
+    }
 });
+
+const dismissExperimentalDialog = () => {
+    localStorage.setItem(EXPERIMENTAL_DIALOG_DISMISSED_KEY, 'true');
+    showExperimentalDialog.value = false;
+};
 
 watch(
     () => keys.panelCredentials.publicKey,
@@ -249,6 +279,217 @@ watch(
 
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
+        <!-- Full-Screen Experimental Dialog -->
+        <Teleport to="body">
+            <Transition name="fade">
+                <div
+                    v-if="showExperimentalDialog"
+                    class="fixed inset-0 z-9999 overflow-y-auto"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="experimental-dialog-title"
+                >
+                    <!-- Dark Overlay Background -->
+                    <div class="fixed inset-0 bg-black/80" @click="dismissExperimentalDialog"></div>
+                    <!-- Full Screen Content -->
+                    <div class="relative min-h-screen w-full bg-background flex flex-col">
+                        <!-- Header -->
+                        <div
+                            class="sticky top-0 z-10 border-b border-border/70 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60"
+                        >
+                            <div class="container mx-auto px-6 py-4 flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-2 rounded-xl bg-amber-500/20 border border-amber-500/30">
+                                        <AlertTriangle class="h-6 w-6 text-amber-500" />
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <Badge
+                                                variant="outline"
+                                                class="bg-amber-500/20 text-amber-600 border-amber-500/40"
+                                            >
+                                                Experimental Feature
+                                            </Badge>
+                                            <Badge
+                                                variant="outline"
+                                                class="bg-blue-500/20 text-blue-600 border-blue-500/40"
+                                            >
+                                                Coming Soon
+                                            </Badge>
+                                        </div>
+                                        <h2 class="text-xl font-bold text-foreground mt-1">
+                                            FeatherCloud Cloud Management - Experimental
+                                        </h2>
+                                    </div>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    class="rounded-xs opacity-70 transition-opacity hover:opacity-100 hover:cursor-pointer"
+                                    @click="dismissExperimentalDialog"
+                                >
+                                    <X class="h-5 w-5" />
+                                    <span class="sr-only">Close</span>
+                                </Button>
+                            </div>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="flex-1 container mx-auto px-6 py-10 space-y-8">
+                            <div class="max-w-4xl mx-auto space-y-8">
+                                <!-- Warning Message -->
+                                <Card
+                                    class="border-2 border-amber-500/50 bg-linear-to-br from-amber-500/10 via-amber-500/5 to-transparent"
+                                >
+                                    <CardContent class="p-6">
+                                        <div class="space-y-4">
+                                            <h3 class="text-2xl font-bold text-foreground">
+                                                This page is experimental - Full features are not yet implemented
+                                            </h3>
+                                            <p class="text-base text-muted-foreground">
+                                                FeatherCloud Cloud Management is currently in active development. The
+                                                features listed below are planned and will be available soon.
+                                            </p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <!-- Coming Soon Features -->
+                                <div>
+                                    <h3 class="text-xl font-bold text-foreground mb-6">Coming Soon Features</h3>
+                                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                        <Card class="border border-border/70 bg-background/95">
+                                            <CardContent class="p-6">
+                                                <div class="flex items-start gap-4">
+                                                    <div class="p-3 rounded-xl bg-primary/10">
+                                                        <Zap class="h-6 w-6 text-primary" />
+                                                    </div>
+                                                    <div class="flex-1">
+                                                        <h4 class="font-semibold text-foreground mb-2">
+                                                            Paid Plugin Marketplace
+                                                        </h4>
+                                                        <p class="text-sm text-muted-foreground">
+                                                            Download and install paid plugins directly from the panel
+                                                            through FeatherCloud integration.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+
+                                        <Card class="border border-border/70 bg-background/95">
+                                            <CardContent class="p-6">
+                                                <div class="flex items-start gap-4">
+                                                    <div class="p-3 rounded-xl bg-primary/10">
+                                                        <ShieldCheck class="h-6 w-6 text-primary" />
+                                                    </div>
+                                                    <div class="flex-1">
+                                                        <h4 class="font-semibold text-foreground mb-2">
+                                                            Thread Intelligence Database
+                                                        </h4>
+                                                        <p class="text-sm text-muted-foreground">
+                                                            Access online threat intelligence databases for enhanced
+                                                            security and threat detection across your infrastructure.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+
+                                        <Card class="border border-border/70 bg-background/95">
+                                            <CardContent class="p-6">
+                                                <div class="flex items-start gap-4">
+                                                    <div class="p-3 rounded-xl bg-amber-500/10">
+                                                        <AlertTriangle class="h-6 w-6 text-amber-500" />
+                                                    </div>
+                                                    <div class="flex-1">
+                                                        <h4 class="font-semibold text-foreground mb-2">
+                                                            Cross-Host Reporting
+                                                        </h4>
+                                                        <p class="text-sm text-muted-foreground">
+                                                            See warnings when users or servers are reported by other
+                                                            hosts for suspicious activity (e.g., crypto mining, abuse).
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+
+                                        <Card class="border border-border/70 bg-background/95">
+                                            <CardContent class="p-6">
+                                                <div class="flex items-start gap-4">
+                                                    <div class="p-3 rounded-xl bg-primary/10">
+                                                        <Sparkles class="h-6 w-6 text-primary" />
+                                                    </div>
+                                                    <div class="flex-1">
+                                                        <h4 class="font-semibold text-foreground mb-2">
+                                                            FeatherAI Integration
+                                                        </h4>
+                                                        <p class="text-sm text-muted-foreground">
+                                                            Use FeatherPanel's built-in AI model instead of external API
+                                                            keys for intelligent automation and analysis.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+
+                                        <Card
+                                            class="border border-border/70 bg-background/95 sm:col-span-2 lg:col-span-1"
+                                        >
+                                            <CardContent class="p-6">
+                                                <div class="flex items-start gap-4">
+                                                    <div class="p-3 rounded-xl bg-primary/10">
+                                                        <Rocket class="h-6 w-6 text-primary" />
+                                                    </div>
+                                                    <div class="flex-1">
+                                                        <h4 class="font-semibold text-foreground mb-2">
+                                                            And Much More
+                                                        </h4>
+                                                        <p class="text-sm text-muted-foreground">
+                                                            Additional cloud-powered features, integrations, and
+                                                            services coming soon to enhance your panel experience.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+                                </div>
+
+                                <!-- Example Explanation -->
+                                <Card class="border border-primary/30 bg-primary/5">
+                                    <CardContent class="p-6">
+                                        <div class="space-y-3">
+                                            <h4 class="font-semibold text-foreground flex items-center gap-2">
+                                                <AlertTriangle class="h-5 w-5 text-amber-500" />
+                                                Cross-Host Reporting Example
+                                            </h4>
+                                            <p class="text-sm text-muted-foreground">
+                                                If Host X reports a user with email, username, first name, or last name
+                                                for crypto mining, you'll see a warning when viewing that user's page
+                                                indicating that 1 or more hosts have reported this user for crypto
+                                                mining activity. This helps protect your infrastructure by sharing
+                                                threat intelligence across the FeatherCloud network.
+                                            </p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <!-- Action Buttons -->
+                                <div class="flex justify-end gap-3 pt-6 border-t">
+                                    <Button variant="outline" @click="dismissExperimentalDialog">
+                                        Remind Me Later
+                                    </Button>
+                                    <Button @click="dismissExperimentalDialog"> Got It, Continue </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Transition>
+        </Teleport>
+
         <div class="min-h-screen space-y-10 pb-12">
             <section
                 class="relative overflow-hidden rounded-3xl border border-border/70 bg-card p-6 sm:p-10 shadow-xl shadow-primary/10"
@@ -913,5 +1154,16 @@ watch(
         transform: translate3d(6px, -26px, 0) rotate(12deg);
         opacity: 1;
     }
+}
+
+/* Full-screen dialog fade transition */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
 }
 </style>
