@@ -233,6 +233,11 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/featherzerotrust/FeatherZeroTrustLogDetails.vue'),
     },
     {
+        path: '/admin/pterodactyl-importer',
+        name: 'AdminPterodactylImporter',
+        component: () => import('@/pages/admin/PterodactylImporter.vue'),
+    },
+    {
         path: '/admin/:pathMatch(.*)*',
         name: 'AdminPluginRenderedPage',
         component: () => import('@/pages/dashboard/PluginRenderedPage.vue'),
