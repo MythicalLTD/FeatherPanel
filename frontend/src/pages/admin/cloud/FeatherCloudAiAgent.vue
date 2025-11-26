@@ -615,6 +615,7 @@ onMounted(() => {
                                                 <SelectItem value="openrouter">OpenRouter</SelectItem>
                                                 <SelectItem value="ollama">Ollama (Self-hosted)</SelectItem>
                                                 <SelectItem value="grok">Grok (xAI)</SelectItem>
+                                                <SelectItem value="perplexity">Perplexity</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -702,7 +703,9 @@ onMounted(() => {
                                                     ? 'OpenRouter'
                                                     : getSettingValue('chatbot_ai_provider') === 'grok'
                                                       ? 'Grok (xAI)'
-                                                      : 'Ollama'
+                                                      : getSettingValue('chatbot_ai_provider') === 'perplexity'
+                                                        ? 'Perplexity'
+                                                        : 'Ollama'
                                         }}
                                     </Badge>
                                 </div>
@@ -783,6 +786,24 @@ onMounted(() => {
                                                 @update:model-value="
                                                     (val: string | number) =>
                                                         updateSettingValue('chatbot_openai_model', String(val))
+                                                "
+                                            />
+                                        </div>
+                                        <div class="space-y-3">
+                                            <Label for="chatbot_openai_base_url" class="text-sm font-medium">
+                                                OpenAI Base URL
+                                            </Label>
+                                            <Input
+                                                id="chatbot_openai_base_url"
+                                                type="text"
+                                                placeholder="https://api.openai.com"
+                                                class="w-full"
+                                                :model-value="
+                                                    String(chatbotSettings.chatbot_openai_base_url?.value ?? '')
+                                                "
+                                                @update:model-value="
+                                                    (val: string | number) =>
+                                                        updateSettingValue('chatbot_openai_base_url', String(val))
                                                 "
                                             />
                                         </div>
@@ -898,6 +919,66 @@ onMounted(() => {
                                                 @update:model-value="
                                                     (val: string | number) =>
                                                         updateSettingValue('chatbot_grok_model', String(val))
+                                                "
+                                            />
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Perplexity -->
+                                <template v-if="getSettingValue('chatbot_ai_provider') === 'perplexity'">
+                                    <div class="grid gap-6 md:grid-cols-2">
+                                        <div class="space-y-3">
+                                            <Label for="chatbot_perplexity_api_key" class="text-sm font-medium">
+                                                Perplexity API Key
+                                            </Label>
+                                            <Input
+                                                id="chatbot_perplexity_api_key"
+                                                type="password"
+                                                placeholder="Enter API key to change"
+                                                class="w-full"
+                                                :model-value="
+                                                    String(chatbotSettings.chatbot_perplexity_api_key?.value ?? '')
+                                                "
+                                                @update:model-value="
+                                                    (val: string | number) =>
+                                                        updateSettingValue('chatbot_perplexity_api_key', String(val))
+                                                "
+                                            />
+                                        </div>
+                                        <div class="space-y-3">
+                                            <Label for="chatbot_perplexity_model" class="text-sm font-medium">
+                                                Perplexity Model
+                                            </Label>
+                                            <Input
+                                                id="chatbot_perplexity_model"
+                                                type="text"
+                                                placeholder="sonar-pro"
+                                                class="w-full"
+                                                :model-value="
+                                                    String(chatbotSettings.chatbot_perplexity_model?.value ?? '')
+                                                "
+                                                @update:model-value="
+                                                    (val: string | number) =>
+                                                        updateSettingValue('chatbot_perplexity_model', String(val))
+                                                "
+                                            />
+                                        </div>
+                                        <div class="space-y-3">
+                                            <Label for="chatbot_perplexity_base_url" class="text-sm font-medium">
+                                                Perplexity Base URL
+                                            </Label>
+                                            <Input
+                                                id="chatbot_perplexity_base_url"
+                                                type="text"
+                                                placeholder="https://api.perplexity.ai"
+                                                class="w-full"
+                                                :model-value="
+                                                    String(chatbotSettings.chatbot_perplexity_base_url?.value ?? '')
+                                                "
+                                                @update:model-value="
+                                                    (val: string | number) =>
+                                                        updateSettingValue('chatbot_perplexity_base_url', String(val))
                                                 "
                                             />
                                         </div>

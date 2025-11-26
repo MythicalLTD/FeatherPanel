@@ -135,6 +135,10 @@ interface ConfigInterface
     public const CHATBOT_OPENROUTER_MODEL = 'chatbot_openrouter_model';
     public const CHATBOT_OPENAI_API_KEY = 'chatbot_openai_api_key';
     public const CHATBOT_OPENAI_MODEL = 'chatbot_openai_model';
+    public const CHATBOT_OPENAI_BASE_URL = 'chatbot_openai_base_url';
+    public const CHATBOT_PERPLEXITY_API_KEY = 'chatbot_perplexity_api_key';
+    public const CHATBOT_PERPLEXITY_MODEL = 'chatbot_perplexity_model';
+    public const CHATBOT_PERPLEXITY_BASE_URL = 'chatbot_perplexity_base_url';
     public const CHATBOT_OLLAMA_BASE_URL = 'chatbot_ollama_base_url';
     public const CHATBOT_OLLAMA_MODEL = 'chatbot_ollama_model';
     public const CHATBOT_GROK_API_KEY = 'chatbot_grok_api_key';

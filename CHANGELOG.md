@@ -7,6 +7,14 @@
 - Improved TOTP page by fixing Cloudflare Turnstile integration and correcting displayed text. by @nayskutzu
 - Added missing Cloudflare Turnstile verification to the account update page for improved security. by @nayskutzu
 
+### Added
+
+- Added seamless integration with Perplexity AI, allowing you to use advanced AI-powered chat capabilities right within FeatherPanel.
+
+### Improved
+
+- Added support for configuring a custom ChatGPT API endpoint, giving you greater flexibility to use self-hosted or enterprise AI solutions. by @nayskutzu
+
 ## v1.0.4 BETA
 
 ### Improved

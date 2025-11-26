@@ -32,10 +32,9 @@ namespace App\Services\Chatbot\Providers;
 
 use App\App;
 use GuzzleHttp\Client;
-use App\Config\ConfigInterface;
 use GuzzleHttp\Exception\GuzzleException;
 
-class OpenAIProvider implements ProviderInterface
+class PerplexityProvider implements ProviderInterface
 {
     private $app;
     private $apiKey;
@@ -44,22 +43,23 @@ class OpenAIProvider implements ProviderInterface
     private $maxTokens;
     private $baseUrl;
 
-    public function __construct(string $apiKey, string $model, float $temperature = 0.7, int $maxTokens = 2048)
-    {
+    public function __construct(
+        string $apiKey,
+        string $model = 'sonar-pro',
+        float $temperature = 0.7,
+        int $maxTokens = 2048,
+        string $baseUrl = 'https://api.perplexity.ai',
+    ) {
         $this->app = App::getInstance(true);
         $this->apiKey = $apiKey;
         $this->model = $model;
         $this->temperature = $temperature;
         $this->maxTokens = $maxTokens;
-        $config = $this->app->getConfig();
-        $this->baseUrl = rtrim(
-            $config->getSetting(ConfigInterface::CHATBOT_OPENAI_BASE_URL, 'https://api.openai.com'),
-            '/'
-        );
+        $this->baseUrl = rtrim($baseUrl, '/');
     }
 
     /**
-     * Process a user message and generate a response using OpenAI API.
+     * Process a user message and generate a response using Perplexity API.
      *
      * @param string $message User's message
      * @param array $history Chat history
@@ -70,12 +70,11 @@ class OpenAIProvider implements ProviderInterface
     public function processMessage(string $message, array $history, string $systemPrompt = ''): array
     {
         try {
-            $url = $this->baseUrl . '/v1/chat/completions';
+            $url = $this->baseUrl . '/chat/completions';
 
-            // Build messages array
+            // Build messages array (system + recent history + current message)
             $messages = [];
 
-            // Add system prompt if provided
             if (!empty($systemPrompt)) {
                 $messages[] = [
                     'role' => 'system',
@@ -83,7 +82,6 @@ class OpenAIProvider implements ProviderInterface
                 ];
             }
 
-            // Add history messages
             $recentHistory = array_slice($history, -10);
             foreach ($recentHistory as $msg) {
                 $messages[] = [
@@ -92,7 +90,6 @@ class OpenAIProvider implements ProviderInterface
                 ];
             }
 
-            // Add current message
             $messages[] = [
                 'role' => 'user',
                 'content' => $message,
@@ -128,21 +125,21 @@ class OpenAIProvider implements ProviderInterface
                     $errorDetails = ': ' . $errorData['error']['message'];
                 }
 
-                $this->app->getLogger()->error("OpenAI API HTTP error: {$httpCode} - Response: {$responseBody}");
+                $this->app->getLogger()->error("Perplexity API HTTP error: {$httpCode} - Response: {$responseBody}");
 
                 return [
-                    'response' => "Error from OpenAI API (HTTP {$httpCode}){$errorDetails}",
-                    'model' => 'OpenAI (Error)',
+                    'response' => "Error from Perplexity API (HTTP {$httpCode}){$errorDetails}",
+                    'model' => 'Perplexity (Error)',
                 ];
             }
 
             $data = json_decode($responseBody, true);
             if (!isset($data['choices'][0]['message']['content'])) {
-                $this->app->getLogger()->error("OpenAI API unexpected response: {$responseBody}");
+                $this->app->getLogger()->error("Perplexity API unexpected response: {$responseBody}");
 
                 return [
-                    'response' => 'Unexpected response from OpenAI. Please try again.',
-                    'model' => 'OpenAI (Error)',
+                    'response' => 'Unexpected response from Perplexity. Please try again.',
+                    'model' => 'Perplexity (Error)',
                 ];
             }
 
@@ -150,21 +147,21 @@ class OpenAIProvider implements ProviderInterface
 
             return [
                 'response' => $responseText,
-                'model' => "OpenAI {$this->model}",
+                'model' => "Perplexity {$this->model}",
             ];
         } catch (GuzzleException $e) {
-            $this->app->getLogger()->error('OpenAI API exception: ' . $e->getMessage());
+            $this->app->getLogger()->error('Perplexity API exception: ' . $e->getMessage());
 
             return [
-                'response' => "Error connecting to OpenAI: {$e->getMessage()}",
-                'model' => 'OpenAI (Error)',
+                'response' => "Error connecting to Perplexity: {$e->getMessage()}",
+                'model' => 'Perplexity (Error)',
             ];
         } catch (\Exception $e) {
-            $this->app->getLogger()->error('OpenAI API exception: ' . $e->getMessage());
+            $this->app->getLogger()->error('Perplexity API exception: ' . $e->getMessage());
 
             return [
                 'response' => 'Error: ' . $e->getMessage(),
-                'model' => 'OpenAI (Error)',
+                'model' => 'Perplexity (Error)',
             ];
         }
     }

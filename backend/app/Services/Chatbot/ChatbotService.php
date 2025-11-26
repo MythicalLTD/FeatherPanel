@@ -40,6 +40,7 @@ use App\Services\Chatbot\Providers\OllamaProvider;
 use App\Services\Chatbot\Providers\OpenAIProvider;
 use App\Services\Chatbot\Providers\ProviderInterface;
 use App\Services\Chatbot\Providers\OpenRouterProvider;
+use App\Services\Chatbot\Providers\PerplexityProvider;
 use App\Services\Chatbot\Providers\GoogleGeminiProvider;
 
 class ChatbotService
@@ -56,7 +57,7 @@ class ChatbotService
     /**
      * Process a user message and generate a response.
      *
-     * Supports multiple AI providers: basic, google_gemini, openrouter, openai, ollama, grok
+     * Supports multiple AI providers: basic, google_gemini, openrouter, openai, ollama, grok, perplexity
      *
      * @param string $message User's message
      * @param array $history Chat history (array of ['role' => 'user'|'assistant', 'content' => string])
@@ -132,15 +133,17 @@ class ChatbotService
             // Determine which provider failed and return appropriate error
             $errorMessage = "Invalid AI provider configured: {$provider}";
             if ($provider === 'google_gemini') {
-                $errorMessage = 'Google AI API key is not configured. Please configure it in admin settings or your user preferences.';
+                $errorMessage = 'Google AI API key is not configured. Please configure it in admin settings.';
             } elseif ($provider === 'openrouter') {
-                $errorMessage = 'OpenRouter API key is not configured. Please configure it in admin settings or your user preferences.';
+                $errorMessage = 'OpenRouter API key is not configured. Please configure it in admin settings.';
             } elseif ($provider === 'openai') {
-                $errorMessage = 'OpenAI API key is not configured. Please configure it in admin settings or your user preferences.';
+                $errorMessage = 'OpenAI API key is not configured. Please configure it in admin settings.';
             } elseif ($provider === 'ollama') {
                 $errorMessage = 'Ollama base URL is not configured. Please configure it in admin settings.';
             } elseif ($provider === 'grok') {
-                $errorMessage = 'xAI (Grok) API key is not configured. Please configure it in admin settings or your user preferences.';
+                $errorMessage = 'xAI (Grok) API key is not configured. Please configure it in admin settings.';
+            } elseif ($provider === 'perplexity') {
+                $errorMessage = 'Perplexity API key is not configured. Please configure it in admin settings.';
             }
 
             return [
@@ -340,6 +343,19 @@ class ChatbotService
                 $model = $this->config->getSetting(ConfigInterface::CHATBOT_OLLAMA_MODEL, 'llama3.2');
 
                 return new OllamaProvider($baseUrl, $model, $temperature, $maxTokens);
+
+            case 'perplexity':
+                $apiKey = $this->config->getSetting(ConfigInterface::CHATBOT_PERPLEXITY_API_KEY, '');
+                if (empty($apiKey)) {
+                    return null;
+                }
+                $model = $this->config->getSetting(ConfigInterface::CHATBOT_PERPLEXITY_MODEL, 'sonar-pro');
+                $baseUrl = $this->config->getSetting(
+                    ConfigInterface::CHATBOT_PERPLEXITY_BASE_URL,
+                    'https://api.perplexity.ai'
+                );
+
+                return new PerplexityProvider($apiKey, $model, $temperature, $maxTokens, $baseUrl);
 
             case 'basic':
             default:

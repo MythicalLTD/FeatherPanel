@@ -579,7 +579,9 @@ const widgetsBottomOfPage = computed(() => getWidgets('admin-settings', 'bottom-
 const loading = computed(() => adminSettingsStore.loading);
 const saving = computed(() => adminSettingsStore.saving);
 const error = computed(() => adminSettingsStore.error);
-const categories = computed(() => adminSettingsStore.categories);
+const categories = computed(() =>
+    (adminSettingsStore.categories || []).filter((category) => category.id !== 'chatbot'),
+);
 const organizedSettings = computed(() => adminSettingsStore.organizedSettings);
 
 const currentCategorySettings = computed(() => {
