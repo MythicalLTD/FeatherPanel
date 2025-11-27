@@ -68,6 +68,7 @@ services:
     volumes:
       - featherpanel_attachments:/var/www/html/public/attachments
       - featherpanel_config:/var/www/html/storage/config
+      - featherpanel_snapshots:/var/www/html/storage/backups
     networks:
       - featherpanel_network
     # Always pull latest image on create/start
@@ -104,6 +105,8 @@ volumes:
   featherpanel_attachments:
     driver: local
   featherpanel_config:
+    driver: local
+  featherpanel_snapshots:
     driver: local
 
 networks:

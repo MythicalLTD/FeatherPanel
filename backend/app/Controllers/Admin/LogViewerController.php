@@ -107,7 +107,10 @@ class LogViewerController
         try {
             $config = App::getInstance(true)->getConfig();
             if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
-                return ApiResponse::error('You are not allowed to view logs in non-developer mode', 403);
+                return ApiResponse::error('Hold up, detective! 🕵️ You can\'t just snoop around the logs like that. Enable developer mode first, then maybe we\'ll talk. Until then, this is classified information! 🔒', 403);
+            }
+            if (!defined('APP_DEBUG') || APP_DEBUG !== true) {
+                return ApiResponse::error('WOAHHH SKRRRRRRRRR SKDIOOO YOU TRYING TO NUKE SOMETHING TODAY?? NAHHHH 😤 Debug mode says NO! You can\'t just peek at the logs without turning on debug mode first. Nice try though! 💀', 'DEBUG_MODE_REQUIRED', 403);
             }
             $logType = $request->query->get('type', 'web');
             $lines = (int) $request->query->get('lines', 100);

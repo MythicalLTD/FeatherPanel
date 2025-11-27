@@ -29,40 +29,32 @@
  */
 
 use App\App;
-use App\Plugins\PluginHelper;
-use PHPUnit\Framework\TestCase;
+use App\Permissions;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Admin\PterodactylImporterController;
 
-class PluginHelperTest extends TestCase
-{
-    protected function setUp(): void
-    {
-        if (!defined('APP_ADDONS_DIR')) {
-            define('APP_ADDONS_DIR', dirname(__DIR__, 2) . '/storage/addons');
-        }
-        if (!defined('APP_DEBUG')) {
-            define('APP_DEBUG', false);
-        }
-        App::getInstance(false, true, true);
-    }
+return function (RouteCollection $routes): void {
+    // Check prerequisites
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-pterodactyl-importer-prerequisites',
+        '/api/admin/pterodactyl-importer/prerequisites',
+        function (Request $request) {
+            return (new PterodactylImporterController())->prerequisites($request);
+        },
+        Permissions::ADMIN_DATABASES_MANAGE,
+    );
 
-    public function testGetPluginsDirReturnsDirectory()
-    {
-        $dir = PluginHelper::getPluginsDir();
-        // Should return empty string if dir doesn't exist or a valid path
-        $this->assertIsString($dir);
-    }
-
-    public function testGetPluginConfigReturnsEmptyForNonExistent()
-    {
-        $config = PluginHelper::getPluginConfig('non_existent_plugin_' . uniqid());
-        $this->assertIsArray($config);
-        $this->assertEmpty($config);
-    }
-
-    public function testGetPluginConfigReturnsArrayForValidPlugin()
-    {
-        // Test with potentially existing plugin or empty
-        $config = PluginHelper::getPluginConfig('test_plugin');
-        $this->assertIsArray($config);
-    }
-}
+    // Import Pterodactyl data
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-pterodactyl-importer-import',
+        '/api/admin/pterodactyl-importer/import',
+        function (Request $request) {
+            return (new PterodactylImporterController())->import($request);
+        },
+        Permissions::ADMIN_DATABASES_MANAGE,
+        ['POST'],
+    );
+};

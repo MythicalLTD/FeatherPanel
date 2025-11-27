@@ -124,3 +124,10 @@ ADMIN_NOTIFICATIONS_VIEW=admin.notifications.view | Admin Notifications | View n
 ADMIN_NOTIFICATIONS_CREATE=admin.notifications.create | Admin Notifications | Create new notifications
 ADMIN_NOTIFICATIONS_EDIT=admin.notifications.edit | Admin Notifications | Edit existing notifications
 ADMIN_NOTIFICATIONS_DELETE=admin.notifications.delete | Admin Notifications | Delete notifications
+
+# Database Snapshots Permissions
+ADMIN_BACKUPS_VIEW=admin.backups.view | Admin Database Snapshots | View database snapshots
+ADMIN_BACKUPS_CREATE=admin.backups.create | Admin Database Snapshots | Create database snapshots
+ADMIN_BACKUPS_DELETE=admin.backups.delete | Admin Database Snapshots | Delete database snapshots
+ADMIN_BACKUPS_RESTORE=admin.backups.restore | Admin Database Snapshots | Restore database from snapshot
+ADMIN_BACKUPS_DOWNLOAD=admin.backups.download | Admin Database Snapshots | Download database snapshots

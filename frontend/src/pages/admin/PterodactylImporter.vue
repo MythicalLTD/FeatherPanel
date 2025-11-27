@@ -23,7 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { useToast } from 'vue-toastification';
 import axios from 'axios';
 import DashboardLayout, { type BreadcrumbEntry } from '@/layouts/DashboardLayout.vue';
@@ -32,7 +32,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Database, FileText, AlertTriangle, CheckCircle, Loader2 } from 'lucide-vue-next';
+import { Upload, Database, FileText, AlertTriangle, CheckCircle, Loader2, XCircle, RefreshCw } from 'lucide-vue-next';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const toast = useToast();
 
@@ -49,11 +59,63 @@ const sqlDumpFile = ref<File | null>(null);
 const envFile = ref<File | null>(null);
 const isUploading = ref(false);
 const uploadProgress = ref(0);
+const isCheckingPrerequisites = ref(false);
+const showConfirmDialog = ref(false);
+
+interface PrerequisitesCheck {
+    users_count: number;
+    nodes_count: number;
+    locations_count: number;
+    realms_count: number;
+    spells_count: number;
+    servers_count: number;
+    databases_count: number;
+    allocations_count: number;
+    panel_clean: boolean;
+}
+
+const prerequisites = ref<PrerequisitesCheck | null>(null);
 
 const form = reactive({
     sqlDump: null as File | null,
     env: null as File | null,
 });
+
+const prerequisitesPassed = computed(() => {
+    if (!prerequisites.value) return false;
+    return (
+        prerequisites.value.users_count <= 1 &&
+        prerequisites.value.nodes_count === 0 &&
+        prerequisites.value.locations_count === 0 &&
+        prerequisites.value.realms_count === 0 &&
+        prerequisites.value.spells_count === 0 &&
+        prerequisites.value.servers_count === 0 &&
+        prerequisites.value.databases_count === 0 &&
+        prerequisites.value.allocations_count === 0 &&
+        prerequisites.value.panel_clean
+    );
+});
+
+async function fetchPrerequisites(): Promise<void> {
+    isCheckingPrerequisites.value = true;
+    try {
+        const response = await axios.get<{ success: boolean; data: PrerequisitesCheck }>(
+            '/api/admin/pterodactyl-importer/prerequisites',
+        );
+        if (response.data && response.data.success) {
+            prerequisites.value = response.data.data;
+        } else {
+            toast.error('Failed to check prerequisites');
+        }
+    } catch (error: unknown) {
+        const errorMessage =
+            (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to check prerequisites';
+        toast.error(errorMessage);
+    } finally {
+        isCheckingPrerequisites.value = false;
+    }
+}
 
 function handleSqlDumpSelect(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -71,25 +133,53 @@ function handleEnvSelect(event: Event): void {
     }
 }
 
-async function handleImport(): Promise<void> {
-    if (!form.sqlDump && !form.env) {
-        toast.error('Please upload at least one file (SQL dump or .env file)');
+function handleImportClick(): void {
+    if (!form.sqlDump) {
+        toast.error('Please upload an SQL dump file (.sql)');
         return;
     }
 
+    if (!form.env) {
+        toast.error('Please upload a .env configuration file');
+        return;
+    }
+
+    if (!prerequisitesPassed.value) {
+        toast.error('Please ensure all prerequisites are met before importing');
+        return;
+    }
+
+    // Show confirmation dialog
+    showConfirmDialog.value = true;
+}
+
+async function handleImport(): Promise<void> {
+    if (!form.sqlDump) {
+        toast.error('Please upload an SQL dump file (.sql)');
+        showConfirmDialog.value = false;
+        return;
+    }
+
+    if (!form.env) {
+        toast.error('Please upload a .env configuration file');
+        showConfirmDialog.value = false;
+        return;
+    }
+
+    if (!prerequisitesPassed.value) {
+        toast.error('Please ensure all prerequisites are met before importing');
+        showConfirmDialog.value = false;
+        return;
+    }
+
+    showConfirmDialog.value = false;
     isUploading.value = true;
     uploadProgress.value = 0;
 
     try {
         const formData = new FormData();
-
-        if (form.sqlDump) {
-            formData.append('sql_dump', form.sqlDump);
-        }
-
-        if (form.env) {
-            formData.append('env_file', form.env);
-        }
+        formData.append('sql_dump', form.sqlDump);
+        formData.append('env_file', form.env);
 
         const response = await axios.post('/api/admin/pterodactyl-importer/import', formData, {
             headers: {
@@ -110,6 +200,15 @@ async function handleImport(): Promise<void> {
             form.sqlDump = null;
             form.env = null;
             uploadProgress.value = 0;
+            // Reset file inputs
+            if (typeof window !== 'undefined') {
+                const sqlInput = document.getElementById('sql-dump') as HTMLInputElement;
+                const envInput = document.getElementById('env-file') as HTMLInputElement;
+                if (sqlInput) sqlInput.value = '';
+                if (envInput) envInput.value = '';
+            }
+            // Refresh prerequisites after import
+            await fetchPrerequisites();
         } else {
             toast.error(response.data?.message || 'Failed to import Pterodactyl data');
         }
@@ -145,6 +244,10 @@ function clearFiles(): void {
         if (envInput) envInput.value = '';
     }
 }
+
+onMounted(() => {
+    void fetchPrerequisites();
+});
 </script>
 
 <template>
@@ -178,6 +281,402 @@ function clearFiles(): void {
                 </div>
             </section>
 
+            <!-- Prerequisites Checklist -->
+            <Card class="border border-border/70 shadow-lg">
+                <CardHeader>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <CardTitle>Prerequisites Checklist</CardTitle>
+                            <CardDescription>
+                                Verify that your panel meets the requirements before importing Pterodactyl data
+                            </CardDescription>
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="isCheckingPrerequisites"
+                            class="gap-2"
+                            @click="fetchPrerequisites"
+                        >
+                            <RefreshCw :class="['h-4 w-4', isCheckingPrerequisites && 'animate-spin']" />
+                            Refresh
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div v-if="isCheckingPrerequisites" class="flex items-center justify-center py-8">
+                        <div class="flex items-center gap-3">
+                            <Loader2 class="h-5 w-5 animate-spin text-primary" />
+                            <span class="text-muted-foreground">Checking prerequisites...</span>
+                        </div>
+                    </div>
+                    <div v-else-if="prerequisites" class="space-y-4">
+                        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <!-- Users Check -->
+                            <div
+                                class="flex items-start gap-3 p-4 rounded-lg border"
+                                :class="
+                                    prerequisites.users_count <= 1
+                                        ? 'bg-green-500/10 border-green-500/30'
+                                        : 'bg-destructive/10 border-destructive/30'
+                                "
+                            >
+                                <div class="mt-0.5">
+                                    <CheckCircle v-if="prerequisites.users_count <= 1" class="h-5 w-5 text-green-500" />
+                                    <XCircle v-else class="h-5 w-5 text-destructive" />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-semibold text-sm mb-1">Users Count</div>
+                                    <div
+                                        class="text-xs"
+                                        :class="
+                                            prerequisites.users_count <= 1
+                                                ? 'text-muted-foreground'
+                                                : 'text-destructive'
+                                        "
+                                    >
+                                        Current: {{ prerequisites.users_count }} user{{
+                                            prerequisites.users_count !== 1 ? 's' : ''
+                                        }}
+                                        <span v-if="prerequisites.users_count <= 1" class="block mt-1">
+                                            ✓ Must have no more than 1 user
+                                        </span>
+                                        <span v-else class="block mt-1 font-semibold">
+                                            ✗ Must have no more than 1 user
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Nodes Check -->
+                            <div
+                                class="flex items-start gap-3 p-4 rounded-lg border"
+                                :class="
+                                    prerequisites.nodes_count === 0
+                                        ? 'bg-green-500/10 border-green-500/30'
+                                        : 'bg-destructive/10 border-destructive/30'
+                                "
+                            >
+                                <div class="mt-0.5">
+                                    <CheckCircle
+                                        v-if="prerequisites.nodes_count === 0"
+                                        class="h-5 w-5 text-green-500"
+                                    />
+                                    <XCircle v-else class="h-5 w-5 text-destructive" />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-semibold text-sm mb-1">Nodes Count</div>
+                                    <div
+                                        class="text-xs"
+                                        :class="
+                                            prerequisites.nodes_count === 0
+                                                ? 'text-muted-foreground'
+                                                : 'text-destructive'
+                                        "
+                                    >
+                                        Current: {{ prerequisites.nodes_count }} node{{
+                                            prerequisites.nodes_count !== 1 ? 's' : ''
+                                        }}
+                                        <span v-if="prerequisites.nodes_count === 0" class="block mt-1">
+                                            ✓ Must have no nodes
+                                        </span>
+                                        <span v-else class="block mt-1 font-semibold">✗ Must have no nodes</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Locations Check -->
+                            <div
+                                class="flex items-start gap-3 p-4 rounded-lg border"
+                                :class="
+                                    prerequisites.locations_count === 0
+                                        ? 'bg-green-500/10 border-green-500/30'
+                                        : 'bg-destructive/10 border-destructive/30'
+                                "
+                            >
+                                <div class="mt-0.5">
+                                    <CheckCircle
+                                        v-if="prerequisites.locations_count === 0"
+                                        class="h-5 w-5 text-green-500"
+                                    />
+                                    <XCircle v-else class="h-5 w-5 text-destructive" />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-semibold text-sm mb-1">Locations Count</div>
+                                    <div
+                                        class="text-xs"
+                                        :class="
+                                            prerequisites.locations_count === 0
+                                                ? 'text-muted-foreground'
+                                                : 'text-destructive'
+                                        "
+                                    >
+                                        Current: {{ prerequisites.locations_count }} location{{
+                                            prerequisites.locations_count !== 1 ? 's' : ''
+                                        }}
+                                        <span v-if="prerequisites.locations_count === 0" class="block mt-1">
+                                            ✓ Must have no locations
+                                        </span>
+                                        <span v-else class="block mt-1 font-semibold">✗ Must have no locations</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Realms Check -->
+                            <div
+                                class="flex items-start gap-3 p-4 rounded-lg border"
+                                :class="
+                                    prerequisites.realms_count === 0
+                                        ? 'bg-green-500/10 border-green-500/30'
+                                        : 'bg-destructive/10 border-destructive/30'
+                                "
+                            >
+                                <div class="mt-0.5">
+                                    <CheckCircle
+                                        v-if="prerequisites.realms_count === 0"
+                                        class="h-5 w-5 text-green-500"
+                                    />
+                                    <XCircle v-else class="h-5 w-5 text-destructive" />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-semibold text-sm mb-1">Realms Count</div>
+                                    <div
+                                        class="text-xs"
+                                        :class="
+                                            prerequisites.realms_count === 0
+                                                ? 'text-muted-foreground'
+                                                : 'text-destructive'
+                                        "
+                                    >
+                                        Current: {{ prerequisites.realms_count }} realm{{
+                                            prerequisites.realms_count !== 1 ? 's' : ''
+                                        }}
+                                        <span v-if="prerequisites.realms_count === 0" class="block mt-1">
+                                            ✓ Must have no realms
+                                        </span>
+                                        <span v-else class="block mt-1 font-semibold">✗ Must have no realms</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Spells Check -->
+                            <div
+                                class="flex items-start gap-3 p-4 rounded-lg border"
+                                :class="
+                                    prerequisites.spells_count === 0
+                                        ? 'bg-green-500/10 border-green-500/30'
+                                        : 'bg-destructive/10 border-destructive/30'
+                                "
+                            >
+                                <div class="mt-0.5">
+                                    <CheckCircle
+                                        v-if="prerequisites.spells_count === 0"
+                                        class="h-5 w-5 text-green-500"
+                                    />
+                                    <XCircle v-else class="h-5 w-5 text-destructive" />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-semibold text-sm mb-1">Spells Count</div>
+                                    <div
+                                        class="text-xs"
+                                        :class="
+                                            prerequisites.spells_count === 0
+                                                ? 'text-muted-foreground'
+                                                : 'text-destructive'
+                                        "
+                                    >
+                                        Current: {{ prerequisites.spells_count }} spell{{
+                                            prerequisites.spells_count !== 1 ? 's' : ''
+                                        }}
+                                        <span v-if="prerequisites.spells_count === 0" class="block mt-1">
+                                            ✓ Must have no spells
+                                        </span>
+                                        <span v-else class="block mt-1 font-semibold">✗ Must have no spells</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Servers Check -->
+                            <div
+                                class="flex items-start gap-3 p-4 rounded-lg border"
+                                :class="
+                                    prerequisites.servers_count === 0
+                                        ? 'bg-green-500/10 border-green-500/30'
+                                        : 'bg-destructive/10 border-destructive/30'
+                                "
+                            >
+                                <div class="mt-0.5">
+                                    <CheckCircle
+                                        v-if="prerequisites.servers_count === 0"
+                                        class="h-5 w-5 text-green-500"
+                                    />
+                                    <XCircle v-else class="h-5 w-5 text-destructive" />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-semibold text-sm mb-1">Servers Count</div>
+                                    <div
+                                        class="text-xs"
+                                        :class="
+                                            prerequisites.servers_count === 0
+                                                ? 'text-muted-foreground'
+                                                : 'text-destructive'
+                                        "
+                                    >
+                                        Current: {{ prerequisites.servers_count }} server{{
+                                            prerequisites.servers_count !== 1 ? 's' : ''
+                                        }}
+                                        <span v-if="prerequisites.servers_count === 0" class="block mt-1">
+                                            ✓ Must have no servers
+                                        </span>
+                                        <span v-else class="block mt-1 font-semibold">✗ Must have no servers</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Databases Check -->
+                            <div
+                                class="flex items-start gap-3 p-4 rounded-lg border"
+                                :class="
+                                    prerequisites.databases_count === 0
+                                        ? 'bg-green-500/10 border-green-500/30'
+                                        : 'bg-destructive/10 border-destructive/30'
+                                "
+                            >
+                                <div class="mt-0.5">
+                                    <CheckCircle
+                                        v-if="prerequisites.databases_count === 0"
+                                        class="h-5 w-5 text-green-500"
+                                    />
+                                    <XCircle v-else class="h-5 w-5 text-destructive" />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-semibold text-sm mb-1">Databases Count</div>
+                                    <div
+                                        class="text-xs"
+                                        :class="
+                                            prerequisites.databases_count === 0
+                                                ? 'text-muted-foreground'
+                                                : 'text-destructive'
+                                        "
+                                    >
+                                        Current: {{ prerequisites.databases_count }} database{{
+                                            prerequisites.databases_count !== 1 ? 's' : ''
+                                        }}
+                                        <span v-if="prerequisites.databases_count === 0" class="block mt-1">
+                                            ✓ Must have no databases
+                                        </span>
+                                        <span v-else class="block mt-1 font-semibold">✗ Must have no databases</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Allocations Check -->
+                            <div
+                                class="flex items-start gap-3 p-4 rounded-lg border"
+                                :class="
+                                    prerequisites.allocations_count === 0
+                                        ? 'bg-green-500/10 border-green-500/30'
+                                        : 'bg-destructive/10 border-destructive/30'
+                                "
+                            >
+                                <div class="mt-0.5">
+                                    <CheckCircle
+                                        v-if="prerequisites.allocations_count === 0"
+                                        class="h-5 w-5 text-green-500"
+                                    />
+                                    <XCircle v-else class="h-5 w-5 text-destructive" />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-semibold text-sm mb-1">Allocations Count</div>
+                                    <div
+                                        class="text-xs"
+                                        :class="
+                                            prerequisites.allocations_count === 0
+                                                ? 'text-muted-foreground'
+                                                : 'text-destructive'
+                                        "
+                                    >
+                                        Current: {{ prerequisites.allocations_count }} allocation{{
+                                            prerequisites.allocations_count !== 1 ? 's' : ''
+                                        }}
+                                        <span v-if="prerequisites.allocations_count === 0" class="block mt-1">
+                                            ✓ Must have no allocations
+                                        </span>
+                                        <span v-else class="block mt-1 font-semibold">✗ Must have no allocations</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Panel Clean Check -->
+                            <div
+                                class="flex items-start gap-3 p-4 rounded-lg border"
+                                :class="
+                                    prerequisites.panel_clean
+                                        ? 'bg-green-500/10 border-green-500/30'
+                                        : 'bg-destructive/10 border-destructive/30'
+                                "
+                            >
+                                <div class="mt-0.5">
+                                    <CheckCircle v-if="prerequisites.panel_clean" class="h-5 w-5 text-green-500" />
+                                    <XCircle v-else class="h-5 w-5 text-destructive" />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-semibold text-sm mb-1">Panel Status</div>
+                                    <div
+                                        class="text-xs"
+                                        :class="
+                                            prerequisites.panel_clean ? 'text-muted-foreground' : 'text-destructive'
+                                        "
+                                    >
+                                        <span v-if="prerequisites.panel_clean" class="block">
+                                            ✓ Panel is clean and ready
+                                        </span>
+                                        <span v-else class="block font-semibold">✗ Panel must be clean</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Overall Status -->
+                        <div
+                            class="p-4 rounded-lg border"
+                            :class="
+                                prerequisitesPassed
+                                    ? 'bg-green-500/10 border-green-500/30'
+                                    : 'bg-amber-500/10 border-amber-500/30'
+                            "
+                        >
+                            <div class="flex items-center gap-3">
+                                <CheckCircle v-if="prerequisitesPassed" class="h-5 w-5 text-green-500 shrink-0" />
+                                <AlertTriangle v-else class="h-5 w-5 text-amber-500 shrink-0" />
+                                <div class="flex-1">
+                                    <div
+                                        class="font-semibold text-sm mb-1"
+                                        :class="
+                                            prerequisitesPassed
+                                                ? 'text-green-600 dark:text-green-500'
+                                                : 'text-amber-600 dark:text-amber-500'
+                                        "
+                                    >
+                                        {{ prerequisitesPassed ? 'All prerequisites met!' : 'Prerequisites not met' }}
+                                    </div>
+                                    <div class="text-xs text-muted-foreground">
+                                        {{
+                                            prerequisitesPassed
+                                                ? 'Your panel is ready for Pterodactyl data import.'
+                                                : 'Please ensure all checks above pass before proceeding with the import.'
+                                        }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else class="text-center py-8 text-muted-foreground">
+                        Failed to load prerequisites. Please refresh the page.
+                    </div>
+                </CardContent>
+            </Card>
+
             <!-- Import Form -->
             <section class="grid gap-6 lg:grid-cols-2">
                 <Card class="border border-border/70 shadow-lg">
@@ -193,17 +692,15 @@ function clearFiles(): void {
                     </CardHeader>
                     <CardContent class="space-y-4">
                         <div class="space-y-2">
-                            <Label for="sql-dump">SQL Dump File</Label>
+                            <Label for="sql-dump">SQL Dump File <span class="text-destructive">*</span></Label>
                             <Input
                                 id="sql-dump"
                                 type="file"
-                                accept=".sql,.gz"
+                                accept=".sql"
                                 :disabled="isUploading"
                                 @change="handleSqlDumpSelect"
                             />
-                            <p class="text-xs text-muted-foreground">
-                                Supported formats: .sql, .sql.gz (compressed SQL dump)
-                            </p>
+                            <p class="text-xs text-muted-foreground">Required: .sql format (SQL dump file)</p>
                         </div>
                         <div v-if="sqlDumpFile" class="p-3 bg-muted/50 rounded-lg border border-border/50">
                             <div class="flex items-center justify-between">
@@ -226,12 +723,13 @@ function clearFiles(): void {
                             <CardTitle>Environment File (.env)</CardTitle>
                         </div>
                         <CardDescription>
-                            Upload your Pterodactyl .env configuration file to import settings and configuration values.
+                            Upload your Pterodactyl .env configuration file. Required for database encryption key and
+                            other configuration values.
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-4">
                         <div class="space-y-2">
-                            <Label for="env-file">Environment File</Label>
+                            <Label for="env-file">Environment File <span class="text-destructive">*</span></Label>
                             <Input
                                 id="env-file"
                                 type="file"
@@ -239,7 +737,9 @@ function clearFiles(): void {
                                 :disabled="isUploading"
                                 @change="handleEnvSelect"
                             />
-                            <p class="text-xs text-muted-foreground">Upload your Pterodactyl .env configuration file</p>
+                            <p class="text-xs text-muted-foreground">
+                                Required: .env file (contains database encryption key)
+                            </p>
                         </div>
                         <div v-if="envFile" class="p-3 bg-muted/50 rounded-lg border border-border/50">
                             <div class="flex items-center justify-between">
@@ -279,15 +779,23 @@ function clearFiles(): void {
                         <li class="flex items-start gap-2">
                             <CheckCircle class="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
                             <span>
-                                <strong class="text-foreground">SQL Dump:</strong> The SQL dump should be from a
-                                Pterodactyl panel database. Compressed (.gz) files are supported.
+                                <strong class="text-foreground">SQL Dump:</strong> The SQL dump must be from a
+                                Pterodactyl panel database in .sql format. Only uncompressed .sql files are supported.
                             </span>
                         </li>
                         <li class="flex items-start gap-2">
                             <CheckCircle class="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
                             <span>
-                                <strong class="text-foreground">Environment File:</strong> The .env file should contain
-                                your Pterodactyl configuration values. This helps map settings correctly.
+                                <strong class="text-foreground">Environment File:</strong> The .env file is
+                                <strong class="text-destructive">required</strong> as it contains the database
+                                encryption key and other critical configuration values needed to decrypt imported data.
+                            </span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <CheckCircle class="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                            <span>
+                                <strong class="text-foreground">Empty Panel:</strong> The panel must be completely empty
+                                before importing. All checks above must pass before proceeding.
                             </span>
                         </li>
                         <li class="flex items-start gap-2">
@@ -298,6 +806,26 @@ function clearFiles(): void {
                             </span>
                         </li>
                     </ul>
+                    <div class="pt-4 border-t border-amber-500/30">
+                        <div class="flex items-start gap-2 mb-2">
+                            <AlertTriangle class="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                            <strong class="text-foreground">Data Not Imported:</strong>
+                        </div>
+                        <p class="text-sm text-muted-foreground ml-6">
+                            To save time and storage, and to reduce unnecessary data, the following items will
+                            <strong class="text-foreground">not</strong> be imported:
+                        </p>
+                        <ul class="mt-2 ml-6 space-y-1 text-sm text-muted-foreground list-disc list-inside">
+                            <li>Server activity logs and audit logs</li>
+                            <li>API keys and API tokens</li>
+                            <li>Activity logs and activity tracking data</li>
+                            <li>Temporary session data</li>
+                            <li>Cache and queue data</li>
+                        </ul>
+                        <p class="text-xs text-muted-foreground mt-3 ml-6 italic">
+                            This helps ensure a cleaner import process and reduces storage usage for non-essential data.
+                        </p>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -306,7 +834,8 @@ function clearFiles(): void {
                 <CardHeader>
                     <CardTitle>Ready to Import?</CardTitle>
                     <CardDescription>
-                        Upload at least one file (SQL dump or .env file) to begin the import process
+                        Upload both SQL dump (.sql) and .env files to begin the import process. The .env file is
+                        required for database encryption key.
                     </CardDescription>
                 </CardHeader>
                 <CardContent class="space-y-4">
@@ -323,29 +852,91 @@ function clearFiles(): void {
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-3">
-                        <Button
-                            size="lg"
-                            :disabled="isUploading || (!form.sqlDump && !form.env)"
-                            class="gap-2"
-                            @click="handleImport"
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <Button
+                                size="lg"
+                                :disabled="isUploading || !form.sqlDump || !form.env || !prerequisitesPassed"
+                                class="gap-2"
+                                @click="handleImportClick"
+                            >
+                                <Loader2 v-if="isUploading" class="h-4 w-4 animate-spin" />
+                                <Upload v-else class="h-4 w-4" />
+                                {{ isUploading ? 'Importing...' : 'Import Pterodactyl Data' }}
+                            </Button>
+                            <Button
+                                v-if="sqlDumpFile || envFile"
+                                variant="outline"
+                                size="lg"
+                                :disabled="isUploading"
+                                @click="clearFiles"
+                            >
+                                Clear Files
+                            </Button>
+                        </div>
+                        <div
+                            v-if="!prerequisitesPassed && prerequisites"
+                            class="text-xs text-muted-foreground flex items-center gap-2"
                         >
-                            <Loader2 v-if="isUploading" class="h-4 w-4 animate-spin" />
-                            <Upload v-else class="h-4 w-4" />
-                            {{ isUploading ? 'Importing...' : 'Import Pterodactyl Data' }}
-                        </Button>
-                        <Button
-                            v-if="sqlDumpFile || envFile"
-                            variant="outline"
-                            size="lg"
-                            :disabled="isUploading"
-                            @click="clearFiles"
-                        >
-                            Clear Files
-                        </Button>
+                            <AlertTriangle class="h-3 w-3 text-amber-500" />
+                            <span>All prerequisites must be met before importing</span>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
+
+            <!-- Confirmation Dialog -->
+            <AlertDialog :open="showConfirmDialog" @update:open="showConfirmDialog = $event">
+                <AlertDialogContent class="bg-background">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle class="flex items-center gap-2">
+                            <AlertTriangle class="h-5 w-5 text-amber-500" />
+                            Confirm Import
+                        </AlertDialogTitle>
+                        <AlertDialogDescription class="space-y-3 pt-4">
+                            <p class="text-base font-semibold text-foreground">
+                                Are you absolutely sure you want to import Pterodactyl data?
+                            </p>
+                            <div class="bg-destructive/10 border border-destructive/30 rounded-lg p-4 space-y-2">
+                                <p class="text-sm font-semibold text-destructive">
+                                    Warning: This action is irreversible!
+                                </p>
+                                <ul class="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                                    <li>All existing data in your panel will be replaced with imported data</li>
+                                    <li>This will overwrite users, servers, nodes, locations, realms, and spells</li>
+                                    <li>Make sure you have a complete backup before proceeding</li>
+                                    <li>The import process may take several minutes depending on data size</li>
+                                </ul>
+                            </div>
+                            <div class="space-y-3">
+                                <div v-if="sqlDumpFile" class="bg-muted/50 rounded-lg p-3 border border-border/50">
+                                    <p class="text-sm font-medium text-foreground mb-1">SQL Dump File:</p>
+                                    <p class="text-sm text-muted-foreground font-mono">{{ sqlDumpFile.name }}</p>
+                                    <p class="text-xs text-muted-foreground mt-1">
+                                        {{ formatFileSize(sqlDumpFile.size) }}
+                                    </p>
+                                </div>
+                                <div v-if="envFile" class="bg-muted/50 rounded-lg p-3 border border-border/50">
+                                    <p class="text-sm font-medium text-foreground mb-1">Environment File:</p>
+                                    <p class="text-sm text-muted-foreground font-mono">{{ envFile.name }}</p>
+                                    <p class="text-xs text-muted-foreground mt-1">{{ formatFileSize(envFile.size) }}</p>
+                                    <p class="text-xs text-amber-600 dark:text-amber-500 mt-2">
+                                        ⚠️ Contains sensitive data (database encryption key)
+                                    </p>
+                                </div>
+                            </div>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel as-child>
+                            <Button variant="outline">Cancel</Button>
+                        </AlertDialogCancel>
+                        <AlertDialogAction as-child>
+                            <Button variant="destructive" @click="handleImport">Yes, Import Now</Button>
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     </DashboardLayout>
 </template>

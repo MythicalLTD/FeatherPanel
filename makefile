@@ -91,6 +91,12 @@ release:
 	@php app exportPermissions
 	@echo -e "${GREEN}${CHECK} Permissions exported${NC}\n"
 
+
+	@echo -e "\n${BOLD}${BLUE}Setting Production Mode${NC} ${PROD}"
+	@echo -e "${CYAN}=======================${NC}"
+	@echo -e "${GREEN}${INFO} Setting APP_DEBUG to false...${NC}"
+	@find $(BACKEND_DIR) -type f -name "*.php" -exec $(SED) -i 's/define('\''APP_DEBUG'\'', true);/define('\''APP_DEBUG'\'', false);/g' {} +
+	@echo -e "${GREEN}${CHECK} Production mode set successfully!${NC}\n"
 	
 	@echo -e "${PURPLE}${INFO} Frontend checks...${NC}"
 

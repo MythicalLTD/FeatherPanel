@@ -242,6 +242,18 @@ class Permissions
     /** Delete notifications */
     public const ADMIN_NOTIFICATIONS_DELETE = 'admin.notifications.delete';
 
+    // Admin Database Snapshots Permissions
+    /** View database snapshots */
+    public const ADMIN_BACKUPS_VIEW = 'admin.backups.view';
+    /** Create database snapshots */
+    public const ADMIN_BACKUPS_CREATE = 'admin.backups.create';
+    /** Delete database snapshots */
+    public const ADMIN_BACKUPS_DELETE = 'admin.backups.delete';
+    /** Restore database from snapshot */
+    public const ADMIN_BACKUPS_RESTORE = 'admin.backups.restore';
+    /** Download database snapshots */
+    public const ADMIN_BACKUPS_DOWNLOAD = 'admin.backups.download';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -715,6 +727,36 @@ class Permissions
                 'value' => self::ADMIN_NOTIFICATIONS_DELETE,
                 'category' => 'Admin Notifications',
                 'description' => 'Delete notifications',
+            ],
+            [
+                'constant' => 'ADMIN_BACKUPS_VIEW',
+                'value' => self::ADMIN_BACKUPS_VIEW,
+                'category' => 'Admin Database Snapshots',
+                'description' => 'View database snapshots',
+            ],
+            [
+                'constant' => 'ADMIN_BACKUPS_CREATE',
+                'value' => self::ADMIN_BACKUPS_CREATE,
+                'category' => 'Admin Database Snapshots',
+                'description' => 'Create database snapshots',
+            ],
+            [
+                'constant' => 'ADMIN_BACKUPS_DELETE',
+                'value' => self::ADMIN_BACKUPS_DELETE,
+                'category' => 'Admin Database Snapshots',
+                'description' => 'Delete database snapshots',
+            ],
+            [
+                'constant' => 'ADMIN_BACKUPS_RESTORE',
+                'value' => self::ADMIN_BACKUPS_RESTORE,
+                'category' => 'Admin Database Snapshots',
+                'description' => 'Restore database from snapshot',
+            ],
+            [
+                'constant' => 'ADMIN_BACKUPS_DOWNLOAD',
+                'value' => self::ADMIN_BACKUPS_DOWNLOAD,
+                'category' => 'Admin Database Snapshots',
+                'description' => 'Download database snapshots',
             ],
         ];
     }

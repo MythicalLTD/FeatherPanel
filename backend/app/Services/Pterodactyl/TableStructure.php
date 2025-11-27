@@ -28,41 +28,43 @@
  * SOFTWARE.
  */
 
-use App\App;
-use App\Plugins\PluginHelper;
-use PHPUnit\Framework\TestCase;
+namespace App\Services\Pterodactyl;
 
-class PluginHelperTest extends TestCase
+/**
+ * This class defines all tables that are considered required for a
+ * successful migration from a Pterodactyl Panel database to FeatherPanel.
+ *
+ * Tables included are those containing core user, server, location, node,
+ * nest, and mission-critical supporting data. It does NOT include transient
+ * or non-essential tables (such as logs, sessions, tokens, cache, etc).
+ *
+ * The list was curated based on a standard Pterodactyl installation
+ * and MAY need adjustments for custom installs or edge cases.
+ */
+class TableStructure
 {
-    protected function setUp(): void
+    /**
+     * Returns a list of all database tables required for import/migration.
+     * This is based on a full inventory of official Pterodactyl schema as of 2025.
+     */
+    public static function getRequiredTables(): array
     {
-        if (!defined('APP_ADDONS_DIR')) {
-            define('APP_ADDONS_DIR', dirname(__DIR__, 2) . '/storage/addons');
-        }
-        if (!defined('APP_DEBUG')) {
-            define('APP_DEBUG', false);
-        }
-        App::getInstance(false, true, true);
-    }
-
-    public function testGetPluginsDirReturnsDirectory()
-    {
-        $dir = PluginHelper::getPluginsDir();
-        // Should return empty string if dir doesn't exist or a valid path
-        $this->assertIsString($dir);
-    }
-
-    public function testGetPluginConfigReturnsEmptyForNonExistent()
-    {
-        $config = PluginHelper::getPluginConfig('non_existent_plugin_' . uniqid());
-        $this->assertIsArray($config);
-        $this->assertEmpty($config);
-    }
-
-    public function testGetPluginConfigReturnsArrayForValidPlugin()
-    {
-        // Test with potentially existing plugin or empty
-        $config = PluginHelper::getPluginConfig('test_plugin');
-        $this->assertIsArray($config);
+        return [
+            // Core objects
+            'allocations',
+            'backups',
+            'database_hosts',
+            'databases',
+            'eggs',
+            'egg_variables',
+            'locations',
+            'nests',
+            'nodes',
+            'servers',
+            'server_variables',
+            'users',
+            'user_ssh_keys',
+            'settings',
+        ];
     }
 }

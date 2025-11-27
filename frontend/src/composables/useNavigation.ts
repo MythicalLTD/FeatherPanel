@@ -787,6 +787,16 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith('/admin/dev/plugin-manager'),
                 category: 'debug' as const,
             },
+            {
+                id: 'debug-database-snapshots',
+                name: 'Database Snapshots',
+                title: 'Database Snapshots',
+                url: '/admin/database-snapshots',
+                icon: Archive,
+                isActive: currentPath.value.startsWith('/admin/database-snapshots'),
+                category: 'debug' as const,
+                permission: Permissions.ADMIN_BACKUPS_VIEW,
+            },
         ];
     });
 

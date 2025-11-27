@@ -235,6 +235,18 @@ class Permissions {
     /** Delete notifications */
     public static ADMIN_NOTIFICATIONS_DELETE = 'admin.notifications.delete';
 
+    // Admin Database Snapshots Permissions
+    /** View database snapshots */
+    public static ADMIN_BACKUPS_VIEW = 'admin.backups.view';
+    /** Create database snapshots */
+    public static ADMIN_BACKUPS_CREATE = 'admin.backups.create';
+    /** Delete database snapshots */
+    public static ADMIN_BACKUPS_DELETE = 'admin.backups.delete';
+    /** Restore database from snapshot */
+    public static ADMIN_BACKUPS_RESTORE = 'admin.backups.restore';
+    /** Download database snapshots */
+    public static ADMIN_BACKUPS_DOWNLOAD = 'admin.backups.download';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -318,6 +330,11 @@ class Permissions {
             { constant: 'ADMIN_NOTIFICATIONS_CREATE', value: Permissions.ADMIN_NOTIFICATIONS_CREATE, category: 'Admin Notifications', description: 'Create new notifications' },
             { constant: 'ADMIN_NOTIFICATIONS_EDIT', value: Permissions.ADMIN_NOTIFICATIONS_EDIT, category: 'Admin Notifications', description: 'Edit existing notifications' },
             { constant: 'ADMIN_NOTIFICATIONS_DELETE', value: Permissions.ADMIN_NOTIFICATIONS_DELETE, category: 'Admin Notifications', description: 'Delete notifications' },
+            { constant: 'ADMIN_BACKUPS_VIEW', value: Permissions.ADMIN_BACKUPS_VIEW, category: 'Admin Database Snapshots', description: 'View database snapshots' },
+            { constant: 'ADMIN_BACKUPS_CREATE', value: Permissions.ADMIN_BACKUPS_CREATE, category: 'Admin Database Snapshots', description: 'Create database snapshots' },
+            { constant: 'ADMIN_BACKUPS_DELETE', value: Permissions.ADMIN_BACKUPS_DELETE, category: 'Admin Database Snapshots', description: 'Delete database snapshots' },
+            { constant: 'ADMIN_BACKUPS_RESTORE', value: Permissions.ADMIN_BACKUPS_RESTORE, category: 'Admin Database Snapshots', description: 'Restore database from snapshot' },
+            { constant: 'ADMIN_BACKUPS_DOWNLOAD', value: Permissions.ADMIN_BACKUPS_DOWNLOAD, category: 'Admin Database Snapshots', description: 'Download database snapshots' },
         ];
     }
 }
