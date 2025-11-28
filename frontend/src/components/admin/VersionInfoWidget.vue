@@ -314,10 +314,10 @@ function hasCurrentVersionChangelog(version: VersionData | null): boolean {
     if (!version) return false;
     return Boolean(
         (Array.isArray(version.changelog_added) && version.changelog_added.length > 0) ||
-            (Array.isArray(version.changelog_fixed) && version.changelog_fixed.length > 0) ||
-            (Array.isArray(version.changelog_improved) && version.changelog_improved.length > 0) ||
-            (Array.isArray(version.changelog_updated) && version.changelog_updated.length > 0) ||
-            (Array.isArray(version.changelog_removed) && version.changelog_removed.length > 0),
+        (Array.isArray(version.changelog_fixed) && version.changelog_fixed.length > 0) ||
+        (Array.isArray(version.changelog_improved) && version.changelog_improved.length > 0) ||
+        (Array.isArray(version.changelog_updated) && version.changelog_updated.length > 0) ||
+        (Array.isArray(version.changelog_removed) && version.changelog_removed.length > 0),
     );
 }
 

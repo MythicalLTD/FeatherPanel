@@ -49,18 +49,18 @@ For installation instructions, system requirements, and complete guides, please 
 
 <!-- COUNT-STATS:START -->
 
-_Last updated: 2025-11-27T00:41:07.152Z_
+_Last updated: 2025-11-28T13:14:26.632Z_
 
 | Extension | Files | Lines |
 | --- | ---: | ---: |
-| `.vue` | 315 | 85,931 |
-| `.php` | 419 | 79,525 |
+| `.vue` | 315 | 85,856 |
+| `.php` | 419 | 79,507 |
 | `.ts` | 83 | 7,882 |
 | `.yaml` | 3 | 3,639 |
 | `.yml` | 13 | 3,561 |
 | `.sql` | 58 | 925 |
 | `.js` | 3 | 398 |
-| **Total** | 894 | 181,861 |
+| **Total** | 894 | 181,768 |
 
 <!-- COUNT-STATS:END -->
 

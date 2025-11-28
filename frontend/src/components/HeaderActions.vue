@@ -27,15 +27,11 @@
 
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import {
     Bell,
-    User,
-    LogOut,
-    Sparkles,
     ExternalLink,
     MessageCircle,
     Github,
@@ -54,7 +50,6 @@ import {
     Pin,
     PinOff,
 } from 'lucide-vue-next';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -72,7 +67,6 @@ import { useSettingsStore } from '@/stores/settings';
 import { useLocalStorage } from '@vueuse/core';
 import { useServerContext } from '@/composables/useServerContext';
 
-const { t } = useI18n();
 const router = useRouter();
 const sessionStore = useSessionStore();
 const settingsStore = useSettingsStore();
@@ -101,9 +95,6 @@ const user = computed(() => ({
     avatar_alt: sessionStore.user?.username?.charAt(0) || '',
     hasAdminPanel: sessionStore.hasPermission('ADMIN_DASHBOARD_VIEW') || false,
 }));
-
-const isAdminRoute = computed(() => router.currentRoute.value?.path.startsWith('/admin'));
-const isAccountRoute = computed(() => router.currentRoute.value?.path === '/dashboard/account');
 
 const visibleNotifications = computed(() => {
     return notifications.value.filter((notification) => {
@@ -579,80 +570,6 @@ onUnmounted(() => {
                 </div>
             </PopoverContent>
         </Popover>
-
-        <!-- User Avatar -->
-        <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-                <Button variant="ghost" class="h-9 px-2 gap-2">
-                    <Avatar class="h-7 w-7">
-                        <AvatarImage :src="user.avatar" :alt="user.name" />
-                        <AvatarFallback class="bg-primary text-primary-foreground text-xs font-semibold">
-                            {{ user.avatar_alt }}
-                        </AvatarFallback>
-                    </Avatar>
-                    <span class="hidden lg:inline-block text-sm font-medium max-w-[120px] truncate">
-                        {{ user.name }}
-                    </span>
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent class="w-64" align="end">
-                <DropdownMenuLabel class="p-0 font-normal">
-                    <div class="flex items-center gap-3 px-2 py-3 rounded-lg bg-muted/50">
-                        <Avatar class="h-10 w-10">
-                            <AvatarImage :src="user.avatar" :alt="user.name" />
-                            <AvatarFallback class="bg-primary text-primary-foreground font-semibold">
-                                {{ user.avatar_alt }}
-                            </AvatarFallback>
-                        </Avatar>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2">
-                                <span class="truncate font-semibold text-sm">{{ user.name }}</span>
-                                <Badge
-                                    v-if="user.hasAdminPanel"
-                                    variant="secondary"
-                                    class="text-[10px] px-1.5 py-0 h-4"
-                                >
-                                    Admin
-                                </Badge>
-                            </div>
-                            <span class="truncate text-xs text-muted-foreground block">{{ user.email }}</span>
-                        </div>
-                    </div>
-                </DropdownMenuLabel>
-
-                <DropdownMenuSeparator class="my-2" />
-
-                <DropdownMenuGroup class="space-y-1">
-                    <DropdownMenuItem
-                        v-if="user.hasAdminPanel && !isAdminRoute"
-                        class="cursor-pointer rounded-lg px-2 py-2.5"
-                        @click="router.push('/admin')"
-                    >
-                        <Sparkles :size="16" class="mr-2" />
-                        <span class="font-medium">{{ t('user.adminPanel') }}</span>
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem
-                        v-if="!isAccountRoute"
-                        class="cursor-pointer rounded-lg px-2 py-2.5"
-                        @click="router.push('/dashboard/account')"
-                    >
-                        <User :size="16" class="mr-2" />
-                        <span class="font-medium">{{ t('user.account') }}</span>
-                    </DropdownMenuItem>
-                </DropdownMenuGroup>
-
-                <DropdownMenuSeparator class="my-2" />
-
-                <DropdownMenuItem
-                    class="cursor-pointer rounded-lg px-2 py-2.5 text-destructive focus:text-destructive focus:bg-destructive/10"
-                    @click="router.push({ name: 'Logout' })"
-                >
-                    <LogOut :size="16" class="mr-2" />
-                    <span class="font-medium">{{ t('user.logOut') }}</span>
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
     </div>
 </template>
 

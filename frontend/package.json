@@ -61,7 +61,7 @@
         "@types/node": "^24.10.1",
         "@vitejs/plugin-vue": "^6.0.2",
         "@vue/tsconfig": "^0.8.1",
-        "@vueuse/core": "^14.0.0",
+        "@vueuse/core": "^14.1.0",
         "@xterm/addon-fit": "^0.10.0",
         "@xterm/addon-web-links": "^0.11.0",
         "@xterm/xterm": "^5.5.0",
@@ -79,7 +79,7 @@
         "marked": "^17.0.1",
         "npm-run-all2": "^8.0.4",
         "pinia": "^3.0.4",
-        "prettier": "^3.6.2",
+        "prettier": "^3.7.1",
         "qrcode": "^1.5.4",
         "reka-ui": "^2.6.0",
         "tailwind-merge": "^3.4.0",
@@ -106,7 +106,7 @@
     },
     "devDependencies": {
         "eslint-plugin-license-header": "^0.8.0",
-        "eslint-plugin-vue": "^10.6.1",
+        "eslint-plugin-vue": "^10.6.2",
         "globals": "^16.5.0",
         "html-minifier-terser": "^7.2.0",
         "vue-eslint-parser": "^10.2.0"

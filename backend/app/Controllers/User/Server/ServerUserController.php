@@ -449,7 +449,7 @@ class ServerUserController
             'port' => $server['node']['daemonSFTP'] ?? 2022,
             'username' => strtolower($user['username']) . '.' . $server['uuidShort'],
             'password' => '#AUTH_PASSWORD#',
-            'url' => 'sftp://' . $server['node']['fqdn'] . ':' . $server['node']['daemonSFTP'] . '/' . strtolower($user['username']) . '.' . $server['uuidShort'],
+            'url' => 'sftp://' . $server['node']['fqdn'] . ':' . $server['node']['daemonSFTP'] . '/',
         ];
 
         $server['sftp'] = $sftp;
