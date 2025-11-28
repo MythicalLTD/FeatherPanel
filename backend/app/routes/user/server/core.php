@@ -109,19 +109,6 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerServerRoute(
         $routes,
-        'session-server-delete',
-        '/api/user/servers/{uuidShort}',
-        function (Request $request, array $args) {
-            $uuidShort = $args['uuidShort'] ?? null;
-
-            return (new ServerUserController())->deleteServer($request, $uuidShort);
-        },
-        'uuidShort', // Pass the server UUID for middleware
-        ['DELETE']
-    );
-
-    App::getInstance(true)->registerServerRoute(
-        $routes,
         'session-server-command',
         '/api/user/servers/{uuidShort}/command',
         function (Request $request, array $args) {

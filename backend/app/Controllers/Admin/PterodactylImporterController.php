@@ -119,164 +119,25 @@ class PterodactylImporterController
 
     #[OA\Post(
         path: '/api/admin/pterodactyl-importer/import',
-        summary: 'Import Pterodactyl data',
-        description: 'Import Pterodactyl data from SQL dump and/or .env file. Requires all prerequisites to be met before importing.',
+        summary: 'Import Pterodactyl data (deprecated)',
+        description: 'Deprecated: Direct HTTP import is no longer supported. Use the external Pterodactyl Migration Agent instead.',
         tags: ['Admin - Pterodactyl Importer'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\MediaType(
-                mediaType: 'multipart/form-data',
-                schema: new OA\Schema(
-                    properties: [
-                        new OA\Property(
-                            property: 'sql_dump',
-                            type: 'string',
-                            format: 'binary',
-                            description: 'SQL dump file (.sql format only)'
-                        ),
-                        new OA\Property(
-                            property: 'env_file',
-                            type: 'string',
-                            format: 'binary',
-                            description: 'Environment configuration file (.env) - Required for database encryption key'
-                        ),
-                    ],
-                    required: ['sql_dump', 'env_file']
-                )
-            )
-        ),
         responses: [
             new OA\Response(
-                response: 200,
-                description: 'Import completed successfully',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'message', type: 'string', example: 'Pterodactyl data imported successfully'),
-                    ]
-                )
+                response: 410,
+                description: 'Deprecated - Import must be performed via the Pterodactyl Migration Agent'
             ),
-            new OA\Response(response: 400, description: 'Bad request - Missing files, prerequisites not met, or invalid file format'),
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
-            new OA\Response(response: 500, description: 'Internal server error - Import failed'),
+            new OA\Response(response: 500, description: 'Internal server error'),
         ]
     )]
     public function import(Request $request): Response
     {
-        try {
-            // First, check prerequisites
-            $usersCount = User::getCount();
-            $nodesCount = Node::getNodesCount();
-            $locationsCount = Location::getCount();
-            $realmsCount = Realm::getCount();
-            $spellsCount = Spell::getSpellsCount();
-            $serversCount = Server::getCount();
-            $databasesCount = DatabaseInstance::getDatabasesCount();
-            $allocationsCount = Allocation::getCount();
-
-            $panelClean =
-                $usersCount <= 1
-                && $nodesCount === 0
-                && $locationsCount === 0
-                && $realmsCount === 0
-                && $spellsCount === 0
-                && $serversCount === 0
-                && $databasesCount === 0
-                && $allocationsCount === 0;
-
-            if (!$panelClean) {
-                return ApiResponse::error(
-                    'Prerequisites not met. Please ensure the panel is completely empty before importing.',
-                    'PREREQUISITES_NOT_MET',
-                    400
-                );
-            }
-
-            // Get uploaded files
-            $files = $request->files->all();
-            $sqlDumpFile = $files['sql_dump'] ?? null;
-            $envFile = $files['env_file'] ?? null;
-
-            // Both files are required
-            if (!$sqlDumpFile) {
-                return ApiResponse::error('SQL dump file (.sql) is required', 'NO_SQL_DUMP_FILE', 400);
-            }
-
-            if (!$envFile) {
-                return ApiResponse::error('.env configuration file is required (contains database encryption key)', 'NO_ENV_FILE', 400);
-            }
-
-            // Validate SQL dump file
-            if ($sqlDumpFile->getError() !== UPLOAD_ERR_OK) {
-                return ApiResponse::error('SQL dump file upload error', 'SQL_DUMP_UPLOAD_ERROR', 400);
-            }
-
-            $sqlDumpPath = $sqlDumpFile->getPathname();
-            $sqlDumpExtension = strtolower(pathinfo($sqlDumpFile->getClientOriginalName(), PATHINFO_EXTENSION));
-
-            // Validate file extension (only .sql files are supported)
-            if ($sqlDumpExtension !== 'sql') {
-                return ApiResponse::error('SQL dump file must be .sql format', 'INVALID_SQL_DUMP_FORMAT', 400);
-            }
-
-            // Validate file is not empty
-            if ($sqlDumpFile->getSize() === 0) {
-                return ApiResponse::error('SQL dump file is empty', 'EMPTY_SQL_DUMP_FILE', 400);
-            }
-
-            // Check file size (limit to 500MB)
-            $maxFileSize = 500 * 1024 * 1024; // 500MB
-            if ($sqlDumpFile->getSize() > $maxFileSize) {
-                return ApiResponse::error('SQL dump file is too large. Maximum size is 500MB', 'SQL_DUMP_FILE_TOO_LARGE', 400);
-            }
-
-            // Validate .env file
-            if ($envFile->getError() !== UPLOAD_ERR_OK) {
-                return ApiResponse::error('.env file upload error', 'ENV_FILE_UPLOAD_ERROR', 400);
-            }
-
-            $envFilePath = $envFile->getPathname();
-            $envFileExtension = strtolower(pathinfo($envFile->getClientOriginalName(), PATHINFO_EXTENSION));
-
-            // Validate file extension (allow .env or no extension)
-            if ($envFileExtension !== 'env' && $envFileExtension !== '') {
-                return ApiResponse::error('.env file must be .env format', 'INVALID_ENV_FILE_FORMAT', 400);
-            }
-
-            // Validate .env file is not empty
-            if ($envFile->getSize() === 0) {
-                return ApiResponse::error('.env file is empty', 'EMPTY_ENV_FILE', 400);
-            }
-
-            // Check .env file size (limit to 10MB)
-            $maxEnvFileSize = 10 * 1024 * 1024; // 10MB
-            if ($envFile->getSize() > $maxEnvFileSize) {
-                return ApiResponse::error('.env file is too large. Maximum size is 10MB', 'ENV_FILE_TOO_LARGE', 400);
-            }
-
-            // TODO: Implement actual import logic here
-            // This is a placeholder - the actual import implementation would:
-            // 1. Parse the SQL dump file (.sql format)
-            // 2. Map Pterodactyl data to FeatherPanel structure
-            // 3. Import users, servers, nodes, locations, realms, spells, etc.
-            // 4. Skip excluded data (server activities, API keys, activity logs, etc.)
-            // 5. Handle data transformation and validation
-
-            return ApiResponse::success(
-                [
-                    'message' => 'Pterodactyl data import initiated successfully',
-                    'sql_dump_uploaded' => true,
-                    'sql_dump_file_name' => $sqlDumpFile->getClientOriginalName(),
-                    'sql_dump_file_size' => $sqlDumpFile->getSize(),
-                    'env_file_uploaded' => true,
-                    'env_file_name' => $envFile->getClientOriginalName(),
-                    'env_file_size' => $envFile->getSize(),
-                ],
-                'Import process started',
-                200
-            );
-        } catch (\Exception $e) {
-            return ApiResponse::error('Failed to import Pterodactyl data: ' . $e->getMessage(), 'IMPORT_ERROR', 500);
-        }
+        return ApiResponse::error(
+            'Direct HTTP import is no longer supported. Please use the Pterodactyl Migration Agent (curl -sSL https://get.featherpanel.com/beta.sh | bash).',
+            'PTERODACTYL_IMPORT_DEPRECATED',
+            410
+        );
     }
 }

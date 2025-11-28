@@ -23,8 +23,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
+import { useSettingsStore } from '@/stores/settings';
 import axios from 'axios';
 import DashboardLayout, { type BreadcrumbEntry } from '@/layouts/DashboardLayout.vue';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,19 +34,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Database, FileText, AlertTriangle, CheckCircle, Loader2, XCircle, RefreshCw } from 'lucide-vue-next';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Database, AlertTriangle, CheckCircle, Loader2, XCircle, RefreshCw, Plus, Key } from 'lucide-vue-next';
 
 const toast = useToast();
+const router = useRouter();
+const settingsStore = useSettingsStore();
 
 const breadcrumbs: BreadcrumbEntry[] = [
     { text: 'Dashboard', href: '/admin' },
@@ -55,12 +58,25 @@ const breadcrumbs: BreadcrumbEntry[] = [
     },
 ];
 
-const sqlDumpFile = ref<File | null>(null);
-const envFile = ref<File | null>(null);
-const isUploading = ref(false);
-const uploadProgress = ref(0);
 const isCheckingPrerequisites = ref(false);
-const showConfirmDialog = ref(false);
+const selectedApiKey = ref<string | null>(null);
+const showWarningDialog = ref(true);
+const showCreateApiKeyModal = ref(false);
+const loadingApiKeys = ref(false);
+const newApiKeyName = ref('');
+const isCreatingApiKey = ref(false);
+
+interface ApiClient {
+    id: number;
+    user_uuid: string;
+    name: string;
+    public_key?: string;
+    private_key?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+const apiClients = ref<ApiClient[]>([]);
 
 interface PrerequisitesCheck {
     users_count: number;
@@ -76,11 +92,6 @@ interface PrerequisitesCheck {
 
 const prerequisites = ref<PrerequisitesCheck | null>(null);
 
-const form = reactive({
-    sqlDump: null as File | null,
-    env: null as File | null,
-});
-
 const prerequisitesPassed = computed(() => {
     if (!prerequisites.value) return false;
     return (
@@ -94,6 +105,17 @@ const prerequisitesPassed = computed(() => {
         prerequisites.value.allocations_count === 0 &&
         prerequisites.value.panel_clean
     );
+});
+
+const panelUrl = computed(() => {
+    // Use settings store URL, fallback to window location
+    if (settingsStore.appUrl) {
+        return settingsStore.appUrl;
+    }
+    if (typeof window !== 'undefined') {
+        return window.location.origin;
+    }
+    return 'https://panel.example.com';
 });
 
 async function fetchPrerequisites(): Promise<void> {
@@ -117,136 +139,95 @@ async function fetchPrerequisites(): Promise<void> {
     }
 }
 
-function handleSqlDumpSelect(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-        sqlDumpFile.value = input.files[0];
-        form.sqlDump = input.files[0];
-    }
-}
-
-function handleEnvSelect(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-        envFile.value = input.files[0];
-        form.env = input.files[0];
-    }
-}
-
-function handleImportClick(): void {
-    if (!form.sqlDump) {
-        toast.error('Please upload an SQL dump file (.sql)');
-        return;
-    }
-
-    if (!form.env) {
-        toast.error('Please upload a .env configuration file');
-        return;
-    }
-
-    if (!prerequisitesPassed.value) {
-        toast.error('Please ensure all prerequisites are met before importing');
-        return;
-    }
-
-    // Show confirmation dialog
-    showConfirmDialog.value = true;
-}
-
-async function handleImport(): Promise<void> {
-    if (!form.sqlDump) {
-        toast.error('Please upload an SQL dump file (.sql)');
-        showConfirmDialog.value = false;
-        return;
-    }
-
-    if (!form.env) {
-        toast.error('Please upload a .env configuration file');
-        showConfirmDialog.value = false;
-        return;
-    }
-
-    if (!prerequisitesPassed.value) {
-        toast.error('Please ensure all prerequisites are met before importing');
-        showConfirmDialog.value = false;
-        return;
-    }
-
-    showConfirmDialog.value = false;
-    isUploading.value = true;
-    uploadProgress.value = 0;
-
+async function fetchApiClients(): Promise<void> {
+    loadingApiKeys.value = true;
     try {
-        const formData = new FormData();
-        formData.append('sql_dump', form.sqlDump);
-        formData.append('env_file', form.env);
-
-        const response = await axios.post('/api/admin/pterodactyl-importer/import', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-            onUploadProgress: (progressEvent) => {
-                if (progressEvent.total) {
-                    uploadProgress.value = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                }
-            },
-        });
-
+        const response = await axios.get<{ success: boolean; data: { api_clients: ApiClient[] } }>(
+            '/api/user/api-clients',
+        );
         if (response.data && response.data.success) {
-            toast.success('Pterodactyl data imported successfully!');
-            // Reset form
-            sqlDumpFile.value = null;
-            envFile.value = null;
-            form.sqlDump = null;
-            form.env = null;
-            uploadProgress.value = 0;
-            // Reset file inputs
-            if (typeof window !== 'undefined') {
-                const sqlInput = document.getElementById('sql-dump') as HTMLInputElement;
-                const envInput = document.getElementById('env-file') as HTMLInputElement;
-                if (sqlInput) sqlInput.value = '';
-                if (envInput) envInput.value = '';
+            apiClients.value = response.data.data.api_clients || [];
+            // Auto-select first API key if available and none selected
+            if (apiClients.value.length > 0 && !selectedApiKey.value) {
+                const firstClient = apiClients.value[0];
+                if (firstClient) {
+                    // Get full details to get the public key
+                    await selectApiClient(firstClient.id);
+                }
             }
-            // Refresh prerequisites after import
-            await fetchPrerequisites();
         } else {
-            toast.error(response.data?.message || 'Failed to import Pterodactyl data');
+            toast.error('Failed to fetch API keys');
         }
     } catch (error: unknown) {
         const errorMessage =
             (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-            'Failed to import Pterodactyl data';
+            'Failed to fetch API keys';
         toast.error(errorMessage);
     } finally {
-        isUploading.value = false;
-        uploadProgress.value = 0;
+        loadingApiKeys.value = false;
     }
 }
 
-function formatFileSize(bytes: number): string {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
-}
-
-function clearFiles(): void {
-    sqlDumpFile.value = null;
-    envFile.value = null;
-    form.sqlDump = null;
-    form.env = null;
-    // Reset file inputs via DOM (file inputs require direct DOM manipulation)
-    if (typeof window !== 'undefined') {
-        const sqlInput = document.getElementById('sql-dump') as HTMLInputElement;
-        const envInput = document.getElementById('env-file') as HTMLInputElement;
-        if (sqlInput) sqlInput.value = '';
-        if (envInput) envInput.value = '';
+async function selectApiClient(clientId: number): Promise<void> {
+    try {
+        const response = await axios.get<{ success: boolean; data: ApiClient }>(`/api/user/api-clients/${clientId}`);
+        if (response.data && response.data.success) {
+            const client = response.data.data;
+            // Note: private_key is only available on creation, so we use public_key for existing keys
+            // The migration agent can use either public_key or private_key for authentication
+            selectedApiKey.value = client.public_key || null;
+        } else {
+            toast.error('Failed to load API key details');
+        }
+    } catch (error: unknown) {
+        const errorMessage =
+            (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to load API key details';
+        toast.error(errorMessage);
     }
 }
 
-onMounted(() => {
+async function createApiKey(): Promise<void> {
+    if (!newApiKeyName.value.trim()) {
+        toast.error('Please enter a name for the API key');
+        return;
+    }
+
+    isCreatingApiKey.value = true;
+    try {
+        const response = await axios.post<{ success: boolean; data: ApiClient }>('/api/user/api-clients', {
+            name: newApiKeyName.value.trim(),
+        });
+        if (response.data && response.data.success) {
+            const newClient = response.data.data;
+            toast.success('API key created successfully!');
+            // Refresh API clients list
+            await fetchApiClients();
+            // Select the newly created key (private_key is only available on creation)
+            selectedApiKey.value = newClient.private_key || newClient.public_key || null;
+            // Close modal and reset form
+            showCreateApiKeyModal.value = false;
+            newApiKeyName.value = '';
+        } else {
+            toast.error('Failed to create API key');
+        }
+    } catch (error: unknown) {
+        const errorMessage =
+            (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to create API key';
+        toast.error(errorMessage);
+    } finally {
+        isCreatingApiKey.value = false;
+    }
+}
+
+onMounted(async () => {
+    // Ensure settings are loaded for panel URL
+    if (!settingsStore.loaded) {
+        await settingsStore.fetchSettings();
+    }
     void fetchPrerequisites();
+    void fetchApiClients();
 });
 </script>
 
@@ -677,84 +658,208 @@ onMounted(() => {
                 </CardContent>
             </Card>
 
-            <!-- Import Form -->
-            <section class="grid gap-6 lg:grid-cols-2">
-                <Card class="border border-border/70 shadow-lg">
-                    <CardHeader>
-                        <div class="flex items-center gap-2">
-                            <Database class="h-5 w-5 text-primary" />
-                            <CardTitle>SQL Dump File</CardTitle>
+            <!-- FeatherPanel CLI Instructions -->
+            <Card
+                v-if="prerequisitesPassed"
+                class="border border-blue-500/50 bg-linear-to-br from-blue-500/10 via-blue-500/5 to-transparent"
+            >
+                <CardHeader>
+                    <div class="flex items-center gap-2">
+                        <Database class="h-5 w-5 text-blue-500" />
+                        <CardTitle class="text-blue-600 dark:text-blue-500">FeatherPanel CLI</CardTitle>
+                    </div>
+                    <CardDescription>
+                        Use the FeatherPanel CLI to manage your servers and migrate from Pterodactyl. The CLI can be
+                        used for server management, migrations, and other administrative tasks.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent class="space-y-6">
+                    <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                        <p class="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">
+                            Quick Overview - Follow these steps in order:
+                        </p>
+                        <ol class="text-xs text-blue-600 dark:text-blue-400 list-decimal list-inside space-y-1 ml-2">
+                            <li>Install the CLI using the installer command</li>
+                            <li>Select or create an API key (shown below)</li>
+                            <li>
+                                Run
+                                <code class="bg-blue-500/20 px-1 py-0.5 rounded font-mono"
+                                    >feathercli config setup</code
+                                >
+                                to configure the CLI
+                            </li>
+                            <li>
+                                Run
+                                <code class="bg-blue-500/20 px-1 py-0.5 rounded font-mono"
+                                    >feathercli migrate pterodactyl</code
+                                >
+                                to start migration
+                            </li>
+                        </ol>
+                    </div>
+                    <div class="space-y-3">
+                        <h3 class="font-semibold text-foreground">Step 1: Install FeatherPanel CLI</h3>
+                        <p class="text-sm text-muted-foreground">
+                            First, you must install the FeatherPanel CLI on your server. Run the following command in
+                            your terminal:
+                        </p>
+                        <div class="bg-background rounded-lg p-3 border border-border/50">
+                            <code class="text-xs text-foreground font-mono block whitespace-pre-wrap"
+                                >curl -sSL https://get.featherpanel.com/beta.sh | bash</code
+                            >
                         </div>
-                        <CardDescription>
-                            Upload your Pterodactyl database SQL dump file (.sql) to import users, servers, and other
-                            data.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent class="space-y-4">
-                        <div class="space-y-2">
-                            <Label for="sql-dump">SQL Dump File <span class="text-destructive">*</span></Label>
-                            <Input
-                                id="sql-dump"
-                                type="file"
-                                accept=".sql"
-                                :disabled="isUploading"
-                                @change="handleSqlDumpSelect"
-                            />
-                            <p class="text-xs text-muted-foreground">Required: .sql format (SQL dump file)</p>
-                        </div>
-                        <div v-if="sqlDumpFile" class="p-3 bg-muted/50 rounded-lg border border-border/50">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <FileText class="h-4 w-4 text-primary" />
-                                    <span class="text-sm font-medium">{{ sqlDumpFile.name }}</span>
-                                </div>
-                                <Badge variant="outline" class="text-xs">
-                                    {{ formatFileSize(sqlDumpFile.size) }}
-                                </Badge>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        <p class="text-xs text-muted-foreground">
+                            This will download and install the FeatherPanel CLI tool on your system. Wait for the
+                            installation to complete before proceeding to the next step.
+                        </p>
+                    </div>
 
-                <Card class="border border-border/70 shadow-lg">
-                    <CardHeader>
-                        <div class="flex items-center gap-2">
-                            <FileText class="h-5 w-5 text-primary" />
-                            <CardTitle>Environment File (.env)</CardTitle>
-                        </div>
-                        <CardDescription>
-                            Upload your Pterodactyl .env configuration file. Required for database encryption key and
-                            other configuration values.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent class="space-y-4">
-                        <div class="space-y-2">
-                            <Label for="env-file">Environment File <span class="text-destructive">*</span></Label>
-                            <Input
-                                id="env-file"
-                                type="file"
-                                accept=".env,text/plain"
-                                :disabled="isUploading"
-                                @change="handleEnvSelect"
-                            />
-                            <p class="text-xs text-muted-foreground">
-                                Required: .env file (contains database encryption key)
-                            </p>
-                        </div>
-                        <div v-if="envFile" class="p-3 bg-muted/50 rounded-lg border border-border/50">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <FileText class="h-4 w-4 text-primary" />
-                                    <span class="text-sm font-medium">{{ envFile.name }}</span>
+                    <div class="space-y-3">
+                        <h3 class="font-semibold text-foreground">Step 2: Select or Create an API Key</h3>
+                        <p class="text-sm text-muted-foreground">
+                            After installing the CLI, you need an API key to authenticate with your FeatherPanel
+                            instance. Select an existing API key or create a new one below.
+                        </p>
+
+                        <div class="bg-muted/50 rounded-lg p-4 border border-border/50 space-y-4">
+                            <div class="space-y-2">
+                                <Label for="api-key-select">Select API Key</Label>
+                                <div class="flex gap-2">
+                                    <Select
+                                        id="api-key-select"
+                                        :model-value="
+                                            apiClients
+                                                .find((c) => {
+                                                    const key = c.private_key || c.public_key;
+                                                    return key === selectedApiKey;
+                                                })
+                                                ?.id?.toString()
+                                        "
+                                        :disabled="loadingApiKeys"
+                                        @update:model-value="(value) => selectApiClient(Number(value))"
+                                    >
+                                        <SelectTrigger class="flex-1">
+                                            <SelectValue
+                                                :placeholder="
+                                                    loadingApiKeys
+                                                        ? 'Loading API keys...'
+                                                        : apiClients.length === 0
+                                                          ? 'No API keys found'
+                                                          : 'Select an API key'
+                                                "
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem
+                                                v-for="client in apiClients"
+                                                :key="client.id"
+                                                :value="client.id.toString()"
+                                            >
+                                                {{ client.name }}
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <Button variant="outline" size="sm" @click="showCreateApiKeyModal = true">
+                                        <Plus class="h-4 w-4 mr-2" />
+                                        Create New
+                                    </Button>
                                 </div>
-                                <Badge variant="outline" class="text-xs">
-                                    {{ formatFileSize(envFile.size) }}
-                                </Badge>
+                                <p class="text-xs text-muted-foreground">
+                                    Select an existing API key from the list above, or create a new one specifically for
+                                    the CLI.
+                                </p>
+                            </div>
+
+                            <div v-if="selectedApiKey" class="space-y-4 pt-2 border-t border-border/50">
+                                <div class="space-y-3">
+                                    <p class="text-xs font-semibold text-foreground">Panel URL:</p>
+                                    <p
+                                        class="text-xs font-mono break-all bg-background px-2 py-1 rounded border border-border"
+                                    >
+                                        {{ panelUrl }}
+                                    </p>
+                                </div>
+
+                                <div class="space-y-3">
+                                    <p class="text-xs font-semibold text-foreground">API Key:</p>
+                                    <p
+                                        class="text-xs font-mono break-all bg-background px-2 py-1 rounded border border-border"
+                                    >
+                                        {{ selectedApiKey }}
+                                    </p>
+                                </div>
+
+                                <div class="space-y-2 pt-2 border-t border-border/50">
+                                    <p class="text-xs font-semibold text-foreground">Step 3: Configure the CLI</p>
+                                    <p class="text-sm text-muted-foreground">
+                                        <strong>After the CLI is installed</strong>, you must configure it with your
+                                        panel URL and API key. Run the following command:
+                                    </p>
+                                    <div class="bg-background rounded p-3 border border-border/50">
+                                        <code class="text-xs text-foreground font-mono block whitespace-pre-wrap"
+                                            >feathercli config setup</code
+                                        >
+                                    </div>
+                                    <p class="text-xs text-muted-foreground mt-2">
+                                        When prompted by the CLI, enter the following values:
+                                    </p>
+                                    <ul class="text-xs text-muted-foreground list-disc list-inside ml-2 space-y-1 mt-1">
+                                        <li>
+                                            <strong>Panel URL:</strong>
+                                            <code class="bg-muted px-1 py-0.5 rounded font-mono">{{ panelUrl }}</code>
+                                        </li>
+                                        <li>
+                                            <strong>API Key:</strong>
+                                            <code class="bg-muted px-1 py-0.5 rounded font-mono break-all">{{
+                                                selectedApiKey
+                                            }}</code>
+                                        </li>
+                                    </ul>
+                                    <p class="text-xs text-amber-600 dark:text-amber-500 mt-2 font-medium">
+                                        ⚠️ Important: You must complete the installation (Step 1) before running this
+                                        configuration command.
+                                    </p>
+                                </div>
+
+                                <div class="space-y-2 pt-2 border-t border-border/50">
+                                    <p class="text-xs font-semibold text-foreground">Step 4: Run Migration</p>
+                                    <p class="text-sm text-muted-foreground">
+                                        <strong>After configuring the CLI</strong> (Step 3), you can now run the
+                                        Pterodactyl migration:
+                                    </p>
+                                    <div class="bg-background rounded p-3 border border-border/50">
+                                        <code class="text-xs text-foreground font-mono block whitespace-pre-wrap"
+                                            >feathercli migrate pterodactyl</code
+                                        >
+                                    </div>
+                                    <p class="text-xs text-muted-foreground mt-2">
+                                        This command will start the migration process. Make sure you have completed
+                                        Steps 1-3 before running this command.
+                                    </p>
+                                </div>
+                            </div>
+                            <div
+                                v-else-if="!loadingApiKeys && apiClients.length === 0"
+                                class="bg-amber-500/10 rounded-lg p-3 border border-amber-500/30 space-y-2 text-xs text-amber-700 dark:text-amber-400"
+                            >
+                                <p class="font-semibold text-foreground">No API keys found.</p>
+                                <p class="text-xs text-muted-foreground">
+                                    Click "Create New" above to create an API key for the CLI.
+                                </p>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
-            </section>
+                    </div>
+
+                    <div
+                        class="mt-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-600 dark:text-blue-500"
+                    >
+                        <strong>Note:</strong> The CLI will handle exporting your Pterodactyl database and configuration
+                        automatically. You do not need to manually create SQL dumps or upload your
+                        <code class="bg-muted px-1 py-0.5 rounded text-foreground font-mono text-xs">.env</code> file.
+                        The CLI can also be used for general server management tasks beyond migration.
+                    </div>
+                </CardContent>
+            </Card>
 
             <!-- Information Card -->
             <Card class="border border-amber-500/50 bg-linear-to-br from-amber-500/10 via-amber-500/5 to-transparent">
@@ -768,44 +873,6 @@ onMounted(() => {
                     </CardDescription>
                 </CardHeader>
                 <CardContent class="space-y-3">
-                    <ul class="space-y-2 text-sm text-muted-foreground">
-                        <li class="flex items-start gap-2">
-                            <CheckCircle class="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                            <span>
-                                <strong class="text-foreground">Backup First:</strong> Make sure you have a backup of
-                                your current FeatherPanel database before importing.
-                            </span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <CheckCircle class="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                            <span>
-                                <strong class="text-foreground">SQL Dump:</strong> The SQL dump must be from a
-                                Pterodactyl panel database in .sql format. Only uncompressed .sql files are supported.
-                            </span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <CheckCircle class="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                            <span>
-                                <strong class="text-foreground">Environment File:</strong> The .env file is
-                                <strong class="text-destructive">required</strong> as it contains the database
-                                encryption key and other critical configuration values needed to decrypt imported data.
-                            </span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <CheckCircle class="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                            <span>
-                                <strong class="text-foreground">Empty Panel:</strong> The panel must be completely empty
-                                before importing. All checks above must pass before proceeding.
-                            </span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <AlertTriangle class="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-                            <span>
-                                <strong class="text-foreground">Data Conflicts:</strong> Importing may overwrite
-                                existing data. Ensure you've backed up your current installation.
-                            </span>
-                        </li>
-                    </ul>
                     <div class="pt-4 border-t border-amber-500/30">
                         <div class="flex items-start gap-2 mb-2">
                             <AlertTriangle class="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
@@ -829,114 +896,101 @@ onMounted(() => {
                 </CardContent>
             </Card>
 
-            <!-- Action Section -->
-            <Card class="border border-border/70 shadow-lg">
-                <CardHeader>
-                    <CardTitle>Ready to Import?</CardTitle>
-                    <CardDescription>
-                        Upload both SQL dump (.sql) and .env files to begin the import process. The .env file is
-                        required for database encryption key.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent class="space-y-4">
-                    <div v-if="isUploading" class="space-y-2">
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-muted-foreground">Uploading files...</span>
-                            <span class="font-medium">{{ uploadProgress }}%</span>
-                        </div>
-                        <div class="w-full h-2 bg-muted rounded-full overflow-hidden">
-                            <div
-                                class="h-full bg-primary transition-all duration-300"
-                                :style="{ width: `${uploadProgress}%` }"
-                            ></div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3">
-                        <div class="flex items-center gap-3">
-                            <Button
-                                size="lg"
-                                :disabled="isUploading || !form.sqlDump || !form.env || !prerequisitesPassed"
-                                class="gap-2"
-                                @click="handleImportClick"
-                            >
-                                <Loader2 v-if="isUploading" class="h-4 w-4 animate-spin" />
-                                <Upload v-else class="h-4 w-4" />
-                                {{ isUploading ? 'Importing...' : 'Import Pterodactyl Data' }}
-                            </Button>
-                            <Button
-                                v-if="sqlDumpFile || envFile"
-                                variant="outline"
-                                size="lg"
-                                :disabled="isUploading"
-                                @click="clearFiles"
-                            >
-                                Clear Files
-                            </Button>
-                        </div>
-                        <div
-                            v-if="!prerequisitesPassed && prerequisites"
-                            class="text-xs text-muted-foreground flex items-center gap-2"
-                        >
-                            <AlertTriangle class="h-3 w-3 text-amber-500" />
-                            <span>All prerequisites must be met before importing</span>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <!-- Confirmation Dialog -->
-            <AlertDialog :open="showConfirmDialog" @update:open="showConfirmDialog = $event">
-                <AlertDialogContent class="bg-background">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle class="flex items-center gap-2">
-                            <AlertTriangle class="h-5 w-5 text-amber-500" />
-                            Confirm Import
-                        </AlertDialogTitle>
-                        <AlertDialogDescription class="space-y-3 pt-4">
-                            <p class="text-base font-semibold text-foreground">
-                                Are you absolutely sure you want to import Pterodactyl data?
+            <!-- Create API Key Modal -->
+            <Dialog :open="showCreateApiKeyModal" @update:open="showCreateApiKeyModal = $event">
+                <DialogContent class="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle class="flex items-center gap-2">
+                            <Key class="h-5 w-5" />
+                            Create New API Key
+                        </DialogTitle>
+                        <DialogDescription>
+                            Create a new API key for the Pterodactyl Migration Agent. This key will be used to
+                            authenticate the migration agent with your FeatherPanel instance.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div class="space-y-4 py-4">
+                        <div class="space-y-2">
+                            <Label for="api-key-name">API Key Name</Label>
+                            <Input
+                                id="api-key-name"
+                                v-model="newApiKeyName"
+                                placeholder="e.g., Pterodactyl Migration Agent"
+                                :disabled="isCreatingApiKey"
+                            />
+                            <p class="text-xs text-muted-foreground">
+                                Choose a descriptive name to identify this API key (e.g., "Pterodactyl Migration
+                                Agent").
                             </p>
-                            <div class="bg-destructive/10 border border-destructive/30 rounded-lg p-4 space-y-2">
-                                <p class="text-sm font-semibold text-destructive">
-                                    Warning: This action is irreversible!
-                                </p>
-                                <ul class="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                                    <li>All existing data in your panel will be replaced with imported data</li>
-                                    <li>This will overwrite users, servers, nodes, locations, realms, and spells</li>
-                                    <li>Make sure you have a complete backup before proceeding</li>
-                                    <li>The import process may take several minutes depending on data size</li>
-                                </ul>
-                            </div>
-                            <div class="space-y-3">
-                                <div v-if="sqlDumpFile" class="bg-muted/50 rounded-lg p-3 border border-border/50">
-                                    <p class="text-sm font-medium text-foreground mb-1">SQL Dump File:</p>
-                                    <p class="text-sm text-muted-foreground font-mono">{{ sqlDumpFile.name }}</p>
-                                    <p class="text-xs text-muted-foreground mt-1">
-                                        {{ formatFileSize(sqlDumpFile.size) }}
-                                    </p>
-                                </div>
-                                <div v-if="envFile" class="bg-muted/50 rounded-lg p-3 border border-border/50">
-                                    <p class="text-sm font-medium text-foreground mb-1">Environment File:</p>
-                                    <p class="text-sm text-muted-foreground font-mono">{{ envFile.name }}</p>
-                                    <p class="text-xs text-muted-foreground mt-1">{{ formatFileSize(envFile.size) }}</p>
-                                    <p class="text-xs text-amber-600 dark:text-amber-500 mt-2">
-                                        ⚠️ Contains sensitive data (database encryption key)
+                        </div>
+                        <div class="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+                            <div class="flex items-start gap-2">
+                                <AlertTriangle class="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                                <div class="text-xs text-amber-700 dark:text-amber-300">
+                                    <p class="font-medium mb-1">Important:</p>
+                                    <p>
+                                        The private key will only be shown once when the API key is created. Make sure
+                                        to copy it immediately as it cannot be retrieved later.
                                     </p>
                                 </div>
                             </div>
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel as-child>
-                            <Button variant="outline">Cancel</Button>
-                        </AlertDialogCancel>
-                        <AlertDialogAction as-child>
-                            <Button variant="destructive" @click="handleImport">Yes, Import Now</Button>
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                        </div>
+                    </div>
+                    <DialogFooter class="flex gap-2">
+                        <Button variant="outline" :disabled="isCreatingApiKey" @click="showCreateApiKeyModal = false">
+                            Cancel
+                        </Button>
+                        <Button :disabled="isCreatingApiKey || !newApiKeyName.trim()" @click="createApiKey">
+                            <Loader2 v-if="isCreatingApiKey" class="h-4 w-4 mr-2 animate-spin" />
+                            <Plus v-else class="h-4 w-4 mr-2" />
+                            {{ isCreatingApiKey ? 'Creating...' : 'Create API Key' }}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <!-- Warning Dialog -->
+            <Dialog v-model:open="showWarningDialog">
+                <DialogContent class="sm:max-w-[600px]">
+                    <DialogHeader>
+                        <DialogTitle class="text-2xl font-bold text-red-600 dark:text-red-400 flex items-center gap-2">
+                            <AlertTriangle class="h-6 w-6" />
+                            ⚠️ WOAHH BUDDY DON'T SHOW THIS PAGE ON STREAM ⚠️
+                        </DialogTitle>
+                        <DialogDescription class="text-base mt-4 space-y-3">
+                            <p class="font-semibold text-red-700 dark:text-red-400">
+                                This page contains sensitive information that can be used to completely nuke your panel!
+                            </p>
+                            <p class="text-foreground">
+                                <strong>DO NOT:</strong>
+                            </p>
+                            <ul class="list-disc list-inside space-y-1 text-foreground ml-2">
+                                <li>Share your screen while on this page</li>
+                                <li>Stream or record this page</li>
+                                <li>Take screenshots that include sensitive information</li>
+                                <li>Show the API key to anyone</li>
+                            </ul>
+                            <p class="text-sm text-muted-foreground mt-4">
+                                The information on this page (especially the API key) can be used by malicious actors to
+                                gain full access to your FeatherPanel instance and potentially destroy your entire
+                                installation.
+                            </p>
+                            <div
+                                class="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded text-sm text-red-700 dark:text-red-400"
+                            >
+                                <strong>⚠️ SECURITY WARNING:</strong> If you're streaming, recording, or sharing your
+                                screen, close this page immediately or switch to a different window/tab!
+                            </div>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter class="mt-6 flex gap-2">
+                        <Button variant="outline" @click="router.push('/admin')"> Go Back to Safety </Button>
+                        <Button variant="destructive" @click="showWarningDialog = false">
+                            I Understand - Continue
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     </DashboardLayout>
 </template>

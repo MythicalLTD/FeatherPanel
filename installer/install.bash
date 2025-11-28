@@ -210,7 +210,8 @@ show_main_menu() {
     echo -e "${BOLD}Choose a component:${NC}"
     echo -e "  ${GREEN}[0]${NC} ${BOLD}Panel${NC} ${BLUE}(Web Interface)${NC}"
     echo -e "  ${BLUE}[1]${NC} ${BOLD}Wings${NC} ${BLUE}(Game Server Daemon)${NC}"
-    echo -e "  ${YELLOW}[2]${NC} ${BOLD}SSL Certificates${NC} ${BLUE}(Let's Encrypt)${NC}"
+    echo -e "  ${CYAN}[2]${NC} ${BOLD}CLI${NC} ${BLUE}(Migration & Server Management)${NC}"
+    echo -e "  ${YELLOW}[3]${NC} ${BOLD}SSL Certificates${NC} ${BLUE}(Let's Encrypt)${NC}"
     draw_hr
 }
 
@@ -261,6 +262,31 @@ show_wings_menu() {
     echo -e "  ${CYAN}${BOLD}[3]${NC} ${BOLD}Create SSL Certificate${NC}"
     echo -e "     ${BLUE}→ Required before installing Wings${NC}"
     echo -e "     ${BLUE}→ Creates Let's Encrypt certificate for Wings domain${NC}"
+    echo ""
+    draw_hr
+}
+
+show_cli_menu() {
+    if [ -t 1 ]; then clear; fi
+    print_banner
+    draw_hr
+    print_centered "CLI Operations" "$CYAN"
+    draw_hr
+    echo ""
+    echo -e "  ${GREEN}${BOLD}[0]${NC} ${BOLD}Install CLI${NC}"
+    echo -e "     ${BLUE}→ Install FeatherPanel CLI tool${NC}"
+    echo -e "     ${BLUE}→ Downloads latest release from GitHub${NC}"
+    echo -e "     ${BLUE}→ Makes 'feathercli' command available system-wide${NC}"
+    echo -e "     ${CYAN}→ Used for Pterodactyl to FeatherPanel migration${NC}"
+    echo -e "     ${CYAN}→ Server management interface via CLI using FeatherPanel API${NC}"
+    echo ""
+    echo -e "  ${RED}${BOLD}[1]${NC} ${BOLD}Uninstall CLI${NC}"
+    echo -e "     ${YELLOW}⚠️  WARNING: This will remove the CLI binary${NC}"
+    echo -e "     ${BLUE}→ Removes feathercli command${NC}"
+    echo ""
+    echo -e "  ${YELLOW}${BOLD}[2]${NC} ${BOLD}Update CLI${NC}"
+    echo -e "     ${BLUE}→ Download latest CLI binary${NC}"
+    echo -e "     ${BLUE}→ Updates to newest version${NC}"
     echo ""
     draw_hr
 }
@@ -879,6 +905,116 @@ update_wings() {
     sudo systemctl start featherwings
     
     log_success "FeatherWings daemon updated successfully."
+}
+
+# CLI installation functions
+install_feathercli() {
+    log_step "Installing FeatherPanel CLI..."
+    
+    # Detect architecture like Wings does
+    ARCH=$(uname -m)
+    case "$ARCH" in
+        x86_64)
+            ARCH_NAME="x64"
+            ;;
+        aarch64|arm64)
+            ARCH_NAME="arm64"
+            ;;
+        armv7l|armv6l)
+            ARCH_NAME="arm"
+            ;;
+        *)
+            log_error "Unsupported architecture: $ARCH"
+            log_info "FeatherPanel CLI supports x64, arm64, and arm only."
+            return 1
+            ;;
+    esac
+    
+    log_info "Detected architecture: $ARCH ($ARCH_NAME)"
+    
+    # Download using the correct format: feathercli-linux-{arch}
+    BINARY_NAME="feathercli-linux-${ARCH_NAME}"
+    DOWNLOAD_URL="https://github.com/MythicalLTD/FeatherPanel-CLI/releases/latest/download/${BINARY_NAME}"
+    
+    log_info "Downloading: ${BINARY_NAME}"
+    if sudo curl -L -f -o /usr/local/bin/feathercli "$DOWNLOAD_URL" 2>>"$LOG_FILE"; then
+        # Check if the downloaded file is actually a binary (not HTML error page)
+        if file /usr/local/bin/feathercli 2>/dev/null | grep -qE "(ELF|executable|binary)"; then
+            log_success "Downloaded CLI binary: ${BINARY_NAME}"
+        else
+            log_error "Downloaded file doesn't appear to be a binary."
+            sudo rm -f /usr/local/bin/feathercli
+            log_error "Failed to download FeatherPanel CLI binary."
+            log_info "Please check the GitHub releases page for available binaries:"
+            log_info "https://github.com/MythicalLTD/FeatherPanel-CLI/releases"
+            return 1
+        fi
+    else
+        log_error "Failed to download FeatherPanel CLI binary."
+        log_info "Please check the GitHub releases page for available binaries:"
+        log_info "https://github.com/MythicalLTD/FeatherPanel-CLI/releases"
+        return 1
+    fi
+    
+    # Make it executable
+    sudo chmod +x /usr/local/bin/feathercli
+    
+    # Verify installation
+    if command -v feathercli >/dev/null 2>&1; then
+        CLI_VERSION=$(feathercli --version 2>/dev/null || feathercli version 2>/dev/null || echo "unknown")
+        log_success "FeatherPanel CLI installed successfully."
+        if [ "$CLI_VERSION" != "unknown" ]; then
+            log_info "Installed version: $CLI_VERSION"
+        fi
+        log_info "You can now use 'feathercli' command from anywhere."
+        log_info "Use cases:"
+        log_info "  • Migrate from Pterodactyl to FeatherPanel"
+        log_info "  • Server management via CLI using FeatherPanel API"
+    else
+        log_warn "CLI binary installed but may not be in PATH."
+        log_info "Try running: /usr/local/bin/feathercli"
+    fi
+}
+
+uninstall_feathercli() {
+    log_step "Uninstalling FeatherPanel CLI..."
+    
+    if [ ! -f /usr/local/bin/feathercli ]; then
+        log_warn "FeatherPanel CLI does not appear to be installed."
+        return 0
+    fi
+    
+    # Remove binary
+    sudo rm -f /usr/local/bin/feathercli
+    
+    log_success "FeatherPanel CLI uninstalled successfully."
+}
+
+update_feathercli() {
+    log_step "Updating FeatherPanel CLI..."
+    
+    if [ ! -f /usr/local/bin/feathercli ]; then
+        log_error "FeatherPanel CLI is not installed. Please install it first."
+        return 1
+    fi
+    
+    # Get current version if available
+    CURRENT_VERSION=$(feathercli --version 2>/dev/null || feathercli version 2>/dev/null || echo "unknown")
+    if [ "$CURRENT_VERSION" != "unknown" ]; then
+        log_info "Current version: $CURRENT_VERSION"
+    fi
+    
+    # Install latest version (same as install, but we know it exists)
+    if install_feathercli; then
+        NEW_VERSION=$(feathercli --version 2>/dev/null || feathercli version 2>/dev/null || echo "unknown")
+        if [ "$NEW_VERSION" != "unknown" ]; then
+            log_info "Updated to version: $NEW_VERSION"
+        fi
+        log_success "FeatherPanel CLI updated successfully."
+    else
+        log_error "Failed to update FeatherPanel CLI."
+        return 1
+    fi
 }
 
 # SSL Certificate functions
@@ -1894,15 +2030,16 @@ if [ -f /etc/os-release ]; then
         case "${FP_COMPONENT:-}" in
             panel) COMPONENT_TYPE="0";;
             wings) COMPONENT_TYPE="1";;
-            ssl) COMPONENT_TYPE="2";;
+            cli) COMPONENT_TYPE="2";;
+            ssl) COMPONENT_TYPE="3";;
             *) COMPONENT_TYPE="";;
         esac
 
-        while [[ ! "$COMPONENT_TYPE" =~ ^[0-2]$ ]]; do
+        while [[ ! "$COMPONENT_TYPE" =~ ^[0-3]$ ]]; do
             show_main_menu
-            prompt "${BOLD}Enter component${NC} ${BLUE}(0/1/2)${NC}: " COMPONENT_TYPE
-            if [[ ! "$COMPONENT_TYPE" =~ ^[0-2]$ ]]; then
-                echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}0${NC}, ${YELLOW}1${NC} or ${YELLOW}2${NC}."; sleep 1
+            prompt "${BOLD}Enter component${NC} ${BLUE}(0/1/2/3)${NC}: " COMPONENT_TYPE
+            if [[ ! "$COMPONENT_TYPE" =~ ^[0-3]$ ]]; then
+                echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}0${NC}, ${YELLOW}1${NC}, ${YELLOW}2${NC} or ${YELLOW}3${NC}."; sleep 1
             fi
         done
 
@@ -1966,6 +2103,39 @@ if [ -f /etc/os-release ]; then
                 echo -e "  ${RED}•${NC} FeatherWings systemd service"
                 echo -e "  ${RED}•${NC} Wings binary"
                 echo -e "  ${RED}•${NC} Configuration and data (optional)"
+                echo ""
+                draw_hr
+                confirm_uninstall=""
+                prompt "${BOLD}${RED}Are you absolutely sure you want to uninstall?${NC} ${BLUE}(type 'yes' to confirm)${NC}: " confirm_uninstall
+                if [ "$confirm_uninstall" != "yes" ]; then
+                    echo -e "${GREEN}Uninstallation cancelled.${NC}"
+                    exit 0
+                fi
+            fi
+        elif [ "$COMPONENT_TYPE" = "2" ]; then
+            # CLI operations
+            while [[ ! "$INST_TYPE" =~ ^[0-2]$ ]]; do
+                show_cli_menu
+                echo ""
+                prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(0/1/2)${NC}: " INST_TYPE
+                if [[ ! "$INST_TYPE" =~ ^[0-2]$ ]]; then
+                    echo ""
+                    echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
+                    echo -e "${YELLOW}Please enter ${BOLD}0${NC} (Install), ${BOLD}1${NC} (Uninstall), or ${BOLD}2${NC} (Update)${NC}"
+                    echo ""
+                    sleep 2
+                fi
+            done
+            
+            # Add confirmation for destructive operations
+            if [ "$INST_TYPE" = "1" ]; then
+                echo ""
+                draw_hr
+                echo -e "${RED}${BOLD}⚠️  WARNING: Uninstall Operation${NC}"
+                draw_hr
+                echo -e "${YELLOW}This will permanently delete:${NC}"
+                echo -e "  ${RED}•${NC} FeatherPanel CLI binary"
+                echo -e "  ${RED}•${NC} feathercli command"
                 echo ""
                 draw_hr
                 confirm_uninstall=""
@@ -2917,10 +3087,50 @@ CF_HOSTNAME=""
                 exit 1
             fi
         elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "0" ]; then
+            # CLI Install
+            if [ -f /usr/local/bin/feathercli ]; then
+                log_warn "FeatherPanel CLI appears to be already installed."
+                reinstall_cli=""
+                prompt "${BOLD}Do you want to reinstall?${NC} ${BLUE}(y/n)${NC}: " reinstall_cli
+                if [[ ! "$reinstall_cli" =~ ^[yY]$ ]]; then
+                    echo "Installation cancelled."
+                    exit 0
+                fi
+            fi
+            
+            install_packages curl jq
+            if install_feathercli; then
+                log_success "CLI installation finished. See log at $LOG_FILE"
+            else
+                log_error "CLI installation failed. See log at $LOG_FILE"
+                exit 1
+            fi
+        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "1" ]; then
+            # CLI Uninstall
+            if [ ! -f /usr/local/bin/feathercli ]; then
+                echo "FeatherPanel CLI does not appear to be installed. Nothing to uninstall."
+                exit 0
+            fi
+            uninstall_feathercli
+            log_success "CLI uninstallation finished. See log at $LOG_FILE"
+        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "2" ]; then
+            # CLI Update
+            if [ ! -f /usr/local/bin/feathercli ]; then
+                echo "FeatherPanel CLI does not appear to be installed. Nothing to update."
+                exit 0
+            fi
+            print_banner
+            if update_feathercli; then
+                log_success "CLI updated successfully. See log at $LOG_FILE"
+            else
+                log_error "CLI update failed. See log at $LOG_FILE"
+                exit 1
+            fi
+        elif [ "$COMPONENT_TYPE" = "3" ] && [ "$INST_TYPE" = "0" ]; then
             # SSL - Install Certbot
             install_certbot
             log_success "SSL certificate tools installation finished. See log at $LOG_FILE"
-        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "1" ]; then
+        elif [ "$COMPONENT_TYPE" = "3" ] && [ "$INST_TYPE" = "1" ]; then
             # SSL - Create Certificate (HTTP/Standalone)
             if create_ssl_certificate_http; then
                 log_success "SSL certificate creation finished. See log at $LOG_FILE"
@@ -2928,7 +3138,7 @@ CF_HOSTNAME=""
                 log_error "SSL certificate creation failed. See log at $LOG_FILE"
                 exit 1
             fi
-        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "2" ]; then
+        elif [ "$COMPONENT_TYPE" = "3" ] && [ "$INST_TYPE" = "2" ]; then
             # SSL - Create Certificate (DNS)
             if create_ssl_certificate_dns; then
                 log_success "SSL certificate creation finished. See log at $LOG_FILE"
@@ -2936,7 +3146,7 @@ CF_HOSTNAME=""
                 log_error "SSL certificate creation failed. See log at $LOG_FILE"
                 exit 1
             fi
-        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "3" ]; then
+        elif [ "$COMPONENT_TYPE" = "3" ] && [ "$INST_TYPE" = "3" ]; then
             # SSL - Setup Auto-Renewal
             if setup_ssl_auto_renewal; then
                 log_success "SSL auto-renewal setup finished. See log at $LOG_FILE"
@@ -2944,7 +3154,7 @@ CF_HOSTNAME=""
                 log_error "SSL auto-renewal setup failed. See log at $LOG_FILE"
                 exit 1
             fi
-        elif [ "$COMPONENT_TYPE" = "2" ] && [ "$INST_TYPE" = "4" ]; then
+        elif [ "$COMPONENT_TYPE" = "3" ] && [ "$INST_TYPE" = "4" ]; then
             # SSL - Install acme.sh
             install_acme_sh
             log_success "acme.sh installation finished. See log at $LOG_FILE"

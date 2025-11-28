@@ -54,6 +54,12 @@ class FeatherZeroTrustController
         summary: 'Get FeatherZeroTrust configuration',
         description: 'Retrieve current FeatherZeroTrust configuration.',
         tags: ['Admin - FeatherZeroTrust'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Configuration retrieved successfully'
+            ),
+        ],
     )]
     public function getConfig(Request $request): Response
     {
@@ -83,6 +89,12 @@ class FeatherZeroTrustController
         summary: 'Update FeatherZeroTrust configuration',
         description: 'Update FeatherZeroTrust configuration settings.',
         tags: ['Admin - FeatherZeroTrust'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Configuration updated successfully'
+            ),
+        ],
     )]
     public function updateConfig(Request $request): Response
     {
@@ -127,6 +139,12 @@ class FeatherZeroTrustController
         summary: 'Scan a server',
         description: 'Scan a server for suspicious files using FeatherZeroTrust.',
         tags: ['Admin - FeatherZeroTrust'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server scan completed successfully'
+            ),
+        ],
     )]
     public function scanServer(Request $request): Response
     {
@@ -242,6 +260,12 @@ class FeatherZeroTrustController
         summary: 'Scan multiple servers',
         description: 'Scan multiple servers for suspicious files using FeatherZeroTrust.',
         tags: ['Admin - FeatherZeroTrust'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Batch scan completed'
+            ),
+        ],
     )]
     public function scanBatch(Request $request): Response
     {
@@ -361,6 +385,12 @@ class FeatherZeroTrustController
         summary: 'Get FeatherZeroTrust cron execution logs',
         description: 'Retrieve cron job execution logs with pagination.',
         tags: ['Admin - FeatherZeroTrust'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Cron logs retrieved successfully'
+            ),
+        ],
     )]
     public function getCronLogs(Request $request): Response
     {
@@ -396,6 +426,12 @@ class FeatherZeroTrustController
         summary: 'Get detailed cron execution log',
         description: 'Retrieve detailed information about a specific cron execution including server scan logs.',
         tags: ['Admin - FeatherZeroTrust'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Execution log retrieved successfully'
+            ),
+        ],
     )]
     public function getCronLogDetails(Request $request, string $executionId): Response
     {
@@ -431,6 +467,12 @@ class FeatherZeroTrustController
                 schema: new OA\Schema(type: 'boolean')
             ),
         ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Hashes retrieved successfully'
+            ),
+        ],
     )]
     public function getHashes(Request $request): Response
     {
@@ -450,6 +492,12 @@ class FeatherZeroTrustController
         summary: 'Get hash statistics',
         description: 'Retrieve statistics about suspicious file hashes in the database.',
         tags: ['Admin - FeatherZeroTrust'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Hash statistics retrieved successfully'
+            ),
+        ],
     )]
     public function getHashStats(Request $request): Response
     {
@@ -467,6 +515,12 @@ class FeatherZeroTrustController
         summary: 'Check hashes against database',
         description: 'Check multiple hashes against the suspicious file hash database.',
         tags: ['Admin - FeatherZeroTrust'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Hashes checked successfully'
+            ),
+        ],
     )]
     public function checkHashes(Request $request): Response
     {
@@ -501,6 +555,12 @@ class FeatherZeroTrustController
         summary: 'Confirm hash as malicious',
         description: 'Mark a hash as confirmed malicious.',
         tags: ['Admin - FeatherZeroTrust'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Hash confirmed as malicious'
+            ),
+        ],
     )]
     public function confirmHash(Request $request, string $hash): Response
     {
@@ -522,6 +582,12 @@ class FeatherZeroTrustController
         summary: 'Add hash manually',
         description: 'Manually add a suspicious file hash to the database.',
         tags: ['Admin - FeatherZeroTrust'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Hash added successfully'
+            ),
+        ],
     )]
     public function addHash(Request $request): Response
     {
@@ -583,6 +649,12 @@ class FeatherZeroTrustController
         summary: 'Confirm multiple hashes as malicious',
         description: 'Mark multiple hashes as confirmed malicious.',
         tags: ['Admin - FeatherZeroTrust'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Bulk hash confirmation completed'
+            ),
+        ],
     )]
     public function bulkConfirmHashes(Request $request): Response
     {
@@ -621,10 +693,16 @@ class FeatherZeroTrustController
     }
 
     #[OA\Post(
-        path: '/api/admin/featherzerotrust/hashes/bulk/delete',
+        path: '/api/admin/featherzerust/hashes/bulk/delete',
         summary: 'Delete multiple hashes',
         description: 'Delete multiple hashes from the database.',
         tags: ['Admin - FeatherZeroTrust'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Bulk hash deletion completed'
+            ),
+        ],
     )]
     public function bulkDeleteHashes(Request $request): Response
     {
@@ -667,6 +745,12 @@ class FeatherZeroTrustController
         summary: 'Delete hash',
         description: 'Delete a hash from the database.',
         tags: ['Admin - FeatherZeroTrust'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Hash deleted successfully'
+            ),
+        ],
     )]
     public function deleteHash(Request $request, string $hash): Response
     {
