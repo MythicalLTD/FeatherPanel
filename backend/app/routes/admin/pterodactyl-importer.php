@@ -57,4 +57,136 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_DATABASES_MANAGE,
         ['POST'],
     );
+
+    // Import Pterodactyl egg as spell
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-pterodactyl-importer-import-egg',
+        '/api/admin/pterodactyl-importer/import-egg',
+        function (Request $request) {
+            return (new PterodactylImporterController())->importEgg($request);
+        },
+        Permissions::ADMIN_SPELLS_CREATE,
+        ['POST'],
+    );
+
+    // Import Pterodactyl node
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-pterodactyl-importer-import-node',
+        '/api/admin/pterodactyl-importer/import-node',
+        function (Request $request) {
+            return (new PterodactylImporterController())->importNode($request);
+        },
+        Permissions::ADMIN_NODES_CREATE,
+        ['POST'],
+    );
+
+    // Import Pterodactyl allocation
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-pterodactyl-importer-import-allocation',
+        '/api/admin/pterodactyl-importer/import-allocation',
+        function (Request $request) {
+            return (new PterodactylImporterController())->importAllocation($request);
+        },
+        Permissions::ADMIN_ALLOCATIONS_CREATE,
+        ['POST'],
+    );
+
+    // Import Pterodactyl user
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-pterodactyl-importer-import-user',
+        '/api/admin/pterodactyl-importer/import-user',
+        function (Request $request) {
+            return (new PterodactylImporterController())->importUser($request);
+        },
+        Permissions::ADMIN_USERS_CREATE,
+        ['POST'],
+    );
+
+    // Import Pterodactyl SSH key
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-pterodactyl-importer-import-ssh-key',
+        '/api/admin/pterodactyl-importer/import-ssh-key',
+        function (Request $request) {
+            return (new PterodactylImporterController())->importSshKey($request);
+        },
+        Permissions::ADMIN_USERS_CREATE,
+        ['POST'],
+    );
+
+    // Import Pterodactyl server
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-pterodactyl-importer-import-server',
+        '/api/admin/pterodactyl-importer/import-server',
+        function (Request $request) {
+            return (new PterodactylImporterController())->importServer($request);
+        },
+        Permissions::ADMIN_SERVERS_CREATE,
+        ['POST'],
+    );
+
+    // Import Pterodactyl server database
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-pterodactyl-importer-import-server-database',
+        '/api/admin/pterodactyl-importer/import-server-database',
+        function (Request $request) {
+            return (new PterodactylImporterController())->importServerDatabase($request);
+        },
+        Permissions::ADMIN_SERVERS_CREATE,
+        ['POST'],
+    );
+
+    // Import Pterodactyl backup
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-pterodactyl-importer-import-backup',
+        '/api/admin/pterodactyl-importer/import-backup',
+        function (Request $request) {
+            return (new PterodactylImporterController())->importBackup($request);
+        },
+        Permissions::ADMIN_SERVERS_CREATE,
+        ['POST'],
+    );
+
+    // Import Pterodactyl subuser
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-pterodactyl-importer-import-subuser',
+        '/api/admin/pterodactyl-importer/import-subuser',
+        function (Request $request) {
+            return (new PterodactylImporterController())->importSubuser($request);
+        },
+        Permissions::ADMIN_SERVERS_CREATE,
+        ['POST'],
+    );
+
+    // Import Pterodactyl schedule
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-pterodactyl-importer-import-schedule',
+        '/api/admin/pterodactyl-importer/import-schedule',
+        function (Request $request) {
+            return (new PterodactylImporterController())->importSchedule($request);
+        },
+        Permissions::ADMIN_SERVERS_CREATE,
+        ['POST'],
+    );
+
+    // Import Pterodactyl task
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-pterodactyl-importer-import-task',
+        '/api/admin/pterodactyl-importer/import-task',
+        function (Request $request) {
+            return (new PterodactylImporterController())->importTask($request);
+        },
+        Permissions::ADMIN_SERVERS_CREATE,
+        ['POST'],
+    );
 };

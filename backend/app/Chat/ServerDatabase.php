@@ -127,13 +127,43 @@ class ServerDatabase
         $data['created_at'] = $data['created_at'] ?? date('Y-m-d H:i:s');
         $data['updated_at'] = $data['updated_at'] ?? date('Y-m-d H:i:s');
 
+        // Build explicit fields and insert arrays (same pattern as Location.php)
+        $fields = ['server_id', 'database_host_id', 'database', 'username', 'password'];
+        $insert = [];
+        foreach ($fields as $field) {
+            $insert[$field] = $data[$field] ?? null;
+        }
+
+        // Add optional fields if provided
+        $optionalFields = ['remote', 'max_connections', 'created_at', 'updated_at'];
+        foreach ($optionalFields as $field) {
+            if (isset($data[$field])) {
+                $insert[$field] = $data[$field];
+                $fields[] = $field;
+            }
+        }
+
+        // Handle optional ID for migrations (EXACT same pattern as Location.php)
+        $hasId = false;
+        if (isset($data['id'])) {
+            // Accept both int and numeric string IDs
+            if (is_int($data['id']) || (is_string($data['id']) && ctype_digit((string) $data['id']))) {
+                $idValue = (int) $data['id'];
+                if ($idValue > 0) {
+                    $insert['id'] = $idValue;
+                    $fields[] = 'id';
+                    $hasId = true;
+                }
+            }
+        }
+
         $pdo = Database::getPdoConnection();
-        $fields = array_keys($data);
-        $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+        $fieldList = '`' . implode('`, `', $fields) . '`';
+        $placeholders = ':' . implode(', :', $fields);
+        $sql = 'INSERT INTO ' . self::$table . ' (' . $fieldList . ') VALUES (' . $placeholders . ')';
         $stmt = $pdo->prepare($sql);
-        if ($stmt->execute($data)) {
-            return (int) $pdo->lastInsertId();
+        if ($stmt->execute($insert)) {
+            return $hasId ? $insert['id'] : (int) $pdo->lastInsertId();
         }
 
         return false;

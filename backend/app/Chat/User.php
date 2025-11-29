@@ -50,7 +50,7 @@ class User
      *
      * @return int|false The new user's ID or false on failure
      */
-    public static function createUser(array $data): int | false
+    public static function createUser(array $data, bool $skipEmailValidation = false): int | false
     {
         // Required fields for user creation
         $required = [
@@ -74,22 +74,56 @@ class User
                 return false;
             }
         }
-        // Email validation
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            return false;
+        if ($skipEmailValidation) {
+            // Email validation
+            if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+                return false;
+            }
         }
         // UUID validation (basic)
         if (!preg_match('/^[a-f0-9\-]{36}$/i', $data['uuid'])) {
             return false;
         }
 
+        // Build explicit fields and insert arrays (same pattern as Location.php)
+        $fields = ['username', 'first_name', 'last_name', 'email', 'password', 'uuid'];
+        $insert = [];
+        foreach ($fields as $field) {
+            $insert[$field] = $data[$field] ?? null;
+        }
+
+        // Add optional fields if provided
+        $optionalFields = ['role_id', 'avatar', 'remember_token', 'first_ip', 'last_ip', 'banned', 'two_fa_enabled', 'two_fa_key', 'external_id'];
+        foreach ($optionalFields as $field) {
+            if (isset($data[$field])) {
+                $insert[$field] = $data[$field];
+                $fields[] = $field;
+            }
+        }
+
+        // Handle optional ID for migrations (EXACT same pattern as Location.php)
+        // NOTE: ID 1 is reserved for the main user and should be skipped
+        $hasId = false;
+        if (isset($data['id'])) {
+            // Accept both int and numeric string IDs
+            if (is_int($data['id']) || (is_string($data['id']) && ctype_digit((string) $data['id']))) {
+                $idValue = (int) $data['id'];
+                // Skip ID 1 (reserved for main user)
+                if ($idValue > 1 && $idValue > 0) {
+                    $insert['id'] = $idValue;
+                    $fields[] = 'id';
+                    $hasId = true;
+                }
+            }
+        }
+
         $pdo = Database::getPdoConnection();
-        $fields = array_keys($data);
-        $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+        $fieldList = '`' . implode('`, `', $fields) . '`';
+        $placeholders = ':' . implode(', :', $fields);
+        $sql = 'INSERT INTO ' . self::$table . ' (' . $fieldList . ') VALUES (' . $placeholders . ')';
         $stmt = $pdo->prepare($sql);
-        if ($stmt->execute($data)) {
-            return (int) $pdo->lastInsertId();
+        if ($stmt->execute($insert)) {
+            return $hasId ? $insert['id'] : (int) $pdo->lastInsertId();
         }
 
         return false;

@@ -237,6 +237,7 @@ class AllocationsController
             content: new OA\JsonContent(
                 required: ['node_id', 'ip', 'port'],
                 properties: [
+                    new OA\Property(property: 'id', type: 'integer', nullable: true, description: 'Optional allocation ID (for migrations)', example: 1),
                     new OA\Property(property: 'node_id', type: 'integer', description: 'Node ID where allocation will be created', minimum: 1),
                     new OA\Property(property: 'ip', type: 'string', description: 'IP address for the allocation', example: '192.168.1.100'),
                     new OA\Property(property: 'port', oneOf: [
@@ -279,7 +280,7 @@ class AllocationsController
         }
 
         // Check for invalid fields
-        $allowedFields = ['node_id', 'ip', 'ip_alias', 'port', 'server_id', 'notes'];
+        $allowedFields = ['id', 'node_id', 'ip', 'ip_alias', 'port', 'server_id', 'notes'];
         $invalidFields = array_diff(array_keys($data), $allowedFields);
         if (!empty($invalidFields)) {
             return ApiResponse::error(
@@ -287,6 +288,21 @@ class AllocationsController
                 'INVALID_FIELDS',
                 400
             );
+        }
+
+        // Handle optional ID for migrations (only works for single port, not port ranges)
+        if (isset($data['id'])) {
+            if (!is_int($data['id']) && !ctype_digit((string) $data['id'])) {
+                return ApiResponse::error('ID must be an integer', 'INVALID_DATA_TYPE', 400);
+            }
+            $data['id'] = (int) $data['id'];
+            if ($data['id'] < 1) {
+                return ApiResponse::error('ID must be a positive integer', 'INVALID_DATA_LENGTH', 400);
+            }
+            // Check if allocation with this ID already exists
+            if (Allocation::getById($data['id'])) {
+                return ApiResponse::error('Allocation with this ID already exists', 'DUPLICATE_ID', 400);
+            }
         }
 
         // Validate required fields
@@ -374,8 +390,9 @@ class AllocationsController
         // Check for existing allocations and prepare batch data
         $allocationsToCreate = [];
         $existingPorts = [];
+        $useCustomId = isset($data['id']) && count($ports) === 1; // Only use custom ID for single port allocations
 
-        foreach ($ports as $port) {
+        foreach ($ports as $index => $port) {
             if (!Allocation::isUniqueIpPort($nodeId, $data['ip'], $port)) {
                 $existingPorts[] = $port;
             } else {
@@ -387,6 +404,10 @@ class AllocationsController
                     'server_id' => $data['server_id'] ?? null,
                     'notes' => $data['notes'] ?? null,
                 ];
+                // Only use custom ID for the first allocation if it's a single port
+                if ($useCustomId && $index === 0) {
+                    $allocationData['id'] = $data['id'];
+                }
                 $allocationsToCreate[] = $allocationData;
             }
         }

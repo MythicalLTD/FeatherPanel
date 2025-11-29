@@ -47,8 +47,6 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'id', type: 'integer', description: 'Location ID'),
         new OA\Property(property: 'name', type: 'string', description: 'Location name'),
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Location description'),
-        new OA\Property(property: 'ip_address', type: 'string', nullable: true, description: 'IP address associated with location'),
-        new OA\Property(property: 'country', type: 'string', nullable: true, description: 'Country where location is based'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', description: 'Creation timestamp'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', description: 'Last update timestamp'),
     ]
@@ -74,8 +72,7 @@ use Symfony\Component\HttpFoundation\Response;
     properties: [
         new OA\Property(property: 'name', type: 'string', description: 'Location name', minLength: 2, maxLength: 255),
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Location description'),
-        new OA\Property(property: 'ip_address', type: 'string', nullable: true, description: 'IP address associated with location'),
-        new OA\Property(property: 'country', type: 'string', nullable: true, description: 'Country where location is based', maxLength: 255),
+        new OA\Property(property: 'id', type: 'integer', nullable: true, description: 'Optional location ID (useful for migrations from other platforms)'),
     ]
 )]
 #[OA\Schema(
@@ -84,8 +81,6 @@ use Symfony\Component\HttpFoundation\Response;
     properties: [
         new OA\Property(property: 'name', type: 'string', description: 'Location name', minLength: 2, maxLength: 255),
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Location description'),
-        new OA\Property(property: 'ip_address', type: 'string', nullable: true, description: 'IP address associated with location'),
-        new OA\Property(property: 'country', type: 'string', nullable: true, description: 'Country where location is based', maxLength: 255),
     ]
 )]
 class LocationsController
@@ -214,7 +209,7 @@ class LocationsController
     #[OA\Put(
         path: '/api/admin/locations',
         summary: 'Create new location',
-        description: 'Create a new location with name and optional description, IP address, and country. Validates IP address format and field lengths.',
+        description: 'Create a new location with name and optional description. Validates field lengths.',
         tags: ['Admin - Locations'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -230,7 +225,7 @@ class LocationsController
                     ]
                 )
             ),
-            new OA\Response(response: 400, description: 'Bad request - Invalid JSON, missing required fields, invalid data types, invalid IP format, or validation errors'),
+            new OA\Response(response: 400, description: 'Bad request - Invalid JSON, missing required fields, invalid data types, or validation errors'),
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
             new OA\Response(response: 500, description: 'Internal server error - Failed to create location'),
@@ -258,24 +253,21 @@ class LocationsController
         if (isset($data['description']) && !is_string($data['description'])) {
             return ApiResponse::error('Description must be a string', 'INVALID_DATA_TYPE');
         }
-        if (isset($data['ip_address']) && !is_string($data['ip_address'])) {
-            return ApiResponse::error('IP Address must be a string', 'INVALID_DATA_TYPE');
-        }
-        if (
-            isset($data['ip_address'])
-            && $data['ip_address'] !== ''
-            && !filter_var($data['ip_address'], FILTER_VALIDATE_IP)
-        ) {
-            return ApiResponse::error('Invalid IP address format', 'INVALID_IP_FORMAT');
-        }
-        if (isset($data['country']) && !is_string($data['country'])) {
-            return ApiResponse::error('Country must be a string', 'INVALID_DATA_TYPE');
-        }
         if (strlen($data['name']) < 2 || strlen($data['name']) > 255) {
             return ApiResponse::error('Name must be between 2 and 255 characters', 'INVALID_DATA_LENGTH');
         }
-        if (isset($data['country']) && strlen($data['country']) > 255) {
-            return ApiResponse::error('Country must be less than 255 characters', 'INVALID_DATA_LENGTH');
+        if (isset($data['id'])) {
+            if (!is_int($data['id']) && !ctype_digit((string) $data['id'])) {
+                return ApiResponse::error('ID must be an integer', 'INVALID_DATA_TYPE');
+            }
+            $data['id'] = (int) $data['id'];
+            if ($data['id'] < 1) {
+                return ApiResponse::error('ID must be a positive integer', 'INVALID_DATA_LENGTH');
+            }
+            // Check if location with this ID already exists
+            if (Location::getById($data['id'])) {
+                return ApiResponse::error('Location with this ID already exists', 'DUPLICATE_ID', 400);
+            }
         }
         $id = Location::create($data);
         if (!$id) {
@@ -309,7 +301,7 @@ class LocationsController
     #[OA\Patch(
         path: '/api/admin/locations/{id}',
         summary: 'Update location',
-        description: 'Update an existing location. Only provided fields will be updated. Validates IP address format and field lengths.',
+        description: 'Update an existing location. Only provided fields will be updated. Validates field lengths.',
         tags: ['Admin - Locations'],
         parameters: [
             new OA\Parameter(
@@ -334,7 +326,7 @@ class LocationsController
                     ]
                 )
             ),
-            new OA\Response(response: 400, description: 'Bad request - Invalid JSON, no data provided, invalid data types, invalid IP format, or validation errors'),
+            new OA\Response(response: 400, description: 'Bad request - Invalid JSON, no data provided, invalid data types, or validation errors'),
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
             new OA\Response(response: 404, description: 'Location not found'),
@@ -367,17 +359,6 @@ class LocationsController
         }
         if (isset($data['description']) && !is_string($data['description'])) {
             return ApiResponse::error('Description must be a string', 'INVALID_DATA_TYPE');
-        }
-        if (isset($data['ip_address']) && !is_string($data['ip_address'])) {
-            return ApiResponse::error('IP Address must be a string', 'INVALID_DATA_TYPE');
-        }
-        if (isset($data['country'])) {
-            if (!is_string($data['country'])) {
-                return ApiResponse::error('Country must be a string', 'INVALID_DATA_TYPE');
-            }
-            if (strlen($data['country']) > 255) {
-                return ApiResponse::error('Country must be less than 255 characters', 'INVALID_DATA_LENGTH');
-            }
         }
         $success = Location::update($id, $data);
         if (!$success) {

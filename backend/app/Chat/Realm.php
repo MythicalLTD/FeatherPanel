@@ -96,11 +96,21 @@ class Realm
         foreach ($fields as $field) {
             $insert[$field] = $data[$field] ?? null;
         }
+
+        // Handle optional ID for migrations
+        $hasId = isset($data['id']) && is_int($data['id']) && $data['id'] > 0;
+        if ($hasId) {
+            $insert['id'] = $data['id'];
+            $fields[] = 'id';
+        }
+
         $pdo = Database::getPdoConnection();
-        $sql = 'INSERT INTO ' . self::$table . ' (name, description) VALUES (:name, :description)';
+        $fieldList = '`' . implode('`, `', $fields) . '`';
+        $placeholders = ':' . implode(', :', $fields);
+        $sql = 'INSERT INTO ' . self::$table . ' (' . $fieldList . ') VALUES (' . $placeholders . ')';
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($insert)) {
-            return (int) $pdo->lastInsertId();
+            return $hasId ? $insert['id'] : (int) $pdo->lastInsertId();
         }
 
         return false;

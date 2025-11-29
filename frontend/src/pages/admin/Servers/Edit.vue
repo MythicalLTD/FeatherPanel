@@ -2106,8 +2106,8 @@ function validateForm(): boolean {
 
     if (form.value.swap < -1) {
         validationErrors.value.swap = 'Swap cannot be less than -1';
-    } else if (form.value.swap > 1048576) {
-        // 1TB in MB
+    } else if (form.value.swap !== 0 && form.value.swap !== -1 && form.value.swap > 1048576) {
+        // 1TB in MB - exclude -1 (unlimited) and 0 (disabled) from max check
         validationErrors.value.swap = 'Swap cannot exceed 1TB (1048576 MB)';
     }
 

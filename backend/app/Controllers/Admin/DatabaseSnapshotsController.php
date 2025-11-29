@@ -409,6 +409,12 @@ class DatabaseSnapshotsController
                 return ApiResponse::error('Failed to read snapshot file', 'READ_ERROR', 500);
             }
 
+            // Validate file content immediately after reading (before attempting restore)
+            $validationError = $this->validateSqlContent($sql);
+            if ($validationError !== null) {
+                return $validationError;
+            }
+
             return $this->performRestore($sql);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to restore database: ' . $e->getMessage(), 500);
@@ -806,27 +812,68 @@ class DatabaseSnapshotsController
             return ApiResponse::error('Backup file is empty or invalid. The file does not contain any SQL data.', 'INVALID_SQL_CONTENT', 400);
         }
 
-        // Check for HTML content (common error page indicators)
-        $htmlIndicators = ['<!DOCTYPE', '<html', '<head', '<body', '<script', 'Content-Type: text/html'];
-        $contentStart = substr(trim($content), 0, 500); // Check first 500 chars
+        // Normalize content for checking (remove whitespace, convert to lowercase for case-insensitive checks)
+        $contentNormalized = strtolower(trim($content));
+        $contentStart = substr($contentNormalized, 0, 1000); // Check first 1000 chars for better detection
+
+        // Check for HTML content (common error page indicators) - more comprehensive check
+        $htmlIndicators = [
+            '<!doctype',
+            '<html',
+            '<head',
+            '<body',
+            '<script',
+            '<meta',
+            '<title',
+            'content-type: text/html',
+            'http/1.1',
+            'http/1.0',
+            '</html>',
+            '<div',
+            '<span',
+            '<p>',
+            'error occurred',
+            'not found',
+            '404',
+            '500',
+            'internal server error',
+        ];
+
         foreach ($htmlIndicators as $indicator) {
             if (stripos($contentStart, $indicator) !== false) {
                 return ApiResponse::error('Invalid backup file: The file appears to contain HTML content instead of SQL. This usually means the file is corrupted, was downloaded incorrectly, or is not a valid FeatherPanel Backup (.fpb) file. Please try downloading the backup again or create a new snapshot.', 'INVALID_SQL_CONTENT', 400);
             }
         }
 
-        // Check for JSON error responses
-        if (preg_match('/^\s*\{.*"error".*"message"/is', $content)) {
+        // Check for JSON error responses (more comprehensive)
+        if (
+            preg_match('/^\s*\{.*"error".*"message"/is', $content)
+            || preg_match('/^\s*\{.*"success".*false/is', $content)
+            || preg_match('/^\s*\{.*"status".*\d{3}/is', $content)
+        ) {
             return ApiResponse::error('Invalid backup file: The file appears to contain an error response instead of SQL data. This usually means the download failed or the file is corrupted. Please try downloading the backup again or create a new snapshot.', 'INVALID_SQL_CONTENT', 400);
         }
 
-        // Check for basic SQL indicators (at least one SQL keyword should be present)
-        $sqlKeywords = ['CREATE', 'INSERT', 'DROP', 'ALTER', 'UPDATE', 'DELETE', 'SELECT', 'TABLE', 'DATABASE'];
+        // Check for HTTP response headers
+        if (preg_match('/^(HTTP\/\d\.\d|Content-Type:|Content-Length:|Location:)/i', $content)) {
+            return ApiResponse::error('Invalid backup file: The file appears to contain HTTP response headers instead of SQL data. This usually means the file was downloaded incorrectly. Please try downloading the backup again or create a new snapshot.', 'INVALID_SQL_CONTENT', 400);
+        }
+
+        // Check for basic SQL indicators (at least one SQL keyword should be present in the first part)
+        // This ensures we're not just finding keywords in error messages
+        $sqlKeywords = ['CREATE', 'INSERT', 'DROP', 'ALTER', 'UPDATE', 'DELETE', 'SELECT', 'TABLE', 'DATABASE', 'USE ', 'SET ', 'LOCK', 'UNLOCK'];
         $hasSqlKeyword = false;
+        $contentUpper = strtoupper($content);
         foreach ($sqlKeywords as $keyword) {
-            if (stripos($content, $keyword) !== false) {
-                $hasSqlKeyword = true;
-                break;
+            if (stripos($contentUpper, $keyword) !== false) {
+                // Make sure it's not part of an HTML/error message
+                $keywordPos = stripos($contentUpper, $keyword);
+                $context = substr($contentUpper, max(0, $keywordPos - 50), 100);
+                // If the keyword is surrounded by HTML-like content, it's probably not real SQL
+                if (stripos($context, '<') === false && stripos($context, 'HTTP') === false) {
+                    $hasSqlKeyword = true;
+                    break;
+                }
             }
         }
 
@@ -865,9 +912,6 @@ class DatabaseSnapshotsController
 
         // Disable foreign key checks temporarily
         $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
-        $pdo->exec('SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO"');
-        $pdo->exec('SET AUTOCOMMIT = 0');
-        $pdo->exec('START TRANSACTION');
 
         try {
             // Step 1: Get all existing table names
@@ -887,34 +931,66 @@ class DatabaseSnapshotsController
                 }
             }
 
-            // Step 3: Split SQL into individual statements
-            $statements = array_filter(
-                array_map('trim', explode(';', $sql)),
-                function ($stmt) {
-                    return !empty($stmt) && !preg_match('/^--/', $stmt) && !preg_match('/^\/\*/', $stmt);
-                }
-            );
+            // Step 3: Write SQL to temporary file and use mysql command to import
+            // This properly handles multi-line statements, comments, and all SQL (like MythicalDash)
+            $tempFile = sys_get_temp_dir() . '/featherpanel_restore_' . uniqid() . '.sql';
+            if (file_put_contents($tempFile, $sql) === false) {
+                throw new \Exception('Failed to write temporary SQL file');
+            }
 
-            // Step 4: Execute each statement from the backup
-            foreach ($statements as $statement) {
-                if (!empty($statement)) {
-                    $pdo->exec($statement);
+            try {
+                // Escape shell arguments
+                $escapedHost = escapeshellarg($host);
+                $escapedPort = escapeshellarg($port);
+                $escapedDatabase = escapeshellarg($database);
+                $escapedUsername = escapeshellarg($username);
+                $escapedPassword = escapeshellarg($password);
+                $escapedFile = escapeshellarg($tempFile);
+
+                // Build mysql command (using -p with password directly, no space after -p)
+                $mysqlCmd = sprintf(
+                    'mysql -h %s -P %s -u %s -p%s %s < %s 2>&1',
+                    $escapedHost,
+                    $escapedPort,
+                    $escapedUsername,
+                    $escapedPassword,
+                    $escapedDatabase,
+                    $escapedFile
+                );
+
+                // Execute mysql import
+                $output = [];
+                $returnVar = 0;
+                exec($mysqlCmd, $output, $returnVar);
+
+                if ($returnVar !== 0) {
+                    $errorMsg = implode("\n", array_slice($output, 0, 10)); // Limit error output
+                    throw new \Exception('MySQL import failed: ' . $errorMsg);
+                }
+            } finally {
+                // Clean up temporary file
+                if (file_exists($tempFile)) {
+                    unlink($tempFile);
                 }
             }
 
-            $pdo->exec('COMMIT');
             $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
-            $pdo->exec('SET AUTOCOMMIT = 1');
+
+            // Run migrations after restore to ensure database is up to date
+            try {
+                $this->runMigrations($pdo);
+            } catch (\Exception $e) {
+                App::getInstance(true)->getLogger()->warning('Failed to run migrations after restore: ' . $e->getMessage());
+                // Don't fail the restore if migrations fail - just log it
+            }
 
             return ApiResponse::success(
                 ['message' => 'Database restored successfully'],
-                'Database restored successfully. Please note: This only protects database integrity and does not protect from deleted servers or other actions performed under Wings. Restoring from this backup might corrupt your database and unsync your panel with Wings!'
+                'Database restored successfully. Migrations have been run to ensure the database is up to date. Please note: This only protects database integrity and does not protect from deleted servers or other actions performed under Wings. Restoring from this backup might corrupt your database and unsync your panel with Wings!'
             );
         } catch (\Exception $e) {
-            $pdo->exec('ROLLBACK');
             $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
-            $pdo->exec('SET AUTOCOMMIT = 1');
-
+            App::getInstance(true)->getLogger()->error('Database restore failed: ' . $e->getMessage());
             throw $e;
         }
     }

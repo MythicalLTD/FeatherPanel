@@ -120,14 +120,47 @@ class Backup
         $data['created_at'] = $data['created_at'] ?? date('Y-m-d H:i:s');
         $data['updated_at'] = $data['updated_at'] ?? date('Y-m-d H:i:s');
 
-        $pdo = Database::getPdoConnection();
-        $fields = array_keys($data);
-        $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
-        $stmt = $pdo->prepare($sql);
-        if ($stmt->execute($data)) {
-            return (int) $pdo->lastInsertId();
+        // Build explicit fields and insert arrays (same pattern as Location.php)
+        $fields = ['server_id', 'uuid', 'name', 'ignored_files', 'disk', 'is_successful', 'is_locked', 'bytes', 'created_at', 'updated_at'];
+        $insert = [];
+        foreach ($fields as $field) {
+            $insert[$field] = $data[$field] ?? null;
         }
+
+        // Add optional fields if provided
+        $optionalFields = ['upload_id', 'checksum', 'completed_at'];
+        foreach ($optionalFields as $field) {
+            if (isset($data[$field])) {
+                $insert[$field] = $data[$field];
+                $fields[] = $field;
+            }
+        }
+
+        // Handle optional ID for migrations (EXACT same pattern as Location.php)
+        $hasId = false;
+        if (isset($data['id'])) {
+            if (is_int($data['id']) || (is_string($data['id']) && ctype_digit((string) $data['id']))) {
+                $idValue = (int) $data['id'];
+                if ($idValue > 0) {
+                    $insert['id'] = $idValue;
+                    $fields[] = 'id';
+                    $hasId = true;
+                }
+            }
+        }
+
+        $pdo = Database::getPdoConnection();
+        $fieldList = '`' . implode('`, `', $fields) . '`';
+        $placeholders = ':' . implode(', :', $fields);
+        $sql = 'INSERT INTO ' . self::$table . ' (' . $fieldList . ') VALUES (' . $placeholders . ')';
+        $stmt = $pdo->prepare($sql);
+        if ($stmt->execute($insert)) {
+            return $hasId ? $insert['id'] : (int) $pdo->lastInsertId();
+        }
+
+        // Log database error for debugging
+        $errorInfo = $stmt->errorInfo();
+        App::getInstance(true)->getLogger()->error('Failed to create backup: ' . ($errorInfo[2] ?? 'Unknown error') . ' | SQLSTATE: ' . ($errorInfo[0] ?? 'N/A') . ' | Error Code: ' . ($errorInfo[1] ?? 'N/A') . ' | SQL: ' . $sql . ' | Data: ' . json_encode(self::sanitizeDataForLogging($insert)));
 
         return false;
     }

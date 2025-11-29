@@ -46,6 +46,7 @@ class DatabaseInstance
      * Whitelist of allowed field names for SQL queries to prevent injection.
      */
     private static array $allowedFields = [
+        'id',
         'name',
         'node_id',
         'database_type',
@@ -67,7 +68,6 @@ class DatabaseInstance
         // Required fields for database creation
         $required = [
             'name',
-            'node_id',
             'database_type',
             'database_port',
             'database_username',
@@ -94,14 +94,7 @@ class DatabaseInstance
             }
 
             // Special validation for different field types
-            if ($field === 'node_id') {
-                if (!is_numeric($data[$field]) || (int) $data[$field] <= 0) {
-                    $sanitizedData = self::sanitizeDataForLogging($data);
-                    App::getInstance(true)->getLogger()->error('Invalid node_id: ' . $data[$field] . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
-
-                    return false;
-                }
-            } elseif ($field === 'database_port') {
+            if ($field === 'database_port') {
                 if (!is_numeric($data[$field]) || (int) $data[$field] < 1 || (int) $data[$field] > 65535) {
                     $sanitizedData = self::sanitizeDataForLogging($data);
                     App::getInstance(true)->getLogger()->error('Invalid database_port: ' . $data[$field] . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
@@ -127,12 +120,28 @@ class DatabaseInstance
             }
         }
 
-        // Validate node_id exists
-        if (!Node::getNodeById($data['node_id'])) {
-            $sanitizedData = self::sanitizeDataForLogging($data);
-            App::getInstance(true)->getLogger()->error('Invalid node_id: ' . $data['node_id'] . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+        // Validate node_id if provided (optional for migration purposes)
+        if (isset($data['node_id']) && $data['node_id'] !== null && $data['node_id'] !== '') {
+            // Handle string '0' or empty string as not provided
+            if ($data['node_id'] === '0' || $data['node_id'] === 0) {
+                unset($data['node_id']);
+            } elseif (!is_numeric($data['node_id']) || (int) $data['node_id'] <= 0) {
+                $sanitizedData = self::sanitizeDataForLogging($data);
+                App::getInstance(true)->getLogger()->error('Invalid node_id: ' . $data['node_id'] . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
 
-            return false;
+                return false;
+            } else {
+                // Validate node_id exists
+                if (!Node::getNodeById($data['node_id'])) {
+                    $sanitizedData = self::sanitizeDataForLogging($data);
+                    App::getInstance(true)->getLogger()->error('Invalid node_id: ' . $data['node_id'] . ' for database: ' . $data['name'] . ' with data: ' . json_encode($sanitizedData));
+
+                    return false;
+                }
+            }
+        } else {
+            // Remove node_id from data if not provided
+            unset($data['node_id']);
         }
 
         // Encrypt sensitive fields before storing
@@ -140,16 +149,40 @@ class DatabaseInstance
             $data['database_password'] = App::getInstance(true)->encryptValue($data['database_password']);
         }
 
-        // Filter data to only include allowed fields
-        $filteredData = array_intersect_key($data, array_flip(self::$allowedFields));
+        // Build explicit fields and insert arrays (same pattern as Location.php)
+        $fields = ['name', 'database_type', 'database_port', 'database_username', 'database_password', 'database_host'];
+        $insert = [];
+        foreach ($fields as $field) {
+            $insert[$field] = $data[$field] ?? null;
+        }
+
+        // Add node_id if provided
+        if (isset($data['node_id']) && $data['node_id'] !== null && $data['node_id'] !== '') {
+            $fields[] = 'node_id';
+            $insert['node_id'] = $data['node_id'];
+        }
+
+        // Handle optional ID for migrations (EXACT same pattern as Location.php)
+        $hasId = false;
+        if (isset($data['id'])) {
+            // Accept both int and numeric string IDs
+            if (is_int($data['id']) || (is_string($data['id']) && ctype_digit((string) $data['id']))) {
+                $idValue = (int) $data['id'];
+                if ($idValue > 0) {
+                    $insert['id'] = $idValue;
+                    $fields[] = 'id';
+                    $hasId = true;
+                }
+            }
+        }
 
         $pdo = Database::getPdoConnection();
-        $fields = array_keys($filteredData);
-        $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`,`', $fields) . '`) VALUES (' . implode(',', $placeholders) . ')';
+        $fieldList = '`' . implode('`, `', $fields) . '`';
+        $placeholders = ':' . implode(', :', $fields);
+        $sql = 'INSERT INTO ' . self::$table . ' (' . $fieldList . ') VALUES (' . $placeholders . ')';
         $stmt = $pdo->prepare($sql);
-        if ($stmt->execute($filteredData)) {
-            return (int) $pdo->lastInsertId();
+        if ($stmt->execute($insert)) {
+            return $hasId ? $insert['id'] : (int) $pdo->lastInsertId();
         }
 
         $sanitizedData = self::sanitizeDataForLogging($data);

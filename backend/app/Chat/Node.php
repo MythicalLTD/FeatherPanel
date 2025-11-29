@@ -46,6 +46,7 @@ class Node
      * Whitelist of allowed field names for SQL queries to prevent injection.
      */
     private static array $allowedFields = [
+        'id',
         'uuid',
         'name',
         'description',
@@ -217,6 +218,9 @@ class Node
             $data['daemon_token'] = App::getInstance(true)->encryptValue($data['daemon_token']);
         }
 
+        // Handle optional ID for migrations
+        $hasId = isset($data['id']) && is_int($data['id']) && $data['id'] > 0;
+
         // Filter data to only include allowed fields
         $filteredData = array_intersect_key($data, array_flip(self::$allowedFields));
 
@@ -226,7 +230,7 @@ class Node
         $sql = 'INSERT INTO ' . self::$table . ' (`' . implode('`,`', $fields) . '`) VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($filteredData)) {
-            return (int) $pdo->lastInsertId();
+            return $hasId ? $filteredData['id'] : (int) $pdo->lastInsertId();
         }
 
         $sanitizedData = self::sanitizeDataForLogging($data);

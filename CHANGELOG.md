@@ -14,6 +14,7 @@
 - Added seamless integration with Perplexity AI, allowing you to use advanced AI-powered chat capabilities right within FeatherPanel.
 - Refactored the Zero Trust system for greater clarity and user-friendliness, making security features easier to understand and configure for beginners. by @nayskutzu
 - Introduced powerful database snapshot tools, empowering developers to easily create and restore database snapshots, streamlining the process of reverting changes during development. by @nayskutzu
+- Added support for standalone database hosts that operate independently of a node host, streamlining migrations from Pterodactyl and enhancing deployment flexibility. by @nayskutzu
 
 ### Improved
 

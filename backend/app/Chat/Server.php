@@ -90,15 +90,30 @@ class Server
 
             // Integer fields that must be positive (>0)
             $strictPositiveFields = [
-                'node_id', 'owner_id', 'allocation_id', 'realms_id', 'spell_id',
+                'node_id',
+                'owner_id',
+                'allocation_id',
+                'realms_id',
+                'spell_id',
             ];
 
             // Integer fields that must be non-negative (>=0, can be 0 for unlimited)
             $nonNegativeFields = [
-                'memory', 'swap', 'disk', 'io', 'cpu',
+                'memory',
+                'disk',
+                'io',
+                'cpu',
             ];
 
-            if (in_array($field, $strictPositiveFields, true)) {
+            // Swap is special: -1 = unlimited, 0 = disabled, >0 = limited
+            if ($field === 'swap') {
+                if (!is_numeric($data[$field]) || (int) $data[$field] < -1) {
+                    $sanitizedData = self::sanitizeDataForLogging($data);
+                    App::getInstance(true)->getLogger()->error('Invalid swap: ' . $data[$field] . ' for server: ' . ($data['name'] ?? '[unknown]') . ' (must be -1 for unlimited, 0 for disabled, or >0 for limited) with data: ' . json_encode($sanitizedData));
+
+                    return false;
+                }
+            } elseif (in_array($field, $strictPositiveFields, true)) {
                 if (!is_numeric($data[$field]) || (int) $data[$field] <= 0) {
                     $sanitizedData = self::sanitizeDataForLogging($data);
                     App::getInstance(true)->getLogger()->error('Invalid ' . $field . ': ' . $data[$field] . ' for server: ' . ($data['name'] ?? '[unknown]') . ' with data: ' . json_encode($sanitizedData));
@@ -190,14 +205,58 @@ class Server
             return false;
         }
 
-        $pdo = Database::getPdoConnection();
-        $fields = array_keys($data);
-        $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
-        $stmt = $pdo->prepare($sql);
-        if ($stmt->execute($data)) {
-            return (int) $pdo->lastInsertId();
+        // Build explicit fields and insert arrays (same pattern as Location.php)
+        $fields = ['uuid', 'uuidShort', 'node_id', 'name', 'owner_id', 'memory', 'swap', 'disk', 'io', 'cpu', 'allocation_id', 'realms_id', 'spell_id', 'startup', 'image'];
+        $insert = [];
+        foreach ($fields as $field) {
+            $insert[$field] = $data[$field] ?? null;
         }
+
+        // Add optional fields if provided
+        $optionalFields = ['description', 'status', 'skip_scripts', 'parent_id', 'external_id', 'threads', 'allocation_limit', 'database_limit', 'backup_limit', 'installed_at'];
+        foreach ($optionalFields as $field) {
+            if (isset($data[$field])) {
+                $insert[$field] = $data[$field];
+                $fields[] = $field;
+            }
+        }
+
+        // Handle oom_killer -> oom_disabled conversion (same as ServersController)
+        if (isset($data['oom_killer'])) {
+            $insert['oom_disabled'] = $data['oom_killer'] ? 0 : 1;
+            $fields[] = 'oom_disabled';
+        } elseif (isset($data['oom_disabled'])) {
+            $insert['oom_disabled'] = (int) $data['oom_disabled'];
+            $fields[] = 'oom_disabled';
+        }
+
+        // Handle optional ID for migrations (EXACT same pattern as Location.php)
+        $hasId = false;
+        if (isset($data['id'])) {
+            // Accept both int and numeric string IDs
+            if (is_int($data['id']) || (is_string($data['id']) && ctype_digit((string) $data['id']))) {
+                $idValue = (int) $data['id'];
+                if ($idValue > 0) {
+                    $insert['id'] = $idValue;
+                    $fields[] = 'id';
+                    $hasId = true;
+                }
+            }
+        }
+
+        $pdo = Database::getPdoConnection();
+        $fieldList = '`' . implode('`, `', $fields) . '`';
+        $placeholders = ':' . implode(', :', $fields);
+        $sql = 'INSERT INTO ' . self::$table . ' (' . $fieldList . ') VALUES (' . $placeholders . ')';
+        $stmt = $pdo->prepare($sql);
+        if ($stmt->execute($insert)) {
+            return $hasId ? $insert['id'] : (int) $pdo->lastInsertId();
+        }
+
+        // Log database error details
+        $errorInfo = $stmt->errorInfo();
+        $sanitizedData = self::sanitizeDataForLogging($insert);
+        App::getInstance(true)->getLogger()->error('Database insert failed for server: ' . ($data['name'] ?? '[unknown]') . ' | SQL Error: ' . ($errorInfo[2] ?? 'Unknown error') . ' | SQL State: ' . ($errorInfo[0] ?? 'Unknown') . ' | Error Code: ' . ($errorInfo[1] ?? 'Unknown') . ' | Data: ' . json_encode($sanitizedData) . ' | SQL: ' . $sql);
 
         return false;
     }

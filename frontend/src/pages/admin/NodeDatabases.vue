@@ -18,9 +18,9 @@
                 <WidgetRenderer v-if="widgetsBeforeTable.length > 0" :widgets="widgetsBeforeTable" />
                 <TableComponent
                     title="Server Databases"
-                    :description="`Managing databases for node: ${node?.name}`"
+                    :description="`Managing databases for node: ${node?.name} (including databases without a node assignment)`"
                     :columns="tableColumns"
-                    :data="databases"
+                    :data="paginatedDatabases"
                     :search-placeholder="'Search by name or host...'"
                     :server-side-pagination="true"
                     :total-records="pagination.total"
@@ -58,6 +58,19 @@
                             <span class="text-xs">
                                 {{ (item as unknown as Database).healthy ? 'Healthy' : 'Unhealthy' }}
                             </span>
+                        </div>
+                    </template>
+
+                    <template #cell-name="{ item }">
+                        <div class="flex items-center gap-2">
+                            <span>{{ (item as unknown as Database).name }}</span>
+                            <Badge
+                                v-if="(item as unknown as Database).node_id === null"
+                                variant="outline"
+                                class="text-xs"
+                            >
+                                No Node
+                            </Badge>
                         </div>
                     </template>
 
@@ -307,6 +320,13 @@
                                     <div class="text-sm">{{ viewDatabase?.database_username }}</div>
                                 </div>
                                 <div>
+                                    <div class="text-sm font-medium text-muted-foreground">Node ID</div>
+                                    <div class="text-sm">
+                                        <span v-if="viewDatabase?.node_id">{{ viewDatabase.node_id }}</span>
+                                        <Badge v-else variant="outline">No Node Assigned</Badge>
+                                    </div>
+                                </div>
+                                <div>
                                     <div class="text-sm font-medium text-muted-foreground">Created</div>
                                     <div class="text-sm">{{ formatDate(viewDatabase?.created_at) }}</div>
                                 </div>
@@ -387,7 +407,7 @@ function getDefaultPort(databaseType: string): number {
 interface Database {
     id: number;
     name: string;
-    node_id: number;
+    node_id: number | null;
     database_type: string;
     database_port: number;
     database_username: string;
@@ -411,7 +431,7 @@ const toast = useToast();
 const nodeId = computed(() => Number(route.params.nodeId));
 
 // Reactive data
-const databases = ref<Database[]>([]);
+const allDatabases = ref<Database[]>([]);
 const node = ref<Node | null>(null);
 const searchQuery = ref('');
 const showDrawer = ref(false);
@@ -455,7 +475,7 @@ const form = ref({
 
 const formErrors = ref<Record<string, string>>({});
 
-// Pagination
+// Pagination (client-side now)
 const pagination = ref({
     page: 1,
     pageSize: 10,
@@ -465,6 +485,53 @@ const pagination = ref({
     from: 0,
     to: 0,
 });
+
+// Computed: Filter databases to show only current node or null node_id
+const filteredDatabases = computed(() => {
+    return allDatabases.value.filter((db) => {
+        return db.node_id === nodeId.value || db.node_id === null;
+    });
+});
+
+// Computed: Apply search filter
+const searchedDatabases = computed(() => {
+    if (!searchQuery.value.trim()) {
+        return filteredDatabases.value;
+    }
+
+    const query = searchQuery.value.toLowerCase().trim();
+    return filteredDatabases.value.filter((db) => {
+        return (
+            db.name.toLowerCase().includes(query) ||
+            db.database_host.toLowerCase().includes(query) ||
+            db.database_username.toLowerCase().includes(query)
+        );
+    });
+});
+
+// Computed: Paginated databases
+const paginatedDatabases = computed(() => {
+    const start = (pagination.value.page - 1) * pagination.value.pageSize;
+    const end = start + pagination.value.pageSize;
+    return searchedDatabases.value.slice(start, end);
+});
+
+// Function: Update pagination metadata
+function updatePaginationMetadata() {
+    const total = searchedDatabases.value.length;
+    const totalPages = Math.ceil(total / pagination.value.pageSize);
+    const from = total > 0 ? (pagination.value.page - 1) * pagination.value.pageSize + 1 : 0;
+    const to = Math.min(pagination.value.page * pagination.value.pageSize, total);
+
+    pagination.value = {
+        ...pagination.value,
+        total,
+        hasNext: pagination.value.page < totalPages,
+        hasPrev: pagination.value.page > 1,
+        from,
+        to,
+    };
+}
 
 // Breadcrumbs
 const breadcrumbs = computed(() => [
@@ -478,26 +545,18 @@ const breadcrumbs = computed(() => [
 async function fetchDatabases() {
     loading.value = true;
     try {
-        const response = await axios.get(`/api/admin/databases/node/${nodeId.value}`, {
+        // Fetch all databases (we'll filter client-side for node_id or null)
+        const response = await axios.get('/api/admin/databases', {
             params: {
-                page: pagination.value.page,
-                limit: pagination.value.pageSize,
-                search: searchQuery.value,
+                page: 1,
+                limit: 1000, // Fetch a large number to get all databases
+                search: '', // We'll filter client-side
             },
         });
-        databases.value = response.data.data.databases;
+        allDatabases.value = response.data.data.databases || [];
 
-        // Map the API response pagination to our expected format
-        const apiPagination = response.data.data.pagination;
-        pagination.value = {
-            page: apiPagination.current_page,
-            pageSize: apiPagination.per_page,
-            total: apiPagination.total_records,
-            hasNext: apiPagination.has_next,
-            hasPrev: apiPagination.has_prev,
-            from: apiPagination.from,
-            to: apiPagination.to,
-        };
+        // Update pagination metadata when databases change
+        updatePaginationMetadata();
     } catch (e) {
         const err = e as { response?: { data?: { message?: string } } };
         toast.error(err?.response?.data?.message || 'Failed to fetch databases');
@@ -528,19 +587,19 @@ async function checkDatabaseHealth(database: Database) {
 }
 
 async function checkAllDatabasesHealth() {
-    await Promise.all(databases.value.map(checkDatabaseHealth));
+    await Promise.all(filteredDatabases.value.map(checkDatabaseHealth));
 }
 
 // Table event handlers
 function handleSearch(query: string) {
     searchQuery.value = query;
     pagination.value.page = 1; // Reset to first page when searching
-    fetchDatabases();
+    updatePaginationMetadata();
 }
 
 function changePage(page: number) {
     pagination.value.page = page;
-    fetchDatabases();
+    updatePaginationMetadata();
 }
 
 function openCreateDrawer() {
@@ -595,6 +654,7 @@ async function confirmDelete(database: Database) {
         await axios.delete(`/api/admin/databases/${database.id}`);
         toast.success('Database deleted successfully');
         await fetchDatabases();
+        await checkAllDatabasesHealth();
         confirmDeleteRow.value = null;
     } catch (e) {
         const err = e as { response?: { data?: { message?: string } } };
@@ -661,12 +721,14 @@ async function submitForm() {
             await axios.put('/api/admin/databases', data);
             toast.success('Database created successfully');
             await fetchDatabases();
+            await checkAllDatabasesHealth();
             showDrawer.value = false;
             editingDatabaseId.value = null;
         } else if (drawerMode.value === 'edit' && editingDatabaseId.value) {
             await axios.patch(`/api/admin/databases/${editingDatabaseId.value}`, data);
             toast.success('Database updated successfully');
             await fetchDatabases();
+            await checkAllDatabasesHealth();
             showDrawer.value = false;
             editingDatabaseId.value = null;
         }
@@ -703,7 +765,27 @@ function formatDate(date: string | undefined) {
 // Watchers
 watch(searchQuery, () => {
     pagination.value.page = 1;
-    fetchDatabases();
+    updatePaginationMetadata();
+});
+
+// Watch filtered databases to update pagination
+watch(filteredDatabases, () => {
+    if (pagination.value.page > Math.ceil(searchedDatabases.value.length / pagination.value.pageSize)) {
+        pagination.value.page = 1;
+    }
+    updatePaginationMetadata();
+});
+
+// Watch nodeId changes to refetch
+watch(nodeId, () => {
+    if (nodeId.value) {
+        fetchDatabases();
+    }
+});
+
+// Watch for changes that affect pagination
+watch([searchedDatabases, () => pagination.value.pageSize], () => {
+    updatePaginationMetadata();
 });
 
 // Lifecycle
@@ -721,6 +803,7 @@ onMounted(async () => {
 
     await fetchNode();
     await fetchDatabases();
+    updatePaginationMetadata(); // Initialize pagination metadata
     await checkAllDatabasesHealth();
 });
 </script>

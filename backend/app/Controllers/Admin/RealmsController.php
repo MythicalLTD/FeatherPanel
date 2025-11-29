@@ -71,6 +71,7 @@ use Symfony\Component\HttpFoundation\Response;
     properties: [
         new OA\Property(property: 'name', type: 'string', description: 'Realm name', minLength: 2, maxLength: 255),
         new OA\Property(property: 'description', type: 'string', nullable: true, description: 'Realm description', maxLength: 65535),
+        new OA\Property(property: 'id', type: 'integer', nullable: true, description: 'Optional realm ID (useful for migrations from other platforms)'),
     ]
 )]
 #[OA\Schema(
@@ -265,6 +266,19 @@ class RealmsController
         }
         if (isset($data['description']) && strlen($data['description']) > 65535) {
             return ApiResponse::error('Description must be less than 65535 characters', 'INVALID_DATA_LENGTH');
+        }
+        if (isset($data['id'])) {
+            if (!is_int($data['id']) && !ctype_digit((string) $data['id'])) {
+                return ApiResponse::error('ID must be an integer', 'INVALID_DATA_TYPE');
+            }
+            $data['id'] = (int) $data['id'];
+            if ($data['id'] < 1) {
+                return ApiResponse::error('ID must be a positive integer', 'INVALID_DATA_LENGTH');
+            }
+            // Check if realm with this ID already exists
+            if (Realm::getById($data['id'])) {
+                return ApiResponse::error('Realm with this ID already exists', 'DUPLICATE_ID', 400);
+            }
         }
         $id = Realm::create($data);
         if (!$id) {

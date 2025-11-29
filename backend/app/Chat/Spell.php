@@ -133,13 +133,16 @@ class Spell
             }
         }
 
+        // Handle optional ID for migrations
+        $hasId = isset($data['id']) && is_int($data['id']) && $data['id'] > 0;
+
         $pdo = Database::getPdoConnection();
         $fields = array_keys($data);
         $placeholders = array_map(fn ($f) => ':' . $f, $fields);
         $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($data)) {
-            return (int) $pdo->lastInsertId();
+            return $hasId ? $data['id'] : (int) $pdo->lastInsertId();
         }
 
         $sanitizedData = self::sanitizeDataForLogging($data);

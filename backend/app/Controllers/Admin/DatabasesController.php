@@ -46,7 +46,7 @@ use Symfony\Component\HttpFoundation\Response;
     properties: [
         new OA\Property(property: 'id', type: 'integer', description: 'Database ID'),
         new OA\Property(property: 'name', type: 'string', description: 'Database name'),
-        new OA\Property(property: 'node_id', type: 'integer', description: 'Node ID'),
+        new OA\Property(property: 'node_id', type: 'integer', nullable: true, description: 'Node ID (optional)'),
         new OA\Property(property: 'database_type', type: 'string', description: 'Database type', enum: ['mysql', 'postgresql', 'mariadb']),
         new OA\Property(property: 'database_port', type: 'integer', description: 'Database port', minimum: 1, maximum: 65535),
         new OA\Property(property: 'database_username', type: 'string', description: 'Database username'),
@@ -58,15 +58,16 @@ use Symfony\Component\HttpFoundation\Response;
 #[OA\Schema(
     schema: 'DatabaseCreate',
     type: 'object',
-    required: ['name', 'node_id', 'database_type', 'database_port', 'database_username', 'database_password', 'database_host'],
+    required: ['name', 'database_type', 'database_port', 'database_username', 'database_password', 'database_host'],
     properties: [
         new OA\Property(property: 'name', type: 'string', description: 'Database name', minLength: 1, maxLength: 255),
-        new OA\Property(property: 'node_id', type: 'integer', description: 'Node ID', minimum: 1),
+        new OA\Property(property: 'node_id', type: 'integer', nullable: true, description: 'Node ID (optional)', minimum: 1),
         new OA\Property(property: 'database_type', type: 'string', description: 'Database type', enum: ['mysql', 'postgresql', 'mariadb']),
         new OA\Property(property: 'database_port', type: 'integer', description: 'Database port', minimum: 1, maximum: 65535),
         new OA\Property(property: 'database_username', type: 'string', description: 'Database username', minLength: 1, maxLength: 255),
         new OA\Property(property: 'database_password', type: 'string', description: 'Database password', minLength: 1, maxLength: 255),
         new OA\Property(property: 'database_host', type: 'string', description: 'Database host', minLength: 1, maxLength: 255),
+        new OA\Property(property: 'id', type: 'integer', nullable: true, description: 'Optional database ID (useful for migrations from other platforms)'),
     ]
 )]
 #[OA\Schema(
@@ -259,7 +260,7 @@ class DatabasesController
     #[OA\Put(
         path: '/api/admin/databases',
         summary: 'Create new database',
-        description: 'Create a new database instance. The system will test the database connection before creating the record.',
+        description: 'Create a new database instance. The system will test the database connection before creating the record. Node ID is optional for migration purposes.',
         tags: ['Admin - Databases'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -278,7 +279,7 @@ class DatabasesController
             new OA\Response(response: 400, description: 'Bad request - Invalid data or connection failed'),
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
-            new OA\Response(response: 404, description: 'Node not found'),
+            new OA\Response(response: 404, description: 'Node not found (only if node_id is provided)'),
             new OA\Response(response: 500, description: 'Internal server error - Failed to create database'),
         ]
     )]
@@ -289,7 +290,6 @@ class DatabasesController
         // Required fields for database creation
         $requiredFields = [
             'name',
-            'node_id',
             'database_type',
             'database_port',
             'database_username',
@@ -310,10 +310,10 @@ class DatabasesController
 
         // Validate data types and format
         foreach ($requiredFields as $field) {
-            if (!is_string($data[$field]) && $field !== 'node_id' && $field !== 'database_port') {
+            if (!is_string($data[$field]) && $field !== 'database_port') {
                 return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a string', 'INVALID_DATA_TYPE');
             }
-            if ($field !== 'node_id' && $field !== 'database_port') {
+            if ($field !== 'database_port') {
                 $data[$field] = trim($data[$field]);
             }
         }
@@ -336,9 +336,17 @@ class DatabasesController
             }
         }
 
-        // Validate node_id
-        if (!is_numeric($data['node_id']) || (int) $data['node_id'] <= 0) {
-            return ApiResponse::error('Node ID must be a positive number', 'INVALID_NODE_ID');
+        // Validate node_id if provided (optional for migration purposes)
+        if (isset($data['node_id']) && $data['node_id'] !== null && $data['node_id'] !== '') {
+            // Handle string '0' or empty string as not provided
+            if ($data['node_id'] === '0' || $data['node_id'] === 0) {
+                unset($data['node_id']);
+            } elseif (!is_numeric($data['node_id']) || (int) $data['node_id'] <= 0) {
+                return ApiResponse::error('Node ID must be a positive number', 'INVALID_NODE_ID');
+            }
+        } else {
+            // Remove node_id from data if not provided
+            unset($data['node_id']);
         }
 
         // Set default port if not provided or is 0
@@ -357,15 +365,32 @@ class DatabasesController
             return ApiResponse::error('Invalid database type. Allowed types: ' . implode(', ', $allowedTypes), 'INVALID_DATABASE_TYPE');
         }
 
-        // Check if node exists
-        if (!Node::getNodeById($data['node_id'])) {
-            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        // Check if node exists (only if node_id is provided)
+        if (isset($data['node_id']) && $data['node_id'] !== null) {
+            if (!Node::getNodeById($data['node_id'])) {
+                return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+            }
         }
 
         // Test database connection before creating
         $connectionTest = $this->testDatabaseConnection($data);
         if (!$connectionTest['success']) {
             return ApiResponse::error('Database connection failed: ' . $connectionTest['message'], 'CONNECTION_FAILED', 400);
+        }
+
+        // Handle optional ID for migrations
+        if (isset($data['id'])) {
+            if (!is_int($data['id']) && !ctype_digit((string) $data['id'])) {
+                return ApiResponse::error('ID must be an integer', 'INVALID_DATA_TYPE');
+            }
+            $data['id'] = (int) $data['id'];
+            if ($data['id'] < 1) {
+                return ApiResponse::error('ID must be a positive integer', 'INVALID_DATA_LENGTH');
+            }
+            // Check if database with this ID already exists
+            if (DatabaseInstance::getDatabaseById($data['id'])) {
+                return ApiResponse::error('Database with this ID already exists', 'DUPLICATE_ID', 400);
+            }
         }
 
         $databaseId = DatabaseInstance::createDatabase($data);

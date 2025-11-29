@@ -125,13 +125,34 @@ class UserSshKey
             return false;
         }
 
+        // Build explicit fields and insert arrays (same pattern as Location.php)
+        $fields = ['user_id', 'name', 'public_key', 'fingerprint'];
+        $insert = [];
+        foreach ($fields as $field) {
+            $insert[$field] = $data[$field] ?? null;
+        }
+
+        // Handle optional ID for migrations (EXACT same pattern as Location.php)
+        $hasId = false;
+        if (isset($data['id'])) {
+            // Accept both int and numeric string IDs
+            if (is_int($data['id']) || (is_string($data['id']) && ctype_digit((string) $data['id']))) {
+                $idValue = (int) $data['id'];
+                if ($idValue > 0) {
+                    $insert['id'] = $idValue;
+                    $fields[] = 'id';
+                    $hasId = true;
+                }
+            }
+        }
+
         $pdo = Database::getPdoConnection();
-        $fields = array_keys($data);
-        $placeholders = array_map(fn ($f) => ':' . $f, $fields);
-        $sql = 'INSERT INTO ' . self::$table . ' (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+        $fieldList = '`' . implode('`, `', $fields) . '`';
+        $placeholders = ':' . implode(', :', $fields);
+        $sql = 'INSERT INTO ' . self::$table . ' (' . $fieldList . ') VALUES (' . $placeholders . ')';
         $stmt = $pdo->prepare($sql);
-        if ($stmt->execute($data)) {
-            return (int) $pdo->lastInsertId();
+        if ($stmt->execute($insert)) {
+            return $hasId ? $insert['id'] : (int) $pdo->lastInsertId();
         }
 
         return false;

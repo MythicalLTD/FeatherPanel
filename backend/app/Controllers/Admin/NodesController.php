@@ -105,6 +105,7 @@ use Symfony\Component\HttpFoundation\Response;
             description: 'Public IPv6 address reachable by clients.',
             example: '2001:db8::10'
         ),
+        new OA\Property(property: 'id', type: 'integer', nullable: true, description: 'Optional node ID (useful for migrations from other platforms)'),
     ]
 )]
 #[OA\Schema(
@@ -348,6 +349,21 @@ class NodesController
         // Check for duplicate UUID
         if (Node::getNodeByUuid($data['uuid'])) {
             return ApiResponse::error('Node with this UUID already exists', 'UUID_ALREADY_EXISTS', 400);
+        }
+
+        // Handle optional ID for migrations
+        if (isset($data['id'])) {
+            if (!is_int($data['id']) && !ctype_digit((string) $data['id'])) {
+                return ApiResponse::error('ID must be an integer', 'INVALID_DATA_TYPE');
+            }
+            $data['id'] = (int) $data['id'];
+            if ($data['id'] < 1) {
+                return ApiResponse::error('ID must be a positive integer', 'INVALID_DATA_LENGTH');
+            }
+            // Check if node with this ID already exists
+            if (Node::getNodeById($data['id'])) {
+                return ApiResponse::error('Node with this ID already exists', 'DUPLICATE_ID', 400);
+            }
         }
 
         $nodeId = Node::createNode($data);

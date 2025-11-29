@@ -112,6 +112,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'config_from', type: 'integer', nullable: true, description: 'Config from spell ID'),
         new OA\Property(property: 'copy_script_from', type: 'integer', nullable: true, description: 'Copy script from spell ID'),
         new OA\Property(property: 'uuid', type: 'string', nullable: true, description: 'Spell UUID (auto-generated if not provided)'),
+        new OA\Property(property: 'id', type: 'integer', nullable: true, description: 'Optional spell ID (useful for migrations from other platforms)'),
     ]
 )]
 #[OA\Schema(
@@ -473,6 +474,21 @@ class SpellsController
         // Check if UUID already exists
         if (Spell::getSpellByUuid($data['uuid'])) {
             return ApiResponse::error('Spell with this UUID already exists', 'UUID_ALREADY_EXISTS');
+        }
+
+        // Handle optional ID for migrations
+        if (isset($data['id'])) {
+            if (!is_int($data['id']) && !ctype_digit((string) $data['id'])) {
+                return ApiResponse::error('ID must be an integer', 'INVALID_DATA_TYPE');
+            }
+            $data['id'] = (int) $data['id'];
+            if ($data['id'] < 1) {
+                return ApiResponse::error('ID must be a positive integer', 'INVALID_DATA_LENGTH');
+            }
+            // Check if spell with this ID already exists
+            if (Spell::getSpellById($data['id'])) {
+                return ApiResponse::error('Spell with this ID already exists', 'DUPLICATE_ID', 400);
+            }
         }
 
         $spellId = Spell::createSpell($data);
