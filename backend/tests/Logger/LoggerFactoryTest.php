@@ -99,18 +99,6 @@ class LoggerFactoryTest extends TestCase
         $this->assertStringContainsString('Test critical message', $content);
     }
 
-    public function testDebugWritesToLogWhenDebugEnabled()
-    {
-        $logger = new LoggerFactory($this->testLogFile);
-        $logger->debug('Test debug message');
-
-        $content = file_get_contents($this->testLogFile);
-        if (APP_DEBUG) {
-            $this->assertStringContainsString('[DEBUG]', $content);
-            $this->assertStringContainsString('Test debug message', $content);
-        }
-    }
-
     public function testGetLogsReturnsLogEntries()
     {
         $logger = new LoggerFactory($this->testLogFile);

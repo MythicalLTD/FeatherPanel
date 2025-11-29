@@ -120,6 +120,11 @@ release:
 	@node count.js --update-readme
 	@echo -e "${GREEN}${CHECK} README updated with code statistics${NC}\n"
 	
+
+	@echo -e "${PURPLE}${INFO} Running backend tests...${NC}"
+	@cd $(BACKEND_DIR) && $(COMPOSER) test
+	@echo -e "${GREEN}${CHECK} Backend tests completed${NC}\n"
+
 	@echo -e "${GREEN}${ROCKET} Release build successful!${NC}\n"
 lint: 
 	@cd $(BACKEND_DIR) && $(COMPOSER) run lint

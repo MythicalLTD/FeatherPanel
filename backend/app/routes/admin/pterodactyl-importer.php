@@ -43,7 +43,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new PterodactylImporterController())->prerequisites($request);
         },
-        Permissions::ADMIN_DATABASES_MANAGE,
+        Permissions::ADMIN_ROOT,
     );
 
     // Import Pterodactyl data
@@ -54,7 +54,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new PterodactylImporterController())->import($request);
         },
-        Permissions::ADMIN_DATABASES_MANAGE,
+        Permissions::ADMIN_ROOT,
         ['POST'],
     );
 
@@ -66,7 +66,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new PterodactylImporterController())->importEgg($request);
         },
-        Permissions::ADMIN_SPELLS_CREATE,
+        Permissions::ADMIN_ROOT,
         ['POST'],
     );
 
@@ -78,7 +78,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new PterodactylImporterController())->importNode($request);
         },
-        Permissions::ADMIN_NODES_CREATE,
+        Permissions::ADMIN_ROOT,
         ['POST'],
     );
 
@@ -90,7 +90,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new PterodactylImporterController())->importAllocation($request);
         },
-        Permissions::ADMIN_ALLOCATIONS_CREATE,
+        Permissions::ADMIN_ROOT,
         ['POST'],
     );
 
@@ -102,7 +102,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new PterodactylImporterController())->importUser($request);
         },
-        Permissions::ADMIN_USERS_CREATE,
+        Permissions::ADMIN_ROOT,
         ['POST'],
     );
 
@@ -114,7 +114,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new PterodactylImporterController())->importSshKey($request);
         },
-        Permissions::ADMIN_USERS_CREATE,
+        Permissions::ADMIN_ROOT,
         ['POST'],
     );
 
@@ -126,7 +126,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new PterodactylImporterController())->importServer($request);
         },
-        Permissions::ADMIN_SERVERS_CREATE,
+        Permissions::ADMIN_ROOT,
         ['POST'],
     );
 
@@ -138,7 +138,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new PterodactylImporterController())->importServerDatabase($request);
         },
-        Permissions::ADMIN_SERVERS_CREATE,
+        Permissions::ADMIN_ROOT,
         ['POST'],
     );
 
@@ -150,7 +150,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new PterodactylImporterController())->importBackup($request);
         },
-        Permissions::ADMIN_SERVERS_CREATE,
+        Permissions::ADMIN_ROOT,
         ['POST'],
     );
 
@@ -162,7 +162,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new PterodactylImporterController())->importSubuser($request);
         },
-        Permissions::ADMIN_SERVERS_CREATE,
+        Permissions::ADMIN_ROOT,
         ['POST'],
     );
 
@@ -174,7 +174,7 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new PterodactylImporterController())->importSchedule($request);
         },
-        Permissions::ADMIN_SERVERS_CREATE,
+        Permissions::ADMIN_ROOT,
         ['POST'],
     );
 
