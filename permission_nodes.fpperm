@@ -131,3 +131,5 @@ ADMIN_BACKUPS_CREATE=admin.backups.create | Admin Database Snapshots | Create da
 ADMIN_BACKUPS_DELETE=admin.backups.delete | Admin Database Snapshots | Delete database snapshots
 ADMIN_BACKUPS_RESTORE=admin.backups.restore | Admin Database Snapshots | Restore database from snapshot
 ADMIN_BACKUPS_DOWNLOAD=admin.backups.download | Admin Database Snapshots | Download database snapshots
+
+ADMIN_API_BYPASS_RESTRICTIONS=admin.api.bypass_restrictions | Admin API | Bypass API rate limits and restrictions

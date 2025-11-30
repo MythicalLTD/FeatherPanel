@@ -2,3 +2,5 @@
 - Status Pages (Next Release)
 - Pterodactyl Importer! (This Release)
 - Ticket System (Next Release)
+- The transfer system doesn't work (don't know why)
+- Add region flags to locations if users set it! 

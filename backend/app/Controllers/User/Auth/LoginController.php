@@ -46,9 +46,9 @@ use Symfony\Component\HttpFoundation\Response;
 #[OA\Schema(
     schema: 'LoginRequest',
     type: 'object',
-    required: ['email', 'password'],
+    required: ['username_or_email', 'password'],
     properties: [
-        new OA\Property(property: 'email', type: 'string', format: 'email', minLength: 3, maxLength: 255, description: 'User email address'),
+        new OA\Property(property: 'username_or_email', type: 'string', minLength: 3, maxLength: 255, description: 'User email address or username'),
         new OA\Property(property: 'password', type: 'string', minLength: 8, maxLength: 255, description: 'User password'),
         new OA\Property(property: 'turnstile_token', type: 'string', description: 'CloudFlare Turnstile token (required if Turnstile is enabled)'),
     ]
@@ -75,7 +75,7 @@ class LoginController
     #[OA\Put(
         path: '/api/user/auth/login',
         summary: 'Login user',
-        description: 'Authenticate user with email and password. Includes CloudFlare Turnstile validation if enabled. Returns 2FA requirement if enabled.',
+        description: 'Authenticate user with username or email and password. Includes CloudFlare Turnstile validation if enabled. Returns 2FA requirement if enabled.',
         tags: ['User - Authentication'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -92,8 +92,8 @@ class LoginController
                     ]
                 )
             ),
-            new OA\Response(response: 400, description: 'Bad request - Missing required fields, invalid email format, Turnstile validation failed, or Turnstile keys not set'),
-            new OA\Response(response: 401, description: 'Unauthorized - Email does not exist, user is banned, or invalid password'),
+            new OA\Response(response: 400, description: 'Bad request - Missing required fields, invalid username or email format, Turnstile validation failed, or Turnstile keys not set'),
+            new OA\Response(response: 401, description: 'Unauthorized - Username or email does not exist, user is banned, or invalid password'),
             new OA\Response(response: 500, description: 'Internal server error - Remember token not set'),
         ]
     )]
@@ -131,48 +131,61 @@ class LoginController
             }
         }
 
-        // Validate required fields
-        $requiredFields = ['email', 'password'];
-        $missingFields = [];
-        foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
-                $missingFields[] = $field;
+        // Validate required fields - support both 'email' (legacy) and 'username_or_email'
+        $usernameOrEmail = $data['username_or_email'] ?? $data['email'] ?? null;
+        if (!$usernameOrEmail || !isset($data['password'])) {
+            $missingFields = [];
+            if (!$usernameOrEmail) {
+                $missingFields[] = 'username_or_email';
             }
-        }
-        if (!empty($missingFields)) {
-            return ApiResponse::error('Missing required fields: ' . implode(', ', $missingFields), 'MISSING_REQUIRED_FIELDS');
+            if (!isset($data['password'])) {
+                $missingFields[] = 'password';
+            }
+            if (!empty($missingFields)) {
+                return ApiResponse::error('Missing required fields: ' . implode(', ', $missingFields), 'MISSING_REQUIRED_FIELDS');
+            }
         }
 
-        // Validate data types and format
-        foreach (['email', 'password'] as $field) {
-            if (!is_string($data[$field])) {
-                return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . ' must be a string', 'INVALID_DATA_TYPE');
-            }
-            $data[$field] = trim($data[$field]);
+        // Validate data types
+        if (!is_string($usernameOrEmail)) {
+            return ApiResponse::error('Username or email must be a string', 'INVALID_DATA_TYPE');
         }
+        if (!is_string($data['password'])) {
+            return ApiResponse::error('Password must be a string', 'INVALID_DATA_TYPE');
+        }
+
+        $usernameOrEmail = trim($usernameOrEmail);
+        $data['password'] = trim($data['password']);
 
         // Validate data length
-        $lengthRules = [
-            'email' => [3, 255],
-            'password' => [8, 255],
-        ];
-        foreach ($lengthRules as $field => [$min, $max]) {
-            $len = strlen($data[$field]);
-            if ($len < $min) {
-                return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . " must be at least $min characters long", 'INVALID_DATA_LENGTH');
-            }
-            if ($len > $max) {
-                return ApiResponse::error(ucfirst(str_replace('_', ' ', $field)) . " must be less than $max characters long", 'INVALID_DATA_LENGTH');
-            }
+        if (strlen($usernameOrEmail) < 3) {
+            return ApiResponse::error('Username or email must be at least 3 characters long', 'INVALID_DATA_LENGTH');
+        }
+        if (strlen($usernameOrEmail) > 255) {
+            return ApiResponse::error('Username or email must be less than 255 characters long', 'INVALID_DATA_LENGTH');
+        }
+        if (strlen($data['password']) < 8) {
+            return ApiResponse::error('Password must be at least 8 characters long', 'INVALID_DATA_LENGTH');
+        }
+        if (strlen($data['password']) > 255) {
+            return ApiResponse::error('Password must be less than 255 characters long', 'INVALID_DATA_LENGTH');
         }
 
-        // Validate email format
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            return ApiResponse::error('Invalid email address', 'INVALID_EMAIL_ADDRESS');
+        // Validate format - must be either valid email or valid username
+        $isEmail = filter_var($usernameOrEmail, FILTER_VALIDATE_EMAIL);
+        $isUsername = preg_match('/^[a-zA-Z0-9_]+$/', $usernameOrEmail);
+        if (!$isEmail && !$isUsername) {
+            return ApiResponse::error('Invalid username or email address format', 'INVALID_USERNAME_OR_EMAIL');
         }
 
-        // Login user
-        $userInfo = User::getUserByEmail($data['email']);
+        // Try to get user by email first, then by username
+        $userInfo = null;
+        if ($isEmail) {
+            $userInfo = User::getUserByEmail($usernameOrEmail);
+        }
+        if ($userInfo == null) {
+            $userInfo = User::getUserByUsername($usernameOrEmail);
+        }
         if ($userInfo == null) {
             // Emit login failed event
             global $eventManager;
@@ -180,14 +193,14 @@ class LoginController
                 $eventManager->emit(
                     AuthEvent::onAuthLoginFailed(),
                     [
-                        'email' => $data['email'],
-                        'reason' => 'EMAIL_DOES_NOT_EXIST',
+                        'username_or_email' => $usernameOrEmail,
+                        'reason' => 'USER_NOT_FOUND',
                         'ip_address' => CloudFlareRealIP::getRealIP(),
                     ]
                 );
             }
 
-            return ApiResponse::error('Email does not exist', 'EMAIL_DOES_NOT_EXIST');
+            return ApiResponse::error('Invalid username or email address', 'INVALID_USERNAME_OR_EMAIL');
         }
         if ($userInfo['banned'] == 'true') {
             // Emit login failed event

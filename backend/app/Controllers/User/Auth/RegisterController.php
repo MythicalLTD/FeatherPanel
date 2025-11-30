@@ -34,6 +34,7 @@ use App\App;
 use App\Chat\User;
 use App\Chat\Activity;
 use App\Helpers\UUIDUtils;
+use App\Chat\UserPreference;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
@@ -62,6 +63,7 @@ use Symfony\Component\HttpFoundation\Response;
     type: 'object',
     properties: [
         new OA\Property(property: 'user', type: 'object', description: 'User information'),
+        new OA\Property(property: 'preferences', type: 'object', description: 'User preferences'),
         new OA\Property(property: 'message', type: 'string', description: 'Success message'),
     ]
 )]
@@ -70,7 +72,7 @@ class RegisterController
     #[OA\Put(
         path: '/api/user/auth/register',
         summary: 'Register new user',
-        description: 'Create a new user account with email verification and welcome email. Includes CloudFlare Turnstile validation if enabled.',
+        description: 'Create a new user account with email verification and welcome email. User is automatically logged in after successful registration. Includes CloudFlare Turnstile validation if enabled.',
         tags: ['User - Authentication'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -79,7 +81,7 @@ class RegisterController
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'User registered successfully',
+                description: 'User registered successfully and automatically logged in',
                 content: new OA\JsonContent(ref: '#/components/schemas/RegisterResponse')
             ),
             new OA\Response(response: 400, description: 'Bad request - Missing required fields, invalid data format, Turnstile validation failed, or Turnstile keys not set'),
@@ -234,6 +236,12 @@ class RegisterController
             ]);
         }
 
+        // Fetch the complete user data from database (includes all fields with defaults)
+        $createdUser = User::getUserByUuid($userInfo['uuid']);
+        if (!$createdUser) {
+            return ApiResponse::error('Failed to retrieve created user', 'USER_RETRIEVAL_FAILED', 500);
+        }
+
         Welcome::send([
             'email' => $data['email'],
             'subject' => 'Welcome to ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
@@ -248,24 +256,53 @@ class RegisterController
         ]);
 
         Activity::createActivity([
-            'user_uuid' => $userInfo['uuid'],
+            'user_uuid' => $createdUser['uuid'],
             'name' => 'register',
             'context' => 'User registered',
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
-        // Emit event
+        // Automatically log in the user after registration
+        // Set session/cookie
+        if (isset($createdUser['remember_token'])) {
+            $token = $createdUser['remember_token'];
+            setcookie('remember_token', $token, time() + 60 * 60 * 24 * 30, '/');
+            User::updateUser($createdUser['uuid'], ['last_ip' => CloudFlareRealIP::getRealIP()]);
+
+            // Create login activity (user is automatically logged in)
+            Activity::createActivity([
+                'user_uuid' => $createdUser['uuid'],
+                'name' => 'login',
+                'context' => 'User logged in automatically after registration',
+                'ip_address' => CloudFlareRealIP::getRealIP(),
+            ]);
+        }
+
+        // Emit events
         global $eventManager;
         if (isset($eventManager) && $eventManager !== null) {
             $eventManager->emit(
                 AuthEvent::onAuthRegisterSuccess(),
                 [
-                    'user' => $userInfo,
+                    'user' => $createdUser,
+                ]
+            );
+            // Also emit login success event since user is automatically logged in
+            $eventManager->emit(
+                AuthEvent::onAuthLoginSuccess(),
+                [
+                    'user' => $createdUser,
                 ]
             );
         }
 
-        // If user creation succeeds, return the user info
-        return ApiResponse::success($userInfo, 'User registered successfully', 200);
+        // Load user preferences
+        $preferences = UserPreference::getPreferences($createdUser['uuid']);
+
+        // Return user info and preferences (same format as login)
+        return ApiResponse::success([
+            'user' => $createdUser,
+            'preferences' => $preferences,
+        ], 'User registered successfully and logged in', 200);
     }
 }

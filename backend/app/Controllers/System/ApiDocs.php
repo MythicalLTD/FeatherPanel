@@ -30,6 +30,7 @@
 
 namespace App\Controllers\System;
 
+use App\Cache\Cache;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
@@ -90,76 +91,119 @@ class ApiDocs
     )]
     public function index(Request $request): Response
     {
-        // Suppress PHP warnings and errors to ensure clean JSON output
-        $oldErrorReporting = error_reporting(3);
-        ob_start();
+        // Determine cache headers based on APP_DEBUG
+        $cacheHeaders = [];
+        if (defined('APP_DEBUG') && APP_DEBUG === true) {
+            // No cache when in debug mode
+            $cacheHeaders = [
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
+            ];
+        } else {
+            // Cache for 1 hour in production
+            $cacheHeaders = [
+                'Cache-Control' => 'public, max-age=3600',
+                'Expires' => gmdate('D, d M Y H:i:s', time() + 3600) . ' GMT',
+            ];
+        }
 
-        try {
-            // Scan all controller directories
-            $controllersDir = realpath(__DIR__ . '/../');
-            $addonsDir = getcwd() . '/../storage/addons';
-            $scanPaths = [$controllersDir];
+        // Check if we have a cached version (only in production, not in debug mode)
+        $cacheKey = 'openapi:specification';
+        $openapiArray = null;
 
-            // Recursively add all directories under /storage/addons/
-            if ($addonsDir && is_dir($addonsDir)) {
-                $iterator = new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator($addonsDir, \RecursiveDirectoryIterator::SKIP_DOTS),
-                    \RecursiveIteratorIterator::SELF_FIRST
-                );
+        if (!defined('APP_DEBUG') || APP_DEBUG !== true) {
+            $cachedSpec = Cache::get($cacheKey);
+            if ($cachedSpec !== null) {
+                $openapiArray = $cachedSpec;
+            }
+        }
 
-                foreach ($iterator as $file) {
-                    if ($file->isDir()) {
-                        $scanPaths[] = $file->getPathname();
+        // If not cached, generate the OpenAPI spec
+        if ($openapiArray === null) {
+            // Suppress PHP warnings and errors to ensure clean JSON output
+            $oldErrorReporting = error_reporting(3);
+            ob_start();
+
+            try {
+                // Scan all controller directories
+                $controllersDir = realpath(__DIR__ . '/../');
+                $addonsDir = getcwd() . '/../storage/addons';
+                $scanPaths = [$controllersDir];
+
+                // Recursively add all directories under /storage/addons/
+                if ($addonsDir && is_dir($addonsDir)) {
+                    $iterator = new \RecursiveIteratorIterator(
+                        new \RecursiveDirectoryIterator($addonsDir, \RecursiveDirectoryIterator::SKIP_DOTS),
+                        \RecursiveIteratorIterator::SELF_FIRST
+                    );
+
+                    foreach ($iterator as $file) {
+                        if ($file->isDir()) {
+                            $scanPaths[] = $file->getPathname();
+                        }
                     }
                 }
+
+                $openapi = \OpenApi\Generator::scan($scanPaths);
+
+                // Clean any output that might have been generated
+                ob_end_clean();
+                error_reporting($oldErrorReporting);
+
+                // Decode the OpenAPI spec
+                $openapiArray = json_decode($openapi->toJson(), true);
+
+                // Cache the OpenAPI spec (60 minutes = 1 hour)
+                if (!defined('APP_DEBUG') || APP_DEBUG !== true) {
+                    Cache::putJson($cacheKey, $openapiArray, 60);
+                }
+            } catch (\Exception $e) {
+                // Clean any output and restore error reporting
+                ob_end_clean();
+                error_reporting($oldErrorReporting);
+
+                // Return a basic OpenAPI spec if scanning fails
+                $openapiArray = [
+                    'openapi' => '3.1.0',
+                    'info' => [
+                        'title' => 'FeatherPanel API',
+                        'version' => '1.0.0',
+                        'description' => 'The next generation of FeatherPanel API',
+                        'contact' => [
+                            'name' => 'MythicalSystems',
+                            'url' => 'https://mythical.systems',
+                            'email' => 'support@mythical.systems',
+                        ],
+                        'license' => [
+                            'name' => 'MIT',
+                            'url' => 'https://opensource.org/licenses/MIT',
+                        ],
+                    ],
+                    'servers' => [
+                        [
+                            'url' => '/api',
+                            'description' => 'FeatherPanel API Server',
+                        ],
+                    ],
+                    'paths' => [],
+                    'components' => new \stdClass(),
+                    'tags' => [
+                        ['name' => 'System', 'description' => 'System configuration and settings'],
+                        ['name' => 'Redirects', 'description' => 'Redirect link management'],
+                    ],
+                ];
             }
-
-            $openapi = \OpenApi\Generator::scan($scanPaths);
-
-            // Clean any output that might have been generated
-            ob_end_clean();
-            error_reporting($oldErrorReporting);
-
-            // Return the generated OpenAPI spec
-            return ApiResponse::sendManualResponse(
-                json_decode($openapi->toJson(), true),
-                200
-            );
-        } catch (\Exception $e) {
-            // Clean any output and restore error reporting
-            ob_end_clean();
-            error_reporting($oldErrorReporting);
-
-            // Return a basic OpenAPI spec if scanning fails
-            return ApiResponse::sendManualResponse([
-                'openapi' => '3.1.0',
-                'info' => [
-                    'title' => 'FeatherPanel API',
-                    'version' => '1.0.0',
-                    'description' => 'The next generation of FeatherPanel API',
-                    'contact' => [
-                        'name' => 'MythicalSystems',
-                        'url' => 'https://mythical.systems',
-                        'email' => 'support@mythical.systems',
-                    ],
-                    'license' => [
-                        'name' => 'MIT',
-                        'url' => 'https://opensource.org/licenses/MIT',
-                    ],
-                ],
-                'servers' => [
-                    [
-                        'url' => '/api',
-                        'description' => 'FeatherPanel API Server',
-                    ],
-                ],
-                'paths' => [],
-                'components' => new \stdClass(),
-                'tags' => [
-                    ['name' => 'System', 'description' => 'System configuration and settings'],
-                    ['name' => 'Redirects', 'description' => 'Redirect link management'],
-                ],
-            ], 200);
         }
+
+        // Return the OpenAPI spec with cache headers
+        $response = ApiResponse::sendManualResponse($openapiArray, 200);
+
+        // Add cache headers to the response
+        foreach ($cacheHeaders as $header => $value) {
+            $response->headers->set($header, $value);
+        }
+
+        return $response;
     }
 }

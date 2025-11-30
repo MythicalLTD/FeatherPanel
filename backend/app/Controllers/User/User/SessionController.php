@@ -158,11 +158,46 @@ class SessionController
             $data['two_fa_enabled'] = $data['two_fa_enabled'] ? 'true' : 'false';
         }
 
-        // Validate avatar URL (only if it's a URL, not a file upload)
-        if (isset($data['avatar']) && !empty($data['avatar'])) {
-            // Check if it's a URL (starts with http) or a local path (starts with /)
-            if (!str_starts_with(strtolower($data['avatar']), 'http') && !str_starts_with($data['avatar'], '/')) {
-                return ApiResponse::error('Avatar must be a valid URL or local path', 'INVALID_AVATAR_PATH');
+        // Check if avatar change is allowed
+        if (isset($data['avatar'])) {
+            if ($config->getSetting(ConfigInterface::USER_ALLOW_AVATAR_CHANGE, 'true') == 'false') {
+                return ApiResponse::error('You are not allowed to change your avatar!', 'AVATAR_CHANGE_NOT_ALLOWED', 403, []);
+            }
+
+            // Validate avatar URL (only if it's a URL, not a file upload)
+            if (!empty($data['avatar'])) {
+                // Check if it's a URL (starts with http) or a local path (starts with /)
+                if (!str_starts_with(strtolower($data['avatar']), 'http') && !str_starts_with($data['avatar'], '/')) {
+                    return ApiResponse::error('Avatar must be a valid URL or local path', 'INVALID_AVATAR_PATH');
+                }
+            }
+        }
+
+        // Check if username change is allowed
+        if (isset($data['username'])) {
+            if ($config->getSetting(ConfigInterface::USER_ALLOW_USERNAME_CHANGE, 'true') == 'false') {
+                return ApiResponse::error('You are not allowed to change your username!', 'USERNAME_CHANGE_NOT_ALLOWED', 403, []);
+            }
+        }
+
+        // Check if email change is allowed
+        if (isset($data['email'])) {
+            if ($config->getSetting(ConfigInterface::USER_ALLOW_EMAIL_CHANGE, 'true') == 'false') {
+                return ApiResponse::error('You are not allowed to change your email!', 'EMAIL_CHANGE_NOT_ALLOWED', 403, []);
+            }
+        }
+
+        // Check if first name change is allowed
+        if (isset($data['first_name'])) {
+            if ($config->getSetting(ConfigInterface::USER_ALLOW_FIRST_NAME_CHANGE, 'true') == 'false') {
+                return ApiResponse::error('You are not allowed to change your first name!', 'FIRST_NAME_CHANGE_NOT_ALLOWED', 403, []);
+            }
+        }
+
+        // Check if last name change is allowed
+        if (isset($data['last_name'])) {
+            if ($config->getSetting(ConfigInterface::USER_ALLOW_LAST_NAME_CHANGE, 'true') == 'false') {
+                return ApiResponse::error('You are not allowed to change your last name!', 'LAST_NAME_CHANGE_NOT_ALLOWED', 403, []);
             }
         }
 

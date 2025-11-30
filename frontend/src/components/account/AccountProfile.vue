@@ -18,43 +18,43 @@
 
         <form v-else class="space-y-4" @submit.prevent="handleSubmit">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormItem>
+                <FormItem v-if="allowUsernameChange">
                     <Label for="username">{{ $t('account.username') }}</Label>
                     <Input
                         id="username"
                         v-model="formData.username"
-                        :disabled="isSubmitting"
+                        :disabled="isSubmitting || !allowUsernameChange"
                         :placeholder="$t('account.usernamePlaceholder')"
                     />
                 </FormItem>
 
-                <FormItem>
+                <FormItem v-if="allowEmailChange">
                     <Label for="email">{{ $t('account.email') }}</Label>
                     <Input
                         id="email"
                         v-model="formData.email"
                         type="email"
-                        :disabled="isSubmitting"
+                        :disabled="isSubmitting || !allowEmailChange"
                         :placeholder="$t('account.emailPlaceholder')"
                     />
                 </FormItem>
 
-                <FormItem>
+                <FormItem v-if="allowFirstNameChange">
                     <Label for="first_name">{{ $t('account.firstName') }}</Label>
                     <Input
                         id="first_name"
                         v-model="formData.first_name"
-                        :disabled="isSubmitting"
+                        :disabled="isSubmitting || !allowFirstNameChange"
                         :placeholder="$t('account.firstNamePlaceholder')"
                     />
                 </FormItem>
 
-                <FormItem>
+                <FormItem v-if="allowLastNameChange">
                     <Label for="last_name">{{ $t('account.lastName') }}</Label>
                     <Input
                         id="last_name"
                         v-model="formData.last_name"
-                        :disabled="isSubmitting"
+                        :disabled="isSubmitting || !allowLastNameChange"
                         :placeholder="$t('account.lastNamePlaceholder')"
                     />
                 </FormItem>
@@ -172,8 +172,12 @@ const formData = ref({
     avatar: '',
 });
 
-// Check if avatar change is allowed by settings
+// Check if profile field changes are allowed by settings
 const allowAvatarChange = computed(() => settingsStore.userAllowAvatarChange);
+const allowUsernameChange = computed(() => settingsStore.userAllowUsernameChange);
+const allowEmailChange = computed(() => settingsStore.userAllowEmailChange);
+const allowFirstNameChange = computed(() => settingsStore.userAllowFirstNameChange);
+const allowLastNameChange = computed(() => settingsStore.userAllowLastNameChange);
 
 // Remove avatar (hide upload field and clear avatar file) if avatar change is denied
 onMounted(() => {
@@ -242,26 +246,26 @@ const handleSubmit = async () => {
 
         isSubmitting.value = true;
 
-        // Prepare data for API - only include fields that have been changed
+        // Prepare data for API - only include fields that have been changed and are allowed
         const submitData: Record<string, string> = {};
 
-        // Only include username if it's different from the original
-        if (formData.value.username !== (sessionStore.user?.username || '')) {
+        // Only include username if it's different from the original and change is allowed
+        if (allowUsernameChange.value && formData.value.username !== (sessionStore.user?.username || '')) {
             submitData.username = formData.value.username;
         }
 
-        // Only include first_name if it's different from the original
-        if (formData.value.first_name !== (sessionStore.user?.first_name || '')) {
+        // Only include first_name if it's different from the original and change is allowed
+        if (allowFirstNameChange.value && formData.value.first_name !== (sessionStore.user?.first_name || '')) {
             submitData.first_name = formData.value.first_name;
         }
 
-        // Only include last_name if it's different from the original
-        if (formData.value.last_name !== (sessionStore.user?.last_name || '')) {
+        // Only include last_name if it's different from the original and change is allowed
+        if (allowLastNameChange.value && formData.value.last_name !== (sessionStore.user?.last_name || '')) {
             submitData.last_name = formData.value.last_name;
         }
 
-        // Only include email if it's different from the original
-        if (formData.value.email !== (sessionStore.user?.email || '')) {
+        // Only include email if it's different from the original and change is allowed
+        if (allowEmailChange.value && formData.value.email !== (sessionStore.user?.email || '')) {
             submitData.email = formData.value.email;
         }
 

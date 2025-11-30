@@ -103,9 +103,15 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::SERVER_ALLOW_STARTUP_CHANGE => 'true',
             ConfigInterface::SERVER_ALLOW_SUBUSERS => 'true',
             ConfigInterface::SERVER_ALLOW_SCHEDULES => 'true',
+            ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT => 'false',
 
             // User related settings
             ConfigInterface::USER_ALLOW_AVATAR_CHANGE => 'true',
+            ConfigInterface::USER_ALLOW_USERNAME_CHANGE => 'true',
+            ConfigInterface::USER_ALLOW_EMAIL_CHANGE => 'true',
+            ConfigInterface::USER_ALLOW_FIRST_NAME_CHANGE => 'true',
+            ConfigInterface::USER_ALLOW_LAST_NAME_CHANGE => 'true',
+            ConfigInterface::USER_ALLOW_API_KEYS_CREATE => 'true',
 
             // Chatbot related settings
             ConfigInterface::CHATBOT_ENABLED => 'false',

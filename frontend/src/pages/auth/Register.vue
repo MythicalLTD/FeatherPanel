@@ -38,8 +38,10 @@ const props = defineProps<{
     class?: HTMLAttributes['class'];
 }>();
 import { useSettingsStore } from '@/stores/settings';
+import { usePreferencesStore } from '@/stores/preferences';
 
 const settingsStore = useSettingsStore();
+const preferencesStore = usePreferencesStore();
 const { t: $t } = useI18n();
 const router = useRouter();
 
@@ -196,8 +198,38 @@ async function onSubmit(e: Event) {
         });
         if (res.data && res.data.success) {
             success.value = res.data.message || $t('auth.registrationSuccess');
+
+            // Load and sync user preferences after successful registration (user is auto-logged in)
+            try {
+                // Initialize the store (set up listeners and load lastSyncTime)
+                preferencesStore.initialize();
+
+                // Check if user has preferences in localStorage that need to be synced
+                const hasLocalStorage = preferencesStore.hasLocalStorage();
+
+                if (hasLocalStorage) {
+                    // User has local preferences - sync them to backend first
+                    await preferencesStore.migrateLocalStorage();
+                } else {
+                    // No local preferences - load from backend
+                    await preferencesStore.loadPreferences();
+                }
+
+                // Start auto-sync (saves entire localStorage every 5 minutes)
+                preferencesStore.startAutoSync();
+                console.log('[Register] Auto-sync enabled for user preferences');
+            } catch (prefError) {
+                console.error('Failed to sync user preferences:', prefError);
+                // Don't block registration if preferences fail to sync
+            }
+
             // Navigate immediately (no delay needed with router)
-            router.replace('/');
+            const redirect = router.currentRoute.value.query.redirect as string;
+            if (redirect && redirect.startsWith('/')) {
+                router.replace(redirect);
+            } else {
+                router.replace('/');
+            }
         } else {
             error.value = getErrorMessage(res.data);
         }

@@ -254,6 +254,10 @@ class Permissions
     /** Download database snapshots */
     public const ADMIN_BACKUPS_DOWNLOAD = 'admin.backups.download';
 
+    // Admin API Permissions
+    /** Bypass API rate limits and restrictions */
+    public const ADMIN_API_BYPASS_RESTRICTIONS = 'admin.api.bypass_restrictions';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -757,6 +761,12 @@ class Permissions
                 'value' => self::ADMIN_BACKUPS_DOWNLOAD,
                 'category' => 'Admin Database Snapshots',
                 'description' => 'Download database snapshots',
+            ],
+            [
+                'constant' => 'ADMIN_API_BYPASS_RESTRICTIONS',
+                'value' => self::ADMIN_API_BYPASS_RESTRICTIONS,
+                'category' => 'Admin API',
+                'description' => 'Bypass API rate limits and restrictions',
             ],
         ];
     }

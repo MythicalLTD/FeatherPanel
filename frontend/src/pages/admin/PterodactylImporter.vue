@@ -43,7 +43,19 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Database, AlertTriangle, CheckCircle, Loader2, XCircle, RefreshCw, Plus, Key } from 'lucide-vue-next';
+import {
+    Database,
+    AlertTriangle,
+    CheckCircle,
+    Loader2,
+    XCircle,
+    RefreshCw,
+    Plus,
+    Key,
+    BookOpen,
+    MessageCircle,
+    ExternalLink,
+} from 'lucide-vue-next';
 
 const toast = useToast();
 const router = useRouter();
@@ -201,10 +213,20 @@ async function createApiKey(): Promise<void> {
         if (response.data && response.data.success) {
             const newClient = response.data.data;
             toast.success('API key created successfully!');
-            // Refresh API clients list
+            // Refresh API clients list to include the newly created client
             await fetchApiClients();
-            // Select the newly created key (private_key is only available on creation)
-            selectedApiKey.value = newClient.private_key || newClient.public_key || null;
+            // Find and select the newly created client by ID
+            // This ensures the Select dropdown shows the correct selection
+            const createdClient = apiClients.value.find((c) => c.id === newClient.id);
+            if (createdClient) {
+                // Select the newly created client - this will fetch full details and set the public_key
+                // Note: The migration agent can use either public_key or private_key for authentication
+                await selectApiClient(createdClient.id);
+            } else {
+                // Fallback: if client not found, use the private key from creation response
+                // (private_key is only available on creation, public_key works for authentication)
+                selectedApiKey.value = newClient.private_key || newClient.public_key || null;
+            }
             // Close modal and reset form
             showCreateApiKeyModal.value = false;
             newApiKeyName.value = '';
@@ -690,9 +712,7 @@ onMounted(async () => {
                             </li>
                             <li>
                                 Run
-                                <code class="bg-blue-500/20 px-1 py-0.5 rounded font-mono"
-                                    >feathercli migrate pterodactyl</code
-                                >
+                                <code class="bg-blue-500/20 px-1 py-0.5 rounded font-mono">feathercli migrate</code>
                                 to start migration
                             </li>
                         </ol>
@@ -829,7 +849,7 @@ onMounted(async () => {
                                     </p>
                                     <div class="bg-background rounded p-3 border border-border/50">
                                         <code class="text-xs text-foreground font-mono block whitespace-pre-wrap"
-                                            >feathercli migrate pterodactyl</code
+                                            >feathercli migrate</code
                                         >
                                     </div>
                                     <p class="text-xs text-muted-foreground mt-2">
@@ -857,6 +877,71 @@ onMounted(async () => {
                         automatically. You do not need to manually create SQL dumps or upload your
                         <code class="bg-muted px-1 py-0.5 rounded text-foreground font-mono text-xs">.env</code> file.
                         The CLI can also be used for general server management tasks beyond migration.
+                    </div>
+                </CardContent>
+            </Card>
+
+            <!-- Help & Support Card -->
+            <Card
+                v-if="prerequisitesPassed"
+                class="border border-primary/50 bg-linear-to-br from-primary/10 via-primary/5 to-transparent"
+            >
+                <CardHeader>
+                    <div class="flex items-center gap-2">
+                        <MessageCircle class="h-5 w-5 text-primary" />
+                        <CardTitle class="text-primary">Help & Support</CardTitle>
+                    </div>
+                    <CardDescription>
+                        Need help with the migration process? Check out our documentation or join our Discord community.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent class="space-y-4">
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <!-- Documentation Link -->
+                        <a
+                            href="https://docs.mythical.systems/docs/featherpanel/migration"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="group flex items-center gap-3 p-4 rounded-lg border border-border/50 bg-card hover:bg-accent hover:border-primary/50 transition-colors"
+                        >
+                            <div
+                                class="p-2 rounded-lg bg-primary/10 border border-primary/20 group-hover:bg-primary/20"
+                            >
+                                <BookOpen class="h-5 w-5 text-primary" />
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <p class="font-semibold text-sm text-foreground">Migration Documentation</p>
+                                    <ExternalLink class="h-3 w-3 text-muted-foreground shrink-0" />
+                                </div>
+                                <p class="text-xs text-muted-foreground mt-1 truncate">
+                                    Complete guide and tutorial for migrating from Pterodactyl
+                                </p>
+                            </div>
+                        </a>
+
+                        <!-- Discord Link -->
+                        <a
+                            href="https://discord.mythical.systems"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="group flex items-center gap-3 p-4 rounded-lg border border-border/50 bg-card hover:bg-accent hover:border-primary/50 transition-colors"
+                        >
+                            <div
+                                class="p-2 rounded-lg bg-primary/10 border border-primary/20 group-hover:bg-primary/20"
+                            >
+                                <MessageCircle class="h-5 w-5 text-primary" />
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <p class="font-semibold text-sm text-foreground">MythicalSystems Discord</p>
+                                    <ExternalLink class="h-3 w-3 text-muted-foreground shrink-0" />
+                                </div>
+                                <p class="text-xs text-muted-foreground mt-1 truncate">
+                                    Get support from our community and team
+                                </p>
+                            </div>
+                        </a>
                     </div>
                 </CardContent>
             </Card>

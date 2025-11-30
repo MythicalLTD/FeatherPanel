@@ -79,7 +79,7 @@
         "marked": "^17.0.1",
         "npm-run-all2": "^8.0.4",
         "pinia": "^3.0.4",
-        "prettier": "^3.7.2",
+        "prettier": "^3.7.3",
         "qrcode": "^1.5.4",
         "reka-ui": "^2.6.0",
         "tailwind-merge": "^3.4.0",
@@ -102,7 +102,7 @@
         "vue-turnstile": "^1.0.11",
         "vue3-ace-editor": "^2.2.4",
         "vuedraggable": "^4.1.0",
-        "yaml": "^2.8.1"
+        "yaml": "^2.8.2"
     },
     "devDependencies": {
         "eslint-plugin-license-header": "^0.8.0",

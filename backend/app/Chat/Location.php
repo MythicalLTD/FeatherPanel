@@ -41,7 +41,7 @@ class Location
         $params = [];
 
         if ($search !== null) {
-            $sql .= ' WHERE name LIKE :search';
+            $sql .= ' WHERE name LIKE :search OR description LIKE :search';
             $params['search'] = '%' . $search . '%';
         }
 
@@ -84,7 +84,7 @@ class Location
         $params = [];
 
         if ($search !== null) {
-            $sql .= ' WHERE name LIKE :search';
+            $sql .= ' WHERE name LIKE :search OR description LIKE :search';
             $params['search'] = '%' . $search . '%';
         }
 
@@ -100,7 +100,7 @@ class Location
 
     public static function create(array $data): int | false
     {
-        $fields = ['name', 'description'];
+        $fields = ['name', 'description', 'flag_code'];
         $insert = [];
         foreach ($fields as $field) {
             $insert[$field] = $data[$field] ?? null;
@@ -127,11 +127,11 @@ class Location
 
     public static function update(int $id, array $data): bool
     {
-        $fields = ['name', 'description'];
+        $fields = ['name', 'description', 'flag_code'];
         $set = [];
         $params = ['id' => $id];
         foreach ($fields as $field) {
-            if (isset($data[$field])) {
+            if (array_key_exists($field, $data)) {
                 $set[] = "`$field` = :$field";
                 $params[$field] = $data[$field];
             }

@@ -36,6 +36,7 @@ use App\Chat\Spell;
 use App\Chat\Server;
 use App\Permissions;
 use App\Chat\Subuser;
+use App\Chat\Location;
 use App\Chat\SpellVariable;
 use App\SubuserPermissions;
 use App\Chat\ServerActivity;
@@ -74,6 +75,12 @@ use Symfony\Component\HttpFoundation\Response;
             new OA\Property(property: 'maintenance_mode', type: 'boolean', nullable: true),
             new OA\Property(property: 'fqdn', type: 'string', nullable: true),
             new OA\Property(property: 'behind_proxy', type: 'boolean', nullable: true),
+        ]),
+        new OA\Property(property: 'location', type: 'object', properties: [
+            new OA\Property(property: 'id', type: 'integer', nullable: true),
+            new OA\Property(property: 'name', type: 'string', nullable: true),
+            new OA\Property(property: 'description', type: 'string', nullable: true),
+            new OA\Property(property: 'flag_code', type: 'string', nullable: true, description: 'ISO 3166-1 alpha-2 country code for flag display'),
         ]),
         new OA\Property(property: 'realm', type: 'object', properties: [
             new OA\Property(property: 'name', type: 'string', nullable: true),
@@ -133,7 +140,12 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'realm', type: 'object', description: 'Realm information'),
         new OA\Property(property: 'spell', type: 'object', description: 'Spell information'),
         new OA\Property(property: 'allocation', type: 'object', description: 'Allocation information'),
-        new OA\Property(property: 'activity', type: 'array', items: new OA\Items(type: 'object'), description: 'Recent server activities'),
+        new OA\Property(property: 'location', type: 'object', properties: [
+            new OA\Property(property: 'id', type: 'integer', nullable: true),
+            new OA\Property(property: 'name', type: 'string', nullable: true),
+            new OA\Property(property: 'description', type: 'string', nullable: true),
+            new OA\Property(property: 'flag_code', type: 'string', nullable: true, description: 'ISO 3166-1 alpha-2 country code for flag display'),
+        ], description: 'Location information'),
         new OA\Property(property: 'sftp', type: 'object', properties: [
             new OA\Property(property: 'host', type: 'string'),
             new OA\Property(property: 'port', type: 'integer'),
@@ -219,6 +231,13 @@ class ServerUserController
                 required: false,
                 schema: new OA\Schema(type: 'string')
             ),
+            new OA\Parameter(
+                name: 'view_all',
+                in: 'query',
+                description: 'View all servers (admin only - requires ADMIN_SERVERS_VIEW permission)',
+                required: false,
+                schema: new OA\Schema(type: 'boolean', default: false)
+            ),
         ],
         responses: [
             new OA\Response(
@@ -247,6 +266,7 @@ class ServerUserController
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         $search = $request->query->get('search', '');
+        $viewAll = $request->query->get('view_all', 'false') === 'true';
 
         if ($page < 1) {
             $page = 1;
@@ -258,62 +278,118 @@ class ServerUserController
             $limit = 100;
         }
 
-        // Get servers the user owns
-        $ownedServers = Server::searchServers(
-            page: $page,
-            limit: $limit,
-            search: $search,
-            ownerId: $user['id']
-        );
+        // Check if admin wants to view all servers
+        if ($viewAll) {
+            // Check if user has admin permission
+            if (!PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_SERVERS_VIEW)) {
+                return ApiResponse::error('You do not have permission to view all servers', 'PERMISSION_DENIED', 403);
+            }
 
-        // Get servers where user is a subuser
-        $subusers = Subuser::getSubusersByUserId((int) $user['id']);
-        $subuserServerIds = array_map(static fn ($subuser) => (int) $subuser['server_id'], $subusers);
+            // Use admin search to get all servers (fetch all then paginate)
+            // First get total count for pagination
+            $total = Server::getCount($search);
 
-        // Create a map of subuser data by server ID for easy lookup
-        $subuserMap = [];
-        foreach ($subusers as $subuser) {
-            $subuserMap[(int) $subuser['server_id']] = $subuser;
-        }
+            // Get all servers matching the search (we'll paginate in memory)
+            // Fetch a large batch to handle all cases
+            $allServers = Server::searchServers(
+                page: 1,
+                limit: 10000, // Get all servers (high limit to bypass pagination)
+                search: $search,
+                fields: [],
+                sortBy: 'id',
+                sortOrder: 'DESC'
+            );
 
-        // Get subuser servers individually
-        $subuserServers = [];
-        foreach ($subuserServerIds as $serverId) {
-            $server = Server::getServerById($serverId);
-            if ($server) {
-                // Apply search filter
-                if (
-                    empty($search)
-                    || stripos($server['name'], $search) !== false
-                    || stripos($server['description'] ?? '', $search) !== false
-                ) {
-                    $subuserServers[] = $server;
+            // Apply pagination to all servers
+            $offset = ($page - 1) * $limit;
+            $servers = array_slice($allServers, $offset, $limit);
+
+            // No subuser map for admin view (all servers are shown as owned by their actual owners)
+            $subuserMap = [];
+        } else {
+            // Get ALL servers the user owns (without pagination)
+            $ownedServers = Server::getServersByOwnerId((int) $user['id']);
+
+            // Apply search filter to owned servers
+            if (!empty($search)) {
+                $ownedServers = array_filter($ownedServers, static function ($server) use ($search) {
+                    return stripos($server['name'], $search) !== false
+                        || stripos($server['description'] ?? '', $search) !== false;
+                });
+                // Re-index array after filtering
+                $ownedServers = array_values($ownedServers);
+            }
+
+            // Get servers where user is a subuser
+            $subusers = Subuser::getSubusersByUserId((int) $user['id']);
+            $subuserServerIds = array_map(static fn ($subuser) => (int) $subuser['server_id'], $subusers);
+
+            // Create a map of subuser data by server ID for easy lookup
+            $subuserMap = [];
+            foreach ($subusers as $subuser) {
+                $subuserMap[(int) $subuser['server_id']] = $subuser;
+            }
+
+            // Get subuser servers individually
+            $subuserServers = [];
+            foreach ($subuserServerIds as $serverId) {
+                $server = Server::getServerById($serverId);
+                if ($server) {
+                    // Apply search filter
+                    if (
+                        empty($search)
+                        || stripos($server['name'], $search) !== false
+                        || stripos($server['description'] ?? '', $search) !== false
+                    ) {
+                        $subuserServers[] = $server;
+                    }
                 }
             }
+
+            // Combine owned and subuser servers
+            $allServers = array_merge($ownedServers, $subuserServers);
+
+            // Get total count before pagination
+            $totalServers = count($allServers);
+
+            // Apply pagination to combined results
+            $offset = ($page - 1) * $limit;
+            $servers = array_slice($allServers, $offset, $limit);
+
+            // Use the total count from our combined results
+            $total = $totalServers;
         }
-
-        // Combine owned and subuser servers
-        $allServers = array_merge($ownedServers, $subuserServers);
-
-        // Apply client-side pagination since we combined results
-        $totalServers = count($allServers);
-        $offset = ($page - 1) * $limit;
-        $servers = array_slice($allServers, $offset, $limit);
 
         // Add related data to each server.
         foreach ($servers as &$server) {
-            // Check if user is a subuser of this server
-            $isSubuser = isset($subuserMap[(int) $server['id']]);
-            $server['is_subuser'] = $isSubuser;
-
-            // Add subuser permissions if applicable
-            if ($isSubuser) {
-                $subuserData = $subuserMap[(int) $server['id']];
-                $server['subuser_permissions'] = json_decode($subuserData['permissions'] ?? '[]', true) ?: [];
-                $server['subuser_id'] = (int) $subuserData['id'];
-            } else {
+            // Check if user is a subuser of this server (only when not viewing all)
+            if ($viewAll) {
+                // When viewing all servers as admin, check if current user is owner
+                $server['is_subuser'] = false;
                 $server['subuser_permissions'] = [];
                 $server['subuser_id'] = null;
+                // Add owner information for admin view
+                $owner = \App\Chat\User::getUserById($server['owner_id']);
+                $server['owner'] = $owner ? [
+                    'id' => $owner['id'],
+                    'username' => $owner['username'],
+                    'email' => $owner['email'],
+                    'avatar' => $owner['avatar'] ?? null,
+                ] : null;
+            } else {
+                // Check if user is a subuser of this server
+                $isSubuser = isset($subuserMap[(int) $server['id']]);
+                $server['is_subuser'] = $isSubuser;
+
+                // Add subuser permissions if applicable
+                if ($isSubuser) {
+                    $subuserData = $subuserMap[(int) $server['id']];
+                    $server['subuser_permissions'] = json_decode($subuserData['permissions'] ?? '[]', true) ?: [];
+                    $server['subuser_id'] = (int) $subuserData['id'];
+                } else {
+                    $server['subuser_permissions'] = [];
+                    $server['subuser_id'] = null;
+                }
             }
 
             $node = Node::getNodeById($server['node_id']);
@@ -323,6 +399,22 @@ class ServerUserController
                 'fqdn' => $node['fqdn'] ?? null,
                 'behind_proxy' => $node['behind_proxy'] ?? null,
             ];
+
+            // Get location information from node
+            $location = null;
+            if (isset($node['location_id']) && $node['location_id'] > 0) {
+                $locationData = Location::getById((int) $node['location_id']);
+                if ($locationData) {
+                    $location = [
+                        'id' => $locationData['id'] ?? null,
+                        'name' => $locationData['name'] ?? null,
+                        'description' => $locationData['description'] ?? null,
+                        'flag_code' => $locationData['flag_code'] ?? null,
+                    ];
+                }
+            }
+            $server['location'] = $location;
+
             $server['realm'] = \App\Chat\Realm::getById($server['realms_id']);
             $server['realm'] = [
                 'name' => $server['realm']['name'] ?? null,
@@ -358,8 +450,7 @@ class ServerUserController
             );
         }
 
-        // Use the total count from our combined results
-        $total = $totalServers;
+        // Calculate pagination (total already set above)
         $totalPages = ceil($total / $limit);
         $from = ($page - 1) * $limit + 1;
         $to = min($from + $limit - 1, $total);
@@ -386,7 +477,7 @@ class ServerUserController
     #[OA\Get(
         path: '/api/user/servers/{uuidShort}',
         summary: 'Get server details',
-        description: 'Retrieve detailed information about a specific server including node, realm, spell, allocation, activities, SFTP details, and variables.',
+        description: 'Retrieve detailed information about a specific server including node, realm, spell, allocation, location, SFTP details, and variables.',
         tags: ['User - Server Management'],
         parameters: [
             new OA\Parameter(
@@ -424,6 +515,22 @@ class ServerUserController
         }
 
         $server['node'] = Node::getNodeById($server['node_id']);
+
+        // Get location information from node
+        $location = null;
+        if (isset($server['node']['location_id']) && $server['node']['location_id'] > 0) {
+            $locationData = Location::getById((int) $server['node']['location_id']);
+            if ($locationData) {
+                $location = [
+                    'id' => $locationData['id'] ?? null,
+                    'name' => $locationData['name'] ?? null,
+                    'description' => $locationData['description'] ?? null,
+                    'flag_code' => $locationData['flag_code'] ?? null,
+                ];
+            }
+        }
+        $server['location'] = $location;
+
         $realmData = \App\Chat\Realm::getById($server['realms_id']);
         $server['realm'] = $realmData ? [
             'id' => $realmData['id'] ?? null,
@@ -442,8 +549,6 @@ class ServerUserController
         ] : null;
 
         $server['allocation'] = \App\Chat\Allocation::getAllocationById($server['allocation_id']);
-        $server['activity'] = ServerActivity::getActivitiesByServerId($server['id']);
-        $server['activity'] = array_reverse(array_slice($server['activity'], 0, 50));
         $sftp = [
             'host' => $server['node']['fqdn'],
             'port' => $server['node']['daemonSFTP'] ?? 2022,
@@ -528,8 +633,6 @@ class ServerUserController
             $server['node']['upload_size'],
             $server['node']['daemon_token_id'],
             $server['node']['daemon_token'],
-            $server['node']['daemonListen'],
-            $server['node']['daemonSFTP'],
             $server['node']['daemonBase'],
             $server['node']['public_ip_v4'],
             $server['node']['public_ip_v6']

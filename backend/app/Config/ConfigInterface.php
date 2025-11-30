@@ -98,11 +98,17 @@ interface ConfigInterface
     public const SERVER_ALLOW_STARTUP_CHANGE = 'server_allow_startup_change';
     public const SERVER_ALLOW_SUBUSERS = 'server_allow_subusers';
     public const SERVER_ALLOW_SCHEDULES = 'server_allow_schedules';
+    public const SERVER_ALLOW_ALLOCATION_SELECT = 'server_allow_allocation_select';
 
     /**
      * User Related Configs.
      */
     public const USER_ALLOW_AVATAR_CHANGE = 'user_allow_avatar_change';
+    public const USER_ALLOW_USERNAME_CHANGE = 'user_allow_username_change';
+    public const USER_ALLOW_EMAIL_CHANGE = 'user_allow_email_change';
+    public const USER_ALLOW_FIRST_NAME_CHANGE = 'user_allow_first_name_change';
+    public const USER_ALLOW_LAST_NAME_CHANGE = 'user_allow_last_name_change';
+    public const USER_ALLOW_API_KEYS_CREATE = 'user_allow_api_keys_create';
 
     /**
      * Subdomain Manager Configs.

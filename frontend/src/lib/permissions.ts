@@ -247,6 +247,10 @@ class Permissions {
     /** Download database snapshots */
     public static ADMIN_BACKUPS_DOWNLOAD = 'admin.backups.download';
 
+    // Admin API Permissions
+    /** Bypass API rate limits and restrictions */
+    public static ADMIN_API_BYPASS_RESTRICTIONS = 'admin.api.bypass_restrictions';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -335,6 +339,7 @@ class Permissions {
             { constant: 'ADMIN_BACKUPS_DELETE', value: Permissions.ADMIN_BACKUPS_DELETE, category: 'Admin Database Snapshots', description: 'Delete database snapshots' },
             { constant: 'ADMIN_BACKUPS_RESTORE', value: Permissions.ADMIN_BACKUPS_RESTORE, category: 'Admin Database Snapshots', description: 'Restore database from snapshot' },
             { constant: 'ADMIN_BACKUPS_DOWNLOAD', value: Permissions.ADMIN_BACKUPS_DOWNLOAD, category: 'Admin Database Snapshots', description: 'Download database snapshots' },
+            { constant: 'ADMIN_API_BYPASS_RESTRICTIONS', value: Permissions.ADMIN_API_BYPASS_RESTRICTIONS, category: 'Admin API', description: 'Bypass API rate limits and restrictions' },
         ];
     }
 }

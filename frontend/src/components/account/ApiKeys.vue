@@ -27,7 +27,12 @@
                         {{ $t('account.apiKeys.refresh') }}
                     </Button>
                 </div>
-                <Button class="w-full" data-umami-event="Create API key" @click="showCreateModal = true">
+                <Button
+                    v-if="canCreateApiKeys"
+                    class="w-full"
+                    data-umami-event="Create API key"
+                    @click="showCreateModal = true"
+                >
                     <Plus class="h-4 w-4 mr-2" />
                     {{ $t('account.apiKeys.addKey') }}
                 </Button>
@@ -178,7 +183,12 @@
             <p class="text-xs text-muted-foreground">
                 {{ searchQuery ? $t('account.apiKeys.tryDifferentSearch') : $t('account.apiKeys.noKeysDescription') }}
             </p>
-            <Button class="mt-4" data-umami-event="Create first API key" @click="showCreateModal = true">
+            <Button
+                v-if="canCreateApiKeys"
+                class="mt-4"
+                data-umami-event="Create first API key"
+                @click="showCreateModal = true"
+            >
                 <Plus class="h-4 w-4 mr-2" />
                 {{ $t('account.apiKeys.addFirstKey') }}
             </Button>
@@ -408,6 +418,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSessionStore } from '@/stores/session';
+import { useSettingsStore } from '@/stores/settings';
 import { useToast } from 'vue-toastification';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -446,6 +457,7 @@ import axios from 'axios';
 
 const { t: $t } = useI18n();
 const sessionStore = useSessionStore();
+const settingsStore = useSettingsStore();
 const toast = useToast();
 
 type ApiClient = {
@@ -493,6 +505,13 @@ const filteredApiClients = computed(() => {
         const publicKeyMatch = (client.public_key?.toLowerCase?.() || '').includes(query);
         return nameMatch || publicKeyMatch;
     });
+});
+
+// Check if user can create API keys (either setting allows it or user has bypass permission)
+const canCreateApiKeys = computed(() => {
+    const allowApiKeysCreate = settingsStore.userAllowApiKeysCreate;
+    const hasBypassPermission = sessionStore.hasPermission('admin.api.bypass_restrictions');
+    return allowApiKeysCreate || hasBypassPermission;
 });
 
 // Methods
@@ -730,6 +749,8 @@ function openApiDocumentation() {
 
 // Lifecycle
 onMounted(async () => {
+    await sessionStore.checkSessionOrRedirect();
+    await settingsStore.fetchSettings();
     await fetchApiClients();
 
     // Fetch plugin widgets

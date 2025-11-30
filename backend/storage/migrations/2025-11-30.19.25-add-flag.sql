@@ -1,0 +1,1 @@
+ALTER TABLE `featherpanel_locations` ADD `flag_code` TEXT NULL DEFAULT NULL AFTER `name`;

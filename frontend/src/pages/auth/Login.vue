@@ -59,6 +59,12 @@ onMounted(async () => {
         // Show link account message - user needs to enter credentials
         success.value = $t('auth.discordLinkPrompt');
     }
+
+    // Check for username_or_email in query (for 2FA redirect)
+    const usernameOrEmail = router.currentRoute.value.query.username_or_email as string;
+    if (usernameOrEmail) {
+        form.value.username_or_email = usernameOrEmail;
+    }
 });
 
 const props = defineProps<{
@@ -68,7 +74,7 @@ const { t: $t } = useI18n();
 const router = useRouter();
 
 const form = ref({
-    email: '',
+    username_or_email: '',
     password: '',
     turnstile_token: '',
 });
@@ -85,7 +91,7 @@ const widgetsAfterForm = computed(() => getWidgets('auth-login', 'after-form'));
 const widgetsBottomOfPage = computed(() => getWidgets('auth-login', 'bottom-of-page'));
 
 function validateForm(): string | null {
-    if (!form.value.email || !form.value.password) {
+    if (!form.value.username_or_email || !form.value.password) {
         return $t('api_errors.MISSING_REQUIRED_FIELDS');
     }
     if (settingsStore.turnstile_enabled) {
@@ -93,18 +99,18 @@ function validateForm(): string | null {
             return $t('api_errors.TURNSTILE_TOKEN_REQUIRED');
         }
     }
-    if (typeof form.value.email !== 'string') {
+    if (typeof form.value.username_or_email !== 'string') {
         return $t('api_errors.INVALID_DATA_TYPE_EMAIL');
     }
     if (typeof form.value.password !== 'string') {
         return $t('api_errors.INVALID_DATA_TYPE_PASSWORD');
     }
-    form.value.email = form.value.email.trim();
+    form.value.username_or_email = form.value.username_or_email.trim();
     form.value.password = form.value.password.trim();
-    if (form.value.email.length < 3) {
+    if (form.value.username_or_email.length < 3) {
         return $t('api_errors.INVALID_DATA_LENGTH_MIN_EMAIL');
     }
-    if (form.value.email.length > 255) {
+    if (form.value.username_or_email.length > 255) {
         return $t('api_errors.INVALID_DATA_LENGTH_MAX_EMAIL');
     }
     if (form.value.password.length < 8) {
@@ -113,8 +119,11 @@ function validateForm(): string | null {
     if (form.value.password.length > 255) {
         return $t('api_errors.INVALID_DATA_LENGTH_MAX_PASSWORD');
     }
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.value.email)) {
-        return $t('api_errors.INVALID_EMAIL_ADDRESS');
+    // Validate as either email or username format
+    const isEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.value.username_or_email);
+    const isUsername = /^[a-zA-Z0-9_]+$/.test(form.value.username_or_email);
+    if (!isEmail && !isUsername) {
+        return $t('api_errors.INVALID_USERNAME_OR_EMAIL');
     }
     return null;
 }
@@ -133,7 +142,7 @@ async function handleDiscordLink(): Promise<void> {
     try {
         const payload = {
             token: discordLinkToken.value,
-            email: form.value.email,
+            username_or_email: form.value.username_or_email,
             password: form.value.password,
         };
         const res = await axios.put('/api/user/auth/discord/link', payload, {
@@ -147,7 +156,7 @@ async function handleDiscordLink(): Promise<void> {
 
             // Now log in with credentials (without the link token check)
             const loginPayload = {
-                email: form.value.email,
+                username_or_email: form.value.username_or_email,
                 password: form.value.password,
                 turnstile_token: form.value.turnstile_token,
             };
@@ -297,7 +306,7 @@ async function onSubmit(e: Event) {
     loading.value = true;
     try {
         const payload = {
-            email: form.value.email,
+            username_or_email: form.value.username_or_email,
             password: form.value.password,
             turnstile_token: form.value.turnstile_token,
         };
@@ -348,7 +357,16 @@ async function onSubmit(e: Event) {
             errorCode = response?.data?.error_code;
         }
         if (errorCode === 'TWO_FACTOR_REQUIRED') {
-            await router.push({ name: 'VerifyTwoFactor', query: { email: form.value.email } });
+            // Extract email from response if available (backend always returns email for 2FA)
+            let emailFor2FA = form.value.username_or_email;
+            if (typeof err === 'object' && err !== null && 'response' in err) {
+                const response = (err as { response?: { data?: { data?: { email?: string } } } }).response;
+                emailFor2FA = response?.data?.data?.email || form.value.username_or_email;
+            }
+            await router.push({
+                name: 'VerifyTwoFactor',
+                query: { email: emailFor2FA, username_or_email: form.value.username_or_email },
+            });
             return;
         }
         error.value = getErrorMessage(err);
@@ -370,8 +388,8 @@ async function onSubmit(e: Event) {
             <div class="flex flex-col gap-6">
                 <div class="flex flex-col gap-4">
                     <div class="grid gap-3">
-                        <Label for="email">{{ $t('auth.email') }}</Label>
-                        <Input id="email" v-model="form.email" type="email" required />
+                        <Label for="username_or_email">{{ $t('auth.usernameOrEmail') }}</Label>
+                        <Input id="username_or_email" v-model="form.username_or_email" type="text" required />
                     </div>
                     <div class="grid gap-3">
                         <Label for="password">{{ $t('auth.password') }}</Label>
@@ -387,7 +405,7 @@ async function onSubmit(e: Event) {
                         class="w-full"
                         :disabled="loading"
                         data-umami-event="Login attempt"
-                        :data-umami-event-email="form.email"
+                        :data-umami-event-email="form.username_or_email"
                     >
                         <span v-if="loading">{{ $t('auth.loggingIn') }}</span>
                         <span v-else>{{ $t('auth.login') }}</span>

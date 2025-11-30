@@ -22,11 +22,7 @@
                             @click="handleUseEulaEditor"
                         >
                             <CheckCircle2 class="h-4 w-4" />
-                            {{
-                                t('eulaConfig.prompt.useGui', {
-                                    defaultValue: 'Open visual editor',
-                                })
-                            }}
+                            {{ t('eulaConfig.prompt.useGui') }}
                         </Button>
                         <Button
                             v-if="shouldOfferCommandsEditor && !useCommandsEditor"
@@ -36,11 +32,7 @@
                             @click="handleUseCommandsEditor"
                         >
                             <CheckCircle2 class="h-4 w-4" />
-                            {{
-                                t('commandsConfig.prompt.useGui', {
-                                    defaultValue: 'Open visual editor',
-                                })
-                            }}
+                            {{ t('commandsConfig.prompt.useGui') }}
                         </Button>
                         <Button
                             v-if="shouldOfferSpigotEditor && !useSpigotEditor"
@@ -50,11 +42,7 @@
                             @click="handleUseSpigotEditor"
                         >
                             <CheckCircle2 class="h-4 w-4" />
-                            {{
-                                t('spigotConfig.prompt.useGui', {
-                                    defaultValue: 'Open visual editor',
-                                })
-                            }}
+                            {{ t('spigotConfig.prompt.useGui') }}
                         </Button>
                         <Button
                             v-if="shouldOfferMinecraftEditor && !useMinecraftEditor"
@@ -64,11 +52,7 @@
                             @click="handleUseMinecraftEditor"
                         >
                             <CheckCircle2 class="h-4 w-4" />
-                            {{
-                                t('minecraftProperties.prompt.useGui', {
-                                    defaultValue: 'Open visual editor',
-                                })
-                            }}
+                            {{ t('minecraftProperties.prompt.useGui') }}
                         </Button>
                         <Button
                             v-if="shouldOfferBukkitEditor && !useBukkitEditor"
@@ -78,11 +62,7 @@
                             @click="handleUseBukkitEditor"
                         >
                             <CheckCircle2 class="h-4 w-4" />
-                            {{
-                                t('bukkitConfig.prompt.useGui', {
-                                    defaultValue: 'Open visual editor',
-                                })
-                            }}
+                            {{ t('bukkitConfig.prompt.useGui') }}
                         </Button>
                         <Button
                             v-if="shouldOfferBannedIpsEditor && !useBannedIpsEditor"
@@ -92,11 +72,7 @@
                             @click="handleUseBannedIpsEditor"
                         >
                             <CheckCircle2 class="h-4 w-4" />
-                            {{
-                                t('bannedIpsConfig.prompt.useGui', {
-                                    defaultValue: 'Open visual editor',
-                                })
-                            }}
+                            {{ t('bannedIpsConfig.prompt.useGui') }}
                         </Button>
                         <Button
                             v-if="shouldOfferBannedPlayersEditor && !useBannedPlayersEditor"
@@ -106,11 +82,7 @@
                             @click="handleUseBannedPlayersEditor"
                         >
                             <CheckCircle2 class="h-4 w-4" />
-                            {{
-                                t('bannedPlayersConfig.prompt.useGui', {
-                                    defaultValue: 'Open visual editor',
-                                })
-                            }}
+                            {{ t('bannedPlayersConfig.prompt.useGui') }}
                         </Button>
                         <Button
                             v-if="shouldOfferOpsEditor && !useOpsEditor"
@@ -120,11 +92,7 @@
                             @click="handleUseOpsEditor"
                         >
                             <CheckCircle2 class="h-4 w-4" />
-                            {{
-                                t('opsConfig.prompt.useGui', {
-                                    defaultValue: 'Open visual editor',
-                                })
-                            }}
+                            {{ t('opsConfig.prompt.useGui') }}
                         </Button>
                         <Button
                             v-if="shouldOfferWhitelistEditor && !useWhitelistEditor"
@@ -134,11 +102,7 @@
                             @click="handleUseWhitelistEditor"
                         >
                             <CheckCircle2 class="h-4 w-4" />
-                            {{
-                                t('whitelistConfig.prompt.useGui', {
-                                    defaultValue: 'Open visual editor',
-                                })
-                            }}
+                            {{ t('whitelistConfig.prompt.useGui') }}
                         </Button>
                         <Badge
                             v-if="!canUpdateFiles"
@@ -168,38 +132,21 @@
                         </div>
                         <div class="space-y-2">
                             <CardTitle class="text-xl">
-                                {{
-                                    t('minecraftProperties.prompt.title', {
-                                        defaultValue: 'Minecraft server.properties detected',
-                                    })
-                                }}
+                                {{ t('minecraftProperties.prompt.title') }}
                             </CardTitle>
                             <CardDescription class="text-sm text-muted-foreground">
-                                {{
-                                    t('minecraftProperties.prompt.description', {
-                                        defaultValue:
-                                            'We can translate this file into a friendly interface so you can update settings without touching raw text.',
-                                    })
-                                }}
+                                {{ t('minecraftProperties.prompt.description') }}
                             </CardDescription>
                         </div>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-2">
                         <Button size="sm" class="gap-2" @click="handleUseMinecraftEditor">
                             <CheckCircle2 class="h-4 w-4" />
-                            {{
-                                t('minecraftProperties.prompt.useGui', {
-                                    defaultValue: 'Open visual editor',
-                                })
-                            }}
+                            {{ t('minecraftProperties.prompt.useGui') }}
                         </Button>
                         <Button size="sm" variant="outline" class="gap-2" @click="handleDismissMinecraftEditor">
                             <FileCode2 class="h-4 w-4" />
-                            {{
-                                t('minecraftProperties.prompt.stayRaw', {
-                                    defaultValue: 'Stay in raw editor',
-                                })
-                            }}
+                            {{ t('minecraftProperties.prompt.stayRaw') }}
                         </Button>
                     </div>
                 </CardHeader>
@@ -216,38 +163,21 @@
                         </div>
                         <div class="space-y-2">
                             <CardTitle class="text-xl">
-                                {{
-                                    t('bukkitConfig.prompt.title', {
-                                        defaultValue: 'Paper bukkit.yml detected',
-                                    })
-                                }}
+                                {{ t('bukkitConfig.prompt.title') }}
                             </CardTitle>
                             <CardDescription class="text-sm text-muted-foreground">
-                                {{
-                                    t('bukkitConfig.prompt.description', {
-                                        defaultValue:
-                                            'Switch to a friendly editor to manage Paper configuration without editing raw YAML.',
-                                    })
-                                }}
+                                {{ t('bukkitConfig.prompt.description') }}
                             </CardDescription>
                         </div>
                     </div>
                     <div class="flex flex-col gap-2 sm:flex-row">
                         <Button size="sm" class="gap-2" @click="handleUseBukkitEditor">
                             <CheckCircle2 class="h-4 w-4" />
-                            {{
-                                t('bukkitConfig.prompt.useGui', {
-                                    defaultValue: 'Open visual editor',
-                                })
-                            }}
+                            {{ t('bukkitConfig.prompt.useGui') }}
                         </Button>
                         <Button size="sm" variant="outline" class="gap-2" @click="handleDismissBukkitEditor">
                             <FileCode2 class="h-4 w-4" />
-                            {{
-                                t('bukkitConfig.prompt.stayRaw', {
-                                    defaultValue: 'Stay in raw editor',
-                                })
-                            }}
+                            {{ t('bukkitConfig.prompt.stayRaw') }}
                         </Button>
                     </div>
                 </CardHeader>
@@ -264,37 +194,21 @@
                         </div>
                         <div class="space-y-2">
                             <CardTitle class="text-xl">
-                                {{
-                                    t('spigotConfig.prompt.title', {
-                                        defaultValue: 'Paper spigot.yml detected',
-                                    })
-                                }}
+                                {{ t('spigotConfig.prompt.title') }}
                             </CardTitle>
                             <CardDescription class="text-sm text-muted-foreground">
-                                {{
-                                    t('spigotConfig.prompt.description', {
-                                        defaultValue: 'Switch to the visual editor to tweak Spigot options safely.',
-                                    })
-                                }}
+                                {{ t('spigotConfig.prompt.description') }}
                             </CardDescription>
                         </div>
                     </div>
                     <div class="flex flex-col gap-2 sm:flex-row">
                         <Button size="sm" class="gap-2" @click="handleUseSpigotEditor">
                             <CheckCircle2 class="h-4 w-4" />
-                            {{
-                                t('spigotConfig.prompt.useGui', {
-                                    defaultValue: 'Open visual editor',
-                                })
-                            }}
+                            {{ t('spigotConfig.prompt.useGui') }}
                         </Button>
                         <Button size="sm" variant="outline" class="gap-2" @click="handleDismissSpigotEditor">
                             <FileCode2 class="h-4 w-4" />
-                            {{
-                                t('spigotConfig.prompt.stayRaw', {
-                                    defaultValue: 'Stay in raw editor',
-                                })
-                            }}
+                            {{ t('spigotConfig.prompt.stayRaw') }}
                         </Button>
                     </div>
                 </CardHeader>
@@ -311,38 +225,21 @@
                         </div>
                         <div class="space-y-2">
                             <CardTitle class="text-xl">
-                                {{
-                                    t('commandsConfig.prompt.title', {
-                                        defaultValue: 'Paper commands.yml detected',
-                                    })
-                                }}
+                                {{ t('commandsConfig.prompt.title') }}
                             </CardTitle>
                             <CardDescription class="text-sm text-muted-foreground">
-                                {{
-                                    t('commandsConfig.prompt.description', {
-                                        defaultValue:
-                                            'Use the guided editor to manage command aliases and overrides without editing YAML.',
-                                    })
-                                }}
+                                {{ t('commandsConfig.prompt.description') }}
                             </CardDescription>
                         </div>
                     </div>
                     <div class="flex flex-col gap-2 sm:flex-row">
                         <Button size="sm" class="gap-2" @click="handleUseCommandsEditor">
                             <CheckCircle2 class="h-4 w-4" />
-                            {{
-                                t('commandsConfig.prompt.useGui', {
-                                    defaultValue: 'Open visual editor',
-                                })
-                            }}
+                            {{ t('commandsConfig.prompt.useGui') }}
                         </Button>
                         <Button size="sm" variant="outline" class="gap-2" @click="handleDismissCommandsEditor">
                             <FileCode2 class="h-4 w-4" />
-                            {{
-                                t('commandsConfig.prompt.stayRaw', {
-                                    defaultValue: 'Stay in raw editor',
-                                })
-                            }}
+                            {{ t('commandsConfig.prompt.stayRaw') }}
                         </Button>
                     </div>
                 </CardHeader>
@@ -1168,12 +1065,7 @@ const loadFileContent = async () => {
 
     // Check if file is editable
     if (!isFileEditable(fileName.value)) {
-        toast(
-            t('fileEditor.cannotEditBinaryFile', {
-                defaultValue: 'Cannot edit binary files. Please download the file instead.',
-            }),
-            { type: TYPE.ERROR },
-        );
+        toast(t('fileEditor.cannotEditBinaryFile'), { type: TYPE.ERROR });
         router.push({
             name: 'ServerFiles',
             params: { uuidShort: serverUuid },
@@ -1220,12 +1112,7 @@ const loadFileContent = async () => {
         const contentString = fileContent.value ?? '';
         const contentSize = new Blob([contentString]).size;
         if (contentSize > FILE_SIZE_LIMIT) {
-            toast(
-                t('fileEditor.fileTooLarge', {
-                    defaultValue: 'File is too large to edit (max 5MB). Please download it instead.',
-                }),
-                { type: TYPE.ERROR },
-            );
+            toast(t('fileEditor.fileTooLarge'), { type: TYPE.ERROR });
             router.push({
                 name: 'ServerFiles',
                 params: { uuidShort: serverUuid },

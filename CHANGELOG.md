@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.0.6 Beta
+
+### Fixed
+
+- Resolved an issue where user server pagination was not functioning correctly; pagination now works as intended. Fixed by 
+@nayskutzu
+- The Pterodactyl importer page has been significantly improved—it now reliably displays your actual API key for seamless integration! by @nayskutzu
+- Enhanced the Pterodactyl importer page with clear, user-friendly labels for improved navigation and ease of use. by @nayskutzu
+- Resolved various mobile UI issues on the server resources page for a smoother, more polished user experience. by @nayskutzu
+
+### Added
+
+- Users can now log in using their usernames for greater convenience and flexibility. by @nayskutzu
+- New users are now automatically logged in right after registration, providing a seamless onboarding experience. by @nayskutzu
+- Admins can now effortlessly view and manage all servers directly from the dashboard, streamlining oversight and administration. by @nayskutzu
+- Introduced a dedicated server ping card to the server list for clearer connection insights, and relocated the UUID for improved accessibility. by @nayskutzu
+- Introduced a new feature that allows users to select their preferred server allocation from available options (disabled by default in settings). by @nayskutzu
+- Added the ability for administrators to restrict users from changing specific profile details, such as their username, first/last name, or email address, for enhanced control and security. by @nayskutzu
+- Introduced a new feature allowing administrators to restrict user access to the client API for enhanced security and control. by @nayskutzu
+- Implemented API documentation caching for significantly faster load times in production environments. by @nayskutzu
+- Enhanced server locations with vibrant country flags for a fresh, modern look! by @nayskutzu
+
 ## v1.0.5 BETA
 
 ### Fixed

@@ -38,6 +38,7 @@ use App\SubuserPermissions;
 use App\Chat\ServerActivity;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Config\ConfigInterface;
 use App\Plugins\Events\Events\ServerEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -472,12 +473,148 @@ class ServerAllocationController
     }
 
     /**
+     * Get available allocations for selection.
+     */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/allocations/available',
+        summary: 'Get available allocations',
+        description: 'Retrieve all available (unassigned) allocations that can be assigned to the server. Supports pagination and search.',
+        tags: ['User - Server Allocations'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                description: 'Page number (default: 1)',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1)
+            ),
+            new OA\Parameter(
+                name: 'limit',
+                in: 'query',
+                description: 'Items per page (default: 20, max: 100)',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100)
+            ),
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                description: 'Search query for IP address, port, alias, or notes',
+                required: false,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Available allocations retrieved successfully',
+                content: new OA\JsonContent(
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'allocations', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServerAllocation')),
+                        new OA\Property(property: 'pagination', type: 'object'),
+                        new OA\Property(property: 'search', type: 'object'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server not found'),
+        ]
+    )]
+    public function getAvailableAllocations(Request $request, int $serverId): Response
+    {
+        // Get authenticated user
+        $user = $request->get('user');
+        if (!$user) {
+            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+        }
+
+        // Get server details
+        $server = Server::getServerById($serverId);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Check allocation.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::ALLOCATION_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
+        // Get pagination parameters
+        $page = (int) $request->query->get('page', 1);
+        $limit = (int) $request->query->get('limit', 20);
+        $search = $request->query->get('search', '');
+
+        // Validate pagination parameters
+        if ($page < 1) {
+            $page = 1;
+        }
+        if ($limit < 1) {
+            $limit = 20;
+        }
+        if ($limit > 100) {
+            $limit = 100;
+        }
+
+        $offset = ($page - 1) * $limit;
+
+        // Get available allocations filtered by node and with search
+        $nodeId = (int) $server['node_id'];
+        $availableAllocations = Allocation::getAll(
+            search: $search ?: null,
+            nodeId: $nodeId,
+            serverId: null,
+            limit: $limit,
+            offset: $offset,
+            notUsed: true
+        );
+
+        // Get total count for pagination
+        $total = Allocation::getCount(
+            search: $search ?: null,
+            nodeId: $nodeId,
+            serverId: null,
+            notUsed: true
+        );
+
+        $totalPages = ceil($total / $limit);
+        $from = ($page - 1) * $limit + 1;
+        $to = min($from + $limit - 1, $total);
+
+        return ApiResponse::success([
+            'allocations' => $availableAllocations,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total_records' => $total,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
+                'from' => $from,
+                'to' => $to,
+            ],
+            'search' => [
+                'query' => $search,
+                'has_results' => count($availableAllocations) > 0,
+            ],
+        ], 'Available allocations fetched successfully');
+    }
+
+    /**
      * Auto-allocate free allocations to the server.
      */
     #[OA\Post(
         path: '/api/user/servers/{uuidShort}/allocations/auto',
         summary: 'Auto-allocate allocation',
-        description: 'Automatically assign a free allocation to the server. Only assigns one allocation at a time.',
+        description: 'Automatically assign a free allocation to the server. Only assigns one allocation at a time. Optionally accepts an allocation_id to assign a specific allocation.',
         tags: ['User - Server Allocations'],
         parameters: [
             new OA\Parameter(
@@ -488,16 +625,25 @@ class ServerAllocationController
                 schema: new OA\Schema(type: 'string')
             ),
         ],
+        requestBody: new OA\RequestBody(
+            description: 'Optional allocation ID to assign',
+            content: new OA\JsonContent(
+                type: 'object',
+                properties: [
+                    new OA\Property(property: 'allocation_id', type: 'integer', nullable: true, description: 'Specific allocation ID to assign. If not provided, a random allocation will be selected.'),
+                ]
+            )
+        ),
         responses: [
             new OA\Response(
                 response: 200,
                 description: 'Allocation assigned successfully',
                 content: new OA\JsonContent(ref: '#/components/schemas/AutoAllocationResponse')
             ),
-            new OA\Response(response: 400, description: 'Bad request - Missing UUID, allocation limit reached, or no free allocations available'),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID, allocation limit reached, no free allocations available, or invalid allocation ID'),
             new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
             new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
-            new OA\Response(response: 404, description: 'Not found - Server not found'),
+            new OA\Response(response: 404, description: 'Not found - Server or allocation not found'),
             new OA\Response(response: 500, description: 'Internal server error - Failed to assign allocation'),
         ]
     )]
@@ -529,19 +675,56 @@ class ServerAllocationController
             return ApiResponse::error('Allocation limit reached', 'ALLOCATION_LIMIT_REACHED', 400);
         }
 
-        // Get available free allocations
-        $availableAllocations = Allocation::getAvailable(100, 0); // Get up to 100 free allocations
+        // Get request body to check for optional allocation_id
+        $requestData = json_decode($request->getContent(), true) ?? [];
+        $requestedAllocationId = isset($requestData['allocation_id']) ? (int) $requestData['allocation_id'] : null;
 
-        if (empty($availableAllocations)) {
-            return ApiResponse::error('No free allocations available', 'NO_FREE_ALLOCATIONS', 400);
+        $selectedAllocation = null;
+
+        // If allocation_id is provided, validate and use it
+        if ($requestedAllocationId !== null) {
+            // Check if allocation selection is enabled
+            $app = App::getInstance(true);
+            $allowSelection = $app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT, 'false');
+
+            if ($allowSelection !== 'true') {
+                return ApiResponse::error('Allocation selection is not enabled', 'ALLOCATION_SELECTION_DISABLED', 403);
+            }
+
+            // Get the requested allocation
+            $requestedAllocation = Allocation::getById($requestedAllocationId);
+            if (!$requestedAllocation) {
+                return ApiResponse::error('Allocation not found', 'ALLOCATION_NOT_FOUND', 404);
+            }
+
+            // Verify the allocation is not already assigned
+            if ($requestedAllocation['server_id'] !== null) {
+                return ApiResponse::error('Allocation is already assigned to another server', 'ALLOCATION_ALREADY_ASSIGNED', 400);
+            }
+
+            // Verify the allocation is on the same node as the server
+            if ((int) $requestedAllocation['node_id'] !== (int) $server['node_id']) {
+                return ApiResponse::error('Allocation must be on the same node as the server', 'ALLOCATION_NODE_MISMATCH', 400);
+            }
+
+            $selectedAllocation = $requestedAllocation;
+        } else {
+            // Get available free allocations (filtered by node)
+            $availableAllocations = Allocation::getAvailable(100, 0); // Get up to 100 free allocations
+
+            // Filter by node_id to only show allocations on the same node
+            $availableAllocations = array_filter($availableAllocations, function ($allocation) use ($server) {
+                return (int) $allocation['node_id'] === (int) $server['node_id'];
+            });
+
+            if (empty($availableAllocations)) {
+                return ApiResponse::error('No free allocations available on this node', 'NO_FREE_ALLOCATIONS', 400);
+            }
+
+            // Randomly select 1 allocation to assign
+            shuffle($availableAllocations);
+            $selectedAllocation = $availableAllocations[0];
         }
-
-        // Only assign 1 allocation at a time
-        $canAssign = 1;
-
-        // Randomly select 1 allocation to assign
-        shuffle($availableAllocations);
-        $selectedAllocation = $availableAllocations[0];
 
         // Assign the selected allocation to the server
         $success = Allocation::assignToServer($selectedAllocation['id'], $serverId);

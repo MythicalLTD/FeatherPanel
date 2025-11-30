@@ -193,11 +193,17 @@ export const useSettingsStore = defineStore('settings', {
          */
         serverAllowEggChange: (state) => getBooleanSetting(state, 'server_allow_egg_change'),
         serverAllowStartupChange: (state) => getBooleanSetting(state, 'server_allow_startup_change'),
+        serverAllowAllocationSelect: (state) => getBooleanSetting(state, 'server_allow_allocation_select'),
 
         /**
          * User-related settings
          */
         userAllowAvatarChange: (state) => getBooleanSetting(state, 'user_allow_avatar_change'),
+        userAllowUsernameChange: (state) => getBooleanSetting(state, 'user_allow_username_change'),
+        userAllowEmailChange: (state) => getBooleanSetting(state, 'user_allow_email_change'),
+        userAllowFirstNameChange: (state) => getBooleanSetting(state, 'user_allow_first_name_change'),
+        userAllowLastNameChange: (state) => getBooleanSetting(state, 'user_allow_last_name_change'),
+        userAllowApiKeysCreate: (state) => getBooleanSetting(state, 'user_allow_api_keys_create'),
 
         /**
          * Chatbot-related settings

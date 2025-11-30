@@ -281,6 +281,188 @@
             <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
         </div>
 
+        <!-- Allocation Selection Drawer -->
+        <Drawer v-model:open="showAllocationSelectDialog">
+            <DrawerContent>
+                <DrawerHeader>
+                    <DrawerTitle class="flex items-center gap-2">
+                        <Network class="h-5 w-5" />
+                        {{ t('serverAllocations.selectAllocation') }}
+                    </DrawerTitle>
+                    <DrawerDescription>
+                        {{ t('serverAllocations.selectAllocationDescription') }}
+                    </DrawerDescription>
+                </DrawerHeader>
+
+                <div class="p-6 space-y-4">
+                    <!-- Search Bar -->
+                    <div class="relative">
+                        <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            v-model="allocationSearchQuery"
+                            :placeholder="t('serverAllocations.searchAllocations')"
+                            class="pl-9"
+                            @input="handleAllocationSearch"
+                        />
+                    </div>
+
+                    <div data-allocation-drawer-content class="max-h-[50vh] overflow-y-auto space-y-4">
+                        <!-- Loading State -->
+                        <div v-if="loadingAvailableAllocations" class="flex items-center justify-center py-8">
+                            <Loader2 class="h-6 w-6 animate-spin text-primary" />
+                            <span class="ml-2 text-muted-foreground">{{ t('common.loading') }}</span>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div
+                            v-else-if="availableAllocations.length === 0 && !allocationSearchQuery"
+                            class="flex flex-col items-center justify-center py-8 text-center"
+                        >
+                            <Network class="h-12 w-12 text-muted-foreground mb-4" />
+                            <p class="text-muted-foreground">{{ t('serverAllocations.noAvailableAllocations') }}</p>
+                        </div>
+
+                        <!-- No Search Results -->
+                        <div
+                            v-else-if="availableAllocations.length === 0 && allocationSearchQuery"
+                            class="flex flex-col items-center justify-center py-8 text-center"
+                        >
+                            <Search class="h-12 w-12 text-muted-foreground mb-4" />
+                            <p class="text-muted-foreground">{{ t('serverAllocations.noSearchResults') }}</p>
+                        </div>
+
+                        <!-- Allocations List -->
+                        <div v-else class="space-y-2">
+                            <!-- Auto Select Option -->
+                            <div
+                                class="group relative rounded-lg border-2 bg-card p-4 transition-all cursor-pointer hover:border-primary/50 hover:shadow-md"
+                                :class="selectedAllocationId === null ? 'border-primary bg-primary/5' : 'border-border'"
+                                @click="selectedAllocationId = null"
+                            >
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3 flex-1">
+                                        <div
+                                            class="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center shrink-0"
+                                        >
+                                            <Zap class="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="font-semibold">{{ t('serverAllocations.autoSelect') }}</div>
+                                            <div class="text-sm text-muted-foreground">
+                                                {{ t('serverAllocations.autoSelectDescription') }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div
+                                        v-if="selectedAllocationId === null"
+                                        class="h-5 w-5 rounded-full border-2 border-primary bg-primary flex items-center justify-center shrink-0"
+                                    >
+                                        <Check class="h-3 w-3 text-primary-foreground" />
+                                    </div>
+                                    <div v-else class="h-5 w-5 rounded-full border-2 border-border shrink-0"></div>
+                                </div>
+                            </div>
+
+                            <!-- Available Allocations -->
+                            <div
+                                v-for="allocation in availableAllocations"
+                                :key="allocation.id"
+                                class="group relative rounded-lg border-2 bg-card p-4 transition-all cursor-pointer hover:border-primary/50 hover:shadow-md"
+                                :class="
+                                    selectedAllocationId === allocation.id
+                                        ? 'border-primary bg-primary/5'
+                                        : 'border-border'
+                                "
+                                @click="selectedAllocationId = allocation.id"
+                            >
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                                        <div
+                                            class="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0"
+                                        >
+                                            <Network class="h-5 w-5 text-green-500" />
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="font-mono font-semibold text-sm truncate">
+                                                {{ allocation.ip }}:{{ allocation.port }}
+                                            </div>
+                                            <div
+                                                v-if="allocation.ip_alias || allocation.notes"
+                                                class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1"
+                                            >
+                                                <span v-if="allocation.ip_alias" class="flex items-center gap-1">
+                                                    <Info class="h-3 w-3" />
+                                                    {{ allocation.ip_alias }}
+                                                </span>
+                                                <span v-if="allocation.notes" class="truncate">{{
+                                                    allocation.notes
+                                                }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div
+                                        v-if="selectedAllocationId === allocation.id"
+                                        class="h-5 w-5 rounded-full border-2 border-primary bg-primary flex items-center justify-center shrink-0"
+                                    >
+                                        <Check class="h-3 w-3 text-primary-foreground" />
+                                    </div>
+                                    <div v-else class="h-5 w-5 rounded-full border-2 border-border shrink-0"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div
+                        v-if="!loadingAvailableAllocations && allocationPagination.totalPages > 1"
+                        class="flex items-center justify-between border-t pt-4"
+                    >
+                        <div class="text-sm text-muted-foreground">
+                            {{
+                                t('serverAllocations.showingAllocations', {
+                                    from: allocationPagination.from,
+                                    to: allocationPagination.to,
+                                    total: allocationPagination.total,
+                                })
+                            }}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                :disabled="!allocationPagination.hasPrev || loadingAvailableAllocations"
+                                @click="changeAllocationPage(allocationPagination.page - 1)"
+                            >
+                                <ChevronLeft class="h-4 w-4" />
+                            </Button>
+                            <span class="text-sm text-muted-foreground">
+                                {{ allocationPagination.page }} / {{ allocationPagination.totalPages }}
+                            </span>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                :disabled="!allocationPagination.hasNext || loadingAvailableAllocations"
+                                @click="changeAllocationPage(allocationPagination.page + 1)"
+                            >
+                                <ChevronRight class="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                <DrawerFooter>
+                    <Button variant="outline" :disabled="autoAllocating" @click="showAllocationSelectDialog = false">
+                        {{ t('common.cancel') }}
+                    </Button>
+                    <Button :disabled="autoAllocating || loadingAvailableAllocations" @click="handleAllocationSelect">
+                        <Loader2 v-if="autoAllocating" class="h-4 w-4 mr-2 animate-spin" />
+                        <Zap v-else class="h-4 w-4 mr-2" />
+                        {{ t('serverAllocations.assignAllocation') }}
+                    </Button>
+                </DrawerFooter>
+            </DrawerContent>
+        </Drawer>
+
         <!-- Confirmation Dialog -->
         <Dialog v-model:open="showConfirmDialog">
             <DialogContent>
@@ -353,6 +535,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
     Dialog,
     DialogContent,
@@ -361,17 +544,40 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { RefreshCw, Network, Trash2, Star, Zap, Info, Loader2, AlertTriangle } from 'lucide-vue-next';
+import {
+    RefreshCw,
+    Network,
+    Trash2,
+    Star,
+    Zap,
+    Info,
+    Loader2,
+    AlertTriangle,
+    Check,
+    Search,
+    ChevronLeft,
+    ChevronRight,
+} from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import { useServerPermissions } from '@/composables/useServerPermissions';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
+import { useSettingsStore } from '@/stores/settings';
+import {
+    Drawer,
+    DrawerContent,
+    DrawerDescription,
+    DrawerFooter,
+    DrawerHeader,
+    DrawerTitle,
+} from '@/components/ui/drawer';
 
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 const { t } = useI18n();
+const settingsStore = useSettingsStore();
 
 // Check server permissions
 const { hasPermission: hasServerPermission, isLoading: permissionsLoading } = useServerPermissions();
@@ -387,6 +593,31 @@ const loading = ref(true);
 const deletingAllocation = ref<number | null>(null);
 const settingPrimary = ref<number | null>(null);
 const autoAllocating = ref(false);
+const showAllocationSelectDialog = ref(false);
+const availableAllocations = ref<
+    Array<{
+        id: number;
+        node_id: number;
+        ip: string;
+        port: number;
+        ip_alias?: string;
+        notes?: string;
+    }>
+>([]);
+const loadingAvailableAllocations = ref(false);
+const selectedAllocationId = ref<number | null>(null);
+const allocationSearchQuery = ref('');
+const allocationSearchTimeout = ref<ReturnType<typeof setTimeout> | null>(null);
+const allocationPagination = ref({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+    from: 0,
+    to: 0,
+});
 
 // Confirm dialog state
 const showConfirmDialog = ref(false);
@@ -527,9 +758,108 @@ async function setPrimaryAllocationConfirm(allocationId: number) {
 }
 
 async function autoAllocate() {
+    // Check if allocation selection is enabled
+    if (settingsStore.serverAllowAllocationSelect) {
+        // Reset search and pagination
+        allocationSearchQuery.value = '';
+        allocationPagination.value.page = 1;
+
+        // Show selection dialog
+        await fetchAvailableAllocations();
+        showAllocationSelectDialog.value = true;
+    } else {
+        // Auto-allocate without selection
+        await performAutoAllocate();
+    }
+}
+
+async function fetchAvailableAllocations() {
+    try {
+        loadingAvailableAllocations.value = true;
+        const params: Record<string, string | number> = {
+            page: allocationPagination.value.page,
+            limit: allocationPagination.value.limit,
+        };
+
+        if (allocationSearchQuery.value) {
+            params.search = allocationSearchQuery.value;
+        }
+
+        const { data } = await axios.get(`/api/user/servers/${route.params.uuidShort}/allocations/available`, {
+            params,
+        });
+
+        if (!data.success) {
+            toast.error(data.message || t('serverAllocations.failedToFetchAvailable'));
+            return;
+        }
+
+        availableAllocations.value = data.data.allocations || [];
+
+        // Update pagination info
+        if (data.data.pagination) {
+            allocationPagination.value = {
+                page: data.data.pagination.current_page,
+                limit: data.data.pagination.per_page,
+                total: data.data.pagination.total_records,
+                totalPages: data.data.pagination.total_pages,
+                hasNext: data.data.pagination.has_next,
+                hasPrev: data.data.pagination.has_prev,
+                from: data.data.pagination.from,
+                to: data.data.pagination.to,
+            };
+        }
+
+        // Reset selection if current selection is not in the list
+        if (selectedAllocationId.value !== null) {
+            const stillAvailable = availableAllocations.value.some((a) => a.id === selectedAllocationId.value);
+            if (!stillAvailable) {
+                selectedAllocationId.value = null;
+            }
+        }
+    } catch (error) {
+        toast.error(t('serverAllocations.failedToFetchAvailable'));
+        console.error('Error fetching available allocations:', error);
+    } finally {
+        loadingAvailableAllocations.value = false;
+    }
+}
+
+function handleAllocationSearch() {
+    // Clear existing timeout
+    if (allocationSearchTimeout.value) {
+        clearTimeout(allocationSearchTimeout.value);
+    }
+
+    // Reset to page 1 when searching
+    allocationPagination.value.page = 1;
+
+    // Debounce search - wait 500ms before fetching
+    allocationSearchTimeout.value = setTimeout(() => {
+        fetchAvailableAllocations();
+    }, 500);
+}
+
+function changeAllocationPage(page: number) {
+    if (page < 1 || page > allocationPagination.value.totalPages) {
+        return;
+    }
+
+    allocationPagination.value.page = page;
+    fetchAvailableAllocations();
+
+    // Scroll to top of drawer content
+    const drawerContent = document.querySelector('[data-allocation-drawer-content]');
+    if (drawerContent) {
+        drawerContent.scrollTop = 0;
+    }
+}
+
+async function performAutoAllocate(allocationId?: number | null) {
     try {
         autoAllocating.value = true;
-        const { data } = await axios.post(`/api/user/servers/${route.params.uuidShort}/allocations/auto`);
+        const payload = allocationId ? { allocation_id: allocationId } : {};
+        const { data } = await axios.post(`/api/user/servers/${route.params.uuidShort}/allocations/auto`, payload);
 
         if (!data.success) {
             toast.error(data.message || t('serverAllocations.failedToAutoAllocate'));
@@ -538,6 +868,10 @@ async function autoAllocate() {
 
         toast.success(data.message || t('serverAllocations.autoAllocationCompleted'));
 
+        // Close dialog if open
+        showAllocationSelectDialog.value = false;
+        selectedAllocationId.value = null;
+
         // Refresh data to show new allocations
         await fetchAllocations();
     } catch (error) {
@@ -545,6 +879,15 @@ async function autoAllocate() {
         console.error('Error auto-allocating:', error);
     } finally {
         autoAllocating.value = false;
+    }
+}
+
+function handleAllocationSelect() {
+    if (selectedAllocationId.value) {
+        performAutoAllocate(selectedAllocationId.value);
+    } else {
+        // Auto-select (random)
+        performAutoAllocate();
     }
 }
 
@@ -560,6 +903,11 @@ function onConfirmDialog() {
 
 // Lifecycle
 onMounted(async () => {
+    // Load settings if not already loaded
+    if (!settingsStore.loaded) {
+        await settingsStore.fetchSettings();
+    }
+
     // Wait for permission check to complete
     while (permissionsLoading.value) {
         await new Promise((resolve) => setTimeout(resolve, 50));

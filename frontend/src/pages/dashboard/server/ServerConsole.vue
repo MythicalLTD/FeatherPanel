@@ -535,6 +535,7 @@
                 :server="server"
                 :wings-uptime="wingsUptime"
                 :wings-state="wingsState"
+                :ping="wingsWebSocket.ping?.value ?? null"
             />
 
             <!-- Plugin Widgets: Under Server Info Cards -->
@@ -1071,6 +1072,9 @@ const wingsUptime = ref<number>(0);
 // Terminal and WebSocket functionality
 const wingsWebSocket = useWingsWebSocket(route.params.uuidShort as string, isNavigatingAway);
 
+// Ping measurement interval
+let pingInterval: number | null = null;
+
 // Stats request interval
 let statsInterval: number | null = null;
 
@@ -1117,26 +1121,32 @@ const breadcrumbs = computed(() => [
 
 // Wings connection status display
 const wingsConnectionInfo = computed(() => {
+    const pingMs = wingsWebSocket.ping?.value;
+    const pingText = pingMs !== null && pingMs !== undefined ? ` (${pingMs}ms)` : '';
+
     if (!wingsWebSocket.isConnected) {
         return {
             status: 'disconnected',
             message: t('serverConsole.wingsDaemonDisconnected'),
             color: 'text-red-500',
             icon: '🔌',
+            ping: null,
         };
     } else if (wingsWebSocket.wingsStatus?.value === 'healthy') {
         return {
             status: 'healthy',
-            message: t('serverConsole.wingsDaemonConnected'),
+            message: t('serverConsole.wingsDaemonConnected') + pingText,
             color: 'text-green-500',
             icon: '✅',
+            ping: pingMs,
         };
     } else if (wingsWebSocket.wingsStatus?.value === 'error') {
         return {
             status: 'error',
-            message: t('serverConsole.wingsDaemonError'),
+            message: t('serverConsole.wingsDaemonError') + pingText,
             color: 'text-yellow-500',
             icon: '⚠️',
+            ping: pingMs,
         };
     } else {
         return {
@@ -1144,6 +1154,7 @@ const wingsConnectionInfo = computed(() => {
             message: t('serverConsole.connectingToWings'),
             color: 'text-blue-500',
             icon: '🔄',
+            ping: null,
         };
     }
 });
@@ -1851,6 +1862,14 @@ onMounted(async () => {
         }
     }, 5000);
 
+    // Set up periodic ping measurements (every 15 seconds, independent of stats)
+    // This ensures we get regular ping updates even if stats requests are less frequent
+    pingInterval = setInterval(() => {
+        if (wingsWebSocket.isConnected && wingsWebSocket.requestStatsForPing) {
+            wingsWebSocket.requestStatsForPing();
+        }
+    }, 15000);
+
     // Initialize performance charts for offline servers
     if (server.value?.status !== 'running') {
         const timestamp = Date.now();
@@ -1948,6 +1967,12 @@ onUnmounted(() => {
 
     // Remove auth success callback
     wingsWebSocket.removeAuthSuccessCallback(onAuthSuccessCallback);
+
+    // Clear ping interval
+    if (pingInterval) {
+        clearInterval(pingInterval);
+        pingInterval = null;
+    }
 
     wingsWebSocket.cleanup();
     if (statsInterval) {
@@ -2436,12 +2461,18 @@ async function killServer(): Promise<void> {
 function requestServerStats(): void {
     if (wingsWebSocket.websocket.value && wingsWebSocket.websocket.value.readyState === WebSocket.OPEN) {
         try {
-            wingsWebSocket.websocket.value.send(
-                JSON.stringify({
-                    event: 'send stats',
-                    args: [],
-                }),
-            );
+            // Use requestStatsForPing to track ping along with stats
+            if (wingsWebSocket.requestStatsForPing) {
+                wingsWebSocket.requestStatsForPing();
+            } else {
+                // Fallback to regular stats request
+                wingsWebSocket.websocket.value.send(
+                    JSON.stringify({
+                        event: 'send stats',
+                        args: [],
+                    }),
+                );
+            }
         } catch (error) {
             console.warn('Failed to request server stats:', error);
         }
@@ -2547,5 +2578,174 @@ function requestServerLogs(): void {
 /* Also target the actual terminal viewport for transparency */
 :deep(.xterm-viewport) {
     background-color: transparent !important;
+}
+
+/* Animated packet movements for ping visualization */
+@keyframes sendPacket1 {
+    0% {
+        transform: translateX(0) translateY(-50%);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(calc(100vw - 8rem)) translateY(-50%);
+        opacity: 0;
+    }
+}
+
+@keyframes sendPacket2 {
+    0% {
+        transform: translateX(0) translateY(-50%);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(calc(100vw - 8rem)) translateY(-50%);
+        opacity: 0;
+    }
+}
+
+@keyframes sendPacket3 {
+    0% {
+        transform: translateX(0) translateY(-50%);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(calc(100vw - 8rem)) translateY(-50%);
+        opacity: 0;
+    }
+}
+
+@keyframes receivePacket1 {
+    0% {
+        transform: translateX(0) translateY(-50%);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(calc(-100vw + 8rem)) translateY(-50%);
+        opacity: 0;
+    }
+}
+
+@keyframes receivePacket2 {
+    0% {
+        transform: translateX(0) translateY(-50%);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(calc(-100vw + 8rem)) translateY(-50%);
+        opacity: 0;
+    }
+}
+
+@keyframes receivePacket3 {
+    0% {
+        transform: translateX(0) translateY(-50%);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(calc(-100vw + 8rem)) translateY(-50%);
+        opacity: 0;
+    }
+}
+
+@keyframes floatBroken {
+    0%,
+    100% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0.5;
+    }
+    50% {
+        transform: translateY(-10px) rotate(180deg);
+        opacity: 1;
+    }
+}
+
+/* Better packet animation - within container bounds */
+.network-visualization {
+    position: relative;
+}
+
+.network-visualization .packet {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.network-visualization .packet.send {
+    animation: sendPacket 2s ease-in-out infinite;
+}
+
+.network-visualization .packet.receive {
+    animation: receivePacket 2s ease-in-out infinite;
+    animation-delay: 1s;
+}
+
+@keyframes sendPacket {
+    from {
+        left: 3.5rem;
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    to {
+        left: calc(100% - 3.5rem);
+        opacity: 0;
+    }
+}
+
+@keyframes receivePacket {
+    from {
+        right: 3.5rem;
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    to {
+        right: calc(100% - 3.5rem);
+        opacity: 0;
+    }
 }
 </style>

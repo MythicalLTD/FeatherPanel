@@ -30,11 +30,15 @@
 
 namespace App\Controllers\User\User;
 
+use App\App;
 use App\Chat\User;
+use App\Permissions;
 use App\Chat\Activity;
 use App\Chat\ApiClient;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Config\ConfigInterface;
+use App\Helpers\PermissionHelper;
 use App\Middleware\AuthMiddleware;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
@@ -327,6 +331,16 @@ class ApiClientController
         $user = AuthMiddleware::getCurrentUser($request);
         if ($user == null) {
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
+        }
+
+        // Check if API key creation is allowed (unless user has bypass permission)
+        $app = App::getInstance(true);
+        $config = $app->getConfig();
+        $allowApiKeysCreate = $config->getSetting(ConfigInterface::USER_ALLOW_API_KEYS_CREATE, 'true') === 'true';
+        $hasBypassPermission = PermissionHelper::hasPermission($user['uuid'], Permissions::ADMIN_API_BYPASS_RESTRICTIONS);
+
+        if (!$allowApiKeysCreate && !$hasBypassPermission) {
+            return ApiResponse::error('You are not allowed to create API keys!', 'API_KEY_CREATION_NOT_ALLOWED', 403, []);
         }
 
         $data = json_decode($request->getContent(), true);

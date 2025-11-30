@@ -84,6 +84,10 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
     const onAuthSuccessCallbacks = ref<Set<(isRefresh: boolean) => void>>(new Set()); // Callbacks to run after auth success
     const isRefreshingToken = ref(false); // Track if we're refreshing token to prevent reconnect logic
 
+    // Ping measurement
+    const ping = ref<number | null>(null); // Current ping in milliseconds
+    const lastStatsRequestTime = ref<number | null>(null); // Timestamp when last stats request was sent
+
     const isConnected = computed(() => connectionStatus.value === 'connected');
     const isConnecting = computed(() => connectionStatus.value === 'connecting');
     const isDisconnected = computed(() => connectionStatus.value === 'disconnected');
@@ -164,8 +168,19 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                         } else if (data.event === 'daemon error') {
                             wingsStatus.value = 'error';
                             // Don't show toast for every daemon error - can be too noisy
-                        } else if (data.event === 'stats' || data.event === 'status') {
-                            // Stats/status received - Wings is healthy
+                        } else if (data.event === 'stats') {
+                            // Stats received - Wings is healthy
+                            if (wingsStatus.value !== 'healthy') {
+                                wingsStatus.value = 'healthy';
+                            }
+                            // Calculate ping based on round-trip time
+                            if (lastStatsRequestTime.value !== null) {
+                                const roundTripTime = Date.now() - lastStatsRequestTime.value;
+                                ping.value = roundTripTime;
+                                lastStatsRequestTime.value = null; // Reset after measurement
+                            }
+                        } else if (data.event === 'status') {
+                            // Status received - Wings is healthy
                             if (wingsStatus.value !== 'healthy') {
                                 wingsStatus.value = 'healthy';
                             }
@@ -329,7 +344,17 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
                             }
                         } else if (data.event === 'daemon error') {
                             wingsStatus.value = 'error';
-                        } else if (data.event === 'stats' || data.event === 'status') {
+                        } else if (data.event === 'stats') {
+                            if (wingsStatus.value !== 'healthy') {
+                                wingsStatus.value = 'healthy';
+                            }
+                            // Calculate ping based on round-trip time
+                            if (lastStatsRequestTime.value !== null) {
+                                const roundTripTime = Date.now() - lastStatsRequestTime.value;
+                                ping.value = roundTripTime;
+                                lastStatsRequestTime.value = null; // Reset after measurement
+                            }
+                        } else if (data.event === 'status') {
                             if (wingsStatus.value !== 'healthy') {
                                 wingsStatus.value = 'healthy';
                             }
@@ -516,10 +541,23 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
         });
     }
 
+    // Function to send stats request and track ping
+    function requestStatsForPing(): void {
+        if (websocket.value && websocket.value.readyState === WebSocket.OPEN) {
+            lastStatsRequestTime.value = Date.now();
+            sendMessage({
+                event: 'send stats',
+                args: [],
+            });
+        }
+    }
+
     // Cleanup function
     function cleanup(): void {
         disconnect();
         onAuthSuccessCallbacks.value.clear();
+        ping.value = null;
+        lastStatsRequestTime.value = null;
     }
 
     return {
@@ -531,6 +569,7 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
         isReconnecting,
         wingsStatus,
         isRefreshingToken,
+        ping,
 
         // Computed
         isConnected,
@@ -542,6 +581,7 @@ export function useWingsWebSocket(serverUuid: string, isNavigatingAway?: Ref<boo
         connect,
         disconnect,
         sendMessage,
+        requestStatsForPing,
         cleanup,
         onAuthSuccess,
         removeAuthSuccessCallback,

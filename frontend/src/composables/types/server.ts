@@ -38,6 +38,13 @@ export interface ServerSpell {
     docker_images?: string | Record<string, string>;
 }
 
+export interface ServerLocation {
+    id: number;
+    name: string;
+    description?: string;
+    flag_code?: string;
+}
+
 export interface Server {
     id: number;
     name: string;
@@ -58,6 +65,7 @@ export interface Server {
     started_at?: string;
     allocation?: ServerAllocation;
     spell?: ServerSpell;
+    location?: ServerLocation;
 }
 
 export interface NetworkStats {

@@ -229,10 +229,10 @@ class DiscordController
         }
 
         $token = $data['token'] ?? '';
-        $email = $data['email'] ?? '';
+        $usernameOrEmail = $data['username_or_email'] ?? $data['email'] ?? '';
         $password = $data['password'] ?? '';
 
-        if (empty($token) || empty($email) || empty($password)) {
+        if (empty($token) || empty($usernameOrEmail) || empty($password)) {
             return ApiResponse::error('Missing required fields', 'MISSING_REQUIRED_FIELDS', 400);
         }
 
@@ -242,14 +242,20 @@ class DiscordController
             return ApiResponse::error('Invalid or expired link token', 'INVALID_TOKEN', 400);
         }
 
-        // Verify user credentials
-        $user = User::getUserByEmail($email);
+        // Verify user credentials - try email first, then username
+        $user = null;
+        if (filter_var($usernameOrEmail, FILTER_VALIDATE_EMAIL)) {
+            $user = User::getUserByEmail($usernameOrEmail);
+        }
         if (!$user) {
-            return ApiResponse::error('Invalid email or password', 'INVALID_CREDENTIALS', 401);
+            $user = User::getUserByUsername($usernameOrEmail);
+        }
+        if (!$user) {
+            return ApiResponse::error('Invalid username/email or password', 'INVALID_CREDENTIALS', 401);
         }
 
         if (!password_verify($password, $user['password'])) {
-            return ApiResponse::error('Invalid email or password', 'INVALID_CREDENTIALS', 401);
+            return ApiResponse::error('Invalid username/email or password', 'INVALID_CREDENTIALS', 401);
         }
 
         // Check if Discord ID is already linked to another account

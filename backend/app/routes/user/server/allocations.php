@@ -103,10 +103,34 @@ return function (RouteCollection $routes): void {
         ['POST']
     );
 
+    // Get available allocations for selection
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-available-allocations',
+        '/api/user/servers/{uuidShort}/allocations/available',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new \App\Controllers\User\Server\ServerAllocationController())->getAvailableAllocations($request, (int) $server['id']);
+        },
+        'uuidShort',
+        ['GET']
+    );
+
+    // Auto-allocate free allocations to server
+
     // Auto-allocate free allocations to server
     App::getInstance(true)->registerServerRoute(
         $routes,
-        'session-server-auto-allocate',
+        'user-server-allocations-auto',
         '/api/user/servers/{uuidShort}/allocations/auto',
         function (Request $request, array $args) {
             $uuidShort = $args['uuidShort'] ?? null;

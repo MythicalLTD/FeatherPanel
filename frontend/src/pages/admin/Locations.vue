@@ -48,6 +48,19 @@
                     </template>
 
                     <!-- Custom cell templates -->
+                    <template #cell-flag="{ item }">
+                        <div v-if="(item as Location).flag_code" class="flex items-center">
+                            <img
+                                :src="`https://flagcdn.com/16x12/${(item as Location).flag_code}.png`"
+                                :srcset="`https://flagcdn.com/32x24/${(item as Location).flag_code}.png 2x, https://flagcdn.com/48x36/${(item as Location).flag_code}.png 3x`"
+                                width="16"
+                                height="12"
+                                :alt="(item as Location).flag_code || ''"
+                                class="rounded-sm"
+                            />
+                        </div>
+                        <span v-else class="text-muted-foreground text-sm">—</span>
+                    </template>
                     <template #cell-actions="{ item }">
                         <div class="flex gap-2">
                             <Button
@@ -205,6 +218,18 @@
             <div class="px-6 pt-6 space-y-2">
                 <div><b>Name:</b> {{ selectedLocation.name }}</div>
                 <div><b>Description:</b> {{ selectedLocation.description || '-' }}</div>
+                <div v-if="selectedLocation.flag_code" class="flex items-center gap-2">
+                    <b>Flag:</b>
+                    <img
+                        :src="`https://flagcdn.com/16x12/${selectedLocation.flag_code}.png`"
+                        :srcset="`https://flagcdn.com/32x24/${selectedLocation.flag_code}.png 2x, https://flagcdn.com/48x36/${selectedLocation.flag_code}.png 3x`"
+                        width="16"
+                        height="12"
+                        :alt="selectedLocation.flag_code"
+                        class="rounded-sm"
+                    />
+                    <span>{{ countryCodes[selectedLocation.flag_code] || selectedLocation.flag_code }}</span>
+                </div>
                 <div><b>Created At:</b> {{ selectedLocation.created_at }}</div>
                 <div><b>Updated At:</b> {{ selectedLocation.updated_at }}</div>
             </div>
@@ -240,6 +265,28 @@
                     label="Description"
                     placeholder="Description"
                 />
+                <label for="edit-flag" class="block mb-1 font-medium">Country Flag (Optional)</label>
+                <Select v-model="editForm.flag_code">
+                    <SelectTrigger id="edit-flag">
+                        <SelectValue placeholder="Select a country flag (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="__NONE__">None</SelectItem>
+                        <SelectItem v-for="(name, code) in countryCodes" :key="code" :value="code">
+                            <div class="flex items-center gap-2">
+                                <img
+                                    :src="`https://flagcdn.com/16x12/${code}.png`"
+                                    :srcset="`https://flagcdn.com/32x24/${code}.png 2x, https://flagcdn.com/48x36/${code}.png 3x`"
+                                    width="16"
+                                    height="12"
+                                    :alt="code"
+                                    class="rounded-sm"
+                                />
+                                <span>{{ name }}</span>
+                            </div>
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
                 <div class="flex justify-end gap-2 mt-4">
                     <Button type="button" variant="outline" @click="closeEditDrawer">Cancel</Button>
                     <Button type="submit" variant="default">Save</Button>
@@ -272,6 +319,28 @@
                     label="Description"
                     placeholder="Description"
                 />
+                <label for="create-flag" class="block mb-1 font-medium">Country Flag (Optional)</label>
+                <Select v-model="createForm.flag_code">
+                    <SelectTrigger id="create-flag">
+                        <SelectValue placeholder="Select a country flag (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="__NONE__">None</SelectItem>
+                        <SelectItem v-for="(name, code) in countryCodes" :key="code" :value="code">
+                            <div class="flex items-center gap-2">
+                                <img
+                                    :src="`https://flagcdn.com/16x12/${code}.png`"
+                                    :srcset="`https://flagcdn.com/32x24/${code}.png 2x, https://flagcdn.com/48x36/${code}.png 3x`"
+                                    width="16"
+                                    height="12"
+                                    :alt="code"
+                                    class="rounded-sm"
+                                />
+                                <span>{{ name }}</span>
+                            </div>
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
                 <div class="flex justify-end gap-2 mt-4">
                     <Button type="button" variant="outline" @click="closeCreateDrawer">Cancel</Button>
                     <Button type="submit" variant="default">Create</Button>
@@ -312,6 +381,7 @@ import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Eye, Pencil, Trash2, Server, Plus, MapPin, Flag, Rocket } from 'lucide-vue-next';
 import axios from 'axios';
 import {
@@ -332,6 +402,7 @@ type Location = {
     id: number;
     name: string;
     description?: string;
+    flag_code?: string | null;
     created_at: string;
     updated_at: string;
 };
@@ -369,15 +440,20 @@ const editDrawerOpen = ref(false);
 const editForm = ref({
     name: '',
     description: '',
+    flag_code: '__NONE__' as string | null,
 });
 const createDrawerOpen = ref(false);
 const createForm = ref({
     name: '',
     description: '',
+    flag_code: '__NONE__' as string | null,
 });
+const countryCodes = ref<Record<string, string>>({});
+const loadingCountryCodes = ref(false);
 
 // Table columns configuration
 const tableColumns: TableColumn[] = [
+    { key: 'flag', label: 'Flag', searchable: false },
     { key: 'name', label: 'Name', searchable: true },
     { key: 'description', label: 'Description', searchable: true },
     { key: 'created_at', label: 'Created' },
@@ -412,9 +488,35 @@ async function fetchLocations() {
     }
 }
 
+async function fetchCountryCodes() {
+    if (Object.keys(countryCodes.value).length > 0) {
+        return; // Already loaded
+    }
+    loadingCountryCodes.value = true;
+    try {
+        const { data } = await axios.get<{
+            success: boolean;
+            data?: { country_codes?: Record<string, string> };
+        }>('/api/system/country-codes');
+        if (data && data.success && data.data?.country_codes) {
+            // Sort by country name
+            const sorted = Object.entries(data.data.country_codes).sort((a, b) => a[1].localeCompare(b[1]));
+            countryCodes.value = Object.fromEntries(sorted) as Record<string, string>;
+        }
+    } catch (error) {
+        console.error('Failed to fetch country codes:', error);
+        toast.error('Failed to load country codes');
+    } finally {
+        loadingCountryCodes.value = false;
+    }
+}
+
 onMounted(async () => {
     // Fetch plugin widgets
     await fetchPluginWidgets();
+
+    // Fetch country codes
+    await fetchCountryCodes();
 
     await fetchLocations();
 });
@@ -490,6 +592,7 @@ async function openEditDrawer(location: Location) {
         editForm.value = {
             name: l.name || '',
             description: l.description || '',
+            flag_code: l.flag_code || '__NONE__',
         };
         editDrawerOpen.value = true;
     } catch {
@@ -505,7 +608,14 @@ function closeEditDrawer() {
 async function submitEdit() {
     if (!editingLocation.value) return;
     try {
-        const patchData = { ...editForm.value };
+        const patchData: { name: string; description?: string; flag_code?: string | null } = {
+            name: editForm.value.name,
+        };
+        if (editForm.value.description !== undefined) {
+            patchData.description = editForm.value.description || undefined;
+        }
+        // Convert __NONE__ sentinel value to null to clear the flag
+        patchData.flag_code = editForm.value.flag_code === '__NONE__' ? null : editForm.value.flag_code || null;
         const { data } = await axios.patch(`/api/admin/locations/${editingLocation.value.id}`, patchData);
         if (data && data.success) {
             toast.success('Location updated successfully');
@@ -524,7 +634,7 @@ async function submitEdit() {
 
 function openCreateDrawer() {
     createDrawerOpen.value = true;
-    createForm.value = { name: '', description: '' };
+    createForm.value = { name: '', description: '', flag_code: '__NONE__' };
 }
 
 function closeCreateDrawer() {
@@ -533,7 +643,15 @@ function closeCreateDrawer() {
 
 async function submitCreate() {
     try {
-        const { data } = await axios.put('/api/admin/locations', createForm.value);
+        const createData: { name: string; description?: string; flag_code?: string | null } = {
+            name: createForm.value.name,
+        };
+        if (createForm.value.description) {
+            createData.description = createForm.value.description;
+        }
+        // Convert __NONE__ sentinel value to null, otherwise use the flag code
+        createData.flag_code = createForm.value.flag_code === '__NONE__' ? null : createForm.value.flag_code || null;
+        const { data } = await axios.put('/api/admin/locations', createData);
         if (data && data.success) {
             toast.success('Location created successfully');
             await fetchLocations();

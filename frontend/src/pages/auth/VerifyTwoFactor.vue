@@ -40,7 +40,12 @@ const props = defineProps<{
 const { t } = useI18n();
 const router = useRouter();
 
-const email = ref<string>((router.currentRoute.value.query.email as string) || '');
+// Support both legacy 'email' and new 'username_or_email' query params
+const email = ref<string>(
+    (router.currentRoute.value.query.email as string) ||
+        (router.currentRoute.value.query.username_or_email as string) ||
+        '',
+);
 const code = ref('');
 const loading = ref(false);
 const error = ref('');

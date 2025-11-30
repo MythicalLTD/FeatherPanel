@@ -60,7 +60,7 @@ class Configuration
         $config = $this->app->getConfig();
 
         return [
-            'enabled' => $config->getSetting('featherzerotrust.enabled', 'true') === 'true',
+            'enabled' => $config->getSetting('featherzerotrust.enabled', 'false') === 'true',
             'scan_interval' => (int) $config->getSetting('featherzerotrust.scan_interval', '15'), // minutes
             'max_file_size' => (int) $config->getSetting('featherzerotrust.max_file_size', '10485760'), // bytes (10MB)
             'max_depth' => (int) $config->getSetting('featherzerotrust.max_depth', '10'),

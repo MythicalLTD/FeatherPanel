@@ -59,6 +59,42 @@
                         @input="handleSearch"
                     />
                 </div>
+                <!-- Admin View All Toggle -->
+                <div
+                    v-if="isAdmin"
+                    class="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-md border border-border/30"
+                >
+                    <label
+                        class="flex items-center gap-2 cursor-pointer select-none"
+                        :class="{ 'cursor-not-allowed opacity-50': loading }"
+                        @click="!loading && handleViewAllToggle(!viewAllServers)"
+                    >
+                        <!-- Custom Checkbox Toggle -->
+                        <div class="relative inline-flex items-center">
+                            <input
+                                type="checkbox"
+                                :checked="viewAllServers"
+                                :disabled="loading"
+                                class="sr-only"
+                                @change="handleViewAllToggle(!viewAllServers)"
+                            />
+                            <!-- Toggle Track -->
+                            <div
+                                class="relative w-10 h-5 rounded-full transition-colors duration-200 ease-in-out"
+                                :class="viewAllServers ? 'bg-primary' : 'bg-input'"
+                            >
+                                <!-- Toggle Thumb -->
+                                <div
+                                    class="absolute top-0.5 left-0.5 w-4 h-4 bg-background rounded-full shadow-sm transform transition-transform duration-200 ease-in-out"
+                                    :class="viewAllServers ? 'translate-x-5' : 'translate-x-0'"
+                                ></div>
+                            </div>
+                        </div>
+                        <span class="text-sm font-medium whitespace-nowrap">
+                            {{ $t('servers.viewAllServers') }}
+                        </span>
+                    </label>
+                </div>
                 <div v-if="!isMobile" class="w-full sm:w-auto">
                     <Select v-model="viewMode">
                         <SelectTrigger class="w-full sm:w-[220px]">
@@ -296,8 +332,32 @@
                                                 </div>
                                             </div>
 
+                                            <!-- Owner Info (Admin View) -->
+                                            <div
+                                                v-if="viewAllServers && server.owner"
+                                                class="flex items-center gap-2 py-2 border-t border-border/50"
+                                            >
+                                                <User class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+                                                <Avatar class="h-5 w-5">
+                                                    <AvatarImage
+                                                        v-if="server.owner.avatar"
+                                                        :src="server.owner.avatar"
+                                                        :alt="server.owner.username || 'User'"
+                                                    />
+                                                    <AvatarFallback class="text-[10px]">
+                                                        {{ server.owner.username?.charAt(0).toUpperCase() || 'U' }}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <span class="text-xs sm:text-sm text-muted-foreground">
+                                                    {{ $t('servers.owner') }}:
+                                                </span>
+                                                <span class="text-xs sm:text-sm font-medium truncate">
+                                                    {{ server.owner.username }}
+                                                </span>
+                                            </div>
+
                                             <!-- Resources -->
-                                            <div class="grid grid-cols-3 gap-1 sm:gap-2 text-xs">
+                                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                                                 <!-- Memory -->
                                                 <div
                                                     class="p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
@@ -627,8 +687,32 @@
                                                 </div>
                                             </div>
 
+                                            <!-- Owner Info (Admin View) -->
+                                            <div
+                                                v-if="viewAllServers && server.owner"
+                                                class="flex items-center gap-2 py-2 border-t border-border/50"
+                                            >
+                                                <User class="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+                                                <Avatar class="h-5 w-5">
+                                                    <AvatarImage
+                                                        v-if="server.owner.avatar"
+                                                        :src="server.owner.avatar"
+                                                        :alt="server.owner.username || 'User'"
+                                                    />
+                                                    <AvatarFallback class="text-[10px]">
+                                                        {{ server.owner.username?.charAt(0).toUpperCase() || 'U' }}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <span class="text-xs sm:text-sm text-muted-foreground">
+                                                    {{ $t('servers.owner') }}:
+                                                </span>
+                                                <span class="text-xs sm:text-sm font-medium truncate">
+                                                    {{ server.owner.username }}
+                                                </span>
+                                            </div>
+
                                             <!-- Resources -->
-                                            <div class="grid grid-cols-3 gap-1 sm:gap-2 text-xs">
+                                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                                                 <!-- Memory -->
                                                 <div
                                                     class="p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
@@ -921,8 +1005,30 @@
                                         </div>
                                     </div>
 
+                                    <!-- Owner Info (Admin View) -->
+                                    <div
+                                        v-if="viewAllServers && server.owner"
+                                        class="flex items-center gap-2 py-2 border-t border-border/50"
+                                    >
+                                        <User class="h-4 w-4 text-muted-foreground shrink-0" />
+                                        <Avatar class="h-5 w-5">
+                                            <AvatarImage
+                                                v-if="server.owner.avatar"
+                                                :src="server.owner.avatar"
+                                                :alt="server.owner.username || 'User'"
+                                            />
+                                            <AvatarFallback class="text-[10px]">
+                                                {{ server.owner.username?.charAt(0).toUpperCase() || 'U' }}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <span class="text-sm text-muted-foreground"> {{ $t('servers.owner') }}: </span>
+                                        <span class="text-sm font-medium truncate">
+                                            {{ server.owner.username }}
+                                        </span>
+                                    </div>
+
                                     <!-- Resources -->
-                                    <div class="grid grid-cols-3 gap-2 text-xs">
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                                         <!-- Memory -->
                                         <div
                                             class="p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
@@ -1173,6 +1279,25 @@
                                                 <div class="text-xs text-muted-foreground truncate">
                                                     {{ server.description || $t('servers.noDescription') }}
                                                 </div>
+                                                <!-- Owner Info (Admin View) -->
+                                                <div
+                                                    v-if="viewAllServers && server.owner"
+                                                    class="flex items-center gap-1.5 mt-1"
+                                                >
+                                                    <Avatar class="h-4 w-4">
+                                                        <AvatarImage
+                                                            v-if="server.owner.avatar"
+                                                            :src="server.owner.avatar"
+                                                            :alt="server.owner.username || 'User'"
+                                                        />
+                                                        <AvatarFallback class="text-[9px]">
+                                                            {{ server.owner.username?.charAt(0).toUpperCase() || 'U' }}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <span class="text-[10px] text-muted-foreground truncate">
+                                                        {{ server.owner.username }}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -1399,6 +1524,25 @@
                                             <p class="text-xs text-muted-foreground truncate">
                                                 {{ server.spell?.name || 'N/A' }}
                                             </p>
+                                            <!-- Owner Info (Admin View) -->
+                                            <div
+                                                v-if="viewAllServers && server.owner"
+                                                class="flex items-center gap-1.5 mt-1"
+                                            >
+                                                <Avatar class="h-4 w-4">
+                                                    <AvatarImage
+                                                        v-if="server.owner.avatar"
+                                                        :src="server.owner.avatar"
+                                                        :alt="server.owner.username || 'User'"
+                                                    />
+                                                    <AvatarFallback class="text-[9px]">
+                                                        {{ server.owner.username?.charAt(0).toUpperCase() || 'U' }}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <span class="text-[10px] text-muted-foreground truncate">
+                                                    {{ server.owner.username }}
+                                                </span>
+                                            </div>
                                         </div>
                                         <div
                                             class="h-2.5 w-2.5 rounded-full"
@@ -1609,6 +1753,27 @@
                                                 <p class="text-sm text-white/90 drop-shadow-md mt-1">
                                                     {{ server.description || $t('servers.noDescription') }}
                                                 </p>
+                                                <!-- Owner Info (Admin View) -->
+                                                <div
+                                                    v-if="viewAllServers && server.owner"
+                                                    class="flex items-center gap-2 mt-2"
+                                                >
+                                                    <Avatar class="h-5 w-5 ring-2 ring-white/20">
+                                                        <AvatarImage
+                                                            v-if="server.owner.avatar"
+                                                            :src="server.owner.avatar"
+                                                            :alt="server.owner.username || 'User'"
+                                                        />
+                                                        <AvatarFallback class="text-[10px] bg-white/20 text-white">
+                                                            {{ server.owner.username?.charAt(0).toUpperCase() || 'U' }}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <span
+                                                        class="text-xs text-white/90 drop-shadow-sm truncate font-medium"
+                                                    >
+                                                        {{ server.owner.username }}
+                                                    </span>
+                                                </div>
                                             </div>
                                             <div class="flex flex-col gap-2 items-end">
                                                 <div class="flex items-center gap-1.5">
@@ -2044,6 +2209,30 @@
                                                     <p class="text-xs text-white/80 drop-shadow-sm truncate mt-1">
                                                         {{ server.spell?.name || 'N/A' }}
                                                     </p>
+                                                    <!-- Owner Info (Admin View) -->
+                                                    <div
+                                                        v-if="viewAllServers && server.owner"
+                                                        class="flex items-center gap-1.5 mt-1.5"
+                                                    >
+                                                        <Avatar class="h-4 w-4 ring-1 ring-white/20">
+                                                            <AvatarImage
+                                                                v-if="server.owner.avatar"
+                                                                :src="server.owner.avatar"
+                                                                :alt="server.owner.username || 'User'"
+                                                            />
+                                                            <AvatarFallback class="text-[9px] bg-white/20 text-white">
+                                                                {{
+                                                                    server.owner.username?.charAt(0).toUpperCase() ||
+                                                                    'U'
+                                                                }}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <span
+                                                            class="text-[10px] text-white/90 drop-shadow-sm truncate font-medium"
+                                                        >
+                                                            {{ server.owner.username }}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                                 <Badge
                                                     v-if="server.is_subuser"
@@ -2259,6 +2448,22 @@
                                 </Badge>
                             </div>
                             <div class="text-xs text-muted-foreground truncate">{{ server.spell?.name || 'N/A' }}</div>
+                            <!-- Owner Info (Admin View) -->
+                            <div v-if="viewAllServers && server.owner" class="flex items-center gap-1.5 mt-1">
+                                <Avatar class="h-4 w-4">
+                                    <AvatarImage
+                                        v-if="server.owner.avatar"
+                                        :src="server.owner.avatar"
+                                        :alt="server.owner.username || 'User'"
+                                    />
+                                    <AvatarFallback class="text-[9px]">
+                                        {{ server.owner.username?.charAt(0).toUpperCase() || 'U' }}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <span class="text-[10px] text-muted-foreground truncate">
+                                    {{ server.owner.username }}
+                                </span>
+                            </div>
                         </div>
                         <div class="shrink-0 text-xs text-muted-foreground">
                             {{
@@ -2470,6 +2675,7 @@ import {
 import axios from 'axios';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
     ContextMenu,
     ContextMenuContent,
@@ -2560,6 +2766,12 @@ interface Server {
     is_subuser?: boolean;
     subuser_permissions?: string[];
     subuser_id?: number | null;
+    owner?: {
+        id: number;
+        username: string;
+        email: string;
+        avatar?: string | null;
+    } | null;
     node?: ServerNode;
     realm?: ServerRealm;
     spell?: ServerSpell;
@@ -2606,6 +2818,12 @@ const viewMode = ref<'folders' | 'list' | 'table' | 'compact' | 'detailed' | 'st
 const folderDialogOpen = ref(false);
 const editingFolder = ref<Folder | null>(null);
 const folderForm = ref({ name: '' });
+const viewAllServers = ref(false);
+
+// Check if user is admin (can view all servers)
+const isAdmin = computed(() => {
+    return sessionStore.hasPermission('ADMIN_SERVERS_VIEW');
+});
 
 // Detect mobile device
 const isMobile = computed(() => {
@@ -2810,6 +3028,7 @@ async function fetchServers() {
                 page: currentPage.value,
                 limit: pagination.value.per_page,
                 search: searchQuery.value.trim(),
+                view_all: viewAllServers.value && isAdmin.value ? 'true' : 'false',
             },
         });
 
@@ -2837,6 +3056,13 @@ async function fetchServers() {
 function handleSearch() {
     currentPage.value = 1;
     fetchServers();
+}
+
+async function handleViewAllToggle(value: boolean) {
+    if (loading.value) return; // Prevent toggling while loading
+    viewAllServers.value = value;
+    currentPage.value = 1; // Reset to first page when toggling
+    await fetchServers();
 }
 
 async function changePage(page: number) {
