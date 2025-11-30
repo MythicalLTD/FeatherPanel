@@ -119,6 +119,16 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::CHATBOT_TEMPERATURE => '0.7',
             ConfigInterface::CHATBOT_MAX_TOKENS => '2048',
             ConfigInterface::CHATBOT_MAX_HISTORY => '10',
+
+            // Status page settings
+            ConfigInterface::STATUS_PAGE_ENABLED => 'false',
+
+            // Knowledgebase settings
+            ConfigInterface::KNOWLEDGEBASE_ENABLED => 'true',
+            ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES => 'true',
+            ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES => 'true',
+            ConfigInterface::KNOWLEDGEBASE_SHOW_ATTACHMENTS => 'true',
+            ConfigInterface::KNOWLEDGEBASE_SHOW_TAGS => 'true',
         ];
     }
 }

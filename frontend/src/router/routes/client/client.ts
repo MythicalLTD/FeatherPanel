@@ -53,6 +53,11 @@ const clientRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/dashboard/knowledgebase/ArticleView.vue'),
     },
     {
+        path: '/dashboard/status',
+        name: 'Status',
+        component: () => import('@/pages/dashboard/Status.vue'),
+    },
+    {
         path: '/',
         redirect: '/dashboard',
     },

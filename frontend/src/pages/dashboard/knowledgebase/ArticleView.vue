@@ -2,12 +2,12 @@
 <template>
     <DashboardLayout
         :breadcrumbs="[
-            { text: 'Knowledgebase', href: '/dashboard/knowledgebase' },
+            { text: t('dashboard.knowledgebase.title'), href: '/dashboard/knowledgebase' },
             {
-                text: category?.name || 'Article',
+                text: category?.name || t('dashboard.knowledgebase.article'),
                 href: category ? `/dashboard/knowledgebase/category/${category.id}` : undefined,
             },
-            { text: article?.title || 'Article', isCurrent: true },
+            { text: article?.title || t('dashboard.knowledgebase.article'), isCurrent: true },
         ]"
     >
         <div class="min-h-screen bg-background">
@@ -15,42 +15,46 @@
             <div v-if="loading" class="flex items-center justify-center py-12">
                 <div class="flex items-center gap-3">
                     <div class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
-                    <span class="text-muted-foreground">Loading article...</span>
+                    <span class="text-muted-foreground">{{ t('dashboard.knowledgebase.loadingArticle') }}</span>
                 </div>
             </div>
 
             <!-- Article Content -->
-            <div v-else-if="article" class="p-6 max-w-5xl mx-auto">
-                <div class="mb-6">
+            <div v-else-if="article" class="p-6">
+                <div class="mb-4">
                     <Button variant="ghost" size="sm" @click="goBack">
                         <ChevronLeft class="h-4 w-4 mr-2" />
-                        Back
+                        {{ t('dashboard.knowledgebase.back') }}
                     </Button>
                 </div>
 
-                <Card class="border-2 shadow-lg">
-                    <CardHeader class="pb-6">
-                        <div class="flex items-start gap-6">
-                            <div v-if="article.icon" class="shrink-0">
-                                <div class="p-3 rounded-xl bg-muted/50 border">
-                                    <img
-                                        :src="article.icon"
-                                        :alt="article.title"
-                                        class="h-24 w-24 rounded-lg object-cover"
-                                        @error="handleImageError"
-                                    />
-                                </div>
+                <Card>
+                    <CardHeader>
+                        <div class="flex items-start gap-4">
+                            <div
+                                v-if="article.icon"
+                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted"
+                            >
+                                <img
+                                    :src="article.icon"
+                                    :alt="article.title"
+                                    class="h-8 w-8 rounded object-cover"
+                                    @error="handleImageError"
+                                />
+                            </div>
+                            <div v-else class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                                <FileText class="h-5 w-5 text-muted-foreground" />
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-start gap-3 mb-3">
-                                    <CardTitle class="text-3xl leading-tight">{{ article.title }}</CardTitle>
+                                    <CardTitle class="text-2xl">{{ article.title }}</CardTitle>
                                     <Badge v-if="article.pinned === 'true'" variant="default" class="shrink-0 mt-1">
-                                        Pinned
+                                        {{ t('dashboard.knowledgebase.pinned') }}
                                     </Badge>
                                 </div>
-                                <div class="flex items-center gap-4 text-sm text-muted-foreground">
+                                <div class="flex items-center gap-3 text-sm text-muted-foreground">
                                     <span v-if="category" class="font-medium">{{ category.name }}</span>
-                                    <span>•</span>
+                                    <span v-if="category">•</span>
                                     <span>{{ formatDate(article.published_at || article.created_at) }}</span>
                                 </div>
                             </div>
@@ -72,23 +76,19 @@
 
                         <!-- Downloadable Attachments -->
                         <div v-if="attachments.length > 0" class="mt-8 pt-8 border-t">
-                            <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">
+                            <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
                                 <Download class="h-5 w-5" />
-                                Downloads
+                                {{ t('dashboard.knowledgebase.downloads') }}
                             </h3>
-                            <div class="grid gap-4 md:grid-cols-2">
+                            <div class="grid gap-3 md:grid-cols-2">
                                 <div
                                     v-for="attachment in attachments"
                                     :key="attachment.id"
-                                    class="flex items-center justify-between p-4 border-2 rounded-lg hover:bg-accent/50 hover:border-primary/20 transition-all group"
+                                    class="flex items-center justify-between p-4 rounded-lg border bg-muted/50"
                                 >
                                     <div class="flex items-center gap-3 flex-1 min-w-0">
-                                        <div
-                                            class="p-2 rounded-lg bg-muted group-hover:bg-primary/10 transition-colors"
-                                        >
-                                            <FileText
-                                                class="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors"
-                                            />
+                                        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                                            <FileText class="h-5 w-5 text-muted-foreground" />
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <a
@@ -145,6 +145,7 @@
 
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -152,6 +153,8 @@ import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, FileText, Download } from 'lucide-vue-next';
 import axios from 'axios';
 import { renderMarkdown } from '@/lib/markdown';
+
+const { t } = useI18n();
 
 type Category = {
     id: number;

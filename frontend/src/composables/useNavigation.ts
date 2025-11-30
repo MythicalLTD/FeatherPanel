@@ -28,6 +28,7 @@ import { computed, ref, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useSessionStore } from '@/stores/session';
+import { useSettingsStore } from '@/stores/settings';
 import axios from 'axios';
 import {
     Home,
@@ -125,6 +126,7 @@ export function useNavigation() {
     const route = useRoute();
     const { t } = useI18n();
     const sessionStore = useSessionStore();
+    const settingsStore = useSettingsStore();
 
     // Point to the shared cache
     const pluginRoutes = sharedPluginRoutes;
@@ -329,6 +331,19 @@ export function useNavigation() {
                 category: 'main' as const,
             },
         ];
+
+        // Only add status page if enabled
+        if (settingsStore.statusPageEnabled) {
+            items.push({
+                id: 'status',
+                name: t('nav.status'),
+                title: t('nav.status'),
+                url: '/dashboard/status',
+                icon: Activity,
+                isActive: currentPath.value.startsWith('/dashboard/status'),
+                category: 'main' as const,
+            });
+        }
 
         // Add plugin client items (with permission filtering)
         if (pluginRoutes.value?.client) {

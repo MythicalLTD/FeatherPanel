@@ -22,6 +22,7 @@
 - Implemented API documentation caching for significantly faster load times in production environments. by @nayskutzu
 - Enhanced server locations with vibrant country flags for a fresh, modern look! by @nayskutzu
 - Introduced a built-in Knowledgebase, allowing users to easily access essential documentation directly within FeatherPanel—no need for third-party solutions! by @nayskutzu
+- Introduced a sleek and informative Status Page for users! When enabled, it provides real-time insights into node statuses and other key system information, enhancing transparency and monitoring. by @nayskutzu
 
 ## v1.0.5 BETA
 

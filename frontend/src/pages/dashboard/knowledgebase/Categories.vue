@@ -1,73 +1,59 @@
 <template>
-    <DashboardLayout :breadcrumbs="[{ text: 'Knowledgebase', isCurrent: true, href: '/dashboard/knowledgebase' }]">
+    <DashboardLayout
+        :breadcrumbs="[{ text: t('dashboard.knowledgebase.title'), isCurrent: true, href: '/dashboard/knowledgebase' }]"
+    >
         <div class="min-h-screen bg-background">
             <!-- Loading State -->
             <div v-if="loading" class="flex items-center justify-center py-12">
                 <div class="flex items-center gap-3">
                     <div class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
-                    <span class="text-muted-foreground">Loading knowledgebase...</span>
+                    <span class="text-muted-foreground">{{ t('dashboard.knowledgebase.loading') }}</span>
                 </div>
             </div>
 
             <!-- Categories Grid -->
-            <div v-else class="p-6 max-w-7xl mx-auto">
-                <div class="mb-8">
-                    <h1
-                        class="text-4xl font-bold mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent"
-                    >
-                        Knowledgebase
-                    </h1>
-                    <p class="text-muted-foreground text-lg">Browse articles by category</p>
+            <div v-else class="p-6">
+                <div class="mb-6">
+                    <h1 class="text-3xl font-bold mb-2">{{ t('dashboard.knowledgebase.title') }}</h1>
+                    <p class="text-muted-foreground">{{ t('dashboard.knowledgebase.browseByCategory') }}</p>
                 </div>
 
                 <div v-if="categories.length === 0" class="text-center py-16">
-                    <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-muted mb-4">
-                        <BookOpen class="h-10 w-10 text-muted-foreground" />
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                        <BookOpen class="h-8 w-8 text-muted-foreground" />
                     </div>
-                    <p class="text-muted-foreground text-lg">No categories available yet.</p>
+                    <p class="text-muted-foreground">{{ t('dashboard.knowledgebase.noCategories') }}</p>
                 </div>
 
-                <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <Card
+                <div v-else class="space-y-0 border rounded-lg">
+                    <div
                         v-for="category in categories"
                         :key="category.id"
-                        class="cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200 border-2 hover:border-primary/20 group"
+                        class="flex items-center gap-4 p-4 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 transition-colors"
                         @click="viewCategory(category)"
                     >
-                        <CardHeader class="pb-4">
-                            <div class="flex items-start gap-4">
-                                <div
-                                    v-if="category.icon"
-                                    class="shrink-0 p-3 rounded-xl bg-muted/50 group-hover:bg-primary/10 transition-colors"
-                                >
-                                    <img
-                                        :src="category.icon"
-                                        :alt="category.name"
-                                        class="h-14 w-14 rounded-lg object-cover"
-                                        @error="handleImageError"
-                                    />
-                                </div>
-                                <div class="flex-1 min-w-0 pt-1">
-                                    <CardTitle class="text-xl mb-2 group-hover:text-primary transition-colors">
-                                        {{ category.name }}
-                                    </CardTitle>
-                                    <CardDescription v-if="category.description" class="line-clamp-2 text-sm">
-                                        {{ category.description }}
-                                    </CardDescription>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent class="pt-0">
-                            <Button
-                                variant="ghost"
-                                class="w-full justify-between group-hover:bg-primary/10 group-hover:text-primary transition-colors"
-                                @click.stop="viewCategory(category)"
-                            >
-                                <span>View Articles</span>
-                                <ChevronRight class="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                            </Button>
-                        </CardContent>
-                    </Card>
+                        <div
+                            v-if="category.icon"
+                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted"
+                        >
+                            <img
+                                :src="category.icon"
+                                :alt="category.name"
+                                class="h-8 w-8 rounded object-cover"
+                                @error="handleImageError"
+                            />
+                        </div>
+                        <div v-else class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                            <BookOpen class="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-semibold mb-1">{{ category.name }}</h3>
+                            <p v-if="category.description" class="text-sm text-muted-foreground line-clamp-2">
+                                {{ category.description }}
+                            </p>
+                        </div>
+                        <ChevronRight class="h-5 w-5 text-muted-foreground shrink-0" />
+                    </div>
                 </div>
             </div>
         </div>
@@ -101,11 +87,12 @@
 
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { BookOpen, ChevronRight } from 'lucide-vue-next';
 import axios from 'axios';
+
+const { t } = useI18n();
 
 type Category = {
     id: number;

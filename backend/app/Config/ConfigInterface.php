@@ -151,4 +151,22 @@ interface ConfigInterface
     public const CHATBOT_GROK_MODEL = 'chatbot_grok_model';
     public const CHATBOT_SYSTEM_PROMPT = 'chatbot_system_prompt';
     public const CHATBOT_USER_PROMPT = 'chatbot_user_prompt';
+
+    /**
+     * Status Page Settings.
+     */
+    public const STATUS_PAGE_ENABLED = 'status_page_enabled';
+    public const STATUS_PAGE_SHOW_NODE_STATUS = 'status_page_show_node_status';
+    public const STATUS_PAGE_SHOW_LOAD_USAGE = 'status_page_show_load_usage';
+    public const STATUS_PAGE_SHOW_TOTAL_SERVERS = 'status_page_show_total_servers';
+    public const STATUS_PAGE_SHOW_INDIVIDUAL_NODES = 'status_page_show_individual_nodes';
+
+    /**
+     * Knowledgebase Settings.
+     */
+    public const KNOWLEDGEBASE_ENABLED = 'knowledgebase_enabled';
+    public const KNOWLEDGEBASE_SHOW_CATEGORIES = 'knowledgebase_show_categories';
+    public const KNOWLEDGEBASE_SHOW_ARTICLES = 'knowledgebase_show_articles';
+    public const KNOWLEDGEBASE_SHOW_ATTACHMENTS = 'knowledgebase_show_attachments';
+    public const KNOWLEDGEBASE_SHOW_TAGS = 'knowledgebase_show_tags';
 }

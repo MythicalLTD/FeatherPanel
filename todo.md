@@ -1,3 +1,2 @@
-- Status Pages (Next Release)
 - Ticket System (Next Release)
 - The transfer system doesn't work (don't know why)

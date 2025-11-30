@@ -30,7 +30,9 @@
 
 namespace App\Controllers\User;
 
+use App\App;
 use App\Helpers\ApiResponse;
+use App\Config\ConfigInterface;
 use App\Chat\KnowledgebaseArticle;
 use App\Chat\KnowledgebaseCategory;
 use App\Chat\KnowledgebaseArticleTag;
@@ -42,6 +44,10 @@ class KnowledgebaseController
 {
     public function categoriesIndex(Request $request): Response
     {
+        if (!$this->isKnowledgebaseEnabled() || !$this->isFeatureEnabled(ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES)) {
+            return ApiResponse::error('Knowledgebase is disabled', 'KNOWLEDGEBASE_DISABLED', 403);
+        }
+
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 100);
         $search = $request->query->get('search', '');
@@ -81,6 +87,10 @@ class KnowledgebaseController
 
     public function categoriesShow(Request $request, int $id): Response
     {
+        if (!$this->isKnowledgebaseEnabled() || !$this->isFeatureEnabled(ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES)) {
+            return ApiResponse::error('Knowledgebase is disabled', 'KNOWLEDGEBASE_DISABLED', 403);
+        }
+
         $category = KnowledgebaseCategory::getById($id);
         if (!$category) {
             return ApiResponse::error('Category not found', 'CATEGORY_NOT_FOUND', 404);
@@ -91,6 +101,10 @@ class KnowledgebaseController
 
     public function articlesIndex(Request $request): Response
     {
+        if (!$this->isKnowledgebaseEnabled() || !$this->isFeatureEnabled(ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES)) {
+            return ApiResponse::error('Knowledgebase is disabled', 'KNOWLEDGEBASE_DISABLED', 403);
+        }
+
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         $search = $request->query->get('search', '');
@@ -135,6 +149,10 @@ class KnowledgebaseController
 
     public function articlesShow(Request $request, int $id): Response
     {
+        if (!$this->isKnowledgebaseEnabled() || !$this->isFeatureEnabled(ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES)) {
+            return ApiResponse::error('Knowledgebase is disabled', 'KNOWLEDGEBASE_DISABLED', 403);
+        }
+
         $article = KnowledgebaseArticle::getById($id);
         if (!$article) {
             return ApiResponse::error('Article not found', 'ARTICLE_NOT_FOUND', 404);
@@ -145,11 +163,17 @@ class KnowledgebaseController
             return ApiResponse::error('Article not found', 'ARTICLE_NOT_FOUND', 404);
         }
 
-        // Get only user-downloadable attachments
-        $attachments = KnowledgebaseArticleAttachment::getByArticleId($id, true);
+        // Get only user-downloadable attachments if enabled
+        $attachments = [];
+        if ($this->isFeatureEnabled(ConfigInterface::KNOWLEDGEBASE_SHOW_ATTACHMENTS)) {
+            $attachments = KnowledgebaseArticleAttachment::getByArticleId($id, true);
+        }
 
-        // Get tags
-        $tags = KnowledgebaseArticleTag::getByArticleId($id);
+        // Get tags if enabled
+        $tags = [];
+        if ($this->isFeatureEnabled(ConfigInterface::KNOWLEDGEBASE_SHOW_TAGS)) {
+            $tags = KnowledgebaseArticleTag::getByArticleId($id);
+        }
 
         return ApiResponse::success([
             'article' => $article,
@@ -160,6 +184,10 @@ class KnowledgebaseController
 
     public function categoryArticles(Request $request, int $id): Response
     {
+        if (!$this->isKnowledgebaseEnabled() || !$this->isFeatureEnabled(ConfigInterface::KNOWLEDGEBASE_SHOW_CATEGORIES) || !$this->isFeatureEnabled(ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES)) {
+            return ApiResponse::error('Knowledgebase is disabled', 'KNOWLEDGEBASE_DISABLED', 403);
+        }
+
         // Verify category exists
         $category = KnowledgebaseCategory::getById($id);
         if (!$category) {
@@ -205,5 +233,21 @@ class KnowledgebaseController
                 'to' => $to,
             ],
         ], 'Category articles fetched successfully', 200);
+    }
+
+    private function isKnowledgebaseEnabled(): bool
+    {
+        $app = App::getInstance(true);
+        $config = $app->getConfig();
+
+        return $config->getSetting(ConfigInterface::KNOWLEDGEBASE_ENABLED, 'true') === 'true';
+    }
+
+    private function isFeatureEnabled(string $feature): bool
+    {
+        $app = App::getInstance(true);
+        $config = $app->getConfig();
+
+        return $config->getSetting($feature, 'true') === 'true';
     }
 }
