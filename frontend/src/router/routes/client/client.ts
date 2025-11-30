@@ -38,6 +38,21 @@ const clientRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/dashboard/account/Account.vue'),
     },
     {
+        path: '/dashboard/knowledgebase',
+        name: 'Knowledgebase',
+        component: () => import('@/pages/dashboard/knowledgebase/Categories.vue'),
+    },
+    {
+        path: '/dashboard/knowledgebase/category/:id',
+        name: 'KnowledgebaseCategory',
+        component: () => import('@/pages/dashboard/knowledgebase/CategoryArticles.vue'),
+    },
+    {
+        path: '/dashboard/knowledgebase/article/:id',
+        name: 'KnowledgebaseArticle',
+        component: () => import('@/pages/dashboard/knowledgebase/ArticleView.vue'),
+    },
+    {
         path: '/',
         redirect: '/dashboard',
     },

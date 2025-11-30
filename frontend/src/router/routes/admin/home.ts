@@ -243,6 +243,26 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/PterodactylImporter.vue'),
     },
     {
+        path: '/admin/knowledgebase',
+        name: 'AdminKnowledgebase',
+        component: () => import('@/pages/admin/knowledgebase/Categories.vue'),
+    },
+    {
+        path: '/admin/knowledgebase/categories',
+        name: 'AdminKnowledgebaseCategories',
+        component: () => import('@/pages/admin/knowledgebase/Categories.vue'),
+    },
+    {
+        path: '/admin/knowledgebase/categories/:id/articles',
+        name: 'AdminKnowledgebaseCategoryArticles',
+        component: () => import('@/pages/admin/knowledgebase/CategoryArticles.vue'),
+    },
+    {
+        path: '/admin/knowledgebase/articles/:id/edit',
+        name: 'AdminKnowledgebaseArticleEdit',
+        component: () => import('@/pages/admin/knowledgebase/ArticleEdit.vue'),
+    },
+    {
         path: '/admin/:pathMatch(.*)*',
         name: 'AdminPluginRenderedPage',
         component: () => import('@/pages/dashboard/PluginRenderedPage.vue'),

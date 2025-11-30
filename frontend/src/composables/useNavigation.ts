@@ -58,6 +58,7 @@ import {
     Bot,
     Package,
     Bell,
+    BookOpen,
 } from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
 import Permissions from '@/lib/permissions';
@@ -316,6 +317,15 @@ export function useNavigation() {
                 url: '/dashboard/account',
                 icon: Users,
                 isActive: currentPath.value.startsWith('/dashboard/account'),
+                category: 'main' as const,
+            },
+            {
+                id: 'knowledgebase',
+                name: 'Knowledgebase',
+                title: 'Knowledgebase',
+                url: '/dashboard/knowledgebase',
+                icon: BookOpen,
+                isActive: currentPath.value.startsWith('/dashboard/knowledgebase'),
                 category: 'main' as const,
             },
         ];
@@ -580,6 +590,17 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith('/admin/notifications'),
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_NOTIFICATIONS_VIEW,
+                group: 'users',
+            },
+            {
+                id: 'admin-knowledgebase',
+                name: 'Knowledgebase',
+                title: 'Knowledgebase',
+                url: '/admin/knowledgebase/categories',
+                icon: BookOpen,
+                isActive: currentPath.value.startsWith('/admin/knowledgebase'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW,
                 group: 'users',
             },
         ];

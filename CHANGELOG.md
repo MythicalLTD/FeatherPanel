@@ -21,6 +21,7 @@
 - Introduced a new feature allowing administrators to restrict user access to the client API for enhanced security and control. by @nayskutzu
 - Implemented API documentation caching for significantly faster load times in production environments. by @nayskutzu
 - Enhanced server locations with vibrant country flags for a fresh, modern look! by @nayskutzu
+- Introduced a built-in Knowledgebase, allowing users to easily access essential documentation directly within FeatherPanel—no need for third-party solutions! by @nayskutzu
 
 ## v1.0.5 BETA
 

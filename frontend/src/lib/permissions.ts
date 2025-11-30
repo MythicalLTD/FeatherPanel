@@ -247,6 +247,26 @@ class Permissions {
     /** Download database snapshots */
     public static ADMIN_BACKUPS_DOWNLOAD = 'admin.backups.download';
 
+    // Admin Knowledgebase Categories Permissions
+    /** View knowledgebase categories */
+    public static ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW = 'admin.knowledgebase.categories.view';
+    /** Create new knowledgebase categories */
+    public static ADMIN_KNOWLEDGEBASE_CATEGORIES_CREATE = 'admin.knowledgebase.categories.create';
+    /** Edit existing knowledgebase categories */
+    public static ADMIN_KNOWLEDGEBASE_CATEGORIES_EDIT = 'admin.knowledgebase.categories.edit';
+    /** Delete knowledgebase categories */
+    public static ADMIN_KNOWLEDGEBASE_CATEGORIES_DELETE = 'admin.knowledgebase.categories.delete';
+
+    // Admin Knowledgebase Articles Permissions
+    /** View knowledgebase articles */
+    public static ADMIN_KNOWLEDGEBASE_ARTICLES_VIEW = 'admin.knowledgebase.articles.view';
+    /** Create new knowledgebase articles */
+    public static ADMIN_KNOWLEDGEBASE_ARTICLES_CREATE = 'admin.knowledgebase.articles.create';
+    /** Edit existing knowledgebase articles */
+    public static ADMIN_KNOWLEDGEBASE_ARTICLES_EDIT = 'admin.knowledgebase.articles.edit';
+    /** Delete knowledgebase articles */
+    public static ADMIN_KNOWLEDGEBASE_ARTICLES_DELETE = 'admin.knowledgebase.articles.delete';
+
     // Admin API Permissions
     /** Bypass API rate limits and restrictions */
     public static ADMIN_API_BYPASS_RESTRICTIONS = 'admin.api.bypass_restrictions';
@@ -339,6 +359,14 @@ class Permissions {
             { constant: 'ADMIN_BACKUPS_DELETE', value: Permissions.ADMIN_BACKUPS_DELETE, category: 'Admin Database Snapshots', description: 'Delete database snapshots' },
             { constant: 'ADMIN_BACKUPS_RESTORE', value: Permissions.ADMIN_BACKUPS_RESTORE, category: 'Admin Database Snapshots', description: 'Restore database from snapshot' },
             { constant: 'ADMIN_BACKUPS_DOWNLOAD', value: Permissions.ADMIN_BACKUPS_DOWNLOAD, category: 'Admin Database Snapshots', description: 'Download database snapshots' },
+            { constant: 'ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW', value: Permissions.ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW, category: 'Admin Knowledgebase Categories', description: 'View knowledgebase categories' },
+            { constant: 'ADMIN_KNOWLEDGEBASE_CATEGORIES_CREATE', value: Permissions.ADMIN_KNOWLEDGEBASE_CATEGORIES_CREATE, category: 'Admin Knowledgebase Categories', description: 'Create new knowledgebase categories' },
+            { constant: 'ADMIN_KNOWLEDGEBASE_CATEGORIES_EDIT', value: Permissions.ADMIN_KNOWLEDGEBASE_CATEGORIES_EDIT, category: 'Admin Knowledgebase Categories', description: 'Edit existing knowledgebase categories' },
+            { constant: 'ADMIN_KNOWLEDGEBASE_CATEGORIES_DELETE', value: Permissions.ADMIN_KNOWLEDGEBASE_CATEGORIES_DELETE, category: 'Admin Knowledgebase Categories', description: 'Delete knowledgebase categories' },
+            { constant: 'ADMIN_KNOWLEDGEBASE_ARTICLES_VIEW', value: Permissions.ADMIN_KNOWLEDGEBASE_ARTICLES_VIEW, category: 'Admin Knowledgebase Articles', description: 'View knowledgebase articles' },
+            { constant: 'ADMIN_KNOWLEDGEBASE_ARTICLES_CREATE', value: Permissions.ADMIN_KNOWLEDGEBASE_ARTICLES_CREATE, category: 'Admin Knowledgebase Articles', description: 'Create new knowledgebase articles' },
+            { constant: 'ADMIN_KNOWLEDGEBASE_ARTICLES_EDIT', value: Permissions.ADMIN_KNOWLEDGEBASE_ARTICLES_EDIT, category: 'Admin Knowledgebase Articles', description: 'Edit existing knowledgebase articles' },
+            { constant: 'ADMIN_KNOWLEDGEBASE_ARTICLES_DELETE', value: Permissions.ADMIN_KNOWLEDGEBASE_ARTICLES_DELETE, category: 'Admin Knowledgebase Articles', description: 'Delete knowledgebase articles' },
             { constant: 'ADMIN_API_BYPASS_RESTRICTIONS', value: Permissions.ADMIN_API_BYPASS_RESTRICTIONS, category: 'Admin API', description: 'Bypass API rate limits and restrictions' },
         ];
     }

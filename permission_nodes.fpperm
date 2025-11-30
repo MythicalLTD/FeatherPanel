@@ -132,4 +132,14 @@ ADMIN_BACKUPS_DELETE=admin.backups.delete | Admin Database Snapshots | Delete da
 ADMIN_BACKUPS_RESTORE=admin.backups.restore | Admin Database Snapshots | Restore database from snapshot
 ADMIN_BACKUPS_DOWNLOAD=admin.backups.download | Admin Database Snapshots | Download database snapshots
 
+# Knowledgebase Permissions
+ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW=admin.knowledgebase.categories.view | Admin Knowledgebase Categories | View knowledgebase categories
+ADMIN_KNOWLEDGEBASE_CATEGORIES_CREATE=admin.knowledgebase.categories.create | Admin Knowledgebase Categories | Create new knowledgebase categories
+ADMIN_KNOWLEDGEBASE_CATEGORIES_EDIT=admin.knowledgebase.categories.edit | Admin Knowledgebase Categories | Edit existing knowledgebase categories
+ADMIN_KNOWLEDGEBASE_CATEGORIES_DELETE=admin.knowledgebase.categories.delete | Admin Knowledgebase Categories | Delete knowledgebase categories
+ADMIN_KNOWLEDGEBASE_ARTICLES_VIEW=admin.knowledgebase.articles.view | Admin Knowledgebase Articles | View knowledgebase articles
+ADMIN_KNOWLEDGEBASE_ARTICLES_CREATE=admin.knowledgebase.articles.create | Admin Knowledgebase Articles | Create new knowledgebase articles
+ADMIN_KNOWLEDGEBASE_ARTICLES_EDIT=admin.knowledgebase.articles.edit | Admin Knowledgebase Articles | Edit existing knowledgebase articles
+ADMIN_KNOWLEDGEBASE_ARTICLES_DELETE=admin.knowledgebase.articles.delete | Admin Knowledgebase Articles | Delete knowledgebase articles
+
 ADMIN_API_BYPASS_RESTRICTIONS=admin.api.bypass_restrictions | Admin API | Bypass API rate limits and restrictions
