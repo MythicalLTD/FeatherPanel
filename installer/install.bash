@@ -79,6 +79,7 @@ done
 
 LOG_DIR=/var/www/featherpanel
 LOG_FILE=$LOG_DIR/install.log
+BACKUP_DIR="/var/www/featherpanel/backups"
 
 # Colors (use real ANSI escapes)
 NC=$'\033[0m'; RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; YELLOW=$'\033[0;33m'; BLUE=$'\033[0;34m'; CYAN=$'\033[0;36m'; BOLD=$'\033[1m'
@@ -263,6 +264,47 @@ show_panel_menu() {
     echo -e "     ${BLUE}→ Pull latest Docker images${NC}"
     echo -e "     ${BLUE}→ Restart containers with new version${NC}"
     echo -e "     ${BLUE}→ Switch between release and dev builds${NC}"
+    echo ""
+    echo -e "  ${CYAN}${BOLD}[3]${NC} ${BOLD}Backup Manager${NC}"
+    echo -e "     ${BLUE}→ Create, list, restore, and manage backups${NC}"
+    echo -e "     ${BLUE}→ Backup database, volumes, and configuration${NC}"
+    echo -e "     ${BLUE}→ Export/Import for migrating to another server${NC}"
+    echo ""
+    draw_hr
+}
+
+show_backup_menu() {
+    if [ -t 1 ]; then clear; fi
+    print_banner
+    draw_hr
+    print_centered "Backup Manager" "$CYAN"
+    draw_hr
+    echo ""
+    echo -e "  ${GREEN}${BOLD}[0]${NC} ${BOLD}Create Backup${NC}"
+    echo -e "     ${BLUE}→ Create a full backup of Panel data and configuration${NC}"
+    echo -e "     ${BLUE}→ Includes database, volumes, and config files${NC}"
+    echo ""
+    echo -e "  ${BLUE}${BOLD}[1]${NC} ${BOLD}List Backups${NC}"
+    echo -e "     ${BLUE}→ View all available backups${NC}"
+    echo -e "     ${BLUE}→ Shows backup size, date, and details${NC}"
+    echo ""
+    echo -e "  ${YELLOW}${BOLD}[2]${NC} ${BOLD}Restore Backup${NC}"
+    echo -e "     ${YELLOW}⚠️  WARNING: This will replace current data with backup${NC}"
+    echo -e "     ${BLUE}→ Restore Panel from a previous backup${NC}"
+    echo -e "     ${BLUE}→ Stops containers, restores data, then restarts${NC}"
+    echo ""
+    echo -e "  ${RED}${BOLD}[3]${NC} ${BOLD}Delete Backup${NC}"
+    echo -e "     ${YELLOW}⚠️  WARNING: This will permanently delete the backup${NC}"
+    echo -e "     ${BLUE}→ Remove a backup file from disk${NC}"
+    echo ""
+    echo -e "  ${CYAN}${BOLD}[4]${NC} ${BOLD}Export for Migration${NC}"
+    echo -e "     ${BLUE}→ Create migration package to move Panel to another server${NC}"
+    echo -e "     ${BLUE}→ Includes all data, config, and transfer instructions${NC}"
+    echo ""
+    echo -e "  ${GREEN}${BOLD}[5]${NC} ${BOLD}Import Migration${NC}"
+    echo -e "     ${YELLOW}⚠️  WARNING: This will replace current installation${NC}"
+    echo -e "     ${BLUE}→ Import Panel data from another server${NC}"
+    echo -e "     ${BLUE}→ Restores complete Panel installation from migration package${NC}"
     echo ""
     draw_hr
 }
@@ -1818,6 +1860,881 @@ EOF
     log_info "Example: featherpanel help"
 }
 
+# Backup management functions
+create_backup() {
+    log_step "Creating FeatherPanel backup..."
+    
+    if [ ! -f /var/www/featherpanel/.installed ]; then
+        log_error "FeatherPanel is not installed. Nothing to backup."
+        return 1
+    fi
+    
+    # Check if containers are running
+    if ! sudo docker ps --format '{{.Names}}' 2>/dev/null | grep -q "featherpanel_backend\|featherpanel_mysql"; then
+        log_error "FeatherPanel containers are not running. Cannot create backup."
+        return 1
+    fi
+    
+    # Create backup directory
+    sudo mkdir -p "$BACKUP_DIR"
+    
+    # Generate backup filename with timestamp
+    BACKUP_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    BACKUP_NAME="featherpanel_backup_${BACKUP_TIMESTAMP}.tar.gz"
+    BACKUP_PATH="${BACKUP_DIR}/${BACKUP_NAME}"
+    
+    log_info "Backup will be saved to: $BACKUP_PATH"
+    
+    # Create temporary directory for backup contents
+    TEMP_BACKUP_DIR=$(mktemp -d)
+    trap 'rm -rf "$TEMP_BACKUP_DIR"' EXIT
+    
+    log_info "Backing up database..."
+    # Backup MySQL database
+    if sudo docker exec featherpanel_mysql mysqldump -u root -pfeatherpanel_root featherpanel > "${TEMP_BACKUP_DIR}/database.sql" 2>>"$LOG_FILE"; then
+        log_success "Database backup created"
+    else
+        log_error "Failed to backup database"
+        return 1
+    fi
+    
+    log_info "Backing up Docker volumes..."
+    # Backup volumes
+    VOLUMES_DIR="${TEMP_BACKUP_DIR}/volumes"
+    mkdir -p "$VOLUMES_DIR"
+    
+    # Backup each volume
+    for volume in featherpanel_attachments featherpanel_config featherpanel_snapshots mariadb_data redis_data; do
+        if sudo docker volume inspect "$volume" >/dev/null 2>&1; then
+            log_info "Backing up volume: $volume"
+            if sudo docker run --rm -v "$volume":/source -v "$VOLUMES_DIR":/backup alpine tar czf "/backup/${volume}.tar.gz" -C /source . 2>>"$LOG_FILE"; then
+                log_success "Volume $volume backed up"
+            else
+                log_warn "Failed to backup volume $volume"
+            fi
+        fi
+    done
+    
+    log_info "Backing up configuration files..."
+    # Backup configuration files
+    CONFIG_DIR="${TEMP_BACKUP_DIR}/config"
+    mkdir -p "$CONFIG_DIR"
+    
+    # Copy important config files
+    if [ -f /var/www/featherpanel/docker-compose.yml ]; then
+        sudo cp /var/www/featherpanel/docker-compose.yml "$CONFIG_DIR/" 2>>"$LOG_FILE"
+    fi
+    if [ -f /var/www/featherpanel/.env ]; then
+        sudo cp /var/www/featherpanel/.env "$CONFIG_DIR/" 2>>"$LOG_FILE"
+    fi
+    
+    # Create backup info file
+    cat > "${TEMP_BACKUP_DIR}/backup_info.txt" <<EOF
+FeatherPanel Backup
+Created: $(date)
+Backup Name: $BACKUP_NAME
+Version: $(grep -oP 'image: ghcr.io/mythicalltd/featherpanel-backend:\K[^\s]+' /var/www/featherpanel/docker-compose.yml 2>/dev/null || echo "unknown")
+EOF
+    
+    log_info "Compressing backup..."
+    # Create compressed archive
+    if sudo tar -czf "$BACKUP_PATH" -C "$TEMP_BACKUP_DIR" . 2>>"$LOG_FILE"; then
+        sudo chmod 600 "$BACKUP_PATH"
+        BACKUP_SIZE=$(du -h "$BACKUP_PATH" | cut -f1)
+        log_success "Backup created successfully: $BACKUP_NAME ($BACKUP_SIZE)"
+        log_info "Backup location: $BACKUP_PATH"
+        return 0
+    else
+        log_error "Failed to create backup archive"
+        return 1
+    fi
+}
+
+list_backups() {
+    log_step "Listing FeatherPanel backups..."
+    
+    if [ ! -d "$BACKUP_DIR" ]; then
+        log_warn "Backup directory does not exist. No backups found."
+        return 0
+    fi
+    
+    mapfile -t BACKUP_FILES < <(sudo find "$BACKUP_DIR" -name "featherpanel_backup_*.tar.gz" -type f 2>/dev/null | sort -r)
+    
+    if [ ${#BACKUP_FILES[@]} -eq 0 ]; then
+        log_warn "No backups found in $BACKUP_DIR"
+        return 0
+    fi
+    
+    if [ -t 1 ]; then clear; fi
+    print_banner
+    draw_hr
+    print_centered "Available Backups" "$CYAN"
+    draw_hr
+    echo ""
+    
+    local index=1
+    for backup_file in "${BACKUP_FILES[@]}"; do
+        BACKUP_NAME=$(basename "$backup_file")
+        BACKUP_SIZE=$(sudo du -h "$backup_file" | cut -f1)
+        BACKUP_DATE=$(sudo stat -c %y "$backup_file" 2>/dev/null | cut -d' ' -f1,2 | cut -d'.' -f1 || echo "Unknown")
+        
+        # Extract timestamp from filename
+        BACKUP_TIMESTAMP=$(echo "$BACKUP_NAME" | sed -n 's/featherpanel_backup_\(.*\)\.tar\.gz/\1/p')
+        
+        echo -e "  ${GREEN}[$index]${NC} ${BOLD}$BACKUP_NAME${NC}"
+        echo -e "     ${BLUE}• Size:${NC} $BACKUP_SIZE"
+        echo -e "     ${BLUE}• Date:${NC} $BACKUP_DATE"
+        echo -e "     ${BLUE}• Path:${NC} $backup_file"
+        echo ""
+        index=$((index + 1))
+    done
+    
+    draw_hr
+    log_info "Total backups: ${#BACKUP_FILES[@]}"
+}
+
+restore_backup() {
+    log_step "Restoring FeatherPanel from backup..."
+    
+    if [ ! -f /var/www/featherpanel/.installed ]; then
+        log_error "FeatherPanel is not installed. Please install first before restoring."
+        return 1
+    fi
+    
+    # List backups and let user choose
+    if [ ! -d "$BACKUP_DIR" ]; then
+        log_error "Backup directory does not exist. No backups found."
+        return 1
+    fi
+    
+    mapfile -t BACKUP_FILES < <(sudo find "$BACKUP_DIR" -name "featherpanel_backup_*.tar.gz" -type f 2>/dev/null | sort -r)
+    
+    if [ ${#BACKUP_FILES[@]} -eq 0 ]; then
+        log_error "No backups found in $BACKUP_DIR"
+        return 1
+    fi
+    
+    if [ -t 1 ]; then clear; fi
+    print_banner
+    draw_hr
+    print_centered "Select Backup to Restore" "$CYAN"
+    draw_hr
+    echo ""
+    
+    local index=1
+    declare -A BACKUP_MAP
+    for backup_file in "${BACKUP_FILES[@]}"; do
+        BACKUP_NAME=$(basename "$backup_file")
+        BACKUP_SIZE=$(sudo du -h "$backup_file" | cut -f1)
+        BACKUP_DATE=$(sudo stat -c %y "$backup_file" 2>/dev/null | cut -d' ' -f1,2 | cut -d'.' -f1 || echo "Unknown")
+        
+        echo -e "  ${GREEN}[$index]${NC} ${BOLD}$BACKUP_NAME${NC}"
+        echo -e "     ${BLUE}• Size:${NC} $BACKUP_SIZE"
+        echo -e "     ${BLUE}• Date:${NC} $BACKUP_DATE"
+        echo ""
+        BACKUP_MAP[$index]="$backup_file"
+        index=$((index + 1))
+    done
+    
+    draw_hr
+    echo ""
+    echo -e "${RED}${BOLD}⚠️  WARNING: Restoring will replace all current Panel data!${NC}"
+    echo -e "${YELLOW}This operation will:${NC}"
+    echo -e "  ${RED}•${NC} Stop all FeatherPanel containers"
+    echo -e "  ${RED}•${NC} Replace database with backup data"
+    echo -e "  ${RED}•${NC} Replace all volumes with backup data"
+    echo -e "  ${RED}•${NC} Restart containers with restored data"
+    echo ""
+    draw_hr
+    
+    backup_choice=""
+    while [[ ! "$backup_choice" =~ ^[0-9]+$ ]] || [ "$backup_choice" -lt 1 ] || [ "$backup_choice" -gt ${#BACKUP_FILES[@]} ]; do
+        prompt "${BOLD}Select backup to restore${NC} ${BLUE}(1-${#BACKUP_FILES[@]})${NC}: " backup_choice
+        if [[ ! "$backup_choice" =~ ^[0-9]+$ ]] || [ "$backup_choice" -lt 1 ] || [ "$backup_choice" -gt ${#BACKUP_FILES[@]} ]; then
+            echo -e "${RED}Invalid input.${NC} Please enter a number between ${YELLOW}1${NC} and ${YELLOW}${#BACKUP_FILES[@]}${NC}."; sleep 1
+        fi
+    done
+    
+    SELECTED_BACKUP="${BACKUP_MAP[$backup_choice]}"
+    BACKUP_NAME=$(basename "$SELECTED_BACKUP")
+    
+    echo ""
+    draw_hr
+    confirm_restore=""
+    prompt "${BOLD}${RED}Are you absolutely sure you want to restore from $BACKUP_NAME?${NC} ${BLUE}(type 'yes' to confirm)${NC}: " confirm_restore
+    if [ "$confirm_restore" != "yes" ]; then
+        echo -e "${GREEN}Restore cancelled.${NC}"
+        return 0
+    fi
+    
+    log_info "Stopping FeatherPanel containers..."
+    if ! run_with_spinner "Stopping containers" "Containers stopped." \
+        bash -c "cd /var/www/featherpanel && sudo docker compose down"; then
+        log_error "Failed to stop containers"
+        return 1
+    fi
+    
+    # Create temporary directory for extraction
+    TEMP_RESTORE_DIR=$(mktemp -d)
+    trap 'rm -rf "$TEMP_RESTORE_DIR"' EXIT
+    
+    log_info "Extracting backup..."
+    if ! sudo tar -xzf "$SELECTED_BACKUP" -C "$TEMP_RESTORE_DIR" 2>>"$LOG_FILE"; then
+        log_error "Failed to extract backup"
+        return 1
+    fi
+    
+    log_info "Restoring database..."
+    # Restore database
+    if [ -f "${TEMP_RESTORE_DIR}/database.sql" ]; then
+        # Start MySQL container temporarily for restore
+        if ! run_with_spinner "Starting MySQL for restore" "MySQL started." \
+            bash -c "cd /var/www/featherpanel && sudo docker compose up -d mysql"; then
+            log_error "Failed to start MySQL container"
+            return 1
+        fi
+        
+        # Wait for MySQL to be ready
+        log_info "Waiting for MySQL to be ready..."
+        max_attempts=30
+        attempt=0
+        while [ $attempt -lt $max_attempts ]; do
+            if sudo docker exec featherpanel_mysql mysqladmin ping -h localhost -u root -pfeatherpanel_root --silent 2>/dev/null; then
+                break
+            fi
+            attempt=$((attempt + 1))
+            sleep 1
+        done
+        
+        if [ $attempt -eq $max_attempts ]; then
+            log_error "MySQL did not become ready in time"
+            return 1
+        fi
+        
+        # Drop and recreate database
+        log_info "Preparing database for restore..."
+        sudo docker exec -i featherpanel_mysql mysql -u root -pfeatherpanel_root <<EOF 2>>"$LOG_FILE" || true
+DROP DATABASE IF EXISTS featherpanel;
+CREATE DATABASE featherpanel;
+EOF
+        
+        # Restore database
+        if sudo docker exec -i featherpanel_mysql mysql -u root -pfeatherpanel_root featherpanel < "${TEMP_RESTORE_DIR}/database.sql" 2>>"$LOG_FILE"; then
+            log_success "Database restored"
+        else
+            log_error "Failed to restore database"
+            return 1
+        fi
+    else
+        log_warn "Database backup not found in archive"
+    fi
+    
+    log_info "Restoring volumes..."
+    # Restore volumes
+    if [ -d "${TEMP_RESTORE_DIR}/volumes" ]; then
+        for volume_file in "${TEMP_RESTORE_DIR}/volumes"/*.tar.gz; do
+            if [ -f "$volume_file" ]; then
+                VOLUME_NAME=$(basename "$volume_file" .tar.gz)
+                log_info "Restoring volume: $VOLUME_NAME"
+                
+                # Remove existing volume if it exists
+                sudo docker volume rm "$VOLUME_NAME" >/dev/null 2>&1 || true
+                
+                # Create new volume and restore data
+                if sudo docker volume create "$VOLUME_NAME" >/dev/null 2>&1; then
+                    if sudo docker run --rm -v "$VOLUME_NAME":/target -v "$(dirname "$volume_file")":/backup alpine sh -c "cd /target && tar xzf /backup/$(basename "$volume_file")" 2>>"$LOG_FILE"; then
+                        log_success "Volume $VOLUME_NAME restored"
+                    else
+                        log_warn "Failed to restore volume $VOLUME_NAME"
+                    fi
+                else
+                    log_warn "Failed to create volume $VOLUME_NAME"
+                fi
+            fi
+        done
+    else
+        log_warn "Volumes backup not found in archive"
+    fi
+    
+    log_info "Restoring configuration files..."
+    # Restore config files (optional - ask user)
+    if [ -d "${TEMP_RESTORE_DIR}/config" ]; then
+        restore_config=""
+        prompt "${BOLD}Restore configuration files (docker-compose.yml, .env)?${NC} ${BLUE}(y/n)${NC}: " restore_config
+        if [[ "$restore_config" =~ ^[yY]$ ]]; then
+            if [ -f "${TEMP_RESTORE_DIR}/config/docker-compose.yml" ]; then
+                sudo cp "${TEMP_RESTORE_DIR}/config/docker-compose.yml" /var/www/featherpanel/docker-compose.yml
+                log_info "docker-compose.yml restored"
+            fi
+            if [ -f "${TEMP_RESTORE_DIR}/config/.env" ]; then
+                sudo cp "${TEMP_RESTORE_DIR}/config/.env" /var/www/featherpanel/.env
+                sudo chmod 600 /var/www/featherpanel/.env
+                log_info ".env restored"
+            fi
+        fi
+    fi
+    
+    log_info "Starting FeatherPanel containers..."
+    if ! run_with_spinner "Starting containers" "Containers started." \
+        bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
+        log_error "Failed to start containers"
+        return 1
+    fi
+    
+    log_success "Backup restored successfully from $BACKUP_NAME"
+    log_warn "Please verify that the Panel is working correctly after restoration."
+    return 0
+}
+
+delete_backup() {
+    log_step "Deleting FeatherPanel backup..."
+    
+    if [ ! -d "$BACKUP_DIR" ]; then
+        log_error "Backup directory does not exist. No backups found."
+        return 1
+    fi
+    
+    mapfile -t BACKUP_FILES < <(sudo find "$BACKUP_DIR" -name "featherpanel_backup_*.tar.gz" -type f 2>/dev/null | sort -r)
+    
+    if [ ${#BACKUP_FILES[@]} -eq 0 ]; then
+        log_error "No backups found in $BACKUP_DIR"
+        return 1
+    fi
+    
+    if [ -t 1 ]; then clear; fi
+    print_banner
+    draw_hr
+    print_centered "Select Backup to Delete" "$CYAN"
+    draw_hr
+    echo ""
+    
+    local index=1
+    declare -A BACKUP_MAP
+    for backup_file in "${BACKUP_FILES[@]}"; do
+        BACKUP_NAME=$(basename "$backup_file")
+        BACKUP_SIZE=$(sudo du -h "$backup_file" | cut -f1)
+        BACKUP_DATE=$(sudo stat -c %y "$backup_file" 2>/dev/null | cut -d' ' -f1,2 | cut -d'.' -f1 || echo "Unknown")
+        
+        echo -e "  ${GREEN}[$index]${NC} ${BOLD}$BACKUP_NAME${NC}"
+        echo -e "     ${BLUE}• Size:${NC} $BACKUP_SIZE"
+        echo -e "     ${BLUE}• Date:${NC} $BACKUP_DATE"
+        echo ""
+        BACKUP_MAP[$index]="$backup_file"
+        index=$((index + 1))
+    done
+    
+    draw_hr
+    echo ""
+    echo -e "${RED}${BOLD}⚠️  WARNING: This will permanently delete the backup file!${NC}"
+    draw_hr
+    
+    backup_choice=""
+    while [[ ! "$backup_choice" =~ ^[0-9]+$ ]] || [ "$backup_choice" -lt 1 ] || [ "$backup_choice" -gt ${#BACKUP_FILES[@]} ]; do
+        prompt "${BOLD}Select backup to delete${NC} ${BLUE}(1-${#BACKUP_FILES[@]})${NC}: " backup_choice
+        if [[ ! "$backup_choice" =~ ^[0-9]+$ ]] || [ "$backup_choice" -lt 1 ] || [ "$backup_choice" -gt ${#BACKUP_FILES[@]} ]; then
+            echo -e "${RED}Invalid input.${NC} Please enter a number between ${YELLOW}1${NC} and ${YELLOW}${#BACKUP_FILES[@]}${NC}."; sleep 1
+        fi
+    done
+    
+    SELECTED_BACKUP="${BACKUP_MAP[$backup_choice]}"
+    BACKUP_NAME=$(basename "$SELECTED_BACKUP")
+    
+    echo ""
+    draw_hr
+    confirm_delete=""
+    prompt "${BOLD}${RED}Are you sure you want to delete $BACKUP_NAME?${NC} ${BLUE}(type 'yes' to confirm)${NC}: " confirm_delete
+    if [ "$confirm_delete" != "yes" ]; then
+        echo -e "${GREEN}Deletion cancelled.${NC}"
+        return 0
+    fi
+    
+    if sudo rm -f "$SELECTED_BACKUP" 2>>"$LOG_FILE"; then
+        log_success "Backup deleted: $BACKUP_NAME"
+        return 0
+    else
+        log_error "Failed to delete backup"
+        return 1
+    fi
+}
+
+export_migration() {
+    log_step "Creating migration package for FeatherPanel..."
+    
+    if [ ! -f /var/www/featherpanel/.installed ]; then
+        log_error "FeatherPanel is not installed. Nothing to export."
+        return 1
+    fi
+    
+    # Check if containers are running
+    if ! sudo docker ps --format '{{.Names}}' 2>/dev/null | grep -q "featherpanel_backend\|featherpanel_mysql"; then
+        log_error "FeatherPanel containers are not running. Cannot create migration package."
+        return 1
+    fi
+    
+    # Create migration directory
+    MIGRATION_DIR="/var/www/featherpanel/migrations"
+    sudo mkdir -p "$MIGRATION_DIR"
+    
+    # Generate migration filename with timestamp
+    MIGRATION_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    MIGRATION_NAME="featherpanel_migration_${MIGRATION_TIMESTAMP}.tar.gz"
+    MIGRATION_PATH="${MIGRATION_DIR}/${MIGRATION_NAME}"
+    
+    log_info "Migration package will be saved to: $MIGRATION_PATH"
+    
+    # Create temporary directory for migration contents
+    TEMP_MIGRATION_DIR=$(mktemp -d)
+    trap 'rm -rf "$TEMP_MIGRATION_DIR"' EXIT
+    
+    log_info "Exporting database..."
+    # Export MySQL database
+    if sudo docker exec featherpanel_mysql mysqldump -u root -pfeatherpanel_root --single-transaction --routines --triggers featherpanel > "${TEMP_MIGRATION_DIR}/database.sql" 2>>"$LOG_FILE"; then
+        log_success "Database exported"
+    else
+        log_error "Failed to export database"
+        return 1
+    fi
+    
+    log_info "Exporting Docker volumes..."
+    # Export volumes
+    VOLUMES_DIR="${TEMP_MIGRATION_DIR}/volumes"
+    mkdir -p "$VOLUMES_DIR"
+    
+    # Export each volume
+    for volume in featherpanel_attachments featherpanel_config featherpanel_snapshots mariadb_data redis_data; do
+        if sudo docker volume inspect "$volume" >/dev/null 2>&1; then
+            log_info "Exporting volume: $volume"
+            if sudo docker run --rm -v "$volume":/source -v "$VOLUMES_DIR":/backup alpine tar czf "/backup/${volume}.tar.gz" -C /source . 2>>"$LOG_FILE"; then
+                log_success "Volume $volume exported"
+            else
+                log_warn "Failed to export volume $volume"
+            fi
+        fi
+    done
+    
+    log_info "Exporting configuration files..."
+    # Export configuration files
+    CONFIG_DIR="${TEMP_MIGRATION_DIR}/config"
+    mkdir -p "$CONFIG_DIR"
+    
+    # Copy important config files
+    if [ -f /var/www/featherpanel/docker-compose.yml ]; then
+        sudo cp /var/www/featherpanel/docker-compose.yml "$CONFIG_DIR/" 2>>"$LOG_FILE"
+    fi
+    if [ -f /var/www/featherpanel/.env ]; then
+        sudo cp /var/www/featherpanel/.env "$CONFIG_DIR/" 2>>"$LOG_FILE"
+    fi
+    
+    # Create migration info file
+    cat > "${TEMP_MIGRATION_DIR}/migration_info.txt" <<EOF
+FeatherPanel Migration Package
+Created: $(date)
+Migration Name: $MIGRATION_NAME
+Source Server: $(hostname)
+Source IP: $(curl -s ifconfig.me 2>/dev/null || echo "Unknown")
+Version: $(grep -oP 'image: ghcr.io/mythicalltd/featherpanel-backend:\K[^\s]+' /var/www/featherpanel/docker-compose.yml 2>/dev/null || echo "unknown")
+
+IMPORTANT: This is a migration package for moving FeatherPanel to another server.
+To import this package on the destination server:
+1. Transfer this file to the destination server
+2. Run the installer and select: Panel > Backup Manager > Import Migration
+3. Follow the import instructions
+
+This package contains:
+- Complete database dump
+- All Docker volumes (attachments, config, snapshots, etc.)
+- Configuration files (docker-compose.yml, .env)
+EOF
+    
+    # Create README with transfer instructions
+    cat > "${TEMP_MIGRATION_DIR}/README_MIGRATION.txt" <<'EOF'
+========================================
+FeatherPanel Migration Package
+========================================
+
+This package contains a complete export of your FeatherPanel installation
+that can be imported on another server.
+
+TRANSFER METHODS:
+
+Method 1: SCP (Recommended)
+----------------------------
+On the DESTINATION server, run:
+  scp user@source-server:/var/www/featherpanel/migrations/featherpanel_migration_*.tar.gz ./
+
+Method 2: Manual Download
+-------------------------
+1. Download this file from the source server using:
+   - SFTP client (FileZilla, WinSCP, etc.)
+   - HTTP server (if configured)
+   - Cloud storage (upload from source, download on destination)
+
+2. Transfer to destination server at:
+   /var/www/featherpanel/migrations/
+
+Method 3: rsync
+---------------
+On the DESTINATION server, run:
+  rsync -avz user@source-server:/var/www/featherpanel/migrations/featherpanel_migration_*.tar.gz ./
+
+IMPORT INSTRUCTIONS:
+--------------------
+1. Ensure FeatherPanel installer is available on destination server
+2. Run: sudo ./install.bash
+3. Select: Panel (0) > Backup Manager (3) > Import Migration (5)
+4. Follow the import wizard
+
+NOTE: The destination server should have FeatherPanel installed first,
+or you can import during installation if the installer supports it.
+EOF
+    
+    log_info "Compressing migration package..."
+    # Create compressed archive
+    if sudo tar -czf "$MIGRATION_PATH" -C "$TEMP_MIGRATION_DIR" . 2>>"$LOG_FILE"; then
+        sudo chmod 600 "$MIGRATION_PATH"
+        MIGRATION_SIZE=$(du -h "$MIGRATION_PATH" | cut -f1)
+        log_success "Migration package created: $MIGRATION_NAME ($MIGRATION_SIZE)"
+        
+        # Display transfer instructions
+        if [ -t 1 ]; then clear; fi
+        print_banner
+        draw_hr
+        print_centered "Migration Package Created" "$GREEN"
+        draw_hr
+        echo ""
+        echo -e "  ${GREEN}${BOLD}✓${NC} Migration package: ${CYAN}$MIGRATION_NAME${NC}"
+        echo -e "  ${BLUE}• Size:${NC} $MIGRATION_SIZE"
+        echo -e "  ${BLUE}• Location:${NC} $MIGRATION_PATH"
+        echo ""
+        draw_hr
+        print_centered "Transfer Instructions" "$CYAN"
+        draw_hr
+        echo ""
+        echo -e "${BOLD}To transfer this package to another server:${NC}"
+        echo ""
+        echo -e "${GREEN}Method 1: SCP (from destination server)${NC}"
+        echo -e "  ${CYAN}scp${NC} ${YELLOW}user@$(hostname):$MIGRATION_PATH${NC} ${CYAN}./${NC}"
+        echo ""
+        echo -e "${GREEN}Method 2: rsync (from destination server)${NC}"
+        echo -e "  ${CYAN}rsync -avz${NC} ${YELLOW}user@$(hostname):$MIGRATION_PATH${NC} ${CYAN}./${NC}"
+        echo ""
+        echo -e "${GREEN}Method 3: Manual Download${NC}"
+        echo -e "  ${BLUE}1.${NC} Download the file from: ${CYAN}$MIGRATION_PATH${NC}"
+        echo -e "  ${BLUE}2.${NC} Upload to destination server"
+        echo -e "  ${BLUE}3.${NC} Place in: ${CYAN}/var/www/featherpanel/migrations/${NC}"
+        echo ""
+        draw_hr
+        print_centered "Import Instructions" "$YELLOW"
+        draw_hr
+        echo ""
+        echo -e "${BOLD}On the destination server:${NC}"
+        echo -e "  ${BLUE}1.${NC} Ensure FeatherPanel installer is available"
+        echo -e "  ${BLUE}2.${NC} Run: ${CYAN}sudo ./install.bash${NC}"
+        echo -e "  ${BLUE}3.${NC} Select: ${CYAN}Panel (0) > Backup Manager (3) > Import Migration (5)${NC}"
+        echo -e "  ${BLUE}4.${NC} Follow the import wizard"
+        echo ""
+        echo -e "${YELLOW}${BOLD}Note:${NC} The destination server should have FeatherPanel installed first."
+        echo ""
+        draw_hr
+        
+        return 0
+    else
+        log_error "Failed to create migration package"
+        return 1
+    fi
+}
+
+import_migration() {
+    log_step "Importing FeatherPanel migration package..."
+    
+    # Check if already installed (optional - can import during fresh install)
+    MIGRATION_DIR="/var/www/featherpanel/migrations"
+    sudo mkdir -p "$MIGRATION_DIR"
+    
+    # Look for migration packages
+    mapfile -t MIGRATION_FILES < <(sudo find "$MIGRATION_DIR" -name "featherpanel_migration_*.tar.gz" -type f 2>/dev/null | sort -r)
+    
+    # Also check current directory and common locations
+    mapfile -t ADDITIONAL_FILES < <(sudo find /root /home -maxdepth 2 -name "featherpanel_migration_*.tar.gz" -type f 2>/dev/null | head -5)
+    MIGRATION_FILES+=("${ADDITIONAL_FILES[@]}")
+    
+    if [ ${#MIGRATION_FILES[@]} -eq 0 ]; then
+        log_warn "No migration packages found in $MIGRATION_DIR"
+        echo ""
+        draw_hr
+        echo -e "${YELLOW}${BOLD}Migration Package Not Found${NC}"
+        draw_hr
+        echo ""
+        echo -e "${BLUE}Please provide the migration package:${NC}"
+        echo ""
+        echo -e "${GREEN}Option 1:${NC} Place the migration file in: ${CYAN}$MIGRATION_DIR${NC}"
+        echo -e "${GREEN}Option 2:${NC} Provide the full path to the migration file"
+        echo ""
+        draw_hr
+        migration_path=""
+        while [ -z "$migration_path" ]; do
+            prompt "${BOLD}Enter path to migration package${NC} ${BLUE}(or press Enter to cancel)${NC}: " migration_path
+            if [ -z "$migration_path" ]; then
+                echo -e "${GREEN}Import cancelled.${NC}"
+                return 0
+            fi
+            if [ ! -f "$migration_path" ]; then
+                echo -e "${RED}File not found: $migration_path${NC}"
+                migration_path=""
+            fi
+        done
+        SELECTED_MIGRATION="$migration_path"
+    else
+        if [ -t 1 ]; then clear; fi
+        print_banner
+        draw_hr
+        print_centered "Select Migration Package" "$CYAN"
+        draw_hr
+        echo ""
+        
+        local index=1
+        declare -A MIGRATION_MAP
+        for migration_file in "${MIGRATION_FILES[@]}"; do
+            MIGRATION_NAME=$(basename "$migration_file")
+            MIGRATION_SIZE=$(sudo du -h "$migration_file" | cut -f1)
+            MIGRATION_DATE=$(sudo stat -c %y "$migration_file" 2>/dev/null | cut -d' ' -f1,2 | cut -d'.' -f1 || echo "Unknown")
+            
+            echo -e "  ${GREEN}[$index]${NC} ${BOLD}$MIGRATION_NAME${NC}"
+            echo -e "     ${BLUE}• Size:${NC} $MIGRATION_SIZE"
+            echo -e "     ${BLUE}• Date:${NC} $MIGRATION_DATE"
+            echo -e "     ${BLUE}• Path:${NC} $migration_file"
+            echo ""
+            MIGRATION_MAP[$index]="$migration_file"
+            index=$((index + 1))
+        done
+        
+        echo -e "  ${CYAN}[$index]${NC} ${BOLD}Specify custom path${NC}"
+        echo ""
+        draw_hr
+        echo ""
+        echo -e "${RED}${BOLD}⚠️  WARNING: Importing will replace all current Panel data!${NC}"
+        echo -e "${YELLOW}This operation will:${NC}"
+        if [ -f /var/www/featherpanel/.installed ]; then
+            echo -e "  ${RED}•${NC} Stop all FeatherPanel containers"
+            echo -e "  ${RED}•${NC} Replace database with migration data"
+            echo -e "  ${RED}•${NC} Replace all volumes with migration data"
+            echo -e "  ${RED}•${NC} Restart containers with imported data"
+        else
+            echo -e "  ${RED}•${NC} Install FeatherPanel with imported data"
+            echo -e "  ${RED}•${NC} Restore database and volumes from migration"
+        fi
+        echo ""
+        draw_hr
+        
+        migration_choice=""
+        while [[ ! "$migration_choice" =~ ^[0-9]+$ ]] || [ "$migration_choice" -lt 1 ] || [ "$migration_choice" -gt $index ]; do
+            prompt "${BOLD}Select migration package${NC} ${BLUE}(1-$index)${NC}: " migration_choice
+            if [[ ! "$migration_choice" =~ ^[0-9]+$ ]] || [ "$migration_choice" -lt 1 ] || [ "$migration_choice" -gt $index ]; then
+                echo -e "${RED}Invalid input.${NC} Please enter a number between ${YELLOW}1${NC} and ${YELLOW}$index${NC}."; sleep 1
+            fi
+        done
+        
+        if [ "$migration_choice" -eq $index ]; then
+            migration_path=""
+            while [ -z "$migration_path" ]; do
+                prompt "${BOLD}Enter full path to migration package${NC}: " migration_path
+                if [ -z "$migration_path" ]; then
+                    echo -e "${RED}Path cannot be empty.${NC}"
+                elif [ ! -f "$migration_path" ]; then
+                    echo -e "${RED}File not found: $migration_path${NC}"
+                    migration_path=""
+                fi
+            done
+            SELECTED_MIGRATION="$migration_path"
+        else
+            SELECTED_MIGRATION="${MIGRATION_MAP[$migration_choice]}"
+        fi
+    fi
+    
+    MIGRATION_NAME=$(basename "$SELECTED_MIGRATION")
+    
+    echo ""
+    draw_hr
+    confirm_import=""
+    prompt "${BOLD}${RED}Are you absolutely sure you want to import from $MIGRATION_NAME?${NC} ${BLUE}(type 'yes' to confirm)${NC}: " confirm_import
+    if [ "$confirm_import" != "yes" ]; then
+        echo -e "${GREEN}Import cancelled.${NC}"
+        return 0
+    fi
+    
+    # Check if Panel is installed
+    if [ -f /var/www/featherpanel/.installed ]; then
+        log_info "Stopping FeatherPanel containers..."
+        if ! run_with_spinner "Stopping containers" "Containers stopped." \
+            bash -c "cd /var/www/featherpanel && sudo docker compose down"; then
+            log_error "Failed to stop containers"
+            return 1
+        fi
+    else
+        log_info "FeatherPanel not installed. Will install with imported data."
+        # Ensure directories exist
+        sudo mkdir -p /var/www/featherpanel
+        sudo mkdir -p "$BACKUP_DIR"
+    fi
+    
+    # Create temporary directory for extraction
+    TEMP_IMPORT_DIR=$(mktemp -d)
+    trap 'rm -rf "$TEMP_IMPORT_DIR"' EXIT
+    
+    log_info "Extracting migration package..."
+    if ! sudo tar -xzf "$SELECTED_MIGRATION" -C "$TEMP_IMPORT_DIR" 2>>"$LOG_FILE"; then
+        log_error "Failed to extract migration package"
+        return 1
+    fi
+    
+    # Check if this is a fresh install or update
+    if [ ! -f /var/www/featherpanel/.installed ]; then
+        log_info "Fresh installation detected. Setting up FeatherPanel first..."
+        
+        # Install Docker if not present
+        if ! command -v docker &> /dev/null; then
+            log_step "Installing Docker engine (required for import)..."
+            curl -sSL https://get.docker.com/ | CHANNEL=stable bash >> "$LOG_FILE" 2>&1
+            sudo systemctl enable --now docker 2>&1 | tee -a "$LOG_FILE" >/dev/null
+            sudo usermod -aG docker "$USER" 2>&1 | tee -a "$LOG_FILE" >/dev/null || true
+            log_success "Docker installed"
+        fi
+        
+        # Download docker-compose.yml if not present
+        if [ ! -f /var/www/featherpanel/docker-compose.yml ]; then
+            if [ -f "${TEMP_IMPORT_DIR}/config/docker-compose.yml" ]; then
+                sudo cp "${TEMP_IMPORT_DIR}/config/docker-compose.yml" /var/www/featherpanel/docker-compose.yml
+                log_info "Using docker-compose.yml from migration package"
+            else
+                log_info "Downloading docker-compose.yml..."
+                if ! run_with_spinner "Downloading docker-compose.yml" "docker-compose.yml downloaded." \
+                    curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml"; then
+                    log_error "Failed to download docker-compose.yml"
+                    return 1
+                fi
+            fi
+        fi
+        
+        # Copy .env if present in migration
+        if [ -f "${TEMP_IMPORT_DIR}/config/.env" ]; then
+            sudo cp "${TEMP_IMPORT_DIR}/config/.env" /var/www/featherpanel/.env
+            sudo chmod 600 /var/www/featherpanel/.env
+            log_info "Restored .env from migration package"
+        fi
+    fi
+    
+    log_info "Restoring database..."
+    # Restore database
+    if [ -f "${TEMP_IMPORT_DIR}/database.sql" ]; then
+        # Start MySQL container
+        if ! run_with_spinner "Starting MySQL for import" "MySQL started." \
+            bash -c "cd /var/www/featherpanel && sudo docker compose up -d mysql"; then
+            log_error "Failed to start MySQL container"
+            return 1
+        fi
+        
+        # Wait for MySQL to be ready
+        log_info "Waiting for MySQL to be ready..."
+        max_attempts=30
+        attempt=0
+        while [ $attempt -lt $max_attempts ]; do
+            if sudo docker exec featherpanel_mysql mysqladmin ping -h localhost -u root -pfeatherpanel_root --silent 2>/dev/null; then
+                break
+            fi
+            attempt=$((attempt + 1))
+            sleep 1
+        done
+        
+        if [ $attempt -eq $max_attempts ]; then
+            log_error "MySQL did not become ready in time"
+            return 1
+        fi
+        
+        # Drop and recreate database
+        log_info "Preparing database for import..."
+        sudo docker exec -i featherpanel_mysql mysql -u root -pfeatherpanel_root <<EOF 2>>"$LOG_FILE" || true
+DROP DATABASE IF EXISTS featherpanel;
+CREATE DATABASE featherpanel;
+EOF
+        
+        # Restore database
+        if sudo docker exec -i featherpanel_mysql mysql -u root -pfeatherpanel_root featherpanel < "${TEMP_IMPORT_DIR}/database.sql" 2>>"$LOG_FILE"; then
+            log_success "Database imported"
+        else
+            log_error "Failed to import database"
+            return 1
+        fi
+    else
+        log_warn "Database backup not found in migration package"
+    fi
+    
+    log_info "Restoring volumes..."
+    # Restore volumes
+    if [ -d "${TEMP_IMPORT_DIR}/volumes" ]; then
+        for volume_file in "${TEMP_IMPORT_DIR}/volumes"/*.tar.gz; do
+            if [ -f "$volume_file" ]; then
+                VOLUME_NAME=$(basename "$volume_file" .tar.gz)
+                log_info "Restoring volume: $VOLUME_NAME"
+                
+                # Remove existing volume if it exists
+                sudo docker volume rm "$VOLUME_NAME" >/dev/null 2>&1 || true
+                
+                # Create new volume and restore data
+                if sudo docker volume create "$VOLUME_NAME" >/dev/null 2>&1; then
+                    if sudo docker run --rm -v "$VOLUME_NAME":/target -v "$(dirname "$volume_file")":/backup alpine sh -c "cd /target && tar xzf /backup/$(basename "$volume_file")" 2>>"$LOG_FILE"; then
+                        log_success "Volume $VOLUME_NAME restored"
+                    else
+                        log_warn "Failed to restore volume $VOLUME_NAME"
+                    fi
+                else
+                    log_warn "Failed to create volume $VOLUME_NAME"
+                fi
+            fi
+        done
+    else
+        log_warn "Volumes backup not found in migration package"
+    fi
+    
+    log_info "Starting FeatherPanel containers..."
+    if ! run_with_spinner "Starting containers" "Containers started." \
+        bash -c "cd /var/www/featherpanel && sudo docker compose up -d"; then
+        log_error "Failed to start containers"
+        return 1
+    fi
+    
+    # Mark as installed
+    sudo touch /var/www/featherpanel/.installed
+    
+    # Install global featherpanel command
+    install_featherpanel_command
+    
+    log_success "Migration import completed successfully from $MIGRATION_NAME"
+    log_warn "Please verify that the Panel is working correctly after import."
+    log_info "You may need to update DNS records and SSL certificates for the new server."
+    
+    if [ -t 1 ]; then clear; fi
+    print_banner
+    draw_hr
+    print_centered "Migration Import Complete" "$GREEN"
+    draw_hr
+    echo ""
+    echo -e "  ${GREEN}${BOLD}✓${NC} Migration package imported: ${CYAN}$MIGRATION_NAME${NC}"
+    echo ""
+    draw_hr
+    print_centered "Next Steps" "$CYAN"
+    draw_hr
+    echo ""
+    echo -e "  ${GREEN}1.${NC} ${BLUE}Wait 2-3 minutes${NC} for containers to fully start"
+    echo -e "  ${GREEN}2.${NC} ${BLUE}Update DNS records${NC} to point to this server (if domain changed)"
+    echo -e "  ${GREEN}3.${NC} ${BLUE}Update SSL certificates${NC} if using a different domain"
+    echo -e "  ${GREEN}4.${NC} ${BLUE}Verify Panel access${NC} and test functionality"
+    echo -e "  ${GREEN}5.${NC} ${BLUE}Update Wings nodes${NC} if Panel URL changed"
+    echo ""
+    draw_hr
+    
+    return 0
+}
+
 # Function to modify docker-compose.yml to use dev image tags
 modify_compose_for_dev() {
     local compose_file="$1"
@@ -2146,14 +3063,14 @@ if [ -f /etc/os-release ]; then
         # Show appropriate menu based on component selection
         if [ "$COMPONENT_TYPE" = "0" ]; then
             # Panel operations
-            while [[ ! "$INST_TYPE" =~ ^[0-2]$ ]]; do
+            while [[ ! "$INST_TYPE" =~ ^[0-3]$ ]]; do
                 show_panel_menu
                 echo ""
-                prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(0/1/2)${NC}: " INST_TYPE
-                if [[ ! "$INST_TYPE" =~ ^[0-2]$ ]]; then
+                prompt "${BOLD}${CYAN}Select operation${NC} ${BLUE}(0/1/2/3)${NC}: " INST_TYPE
+                if [[ ! "$INST_TYPE" =~ ^[0-3]$ ]]; then
                     echo ""
                     echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
-                    echo -e "${YELLOW}Please enter ${BOLD}0${NC} (Install), ${BOLD}1${NC} (Uninstall), or ${BOLD}2${NC} (Update)${NC}"
+                    echo -e "${YELLOW}Please enter ${BOLD}0${NC} (Install), ${BOLD}1${NC} (Uninstall), ${BOLD}2${NC} (Update), or ${BOLD}3${NC} (Backup)${NC}"
                     echo ""
                     sleep 2
                 fi
@@ -2611,6 +3528,7 @@ CF_HOSTNAME=""
             fi
                 
             sudo mkdir -p /var/www/featherpanel
+            sudo mkdir -p "$BACKUP_DIR"
             cd /var/www/featherpanel || exit 1
 
             # Only create Cloudflare .env if Cloudflare Tunnel is selected
@@ -3349,6 +4267,79 @@ CF_HOSTNAME=""
 
             log_success "FeatherPanel updated successfully."
                     exit 0
+        elif [ "$COMPONENT_TYPE" = "0" ] && [ "$INST_TYPE" = "3" ]; then
+            # Panel Backup Manager
+            if [ ! -f /var/www/featherpanel/.installed ]; then
+                log_error "FeatherPanel is not installed. Nothing to backup."
+                exit 1
+            fi
+            
+            BACKUP_ACTION=""
+            while [[ ! "$BACKUP_ACTION" =~ ^[0-5]$ ]]; do
+                show_backup_menu
+                echo ""
+                prompt "${BOLD}${CYAN}Select backup operation${NC} ${BLUE}(0/1/2/3/4/5)${NC}: " BACKUP_ACTION
+                if [[ ! "$BACKUP_ACTION" =~ ^[0-5]$ ]]; then
+                    echo ""
+                    echo -e "${RED}${BOLD}✗ Invalid input!${NC}"
+                    echo -e "${YELLOW}Please enter ${BOLD}0${NC} (Create), ${BOLD}1${NC} (List), ${BOLD}2${NC} (Restore), ${BOLD}3${NC} (Delete), ${BOLD}4${NC} (Export), or ${BOLD}5${NC} (Import)${NC}"
+                    echo ""
+                    sleep 2
+                fi
+            done
+            
+            case $BACKUP_ACTION in
+                0)
+                    # Create Backup
+                    if create_backup; then
+                        log_success "Backup operation completed. See log at $LOG_FILE"
+                    else
+                        log_error "Backup operation failed. See log at $LOG_FILE"
+                        exit 1
+                    fi
+                    ;;
+                1)
+                    # List Backups
+                    list_backups
+                    log_info "Backup listing completed. See log at $LOG_FILE"
+                    ;;
+                2)
+                    # Restore Backup
+                    if restore_backup; then
+                        log_success "Backup restore completed. See log at $LOG_FILE"
+                    else
+                        log_error "Backup restore failed. See log at $LOG_FILE"
+                        exit 1
+                    fi
+                    ;;
+                3)
+                    # Delete Backup
+                    if delete_backup; then
+                        log_success "Backup deletion completed. See log at $LOG_FILE"
+                    else
+                        log_error "Backup deletion failed. See log at $LOG_FILE"
+                        exit 1
+                    fi
+                    ;;
+                4)
+                    # Export for Migration
+                    if export_migration; then
+                        log_success "Migration export completed. See log at $LOG_FILE"
+                    else
+                        log_error "Migration export failed. See log at $LOG_FILE"
+                        exit 1
+                    fi
+                    ;;
+                5)
+                    # Import Migration
+                    if import_migration; then
+                        log_success "Migration import completed. See log at $LOG_FILE"
+                    else
+                        log_error "Migration import failed. See log at $LOG_FILE"
+                        exit 1
+                    fi
+                    ;;
+            esac
         elif [ "$COMPONENT_TYPE" = "1" ] && [ "$INST_TYPE" = "0" ]; then
             # Wings Install
             if [ -f /usr/local/bin/featherwings ]; then
