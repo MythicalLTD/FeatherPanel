@@ -2388,7 +2388,7 @@ CF_HOSTNAME=""
             fi
 
             # Release type selection (only if not already set via CLI/env)
-            if [ "$USE_DEV" = false ] && [ -z "${FP_DEV:-}" ]; then
+            if [ "$USE_DEV" != "true" ] && [ -z "${FP_DEV:-}" ]; then
                 RELEASE_TYPE=""
                 while [[ ! "$RELEASE_TYPE" =~ ^[1-3]$ ]]; do
                     show_release_type_menu
@@ -3115,6 +3115,121 @@ CF_HOSTNAME=""
                 echo "FeatherPanel does not appear to be installed. Nothing to update."
                 exit 0
             fi
+            
+            # Check current installation type BEFORE doing anything
+            CURRENT_IS_DEV=false
+            if [ -f /var/www/featherpanel/docker-compose.yml ]; then
+                if grep -q "featherpanel-backend:dev" /var/www/featherpanel/docker-compose.yml 2>/dev/null; then
+                    CURRENT_IS_DEV=true
+                fi
+            fi
+            
+            # Release type selection for updates (only if not already set via CLI/env)
+            if [ "$USE_DEV" != "true" ] && [ -z "${FP_DEV:-}" ]; then
+                if [ "$CURRENT_IS_DEV" = true ]; then
+                    # Currently on dev, ask if they want to stay on dev or switch to release
+                    if [ -t 1 ]; then clear; fi
+                    print_banner
+                    draw_hr
+                    echo -e "${BOLD}${YELLOW}Current Installation Type${NC}"
+                    draw_hr
+                    echo ""
+                    echo -e "${BLUE}Your current installation is using ${BOLD}development builds${NC}.${NC}"
+                    echo ""
+                    echo -e "${BOLD}What would you like to do?${NC}"
+                    echo -e "  ${GREEN}[1]${NC} ${BOLD}Stay on Development Builds${NC} ${BLUE}(Update to latest dev)${NC}"
+                    echo -e "  ${YELLOW}[2]${NC} ${BOLD}Switch to Stable Release${NC} ${BLUE}(Recommended for production)${NC}"
+                    draw_hr
+                    update_choice=""
+                    while [[ ! "$update_choice" =~ ^[12]$ ]]; do
+                        prompt "${BOLD}Enter choice${NC} ${BLUE}(1/2)${NC}: " update_choice
+                        if [[ ! "$update_choice" =~ ^[12]$ ]]; then
+                            echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}1${NC} or ${YELLOW}2${NC}."; sleep 1
+                        fi
+                    done
+                    
+                    if [ "$update_choice" = "1" ]; then
+                        USE_DEV=true
+                        # Try to detect current branch from compose file
+                        if grep -q "featherpanel-backend:dev-main" /var/www/featherpanel/docker-compose.yml 2>/dev/null; then
+                            DEV_BRANCH="main"
+                        elif grep -q "featherpanel-backend:dev-" /var/www/featherpanel/docker-compose.yml 2>/dev/null; then
+                            # Extract branch from tag
+                            EXTRACTED_BRANCH=$(grep "featherpanel-backend:dev-" /var/www/featherpanel/docker-compose.yml | sed -n 's/.*featherpanel-backend:dev-\([^-]*\).*/\1/p' | head -1)
+                            if [ -n "$EXTRACTED_BRANCH" ]; then
+                                DEV_BRANCH="$EXTRACTED_BRANCH"
+                            else
+                                DEV_BRANCH="main"
+                            fi
+                        else
+                            DEV_BRANCH="main"
+                        fi
+                        log_info "Staying on development builds (branch: $DEV_BRANCH)"
+                    else
+                        USE_DEV=false
+                        log_info "Switching to stable release"
+                    fi
+                else
+                    # Currently on release, ask if they want to switch to dev
+                    if [ -t 1 ]; then clear; fi
+                    print_banner
+                    draw_hr
+                    echo -e "${BOLD}${CYAN}Update Type${NC}"
+                    draw_hr
+                    echo ""
+                    echo -e "${BLUE}Your current installation is using ${BOLD}stable release${NC}.${NC}"
+                    echo ""
+                    echo -e "${BOLD}What would you like to do?${NC}"
+                    echo -e "  ${GREEN}[1]${NC} ${BOLD}Update to Latest Stable Release${NC} ${BLUE}(Recommended)${NC}"
+                    echo -e "  ${YELLOW}[2]${NC} ${BOLD}Switch to Development Build${NC} ${BLUE}(Latest from main branch)${NC}"
+                    echo -e "  ${CYAN}[3]${NC} ${BOLD}Switch to Custom Development Build${NC} ${BLUE}(Specific branch/commit)${NC}"
+                    draw_hr
+                    update_choice=""
+                    while [[ ! "$update_choice" =~ ^[1-3]$ ]]; do
+                        prompt "${BOLD}Enter choice${NC} ${BLUE}(1/2/3)${NC}: " update_choice
+                        if [[ ! "$update_choice" =~ ^[1-3]$ ]]; then
+                            echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}1${NC}, ${YELLOW}2${NC}, or ${YELLOW}3${NC}."; sleep 1
+                        fi
+                    done
+                    
+                    case $update_choice in
+                        1)
+                            USE_DEV=false
+                            log_info "Updating to latest stable release"
+                            ;;
+                        2)
+                            USE_DEV=true
+                            DEV_BRANCH="main"
+                            log_info "Switching to development build from main branch"
+                            ;;
+                        3)
+                            USE_DEV=true
+                            if [ -t 1 ]; then clear; fi
+                            print_banner
+                            draw_hr
+                            echo -e "${BOLD}${CYAN}Custom Development Build${NC}"
+                            draw_hr
+                            echo ""
+                            echo -e "${BLUE}Enter the branch name (default: main)${NC}"
+                            prompt "${BOLD}Branch name${NC} ${BLUE}(e.g., main, develop)${NC}: " DEV_BRANCH
+                            if [ -z "$DEV_BRANCH" ]; then
+                                DEV_BRANCH="main"
+                            fi
+                            
+                            echo ""
+                            echo -e "${BLUE}Enter a specific commit SHA (optional)${NC}"
+                            echo -e "${BLUE}Leave empty to use the latest commit from the branch${NC}"
+                            prompt "${BOLD}Commit SHA${NC} ${BLUE}(7+ characters, optional)${NC}: " DEV_SHA
+                            if [ -n "$DEV_SHA" ] && [ ${#DEV_SHA} -lt 7 ]; then
+                                log_warn "Commit SHA should be at least 7 characters. Using latest from branch instead."
+                                DEV_SHA=""
+                            fi
+                            log_info "Switching to custom dev build: branch=$DEV_BRANCH, sha=${DEV_SHA:-latest}"
+                            ;;
+                    esac
+                fi
+            fi
+            
             print_banner
             log_step "Updating FeatherPanel components..."
             if [ ! -f /var/www/featherpanel/docker-compose.yml ]; then
@@ -3124,63 +3239,9 @@ CF_HOSTNAME=""
                     exit 1
                 fi
             else
-                # Backup current compose file to preserve dev modifications
-                if [ "$USE_DEV" = true ] && grep -q "featherpanel-backend:dev" /var/www/featherpanel/docker-compose.yml 2>/dev/null; then
-                    log_info "Preserving dev image configuration in docker-compose.yml"
-                    DEV_TAG=$(get_dev_image_tag)
-                    # Refresh from upstream but restore dev tags
-                    if ! run_with_spinner "Refreshing docker-compose.yml from upstream" "docker-compose.yml refreshed." \
-                        curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml"; then
-                        log_warn "Could not refresh compose file; keeping existing copy."
-                    else
-                        # Re-apply dev tags after refresh
-                        modify_compose_for_dev "/var/www/featherpanel/docker-compose.yml" "$DEV_TAG" "$DEV_TAG"
-                    fi
-                else
-                    if ! run_with_spinner "Refreshing docker-compose.yml from upstream" "docker-compose.yml refreshed." \
-                        curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml"; then
-                        log_warn "Could not refresh compose file; keeping existing copy."
-                    fi
-                fi
-            fi
-            
-            # Check if switching between release and dev modes
-            if [ -f /var/www/featherpanel/docker-compose.yml ]; then
-                CURRENT_IS_DEV=false
-                if grep -q "featherpanel-backend:dev" /var/www/featherpanel/docker-compose.yml 2>/dev/null; then
-                    CURRENT_IS_DEV=true
-                fi
-                
-                if [ "$USE_DEV" = true ] && [ "$CURRENT_IS_DEV" = false ]; then
-                    log_warn "Switching from release to dev mode"
-                    echo ""
-                    draw_hr
-                    echo -e "${YELLOW}${BOLD}⚠️  Switching to Development Release${NC}"
-                    draw_hr
-                    echo -e "${BLUE}You are switching from a release build to a development build.${NC}"
-                    echo -e "${YELLOW}This may cause compatibility issues or data loss.${NC}"
-                    echo ""
-                    switch_confirm=""
-                    prompt "${BOLD}${RED}Are you sure you want to switch to dev mode?${NC} ${BLUE}(type 'yes' to confirm)${NC}: " switch_confirm
-                    if [ "$switch_confirm" != "yes" ]; then
-                        echo -e "${GREEN}Update cancelled.${NC}"
-                        exit 0
-                    fi
-                elif [ "$USE_DEV" = false ] && [ "$CURRENT_IS_DEV" = true ]; then
-                    log_warn "Switching from dev to release mode"
-                    echo ""
-                    draw_hr
-                    echo -e "${YELLOW}${BOLD}⚠️  Switching to Release Build${NC}"
-                    draw_hr
-                    echo -e "${BLUE}You are switching from a development build to a release build.${NC}"
-                    echo -e "${GREEN}This is recommended for production use.${NC}"
-                    echo ""
-                    switch_confirm=""
-                    prompt "${BOLD}Continue switching to release mode?${NC} ${BLUE}(y/n)${NC}: " switch_confirm
-                    if [[ ! "$switch_confirm" =~ ^[yY]$ ]]; then
-                        echo -e "${GREEN}Update cancelled.${NC}"
-                        exit 0
-                    fi
+                if ! run_with_spinner "Refreshing docker-compose.yml from upstream" "docker-compose.yml refreshed." \
+                    curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml"; then
+                    log_warn "Could not refresh compose file; keeping existing copy."
                 fi
             fi
             
