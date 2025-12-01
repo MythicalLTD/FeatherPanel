@@ -935,8 +935,8 @@ const sanitizedMailBody = computed(() => {
             const url = data.attrValue.trim();
             const lowerUrl = url.toLowerCase();
 
-            // Block javascript: and data: protocols (except data:image/* for img src)
-            if (lowerUrl.startsWith('javascript:') || lowerUrl.startsWith('vbscript:')) {
+            // Block javascript:, data:, and vbscript: protocols (except data:image/* for img src)
+            if (lowerUrl.startsWith('javascript:') || lowerUrl.startsWith('data:') || lowerUrl.startsWith('vbscript:')) {
                 data.keepAttr = false;
                 return;
             }
