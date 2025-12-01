@@ -2448,8 +2448,8 @@ Backup Method: Volume-only backup (safest and most reliable)
 IMPORTANT: This is a migration package for moving FeatherPanel to another server.
 To import this package on the destination server:
 1. Transfer this file to the destination server
-2. Run the installer and select: Panel > Backup Manager > Import Migration
-3. Follow the import instructions
+2. Launch the FeatherPanel installer and navigate to: Panel > Backup Manager > Import Migration
+3. Follow the import wizard to complete the migration
 
 This package contains:
 - All Docker volumes (mariadb_data, attachments, config, snapshots, redis_data, etc.)
@@ -2490,13 +2490,13 @@ On the DESTINATION server, run:
 
 IMPORT INSTRUCTIONS:
 --------------------
-1. Ensure FeatherPanel installer is available on destination server
-2. Run: sudo ./install.bash
-3. Select: Panel (0) > Backup Manager (3) > Import Migration (5)
-4. Follow the import wizard
+1. Ensure FeatherPanel is installed on the destination server
+2. Launch the FeatherPanel installer
+3. Navigate to: Panel > Backup Manager > Import Migration
+4. Follow the import wizard to complete the migration
 
-NOTE: The destination server should have FeatherPanel installed first,
-or you can import during installation if the installer supports it.
+NOTE: The destination server must have FeatherPanel installed before
+importing this migration package.
 EOF
     
     log_info "Compressing migration package..."
@@ -2539,12 +2539,12 @@ EOF
         draw_hr
         echo ""
         echo -e "${BOLD}On the destination server:${NC}"
-        echo -e "  ${BLUE}1.${NC} Ensure FeatherPanel installer is available"
-        echo -e "  ${BLUE}2.${NC} Run: ${CYAN}sudo ./install.bash${NC}"
-        echo -e "  ${BLUE}3.${NC} Select: ${CYAN}Panel (0) > Backup Manager (3) > Import Migration (5)${NC}"
+        echo -e "  ${BLUE}1.${NC} Ensure FeatherPanel is installed"
+        echo -e "  ${BLUE}2.${NC} Launch the FeatherPanel installer"
+        echo -e "  ${BLUE}3.${NC} Navigate to: ${CYAN}Panel > Backup Manager > Import Migration${NC}"
         echo -e "  ${BLUE}4.${NC} Follow the import wizard"
         echo ""
-        echo -e "${YELLOW}${BOLD}Note:${NC} The destination server should have FeatherPanel installed first."
+        echo -e "${YELLOW}${BOLD}Note:${NC} The destination server must have FeatherPanel installed before importing."
         echo ""
         draw_hr
         
