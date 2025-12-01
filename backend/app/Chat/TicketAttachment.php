@@ -265,6 +265,8 @@ class TicketAttachment
 
     /**
      * Delete an attachment by ID.
+     * This method deletes both the database record and the associated file on disk.
+     * File deletion happens first to prevent orphaned files if database deletion fails.
      *
      * @param int $id Attachment ID
      *
@@ -276,9 +278,152 @@ class TicketAttachment
             return false;
         }
 
-        $pdo = Database::getPdoConnection();
-        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
+        // Fetch the attachment record first to get the file path
+        $attachment = self::getById($id);
+        if (!$attachment) {
+            return false;
+        }
 
-        return $stmt->execute(['id' => $id]);
+        $pdo = Database::getPdoConnection();
+        $fileDeleted = false;
+        $filePath = null;
+
+        // Delete the physical file first to prevent orphaned files
+        if (isset($attachment['file_path']) && is_string($attachment['file_path']) && $attachment['file_path'] !== '') {
+            $filePath = self::sanitizeAndResolveFilePath($attachment['file_path']);
+            if ($filePath !== null && file_exists($filePath)) {
+                if (@unlink($filePath)) {
+                    $fileDeleted = true;
+                } else {
+                    // File deletion failed - log error and return false
+                    App::getInstance(true)->getLogger()->error(
+                        'Failed to delete attachment file: ' . $filePath . ' (ID: ' . $id . ')'
+                    );
+
+                    return false;
+                }
+            } elseif ($filePath === null) {
+                // Invalid file path - log warning but continue with DB deletion
+                App::getInstance(true)->getLogger()->warning(
+                    'Invalid attachment file path for ID ' . $id . ': ' . $attachment['file_path']
+                );
+            }
+            // If file doesn't exist, continue with DB deletion (file may have been manually deleted)
+        }
+
+        // Start transaction to delete database record
+        try {
+            $pdo->beginTransaction();
+
+            $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE id = :id');
+            if (!$stmt->execute(['id' => $id])) {
+                $pdo->rollBack();
+
+                // If we deleted the file but DB deletion failed, log error
+                if ($fileDeleted) {
+                    App::getInstance(true)->getLogger()->error(
+                        'Database deletion failed after file deletion for attachment ID: ' . $id
+                    );
+                }
+
+                return false;
+            }
+
+            // Commit transaction
+            $pdo->commit();
+
+            return true;
+        } catch (\Exception $e) {
+            // Rollback transaction on any error
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            // If we deleted the file but DB deletion failed, log error
+            if ($fileDeleted) {
+                App::getInstance(true)->getLogger()->error(
+                    'Database deletion failed after file deletion for attachment ID: ' . $id . ' - ' . $e->getMessage()
+                );
+            } else {
+                App::getInstance(true)->getLogger()->error(
+                    'Failed to delete attachment (ID: ' . $id . '): ' . $e->getMessage()
+                );
+            }
+
+            return false;
+        }
+    }
+
+    /**
+     * Sanitize and resolve the file path to prevent directory traversal attacks.
+     *
+     * @param string $filePath The file path from the database (e.g., '/attachments/filename.ext')
+     *
+     * @return string|null The resolved absolute file path, or null if invalid
+     */
+    private static function sanitizeAndResolveFilePath(string $filePath): ?string
+    {
+        if (empty($filePath)) {
+            return null;
+        }
+
+        // Normalize the path by removing leading slashes
+        $normalizedPath = ltrim($filePath, '/\\');
+
+        // Check if path starts with 'attachments/' - it should be stored as '/attachments/filename.ext'
+        if (strpos($normalizedPath, 'attachments/') !== 0) {
+            App::getInstance(true)->getLogger()->warning(
+                'Invalid attachment file path format: ' . $filePath
+            );
+
+            return null;
+        }
+
+        // Check for path traversal attempts (even after normalization)
+        if (strpos($normalizedPath, '..') !== false || strpos($normalizedPath, '../') !== false) {
+            App::getInstance(true)->getLogger()->warning(
+                'Path traversal detected in attachment file path: ' . $filePath
+            );
+
+            return null;
+        }
+
+        // Construct the full path
+        $fullPath = APP_PUBLIC . '/' . $normalizedPath;
+
+        // Resolve the real path to handle symlinks, normalize separators, and resolve '..' components
+        $resolvedPath = realpath($fullPath);
+        if ($resolvedPath === false) {
+            // File doesn't exist, but path format is valid - return null
+            return null;
+        }
+
+        // Ensure the resolved path is within the attachments directory
+        // Use realpath to normalize the attachments directory path as well
+        $attachmentsDirPath = APP_PUBLIC . '/attachments/';
+        $realAttachmentsDir = realpath($attachmentsDirPath);
+        if ($realAttachmentsDir === false) {
+            // Attachments directory doesn't exist - this is an error condition
+            App::getInstance(true)->getLogger()->warning(
+                'Attachments directory does not exist: ' . $attachmentsDirPath
+            );
+
+            return null;
+        }
+
+        // Normalize directory path for comparison (ensure it ends with directory separator)
+        $realAttachmentsDir = rtrim($realAttachmentsDir, '/\\') . DIRECTORY_SEPARATOR;
+
+        // Check if the resolved path is within the attachments directory
+        $normalizedResolved = $resolvedPath . (is_dir($resolvedPath) ? DIRECTORY_SEPARATOR : '');
+        if (strpos($normalizedResolved, $realAttachmentsDir) !== 0) {
+            App::getInstance(true)->getLogger()->warning(
+                'Attachment file path outside allowed directory. Resolved: ' . $resolvedPath . ', Allowed: ' . $realAttachmentsDir
+            );
+
+            return null;
+        }
+
+        return $resolvedPath;
     }
 }
