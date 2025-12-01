@@ -419,6 +419,7 @@ servers:
     searchPlaceholder: 'Search servers...'
     refresh: 'Refresh'
     viewAllServers: 'View All Servers'
+    selectView: 'Select View'
     loading: 'Loading servers...'
     errorTitle: 'Failed to load servers'
     retry: 'Try again'
