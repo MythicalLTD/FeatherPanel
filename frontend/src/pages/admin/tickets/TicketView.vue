@@ -700,7 +700,7 @@
                 </DialogHeader>
                 <div class="overflow-auto max-h-[60vh] border rounded bg-background p-4">
                     <!-- eslint-disable-next-line vue/no-v-html -->
-                    <div v-if="mailPreview?.body" v-html="mailPreview.body"></div>
+                    <div v-if="sanitizedMailBody" v-html="sanitizedMailBody"></div>
                     <div v-else class="text-muted-foreground">No content</div>
                 </div>
             </DialogContent>
@@ -765,6 +765,7 @@ import {
 import axios, { type AxiosError } from 'axios';
 import { useToast } from 'vue-toastification';
 import { renderMarkdown } from '@/lib/markdown';
+import DOMPurify from 'dompurify';
 
 type ApiTicket = {
     id: number;
@@ -944,6 +945,60 @@ const editForm = ref({
 
 const internalNotesCount = computed(() => {
     return messages.value.filter((m) => m.is_internal).length;
+});
+
+const sanitizedMailBody = computed(() => {
+    const body = mailPreview.value?.body;
+    if (!body) return '';
+    return DOMPurify.sanitize(body, {
+        ALLOWED_TAGS: [
+            'p',
+            'br',
+            'hr',
+            'strong',
+            'em',
+            'u',
+            's',
+            'b',
+            'i',
+            'small',
+            'sub',
+            'sup',
+            'h1',
+            'h2',
+            'h3',
+            'h4',
+            'h5',
+            'h6',
+            'ul',
+            'ol',
+            'li',
+            'dl',
+            'dt',
+            'dd',
+            'a',
+            'img',
+            'figure',
+            'figcaption',
+            'code',
+            'pre',
+            'blockquote',
+            'cite',
+            'div',
+            'span',
+            'section',
+            'article',
+            'table',
+            'thead',
+            'tbody',
+            'tfoot',
+            'tr',
+            'th',
+            'td',
+        ],
+        ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'style', 'width', 'height', 'target', 'rel'],
+        KEEP_CONTENT: true,
+    });
 });
 
 async function fetchTicketDetails() {
