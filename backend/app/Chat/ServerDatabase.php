@@ -424,6 +424,23 @@ class ServerDatabase
     }
 
     /**
+     * Get count of server databases based on conditions.
+     */
+    public static function count(array $conditions = []): int
+    {
+        if (empty($conditions)) {
+            return 0;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $where = implode(' AND ', array_map(static fn ($k) => "$k = :$k", array_keys($conditions)));
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . self::$table . ' WHERE ' . $where);
+        $stmt->execute($conditions);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
      * Search server databases.
      */
     public static function searchServerDatabases(string $search, int $limit = 50): array

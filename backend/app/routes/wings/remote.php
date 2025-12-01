@@ -234,4 +234,20 @@ return function (RouteCollection $routes): void {
         },
         ['POST']
     );
+
+    // Transfer success endpoint - called by destination Wings when transfer completes successfully
+    App::getInstance(true)->registerWingsRoute(
+        $routes,
+        'wings-transfer-success',
+        '/api/remote/servers/{uuid}/transfer/success',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid) {
+                return ApiResponse::error('Missing server UUID', 'MISSING_SERVER_UUID', 400);
+            }
+
+            return (new WingsTransferStatusController())->transferSuccess($request, $uuid);
+        },
+        ['POST']
+    );
 };

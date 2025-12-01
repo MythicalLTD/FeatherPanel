@@ -245,6 +245,34 @@
                                     <Trash2 :size="16" />
                                 </Button>
                             </template>
+                            <template v-if="(item as ApiServer).status === 'transferring'">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    class="border-amber-500 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:scale-110 hover:shadow-md transition-all duration-200 animate-pulse"
+                                    title="Cancel server transfer"
+                                    data-umami-event="Cancel server transfer"
+                                    :data-umami-event-server="(item as ApiServer).name"
+                                    :disabled="cancellingTransfer === (item as ApiServer).id"
+                                    @click="onCancelTransfer(item as ApiServer)"
+                                >
+                                    <X v-if="cancellingTransfer !== (item as ApiServer).id" :size="16" />
+                                    <Loader2 v-else :size="16" class="animate-spin" />
+                                </Button>
+                            </template>
+                            <template v-else>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    class="hover:scale-110 hover:shadow-md transition-all duration-200"
+                                    title="Transfer server to another node"
+                                    data-umami-event="Open transfer server dialog"
+                                    :data-umami-event-server="(item as ApiServer).name"
+                                    @click="onOpenTransfer(item as ApiServer)"
+                                >
+                                    <ArrowLeftRight :size="16" />
+                                </Button>
+                            </template>
                         </div>
                     </template>
                 </TableComponent>
@@ -652,6 +680,317 @@
                 </div>
             </DrawerContent>
         </Drawer>
+
+        <!-- Transfer Server Dialog -->
+        <AlertDialog
+            :open="transferDialogOpen"
+            @update:open="
+                (val: boolean) => {
+                    if (!val) cancelTransferDialog();
+                }
+            "
+        >
+            <AlertDialogContent class="sm:max-w-[500px]">
+                <AlertDialogHeader>
+                    <AlertDialogTitle class="flex items-center gap-2">
+                        <svg class="h-5 w-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24">
+                            <path
+                                stroke="currentColor"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M8 7h12m0 0-4-4m4 4-4 4m0 6H4m0 0 4 4m-4-4 4-4"
+                            />
+                        </svg>
+                        Transfer Server
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Transfer this server to a different node and choose the new primary allocation (IP:Port) it
+                        should use on the destination node.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                <div class="space-y-4 py-2">
+                    <div v-if="transferServer" class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-muted-foreground">Server:</span>
+                            <span class="font-medium">{{ transferServer.name }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-muted-foreground">Current Node:</span>
+                            <span>{{ transferServer.node?.name || 'Unknown' }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-muted-foreground">Current Primary Allocation:</span>
+                            <span class="font-mono text-xs">
+                                <span v-if="transferServer.allocation">
+                                    {{ transferServer.allocation.ip }}:{{ transferServer.allocation.port }}
+                                </span>
+                                <span v-else>Unknown</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block mb-1 text-sm font-medium">Destination Node</label>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                class="w-full justify-between"
+                                :disabled="initiatingTransfer"
+                                @click="openTransferNodeModal"
+                            >
+                                {{ getTransferDestinationNodeName() || 'Select destination node...' }}
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="h-4 w-4 ml-2 opacity-60"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M19 9l-7 7-7-7"
+                                    />
+                                </svg>
+                            </Button>
+                            <p class="text-xs text-muted-foreground mt-1">
+                                Choose a different node to transfer this server to.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="block mb-1 text-sm font-medium">Destination Primary Allocation (Port)</label>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                class="w-full justify-between"
+                                :disabled="!transferDestinationNodeId || initiatingTransfer"
+                                @click="openTransferAllocationModal"
+                            >
+                                {{ getTransferDestinationAllocationName() || 'Select destination allocation...' }}
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="h-4 w-4 ml-2 opacity-60"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M19 9l-7 7-7-7"
+                                    />
+                                </svg>
+                            </Button>
+                            <p class="text-xs text-muted-foreground mt-1">
+                                Only free allocations on the selected destination node are shown here.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Critical Warning Banner -->
+                    <div
+                        class="p-4 bg-red-100 dark:bg-red-900/30 border-2 border-red-500 dark:border-red-600 rounded-lg"
+                    >
+                        <div class="flex items-start gap-3">
+                            <svg
+                                class="h-6 w-6 text-red-600 dark:text-red-400 shrink-0 mt-0.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                />
+                            </svg>
+                            <div>
+                                <p class="text-sm font-bold text-red-800 dark:text-red-200 uppercase tracking-wide">
+                                    ⚠️ USE AT YOUR OWN RISK ⚠️
+                                </p>
+                                <p class="text-xs text-red-700 dark:text-red-300 mt-1">
+                                    Server transfers are
+                                    <span class="font-bold">NOT RECOMMENDED</span> in Pterodactyl, Pelican, or
+                                    FeatherPanel. This feature exists but is known to be unreliable.
+                                    <span class="font-bold">Things CAN and WILL go wrong.</span>
+                                    Data loss, corruption, and failed transfers are possible. Only use this if you have
+                                    no other option and have verified backups stored externally.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Warnings -->
+                    <div
+                        class="p-4 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-300 dark:border-orange-700 rounded-lg space-y-2"
+                    >
+                        <p class="text-sm font-semibold text-orange-900 dark:text-orange-100">
+                            BETA / Experimental Feature - Proceed with Extreme Caution
+                        </p>
+                        <ul class="text-xs text-orange-800 dark:text-orange-200 space-y-1 list-disc list-inside">
+                            <li>
+                                Transfers can be cancelled from the server list while in progress, but
+                                <span class="font-semibold">partial data may remain on the destination node</span>.
+                            </li>
+                            <li>The server will be stopped and unavailable during the transfer.</li>
+                            <li>
+                                The selected allocation will become the
+                                <span class="font-semibold">only</span> primary allocation on the destination node.
+                            </li>
+                            <li>
+                                <span class="font-semibold">
+                                    All extra allocations on the source node for this server will be released
+                                </span>
+                                after a successful transfer.
+                            </li>
+                            <li>
+                                <span class="font-semibold">Backups will be deleted</span>. Backup records are removed
+                                during transfer; backup files on the source node become orphaned.
+                            </li>
+                            <li>
+                                <span class="font-semibold">Install logs and server logs are not transferred</span>.
+                                Historical logs will stay on the source node; only the server data itself is moved.
+                            </li>
+                            <li>
+                                <span class="font-semibold">Always create and verify backups EXTERNALLY</span> before
+                                transferring. Do not rely on panel backups.
+                            </li>
+                            <li>
+                                <span class="font-semibold">Network issues, timeouts, or node problems</span> can cause
+                                partial transfers or data corruption.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <AlertDialogFooter>
+                    <AlertDialogCancel :disabled="initiatingTransfer" @click="cancelTransferDialog">
+                        Cancel
+                    </AlertDialogCancel>
+                    <Button
+                        class="bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-800"
+                        :disabled="
+                            initiatingTransfer ||
+                            !transferDestinationNodeId ||
+                            !transferDestinationAllocationId ||
+                            !transferServer
+                        "
+                        :data-umami-event-server="transferServer?.name"
+                        data-umami-event="Confirm server transfer"
+                        @click="initiateServerTransfer"
+                    >
+                        {{ initiatingTransfer ? 'Starting Transfer...' : 'I Understand - Start Transfer' }}
+                    </Button>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        <!-- Transfer Node Selection Modal -->
+        <SelectionModal
+            :is-open="transferNodeModal.state.value.isOpen"
+            title="Select Destination Node"
+            description="Choose a node to transfer this server to"
+            item-type="node"
+            search-placeholder="Search nodes by name or FQDN..."
+            :items="transferNodeModal.state.value.items"
+            :loading="transferNodeModal.state.value.loading"
+            :current-page="transferNodeModal.state.value.currentPage"
+            :total-pages="transferNodeModal.state.value.totalPages"
+            :total-items="transferNodeModal.state.value.totalItems"
+            :page-size="20"
+            :selected-item="transferNodeModal.state.value.selectedItem"
+            :search-query="transferNodeModal.state.value.searchQuery"
+            @update:open="transferNodeModal.closeModal"
+            @search="transferNodeModal.handleSearch"
+            @search-query-update="transferNodeModal.handleSearchQueryUpdate"
+            @page-change="transferNodeModal.handlePageChange"
+            @select="transferNodeModal.selectItem"
+            @confirm="selectTransferDestinationNode(transferNodeModal.confirmSelection())"
+        >
+            <template #default="{ item, isSelected }">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-medium truncate text-sm sm:text-base">{{ item.name }}</h4>
+                        <p class="text-xs sm:text-sm text-muted-foreground truncate">{{ item.fqdn || 'No FQDN' }}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <Badge
+                            v-if="transferServer && String(item.id) === String(transferServer.node_id)"
+                            variant="secondary"
+                            class="text-xs"
+                        >
+                            Current Node
+                        </Badge>
+                        <div v-if="isSelected" class="shrink-0 ml-2 sm:ml-4">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4 sm:h-5 sm:w-5 text-primary"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M5 13l4 4L19 7"
+                                />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </SelectionModal>
+
+        <!-- Transfer Allocation Selection Modal -->
+        <SelectionModal
+            :is-open="transferAllocationModal.state.value.isOpen"
+            title="Select Destination Allocation"
+            description="Choose a free allocation (IP:Port) on the destination node"
+            item-type="allocation"
+            search-placeholder="Search allocations by IP or port..."
+            :items="transferAllocationModal.state.value.items"
+            :loading="transferAllocationModal.state.value.loading"
+            :current-page="transferAllocationModal.state.value.currentPage"
+            :total-pages="transferAllocationModal.state.value.totalPages"
+            :total-items="transferAllocationModal.state.value.totalItems"
+            :page-size="20"
+            :selected-item="transferAllocationModal.state.value.selectedItem"
+            :search-query="transferAllocationModal.state.value.searchQuery"
+            @update:open="transferAllocationModal.closeModal"
+            @search="transferAllocationModal.handleSearch"
+            @search-query-update="transferAllocationModal.handleSearchQueryUpdate"
+            @page-change="transferAllocationModal.handlePageChange"
+            @select="transferAllocationModal.selectItem"
+            @confirm="selectTransferDestinationAllocation(transferAllocationModal.confirmSelection())"
+        >
+            <template #default="{ item, isSelected }">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-medium truncate text-sm sm:text-base">{{ item.ip }}:{{ item.port }}</h4>
+                        <p class="text-xs sm:text-sm text-muted-foreground truncate">Node ID: {{ item.node_id }}</p>
+                    </div>
+                    <div v-if="isSelected" class="shrink-0 ml-2 sm:ml-4">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4 sm:h-5 sm:w-5 text-primary"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                        >
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                </div>
+            </template>
+        </SelectionModal>
     </DashboardLayout>
 </template>
 
@@ -688,7 +1027,20 @@ import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Eye, Pencil, Trash2, Plus, Server, Layers, Gauge, HelpCircle, ShieldCheck } from 'lucide-vue-next';
+import {
+    Eye,
+    Pencil,
+    Trash2,
+    Plus,
+    Server,
+    Layers,
+    Gauge,
+    HelpCircle,
+    ShieldCheck,
+    ArrowLeftRight,
+    X,
+    Loader2,
+} from 'lucide-vue-next';
 import axios from 'axios';
 import {
     Drawer,
@@ -713,6 +1065,9 @@ import TableComponent from '@/components/ui/feather-table/TableComponent.vue';
 import type { TableColumn } from '@/components/ui/feather-table/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from 'vue-toastification';
+import { SelectionModal } from '@/components/ui/selection-modal';
+import { useSelectionModal } from '@/composables/useSelectionModal';
+import type { ApiNode, ApiAllocation } from '@/composables/types/admin/server';
 
 const router = useRouter();
 const toast = useToast();
@@ -804,6 +1159,164 @@ const viewing = ref(false);
 const showHardDeleteWarning = ref(false);
 const serverToHardDelete = ref<ApiServer | null>(null);
 const scanningServers = ref<Set<string>>(new Set());
+
+// Transfer state
+const transferDialogOpen = ref(false);
+const transferServer = ref<ApiServer | null>(null);
+const transferDestinationNodeId = ref<string>('');
+const transferDestinationNode = ref<ApiNode | null>(null);
+const transferDestinationAllocationId = ref<string>('');
+const transferDestinationAllocation = ref<ApiAllocation | null>(null);
+const initiatingTransfer = ref(false);
+const cancellingTransfer = ref<number | null>(null);
+
+const transferNodeAdditionalParams = computed(() => ({
+    exclude_node_id: transferServer.value?.node_id || null,
+}));
+
+const transferNodeModal = useSelectionModal('/api/admin/nodes', 20, 'search', 'page', transferNodeAdditionalParams);
+
+const transferAllocationAdditionalParams = computed(() => ({
+    node_id: transferDestinationNodeId.value || null,
+}));
+
+const transferAllocationModal = useSelectionModal(
+    '/api/admin/allocations?not_used=true',
+    20,
+    'search',
+    'page',
+    transferAllocationAdditionalParams,
+);
+
+function onOpenTransfer(server: ApiServer) {
+    transferServer.value = server;
+    transferDestinationNodeId.value = '';
+    transferDestinationNode.value = null;
+    transferDestinationAllocationId.value = '';
+    transferDestinationAllocation.value = null;
+    transferDialogOpen.value = true;
+}
+
+function cancelTransferDialog() {
+    if (initiatingTransfer.value) return;
+    transferDialogOpen.value = false;
+    transferServer.value = null;
+    transferDestinationNodeId.value = '';
+    transferDestinationNode.value = null;
+    transferDestinationAllocationId.value = '';
+    transferDestinationAllocation.value = null;
+}
+
+function openTransferNodeModal() {
+    transferNodeModal.openModal();
+}
+
+function openTransferAllocationModal() {
+    if (!transferDestinationNodeId.value) return;
+    transferAllocationModal.openModal();
+}
+
+function selectTransferDestinationNode(node: ApiNode) {
+    if (!node || !node.id) {
+        return;
+    }
+
+    if (transferServer.value && String(node.id) === String(transferServer.value.node_id)) {
+        toast.warning('Cannot transfer to the current node. Please choose a different node.');
+        return;
+    }
+
+    transferDestinationNodeId.value = String(node.id);
+    transferDestinationNode.value = node;
+    transferNodeModal.closeModal();
+
+    // Reset allocation when node changes
+    transferDestinationAllocationId.value = '';
+    transferDestinationAllocation.value = null;
+}
+
+function getTransferDestinationNodeName() {
+    if (transferNodeModal.state.value.selectedItem) {
+        const node = transferNodeModal.state.value.selectedItem;
+        return `${node.name} (${node.fqdn})`;
+    }
+    if (transferDestinationNode.value) {
+        return `${transferDestinationNode.value.name} (${transferDestinationNode.value.fqdn})`;
+    }
+    return '';
+}
+
+function selectTransferDestinationAllocation(allocation: ApiAllocation) {
+    if (!allocation || !allocation.id) {
+        return;
+    }
+
+    transferDestinationAllocationId.value = String(allocation.id);
+    transferDestinationAllocation.value = allocation;
+    transferAllocationModal.closeModal();
+}
+
+function getTransferDestinationAllocationName() {
+    if (transferAllocationModal.state.value.selectedItem) {
+        const allocation = transferAllocationModal.state.value.selectedItem;
+        return `${allocation.ip}:${allocation.port}`;
+    }
+    if (transferDestinationAllocation.value) {
+        return `${transferDestinationAllocation.value.ip}:${transferDestinationAllocation.value.port}`;
+    }
+    return '';
+}
+
+async function initiateServerTransfer() {
+    if (!transferServer.value || !transferDestinationNodeId.value || !transferDestinationAllocationId.value) {
+        toast.warning('Please select both a destination node and allocation');
+        return;
+    }
+
+    initiatingTransfer.value = true;
+    try {
+        const { data } = await axios.post(`/api/admin/servers/${transferServer.value.id}/transfer`, {
+            destination_node_id: Number(transferDestinationNodeId.value),
+            destination_allocation_id: Number(transferDestinationAllocationId.value),
+        });
+
+        if (data && data.success) {
+            toast.success('Server transfer initiated successfully!');
+            transferDialogOpen.value = false;
+            await fetchServers();
+        } else {
+            toast.error(data?.message || 'Failed to initiate server transfer');
+        }
+    } catch (error: unknown) {
+        const errorMessage = (error as AxiosError)?.response?.data?.message || 'Failed to initiate server transfer';
+        toast.error(errorMessage);
+        console.error('Failed to initiate transfer:', error);
+    } finally {
+        initiatingTransfer.value = false;
+    }
+}
+
+async function onCancelTransfer(server: ApiServer) {
+    if (cancellingTransfer.value !== null) return;
+
+    cancellingTransfer.value = server.id;
+    try {
+        const { data } = await axios.delete(`/api/admin/servers/${server.id}/transfer`);
+
+        if (data && data.success) {
+            toast.success('Server transfer cancelled successfully!');
+            await fetchServers();
+        } else {
+            toast.error(data?.message || 'Failed to cancel server transfer');
+        }
+    } catch (error: unknown) {
+        const errorMessage = (error as AxiosError)?.response?.data?.message || 'Failed to cancel server transfer';
+        toast.error(errorMessage);
+        console.error('Failed to cancel transfer:', error);
+    } finally {
+        cancellingTransfer.value = null;
+    }
+}
 
 // Plugin widgets
 const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-servers');
@@ -970,6 +1483,7 @@ function getStatusVariant(status: string): 'default' | 'secondary' | 'destructiv
             return 'default';
         case 'installed':
         case 'installing':
+        case 'transferring':
             return 'secondary';
         case 'stopped':
         case 'suspended':

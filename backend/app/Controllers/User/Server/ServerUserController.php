@@ -538,6 +538,9 @@ class ServerUserController
             'description' => $realmData['description'] ?? null,
             'logo' => $realmData['logo'] ?? null,
         ] : null;
+
+        // Include all spell fields required by the frontend, especially "features"
+        // which are used for console feature detection (EULA, java_version, pid_limit, etc.)
         $spellData = Spell::getSpellById($server['spell_id']);
         $server['spell'] = $spellData ? [
             'id' => $spellData['id'] ?? null,
@@ -546,6 +549,13 @@ class ServerUserController
             'banner' => $spellData['banner'] ?? null,
             'startup' => $spellData['startup'] ?? null,
             'docker_images' => $spellData['docker_images'] ?? null,
+            // Features & additional JSON-config fields (decoded further down if JSON)
+            'features' => $spellData['features'] ?? null,
+            'file_denylist' => $spellData['file_denylist'] ?? null,
+            'update_url' => $spellData['update_url'] ?? null,
+            'config_files' => $spellData['config_files'] ?? null,
+            'config_startup' => $spellData['config_startup'] ?? null,
+            'config_logs' => $spellData['config_logs'] ?? null,
         ] : null;
 
         $server['allocation'] = \App\Chat\Allocation::getAllocationById($server['allocation_id']);

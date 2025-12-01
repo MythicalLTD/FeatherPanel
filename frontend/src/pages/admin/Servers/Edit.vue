@@ -842,140 +842,6 @@
                             </div>
                         </div>
 
-                        <!-- Server Transfer Section -->
-                        <div class="bg-card border rounded-lg p-6">
-                            <div class="flex items-center justify-between mb-4">
-                                <div>
-                                    <div class="flex items-center gap-3">
-                                        <h2 class="text-xl font-semibold">Server Transfer</h2>
-                                        <Badge variant="destructive" class="text-xs">BETA</Badge>
-                                    </div>
-                                    <p class="text-sm text-muted-foreground mt-1">
-                                        Transfer this server to a different node (experimental feature)
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div v-if="isTransferring" class="space-y-4">
-                                <div
-                                    class="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg"
-                                >
-                                    <div class="flex items-center gap-3 mb-2">
-                                        <div
-                                            class="animate-spin rounded-full h-5 w-5 border-2 border-yellow-500 border-t-transparent"
-                                        ></div>
-                                        <span class="font-medium text-yellow-900 dark:text-yellow-100"
-                                            >Transfer in Progress</span
-                                        >
-                                    </div>
-                                    <p class="text-sm text-yellow-800 dark:text-yellow-200 mb-3">
-                                        This server is currently being transferred. This may take several minutes
-                                        depending on server size.
-                                    </p>
-                                    <div v-if="transferStatus" class="space-y-2">
-                                        <div class="flex justify-between text-sm">
-                                            <span>Progress:</span>
-                                            <span class="font-medium"
-                                                >{{ transferStatus.progress?.toFixed(1) || 0 }}%</span
-                                            >
-                                        </div>
-                                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                            <div
-                                                class="bg-yellow-500 h-2 rounded-full transition-all duration-300"
-                                                :style="{ width: `${transferStatus.progress || 0}%` }"
-                                            ></div>
-                                        </div>
-                                        <p v-if="transferStatus.started_at" class="text-xs text-muted-foreground">
-                                            Started: {{ new Date(transferStatus.started_at).toLocaleString() }}
-                                        </p>
-                                    </div>
-                                    <p class="text-xs text-muted-foreground mt-3">
-                                        Transfer cannot be cancelled once started. Please wait for completion or
-                                        failure.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div v-else class="space-y-4">
-                                <!-- Beta Warning -->
-                                <div
-                                    class="p-4 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-300 dark:border-orange-700 rounded-lg"
-                                >
-                                    <div class="flex items-start gap-3">
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            class="h-5 w-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                        >
-                                            <path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                stroke-width="2"
-                                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                            />
-                                        </svg>
-                                        <div class="flex-1">
-                                            <h4 class="font-semibold text-orange-900 dark:text-orange-100 mb-2">
-                                                ⚠️ BETA Feature - Use with Caution
-                                            </h4>
-                                            <ul
-                                                class="text-sm text-orange-800 dark:text-orange-200 space-y-1 list-disc list-inside"
-                                            >
-                                                <li>
-                                                    Server transfers are an <strong>experimental feature</strong> and
-                                                    may have bugs
-                                                </li>
-                                                <li>Transfer <strong>cannot be cancelled</strong> once started</li>
-                                                <li>
-                                                    Server will be <strong>unavailable</strong> during the entire
-                                                    transfer process
-                                                </li>
-                                                <li>
-                                                    If <strong>checksum validation fails</strong>, the transfer will
-                                                    fail and server reverts to source node
-                                                </li>
-                                                <li>Network issues between nodes can cause transfer failures</li>
-                                                <li>
-                                                    <strong>Always backup your server</strong> before initiating a
-                                                    transfer
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <p class="text-sm text-muted-foreground">
-                                    Transferring a server will move it to a different node. The server will be stopped
-                                    during the transfer and automatically started on the destination node once complete.
-                                </p>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    data-umami-event="Transfer server"
-                                    :data-umami-event-server="form.name"
-                                    @click="openTransferDialog"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-4 w-4 mr-2"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-                                        />
-                                    </svg>
-                                    Transfer Server
-                                </Button>
-                            </div>
-                        </div>
-
                         <!-- Form Actions -->
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <div class="flex items-center gap-3">
@@ -1181,150 +1047,6 @@
                 </div>
             </template>
         </SelectionModal>
-
-        <!-- Transfer Dialog -->
-        <Dialog v-model:open="transferDialogOpen">
-            <DialogContent class="sm:max-w-[500px]">
-                <DialogHeader>
-                    <DialogTitle>Transfer Server</DialogTitle>
-                    <DialogDescription>
-                        Select the destination node for this server transfer. The server will be stopped, transferred,
-                        and restarted on the new node.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div class="space-y-4 py-4">
-                    <div>
-                        <label class="block mb-2 font-medium">Current Node</label>
-                        <div class="p-3 bg-muted rounded-lg">
-                            <p class="font-medium">{{ getSelectedNodeName() }}</p>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block mb-2 font-medium">Destination Node</label>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            class="w-full justify-between"
-                            @click="transferNodeModal.openModal()"
-                        >
-                            {{ getTransferDestinationNodeName() || 'Select destination node...' }}
-                            <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                        <p class="text-xs text-muted-foreground mt-1">
-                            Choose a different node to transfer this server to.
-                        </p>
-                    </div>
-
-                    <!-- Beta Warning -->
-                    <div
-                        class="p-4 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-300 dark:border-orange-700 rounded-lg"
-                    >
-                        <div class="flex items-start gap-2 mb-2">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="h-5 w-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                />
-                            </svg>
-                            <div>
-                                <p class="font-semibold text-orange-900 dark:text-orange-100">
-                                    BETA / Experimental Feature
-                                </p>
-                            </div>
-                        </div>
-                        <ul class="text-xs text-orange-800 dark:text-orange-200 space-y-1 ml-7 list-disc">
-                            <li>This feature is experimental and may have bugs</li>
-                            <li>Transfer cannot be cancelled once started</li>
-                            <li>Server will be stopped and unavailable during transfer</li>
-                            <li>Checksum validation failures will cause transfer to fail</li>
-                            <li>On failure, server automatically reverts to source node</li>
-                            <li><strong>Create a backup before transferring!</strong></li>
-                        </ul>
-                    </div>
-                </div>
-
-                <DialogFooter>
-                    <Button variant="outline" @click="transferDialogOpen = false">Cancel</Button>
-                    <Button
-                        :disabled="!transferDestinationNodeId"
-                        :loading="initiatingTransfer"
-                        variant="destructive"
-                        @click="initiateServerTransfer"
-                    >
-                        I Understand - Start Transfer
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-
-        <!-- Transfer Node Selection Modal -->
-        <SelectionModal
-            :is-open="transferNodeModal.state.value.isOpen"
-            title="Select Destination Node"
-            description="Choose a node to transfer this server to"
-            item-type="node"
-            search-placeholder="Search nodes by name or FQDN..."
-            :items="availableTransferNodes"
-            :loading="transferNodeModal.state.value.loading"
-            :current-page="transferNodeModal.state.value.currentPage"
-            :total-pages="transferNodeModal.state.value.totalPages"
-            :total-items="transferNodeModal.state.value.totalItems"
-            :page-size="20"
-            :selected-item="transferNodeModal.state.value.selectedItem"
-            :search-query="transferNodeModal.state.value.searchQuery"
-            :is-item-disabled="isNodeDisabled"
-            @update:open="transferNodeModal.closeModal"
-            @search="transferNodeModal.handleSearch"
-            @search-query-update="transferNodeModal.handleSearchQueryUpdate"
-            @page-change="transferNodeModal.handlePageChange"
-            @select="transferNodeModal.selectItem"
-            @confirm="selectTransferDestinationNode(transferNodeModal.confirmSelection())"
-        >
-            <template #default="{ item, isSelected, isDisabled }">
-                <div class="relative flex items-center justify-between">
-                    <div class="flex-1 min-w-0">
-                        <h4 class="font-medium truncate text-sm sm:text-base">{{ item.name }}</h4>
-                        <p class="text-xs sm:text-sm text-muted-foreground truncate">{{ item.fqdn || 'No FQDN' }}</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <!-- TODO: Maybe these should use the status dots instead? -->
-                        <Badge v-if="String(item.id) === String(form.node_id)" variant="secondary" class="text-xs">
-                            Current Node
-                        </Badge>
-                        <Badge
-                            v-else-if="getNodeHealthStatus(item) === 'unhealthy'"
-                            variant="destructive"
-                            class="text-xs"
-                        >
-                            Unhealthy
-                        </Badge>
-                        <Badge v-else-if="getNodeHealthStatus(item) === 'unknown'" variant="outline" class="text-xs">
-                            Unknown
-                        </Badge>
-                        <Badge
-                            v-else-if="getNodeHealthStatus(item) === 'healthy'"
-                            variant="default"
-                            class="text-xs bg-green-600 hover:bg-green-700"
-                        >
-                            Healthy
-                        </Badge>
-                        <div v-if="isSelected && !isDisabled" class="shrink-0 ml-2 sm:ml-4">
-                            <Check class="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                        </div>
-                    </div>
-                </div>
-            </template>
-        </SelectionModal>
     </DashboardLayout>
 </template>
 
@@ -1353,7 +1075,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
@@ -1368,14 +1090,6 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '
 import { SelectionModal } from '@/components/ui/selection-modal';
 import { useSelectionModal } from '@/composables/useSelectionModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import { useToast } from 'vue-toastification';
 import { cn } from '@/lib/utils';
 import type {
@@ -1390,7 +1104,6 @@ import type {
     EditForm,
     SubmitData,
     AxiosError,
-    TransferStatus,
 } from '@/composables/types/admin/server';
 
 const router = useRouter();
@@ -1782,109 +1495,6 @@ const serverAllocations = ref<{
 });
 const loadingAllocations = ref(false);
 const deletingAllocation = ref<number | null>(null);
-
-// Server transfer state
-const transferDialogOpen = ref(false);
-const transferDestinationNodeId = ref<string>('');
-const transferDestinationNode = ref<ApiNode | null>(null);
-const initiatingTransfer = ref(false);
-const transferStatus = ref<TransferStatus | null>(null);
-const isTransferring = computed(() => form.value.status === 'transferring');
-const transferStatusInterval = ref<number | null>(null);
-
-// Transfer node modal - exclude current node
-const transferNodeAdditionalParams = computed(() => ({ exclude_node_id: form.value.node_id || null }));
-const transferNodeModal = useSelectionModal('/api/admin/nodes', 20, 'search', 'page', transferNodeAdditionalParams);
-
-const availableTransferNodes = computed(() => transferNodeModal.state.value.items);
-const nodeHealthStatuses = ref<Record<number, 'healthy' | 'unhealthy' | 'unknown'>>({});
-const checkingNodeHealth = ref<Set<number>>(new Set());
-const healthCheckInterval = ref<number | null>(null);
-
-// Most of this logic was taken from the allocations page, perhaps in the future this should be abstracted out into a helper function.
-async function checkNodeHealth(nodeId: number): Promise<'healthy' | 'unhealthy' | 'unknown'> {
-    if (checkingNodeHealth.value.has(nodeId)) {
-        return nodeHealthStatuses.value[nodeId] || 'unknown';
-    }
-
-    checkingNodeHealth.value.add(nodeId);
-    nodeHealthStatuses.value[nodeId] = 'unknown';
-
-    try {
-        const response = await axios.get(`/api/wings/admin/node/${nodeId}/system`);
-        const isHealthy = response.data.success;
-        nodeHealthStatuses.value[nodeId] = isHealthy ? 'healthy' : 'unhealthy';
-        return nodeHealthStatuses.value[nodeId];
-    } catch {
-        nodeHealthStatuses.value[nodeId] = 'unhealthy';
-        return 'unhealthy';
-    } finally {
-        checkingNodeHealth.value.delete(nodeId);
-    }
-}
-
-const isNodeDisabled = (node: ApiNode) => {
-    // Disable the provided node if it matches the servers current node.
-    if (String(node.id) === String(form.value.node_id)) {
-        return true;
-    }
-
-    const healthStatus = nodeHealthStatuses.value[node.id];
-
-    // Disable the provided node if the health check returned either an unhealthy or unknown state.
-    return healthStatus === 'unhealthy' || healthStatus === 'unknown';
-};
-
-const getNodeHealthStatus = (node: ApiNode): 'healthy' | 'unhealthy' | 'unknown' => {
-    return nodeHealthStatuses.value[node.id] || 'unknown';
-};
-
-async function checkNodeHealthStates() {
-    const nodes = availableTransferNodes.value;
-    if (!nodes || nodes.length === 0) return;
-
-    const healthChecks = nodes.map((node) => {
-        // Skip if the node health state is already being checked.
-        if (checkingNodeHealth.value.has(node.id)) {
-            return Promise.resolve();
-        }
-
-        return checkNodeHealth(node.id);
-    });
-
-    await Promise.all(healthChecks);
-}
-
-// Check all the nodes health states when the available nodes for transfer changes.
-watch(
-    () => availableTransferNodes.value,
-    async () => {
-        await checkNodeHealthStates();
-    },
-    { immediate: false },
-);
-
-// Check health when modal opens and periodicly check whilst it's open.
-watch(
-    () => transferNodeModal.state.value.isOpen,
-    async (isOpen) => {
-        if (isOpen) {
-            // Trigger an initial health check of all nodes when the model is opened.
-            await checkNodeHealthStates();
-
-            // Recheck the nodes health state every 10 seconds.
-            healthCheckInterval.value = window.setInterval(() => {
-                checkNodeHealthStates();
-            }, 10000);
-        } else {
-            // Clear the repeating health state check when the model is closed.
-            if (healthCheckInterval.value !== null) {
-                clearInterval(healthCheckInterval.value);
-                healthCheckInterval.value = null;
-            }
-        }
-    },
-);
 
 // Load server data for editing
 async function loadServerData() {
@@ -2382,147 +1992,16 @@ async function deleteAllocation(allocationId: number) {
     }
 }
 
-// Transfer functions
-function openTransferDialog() {
-    transferDestinationNodeId.value = '';
-    transferDestinationNode.value = null;
-    transferDialogOpen.value = true;
-}
-
-// Sanity check for selecting a transfer destination node.
-function selectTransferDestinationNode(node: ApiNode) {
-    if (node && node.id) {
-        if (isNodeDisabled(node)) {
-            const healthStatus = getNodeHealthStatus(node);
-
-            if (String(node.id) === String(form.value.node_id)) {
-                toast.warning('Cannot select the current node. Please choose a different node.');
-            } else if (healthStatus === 'unhealthy') {
-                toast.warning('Cannot transfer to an unhealthy node. Please choose a healthy node.');
-            } else if (healthStatus === 'unknown') {
-                toast.warning(
-                    'Node health status is unknown. Please wait for health check to complete or choose a different node.',
-                );
-            }
-
-            return;
-        }
-
-        transferDestinationNodeId.value = String(node.id);
-        transferDestinationNode.value = node;
-
-        transferNodeModal.closeModal();
-    }
-}
-
-function getTransferDestinationNodeName() {
-    if (transferNodeModal.state.value.selectedItem) {
-        const node = transferNodeModal.state.value.selectedItem;
-        return `${node.name} (${node.fqdn})`;
-    }
-    if (transferDestinationNode.value) {
-        return `${transferDestinationNode.value.name} (${transferDestinationNode.value.fqdn})`;
-    }
-    return '';
-}
-
-async function initiateServerTransfer() {
-    const serverId = route.params.id;
-    if (!serverId || !transferDestinationNodeId.value) return;
-
-    initiatingTransfer.value = true;
-    try {
-        const { data } = await axios.post(`/api/admin/servers/${serverId}/transfer`, {
-            destination_node_id: Number(transferDestinationNodeId.value),
-        });
-
-        if (data && data.success) {
-            toast.success('Server transfer initiated successfully!');
-            transferDialogOpen.value = false;
-
-            // Update server status to transferring
-            form.value.status = 'transferring';
-
-            // Start polling for transfer status
-            startTransferStatusPolling();
-        } else {
-            toast.error(data?.message || 'Failed to initiate server transfer');
-        }
-    } catch (error) {
-        console.error('Failed to initiate transfer:', error);
-        toast.error('Failed to initiate server transfer');
-    } finally {
-        initiatingTransfer.value = false;
-    }
-}
-
-async function fetchTransferStatus() {
-    const serverId = route.params.id;
-    if (!serverId) return;
-
-    try {
-        const { data } = await axios.get(`/api/admin/servers/${serverId}/transfer`);
-
-        if (data && data.success) {
-            transferStatus.value = data.data;
-
-            // If transfer is complete, stop polling and reload server data
-            if (data.data.status === 'completed') {
-                stopTransferStatusPolling();
-                toast.success('Server transfer completed successfully!');
-                await loadServerData();
-            } else if (data.data.status === 'failed') {
-                stopTransferStatusPolling();
-                toast.error('Server transfer failed: ' + (data.data.error || 'Unknown error'));
-                form.value.status = 'offline';
-            }
-        }
-    } catch (error) {
-        // Silently fail - transfer might not be in progress
-        console.debug('Transfer status fetch error:', error);
-    }
-}
-
-function startTransferStatusPolling() {
-    // Clear any existing interval
-    stopTransferStatusPolling();
-
-    // Fetch immediately
-    fetchTransferStatus();
-
-    // Poll every 5 seconds
-    transferStatusInterval.value = window.setInterval(() => {
-        fetchTransferStatus();
-    }, 5000);
-}
-
-function stopTransferStatusPolling() {
-    if (transferStatusInterval.value !== null) {
-        clearInterval(transferStatusInterval.value);
-        transferStatusInterval.value = null;
-    }
-}
-
 onMounted(async () => {
     // Fetch plugin widgets
     await fetchPluginWidgets();
 
     await loadServerData();
     await fetchAllocations();
-
-    // If server is transferring, start polling for status
-    if (isTransferring.value) {
-        startTransferStatusPolling();
-    }
 });
 
-// Cleanup intervals on unmount
+// Cleanup on unmount (reserved for future use)
 onUnmounted(() => {
-    stopTransferStatusPolling();
-
-    if (healthCheckInterval.value !== null) {
-        clearInterval(healthCheckInterval.value);
-        healthCheckInterval.value = null;
-    }
+    // No-op for now
 });
 </script>

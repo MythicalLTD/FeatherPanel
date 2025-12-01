@@ -373,6 +373,61 @@ class Allocation
     }
 
     /**
+     * Unassign multiple allocations from their servers.
+     *
+     * @param array $allocationIds Array of allocation IDs to unassign
+     *
+     * @return bool True if all allocations were unassigned successfully
+     */
+    public static function unassignMultiple(array $allocationIds): bool
+    {
+        if (empty($allocationIds)) {
+            return true;
+        }
+
+        // Filter out null/invalid values
+        $allocationIds = array_filter($allocationIds, fn ($id) => $id !== null && is_numeric($id) && (int) $id > 0);
+        if (empty($allocationIds)) {
+            return true;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $placeholders = implode(',', array_fill(0, count($allocationIds), '?'));
+        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET server_id = NULL WHERE id IN (' . $placeholders . ')');
+
+        return $stmt->execute(array_values($allocationIds));
+    }
+
+    /**
+     * Assign multiple allocations to a server.
+     *
+     * @param int $serverId The server ID to assign allocations to
+     * @param array $allocationIds Array of allocation IDs to assign
+     *
+     * @return bool True if all allocations were assigned successfully
+     */
+    public static function assignMultipleToServer(int $serverId, array $allocationIds): bool
+    {
+        if (empty($allocationIds)) {
+            return true;
+        }
+
+        // Filter out null/invalid values
+        $allocationIds = array_filter($allocationIds, fn ($id) => $id !== null && is_numeric($id) && (int) $id > 0);
+        if (empty($allocationIds)) {
+            return true;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $placeholders = implode(',', array_fill(0, count($allocationIds), '?'));
+        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET server_id = ? WHERE id IN (' . $placeholders . ') AND server_id IS NULL');
+
+        $params = array_merge([$serverId], array_values($allocationIds));
+
+        return $stmt->execute($params);
+    }
+
+    /**
      * Delete an allocation.
      * Only allows deletion if the allocation is not assigned to a server.
      */

@@ -380,4 +380,21 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_SERVERS_VIEW,
         ['GET']
     );
+
+    // Server transfers - Cancel transfer
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-servers-transfer-cancel',
+        '/api/admin/servers/{id}/transfer',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid server ID', 'INVALID_SERVER_ID', 400);
+            }
+
+            return (new ServersController())->cancelTransfer($request, (int) $id);
+        },
+        Permissions::ADMIN_SERVERS_EDIT,
+        ['DELETE']
+    );
 };

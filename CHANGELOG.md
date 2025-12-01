@@ -9,6 +9,9 @@
 - The Pterodactyl importer page has been significantly improved—it now reliably displays your actual API key for seamless integration! by @nayskutzu
 - Enhanced the Pterodactyl importer page with clear, user-friendly labels for improved navigation and ease of use. by @nayskutzu
 - Resolved various mobile UI issues on the server resources page for a smoother, more polished user experience. by @nayskutzu
+- Resolved longstanding issues with server transfers in FeatherPanel: transfers are now fully functional and reliable. by @nayskutzu
+- Resolved a query error that occurred when a database host was associated with active servers. by @nayskutzu
+- Resolved an issue preventing EULA and egg/spell features from functioning correctly—these are now properly included in server requests, restoring expected functionality. by @nayskutzu
 
 ### Added
 

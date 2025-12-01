@@ -318,6 +318,49 @@ class Backup
     }
 
     /**
+     * Delete all backups for a server (soft delete).
+     *
+     * @param int $serverId The server ID
+     *
+     * @return int Number of backups deleted
+     */
+    public static function deleteAllByServerId(int $serverId): int
+    {
+        if ($serverId <= 0) {
+            return 0;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('UPDATE ' . self::$table . ' SET deleted_at = :deleted_at WHERE server_id = :server_id AND deleted_at IS NULL');
+        $stmt->execute([
+            'deleted_at' => date('Y-m-d H:i:s'),
+            'server_id' => $serverId,
+        ]);
+
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Hard delete all backups for a server.
+     *
+     * @param int $serverId The server ID
+     *
+     * @return int Number of backups deleted
+     */
+    public static function hardDeleteAllByServerId(int $serverId): int
+    {
+        if ($serverId <= 0) {
+            return 0;
+        }
+
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . ' WHERE server_id = :server_id');
+        $stmt->execute(['server_id' => $serverId]);
+
+        return $stmt->rowCount();
+    }
+
+    /**
      * Get all backups with pagination.
      *
      * @param int $page The page number (1-based)
