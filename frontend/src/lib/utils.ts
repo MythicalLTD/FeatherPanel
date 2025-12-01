@@ -45,7 +45,7 @@ export function sanitizeColor(color: string | undefined): Record<string, string>
     const trimmedColor = color.trim();
 
     // Only allow valid hex codes (#RGB, #RRGGBB, #RRGGBBAA, #RRRRGGGGBBBB, #RRRRGGGGBBBBAAAA)
-    const hexPattern = /^#[0-9A-Fa-f]{3,8}$/;
+    const hexPattern = /^#[0-9A-Fa-f]{3}$|^#[0-9A-Fa-f]{4}$|^#[0-9A-Fa-f]{6}$|^#[0-9A-Fa-f]{8}$/;
 
     // Allow safe CSS named colors (common ones used in UI)
     const namedColors = [

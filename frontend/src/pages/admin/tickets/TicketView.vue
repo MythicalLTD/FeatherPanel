@@ -356,83 +356,141 @@
                                         <TabsTrigger value="emails" class="text-xs">Emails</TabsTrigger>
                                     </TabsList>
                                     <TabsContent value="account" class="p-4 space-y-3">
-                                        <div>
-                                            <div class="text-xs text-muted-foreground mb-1">User ID</div>
-                                            <div class="font-medium text-sm">{{ userDetails.id }}</div>
-                                        </div>
-                                        <div>
-                                            <div class="text-xs text-muted-foreground mb-1">UUID</div>
-                                            <div class="font-mono text-xs break-all">{{ userDetails.uuid }}</div>
-                                        </div>
-                                        <div v-if="userDetails.email">
-                                            <div class="text-xs text-muted-foreground mb-1">Email</div>
-                                            <div class="text-sm">
-                                                <a
-                                                    :href="`mailto:${userDetails.email}`"
-                                                    class="hover:underline text-primary"
+                                        <div v-if="userDetailsLoading" class="flex items-center justify-center py-8">
+                                            <div class="flex items-center gap-3">
+                                                <div
+                                                    class="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"
+                                                ></div>
+                                                <span class="text-sm text-muted-foreground"
+                                                    >Loading user details...</span
                                                 >
-                                                    {{ userDetails.email }}
-                                                </a>
                                             </div>
                                         </div>
-                                        <div v-if="userDetails.role">
-                                            <div class="text-xs text-muted-foreground mb-1">Role</div>
-                                            <Badge
-                                                :style="sanitizeColor(userDetails.role?.color)"
-                                                variant="secondary"
-                                                class="text-xs"
+                                        <Alert v-else-if="userDetailsError" variant="destructive" class="relative mb-4">
+                                            <AlertTriangle class="h-4 w-4" />
+                                            <AlertTitle class="font-semibold mb-1"
+                                                >Failed to load user details</AlertTitle
                                             >
-                                                {{ userDetails.role.display_name || userDetails.role.name }}
-                                            </Badge>
-                                        </div>
-                                        <div v-if="userDetails.first_name || userDetails.last_name">
-                                            <div class="text-xs text-muted-foreground mb-1">Full Name</div>
-                                            <div class="font-medium text-sm">
-                                                {{ userDetails.first_name }} {{ userDetails.last_name }}
+                                            <AlertDescription class="text-sm">
+                                                {{ userDetailsError }}
+                                            </AlertDescription>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                class="absolute top-2 right-2 h-6 w-6 opacity-70 hover:opacity-100"
+                                                @click="userDetailsError = null"
+                                            >
+                                                <X class="h-4 w-4" />
+                                            </Button>
+                                        </Alert>
+                                        <template v-else-if="userDetails">
+                                            <div>
+                                                <div class="text-xs text-muted-foreground mb-1">User ID</div>
+                                                <div class="font-medium text-sm">{{ userDetails.id }}</div>
                                             </div>
-                                        </div>
-                                        <div>
-                                            <div class="text-xs text-muted-foreground mb-1">Account Status</div>
-                                            <div class="flex gap-2 flex-wrap">
+                                            <div>
+                                                <div class="text-xs text-muted-foreground mb-1">UUID</div>
+                                                <div class="font-mono text-xs break-all">{{ userDetails.uuid }}</div>
+                                            </div>
+                                            <div v-if="userDetails.email">
+                                                <div class="text-xs text-muted-foreground mb-1">Email</div>
+                                                <div class="text-sm">
+                                                    <a
+                                                        :href="`mailto:${userDetails.email}`"
+                                                        class="hover:underline text-primary"
+                                                    >
+                                                        {{ userDetails.email }}
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div v-if="userDetails.role">
+                                                <div class="text-xs text-muted-foreground mb-1">Role</div>
                                                 <Badge
-                                                    :variant="
-                                                        userDetails.banned === 'true' ? 'destructive' : 'secondary'
-                                                    "
+                                                    :style="sanitizeColor(userDetails.role?.color)"
+                                                    variant="secondary"
                                                     class="text-xs"
                                                 >
-                                                    {{ userDetails.banned === 'true' ? 'Banned' : 'Active' }}
-                                                </Badge>
-                                                <Badge
-                                                    :variant="
-                                                        userDetails.two_fa_enabled === 'true' ? 'secondary' : 'outline'
-                                                    "
-                                                    class="text-xs"
-                                                >
-                                                    2FA:
-                                                    {{ userDetails.two_fa_enabled === 'true' ? 'Enabled' : 'Disabled' }}
+                                                    {{ userDetails.role.display_name || userDetails.role.name }}
                                                 </Badge>
                                             </div>
-                                        </div>
-                                        <div v-if="userDetails.first_ip">
-                                            <div class="text-xs text-muted-foreground mb-1">First IP</div>
-                                            <div class="font-mono text-xs">{{ userDetails.first_ip }}</div>
-                                        </div>
-                                        <div v-if="userDetails.last_ip">
-                                            <div class="text-xs text-muted-foreground mb-1">Last IP</div>
-                                            <div class="font-mono text-xs">{{ userDetails.last_ip }}</div>
-                                        </div>
-                                        <div v-if="userDetails.created_at">
-                                            <div class="text-xs text-muted-foreground mb-1">Account Created</div>
-                                            <div class="text-xs">{{ formatDate(userDetails.created_at) }}</div>
-                                        </div>
-                                        <div v-if="userDetails.last_seen">
-                                            <div class="text-xs text-muted-foreground mb-1">Last Seen</div>
-                                            <div class="text-xs">{{ formatDate(userDetails.last_seen) }}</div>
-                                        </div>
+                                            <div v-if="userDetails.first_name || userDetails.last_name">
+                                                <div class="text-xs text-muted-foreground mb-1">Full Name</div>
+                                                <div class="font-medium text-sm">
+                                                    {{ userDetails.first_name }} {{ userDetails.last_name }}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="text-xs text-muted-foreground mb-1">Account Status</div>
+                                                <div class="flex gap-2 flex-wrap">
+                                                    <Badge
+                                                        :variant="
+                                                            userDetails.banned === 'true' ? 'destructive' : 'secondary'
+                                                        "
+                                                        class="text-xs"
+                                                    >
+                                                        {{ userDetails.banned === 'true' ? 'Banned' : 'Active' }}
+                                                    </Badge>
+                                                    <Badge
+                                                        :variant="
+                                                            userDetails.two_fa_enabled === 'true'
+                                                                ? 'secondary'
+                                                                : 'outline'
+                                                        "
+                                                        class="text-xs"
+                                                    >
+                                                        2FA:
+                                                        {{
+                                                            userDetails.two_fa_enabled === 'true'
+                                                                ? 'Enabled'
+                                                                : 'Disabled'
+                                                        }}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                            <div v-if="userDetails.first_ip">
+                                                <div class="text-xs text-muted-foreground mb-1">First IP</div>
+                                                <div class="font-mono text-xs">{{ userDetails.first_ip }}</div>
+                                            </div>
+                                            <div v-if="userDetails.last_ip">
+                                                <div class="text-xs text-muted-foreground mb-1">Last IP</div>
+                                                <div class="font-mono text-xs">{{ userDetails.last_ip }}</div>
+                                            </div>
+                                            <div v-if="userDetails.created_at">
+                                                <div class="text-xs text-muted-foreground mb-1">Account Created</div>
+                                                <div class="text-xs">{{ formatDate(userDetails.created_at) }}</div>
+                                            </div>
+                                            <div v-if="userDetails.last_seen">
+                                                <div class="text-xs text-muted-foreground mb-1">Last Seen</div>
+                                                <div class="text-xs">{{ formatDate(userDetails.last_seen) }}</div>
+                                            </div>
+                                        </template>
                                     </TabsContent>
                                     <TabsContent value="servers" class="p-4">
+                                        <div v-if="userDetailsLoading" class="flex items-center justify-center py-8">
+                                            <div class="flex items-center gap-3">
+                                                <div
+                                                    class="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"
+                                                ></div>
+                                                <span class="text-sm text-muted-foreground">Loading servers...</span>
+                                            </div>
+                                        </div>
+                                        <Alert v-else-if="userDetailsError" variant="destructive" class="relative mb-4">
+                                            <AlertTriangle class="h-4 w-4" />
+                                            <AlertTitle class="font-semibold mb-1">Failed to load servers</AlertTitle>
+                                            <AlertDescription class="text-sm">
+                                                {{ userDetailsError }}
+                                            </AlertDescription>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                class="absolute top-2 right-2 h-6 w-6 opacity-70 hover:opacity-100"
+                                                @click="userDetailsError = null"
+                                            >
+                                                <X class="h-4 w-4" />
+                                            </Button>
+                                        </Alert>
                                         <div
-                                            v-if="userServers.length === 0"
+                                            v-else-if="userServers.length === 0"
                                             class="text-sm text-muted-foreground text-center py-4"
                                         >
                                             No servers found
@@ -455,8 +513,31 @@
                                         </div>
                                     </TabsContent>
                                     <TabsContent value="tickets" class="p-4">
+                                        <div v-if="userTicketsLoading" class="flex items-center justify-center py-8">
+                                            <div class="flex items-center gap-3">
+                                                <div
+                                                    class="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"
+                                                ></div>
+                                                <span class="text-sm text-muted-foreground">Loading tickets...</span>
+                                            </div>
+                                        </div>
+                                        <Alert v-else-if="userTicketsError" variant="destructive" class="relative mb-4">
+                                            <AlertTriangle class="h-4 w-4" />
+                                            <AlertTitle class="font-semibold mb-1">Failed to load tickets</AlertTitle>
+                                            <AlertDescription class="text-sm">
+                                                {{ userTicketsError }}
+                                            </AlertDescription>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                class="absolute top-2 right-2 h-6 w-6 opacity-70 hover:opacity-100"
+                                                @click="userTicketsError = null"
+                                            >
+                                                <X class="h-4 w-4" />
+                                            </Button>
+                                        </Alert>
                                         <div
-                                            v-if="userTickets.length === 0"
+                                            v-else-if="userTickets.length === 0"
                                             class="text-sm text-muted-foreground text-center py-4"
                                         >
                                             No other tickets found
@@ -718,6 +799,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
     ArrowLeft,
     Pencil,
@@ -731,6 +813,8 @@ import {
     User,
     Ticket,
     Server,
+    AlertTriangle,
+    X,
 } from 'lucide-vue-next';
 import axios, { type AxiosError } from 'axios';
 import { useToast } from 'vue-toastification';
@@ -900,6 +984,10 @@ const reopening = ref(false);
 const editDrawerOpen = ref(false);
 const mailPreviewOpen = ref(false);
 const mailPreview = ref<{ subject: string; body?: string; status: string; created_at: string } | null>(null);
+const userDetailsError = ref<string | null>(null);
+const userTicketsError = ref<string | null>(null);
+const userDetailsLoading = ref(false);
+const userTicketsLoading = ref(false);
 
 const replyForm = ref({
     message: '',
@@ -935,8 +1023,8 @@ const sanitizedMailBody = computed(() => {
             const url = data.attrValue.trim();
             const lowerUrl = url.toLowerCase();
 
-            // Block javascript:, data:, and vbscript: protocols (except data:image/* for img src)
-            if (lowerUrl.startsWith('javascript:') || lowerUrl.startsWith('data:') || lowerUrl.startsWith('vbscript:')) {
+            // Block javascript: and data: protocols (except data:image/* for img src)
+            if (lowerUrl.startsWith('javascript:') || lowerUrl.startsWith('vbscript:')) {
                 data.keepAttr = false;
                 return;
             }
@@ -1070,23 +1158,40 @@ async function fetchTicketDetails() {
 }
 
 async function fetchUserDetails(userUuid: string) {
+    userDetailsLoading.value = true;
+    userDetailsError.value = null;
     try {
         const { data } = await axios.get(`/api/admin/users/${userUuid}`);
         if (data && data.success) {
             userDetails.value = data.data.user;
+            userDetailsError.value = null;
 
             // Fetch user servers
-            const serversRes = await axios.get(`/api/admin/users/${userUuid}/servers`);
-            if (serversRes.data?.data?.servers) {
-                userServers.value = serversRes.data.data.servers;
+            try {
+                const serversRes = await axios.get(`/api/admin/users/${userUuid}/servers`);
+                if (serversRes.data?.data?.servers) {
+                    userServers.value = serversRes.data.data.servers;
+                }
+            } catch (serverErr: unknown) {
+                // Server fetch errors are non-critical, log but don't show error
+                console.error('Failed to fetch user servers:', serverErr);
             }
+        } else {
+            userDetailsError.value = 'Failed to load user details';
         }
     } catch (err: unknown) {
+        const errorMessage =
+            ((err as AxiosError)?.response?.data as { message?: string })?.message || 'Failed to load user details';
+        userDetailsError.value = errorMessage;
         console.error('Failed to fetch user details:', err);
+    } finally {
+        userDetailsLoading.value = false;
     }
 }
 
 async function fetchUserTickets(userUuid: string) {
+    userTicketsLoading.value = true;
+    userTicketsError.value = null;
     try {
         const { data } = await axios.get('/api/admin/tickets', {
             params: {
@@ -1098,9 +1203,17 @@ async function fetchUserTickets(userUuid: string) {
         if (data && data.success) {
             // Filter out the current ticket
             userTickets.value = (data.data.tickets || []).filter((t: ApiTicket) => t.uuid !== ticket.value?.uuid);
+            userTicketsError.value = null;
+        } else {
+            userTicketsError.value = 'Failed to load user tickets';
         }
     } catch (err: unknown) {
+        const errorMessage =
+            ((err as AxiosError)?.response?.data as { message?: string })?.message || 'Failed to load user tickets';
+        userTicketsError.value = errorMessage;
         console.error('Failed to fetch user tickets:', err);
+    } finally {
+        userTicketsLoading.value = false;
     }
 }
 
