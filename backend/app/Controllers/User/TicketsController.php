@@ -576,7 +576,6 @@ class TicketsController
 
         // Get file properties BEFORE moving (must be done before move())
         $fileSize = $file->getSize();
-        $mimeType = $file->getMimeType() ?: 'application/octet-stream';
         $originalName = $file->getClientOriginalName();
 
         // Check file size (max 50MB)
@@ -584,23 +583,106 @@ class TicketsController
             return ApiResponse::error('File size too large. Maximum size is 50MB', 'FILE_TOO_LARGE', 400);
         }
 
+        // Define allowed MIME types for ticket attachments
+        $allowedMimeTypes = [
+            // Images (for screenshots)
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            'image/bmp',
+            'image/svg+xml',
+            // Documents
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+            'text/plain',
+            'text/csv',
+            // Spreadsheets
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+            // Archives
+            'application/zip',
+            'application/x-rar-compressed',
+            'application/x-tar',
+            'application/gzip',
+        ];
+
+        // Define allowed file extensions (must match MIME types)
+        $allowedExtensions = [
+            'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg',
+            'pdf', 'doc', 'docx', 'txt', 'csv',
+            'xls', 'xlsx',
+            'zip', 'rar', 'tar', 'gz',
+        ];
+
+        // Get file extension from original filename
+        $originalExtension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+        $originalExtension = preg_replace('/[^a-zA-Z0-9]/', '', $originalExtension);
+
+        // Validate extension
+        if (empty($originalExtension) || !in_array($originalExtension, $allowedExtensions, true)) {
+            $allowedList = implode(', ', array_map('strtoupper', $allowedExtensions));
+
+            return ApiResponse::error(
+                'File type not allowed. Allowed file types: ' . $allowedList,
+                'INVALID_FILE_TYPE',
+                400
+            );
+        }
+
+        // Get MIME type using reliable server-side detection
+        // Use finfo_file for more reliable detection than getMimeType()
+        $detectedMimeType = null;
+        if (extension_loaded('fileinfo')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $tempPath = $file->getPathname();
+            if ($tempPath && file_exists($tempPath)) {
+                $detectedMimeType = finfo_file($finfo, $tempPath);
+            }
+        }
+
+        // Fallback to uploaded file's MIME type if finfo failed
+        if (!$detectedMimeType) {
+            $detectedMimeType = $file->getMimeType();
+        }
+
+        // Validate MIME type
+        if (empty($detectedMimeType) || !in_array($detectedMimeType, $allowedMimeTypes, true)) {
+            return ApiResponse::error(
+                'File type not allowed. Please upload a valid file type (images, documents, PDF, archives).',
+                'INVALID_MIME_TYPE',
+                400
+            );
+        }
+
         // Create attachments directory if it doesn't exist
+        // Note: Ensure .htaccess or nginx configuration prevents PHP execution in this directory
+        // Example .htaccess: <FilesMatch "\.php$"> Require all denied </FilesMatch>
+        // Example nginx: location ~ ^/attachments/.*\.php$ { deny all; }
         $attachmentsDir = APP_PUBLIC . '/attachments/';
         if (!is_dir($attachmentsDir)) {
             mkdir($attachmentsDir, 0755, true);
         }
 
-        // Generate unique filename
-        $extension = $file->guessExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION);
-        $filename = uniqid() . '_ticket_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
+        // Generate unique filename with sanitized extension
+        $sanitizedBase = preg_replace('/[^a-zA-Z0-9._-]/', '_', pathinfo($originalName, PATHINFO_FILENAME));
+        $filename = uniqid() . '_ticket_' . $sanitizedBase . '.' . $originalExtension;
         $filePath = $attachmentsDir . $filename;
 
         // Move uploaded file
         try {
             $file->move($attachmentsDir, $filename);
+
+            // Set safe file permissions (read-only for owner and group, no execute)
+            // This prevents accidental execution even if PHP execution is somehow enabled
+            @chmod($filePath, 0644);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to save file: ' . $e->getMessage(), 'SAVE_FAILED', 500);
         }
+
+        // Use detected MIME type for storage
+        $mimeType = $detectedMimeType;
 
         // Generate URL
         $baseUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
