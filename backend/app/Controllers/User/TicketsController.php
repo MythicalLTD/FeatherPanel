@@ -888,12 +888,7 @@ class TicketsController
             // Delete attachments for this message
             $attachments = TicketAttachment::getAll($ticketId, (int) $message['id']);
             foreach ($attachments as $attachment) {
-                // Delete file from disk
-                $filePath = APP_PUBLIC . '/attachments/' . $attachment['file_path'];
-                if (file_exists($filePath)) {
-                    unlink($filePath);
-                }
-                // Delete record from database
+                // Let the model handle file deletion with proper path sanitization
                 TicketAttachment::delete((int) $attachment['id']);
             }
             // Delete message

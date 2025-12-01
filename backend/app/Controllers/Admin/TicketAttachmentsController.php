@@ -424,15 +424,10 @@ class TicketAttachmentsController
             return ApiResponse::error('Attachment not found for this ticket', 'ATTACHMENT_NOT_FOUND', 404);
         }
 
-        $filePath = APP_PUBLIC . $attachment['file_path'];
-
+        // Let the model handle file deletion with proper path sanitization
         $deleted = TicketAttachment::delete($attachmentId);
         if (!$deleted) {
             return ApiResponse::error('Failed to delete attachment', 'DELETE_FAILED', 500);
-        }
-
-        if (is_string($filePath) && file_exists($filePath)) {
-            @unlink($filePath);
         }
 
         $currentUser = $request->get('user');
