@@ -272,6 +272,9 @@
   "editor.formatOnType": false, // required
   "editor.formatOnSave": true, // optional
   "editor.formatOnSaveMode": "file",
+  "php-cs-fixer.executablePath": "/var/www/featherpanel/backend/storage/packages/bin/php-cs-fixer",
+  "php-cs-fixer.config": "/var/www/featherpanel/backend/.php-cs-fixer.dist.php",
+  "php-cs-fixer.onsave": true,
   "[shellscript]": {
     "editor.defaultFormatter": "mads-hartmann.bash-ide-vscode"
   },
@@ -279,7 +282,7 @@
     "editor.defaultFormatter": "inferrinizzard.prettier-sql-vscode"
   },
   "[php]": {
-    "editor.defaultFormatter": "DEVSENSE.phptools-vscode"
+    "editor.defaultFormatter": "junstyle.php-cs-fixer"
   },
   "[xml]": {
     "editor.defaultFormatter": "redhat.vscode-xml"

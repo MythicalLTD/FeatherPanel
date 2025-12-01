@@ -42,6 +42,7 @@ use App\Chat\KnowledgebaseArticleTag;
 use App\Chat\KnowledgebaseArticleAttachment;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\KnowledgebaseEvent;
 
 #[OA\Schema(
     schema: 'KnowledgebaseCategory',
@@ -218,7 +219,7 @@ class KnowledgebaseController
         $from = $total > 0 ? $offset + 1 : 0;
         $to = min($offset + $limit, $total);
 
-        return ApiResponse::success([
+        $responseData = [
             'categories' => $categories,
             'pagination' => [
                 'current_page' => $page,
@@ -234,7 +235,18 @@ class KnowledgebaseController
                 'query' => $search,
                 'has_results' => count($categories) > 0,
             ],
-        ], 'Categories fetched successfully', 200);
+        ];
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseCategoriesRetrieved(),
+                $responseData
+            );
+        }
+
+        return ApiResponse::success($responseData, 'Categories fetched successfully', 200);
     }
 
     #[OA\Get(
@@ -272,6 +284,17 @@ class KnowledgebaseController
         $category = KnowledgebaseCategory::getById($id);
         if (!$category) {
             return ApiResponse::error('Category not found', 'CATEGORY_NOT_FOUND', 404);
+        }
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseCategoryRetrieved(),
+                [
+                    'category' => $category,
+                ]
+            );
         }
 
         return ApiResponse::success(['category' => $category], 'Category fetched successfully', 200);
@@ -375,6 +398,18 @@ class KnowledgebaseController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseCategoryCreated(),
+                [
+                    'category' => $category,
+                    'created_by' => $admin,
+                ]
+            );
+        }
+
         return ApiResponse::success(['category' => $category], 'Category created successfully', 201);
     }
 
@@ -474,6 +509,18 @@ class KnowledgebaseController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseCategoryUpdated(),
+                [
+                    'category' => $category,
+                    'updated_by' => $admin,
+                ]
+            );
+        }
+
         return ApiResponse::success(['category' => $category], 'Category updated successfully', 200);
     }
 
@@ -528,6 +575,18 @@ class KnowledgebaseController
             'context' => 'Deleted knowledgebase category: ' . $category['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseCategoryDeleted(),
+                [
+                    'category' => $category,
+                    'deleted_by' => $admin,
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Category deleted successfully', 200);
     }
@@ -631,7 +690,7 @@ class KnowledgebaseController
         $from = $total > 0 ? ($page - 1) * $limit + 1 : 0;
         $to = min(($page - 1) * $limit + $limit, $total);
 
-        return ApiResponse::success([
+        $responseData = [
             'articles' => $articles,
             'pagination' => [
                 'current_page' => $page,
@@ -647,7 +706,18 @@ class KnowledgebaseController
                 'query' => $search,
                 'has_results' => count($articles) > 0,
             ],
-        ], 'Articles fetched successfully', 200);
+        ];
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseArticlesRetrieved(),
+                $responseData
+            );
+        }
+
+        return ApiResponse::success($responseData, 'Articles fetched successfully', 200);
     }
 
     #[OA\Get(
@@ -685,6 +755,17 @@ class KnowledgebaseController
         $article = KnowledgebaseArticle::getById($id);
         if (!$article) {
             return ApiResponse::error('Article not found', 'ARTICLE_NOT_FOUND', 404);
+        }
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseArticleRetrieved(),
+                [
+                    'article' => $article,
+                ]
+            );
         }
 
         return ApiResponse::success(['article' => $article], 'Article fetched successfully', 200);
@@ -799,6 +880,18 @@ class KnowledgebaseController
             'context' => 'Created knowledgebase article: ' . $article['title'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseArticleCreated(),
+                [
+                    'article' => $article,
+                    'created_by' => $admin,
+                ]
+            );
+        }
 
         return ApiResponse::success(['article' => $article], 'Article created successfully', 201);
     }
@@ -925,6 +1018,18 @@ class KnowledgebaseController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseArticleUpdated(),
+                [
+                    'article' => $article,
+                    'updated_by' => $admin,
+                ]
+            );
+        }
+
         return ApiResponse::success(['article' => $article], 'Article updated successfully', 200);
     }
 
@@ -979,6 +1084,18 @@ class KnowledgebaseController
             'context' => 'Deleted knowledgebase article: ' . $article['title'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseArticleDeleted(),
+                [
+                    'article' => $article,
+                    'deleted_by' => $admin,
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Article deleted successfully', 200);
     }
@@ -1075,6 +1192,19 @@ class KnowledgebaseController
             'context' => 'Uploaded knowledgebase icon: ' . $filename,
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseIconUploaded(),
+                [
+                    'url' => $url,
+                    'filename' => $filename,
+                    'uploaded_by' => $admin,
+                ]
+            );
+        }
 
         return ApiResponse::success([
             'url' => $url,
@@ -1214,6 +1344,19 @@ class KnowledgebaseController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseAttachmentUploaded(),
+                [
+                    'article' => $article,
+                    'attachment' => $attachment,
+                    'uploaded_by' => $admin,
+                ]
+            );
+        }
+
         return ApiResponse::success([
             'attachment' => $attachment,
         ], 'Attachment uploaded successfully', 201);
@@ -1257,6 +1400,18 @@ class KnowledgebaseController
         }
 
         $attachments = KnowledgebaseArticleAttachment::getByArticleId($id);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseAttachmentsRetrieved(),
+                [
+                    'article' => $article,
+                    'attachments' => $attachments,
+                ]
+            );
+        }
 
         return ApiResponse::success([
             'attachments' => $attachments,
@@ -1343,6 +1498,19 @@ class KnowledgebaseController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseAttachmentDeleted(),
+                [
+                    'article' => $article,
+                    'attachment' => $attachment,
+                    'deleted_by' => $admin,
+                ]
+            );
+        }
+
         return ApiResponse::success([], 'Attachment deleted successfully', 200);
     }
 
@@ -1386,6 +1554,18 @@ class KnowledgebaseController
         }
 
         $tags = KnowledgebaseArticleTag::getByArticleId($id);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseTagsRetrieved(),
+                [
+                    'article' => $article,
+                    'tags' => $tags,
+                ]
+            );
+        }
 
         return ApiResponse::success([
             'tags' => $tags,
@@ -1478,6 +1658,19 @@ class KnowledgebaseController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseTagCreated(),
+                [
+                    'article' => $article,
+                    'tag' => $tag,
+                    'created_by' => $admin,
+                ]
+            );
+        }
+
         return ApiResponse::success([
             'tag' => $tag,
         ], 'Tag added successfully', 201);
@@ -1549,6 +1742,19 @@ class KnowledgebaseController
             'context' => 'Deleted tag "' . $tag['tag_name'] . '" from article: ' . $article['title'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                KnowledgebaseEvent::onKnowledgebaseTagDeleted(),
+                [
+                    'article' => $article,
+                    'tag' => $tag,
+                    'deleted_by' => $admin,
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Tag deleted successfully', 200);
     }

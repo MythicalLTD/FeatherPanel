@@ -1,32 +1,28 @@
 {
   "recommendations": [
     "mads-hartmann.bash-ide-vscode",
-    "streetsidesoftware.code-spell-checker",
     "devsense.composer-php-vscode",
-    "ikappas.composer",
     "muath-ye.composer-intelephense",
-    "streetsidesoftware.code-spell-checker-cspell-bundled-dictionaries",
     "ms-azuretools.vscode-docker",
     "dbaeumer.vscode-eslint",
     "oderwat.indent-rainbow",
     "devsense.intelli-php-vscode",
-    "ms-vscode.vscode-typescript-next",
     "ms-vscode.makefile-tools",
     "pkief.material-icon-theme",
     "devsense.phptools-vscode",
+    "junstyle.php-cs-fixer",
     "xdebug.php-debug",
     "xdebug.php-pack",
     "zobo.php-intellisense",
     "devsense.profiler-php-vscode",
+    "recca0120.vscode-phpunit",
     "esbenp.prettier-vscode",
     "inferrinizzard.prettier-sql-vscode",
     "mblode.pretty-formatter",
     "yoavbls.pretty-ts-errors",
     "bradlc.vscode-tailwindcss",
-    "antfu.vite",
-    "vue.volar",
-    "redhat.vscode-yaml",
     "gruntfuggly.todo-tree",
-    "recca0120.vscode-phpunit"
+    "antfu.vite",
+    "vue.volar"
   ]
 }
