@@ -269,11 +269,6 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/tickets/Tickets.vue'),
     },
     {
-        path: '/admin/tickets/:uuid',
-        name: 'AdminTicketView',
-        component: () => import('@/pages/admin/tickets/TicketView.vue'),
-    },
-    {
         path: '/admin/tickets/categories',
         name: 'AdminTicketCategories',
         component: () => import('@/pages/admin/tickets/TicketCategories.vue'),
@@ -287,6 +282,11 @@ const adminRoutes: RouteRecordRaw[] = [
         path: '/admin/tickets/statuses',
         name: 'AdminTicketStatuses',
         component: () => import('@/pages/admin/tickets/TicketStatuses.vue'),
+    },
+    {
+        path: '/admin/tickets/:uuid',
+        name: 'AdminTicketView',
+        component: () => import('@/pages/admin/tickets/TicketView.vue'),
     },
     {
         path: '/admin/:pathMatch(.*)*',
