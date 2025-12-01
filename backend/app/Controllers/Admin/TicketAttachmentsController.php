@@ -168,6 +168,11 @@ class TicketAttachmentsController
             ++$counter;
         }
 
+        // Capture file properties BEFORE moving the file
+        // (getSize() and getMimeType() may return invalid values after move())
+        $fileSize = $file->getSize();
+        $mimeType = $file->getMimeType() ?: 'application/octet-stream';
+
         try {
             $file->move($attachmentsDir, $filename);
         } catch (\Exception $e) {
@@ -175,8 +180,6 @@ class TicketAttachmentsController
         }
 
         $relativePath = '/attachments/' . $filename;
-        $fileSize = $file->getSize();
-        $mimeType = $file->getMimeType() ?: 'application/octet-stream';
 
         $data = [
             'ticket_id' => $ticket['id'],
