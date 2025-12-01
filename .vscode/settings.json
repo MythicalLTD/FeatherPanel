@@ -265,7 +265,7 @@
     "[x]",
     "REFACTOR"
   ],
-  "php.version": "8.3.23",
+  "php.version": "8.5",
   "php.stubs": ["*", "opcache"],
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnPaste": true, // required

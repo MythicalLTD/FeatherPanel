@@ -152,16 +152,6 @@ class SettingsController
                 ConfigInterface::SMTP_ENCRYPTION,
             ],
         ],
-        'other' => [
-            'name' => 'Other',
-            'description' => 'Other configuration settings',
-            'icon' => 'settings',
-            'settings' => [
-                ConfigInterface::LEGAL_TOS,
-                ConfigInterface::LEGAL_PRIVACY,
-                ConfigInterface::APP_DEVELOPER_MODE,
-            ],
-        ],
         'status_page' => [
             'name' => 'Status Page',
             'description' => 'User-facing status page configuration',
@@ -231,6 +221,26 @@ class SettingsController
                 ConfigInterface::CHATBOT_OLLAMA_MODEL,
                 ConfigInterface::CHATBOT_GROK_API_KEY,
                 ConfigInterface::CHATBOT_GROK_MODEL,
+            ],
+        ],
+        'ticket_system' => [
+            'name' => 'Ticket System',
+            'description' => 'Ticket system configuration settings',
+            'icon' => 'ticket',
+            'settings' => [
+                ConfigInterface::TICKET_SYSTEM_ENABLED,
+                ConfigInterface::TICKET_SYSTEM_ALLOW_ATTACHMENTS,
+                ConfigInterface::TICKET_SYSTEM_MAX_OPEN_TICKETS,
+            ],
+        ],
+        'other' => [
+            'name' => 'Other',
+            'description' => 'Other configuration settings',
+            'icon' => 'settings',
+            'settings' => [
+                ConfigInterface::LEGAL_TOS,
+                ConfigInterface::LEGAL_PRIVACY,
+                ConfigInterface::APP_DEVELOPER_MODE,
             ],
         ],
     ];
@@ -1069,6 +1079,39 @@ class SettingsController
                 'validation' => 'required|string|max:255',
                 'options' => ['true', 'false'],
                 'category' => 'knowledgebase',
+            ],
+            ConfigInterface::TICKET_SYSTEM_ENABLED => [
+                'name' => ConfigInterface::TICKET_SYSTEM_ENABLED,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::TICKET_SYSTEM_ENABLED, 'true'),
+                'description' => 'Enable or disable the ticket system feature',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'ticket_system',
+            ],
+            ConfigInterface::TICKET_SYSTEM_ALLOW_ATTACHMENTS => [
+                'name' => ConfigInterface::TICKET_SYSTEM_ALLOW_ATTACHMENTS,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::TICKET_SYSTEM_ALLOW_ATTACHMENTS, 'true'),
+                'description' => 'Allow users to attach files to tickets',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'true',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'ticket_system',
+            ],
+            ConfigInterface::TICKET_SYSTEM_MAX_OPEN_TICKETS => [
+                'name' => ConfigInterface::TICKET_SYSTEM_MAX_OPEN_TICKETS,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::TICKET_SYSTEM_MAX_OPEN_TICKETS, '10'),
+                'description' => 'Maximum number of open tickets a user can have at once (0 = unlimited)',
+                'type' => 'number',
+                'required' => true,
+                'placeholder' => '10',
+                'validation' => 'required|integer|min:0|max:1000',
+                'options' => [],
+                'category' => 'ticket_system',
             ],
         ];
     }

@@ -44,13 +44,18 @@ import { useTheme } from '@/composables/useTheme';
 
 const { t } = useI18n();
 
-defineProps<{
+const props = defineProps<{
     user: {
         name: string;
         email: string;
         avatar: string;
         avatar_alt: string;
         hasAdminPanel: boolean;
+        role: {
+            name: string;
+            display_name: string;
+            color: string;
+        } | null;
     };
 }>();
 
@@ -60,6 +65,14 @@ const { isDark, toggleTheme } = useTheme();
 
 const isAdminRoute = computed(() => router.currentRoute.value?.path.startsWith('/admin'));
 const isAccountRoute = computed(() => router.currentRoute.value?.path === '/dashboard/account');
+
+const roleBadgeStyle = computed(() => {
+    if (!props.user.role?.color) return {};
+    return {
+        backgroundColor: props.user.role.color,
+        color: '#fff',
+    };
+});
 </script>
 
 <template>
@@ -88,7 +101,17 @@ const isAccountRoute = computed(() => router.currentRoute.value?.path === '/dash
                             />
                         </div>
                         <div class="grid flex-1 text-left text-sm leading-tight">
-                            <span class="truncate font-semibold">{{ user.name }}</span>
+                            <div class="flex items-center gap-1.5 truncate">
+                                <span class="truncate font-semibold">{{ user.name }}</span>
+                                <Badge
+                                    v-if="user.role"
+                                    :style="roleBadgeStyle"
+                                    variant="secondary"
+                                    class="text-[10px] px-1.5 py-0 h-4 font-medium shrink-0"
+                                >
+                                    {{ user.role.display_name }}
+                                </Badge>
+                            </div>
                             <span class="truncate text-xs text-muted-foreground">{{ user.email }}</span>
                         </div>
                         <ChevronsUpDown class="ml-auto size-4 opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -112,14 +135,15 @@ const isAccountRoute = computed(() => router.currentRoute.value?.path === '/dash
                                 </AvatarFallback>
                             </Avatar>
                             <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-2 flex-wrap">
                                     <span class="truncate font-semibold text-sm">{{ user.name }}</span>
                                     <Badge
-                                        v-if="user.hasAdminPanel"
+                                        v-if="user.role"
+                                        :style="roleBadgeStyle"
                                         variant="secondary"
-                                        class="text-[10px] px-1.5 py-0 h-4"
+                                        class="text-[10px] px-1.5 py-0 h-4 font-medium shrink-0"
                                     >
-                                        Admin
+                                        {{ user.role.display_name }}
                                     </Badge>
                                 </div>
                                 <span class="truncate text-xs text-muted-foreground block">{{ user.email }}</span>

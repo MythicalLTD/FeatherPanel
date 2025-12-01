@@ -169,4 +169,11 @@ interface ConfigInterface
     public const KNOWLEDGEBASE_SHOW_ARTICLES = 'knowledgebase_show_articles';
     public const KNOWLEDGEBASE_SHOW_ATTACHMENTS = 'knowledgebase_show_attachments';
     public const KNOWLEDGEBASE_SHOW_TAGS = 'knowledgebase_show_tags';
+
+    /**
+     * Ticket System Settings.
+     */
+    public const TICKET_SYSTEM_ENABLED = 'ticket_system_enabled';
+    public const TICKET_SYSTEM_ALLOW_ATTACHMENTS = 'ticket_system_allow_attachments';
+    public const TICKET_SYSTEM_MAX_OPEN_TICKETS = 'ticket_system_max_open_tickets';
 }

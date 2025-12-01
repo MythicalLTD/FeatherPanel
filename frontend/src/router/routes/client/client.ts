@@ -58,6 +58,21 @@ const clientRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/dashboard/Status.vue'),
     },
     {
+        path: '/dashboard/tickets',
+        name: 'Tickets',
+        component: () => import('@/pages/dashboard/tickets/Tickets.vue'),
+    },
+    {
+        path: '/dashboard/tickets/create',
+        name: 'TicketCreate',
+        component: () => import('@/pages/dashboard/tickets/TicketCreate.vue'),
+    },
+    {
+        path: '/dashboard/tickets/:uuid',
+        name: 'TicketView',
+        component: () => import('@/pages/dashboard/tickets/TicketView.vue'),
+    },
+    {
         path: '/',
         redirect: '/dashboard',
     },

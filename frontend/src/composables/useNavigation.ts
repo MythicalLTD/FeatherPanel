@@ -61,6 +61,7 @@ import {
     Bell,
     BookOpen,
     Mail,
+    Ticket,
 } from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
 import Permissions from '@/lib/permissions';
@@ -398,6 +399,16 @@ export function useNavigation() {
                 category: 'main' as const,
                 group: 'support',
             },
+            {
+                id: 'tickets',
+                name: 'Support Tickets',
+                title: 'Support Tickets',
+                url: '/dashboard/tickets',
+                icon: Ticket,
+                isActive: currentPath.value.startsWith('/dashboard/tickets'),
+                category: 'main' as const,
+                group: 'support',
+            },
         ];
 
         // Only add status page if enabled
@@ -692,6 +703,55 @@ export function useNavigation() {
                 permission: Permissions.ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW,
                 group: 'users',
             },
+            // Ticket System
+            {
+                id: 'admin-tickets',
+                name: 'Tickets',
+                title: 'Support Tickets',
+                url: '/admin/tickets',
+                icon: Ticket,
+                isActive:
+                    currentPath.value.startsWith('/admin/tickets') &&
+                    !currentPath.value.startsWith('/admin/tickets/categories') &&
+                    !currentPath.value.startsWith('/admin/tickets/priorities') &&
+                    !currentPath.value.startsWith('/admin/tickets/statuses'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_TICKETS_VIEW,
+                group: 'tickets',
+            },
+            {
+                id: 'admin-ticket-categories',
+                name: 'Ticket Categories',
+                title: 'Ticket Categories',
+                url: '/admin/tickets/categories',
+                icon: Ticket,
+                isActive: currentPath.value.startsWith('/admin/tickets/categories'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_TICKET_CATEGORIES_VIEW,
+                group: 'tickets',
+            },
+            {
+                id: 'admin-ticket-priorities',
+                name: 'Ticket Priorities',
+                title: 'Ticket Priorities',
+                url: '/admin/tickets/priorities',
+                icon: Ticket,
+                isActive: currentPath.value.startsWith('/admin/tickets/priorities'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_TICKET_PRIORITIES_VIEW,
+                group: 'tickets',
+            },
+            {
+                id: 'admin-ticket-statuses',
+                name: 'Ticket Statuses',
+                title: 'Ticket Statuses',
+                url: '/admin/tickets/statuses',
+                icon: Ticket,
+                isActive: currentPath.value.startsWith('/admin/tickets/statuses'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_TICKET_STATUSES_VIEW,
+                group: 'tickets',
+            },
         ];
 
         // Add plugin admin items (with permission filtering)
@@ -941,6 +1001,7 @@ export function useNavigation() {
             overview: () => t('navGroups.overview'),
             feathercloud: () => 'FeatherCloud',
             users: () => t('navGroups.userManagement'),
+            tickets: () => 'Support Tickets',
             networking: () => t('navGroups.networking'),
             infrastructure: () => t('navGroups.infrastructure'),
             content: () => t('navGroups.content'),

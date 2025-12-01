@@ -85,6 +85,24 @@
             </div>
 
             <div class="space-y-4 pt-4">
+                <FormItem>
+                    <Label for="ticket_signature">Ticket Signature</Label>
+                    <Textarea
+                        id="ticket_signature"
+                        v-model="formData.ticket_signature"
+                        :disabled="isSubmitting"
+                        placeholder="Your signature (e.g., Best regards,&#10;John Doe&#10;Support Team)"
+                        rows="4"
+                        class="font-mono text-sm"
+                    />
+                    <p class="text-xs text-muted-foreground mt-1">
+                        This signature will be automatically appended to all your ticket replies. Supports Markdown
+                        formatting.
+                    </p>
+                </FormItem>
+            </div>
+
+            <div class="space-y-4 pt-4">
                 <div v-if="settingsStore.turnstile_enabled" class="flex justify-start">
                     <Turnstile v-model="turnstileToken" :site-key="settingsStore.turnstile_key_pub as string" />
                 </div>
@@ -147,6 +165,7 @@ import { useI18n } from 'vue-i18n';
 import { useSessionStore } from '@/stores/session';
 import { useToast } from 'vue-toastification';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { FormItem } from '@/components/ui/form';
@@ -170,6 +189,7 @@ const formData = ref({
     last_name: '',
     password: '',
     avatar: '',
+    ticket_signature: '',
 });
 
 // Check if profile field changes are allowed by settings
@@ -200,7 +220,7 @@ const widgetsTop = computed(() => getWidgets('account', 'profile-top'));
 const widgetsBottom = computed(() => getWidgets('account', 'profile-bottom'));
 
 // Initialize form with current user data
-const initializeForm = () => {
+const initializeForm = async () => {
     if (sessionStore.user) {
         formData.value = {
             username: sessionStore.user.username || '',
@@ -209,9 +229,22 @@ const initializeForm = () => {
             last_name: sessionStore.user.last_name || '',
             password: '',
             avatar: sessionStore.user.avatar || '',
+            ticket_signature: sessionStore.user.ticket_signature || '',
         };
         if (!allowAvatarChange.value) {
             formData.value.avatar = '';
+        }
+
+        // Fetch full user data to get ticket_signature if not in session
+        if (!formData.value.ticket_signature) {
+            try {
+                const response = await axios.get('/api/user/session');
+                if (response.data && response.data.success && response.data.data?.ticket_signature) {
+                    formData.value.ticket_signature = response.data.data.ticket_signature;
+                }
+            } catch (error) {
+                console.error('Failed to fetch ticket signature:', error);
+            }
         }
     }
 };
@@ -303,6 +336,11 @@ const handleSubmit = async () => {
         // Only include password if user actually wants to change it
         if (formData.value.password && formData.value.password.trim() !== '') {
             submitData.password = formData.value.password;
+        }
+
+        // Include ticket_signature if it's different from the original
+        if (formData.value.ticket_signature !== (sessionStore.user?.ticket_signature || '')) {
+            submitData.ticket_signature = formData.value.ticket_signature;
         }
 
         // Include Turnstile token when enabled

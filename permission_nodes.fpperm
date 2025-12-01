@@ -143,3 +143,31 @@ ADMIN_KNOWLEDGEBASE_ARTICLES_EDIT=admin.knowledgebase.articles.edit | Admin Know
 ADMIN_KNOWLEDGEBASE_ARTICLES_DELETE=admin.knowledgebase.articles.delete | Admin Knowledgebase Articles | Delete knowledgebase articles
 
 ADMIN_API_BYPASS_RESTRICTIONS=admin.api.bypass_restrictions | Admin API | Bypass API rate limits and restrictions
+
+
+ADMIN_TICKETS_VIEW=admin.tickets.view | Admin Tickets | View support tickets
+ADMIN_TICKETS_CREATE=admin.tickets.create | Admin Tickets | Create support tickets
+ADMIN_TICKETS_EDIT=admin.tickets.edit | Admin Tickets | Edit support tickets
+ADMIN_TICKETS_DELETE=admin.tickets.delete | Admin Tickets | Delete support tickets
+ADMIN_TICKETS_MANAGE=admin.tickets.manage | Admin Tickets | Manage all aspects of support tickets
+
+ADMIN_TICKET_CATEGORIES_VIEW=admin.ticket_categories.view | Admin Ticket Categories | View ticket categories
+ADMIN_TICKET_CATEGORIES_CREATE=admin.ticket_categories.create | Admin Ticket Categories | Create ticket categories
+ADMIN_TICKET_CATEGORIES_EDIT=admin.ticket_categories.edit | Admin Ticket Categories | Edit ticket categories
+ADMIN_TICKET_CATEGORIES_DELETE=admin.ticket_categories.delete | Admin Ticket Categories | Delete ticket categories
+
+ADMIN_TICKET_PRIORITIES_VIEW=admin.ticket_priorities.view | Admin Ticket Priorities | View ticket priorities
+ADMIN_TICKET_PRIORITIES_CREATE=admin.ticket_priorities.create | Admin Ticket Priorities | Create ticket priorities
+ADMIN_TICKET_PRIORITIES_EDIT=admin.ticket_priorities.edit | Admin Ticket Priorities | Edit ticket priorities
+ADMIN_TICKET_PRIORITIES_DELETE=admin.ticket_priorities.delete | Admin Ticket Priorities | Delete ticket priorities
+
+ADMIN_TICKET_STATUSES_VIEW=admin.ticket_statuses.view | Admin Ticket Statuses | View ticket statuses
+ADMIN_TICKET_STATUSES_CREATE=admin.ticket_statuses.create | Admin Ticket Statuses | Create ticket statuses
+ADMIN_TICKET_STATUSES_EDIT=admin.ticket_statuses.edit | Admin Ticket Statuses | Edit ticket statuses
+ADMIN_TICKET_STATUSES_DELETE=admin.ticket_statuses.delete | Admin Ticket Statuses | Delete ticket statuses
+
+ADMIN_TICKET_ATTACHMENTS_VIEW=admin.ticket_attachments.view | Admin Ticket Attachments | View ticket attachments
+ADMIN_TICKET_ATTACHMENTS_MANAGE=admin.ticket_attachments.manage | Admin Ticket Attachments | Manage ticket attachments
+
+ADMIN_TICKET_MESSAGES_VIEW=admin.ticket_messages.view | Admin Ticket Messages | View ticket messages
+ADMIN_TICKET_MESSAGES_MANAGE=admin.ticket_messages.manage | Admin Ticket Messages | Manage ticket messages

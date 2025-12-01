@@ -1,94 +1,96 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
-         bootstrap="storage/packages/autoload.php"
-         colors="true"
-         cacheDirectory=".phpunit.cache"
-         displayDetailsOnTestsThatTriggerWarnings="true"
-         displayDetailsOnTestsThatTriggerErrors="true"
-         failOnWarning="false"
-         failOnRisky="false"
-         stopOnFailure="false">
-    
-    <!-- Test Suites -->
-    <testsuites>
-        <testsuite name="All Tests">
-            <directory>tests</directory>
-        </testsuite>
-        
-        <testsuite name="Admin Controllers">
-            <file>tests/AllocationsControllerTest.php</file>
-            <file>tests/ConsoleControllerTest.php</file>
-            <file>tests/DatabaseManagmentControllerTest.php</file>
-            <file>tests/DatabasesControllerTest.php</file>
-            <file>tests/FileManagerControllerTest.php</file>
-            <file>tests/ImagesControllerTest.php</file>
-            <file>tests/LocationsControllerTest.php</file>
-            <file>tests/LogViewerControllerTest.php</file>
-            <file>tests/MailTemplatesControllerTest.php</file>
-            <file>tests/NodesControllerTest.php</file>
-            <file>tests/PermissionsControllerTest.php</file>
-            <file>tests/PluginManagerControllerTest.php</file>
-            <file>tests/PluginsControllerTest.php</file>
-            <file>tests/RealmsControllerTest.php</file>
-            <file>tests/RedirectLinksControllerTest.php</file>
-            <file>tests/RolesControllerTest.php</file>
-            <file>tests/ServerActivitiesControllerTest.php</file>
-            <file>tests/ServersControllerTest.php</file>
-            <file>tests/SettingsControllerTest.php</file>
-            <file>tests/SpellsControllerTest.php</file>
-            <file>tests/UsersControllerTest.php</file>
-        </testsuite>
-        
-        <testsuite name="System Controllers">
-            <directory>tests/System</directory>
-        </testsuite>
-        
-        <testsuite name="Helpers">
-            <directory>tests/Helpers</directory>
-        </testsuite>
-        
-        <testsuite name="Plugins">
-            <directory>tests/Plugins</directory>
-        </testsuite>
-        
-        <testsuite name="Cron">
-            <directory>tests/Cron</directory>
-        </testsuite>
-        
-        <testsuite name="Logger">
-            <directory>tests/Logger</directory>
-        </testsuite>
-        
-        <testsuite name="Unit Tests">
-            <file>tests/HelloWorldTest.php</file>
-        </testsuite>
-    </testsuites>
+	xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
+	bootstrap="tests/bootstrap.php"
+	colors="true"
+	cacheDirectory=".phpunit.cache"
+	displayDetailsOnTestsThatTriggerWarnings="true"
+	displayDetailsOnTestsThatTriggerErrors="true"
+	failOnWarning="false"
+	failOnRisky="false"
+	stopOnFailure="false">
 
-    <!-- Source Files for Coverage -->
-    <source>
-        <include>
-            <directory>app</directory>
-        </include>
-        <exclude>
-            <directory>app/Cli</directory>
-            <directory>app/routes</directory>
-            <directory>vendor</directory>
-            <directory>storage</directory>
-        </exclude>
-    </source>
+	<!-- Test Suites -->
+	<testsuites>
+		<testsuite name="All Tests">
+			<!-- Use directory include - warnings about duplicates are harmless and allow running
+			subsets -->
+			<directory>tests</directory>
+		</testsuite>
 
-    <!-- PHP Settings -->
-    <php>
-        <ini name="display_errors" value="1"/>
-        <ini name="error_reporting" value="-1"/>
-        <ini name="memory_limit" value="512M"/>
-        <env name="APP_ENV" value="testing"/>
-    </php>
+		<testsuite name="Admin Controllers">
+			<file>tests/AllocationsControllerTest.php</file>
+			<file>tests/ConsoleControllerTest.php</file>
+			<file>tests/DatabaseManagmentControllerTest.php</file>
+			<file>tests/DatabasesControllerTest.php</file>
+			<file>tests/FileManagerControllerTest.php</file>
+			<file>tests/ImagesControllerTest.php</file>
+			<file>tests/LocationsControllerTest.php</file>
+			<file>tests/LogViewerControllerTest.php</file>
+			<file>tests/MailTemplatesControllerTest.php</file>
+			<file>tests/NodesControllerTest.php</file>
+			<file>tests/PermissionsControllerTest.php</file>
+			<file>tests/PluginManagerControllerTest.php</file>
+			<file>tests/PluginsControllerTest.php</file>
+			<file>tests/RealmsControllerTest.php</file>
+			<file>tests/RedirectLinksControllerTest.php</file>
+			<file>tests/RolesControllerTest.php</file>
+			<file>tests/ServerActivitiesControllerTest.php</file>
+			<file>tests/ServersControllerTest.php</file>
+			<file>tests/SettingsControllerTest.php</file>
+			<file>tests/SpellsControllerTest.php</file>
+			<file>tests/UsersControllerTest.php</file>
+		</testsuite>
 
-    <!-- Logging and Output -->
-    <logging>
-        <testdoxHtml outputFile="storage/logs/testdox.html"/>
-        <junit outputFile="storage/logs/junit.xml"/>
-    </logging>
+		<testsuite name="System Controllers">
+			<directory>tests/System</directory>
+		</testsuite>
+
+		<testsuite name="Helpers">
+			<directory>tests/Helpers</directory>
+		</testsuite>
+
+		<testsuite name="Plugins">
+			<directory>tests/Plugins</directory>
+		</testsuite>
+
+		<testsuite name="Cron">
+			<directory>tests/Cron</directory>
+		</testsuite>
+
+		<testsuite name="Logger">
+			<directory>tests/Logger</directory>
+		</testsuite>
+
+		<testsuite name="Unit Tests">
+			<file>tests/HelloWorldTest.php</file>
+		</testsuite>
+	</testsuites>
+
+	<!-- Source Files for Coverage -->
+	<source>
+		<include>
+			<directory>app</directory>
+		</include>
+		<exclude>
+			<directory>app/Cli</directory>
+			<directory>app/routes</directory>
+			<directory>vendor</directory>
+			<directory>storage</directory>
+		</exclude>
+	</source>
+
+	<!-- PHP Settings -->
+	<php>
+		<ini name="display_errors" value="1" />
+		<ini name="error_reporting" value="-1" />
+		<ini name="memory_limit" value="512M" />
+		<env name="APP_ENV" value="testing" />
+	</php>
+
+	<!-- Logging and Output -->
+	<logging>
+		<testdoxHtml outputFile="storage/logs/testdox.html" />
+		<junit outputFile="storage/logs/junit.xml" />
+	</logging>
 </phpunit>

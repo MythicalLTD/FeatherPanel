@@ -117,6 +117,7 @@ const user = computed(() => {
         avatar: sessionStore.user?.avatar || '',
         avatar_alt: sessionStore.user?.username?.charAt(0) || '',
         hasAdminPanel: sessionStore.hasPermission('ADMIN_DASHBOARD_VIEW') || false,
+        role: sessionStore.user?.role || null,
     };
 });
 

@@ -31,6 +31,7 @@
 namespace App\Controllers\User\User;
 
 use App\App;
+use App\Chat\Role;
 use App\Chat\User;
 use App\Chat\Activity;
 use App\Chat\MailList;
@@ -56,6 +57,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'last_name', type: 'string', minLength: 1, maxLength: 64, description: 'User last name'),
         new OA\Property(property: 'password', type: 'string', minLength: 8, maxLength: 255, description: 'User password'),
         new OA\Property(property: 'avatar', type: 'string', format: 'uri', description: 'Avatar URL (must start with https://)'),
+        new OA\Property(property: 'ticket_signature', type: 'string', description: 'Ticket signature (supports Markdown)'),
         new OA\Property(property: 'two_fa_enabled', type: 'boolean', description: 'Two-factor authentication enabled status'),
         new OA\Property(property: 'turnstile_token', type: 'string', description: 'CloudFlare Turnstile token (required if Turnstile is enabled)'),
     ]
@@ -148,6 +150,7 @@ class SessionController
             'last_name',
             'password',
             'avatar',
+            'ticket_signature',
             'two_fa_enabled',
         ];
         // Validate two_fa_enabled field
@@ -302,6 +305,23 @@ class SessionController
         }
         $permissions = Permission::getPermissionsByRoleId($user['role_id']);
         $permissions = array_column($permissions, 'permission');
+
+        // Load role information
+        $roles = Role::getAllRoles();
+        $rolesMap = [];
+        foreach ($roles as $role) {
+            $rolesMap[$role['id']] = [
+                'name' => $role['name'],
+                'display_name' => $role['display_name'],
+                'color' => $role['color'],
+            ];
+        }
+        $roleId = $user['role_id'] ?? null;
+        $user['role'] = [
+            'name' => $rolesMap[$roleId]['name'] ?? $roleId,
+            'display_name' => $rolesMap[$roleId]['display_name'] ?? 'User',
+            'color' => $rolesMap[$roleId]['color'] ?? '#666666',
+        ];
 
         // Load user preferences
         $preferences = UserPreference::getPreferences($user['uuid']);
