@@ -195,7 +195,7 @@ class TicketAttachment
         $insert = [];
         foreach ($fields as $field) {
             if ($field === 'user_downloadable') {
-                $insert[$field] = isset($data[$field]) && $data[$field] ? 1 : 1; // Default to 1
+                $insert[$field] = isset($data[$field]) ? (int) filter_var($data[$field], FILTER_VALIDATE_BOOLEAN) : 1; // Default to 1
             } elseif (($field === 'ticket_id' || $field === 'message_id') && (!isset($data[$field]) || $data[$field] === null)) {
                 $insert[$field] = null;
             } else {
@@ -244,7 +244,7 @@ class TicketAttachment
         foreach ($fields as $field) {
             if (array_key_exists($field, $data)) {
                 if ($field === 'user_downloadable') {
-                    $params[$field] = $data[$field] ? 1 : 0;
+                    $params[$field] = (int) filter_var($data[$field], FILTER_VALIDATE_BOOLEAN);
                 } else {
                     $params[$field] = $data[$field];
                 }
