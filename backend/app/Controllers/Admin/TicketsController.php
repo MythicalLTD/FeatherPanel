@@ -430,7 +430,7 @@ class TicketsController
             $messageAttachments = TicketAttachment::getAll($ticket['id'], (int) $message['id']);
             $baseUrl = App::getInstance(true)->getConfig()->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
             foreach ($messageAttachments as &$attachment) {
-                $attachment['url'] = $baseUrl . '/attachments/' . $attachment['file_path'];
+                $attachment['url'] = rtrim($baseUrl, '/') . $attachment['file_path'];
             }
             $message['attachments'] = $messageAttachments;
         }
