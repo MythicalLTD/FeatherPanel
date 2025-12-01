@@ -1889,80 +1889,80 @@ create_backup() {
     TEMP_BACKUP_DIR=$(mktemp -d)
     trap 'rm -rf "$TEMP_BACKUP_DIR"' EXIT
     
-    log_info "Backing up database..."
-    # Wait for MySQL to be ready
-    log_info "Waiting for MySQL to be ready..."
-    max_attempts=30
-    attempt=0
-    mysql_ready=false
-    while [ $attempt -lt $max_attempts ]; do
-        if sudo docker exec featherpanel_mysql mysqladmin ping -h localhost -u root -pfeatherpanel_root --silent 2>/dev/null; then
-            mysql_ready=true
-            break
-        fi
-        attempt=$((attempt + 1))
-        sleep 1
-    done
-    
-    if [ "$mysql_ready" = false ]; then
-        log_warn "MySQL container is not responding. Will backup mariadb_data volume instead."
-        DB_BACKUP_SUCCESS=false
-    else
-        # Try mysqldump with different password formats
-        DB_BACKUP_SUCCESS=false
-        if sudo docker exec featherpanel_mysql mysqldump -u root -pfeatherpanel_root --single-transaction --routines --triggers featherpanel > "${TEMP_BACKUP_DIR}/database.sql" 2>>"$LOG_FILE"; then
-            # Check if the dump file is not empty and contains actual data
-            if [ -s "${TEMP_BACKUP_DIR}/database.sql" ] && grep -q "CREATE TABLE\|INSERT INTO" "${TEMP_BACKUP_DIR}/database.sql" 2>/dev/null; then
-                log_success "Database backup created (mysqldump)"
-                DB_BACKUP_SUCCESS=true
-            else
-                log_warn "Database dump appears empty or invalid. Will use volume backup as fallback."
-                DB_BACKUP_SUCCESS=false
-            fi
-        else
-            log_warn "mysqldump failed. Will backup mariadb_data volume as fallback."
-            DB_BACKUP_SUCCESS=false
-        fi
-    fi
-    
-    # Note: We always backup mariadb_data volume as a fallback, which contains the raw database files
-    # This ensures we have a backup even if mysqldump fails
-    
-    log_info "Backing up Docker volumes..."
-    # Backup volumes
+    log_info "Backing up Docker volumes (volume-only backup method)..."
+    # Backup volumes only - this is the safest and most reliable method
     VOLUMES_DIR="${TEMP_BACKUP_DIR}/volumes"
     mkdir -p "$VOLUMES_DIR"
     
-    # Always backup mariadb_data volume (contains raw database files as fallback)
-    # This ensures we have database backup even if mysqldump fails
-    VOLUMES_TO_BACKUP="featherpanel_attachments featherpanel_config featherpanel_snapshots mariadb_data redis_data"
+    # Get actual volume names from running containers (most reliable method)
+    VOLUMES_FOUND=0
+    declare -a ACTUAL_VOLUMES=()
     
-    # Backup each volume
-    for volume in $VOLUMES_TO_BACKUP; do
+    # Get volumes directly from running containers
+    for container in featherpanel_mysql featherpanel_backend featherpanel_redis; do
+        if sudo docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${container}$"; then
+            # Get volume names from container mounts
+            while IFS= read -r volume_name; do
+                if [ -n "$volume_name" ] && [[ ! " ${ACTUAL_VOLUMES[*]} " =~ " ${volume_name} " ]]; then
+                    ACTUAL_VOLUMES+=("$volume_name")
+                fi
+            done < <(sudo docker inspect "$container" --format '{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}}{{println}}{{end}}{{end}}' 2>/dev/null | grep -v "^$" || true)
+        fi
+    done
+    
+    # If no volumes found from containers, try docker volume ls with filter
+    if [ ${#ACTUAL_VOLUMES[@]} -eq 0 ]; then
+        log_info "Getting volumes from docker volume list..."
+        while IFS= read -r volume_name; do
+            if [ -n "$volume_name" ] && [[ "$volume_name" =~ ^featherpanel_ ]]; then
+                if [[ ! " ${ACTUAL_VOLUMES[*]} " =~ " ${volume_name} " ]]; then
+                    ACTUAL_VOLUMES+=("$volume_name")
+                fi
+            fi
+        done < <(sudo docker volume ls --format "{{.Name}}" 2>/dev/null | grep "^featherpanel_" || true)
+    fi
+    
+    # Fallback: Try known volume names if still nothing found
+    if [ ${#ACTUAL_VOLUMES[@]} -eq 0 ]; then
+        log_warn "Could not detect volumes from containers, trying known volume names..."
+        ACTUAL_VOLUMES=("featherpanel_mariadb_data" "featherpanel_redis_data" "featherpanel_featherpanel_attachments" "featherpanel_featherpanel_config" "featherpanel_featherpanel_snapshots")
+    fi
+    
+    # Backup each volume that actually exists
+    for volume in "${ACTUAL_VOLUMES[@]}"; do
         if sudo docker volume inspect "$volume" >/dev/null 2>&1; then
             log_info "Backing up volume: $volume"
             if sudo docker run --rm -v "$volume":/source -v "$VOLUMES_DIR":/backup alpine tar czf "/backup/${volume}.tar.gz" -C /source . 2>>"$LOG_FILE"; then
                 log_success "Volume $volume backed up"
-                if [ "$volume" = "mariadb_data" ]; then
-                    log_info "  → mariadb_data volume contains raw database files (fallback if mysqldump unavailable)"
-                fi
+                VOLUMES_FOUND=$((VOLUMES_FOUND + 1))
             else
                 log_warn "Failed to backup volume $volume"
             fi
-        else
-            log_warn "Volume $volume does not exist, skipping"
         fi
     done
     
-    # If mysqldump failed but we have mariadb_data volume, that's okay
-    if [ "$DB_BACKUP_SUCCESS" = false ]; then
-        if sudo docker volume inspect mariadb_data >/dev/null 2>&1; then
-            log_info "Note: Database will be restored from mariadb_data volume (raw files backup)"
-        else
-            log_error "No database backup available (neither mysqldump nor mariadb_data volume)"
-            return 1
+    # Check if we got the critical mariadb_data volume
+    MARIADB_BACKED_UP=false
+    for volume in "${ACTUAL_VOLUMES[@]}"; do
+        if [[ "$volume" =~ mariadb_data ]] && sudo docker volume inspect "$volume" >/dev/null 2>&1; then
+            if [ -f "${VOLUMES_DIR}/${volume}.tar.gz" ]; then
+                MARIADB_BACKED_UP=true
+                break
+            fi
         fi
+    done
+    
+    if [ $VOLUMES_FOUND -eq 0 ]; then
+        log_error "No volumes found to backup. Is FeatherPanel installed and running?"
+        return 1
     fi
+    
+    if [ "$MARIADB_BACKED_UP" = false ]; then
+        log_error "mariadb_data volume not found or could not be backed up. This is required for database backup."
+        return 1
+    fi
+    
+    log_success "Backed up $VOLUMES_FOUND volume(s) including database (mariadb_data)"
     
     log_info "Backing up configuration files..."
     # Backup configuration files
@@ -1983,7 +1983,9 @@ FeatherPanel Backup
 Created: $(date)
 Backup Name: $BACKUP_NAME
 Version: $(grep -oP 'image: ghcr.io/mythicalltd/featherpanel-backend:\K[^\s]+' /var/www/featherpanel/docker-compose.yml 2>/dev/null || echo "unknown")
-Database Backup Method: $([ "$DB_BACKUP_SUCCESS" = true ] && echo "mysqldump (SQL dump)" || echo "mariadb_data volume (raw files)")
+Backup Method: Volume-only backup (safest and most reliable)
+Volumes Backed Up: $VOLUMES_FOUND
+Database: Backed up via mariadb_data volume (raw files)
 EOF
     
     log_info "Compressing backup..."
@@ -2134,91 +2136,52 @@ restore_backup() {
         return 1
     fi
     
-    log_info "Restoring database..."
-    # Check if we have database.sql (mysqldump) or need to use mariadb_data volume
-    HAS_SQL_DUMP=false
+    log_info "Restoring database from volumes (volume-only restore method)..."
+    # Check if we have mariadb_data volume backup
     HAS_MARIADB_VOLUME=false
+    MARIADB_VOLUME_FILE=""
     
-    if [ -f "${TEMP_RESTORE_DIR}/database.sql" ] && [ -s "${TEMP_RESTORE_DIR}/database.sql" ]; then
-        HAS_SQL_DUMP=true
-    fi
-    
-    if [ -f "${TEMP_RESTORE_DIR}/volumes/mariadb_data.tar.gz" ]; then
-        HAS_MARIADB_VOLUME=true
-    fi
-    
-    if [ "$HAS_SQL_DUMP" = true ]; then
-        # Restore from SQL dump (preferred method)
-        log_info "Restoring database from SQL dump..."
-        # Start MySQL container temporarily for restore
-        if ! run_with_spinner "Starting MySQL for restore" "MySQL started." \
-            bash -c "cd /var/www/featherpanel && sudo docker compose up -d mysql"; then
-            log_error "Failed to start MySQL container"
-            return 1
-        fi
-        
-        # Wait for MySQL to be ready
-        log_info "Waiting for MySQL to be ready..."
-        max_attempts=30
-        attempt=0
-        while [ $attempt -lt $max_attempts ]; do
-            if sudo docker exec featherpanel_mysql mysqladmin ping -h localhost -u root -pfeatherpanel_root --silent 2>/dev/null; then
+    # Look for mariadb_data volume in backup (could be prefixed or standard name)
+    if [ -d "${TEMP_RESTORE_DIR}/volumes" ]; then
+        for volume_file in "${TEMP_RESTORE_DIR}/volumes"/*mariadb_data*.tar.gz; do
+            if [ -f "$volume_file" ]; then
+                HAS_MARIADB_VOLUME=true
+                MARIADB_VOLUME_FILE="$volume_file"
                 break
             fi
-            attempt=$((attempt + 1))
-            sleep 1
         done
-        
-        if [ $attempt -eq $max_attempts ]; then
-            log_error "MySQL did not become ready in time"
-            return 1
-        fi
-        
-        # Drop and recreate database
-        log_info "Preparing database for restore..."
-        sudo docker exec -i featherpanel_mysql mysql -u root -pfeatherpanel_root <<EOF 2>>"$LOG_FILE" || true
-DROP DATABASE IF EXISTS featherpanel;
-CREATE DATABASE featherpanel;
-EOF
-        
-        # Restore database
-        if sudo docker exec -i featherpanel_mysql mysql -u root -pfeatherpanel_root featherpanel < "${TEMP_RESTORE_DIR}/database.sql" 2>>"$LOG_FILE"; then
-            log_success "Database restored from SQL dump"
-        else
-            log_error "Failed to restore database from SQL dump"
-            if [ "$HAS_MARIADB_VOLUME" = true ]; then
-                log_info "Will restore database from mariadb_data volume instead"
-            else
-                return 1
-            fi
-        fi
-    elif [ "$HAS_MARIADB_VOLUME" = true ]; then
-        # No SQL dump, but we have mariadb_data volume - database will be restored when volume is restored
-        log_info "No SQL dump found. Database will be restored from mariadb_data volume (raw files)"
-        log_info "Note: Ensure MariaDB version matches between backup and restore for best compatibility"
-    else
-        log_error "No database backup found (neither database.sql nor mariadb_data volume)"
+    fi
+    
+    if [ "$HAS_MARIADB_VOLUME" = false ]; then
+        log_error "No mariadb_data volume backup found. Cannot restore database."
         return 1
     fi
     
+    log_info "Database will be restored from mariadb_data volume (raw files)"
+    log_info "Note: Ensure MariaDB version matches between backup and restore for best compatibility"
+    
     log_info "Restoring volumes..."
-    # Restore volumes
-    # If using volume-based database restore, restore mariadb_data first (before starting MySQL)
+    # Restore volumes - mariadb_data must be restored first (before starting MySQL)
     if [ -d "${TEMP_RESTORE_DIR}/volumes" ]; then
-        # Restore mariadb_data first if it exists and we're using volume-based restore
-        if [ "$HAS_SQL_DUMP" = false ] && [ "$HAS_MARIADB_VOLUME" = true ]; then
-            VOLUME_FILE="${TEMP_RESTORE_DIR}/volumes/mariadb_data.tar.gz"
-            if [ -f "$VOLUME_FILE" ]; then
-                log_info "Restoring volume: mariadb_data (database will be restored from this)"
-                sudo docker volume rm mariadb_data >/dev/null 2>&1 || true
-                if sudo docker volume create mariadb_data >/dev/null 2>&1; then
-                    if sudo docker run --rm -v mariadb_data:/target -v "$(dirname "$VOLUME_FILE")":/backup alpine sh -c "cd /target && tar xzf /backup/$(basename "$VOLUME_FILE")" 2>>"$LOG_FILE"; then
-                        log_success "Volume mariadb_data restored (database restored from raw files)"
-                    else
-                        log_error "Failed to restore mariadb_data volume"
-                        return 1
-                    fi
+        # Restore mariadb_data first (critical for database)
+        if [ "$HAS_MARIADB_VOLUME" = true ] && [ -n "$MARIADB_VOLUME_FILE" ]; then
+            VOLUME_NAME=$(basename "$MARIADB_VOLUME_FILE" .tar.gz)
+            log_info "Restoring volume: $VOLUME_NAME (database will be restored from this)"
+            
+            # Remove existing volume if it exists
+            sudo docker volume rm "$VOLUME_NAME" >/dev/null 2>&1 || true
+            
+            # Create new volume and restore data
+            if sudo docker volume create "$VOLUME_NAME" >/dev/null 2>&1; then
+                if sudo docker run --rm -v "$VOLUME_NAME":/target -v "$(dirname "$MARIADB_VOLUME_FILE")":/backup alpine sh -c "cd /target && tar xzf /backup/$(basename "$MARIADB_VOLUME_FILE")" 2>>"$LOG_FILE"; then
+                    log_success "Volume $VOLUME_NAME restored (database restored from raw files)"
+                else
+                    log_error "Failed to restore $VOLUME_NAME volume"
+                    return 1
                 fi
+            else
+                log_error "Failed to create volume $VOLUME_NAME"
+                return 1
             fi
         fi
         
@@ -2228,7 +2191,7 @@ EOF
                 VOLUME_NAME=$(basename "$volume_file" .tar.gz)
                 
                 # Skip mariadb_data if we already restored it above
-                if [ "$VOLUME_NAME" = "mariadb_data" ] && [ "$HAS_SQL_DUMP" = false ] && [ "$HAS_MARIADB_VOLUME" = true ]; then
+                if [[ "$VOLUME_NAME" =~ mariadb_data ]] && [ "$HAS_MARIADB_VOLUME" = true ]; then
                     continue
                 fi
                 
@@ -2250,7 +2213,8 @@ EOF
             fi
         done
     else
-        log_warn "Volumes backup not found in archive"
+        log_error "Volumes backup not found in archive"
+        return 1
     fi
     
     log_info "Restoring configuration files..."
@@ -2383,31 +2347,80 @@ export_migration() {
     TEMP_MIGRATION_DIR=$(mktemp -d)
     trap 'rm -rf "$TEMP_MIGRATION_DIR"' EXIT
     
-    log_info "Exporting database..."
-    # Export MySQL database
-    if sudo docker exec featherpanel_mysql mysqldump -u root -pfeatherpanel_root --single-transaction --routines --triggers featherpanel > "${TEMP_MIGRATION_DIR}/database.sql" 2>>"$LOG_FILE"; then
-        log_success "Database exported"
-    else
-        log_error "Failed to export database"
-        return 1
-    fi
-    
-    log_info "Exporting Docker volumes..."
-    # Export volumes
+    log_info "Exporting Docker volumes (volume-only method)..."
+    # Export volumes only - this is the safest and most reliable method
     VOLUMES_DIR="${TEMP_MIGRATION_DIR}/volumes"
     mkdir -p "$VOLUMES_DIR"
     
-    # Export each volume
-    for volume in featherpanel_attachments featherpanel_config featherpanel_snapshots mariadb_data redis_data; do
+    # Get actual volume names from running containers (same logic as create_backup)
+    VOLUMES_FOUND=0
+    declare -a ACTUAL_VOLUMES=()
+    
+    # Get volumes directly from running containers
+    for container in featherpanel_mysql featherpanel_backend featherpanel_redis; do
+        if sudo docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${container}$"; then
+            # Get volume names from container mounts
+            while IFS= read -r volume_name; do
+                if [ -n "$volume_name" ] && [[ ! " ${ACTUAL_VOLUMES[*]} " =~ " ${volume_name} " ]]; then
+                    ACTUAL_VOLUMES+=("$volume_name")
+                fi
+            done < <(sudo docker inspect "$container" --format '{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}}{{println}}{{end}}{{end}}' 2>/dev/null | grep -v "^$" || true)
+        fi
+    done
+    
+    # If no volumes found from containers, try docker volume ls with filter
+    if [ ${#ACTUAL_VOLUMES[@]} -eq 0 ]; then
+        log_info "Getting volumes from docker volume list..."
+        while IFS= read -r volume_name; do
+            if [ -n "$volume_name" ] && [[ "$volume_name" =~ ^featherpanel_ ]]; then
+                if [[ ! " ${ACTUAL_VOLUMES[*]} " =~ " ${volume_name} " ]]; then
+                    ACTUAL_VOLUMES+=("$volume_name")
+                fi
+            fi
+        done < <(sudo docker volume ls --format "{{.Name}}" 2>/dev/null | grep "^featherpanel_" || true)
+    fi
+    
+    # Fallback: Try known volume names if still nothing found
+    if [ ${#ACTUAL_VOLUMES[@]} -eq 0 ]; then
+        log_warn "Could not detect volumes from containers, trying known volume names..."
+        ACTUAL_VOLUMES=("featherpanel_mariadb_data" "featherpanel_redis_data" "featherpanel_featherpanel_attachments" "featherpanel_featherpanel_config" "featherpanel_featherpanel_snapshots")
+    fi
+    
+    # Export each volume that actually exists
+    for volume in "${ACTUAL_VOLUMES[@]}"; do
         if sudo docker volume inspect "$volume" >/dev/null 2>&1; then
             log_info "Exporting volume: $volume"
             if sudo docker run --rm -v "$volume":/source -v "$VOLUMES_DIR":/backup alpine tar czf "/backup/${volume}.tar.gz" -C /source . 2>>"$LOG_FILE"; then
                 log_success "Volume $volume exported"
+                VOLUMES_FOUND=$((VOLUMES_FOUND + 1))
             else
                 log_warn "Failed to export volume $volume"
             fi
         fi
     done
+    
+    # Check if we got the critical mariadb_data volume
+    MARIADB_EXPORTED=false
+    for volume in "${ACTUAL_VOLUMES[@]}"; do
+        if [[ "$volume" =~ mariadb_data ]] && sudo docker volume inspect "$volume" >/dev/null 2>&1; then
+            if [ -f "${VOLUMES_DIR}/${volume}.tar.gz" ]; then
+                MARIADB_EXPORTED=true
+                break
+            fi
+        fi
+    done
+    
+    if [ $VOLUMES_FOUND -eq 0 ]; then
+        log_error "No volumes found to export. Is FeatherPanel installed and running?"
+        return 1
+    fi
+    
+    if [ "$MARIADB_EXPORTED" = false ]; then
+        log_error "mariadb_data volume not found or could not be exported. This is required for database migration."
+        return 1
+    fi
+    
+    log_success "Exported $VOLUMES_FOUND volume(s) including database (mariadb_data)"
     
     log_info "Exporting configuration files..."
     # Export configuration files
@@ -2430,6 +2443,7 @@ Migration Name: $MIGRATION_NAME
 Source Server: $(hostname)
 Source IP: $(curl -s ifconfig.me 2>/dev/null || echo "Unknown")
 Version: $(grep -oP 'image: ghcr.io/mythicalltd/featherpanel-backend:\K[^\s]+' /var/www/featherpanel/docker-compose.yml 2>/dev/null || echo "unknown")
+Backup Method: Volume-only backup (safest and most reliable)
 
 IMPORTANT: This is a migration package for moving FeatherPanel to another server.
 To import this package on the destination server:
@@ -2438,9 +2452,9 @@ To import this package on the destination server:
 3. Follow the import instructions
 
 This package contains:
-- Complete database dump
-- All Docker volumes (attachments, config, snapshots, etc.)
+- All Docker volumes (mariadb_data, attachments, config, snapshots, redis_data, etc.)
 - Configuration files (docker-compose.yml, .env)
+- Database is included in mariadb_data volume (raw files - safest method)
 EOF
     
     # Create README with transfer instructions
@@ -2735,7 +2749,7 @@ import_migration() {
         max_attempts=30
         attempt=0
         while [ $attempt -lt $max_attempts ]; do
-            if sudo docker exec featherpanel_mysql mysqladmin ping -h localhost -u root -pfeatherpanel_root --silent 2>/dev/null; then
+            if sudo docker exec featherpanel_mysql mysql -u root -pfeatherpanel_root -e "SELECT 1" >/dev/null 2>&1; then
                 break
             fi
             attempt=$((attempt + 1))
