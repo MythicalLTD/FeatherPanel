@@ -65,11 +65,7 @@
                                         <div class="text-sm text-muted-foreground mb-1">Status</div>
                                         <Badge
                                             v-if="ticket.status"
-                                            :style="
-                                                ticket.status?.color
-                                                    ? { backgroundColor: ticket.status.color, color: '#fff' }
-                                                    : {}
-                                            "
+                                            :style="sanitizeColor(ticket.status?.color)"
                                             variant="secondary"
                                         >
                                             {{ ticket.status.name }}
@@ -79,11 +75,7 @@
                                         <div class="text-sm text-muted-foreground mb-1">Priority</div>
                                         <Badge
                                             v-if="ticket.priority"
-                                            :style="
-                                                ticket.priority?.color
-                                                    ? { backgroundColor: ticket.priority.color, color: '#fff' }
-                                                    : {}
-                                            "
+                                            :style="sanitizeColor(ticket.priority?.color)"
                                             variant="secondary"
                                         >
                                             {{ ticket.priority.name }}
@@ -93,11 +85,7 @@
                                         <div class="text-sm text-muted-foreground mb-1">Category</div>
                                         <Badge
                                             v-if="ticket.category"
-                                            :style="
-                                                ticket.category?.color
-                                                    ? { backgroundColor: ticket.category.color, color: '#fff' }
-                                                    : {}
-                                            "
+                                            :style="sanitizeColor(ticket.category?.color)"
                                             variant="secondary"
                                         >
                                             {{ ticket.category.name }}
@@ -175,14 +163,7 @@
                                                             v-if="message.user?.role"
                                                             variant="secondary"
                                                             class="text-xs font-medium"
-                                                            :style="
-                                                                message.user.role.color
-                                                                    ? {
-                                                                          backgroundColor: message.user.role.color,
-                                                                          color: '#fff',
-                                                                      }
-                                                                    : {}
-                                                            "
+                                                            :style="sanitizeColor(message.user.role?.color)"
                                                         >
                                                             {{
                                                                 message.user.role.display_name || message.user.role.name
@@ -397,11 +378,7 @@
                                         <div v-if="userDetails.role">
                                             <div class="text-xs text-muted-foreground mb-1">Role</div>
                                             <Badge
-                                                :style="
-                                                    userDetails.role.color
-                                                        ? { backgroundColor: userDetails.role.color, color: '#fff' }
-                                                        : {}
-                                                "
+                                                :style="sanitizeColor(userDetails.role?.color)"
                                                 variant="secondary"
                                                 class="text-xs"
                                             >
@@ -498,14 +475,7 @@
                                                     <div class="flex items-center gap-2 mt-1">
                                                         <Badge
                                                             v-if="userTicket.status"
-                                                            :style="
-                                                                userTicket.status.color
-                                                                    ? {
-                                                                          backgroundColor: userTicket.status.color,
-                                                                          color: '#fff',
-                                                                      }
-                                                                    : {}
-                                                            "
+                                                            :style="sanitizeColor(userTicket.status?.color)"
                                                             variant="secondary"
                                                             class="text-xs"
                                                         >
@@ -766,6 +736,7 @@ import axios, { type AxiosError } from 'axios';
 import { useToast } from 'vue-toastification';
 import { renderMarkdown } from '@/lib/markdown';
 import DOMPurify from 'dompurify';
+import { sanitizeColor } from '@/lib/utils';
 
 type ApiTicket = {
     id: number;
@@ -950,7 +921,66 @@ const internalNotesCount = computed(() => {
 const sanitizedMailBody = computed(() => {
     const body = mailPreview.value?.body;
     if (!body) return '';
-    return DOMPurify.sanitize(body, {
+
+    // Configure DOMPurify hooks for security
+    DOMPurify.addHook('uponSanitizeAttribute', (node, data) => {
+        // Remove dangerous event handlers and style attributes
+        if (data.attrName === 'onerror' || data.attrName === 'onload' || data.attrName === 'style') {
+            data.keepAttr = false;
+            return;
+        }
+
+        // Validate and sanitize href/src URLs
+        if ((data.attrName === 'href' || data.attrName === 'src') && data.attrValue) {
+            const url = data.attrValue.trim();
+            const lowerUrl = url.toLowerCase();
+
+            // Block javascript: and data: protocols (except data:image/* for img src)
+            if (lowerUrl.startsWith('javascript:') || lowerUrl.startsWith('vbscript:')) {
+                data.keepAttr = false;
+                return;
+            }
+
+            // For img src, only allow http(s) and data:image/*
+            if (data.attrName === 'src' && node.tagName === 'IMG') {
+                if (
+                    !lowerUrl.startsWith('http://') &&
+                    !lowerUrl.startsWith('https://') &&
+                    !lowerUrl.startsWith('data:image/')
+                ) {
+                    data.keepAttr = false;
+                    return;
+                }
+            }
+
+            // For anchor href, only allow http(s), mailto:, and tel:
+            if (data.attrName === 'href' && node.tagName === 'A') {
+                if (
+                    !lowerUrl.startsWith('http://') &&
+                    !lowerUrl.startsWith('https://') &&
+                    !lowerUrl.startsWith('mailto:') &&
+                    !lowerUrl.startsWith('tel:') &&
+                    !lowerUrl.startsWith('#') // Allow anchor links
+                ) {
+                    data.keepAttr = false;
+                    return;
+                }
+            }
+        }
+    });
+
+    DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+        // Force rel="noopener noreferrer" on all anchor tags with href
+        if (node.tagName === 'A' && node.hasAttribute('href')) {
+            const href = node.getAttribute('href');
+            // Only add rel for external links (http/https)
+            if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+                node.setAttribute('rel', 'noopener noreferrer');
+            }
+        }
+    });
+
+    const sanitized = DOMPurify.sanitize(body, {
         ALLOWED_TAGS: [
             'p',
             'br',
@@ -996,9 +1026,18 @@ const sanitizedMailBody = computed(() => {
             'th',
             'td',
         ],
-        ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'style', 'width', 'height', 'target', 'rel'],
+        ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'width', 'height', 'rel'],
+        FORBID_TAGS: ['script', 'style'],
+        FORBID_ATTR: ['onerror', 'onload', 'style'],
         KEEP_CONTENT: true,
+        ALLOW_DATA_ATTR: false,
+        ALLOW_UNKNOWN_PROTOCOLS: false,
     });
+
+    // Clean up hooks after sanitization
+    DOMPurify.removeAllHooks();
+
+    return sanitized;
 });
 
 async function fetchTicketDetails() {

@@ -361,7 +361,7 @@ class TicketAttachment
      *
      * @return string|null The resolved absolute file path, or null if invalid
      */
-    private static function sanitizeAndResolveFilePath(string $filePath): ?string
+    public static function sanitizeAndResolveFilePath(string $filePath): ?string
     {
         if (empty($filePath)) {
             return null;

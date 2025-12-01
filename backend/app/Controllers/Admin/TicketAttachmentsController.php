@@ -146,7 +146,6 @@ class TicketAttachmentsController
             'image/gif',
             'image/webp',
             'image/bmp',
-            'image/svg+xml',
             // Documents
             'application/pdf',
             'application/msword',

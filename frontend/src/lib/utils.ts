@@ -30,3 +30,47 @@ import { twMerge } from 'tailwind-merge';
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
+
+/**
+ * Sanitize color values to prevent CSS injection attacks.
+ * Only allows valid hex codes or safe named CSS colors.
+ *
+ * @param color - The color value to sanitize (can be undefined)
+ * @returns A style object with backgroundColor and color, or empty object if invalid
+ */
+export function sanitizeColor(color: string | undefined): Record<string, string> {
+    if (!color) return {};
+
+    // Remove any whitespace
+    const trimmedColor = color.trim();
+
+    // Only allow valid hex codes (#RGB, #RRGGBB, #RRGGBBAA, #RRRRGGGGBBBB, #RRRRGGGGBBBBAAAA)
+    const hexPattern = /^#[0-9A-Fa-f]{3,8}$/;
+
+    // Allow safe CSS named colors (common ones used in UI)
+    const namedColors = [
+        'red',
+        'blue',
+        'green',
+        'yellow',
+        'purple',
+        'orange',
+        'pink',
+        'gray',
+        'grey',
+        'black',
+        'white',
+        'transparent',
+        'currentcolor',
+        'inherit',
+    ];
+
+    const lowerColor = trimmedColor.toLowerCase();
+
+    if (hexPattern.test(trimmedColor) || namedColors.includes(lowerColor)) {
+        return { backgroundColor: trimmedColor, color: '#fff' };
+    }
+
+    // Invalid color, ignore it (return empty object)
+    return {};
+}

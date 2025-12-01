@@ -591,7 +591,6 @@ class TicketsController
             'image/gif',
             'image/webp',
             'image/bmp',
-            'image/svg+xml',
             // Documents
             'application/pdf',
             'application/msword',
@@ -657,9 +656,7 @@ class TicketsController
         }
 
         // Create attachments directory if it doesn't exist
-        // Note: Ensure .htaccess or nginx configuration prevents PHP execution in this directory
-        // Example .htaccess: <FilesMatch "\.php$"> Require all denied </FilesMatch>
-        // Example nginx: location ~ ^/attachments/.*\.php$ { deny all; }
+
         $attachmentsDir = APP_PUBLIC . '/attachments/';
         if (!is_dir($attachmentsDir)) {
             mkdir($attachmentsDir, 0755, true);
@@ -882,23 +879,53 @@ class TicketsController
 
         $ticketId = (int) $ticket['id'];
 
-        // Delete all messages and their attachments
-        $messages = TicketMessage::getByTicketId($ticketId, 1000, 0);
-        foreach ($messages as $message) {
-            // Delete attachments for this message
-            $attachments = TicketAttachment::getAll($ticketId, (int) $message['id']);
-            foreach ($attachments as $attachment) {
-                // Let the model handle file deletion with proper path sanitization
-                TicketAttachment::delete((int) $attachment['id']);
-            }
-            // Delete message
-            TicketMessage::delete((int) $message['id']);
-        }
+        // Get PDO connection for transaction
+        $pdo = \App\Chat\Database::getPdoConnection();
 
-        // Delete ticket
-        $deleted = Ticket::delete($ticketId);
-        if (!$deleted) {
-            return ApiResponse::error('Failed to delete ticket', 'DELETE_FAILED', 500);
+        try {
+            // Start transaction to ensure atomic deletion
+            $pdo->beginTransaction();
+
+            // Fetch all attachments for this ticket (no pagination limit)
+            // We need to delete files before database records are removed by cascade
+            $stmt = $pdo->prepare('SELECT * FROM featherpanel_ticket_attachments WHERE ticket_id = :ticket_id');
+            $stmt->execute(['ticket_id' => $ticketId]);
+            $attachments = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            // Delete all attachment files (using model's safe deletion method)
+            foreach ($attachments as $attachment) {
+                // TicketAttachment::delete() handles file deletion with path sanitization
+                // However, it starts its own transaction, so we need to delete files manually
+                // and let the cascade handle database records
+                if (isset($attachment['file_path']) && is_string($attachment['file_path']) && $attachment['file_path'] !== '') {
+                    $filePath = TicketAttachment::sanitizeAndResolveFilePath($attachment['file_path']);
+                    if ($filePath !== null && file_exists($filePath)) {
+                        if (!@unlink($filePath)) {
+                            throw new \Exception('Failed to delete attachment file: ' . $filePath);
+                        }
+                    }
+                }
+            }
+
+            // Delete ticket - this will cascade delete messages and attachment records via foreign keys
+            $stmt = $pdo->prepare('DELETE FROM featherpanel_tickets WHERE id = :id');
+            if (!$stmt->execute(['id' => $ticketId])) {
+                throw new \Exception('Failed to delete ticket from database');
+            }
+
+            // Commit transaction
+            $pdo->commit();
+        } catch (\Exception $e) {
+            // Rollback transaction on any error
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            App::getInstance(true)->getLogger()->error(
+                'Failed to delete ticket ' . $ticketId . ': ' . $e->getMessage()
+            );
+
+            return ApiResponse::error('Failed to delete ticket: ' . $e->getMessage(), 'DELETE_FAILED', 500);
         }
 
         // Log activity
