@@ -1276,10 +1276,6 @@ class KnowledgebaseController
             return ApiResponse::error('Invalid file upload', 'INVALID_FILE', 400);
         }
 
-        // Get MIME type BEFORE moving the file (must be done before move())
-        // Allow any file type for attachments (not just images)
-        $mimeType = $file->getMimeType();
-
         // Get file size BEFORE moving the file (must be done before move())
         $fileSize = $file->getSize();
 
@@ -1288,24 +1284,122 @@ class KnowledgebaseController
             return ApiResponse::error('File size too large. Maximum size is 50MB', 'FILE_TOO_LARGE', 400);
         }
 
+        // Define allowed MIME types for knowledgebase attachments
+        $allowedMimeTypes = [
+            // Images (for screenshots)
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            'image/bmp',
+            'image/svg+xml',
+            // Documents
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+            'text/plain',
+            'text/csv',
+            // Spreadsheets
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+            // Archives
+            'application/zip',
+            'application/x-rar-compressed',
+            'application/x-tar',
+            'application/gzip',
+        ];
+
+        // Define allowed file extensions (must match MIME types)
+        $allowedExtensions = [
+            'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg',
+            'pdf', 'doc', 'docx', 'txt', 'csv',
+            'xls', 'xlsx',
+            'zip', 'rar', 'tar', 'gz',
+        ];
+
+        // Explicitly block dangerous executable extensions
+        $blockedExtensions = [
+            'php', 'phar', 'phtml', 'php3', 'php4', 'php5', 'php7', 'php8',
+            'cgi', 'pl', 'py', 'rb', 'sh', 'bash',
+            'jsp', 'jspx', 'asp', 'aspx', 'asmx',
+            'exe', 'bat', 'cmd', 'com', 'scr', 'vbs', 'wsf',
+            'jar', 'war', 'ear',
+        ];
+
+        // Get file extension from original filename
+        $originalName = $file->getClientOriginalName();
+        $pathInfo = pathinfo($originalName);
+        $originalExtension = strtolower($pathInfo['extension'] ?? '');
+        $originalExtension = preg_replace('/[^a-zA-Z0-9]/', '', $originalExtension);
+
+        // Validate extension - check blocked first
+        if (!empty($originalExtension) && in_array($originalExtension, $blockedExtensions, true)) {
+            return ApiResponse::error(
+                'File type not allowed. Executable files are not permitted.',
+                'INVALID_FILE_TYPE',
+                400
+            );
+        }
+
+        // Validate extension against allowlist
+        if (empty($originalExtension) || !in_array($originalExtension, $allowedExtensions, true)) {
+            $allowedList = implode(', ', array_map('strtoupper', $allowedExtensions));
+
+            return ApiResponse::error(
+                'File type not allowed. Allowed file types: ' . $allowedList,
+                'INVALID_FILE_TYPE',
+                400
+            );
+        }
+
+        // Get MIME type using reliable server-side detection
+        $detectedMimeType = null;
+        if (extension_loaded('fileinfo')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $tempPath = $file->getPathname();
+            if ($tempPath && file_exists($tempPath)) {
+                $detectedMimeType = finfo_file($finfo, $tempPath);
+            }
+        }
+
+        // Fallback to uploaded file's MIME type if finfo failed
+        if (!$detectedMimeType) {
+            $detectedMimeType = $file->getMimeType();
+        }
+
+        // Validate MIME type
+        if (empty($detectedMimeType) || !in_array($detectedMimeType, $allowedMimeTypes, true)) {
+            return ApiResponse::error(
+                'File type not allowed. Please upload a valid file type (images, documents, PDF, archives).',
+                'INVALID_MIME_TYPE',
+                400
+            );
+        }
+
         // Create attachments directory if it doesn't exist
         $attachmentsDir = APP_PUBLIC . '/attachments/';
         if (!is_dir($attachmentsDir)) {
             mkdir($attachmentsDir, 0755, true);
         }
 
-        // Generate unique filename
-        $originalName = $file->getClientOriginalName();
-        $extension = $file->guessExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION);
-        $filename = uniqid() . '_kb_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
+        // Generate unique filename with sanitized extension
+        $sanitizedBase = preg_replace('/[^a-zA-Z0-9._-]/', '_', $pathInfo['filename'] ?? 'attachment');
+        $filename = uniqid() . '_kb_' . $sanitizedBase . '.' . $originalExtension;
         $filePath = $attachmentsDir . $filename;
 
         // Move uploaded file
         try {
             $file->move($attachmentsDir, $filename);
+
+            // Set safe file permissions (read-only for owner and group, no execute)
+            // This prevents accidental execution even if PHP execution is somehow enabled
+            @chmod($filePath, 0644);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to save file: ' . $e->getMessage(), 'SAVE_FAILED', 500);
         }
+
+        // Use detected MIME type for storage
+        $mimeType = $detectedMimeType ?: 'application/octet-stream';
 
         // Generate URL (relative path for reverse proxy)
         $url = '/attachments/' . $filename;
@@ -1319,7 +1413,7 @@ class KnowledgebaseController
             'file_name' => $originalName,
             'file_path' => $url,
             'file_size' => $fileSize,
-            'file_type' => $mimeType ?: 'application/octet-stream',
+            'file_type' => $mimeType,
             'user_downloadable' => $userDownloadable,
         ];
 

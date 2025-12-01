@@ -138,6 +138,98 @@ class TicketAttachmentsController
             return ApiResponse::error('File size too large. Maximum size is 50MB', 'FILE_TOO_LARGE', 400);
         }
 
+        // Define allowed MIME types for ticket attachments
+        $allowedMimeTypes = [
+            // Images (for screenshots)
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            'image/bmp',
+            'image/svg+xml',
+            // Documents
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+            'text/plain',
+            'text/csv',
+            // Spreadsheets
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+            // Archives
+            'application/zip',
+            'application/x-rar-compressed',
+            'application/x-tar',
+            'application/gzip',
+        ];
+
+        // Define allowed file extensions (must match MIME types)
+        $allowedExtensions = [
+            'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg',
+            'pdf', 'doc', 'docx', 'txt', 'csv',
+            'xls', 'xlsx',
+            'zip', 'rar', 'tar', 'gz',
+        ];
+
+        // Explicitly block dangerous executable extensions
+        $blockedExtensions = [
+            'php', 'phar', 'phtml', 'php3', 'php4', 'php5', 'php7', 'php8',
+            'cgi', 'pl', 'py', 'rb', 'sh', 'bash',
+            'jsp', 'jspx', 'asp', 'aspx', 'asmx',
+            'exe', 'bat', 'cmd', 'com', 'scr', 'vbs', 'wsf',
+            'jar', 'war', 'ear',
+        ];
+
+        // Get file extension from original filename
+        $originalName = $file->getClientOriginalName() ?: 'attachment';
+        $pathInfo = pathinfo($originalName);
+        $originalExtension = strtolower($pathInfo['extension'] ?? '');
+        $originalExtension = preg_replace('/[^a-zA-Z0-9]/', '', $originalExtension);
+
+        // Validate extension - check blocked first
+        if (!empty($originalExtension) && in_array($originalExtension, $blockedExtensions, true)) {
+            return ApiResponse::error(
+                'File type not allowed. Executable files are not permitted.',
+                'INVALID_FILE_TYPE',
+                400
+            );
+        }
+
+        // Validate extension against allowlist
+        if (empty($originalExtension) || !in_array($originalExtension, $allowedExtensions, true)) {
+            $allowedList = implode(', ', array_map('strtoupper', $allowedExtensions));
+
+            return ApiResponse::error(
+                'File type not allowed. Allowed file types: ' . $allowedList,
+                'INVALID_FILE_TYPE',
+                400
+            );
+        }
+
+        // Get MIME type using reliable server-side detection
+        $detectedMimeType = null;
+        if (extension_loaded('fileinfo')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $tempPath = $file->getPathname();
+            if ($tempPath && file_exists($tempPath)) {
+                $detectedMimeType = finfo_file($finfo, $tempPath);
+            }
+        }
+
+        // Fallback to uploaded file's MIME type if finfo failed
+        if (!$detectedMimeType) {
+            $detectedMimeType = $file->getMimeType();
+        }
+
+        // Validate MIME type
+        if (empty($detectedMimeType) || !in_array($detectedMimeType, $allowedMimeTypes, true)) {
+            return ApiResponse::error(
+                'File type not allowed. Please upload a valid file type (images, documents, PDF, archives).',
+                'INVALID_MIME_TYPE',
+                400
+            );
+        }
+
         // Directory
         $attachmentsDir = APP_PUBLIC . '/attachments/';
         if (!is_dir($attachmentsDir)) {
@@ -145,16 +237,9 @@ class TicketAttachmentsController
         }
 
         // Build filename: <ticketUuid>_tk_<name>.<extension>
-        $originalName = $file->getClientOriginalName() ?: 'attachment';
-        $pathInfo = pathinfo($originalName);
         $base = $pathInfo['filename'] ?? 'attachment';
-        $ext = $pathInfo['extension'] ?? $file->guessExtension() ?? 'bin';
-
         $base = preg_replace('/[^a-zA-Z0-9._-]/', '_', $base);
-        $ext = preg_replace('/[^a-zA-Z0-9]/', '', (string) $ext);
-        if ($ext === '') {
-            $ext = 'bin';
-        }
+        $ext = $originalExtension;
 
         $ticketUuid = $ticket['uuid'];
         $filename = $ticketUuid . '_tk_' . $base . '.' . $ext;
@@ -171,10 +256,14 @@ class TicketAttachmentsController
         // Capture file properties BEFORE moving the file
         // (getSize() and getMimeType() may return invalid values after move())
         $fileSize = $file->getSize();
-        $mimeType = $file->getMimeType() ?: 'application/octet-stream';
+        $mimeType = $detectedMimeType ?: 'application/octet-stream';
 
         try {
             $file->move($attachmentsDir, $filename);
+
+            // Set safe file permissions (read-only for owner and group, no execute)
+            // This prevents accidental execution even if PHP execution is somehow enabled
+            @chmod($filePath, 0644);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to save file: ' . $e->getMessage(), 'SAVE_FAILED', 500);
         }

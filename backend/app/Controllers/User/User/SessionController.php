@@ -383,21 +383,84 @@ class SessionController
             return ApiResponse::error('No avatar file provided', 'NO_FILE_PROVIDED', 400);
         }
 
-        // Validate file type
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        if (!in_array($uploadedFile->getMimeType(), $allowedTypes)) {
-            return ApiResponse::error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.', 'INVALID_FILE_TYPE', 400);
-        }
-
         // Validate file size (max 5MB)
         $maxSize = 5 * 1024 * 1024; // 5MB
         if ($uploadedFile->getSize() > $maxSize) {
             return ApiResponse::error('File too large. Maximum size is 5MB.', 'FILE_TOO_LARGE', 400);
         }
 
-        // Generate unique filename using user UUID
-        $extension = $uploadedFile->guessExtension();
-        $filename = $user['uuid'] . '.' . $extension;
+        // Define allowed MIME types for avatars (images only)
+        $allowedMimeTypes = [
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+        ];
+
+        // Define allowed file extensions (must match MIME types)
+        $allowedExtensions = [
+            'jpg', 'jpeg', 'png', 'gif', 'webp',
+        ];
+
+        // Explicitly block dangerous executable extensions
+        $blockedExtensions = [
+            'php', 'phar', 'phtml', 'php3', 'php4', 'php5', 'php7', 'php8',
+            'cgi', 'pl', 'py', 'rb', 'sh', 'bash',
+            'jsp', 'jspx', 'asp', 'aspx', 'asmx',
+            'exe', 'bat', 'cmd', 'com', 'scr', 'vbs', 'wsf',
+            'jar', 'war', 'ear',
+        ];
+
+        // Get file extension from original filename
+        $originalName = $uploadedFile->getClientOriginalName();
+        $pathInfo = pathinfo($originalName);
+        $originalExtension = strtolower($pathInfo['extension'] ?? '');
+        $originalExtension = preg_replace('/[^a-zA-Z0-9]/', '', $originalExtension);
+
+        // Validate extension - check blocked first
+        if (!empty($originalExtension) && in_array($originalExtension, $blockedExtensions, true)) {
+            return ApiResponse::error(
+                'File type not allowed. Executable files are not permitted.',
+                'INVALID_FILE_TYPE',
+                400
+            );
+        }
+
+        // Validate extension against allowlist
+        if (empty($originalExtension) || !in_array($originalExtension, $allowedExtensions, true)) {
+            return ApiResponse::error(
+                'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.',
+                'INVALID_FILE_TYPE',
+                400
+            );
+        }
+
+        // Get MIME type using reliable server-side detection
+        $detectedMimeType = null;
+        if (extension_loaded('fileinfo')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $tempPath = $uploadedFile->getPathname();
+            if ($tempPath && file_exists($tempPath)) {
+                $detectedMimeType = finfo_file($finfo, $tempPath);
+            }
+        }
+
+        // Fallback to uploaded file's MIME type if finfo failed
+        if (!$detectedMimeType) {
+            $detectedMimeType = $uploadedFile->getMimeType();
+        }
+
+        // Validate MIME type
+        if (empty($detectedMimeType) || !in_array($detectedMimeType, $allowedMimeTypes, true)) {
+            return ApiResponse::error(
+                'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.',
+                'INVALID_MIME_TYPE',
+                400
+            );
+        }
+
+        // Generate unique filename using user UUID with validated extension
+        $filename = $user['uuid'] . '.' . $originalExtension;
         $avatarsDir = __DIR__ . '/../../../../public/attachments/avatars/';
 
         // Ensure avatars directory exists
@@ -405,9 +468,15 @@ class SessionController
             mkdir($avatarsDir, 0755, true);
         }
 
+        $filePath = $avatarsDir . $filename;
+
         // Move uploaded file
         try {
             $uploadedFile->move($avatarsDir, $filename);
+
+            // Set safe file permissions (read-only for owner and group, no execute)
+            // This prevents accidental execution even if PHP execution is somehow enabled
+            @chmod($filePath, 0644);
 
             // Generate URL for the avatar
             $avatarUrl = '/attachments/avatars/' . $filename;
