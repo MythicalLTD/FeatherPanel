@@ -262,6 +262,32 @@ const adminRoutes: RouteRecordRaw[] = [
         name: 'AdminKnowledgebaseArticleEdit',
         component: () => import('@/pages/admin/knowledgebase/ArticleEdit.vue'),
     },
+    // Ticket System
+    {
+        path: '/admin/tickets',
+        name: 'AdminTickets',
+        component: () => import('@/pages/admin/tickets/Tickets.vue'),
+    },
+    {
+        path: '/admin/tickets/categories',
+        name: 'AdminTicketCategories',
+        component: () => import('@/pages/admin/tickets/TicketCategories.vue'),
+    },
+    {
+        path: '/admin/tickets/priorities',
+        name: 'AdminTicketPriorities',
+        component: () => import('@/pages/admin/tickets/TicketPriorities.vue'),
+    },
+    {
+        path: '/admin/tickets/statuses',
+        name: 'AdminTicketStatuses',
+        component: () => import('@/pages/admin/tickets/TicketStatuses.vue'),
+    },
+    {
+        path: '/admin/tickets/:uuid',
+        name: 'AdminTicketView',
+        component: () => import('@/pages/admin/tickets/TicketView.vue'),
+    },
     {
         path: '/admin/:pathMatch(.*)*',
         name: 'AdminPluginRenderedPage',

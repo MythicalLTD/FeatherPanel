@@ -12,7 +12,7 @@ FeatherPanel Backend is a modern PHP 8.1+ application built without a traditiona
 
 ## Core Technologies
 
-- **PHP:** 8.1+ (requires 8.4 for some features)
+- **PHP:** 8.5+ (requires 8.5 for some features)
 - **Database:** MySQL/MariaDB with PDO
 - **Cache:** Redis (Predis library)
 - **Router:** Symfony Routing Component

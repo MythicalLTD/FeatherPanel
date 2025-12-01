@@ -202,7 +202,7 @@ const dependencyTypes = [
     { value: 'plugin', label: 'Plugin' },
 ];
 
-const phpVersions = ['8.0', '8.1', '8.2', '8.3', '8.4'];
+const phpVersions = ['8.0', '8.1', '8.2', '8.3', '8.4', '8.5'];
 const phpExtensions = ['pdo', 'curl', 'json', 'mbstring', 'gd', 'zip', 'xml', 'openssl', 'sqlite3', 'mysql', 'pgsql'];
 const composerPackages = ['laravel/framework', 'symfony/console', 'monolog/monolog', 'guzzlehttp/guzzle'];
 

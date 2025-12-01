@@ -12,6 +12,7 @@
 - Resolved longstanding issues with server transfers in FeatherPanel: transfers are now fully functional and reliable. by @nayskutzu
 - Resolved a query error that occurred when a database host was associated with active servers. by @nayskutzu
 - Resolved an issue preventing EULA and egg/spell features from functioning correctly—these are now properly included in server requests, restoring expected functionality. by @nayskutzu
+- Fixed an issue where role names and colors were not properly displayed on the frontend; these are now shown as intended. by @nayskutzu
 
 ### Added
 
@@ -27,6 +28,11 @@
 - Introduced a built-in Knowledgebase, allowing users to easily access essential documentation directly within FeatherPanel—no need for third-party solutions! by @nayskutzu
 - Introduced a sleek and informative Status Page for users! When enabled, it provides real-time insights into node statuses and other key system information, enhancing transparency and monitoring. by @nayskutzu
 - Introduced seamless SSO authentication support, enabling integration with WHMCS and other external platforms for a unified login experience. by @nayskutzu
+- Rolled out a comprehensive, user-friendly ticket system packed with advanced features and thoughtful enhancements for a seamless support experience. by @nayskutzu
+
+### Updated
+
+- Native support for PHP 8.5! FeatherPanel is now fully compatible with the latest PHP release, ensuring optimal performance and future-proofing your deployments. by @nayskutzu
 
 ## v1.0.5 BETA
 

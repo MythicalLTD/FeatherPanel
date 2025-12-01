@@ -129,6 +129,11 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::KNOWLEDGEBASE_SHOW_ARTICLES => 'true',
             ConfigInterface::KNOWLEDGEBASE_SHOW_ATTACHMENTS => 'true',
             ConfigInterface::KNOWLEDGEBASE_SHOW_TAGS => 'true',
+
+            // Ticket system settings
+            ConfigInterface::TICKET_SYSTEM_ENABLED => 'true',
+            ConfigInterface::TICKET_SYSTEM_ALLOW_ATTACHMENTS => 'true',
+            ConfigInterface::TICKET_SYSTEM_MAX_OPEN_TICKETS => '10',
         ];
     }
 }

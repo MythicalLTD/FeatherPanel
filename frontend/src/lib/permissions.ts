@@ -271,6 +271,60 @@ class Permissions {
     /** Bypass API rate limits and restrictions */
     public static ADMIN_API_BYPASS_RESTRICTIONS = 'admin.api.bypass_restrictions';
 
+    // Admin Tickets Permissions
+    /** View support tickets */
+    public static ADMIN_TICKETS_VIEW = 'admin.tickets.view';
+    /** Create support tickets */
+    public static ADMIN_TICKETS_CREATE = 'admin.tickets.create';
+    /** Edit support tickets */
+    public static ADMIN_TICKETS_EDIT = 'admin.tickets.edit';
+    /** Delete support tickets */
+    public static ADMIN_TICKETS_DELETE = 'admin.tickets.delete';
+    /** Manage all aspects of support tickets */
+    public static ADMIN_TICKETS_MANAGE = 'admin.tickets.manage';
+
+    // Admin Ticket Categories Permissions
+    /** View ticket categories */
+    public static ADMIN_TICKET_CATEGORIES_VIEW = 'admin.ticket_categories.view';
+    /** Create ticket categories */
+    public static ADMIN_TICKET_CATEGORIES_CREATE = 'admin.ticket_categories.create';
+    /** Edit ticket categories */
+    public static ADMIN_TICKET_CATEGORIES_EDIT = 'admin.ticket_categories.edit';
+    /** Delete ticket categories */
+    public static ADMIN_TICKET_CATEGORIES_DELETE = 'admin.ticket_categories.delete';
+
+    // Admin Ticket Priorities Permissions
+    /** View ticket priorities */
+    public static ADMIN_TICKET_PRIORITIES_VIEW = 'admin.ticket_priorities.view';
+    /** Create ticket priorities */
+    public static ADMIN_TICKET_PRIORITIES_CREATE = 'admin.ticket_priorities.create';
+    /** Edit ticket priorities */
+    public static ADMIN_TICKET_PRIORITIES_EDIT = 'admin.ticket_priorities.edit';
+    /** Delete ticket priorities */
+    public static ADMIN_TICKET_PRIORITIES_DELETE = 'admin.ticket_priorities.delete';
+
+    // Admin Ticket Statuses Permissions
+    /** View ticket statuses */
+    public static ADMIN_TICKET_STATUSES_VIEW = 'admin.ticket_statuses.view';
+    /** Create ticket statuses */
+    public static ADMIN_TICKET_STATUSES_CREATE = 'admin.ticket_statuses.create';
+    /** Edit ticket statuses */
+    public static ADMIN_TICKET_STATUSES_EDIT = 'admin.ticket_statuses.edit';
+    /** Delete ticket statuses */
+    public static ADMIN_TICKET_STATUSES_DELETE = 'admin.ticket_statuses.delete';
+
+    // Admin Ticket Attachments Permissions
+    /** View ticket attachments */
+    public static ADMIN_TICKET_ATTACHMENTS_VIEW = 'admin.ticket_attachments.view';
+    /** Manage ticket attachments */
+    public static ADMIN_TICKET_ATTACHMENTS_MANAGE = 'admin.ticket_attachments.manage';
+
+    // Admin Ticket Messages Permissions
+    /** View ticket messages */
+    public static ADMIN_TICKET_MESSAGES_VIEW = 'admin.ticket_messages.view';
+    /** Manage ticket messages */
+    public static ADMIN_TICKET_MESSAGES_MANAGE = 'admin.ticket_messages.manage';
+
     /**
      * Returns all permission nodes with metadata.
      */
@@ -368,6 +422,27 @@ class Permissions {
             { constant: 'ADMIN_KNOWLEDGEBASE_ARTICLES_EDIT', value: Permissions.ADMIN_KNOWLEDGEBASE_ARTICLES_EDIT, category: 'Admin Knowledgebase Articles', description: 'Edit existing knowledgebase articles' },
             { constant: 'ADMIN_KNOWLEDGEBASE_ARTICLES_DELETE', value: Permissions.ADMIN_KNOWLEDGEBASE_ARTICLES_DELETE, category: 'Admin Knowledgebase Articles', description: 'Delete knowledgebase articles' },
             { constant: 'ADMIN_API_BYPASS_RESTRICTIONS', value: Permissions.ADMIN_API_BYPASS_RESTRICTIONS, category: 'Admin API', description: 'Bypass API rate limits and restrictions' },
+            { constant: 'ADMIN_TICKETS_VIEW', value: Permissions.ADMIN_TICKETS_VIEW, category: 'Admin Tickets', description: 'View support tickets' },
+            { constant: 'ADMIN_TICKETS_CREATE', value: Permissions.ADMIN_TICKETS_CREATE, category: 'Admin Tickets', description: 'Create support tickets' },
+            { constant: 'ADMIN_TICKETS_EDIT', value: Permissions.ADMIN_TICKETS_EDIT, category: 'Admin Tickets', description: 'Edit support tickets' },
+            { constant: 'ADMIN_TICKETS_DELETE', value: Permissions.ADMIN_TICKETS_DELETE, category: 'Admin Tickets', description: 'Delete support tickets' },
+            { constant: 'ADMIN_TICKETS_MANAGE', value: Permissions.ADMIN_TICKETS_MANAGE, category: 'Admin Tickets', description: 'Manage all aspects of support tickets' },
+            { constant: 'ADMIN_TICKET_CATEGORIES_VIEW', value: Permissions.ADMIN_TICKET_CATEGORIES_VIEW, category: 'Admin Ticket Categories', description: 'View ticket categories' },
+            { constant: 'ADMIN_TICKET_CATEGORIES_CREATE', value: Permissions.ADMIN_TICKET_CATEGORIES_CREATE, category: 'Admin Ticket Categories', description: 'Create ticket categories' },
+            { constant: 'ADMIN_TICKET_CATEGORIES_EDIT', value: Permissions.ADMIN_TICKET_CATEGORIES_EDIT, category: 'Admin Ticket Categories', description: 'Edit ticket categories' },
+            { constant: 'ADMIN_TICKET_CATEGORIES_DELETE', value: Permissions.ADMIN_TICKET_CATEGORIES_DELETE, category: 'Admin Ticket Categories', description: 'Delete ticket categories' },
+            { constant: 'ADMIN_TICKET_PRIORITIES_VIEW', value: Permissions.ADMIN_TICKET_PRIORITIES_VIEW, category: 'Admin Ticket Priorities', description: 'View ticket priorities' },
+            { constant: 'ADMIN_TICKET_PRIORITIES_CREATE', value: Permissions.ADMIN_TICKET_PRIORITIES_CREATE, category: 'Admin Ticket Priorities', description: 'Create ticket priorities' },
+            { constant: 'ADMIN_TICKET_PRIORITIES_EDIT', value: Permissions.ADMIN_TICKET_PRIORITIES_EDIT, category: 'Admin Ticket Priorities', description: 'Edit ticket priorities' },
+            { constant: 'ADMIN_TICKET_PRIORITIES_DELETE', value: Permissions.ADMIN_TICKET_PRIORITIES_DELETE, category: 'Admin Ticket Priorities', description: 'Delete ticket priorities' },
+            { constant: 'ADMIN_TICKET_STATUSES_VIEW', value: Permissions.ADMIN_TICKET_STATUSES_VIEW, category: 'Admin Ticket Statuses', description: 'View ticket statuses' },
+            { constant: 'ADMIN_TICKET_STATUSES_CREATE', value: Permissions.ADMIN_TICKET_STATUSES_CREATE, category: 'Admin Ticket Statuses', description: 'Create ticket statuses' },
+            { constant: 'ADMIN_TICKET_STATUSES_EDIT', value: Permissions.ADMIN_TICKET_STATUSES_EDIT, category: 'Admin Ticket Statuses', description: 'Edit ticket statuses' },
+            { constant: 'ADMIN_TICKET_STATUSES_DELETE', value: Permissions.ADMIN_TICKET_STATUSES_DELETE, category: 'Admin Ticket Statuses', description: 'Delete ticket statuses' },
+            { constant: 'ADMIN_TICKET_ATTACHMENTS_VIEW', value: Permissions.ADMIN_TICKET_ATTACHMENTS_VIEW, category: 'Admin Ticket Attachments', description: 'View ticket attachments' },
+            { constant: 'ADMIN_TICKET_ATTACHMENTS_MANAGE', value: Permissions.ADMIN_TICKET_ATTACHMENTS_MANAGE, category: 'Admin Ticket Attachments', description: 'Manage ticket attachments' },
+            { constant: 'ADMIN_TICKET_MESSAGES_VIEW', value: Permissions.ADMIN_TICKET_MESSAGES_VIEW, category: 'Admin Ticket Messages', description: 'View ticket messages' },
+            { constant: 'ADMIN_TICKET_MESSAGES_MANAGE', value: Permissions.ADMIN_TICKET_MESSAGES_MANAGE, category: 'Admin Ticket Messages', description: 'Manage ticket messages' },
         ];
     }
 }

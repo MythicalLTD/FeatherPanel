@@ -34,7 +34,12 @@ export interface UserInfo {
     first_name: string;
     last_name: string;
     email: string;
-    role: number;
+    role_id?: number;
+    role?: {
+        name: string;
+        display_name: string;
+        color: string;
+    };
     external_id: number | null;
     password: string;
     remember_token: string;
@@ -51,6 +56,7 @@ export interface UserInfo {
     locked: string;
     last_seen: string;
     first_seen: string;
+    ticket_signature?: string | null;
     discord_oauth2_id?: string | null;
     discord_oauth2_access_token?: string | null;
     discord_oauth2_linked?: string;

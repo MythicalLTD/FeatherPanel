@@ -518,20 +518,25 @@ import { useAdminSettingsStore, type Setting } from '@/stores/adminSettings';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import {
-    Settings,
-    Save,
+    Activity,
     AlertCircle,
-    Shield,
-    Mail,
+    Bell,
+    BookOpen,
+    Bot,
+    CheckCircle2,
+    Copy,
     Database,
+    ExternalLink,
     Globe,
     Lock,
-    Bell,
+    Mail,
     Palette,
+    Save,
+    Server,
+    Settings,
+    Shield,
+    Ticket,
     Upload,
-    ExternalLink,
-    Copy,
-    CheckCircle2,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -600,6 +605,11 @@ const getCategoryIcon = (iconName: string) => {
         lock: Lock,
         bell: Bell,
         palette: Palette,
+        activity: Activity,
+        book: BookOpen,
+        server: Server,
+        bot: Bot,
+        ticket: Ticket,
     };
     return icons[iconName] || Settings;
 };

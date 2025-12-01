@@ -780,7 +780,6 @@ async function submitEdit() {
         const { data } = await axios.patch(`/api/admin/knowledgebase/articles/${article.value.id}`, patchData);
         if (data && data.success) {
             toast.success('Article updated successfully');
-            router.push('/admin/knowledgebase/articles');
         } else {
             toast.error(data?.message || 'Failed to update article');
         }

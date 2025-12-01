@@ -122,7 +122,7 @@ class DiscordController
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
         $tokenResponse = curl_exec($ch);
         $tokenData = json_decode($tokenResponse, true);
-        curl_close($ch);
+        // curl_close() is deprecated in PHP 8.5 (no-op since PHP 8.0)
 
         if (!isset($tokenData['access_token'])) {
             return new RedirectResponse('/auth/login?error=discord_token_failed');
@@ -137,7 +137,7 @@ class DiscordController
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
         $userResponse = curl_exec($ch);
         $discordUser = json_decode($userResponse, true);
-        curl_close($ch);
+        // curl_close() is deprecated in PHP 8.5 (no-op since PHP 8.0)
 
         if (!isset($discordUser['id'])) {
             return new RedirectResponse('/auth/login?error=discord_user_failed');

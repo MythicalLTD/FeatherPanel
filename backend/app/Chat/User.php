@@ -93,7 +93,7 @@ class User
         }
 
         // Add optional fields if provided
-        $optionalFields = ['role_id', 'avatar', 'remember_token', 'first_ip', 'last_ip', 'banned', 'two_fa_enabled', 'two_fa_key', 'external_id'];
+        $optionalFields = ['role_id', 'avatar', 'remember_token', 'first_ip', 'last_ip', 'banned', 'two_fa_enabled', 'two_fa_key', 'external_id', 'ticket_signature'];
         foreach ($optionalFields as $field) {
             if (isset($data[$field])) {
                 $insert[$field] = $data[$field];
