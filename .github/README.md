@@ -51,16 +51,16 @@ For installation instructions, system requirements, and complete guides, please 
 
 _Last updated: 2025-12-01T21:33:11.474Z_
 
-| Extension | Files | Lines |
-| --- | ---: | ---: |
-| `.vue` | 330 | 95,460 |
-| `.php` | 452 | 92,853 |
-| `.ts` | 84 | 8,484 |
-| `.yml` | 13 | 3,721 |
-| `.yaml` | 3 | 3,602 |
-| `.sql` | 69 | 1,168 |
-| `.js` | 3 | 398 |
-| **Total** | 954 | 205,686 |
+| Extension | Files |   Lines |
+| --------- | ----: | ------: |
+| `.vue`    |   330 |  95,460 |
+| `.php`    |   452 |  92,853 |
+| `.ts`     |    84 |   8,484 |
+| `.yml`    |    13 |   3,721 |
+| `.yaml`   |     3 |   3,602 |
+| `.sql`    |    69 |   1,168 |
+| `.js`     |     3 |     398 |
+| **Total** |   954 | 205,686 |
 
 <!-- COUNT-STATS:END -->
 
@@ -70,10 +70,28 @@ _Last updated: 2025-12-01T21:33:11.474Z_
 
 **Curious to try it out? This build is for testers and adventurous users:**
 
+### Linux
+
 ```bash
 # Install Beta Build!
 curl -sSL https://get.featherpanel.com/beta.sh | bash
 ```
+
+### Windows
+
+**PowerShell:**
+
+```powershell
+iwr https://get.featherpanel.com/beta.ps1 | iex
+```
+
+**Command Prompt (CMD):**
+
+```cmd
+powershell -ExecutionPolicy Bypass -Command "iwr https://get.featherpanel.com/beta.ps1 | iex"
+```
+
+**Note:** The installer will automatically request Administrator privileges via UAC when needed.
 
 **⚡ After installation:**
 
