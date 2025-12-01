@@ -102,6 +102,7 @@ const data = computed(() => ({
         avatar_alt: sessionStore.user?.username?.charAt(0) || '',
     },
     navMain: sidebarNavigation.value.navMain,
+    navMainGrouped: sidebarNavigation.value.navMainGrouped,
     navAdmin: sidebarNavigation.value.navAdmin,
     navAdminGrouped: sidebarNavigation.value.navAdminGrouped,
     navServer: sidebarNavigation.value.navServer,
@@ -367,11 +368,13 @@ const sendServerCommand = async (command: 'start' | 'stop' | 'restart' | 'kill')
         <SidebarContent
             class="px-2 sm:px-0 overflow-y-auto! overflow-x-hidden! group-data-[collapsible=icon]:overflow-y-auto!"
         >
-            <NavMain
-                v-if="router.currentRoute.value.path.startsWith('/dashboard')"
-                :name="t('nav.dashboard')"
-                :items="data.navMain"
-            />
+            <!-- Grouped Dashboard Navigation -->
+            <template v-if="router.currentRoute.value.path.startsWith('/dashboard')">
+                <template v-for="(group, index) in data.navMainGrouped" :key="group.name">
+                    <SidebarSeparator v-if="index > 0" class="my-0.5" />
+                    <NavMain :name="group.name" :items="group.items" />
+                </template>
+            </template>
             <!-- Grouped Server Navigation -->
             <template v-if="router.currentRoute.value.path.startsWith('/server')">
                 <template v-for="(group, index) in data.navServerGrouped" :key="group.name">

@@ -60,6 +60,7 @@ import {
     Package,
     Bell,
     BookOpen,
+    Mail,
 } from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
 import Permissions from '@/lib/permissions';
@@ -311,16 +312,82 @@ export function useNavigation() {
                 icon: Home,
                 isActive: currentPath.value === '/dashboard',
                 category: 'main' as const,
+                group: 'overview',
+            },
+            // Account section - individual entries for each account tab
+            {
+                id: 'account-profile',
+                name: t('nav.account'),
+                title: t('account.profile'),
+                url: '/dashboard/account?tab=profile',
+                icon: Users,
+                isActive:
+                    currentPath.value.startsWith('/dashboard/account') &&
+                    (!route.query.tab || route.query.tab === 'profile'),
+                category: 'main' as const,
+                group: 'account',
             },
             {
-                id: 'account',
+                id: 'account-settings',
                 name: t('nav.account'),
-                title: t('nav.account'),
-                url: '/dashboard/account',
-                icon: Users,
-                isActive: currentPath.value.startsWith('/dashboard/account'),
+                title: t('account.settings'),
+                url: '/dashboard/account?tab=settings',
+                icon: Settings,
+                isActive: currentPath.value.startsWith('/dashboard/account') && route.query.tab === 'settings',
                 category: 'main' as const,
+                group: 'account',
             },
+            {
+                id: 'account-appearance',
+                name: t('nav.account'),
+                title: t('account.appearance'),
+                url: '/dashboard/account?tab=appearance',
+                icon: Activity,
+                isActive: currentPath.value.startsWith('/dashboard/account') && route.query.tab === 'appearance',
+                category: 'main' as const,
+                group: 'account',
+            },
+            {
+                id: 'account-ssh-keys',
+                name: t('nav.account'),
+                title: t('account.sshKeys.title'),
+                url: '/dashboard/account?tab=ssh-keys',
+                icon: Key,
+                isActive: currentPath.value.startsWith('/dashboard/account') && route.query.tab === 'ssh-keys',
+                category: 'main' as const,
+                group: 'account',
+            },
+            {
+                id: 'account-api-keys',
+                name: t('nav.account'),
+                title: t('account.apiKeys.title'),
+                url: '/dashboard/account?tab=api-keys',
+                icon: Key,
+                isActive: currentPath.value.startsWith('/dashboard/account') && route.query.tab === 'api-keys',
+                category: 'main' as const,
+                group: 'account',
+            },
+            {
+                id: 'account-activity',
+                name: t('nav.account'),
+                title: t('account.activity.title'),
+                url: '/dashboard/account?tab=activity',
+                icon: Clock,
+                isActive: currentPath.value.startsWith('/dashboard/account') && route.query.tab === 'activity',
+                category: 'main' as const,
+                group: 'account',
+            },
+            {
+                id: 'account-mail',
+                name: t('nav.account'),
+                title: t('account.mail.title'),
+                url: '/dashboard/account?tab=mail',
+                icon: Mail,
+                isActive: currentPath.value.startsWith('/dashboard/account') && route.query.tab === 'mail',
+                category: 'main' as const,
+                group: 'account',
+            },
+            // Support section
             {
                 id: 'knowledgebase',
                 name: 'Knowledgebase',
@@ -329,6 +396,7 @@ export function useNavigation() {
                 icon: BookOpen,
                 isActive: currentPath.value.startsWith('/dashboard/knowledgebase'),
                 category: 'main' as const,
+                group: 'support',
             },
         ];
 
@@ -342,12 +410,18 @@ export function useNavigation() {
                 icon: Activity,
                 isActive: currentPath.value.startsWith('/dashboard/status'),
                 category: 'main' as const,
+                // Group Status together with Knowledgebase under "support"
+                group: 'support',
             });
         }
 
         // Add plugin client items (with permission filtering)
         if (pluginRoutes.value?.client) {
             const pluginItems = convertPluginItems(pluginRoutes.value.client, 'main');
+            // Group all client plugins under the "plugins" main group
+            pluginItems.forEach((item) => {
+                item.group = 'plugins';
+            });
             items.push(...pluginItems);
         }
 
@@ -926,6 +1000,39 @@ export function useNavigation() {
             .filter((group) => group.name && group.items.length > 0);
     });
 
+    // Group main navigation items
+    const groupedMainItems = computed((): NavigationGroup[] => {
+        const groups: Record<string, NavigationItem[]> = {};
+
+        mainItems.value.forEach((item) => {
+            const groupKey = item.group || 'other';
+            if (!groups[groupKey]) {
+                groups[groupKey] = [];
+            }
+            groups[groupKey].push(item);
+        });
+
+        const groupConfig: Record<string, () => string> = {
+            overview: () => t('navGroups.overview'),
+            account: () => t('navGroups.account'),
+            support: () => t('navGroups.support'),
+            plugins: () => t('navGroups.plugins'),
+        };
+
+        return Object.keys(groupConfig)
+            .filter((key) => groups[key] && groups[key].length > 0)
+            .map((key) => {
+                const labelResolver = groupConfig[key];
+                const name = labelResolver ? labelResolver() : '';
+                const items = groups[key];
+                if (!name || !items) {
+                    return { name: '', items: [] };
+                }
+                return { name, items };
+            })
+            .filter((group) => group.name && group.items.length > 0);
+    });
+
     // Get all navigation items based on current route
     const allNavigationItems = computed(() => {
         const items: NavigationItem[] = [];
@@ -949,6 +1056,7 @@ export function useNavigation() {
     // Get items for sidebar (grouped by category)
     const sidebarNavigation = computed(() => ({
         navMain: mainItems.value,
+        navMainGrouped: groupedMainItems.value,
         navAdmin: filteredAdminItems.value,
         navAdminGrouped: groupedAdminItems.value,
         navServer: filteredServerItems.value,

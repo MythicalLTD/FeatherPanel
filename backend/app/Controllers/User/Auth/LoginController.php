@@ -33,6 +33,7 @@ namespace App\Controllers\User\Auth;
 use App\App;
 use App\Chat\User;
 use App\Chat\Activity;
+use App\Chat\SsoToken;
 use App\Chat\UserPreference;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
@@ -114,6 +115,25 @@ class LoginController
             }
 
             // Use existing login flow to set session and return user data
+            return $this->completeLogin($userInfo, $request);
+        }
+
+        // Handle SSO token login
+        $ssoToken = $data['sso_token'] ?? null;
+        if ($ssoToken) {
+            $record = SsoToken::getValidToken($ssoToken);
+            if ($record === null || !isset($record['user_uuid'])) {
+                return ApiResponse::error('Invalid or expired SSO token', 'INVALID_SSO_TOKEN', 400);
+            }
+
+            // Single-use token: mark as used
+            SsoToken::markTokenUsed((int) $record['id']);
+
+            $userInfo = User::getUserByUuid($record['user_uuid']);
+            if (!$userInfo) {
+                return ApiResponse::error('User not found for SSO token', 'SSO_USER_NOT_FOUND', 404);
+            }
+
             return $this->completeLogin($userInfo, $request);
         }
 

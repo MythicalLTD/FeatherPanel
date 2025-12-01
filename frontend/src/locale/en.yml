@@ -89,6 +89,9 @@ auth:
     loginSuccess: 'Login successful! Redirecting...'
     registrationSuccess: 'Registration successful!'
     passwordResetSuccess: 'Password reset successful.'
+    # SSO login
+    ssoLoggingIn: 'Logging you in securely via SSO...'
+    ssoPleaseWait: 'Please wait while we verify your single sign-on token.'
     # Error messages
     tokenRequired: 'Token is required.'
     invalidToken: 'Invalid token.'
@@ -2492,7 +2495,7 @@ nav:
     network: 'Network'
     startup: 'Startup'
     billing: 'Billing'
-    notifications: 'Notifications'
+    notifications: 'Announcements'
     logs: 'Logs'
     activities: 'Activities'
     apiKeys: 'API Keys'
@@ -2513,6 +2516,8 @@ nav:
 
 navGroups:
     overview: 'Overview'
+    account: 'Account'
+    support: 'Support'
     userManagement: 'User Management'
     networking: 'Networking'
     infrastructure: 'Infrastructure'

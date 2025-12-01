@@ -60,6 +60,17 @@ onMounted(async () => {
         success.value = $t('auth.discordLinkPrompt');
     }
 
+    // Check for SSO login token
+    const ssoToken = router.currentRoute.value.query.sso_token as string;
+    if (ssoToken) {
+        isSsoLogin.value = true;
+        ssoStatus.value = $t('auth.ssoLoggingIn') as string;
+        error.value = '';
+        success.value = '';
+        await handleSsoLogin(ssoToken);
+        return;
+    }
+
     // Check for username_or_email in query (for 2FA redirect)
     const usernameOrEmail = router.currentRoute.value.query.username_or_email as string;
     if (usernameOrEmail) {
@@ -82,6 +93,10 @@ const loading = ref(false);
 const error = ref('');
 const success = ref('');
 const discordLinkToken = ref<string | null>(null);
+
+// SSO login state
+const isSsoLogin = ref(false);
+const ssoStatus = ref('');
 
 // Plugin widgets
 const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('auth-login');
@@ -261,6 +276,58 @@ async function handleDiscordLogin(token: string): Promise<void> {
     }
 }
 
+async function handleSsoLogin(token: string): Promise<void> {
+    isSsoLogin.value = true;
+    ssoStatus.value = $t('auth.ssoLoggingIn') as string;
+    loading.value = true;
+    error.value = '';
+    success.value = '';
+    try {
+        const payload = {
+            sso_token: token,
+        };
+        const res = await axios.put('/api/user/auth/login', payload, {
+            headers: { 'Content-Type': 'application/json' },
+        });
+        if (res.data && res.data.success) {
+            success.value = res.data.message || $t('auth.loginSuccess');
+
+            // Load and sync user preferences after successful login
+            try {
+                preferencesStore.initialize();
+
+                const hasLocalStorage = preferencesStore.hasLocalStorage();
+
+                if (hasLocalStorage) {
+                    await preferencesStore.migrateLocalStorage();
+                } else {
+                    await preferencesStore.loadPreferences();
+                }
+
+                preferencesStore.startAutoSync();
+                console.log('[Login] Auto-sync enabled for user preferences');
+            } catch (prefError) {
+                console.error('Failed to sync user preferences:', prefError);
+            }
+
+            const redirect = router.currentRoute.value.query.redirect as string;
+            if (redirect && redirect.startsWith('/')) {
+                router.replace(redirect);
+            } else {
+                router.replace('/');
+            }
+        } else if (res.data) {
+            isSsoLogin.value = false;
+            error.value = getErrorMessage(res.data);
+        }
+    } catch (err: unknown) {
+        isSsoLogin.value = false;
+        error.value = getErrorMessage(err);
+    } finally {
+        loading.value = false;
+    }
+}
+
 function getErrorMessage(err: unknown): string {
     if (typeof err === 'object' && err !== null) {
         const e = err as { response?: { data?: { message?: string; error_code?: string } }; message?: string };
@@ -384,7 +451,19 @@ async function onSubmit(e: Event) {
         <!-- Plugin Widgets: Before Form -->
         <WidgetRenderer v-if="widgetsBeforeForm.length > 0" :widgets="widgetsBeforeForm" />
 
-        <form @submit.prevent="onSubmit">
+        <div v-if="isSsoLogin" class="flex flex-col items-center gap-4 py-6">
+            <div class="flex items-center gap-3">
+                <div class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+                <span class="text-muted-foreground">
+                    {{ ssoStatus || $t('auth.ssoLoggingIn') }}
+                </span>
+            </div>
+            <p class="text-xs text-muted-foreground">
+                {{ $t('auth.ssoPleaseWait') }}
+            </p>
+        </div>
+
+        <form v-else @submit.prevent="onSubmit">
             <div class="flex flex-col gap-6">
                 <div class="flex flex-col gap-4">
                     <div class="grid gap-3">

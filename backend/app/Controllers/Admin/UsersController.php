@@ -35,6 +35,7 @@ use App\Chat\User;
 use App\Chat\Subuser;
 use App\Chat\Activity;
 use App\Chat\MailList;
+use App\Chat\SsoToken;
 use App\Chat\ApiClient;
 use App\Chat\MailQueue;
 use App\Helpers\UUIDUtils;
@@ -846,5 +847,57 @@ class UsersController
         }
 
         return ApiResponse::success(['user' => $user], 'User fetched successfully', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/users/{uuid}/sso-token',
+        summary: 'Create SSO login token for user',
+        description: 'Generate a short-lived single sign-on (SSO) token that can be used to log the user in via the public login endpoint.',
+        tags: ['Admin - Users'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuid',
+                in: 'path',
+                description: 'User UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'SSO token created successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'token', type: 'string', description: 'SSO login token'),
+                        new OA\Property(property: 'expires_in', type: 'integer', description: 'Token expiration time in minutes'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'User not found'),
+        ]
+    )]
+    public function createSsoToken(Request $request, string $uuid): Response
+    {
+        $user = User::getUserByUuid($uuid);
+        if (!$user) {
+            return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
+        }
+
+        $expiresInMinutes = 5;
+        $token = SsoToken::createTokenForUser($user['uuid'], $expiresInMinutes);
+        if ($token === null) {
+            return ApiResponse::error('Failed to create SSO token', 'FAILED_TO_CREATE_SSO_TOKEN', 500);
+        }
+
+        $logger = App::getInstance(true)->getLogger();
+        $logger->info('Created SSO login token for user ' . $user['uuid']);
+
+        return ApiResponse::success([
+            'token' => $token,
+            'expires_in' => $expiresInMinutes,
+        ], 'SSO token created successfully', 200);
     }
 }

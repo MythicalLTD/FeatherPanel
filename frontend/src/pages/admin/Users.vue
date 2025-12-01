@@ -331,6 +331,45 @@
                                     <div class="text-sm text-muted-foreground mb-1">Last IP</div>
                                     <div class="font-mono text-sm">{{ selectedUser.last_ip }}</div>
                                 </div>
+                                <div class="col-span-2">
+                                    <div class="text-sm text-muted-foreground mb-2">SSO Login Link</div>
+                                    <div class="flex flex-col gap-2">
+                                        <div class="flex flex-wrap gap-2">
+                                            <Button
+                                                size="sm"
+                                                :loading="ssoGenerating"
+                                                variant="outline"
+                                                data-umami-event="Generate SSO login link"
+                                                :data-umami-event-user="selectedUser.username"
+                                                @click="generateSsoLoginLink"
+                                            >
+                                                Generate SSO Link
+                                            </Button>
+                                            <Button
+                                                v-if="ssoLink"
+                                                size="sm"
+                                                variant="secondary"
+                                                data-umami-event="Copy SSO login link"
+                                                :data-umami-event-user="selectedUser.username"
+                                                @click="copySsoLinkToClipboard"
+                                            >
+                                                Copy Link
+                                            </Button>
+                                        </div>
+                                        <div v-if="ssoLink">
+                                            <Input
+                                                :model-value="ssoLink"
+                                                readonly
+                                                class="text-xs font-mono"
+                                                title="SSO login link"
+                                            />
+                                            <p class="text-xs text-muted-foreground mt-1">
+                                                This link will auto-login the user via SSO and redirect to the
+                                                dashboard.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div v-if="selectedUser.discord_oauth2_linked === 'true'" class="mt-6">
                                 <h3 class="font-semibold text-base mb-4">Discord Integration</h3>
@@ -889,6 +928,9 @@ function changePage(page: number) {
 
 async function onView(user: ApiUser) {
     viewing.value = true;
+    // Reset SSO state when viewing a new user
+    ssoToken.value = null;
+    ssoLink.value = null;
     try {
         const { data } = await axios.get(`/api/admin/users/${user.uuid}`);
         selectedUser.value = data.data.user;
@@ -939,6 +981,8 @@ function closeView() {
     viewing.value = false;
     selectedUser.value = null;
     ownedServers.value = [];
+    ssoToken.value = null;
+    ssoLink.value = null;
 }
 
 async function disable2FA() {
@@ -1125,5 +1169,52 @@ const mailPreviewOpen = ref(false);
 function showMailPreview(mail: { subject: string; body?: string; status: string; created_at: string }) {
     mailPreview.value = mail;
     mailPreviewOpen.value = true;
+}
+
+// SSO login token/link for selected user
+const ssoGenerating = ref(false);
+const ssoToken = ref<string | null>(null);
+const ssoLink = ref<string | null>(null);
+
+async function generateSsoLoginLink() {
+    if (!selectedUser.value) {
+        return;
+    }
+
+    ssoGenerating.value = true;
+    try {
+        const { data } = await axios.post(`/api/admin/users/${selectedUser.value.uuid}/sso-token`);
+        if (data && data.success && data.data?.token) {
+            ssoToken.value = data.data.token as string;
+
+            const origin = window.location.origin;
+            // Default redirect to dashboard if not specified later by the admin
+            ssoLink.value = `${origin}/auth/login?sso_token=${encodeURIComponent(ssoToken.value)}&redirect=/`;
+
+            toast.success('SSO login link generated');
+        } else {
+            toast.error(data?.message || 'Failed to generate SSO token');
+        }
+    } catch (e: unknown) {
+        const errorMessage =
+            (e as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+            'Failed to generate SSO token';
+        toast.error(errorMessage);
+    } finally {
+        ssoGenerating.value = false;
+    }
+}
+
+async function copySsoLinkToClipboard() {
+    if (!ssoLink.value) {
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(ssoLink.value);
+        toast.success('SSO link copied to clipboard');
+    } catch {
+        toast.error('Failed to copy SSO link');
+    }
 }
 </script>

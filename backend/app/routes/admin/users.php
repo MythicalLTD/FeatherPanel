@@ -129,4 +129,19 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_USERS_VIEW,
         ['GET']
     );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-users-sso-token',
+        '/api/admin/users/{uuid}/sso-token',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid || !is_string($uuid)) {
+                return ApiResponse::error('Missing or invalid UUID', 'INVALID_UUID', 400);
+            }
+
+            return (new UsersController())->createSsoToken($request, $uuid);
+        },
+        Permissions::ADMIN_USERS_EDIT,
+        ['POST']
+    );
 };
