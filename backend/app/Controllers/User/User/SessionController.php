@@ -306,21 +306,16 @@ class SessionController
         $permissions = Permission::getPermissionsByRoleId($user['role_id']);
         $permissions = array_column($permissions, 'permission');
 
-        // Load role information
-        $roles = Role::getAllRoles();
-        $rolesMap = [];
-        foreach ($roles as $role) {
-            $rolesMap[$role['id']] = [
-                'name' => $role['name'],
-                'display_name' => $role['display_name'],
-                'color' => $role['color'],
-            ];
-        }
+        // Load role information for the current user
         $roleId = $user['role_id'] ?? null;
+        $role = null;
+        if ($roleId && is_numeric($roleId)) {
+            $role = Role::getById((int) $roleId);
+        }
         $user['role'] = [
-            'name' => $rolesMap[$roleId]['name'] ?? $roleId,
-            'display_name' => $rolesMap[$roleId]['display_name'] ?? 'User',
-            'color' => $rolesMap[$roleId]['color'] ?? '#666666',
+            'name' => $role ? ($role['name'] ?? $roleId) : $roleId,
+            'display_name' => $role ? ($role['display_name'] ?? 'User') : 'User',
+            'color' => $role ? ($role['color'] ?? '#666666') : '#666666',
         ];
 
         // Load user preferences

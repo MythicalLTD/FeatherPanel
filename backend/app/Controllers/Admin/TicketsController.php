@@ -253,9 +253,10 @@ class TicketsController
         $to = min($offset + $limit, $total);
 
         // Enrich tickets with related data
-        $categories = TicketCategory::getAll();
-        $priorities = TicketPriority::getAll();
-        $statuses = TicketStatus::getAll();
+        // Retrieve all categories/priorities/statuses without pagination for complete mapping
+        $categories = TicketCategory::getAll(null, 100, 0);
+        $priorities = TicketPriority::getAll(null, 100, 0);
+        $statuses = TicketStatus::getAll(null, 100, 0);
 
         $categoriesMap = [];
         foreach ($categories as $cat) {
