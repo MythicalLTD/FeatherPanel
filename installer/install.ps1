@@ -269,7 +269,8 @@ function Show-MainMenu {
     Draw-HR
     Write-Host "Choose a component:" -ForegroundColor White
     Write-Host "  [0] Panel (Web Interface)" -ForegroundColor Green
-    Write-Host "  [1] Exit" -ForegroundColor Red
+    Write-Host "  [1] CLI (Migration & Server Management)" -ForegroundColor Cyan
+    Write-Host "  [2] Exit" -ForegroundColor Red
     Draw-HR
 }
 
@@ -318,6 +319,26 @@ function Show-ReleaseTypeMenu {
     Write-Host "  [1] Stable Release (Recommended for production)" -ForegroundColor Green
     Write-Host "  [2] Development Build (Latest from main branch)" -ForegroundColor Yellow
     Write-Host "  [3] Custom Development Build (Specify branch/commit)" -ForegroundColor Cyan
+    Draw-HR
+}
+
+function Show-CLIMenu {
+    Show-Banner
+    Draw-HR
+    Write-Host "CLI Operations" -ForegroundColor Cyan
+    Draw-HR
+    Write-Host ""
+    Write-Host "  [0] Install CLI" -ForegroundColor Green
+    Write-Host "     → Install FeatherPanel CLI tool"
+    Write-Host "     → Downloads latest release from GitHub"
+    Write-Host "     → Makes 'feathercli' command available system-wide"
+    Write-Host ""
+    Write-Host "  [1] Uninstall CLI" -ForegroundColor Red
+    Write-Host "     ⚠️  WARNING: This will remove the CLI binary"
+    Write-Host ""
+    Write-Host "  [2] Update CLI" -ForegroundColor Yellow
+    Write-Host "     → Download latest CLI binary"
+    Write-Host ""
     Draw-HR
 }
 
@@ -861,6 +882,9 @@ function Install-Panel {
     # Create installed marker
     New-Item -ItemType File -Path $Script:InstalledMarker -Force | Out-Null
     
+    # Install featherpanel command wrapper
+    Install-FeatherPanelCommand | Out-Null
+    
     Write-LogSuccess "Panel installation completed successfully!"
     if ($useDev) {
         Write-LogWarn "DEVELOPMENT RELEASE: This is a dev build and may be unstable."
@@ -1055,6 +1079,9 @@ function Update-Panel {
         return $false
     }
     Pop-Location
+    
+    # Install/update featherpanel command wrapper
+    Install-FeatherPanelCommand | Out-Null
     
     Write-LogSuccess "FeatherPanel updated successfully"
     Write-Host ""
@@ -1591,6 +1618,335 @@ function Import-Migration {
     }
 }
 
+# Install CLI
+function Install-CLI {
+    Write-LogStep "Installing FeatherPanel CLI..."
+    
+    # Detect Windows architecture
+    $arch = $env:PROCESSOR_ARCHITECTURE
+    if ($arch -eq "AMD64" -or $arch -eq "x86_64") {
+        $archName = "x64"
+    } elseif ($arch -eq "ARM64") {
+        $archName = "arm64"
+    } else {
+        Write-LogError "Unsupported architecture: $arch"
+        Write-LogInfo "FeatherPanel CLI supports x64 and arm64 only."
+        return $false
+    }
+    
+    Write-LogInfo "Detected architecture: $arch ($archName)"
+    
+    # Check if already installed
+    $cliPath = "$env:ProgramFiles\FeatherPanel\feathercli.exe"
+    $cliPathAlt = "$env:ProgramFiles(x86)\FeatherPanel\feathercli.exe"
+    $cliInPath = Get-Command feathercli -ErrorAction SilentlyContinue
+    
+    if ($cliInPath -or (Test-Path $cliPath) -or (Test-Path $cliPathAlt)) {
+        Write-LogWarn "FeatherPanel CLI appears to be already installed."
+        $reinstall = Read-Host "Do you want to reinstall? (y/n)"
+        if ($reinstall -ne "y") {
+            Write-Host "Installation cancelled." -ForegroundColor Green
+            return $false
+        }
+    }
+    
+    # Download Windows binary
+    $binaryName = "feathercli-win-${archName}.exe"
+    $downloadUrl = "https://github.com/MythicalLTD/FeatherPanel-CLI/releases/latest/download/${binaryName}"
+    
+    Write-LogInfo "Downloading: $binaryName"
+    
+    # Create installation directory
+    $installPath = "$env:ProgramFiles\FeatherPanel"
+    if (-not (Test-Path $installPath)) {
+        try {
+            $null = New-Item -ItemType Directory -Path $installPath -Force -ErrorAction Stop
+            Write-LogInfo "Created installation directory: $installPath"
+        } catch {
+            Write-LogError "Failed to create installation directory: $_"
+            return $false
+        }
+    }
+    
+    $cliExe = Join-Path $installPath "feathercli.exe"
+    
+    try {
+        Invoke-WebRequest -Uri $downloadUrl -OutFile $cliExe -UseBasicParsing -ErrorAction Stop
+        
+        # Verify it's an executable
+        if (-not (Test-Path $cliExe)) {
+            Write-LogError "Downloaded file not found"
+            return $false
+        }
+        
+        Write-LogSuccess "Downloaded CLI binary: $binaryName"
+    } catch {
+        Write-LogError "Failed to download FeatherPanel CLI binary: $_"
+        Write-LogInfo "Please check the GitHub releases page for available binaries:"
+        Write-LogInfo "https://github.com/MythicalLTD/FeatherPanel-CLI/releases"
+        return $false
+    }
+    
+    # Add to PATH if not already there
+    $pathToAdd = $installPath
+    $currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+    
+    if ($currentPath -notlike "*$pathToAdd*") {
+        Write-LogInfo "Adding FeatherPanel CLI to system PATH..."
+        try {
+            $newPath = $currentPath + ";" + $pathToAdd
+            [Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
+            $env:Path = $env:Path + ";" + $pathToAdd
+            Write-LogSuccess "Added to system PATH"
+        } catch {
+            Write-LogWarn "Failed to add to PATH automatically. You may need to add it manually."
+            Write-LogInfo "Add this directory to your PATH: $pathToAdd"
+        }
+    }
+    
+    # Verify installation
+    Start-Sleep -Seconds 1  # Give PATH time to refresh
+    $cliCommand = Get-Command feathercli -ErrorAction SilentlyContinue
+    
+    if ($cliCommand -or (Test-Path $cliExe)) {
+        try {
+            $version = & $cliExe --version 2>&1
+            if ($version) {
+                Write-LogSuccess "FeatherPanel CLI installed successfully."
+                Write-LogInfo "Installed version: $version"
+            } else {
+                Write-LogSuccess "FeatherPanel CLI installed successfully."
+            }
+            Write-LogInfo "You can now use 'feathercli' command from anywhere."
+            Write-LogInfo "Use cases:"
+            Write-LogInfo "  • Migrate from Pterodactyl to FeatherPanel"
+            Write-LogInfo "  • Server management via CLI using FeatherPanel API"
+            return $true
+        } catch {
+            Write-LogSuccess "FeatherPanel CLI installed successfully."
+            Write-LogInfo "Location: $cliExe"
+            Write-LogWarn "You may need to restart your terminal for the command to be available."
+            return $true
+        }
+    } else {
+        Write-LogWarn "CLI binary installed but may not be in PATH."
+        Write-LogInfo "Try running: $cliExe"
+        Write-LogInfo "Or add this directory to your PATH: $installPath"
+        return $true
+    }
+}
+
+# Uninstall CLI
+function Uninstall-CLI {
+    Write-LogStep "Uninstalling FeatherPanel CLI..."
+    
+    $cliPath = "$env:ProgramFiles\FeatherPanel\feathercli.exe"
+    $cliPathAlt = "$env:ProgramFiles(x86)\FeatherPanel\feathercli.exe"
+    $cliInPath = Get-Command feathercli -ErrorAction SilentlyContinue
+    
+    $found = $false
+    
+    if ($cliInPath) {
+        $cliPath = $cliInPath.Source
+        $found = $true
+    } elseif (Test-Path $cliPath) {
+        $found = $true
+    } elseif (Test-Path $cliPathAlt) {
+        $cliPath = $cliPathAlt
+        $found = $true
+    }
+    
+    if (-not $found) {
+        Write-LogWarn "FeatherPanel CLI does not appear to be installed."
+        return $true
+    }
+    
+    try {
+        Remove-Item $cliPath -Force -ErrorAction Stop
+        Write-LogSuccess "FeatherPanel CLI uninstalled successfully."
+        
+        # Try to remove from PATH
+        $installDir = Split-Path $cliPath -Parent
+        $currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+        if ($currentPath -like "*$installDir*") {
+            $newPath = ($currentPath -split ';' | Where-Object { $_ -ne $installDir }) -join ';'
+            [Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
+            Write-LogInfo "Removed from system PATH"
+        }
+        
+        return $true
+    } catch {
+        Write-LogError "Failed to uninstall CLI: $_"
+        return $false
+    }
+}
+
+# Update CLI
+function Update-CLI {
+    Write-LogStep "Updating FeatherPanel CLI..."
+    
+    $cliPath = "$env:ProgramFiles\FeatherPanel\feathercli.exe"
+    $cliPathAlt = "$env:ProgramFiles(x86)\FeatherPanel\feathercli.exe"
+    $cliInPath = Get-Command feathercli -ErrorAction SilentlyContinue
+    
+    $found = $false
+    $currentPath = $null
+    
+    if ($cliInPath) {
+        $currentPath = $cliInPath.Source
+        $found = $true
+    } elseif (Test-Path $cliPath) {
+        $currentPath = $cliPath
+        $found = $true
+    } elseif (Test-Path $cliPathAlt) {
+        $currentPath = $cliPathAlt
+        $found = $true
+    }
+    
+    if (-not $found) {
+        Write-LogError "FeatherPanel CLI is not installed. Please install it first."
+        return $false
+    }
+    
+    # Get current version if available
+    try {
+        $currentVersion = & $currentPath --version 2>&1
+        if ($currentVersion) {
+            Write-LogInfo "Current version: $currentVersion"
+        }
+    } catch {
+        # Version check failed, continue anyway
+    }
+    
+    # Install latest version (same as install, but we know it exists)
+    if (Install-CLI) {
+        try {
+            $newVersion = & $currentPath --version 2>&1
+            if ($newVersion) {
+                Write-LogInfo "Updated to version: $newVersion"
+            }
+        } catch {
+            # Version check failed, continue anyway
+        }
+        Write-LogSuccess "FeatherPanel CLI updated successfully."
+        return $true
+    } else {
+        Write-LogError "Failed to update FeatherPanel CLI."
+        return $false
+    }
+}
+
+# Install featherpanel command wrapper
+function Install-FeatherPanelCommand {
+    Write-LogStep "Installing global 'featherpanel' command..."
+    
+    $installPath = "$env:ProgramFiles\FeatherPanel"
+    if (-not (Test-Path $installPath)) {
+        try {
+            $null = New-Item -ItemType Directory -Path $installPath -Force -ErrorAction Stop
+        } catch {
+            Write-LogError "Failed to create installation directory: $_"
+            return $false
+        }
+    }
+    
+    # Create PowerShell script
+    $psScriptPath = Join-Path $installPath "featherpanel.ps1"
+    $psScriptContent = @'
+# FeatherPanel CLI wrapper
+# Executes commands in the FeatherPanel backend container
+
+param(
+    [Parameter(ValueFromRemainingArguments=$true)]
+    [string[]]$Arguments
+)
+
+# Handle special "run-script" command
+if ($Arguments.Count -gt 0 -and $Arguments[0] -eq "run-script") {
+    Write-Host "Running featherpanel installer script..." -ForegroundColor Cyan
+    Invoke-WebRequest -Uri "https://get.featherpanel.com/beta.ps1" -UseBasicParsing | Invoke-Expression
+    exit $LASTEXITCODE
+}
+
+$containerName = "featherpanel_backend"
+
+# Check if container exists and is running
+$runningContainers = docker ps --format "{{.Names}}" 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Error: Failed to check Docker containers." -ForegroundColor Red
+    exit 1
+}
+
+$containerRunning = $runningContainers -split "`n" | Where-Object { $_ -eq $containerName }
+
+if (-not $containerRunning) {
+    Write-Host "Error: FeatherPanel backend container '$containerName' is not running." -ForegroundColor Red
+    Write-Host "Please ensure FeatherPanel is installed and running." -ForegroundColor Yellow
+    exit 1
+}
+
+# Build docker exec command
+$dockerArgs = @("exec")
+if ([Console]::IsInputRedirected -eq $false) {
+    $dockerArgs += "-it"
+} else {
+    $dockerArgs += "-i"
+}
+$dockerArgs += $containerName
+$dockerArgs += "php"
+$dockerArgs += "cli"
+$dockerArgs += $Arguments
+
+# Execute docker command
+& docker $dockerArgs
+exit $LASTEXITCODE
+'@
+    
+    try {
+        Set-Content -Path $psScriptPath -Value $psScriptContent -Encoding UTF8 -Force
+        Write-LogInfo "Created PowerShell script: $psScriptPath"
+    } catch {
+        Write-LogError "Failed to create PowerShell script: $_"
+        return $false
+    }
+    
+    # Create batch file wrapper for easier invocation
+    $batPath = Join-Path $installPath "featherpanel.cmd"
+    $batContent = @"
+@echo off
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0featherpanel.ps1" %*
+"@
+    
+    try {
+        Set-Content -Path $batPath -Value $batContent -Encoding ASCII -Force
+        Write-LogInfo "Created batch wrapper: $batPath"
+    } catch {
+        Write-LogError "Failed to create batch wrapper: $_"
+        return $false
+    }
+    
+    # Add to PATH if not already there
+    $currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+    if ($currentPath -notlike "*$installPath*") {
+        Write-LogInfo "Adding FeatherPanel to system PATH..."
+        try {
+            $newPath = $currentPath + ";" + $installPath
+            [Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
+            $env:Path = $env:Path + ";" + $installPath
+            Write-LogSuccess "Added to system PATH"
+        } catch {
+            Write-LogWarn "Failed to add to PATH automatically. You may need to add it manually."
+            Write-LogInfo "Add this directory to your PATH: $installPath"
+        }
+    }
+    
+    Write-LogSuccess "Global 'featherpanel' command installed successfully."
+    Write-LogInfo "You can now use 'featherpanel <command>' to run CLI commands."
+    Write-LogInfo "Example: featherpanel help"
+    Write-LogInfo "Example: featherpanel run-script (runs installer)"
+    return $true
+}
+
 # Main execution
 Initialize-Logging
 
@@ -1612,7 +1968,7 @@ if (-not (Test-DockerCompose)) {
 # Main menu loop
 while ($true) {
     Show-MainMenu
-    $choice = Read-Host "Enter component (0/1)"
+    $choice = Read-Host "Enter component (0/1/2)"
     
     switch ($choice) {
         "0" {
@@ -1695,6 +2051,37 @@ while ($true) {
             }
         }
         "1" {
+            # CLI menu
+            while ($true) {
+                Show-CLIMenu
+                $cliChoice = Read-Host "Select operation (0/1/2)"
+                
+                switch ($cliChoice) {
+                    "0" {
+                        if (Install-CLI) {
+                            Write-Host "Press any key to continue..."
+                            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+                        }
+                    }
+                    "1" {
+                        if (Uninstall-CLI) {
+                            Write-Host "Press any key to continue..."
+                            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+                        }
+                    }
+                    "2" {
+                        if (Update-CLI) {
+                            Write-Host "Press any key to continue..."
+                            $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+                        }
+                    }
+                    default {
+                        break
+                    }
+                }
+            }
+        }
+        "2" {
             Write-Host "Exiting..." -ForegroundColor Yellow
             exit 0
         }
