@@ -12,6 +12,9 @@ fi
 SKIP_OS_CHECK=false
 FORCE_ARM=false
 SKIP_INSTALL_CHECK=false
+USE_DEV=false
+DEV_BRANCH=""
+DEV_SHA=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -27,6 +30,20 @@ while [[ $# -gt 0 ]]; do
             SKIP_INSTALL_CHECK=true
             shift
             ;;
+        --dev)
+            USE_DEV=true
+            shift
+            ;;
+        --dev-branch)
+            USE_DEV=true
+            DEV_BRANCH="$2"
+            shift 2
+            ;;
+        --dev-sha)
+            USE_DEV=true
+            DEV_SHA="$2"
+            shift 2
+            ;;
         --help|-h)
             echo "FeatherPanel Installer"
             echo ""
@@ -36,10 +53,20 @@ while [[ $# -gt 0 ]]; do
             echo "  --skip-os-check        Skip OS version compatibility checks"
             echo "  --force-arm            Bypass ARM architecture warnings and checks"
             echo "  --skip-install-check   Skip check for existing installation"
+            echo "  --dev                  Use latest dev release images"
+            echo "  --dev-branch BRANCH    Use dev images for specific branch (e.g., main, develop)"
+            echo "  --dev-sha SHA          Use dev images for specific commit SHA (requires --dev-branch)"
             echo "  --help, -h             Show this help message"
+            echo ""
+            echo "Dev Release Examples:"
+            echo "  $0 --dev                           # Latest dev release"
+            echo "  $0 --dev-branch main                # Dev images from main branch"
+            echo "  $0 --dev-branch main --dev-sha abc1234  # Specific commit from main branch"
             echo ""
             echo "Warning: Using --skip-os-check, --force-arm, or --skip-install-check may result in"
             echo "unsupported configurations. Use at your own risk."
+            echo ""
+            echo "Warning: Dev releases are development builds and may be unstable."
             exit 0
             ;;
         *)
@@ -225,6 +252,7 @@ show_panel_menu() {
     echo -e "  ${GREEN}${BOLD}[0]${NC} ${BOLD}Install Panel${NC}"
     echo -e "     ${BLUE}→ Install FeatherPanel web interface using Docker${NC}"
     echo -e "     ${BLUE}→ Choose access method (Cloudflare Tunnel, Nginx, Apache, Direct)${NC}"
+    echo -e "     ${BLUE}→ Choose release type (Stable Release or Development Build)${NC}"
     echo ""
     echo -e "  ${RED}${BOLD}[1]${NC} ${BOLD}Uninstall Panel${NC}"
     echo -e "     ${YELLOW}⚠️  WARNING: This will remove all Panel data and containers${NC}"
@@ -234,6 +262,29 @@ show_panel_menu() {
     echo -e "  ${YELLOW}${BOLD}[2]${NC} ${BOLD}Update Panel${NC}"
     echo -e "     ${BLUE}→ Pull latest Docker images${NC}"
     echo -e "     ${BLUE}→ Restart containers with new version${NC}"
+    echo -e "     ${BLUE}→ Switch between release and dev builds${NC}"
+    echo ""
+    draw_hr
+}
+
+show_release_type_menu() {
+    if [ -t 1 ]; then clear; fi
+    print_banner
+    draw_hr
+    echo -e "${BOLD}Choose release type:${NC}"
+    echo -e "  ${GREEN}[1]${NC} ${BOLD}Stable Release${NC} ${BLUE}(Recommended for production)${NC}"
+    echo -e "     ${BLUE}→ Latest stable, tested release${NC}"
+    echo -e "     ${BLUE}→ Best for production environments${NC}"
+    echo ""
+    echo -e "  ${YELLOW}[2]${NC} ${BOLD}Development Build${NC} ${BLUE}(Latest from main branch)${NC}"
+    echo -e "     ${YELLOW}⚠️  May be unstable - for testing only${NC}"
+    echo -e "     ${BLUE}→ Latest development build from main branch${NC}"
+    echo -e "     ${BLUE}→ Includes newest features and fixes${NC}"
+    echo ""
+    echo -e "  ${CYAN}[3]${NC} ${BOLD}Development Build (Custom)${NC} ${BLUE}(Specific branch/commit)${NC}"
+    echo -e "     ${YELLOW}⚠️  May be unstable - for testing only${NC}"
+    echo -e "     ${BLUE}→ Choose specific branch and optional commit${NC}"
+    echo -e "     ${BLUE}→ For advanced users and testing${NC}"
     echo ""
     draw_hr
 }
@@ -1767,6 +1818,55 @@ EOF
     log_info "Example: featherpanel help"
 }
 
+# Function to modify docker-compose.yml to use dev image tags
+modify_compose_for_dev() {
+    local compose_file="$1"
+    local backend_tag="$2"
+    local frontend_tag="$3"
+    
+    log_info "Modifying docker-compose.yml to use dev images..."
+    log_info "Backend tag: $backend_tag"
+    log_info "Frontend tag: $frontend_tag"
+    
+    # Backup original file
+    if [ -f "$compose_file" ]; then
+        sudo cp "$compose_file" "${compose_file}.backup"
+    fi
+    
+    # Use sed to replace image tags
+    # Replace backend image
+    sudo sed -i "s|image: ghcr.io/mythicalltd/featherpanel-backend:latest|image: ghcr.io/mythicalltd/featherpanel-backend:${backend_tag}|g" "$compose_file"
+    sudo sed -i "s|image: ghcr.io/mythicalltd/featherpanel-backend:.*|image: ghcr.io/mythicalltd/featherpanel-backend:${backend_tag}|g" "$compose_file"
+    
+    # Replace frontend image
+    sudo sed -i "s|image: ghcr.io/mythicalltd/featherpanel-frontend:latest|image: ghcr.io/mythicalltd/featherpanel-frontend:${frontend_tag}|g" "$compose_file"
+    sudo sed -i "s|image: ghcr.io/mythicalltd/featherpanel-frontend:.*|image: ghcr.io/mythicalltd/featherpanel-frontend:${frontend_tag}|g" "$compose_file"
+    
+    log_success "docker-compose.yml modified for dev images"
+}
+
+# Function to determine dev image tag based on options
+get_dev_image_tag() {
+    local tag="dev"
+    
+    if [ -n "$DEV_BRANCH" ]; then
+        # Sanitize branch name (replace / with -)
+        local sanitized_branch=$(echo "$DEV_BRANCH" | sed 's/\//-/g')
+        tag="dev-${sanitized_branch}"
+        
+        if [ -n "$DEV_SHA" ]; then
+            # Use short SHA (first 7 characters)
+            local short_sha=$(echo "$DEV_SHA" | cut -c1-7)
+            tag="dev-${sanitized_branch}-${short_sha}"
+        fi
+    else
+        # Default to main branch if no branch specified
+        tag="dev-main"
+    fi
+    
+    echo "$tag"
+}
+
 # Docker-only flow
 uninstall_docker() {
     if [ ! -f /var/www/featherpanel/.installed ]; then
@@ -2168,6 +2268,19 @@ if [ -f /etc/os-release ]; then
             update) INST_TYPE="2";;
             *) ;;
         esac
+        
+        # Environment overrides for dev mode
+        if [ -n "${FP_DEV:-}" ] && [ "${FP_DEV}" = "true" ]; then
+            USE_DEV=true
+        fi
+        if [ -n "${FP_DEV_BRANCH:-}" ]; then
+            USE_DEV=true
+            DEV_BRANCH="${FP_DEV_BRANCH}"
+        fi
+        if [ -n "${FP_DEV_SHA:-}" ]; then
+            USE_DEV=true
+            DEV_SHA="${FP_DEV_SHA}"
+        fi
 
         reinstall="n"
 CF_TUNNEL_SETUP=""
@@ -2272,6 +2385,54 @@ CF_HOSTNAME=""
                 fi
             else
                 log_warn "Installation check skipped via --skip-install-check flag"
+            fi
+
+            # Release type selection (only if not already set via CLI/env)
+            if [ "$USE_DEV" = false ] && [ -z "${FP_DEV:-}" ]; then
+                RELEASE_TYPE=""
+                while [[ ! "$RELEASE_TYPE" =~ ^[1-3]$ ]]; do
+                    show_release_type_menu
+                    prompt "${BOLD}Enter release type${NC} ${BLUE}(1/2/3)${NC}: " RELEASE_TYPE
+                    if [[ ! "$RELEASE_TYPE" =~ ^[1-3]$ ]]; then
+                        echo -e "${RED}Invalid input.${NC} Please enter ${YELLOW}1${NC}, ${YELLOW}2${NC}, or ${YELLOW}3${NC}."; sleep 1
+                    fi
+                done
+                
+                case $RELEASE_TYPE in
+                    1)
+                        USE_DEV=false
+                        log_info "Stable release selected"
+                        ;;
+                    2)
+                        USE_DEV=true
+                        DEV_BRANCH="main"
+                        log_info "Development build from main branch selected"
+                        ;;
+                    3)
+                        USE_DEV=true
+                        if [ -t 1 ]; then clear; fi
+                        print_banner
+                        draw_hr
+                        echo -e "${BOLD}${CYAN}Custom Development Build${NC}"
+                        draw_hr
+                        echo ""
+                        echo -e "${BLUE}Enter the branch name (default: main)${NC}"
+                        prompt "${BOLD}Branch name${NC} ${BLUE}(e.g., main, develop)${NC}: " DEV_BRANCH
+                        if [ -z "$DEV_BRANCH" ]; then
+                            DEV_BRANCH="main"
+                        fi
+                        
+                        echo ""
+                        echo -e "${BLUE}Enter a specific commit SHA (optional)${NC}"
+                        echo -e "${BLUE}Leave empty to use the latest commit from the branch${NC}"
+                        prompt "${BOLD}Commit SHA${NC} ${BLUE}(7+ characters, optional)${NC}: " DEV_SHA
+                        if [ -n "$DEV_SHA" ] && [ ${#DEV_SHA} -lt 7 ]; then
+                            log_warn "Commit SHA should be at least 7 characters. Using latest from branch instead."
+                            DEV_SHA=""
+                        fi
+                        log_info "Custom dev build selected: branch=$DEV_BRANCH, sha=${DEV_SHA:-latest}"
+                        ;;
+                esac
             fi
 
             # Unified access method selection
@@ -2462,6 +2623,48 @@ CF_HOSTNAME=""
                     curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml"; then
                     exit 1
                 fi
+            fi
+            
+            # Modify docker-compose.yml for dev images if dev mode is enabled
+            # (Only show confirmation if not already confirmed via GUI)
+            if [ "$USE_DEV" = true ]; then
+                DEV_TAG=$(get_dev_image_tag)
+                log_info "Using dev release mode with tag: $DEV_TAG"
+                
+                # Only show confirmation if this wasn't selected via GUI menu
+                # (We can detect this by checking if RELEASE_TYPE was set)
+                if [ -z "${RELEASE_TYPE:-}" ]; then
+                    if [ -t 1 ]; then clear; fi
+                    print_banner
+                    draw_hr
+                    echo -e "${YELLOW}${BOLD}⚠️  Development Release Mode${NC}"
+                    draw_hr
+                    echo ""
+                    echo -e "${YELLOW}You are installing a ${BOLD}development release${NC} of FeatherPanel.${NC}"
+                    echo ""
+                    echo -e "${BLUE}Dev Release Information:${NC}"
+                    if [ -n "$DEV_BRANCH" ]; then
+                        echo -e "  ${CYAN}•${NC} Branch: ${BOLD}$DEV_BRANCH${NC}"
+                    else
+                        echo -e "  ${CYAN}•${NC} Branch: ${BOLD}main${NC} (default)"
+                    fi
+                    if [ -n "$DEV_SHA" ]; then
+                        echo -e "  ${CYAN}•${NC} Commit: ${BOLD}$DEV_SHA${NC}"
+                    fi
+                    echo -e "  ${CYAN}•${NC} Image Tag: ${BOLD}$DEV_TAG${NC}"
+                    echo ""
+                    echo -e "${YELLOW}${BOLD}Warning:${NC} Development releases may be unstable and are not recommended for production use.${NC}"
+                    echo ""
+                    draw_hr
+                    dev_confirm=""
+                    prompt "${BOLD}Continue with dev release installation?${NC} ${BLUE}(y/n)${NC}: " dev_confirm
+                    if [[ ! "$dev_confirm" =~ ^[yY]$ ]]; then
+                        echo -e "${GREEN}Installation cancelled.${NC}"
+                        exit 0
+                    fi
+                fi
+                
+                modify_compose_for_dev "/var/www/featherpanel/docker-compose.yml" "$DEV_TAG" "$DEV_TAG"
             fi
 
             print_banner
@@ -2818,6 +3021,9 @@ CF_HOSTNAME=""
             echo ""
             
             log_success "Panel installation completed successfully!"
+            if [ "$USE_DEV" = true ]; then
+                log_warn "DEVELOPMENT RELEASE: This is a dev build and may be unstable."
+            fi
             log_warn "IMPORTANT: The Panel may take up to 5 minutes to fully initialize."
             log_info "Please wait at least 5 minutes before trying to access the Panel."
             
@@ -2826,6 +3032,19 @@ CF_HOSTNAME=""
             print_centered "Panel Access Information" "$CYAN"
             draw_hr
             echo ""
+            
+            if [ "$USE_DEV" = true ]; then
+                DEV_TAG=$(get_dev_image_tag)
+                echo -e "  ${YELLOW}${BOLD}⚠️  Development Release${NC}"
+                echo -e "     ${BLUE}• Using dev images with tag: ${CYAN}$DEV_TAG${NC}"
+                if [ -n "$DEV_BRANCH" ]; then
+                    echo -e "     ${BLUE}• Branch: ${CYAN}$DEV_BRANCH${NC}"
+                fi
+                if [ -n "$DEV_SHA" ]; then
+                    echo -e "     ${BLUE}• Commit: ${CYAN}$DEV_SHA${NC}"
+                fi
+                echo ""
+            fi
             
             if [[ "$CF_TUNNEL_SETUP" =~ ^[yY]$ ]]; then
                 echo -e "  ${GREEN}${BOLD}✓${NC} ${BOLD}Cloudflare Tunnel:${NC} ${CYAN}https://$CF_HOSTNAME${NC}"
@@ -2905,10 +3124,75 @@ CF_HOSTNAME=""
                     exit 1
                 fi
             else
-                if ! run_with_spinner "Refreshing docker-compose.yml from upstream" "docker-compose.yml refreshed." \
-                    curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml"; then
-                    log_warn "Could not refresh compose file; keeping existing copy."
+                # Backup current compose file to preserve dev modifications
+                if [ "$USE_DEV" = true ] && grep -q "featherpanel-backend:dev" /var/www/featherpanel/docker-compose.yml 2>/dev/null; then
+                    log_info "Preserving dev image configuration in docker-compose.yml"
+                    DEV_TAG=$(get_dev_image_tag)
+                    # Refresh from upstream but restore dev tags
+                    if ! run_with_spinner "Refreshing docker-compose.yml from upstream" "docker-compose.yml refreshed." \
+                        curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml"; then
+                        log_warn "Could not refresh compose file; keeping existing copy."
+                    else
+                        # Re-apply dev tags after refresh
+                        modify_compose_for_dev "/var/www/featherpanel/docker-compose.yml" "$DEV_TAG" "$DEV_TAG"
+                    fi
+                else
+                    if ! run_with_spinner "Refreshing docker-compose.yml from upstream" "docker-compose.yml refreshed." \
+                        curl -fsSL -o /var/www/featherpanel/docker-compose.yml "https://raw.githubusercontent.com/MythicalLTD/FeatherPanel/refs/heads/main/docker-compose.yml"; then
+                        log_warn "Could not refresh compose file; keeping existing copy."
+                    fi
                 fi
+            fi
+            
+            # Check if switching between release and dev modes
+            if [ -f /var/www/featherpanel/docker-compose.yml ]; then
+                CURRENT_IS_DEV=false
+                if grep -q "featherpanel-backend:dev" /var/www/featherpanel/docker-compose.yml 2>/dev/null; then
+                    CURRENT_IS_DEV=true
+                fi
+                
+                if [ "$USE_DEV" = true ] && [ "$CURRENT_IS_DEV" = false ]; then
+                    log_warn "Switching from release to dev mode"
+                    echo ""
+                    draw_hr
+                    echo -e "${YELLOW}${BOLD}⚠️  Switching to Development Release${NC}"
+                    draw_hr
+                    echo -e "${BLUE}You are switching from a release build to a development build.${NC}"
+                    echo -e "${YELLOW}This may cause compatibility issues or data loss.${NC}"
+                    echo ""
+                    switch_confirm=""
+                    prompt "${BOLD}${RED}Are you sure you want to switch to dev mode?${NC} ${BLUE}(type 'yes' to confirm)${NC}: " switch_confirm
+                    if [ "$switch_confirm" != "yes" ]; then
+                        echo -e "${GREEN}Update cancelled.${NC}"
+                        exit 0
+                    fi
+                elif [ "$USE_DEV" = false ] && [ "$CURRENT_IS_DEV" = true ]; then
+                    log_warn "Switching from dev to release mode"
+                    echo ""
+                    draw_hr
+                    echo -e "${YELLOW}${BOLD}⚠️  Switching to Release Build${NC}"
+                    draw_hr
+                    echo -e "${BLUE}You are switching from a development build to a release build.${NC}"
+                    echo -e "${GREEN}This is recommended for production use.${NC}"
+                    echo ""
+                    switch_confirm=""
+                    prompt "${BOLD}Continue switching to release mode?${NC} ${BLUE}(y/n)${NC}: " switch_confirm
+                    if [[ ! "$switch_confirm" =~ ^[yY]$ ]]; then
+                        echo -e "${GREEN}Update cancelled.${NC}"
+                        exit 0
+                    fi
+                fi
+            fi
+            
+            # Modify docker-compose.yml for dev images if dev mode is enabled
+            if [ "$USE_DEV" = true ]; then
+                DEV_TAG=$(get_dev_image_tag)
+                log_info "Using dev release mode with tag: $DEV_TAG"
+                modify_compose_for_dev "/var/www/featherpanel/docker-compose.yml" "$DEV_TAG" "$DEV_TAG"
+            elif [ -f /var/www/featherpanel/docker-compose.yml ] && grep -q "featherpanel-backend:dev" /var/www/featherpanel/docker-compose.yml 2>/dev/null; then
+                # Switching from dev to release - restore to latest
+                log_info "Switching to release images (latest)"
+                modify_compose_for_dev "/var/www/featherpanel/docker-compose.yml" "latest" "latest"
             fi
 
             if ! run_with_spinner "Pulling FeatherPanel Docker images" "Docker images updated." bash -c "cd /var/www/featherpanel && sudo docker compose pull"; then
