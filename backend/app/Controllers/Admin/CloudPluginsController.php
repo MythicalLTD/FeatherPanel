@@ -31,11 +31,14 @@
 namespace App\Controllers\Admin;
 
 use App\App;
+use App\Chat\Activity;
 use App\Chat\Database;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\CloudPluginsEvent;
 
 #[OA\Schema(
     schema: 'OnlineAddon',
@@ -962,7 +965,36 @@ class CloudPluginsController
                 return ApiResponse::error('Failed to extract addon package', 'ADDON_EXTRACT_FAILED', 422);
             }
 
-            return $this->performAddonInstall($tempDir, $identifier);
+            $installResult = $this->performAddonInstall($tempDir, $identifier);
+
+            // If install was successful, log activity and emit event
+            if ($installResult->getStatusCode() === 200 || $installResult->getStatusCode() === 201) {
+                $currentUser = $request->get('user');
+                $responseData = json_decode($installResult->getContent(), true);
+                $isUpdate = $responseData['data']['is_update'] ?? false;
+
+                Activity::createActivity([
+                    'user_uuid' => $currentUser['uuid'] ?? null,
+                    'name' => $isUpdate ? 'cloud_plugin_updated' : 'cloud_plugin_installed',
+                    'context' => ($isUpdate ? 'Updated' : 'Installed') . " cloud plugin: {$identifier}",
+                    'ip_address' => CloudFlareRealIP::getRealIP(),
+                ]);
+
+                // Emit event
+                global $eventManager;
+                if (isset($eventManager) && $eventManager !== null) {
+                    $eventManager->emit(
+                        $isUpdate ? CloudPluginsEvent::onPluginInstalled() : CloudPluginsEvent::onPluginInstalled(),
+                        [
+                            'identifier' => $identifier,
+                            'plugin_data' => $responseData['data'] ?? [],
+                            'user_uuid' => $currentUser['uuid'] ?? null,
+                        ]
+                    );
+                }
+            }
+
+            return $installResult;
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to install addon: ' . $e->getMessage(), 500);
         }

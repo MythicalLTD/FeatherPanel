@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- Resolved an issue where user server pagination was not functioning correctly; pagination now works as intended. Fixed by 
-@nayskutzu
+- Resolved an issue where user server pagination was not functioning correctly; pagination now works as intended. Fixed by
+  @nayskutzu
 - The Pterodactyl importer page has been significantly improved—it now reliably displays your actual API key for seamless integration! by @nayskutzu
 - Enhanced the Pterodactyl importer page with clear, user-friendly labels for improved navigation and ease of use. by @nayskutzu
 - Resolved various mobile UI issues on the server resources page for a smoother, more polished user experience. by @nayskutzu
@@ -15,6 +15,7 @@
 - Fixed an issue where role names and colors were not properly displayed on the frontend; these are now shown as intended. by @nayskutzu
 - Resolved an issue preventing JSON files from being opened and edited; you can now seamlessly edit JSON files as intended. by @nayskutzu
 - Improved the handling of the --skip-os-check flag: the installer will now correctly honor this option even if /etc/os-release is missing, ensuring a smoother and more flexible installation experience. by @nayskutzu
+- Plugin-rendered pages now feature customizable sidebars, enabling a more intuitive and seamless user experience! by @nayskutzu
 
 ### Added
 
@@ -31,6 +32,12 @@
 - Introduced a sleek and informative Status Page for users! When enabled, it provides real-time insights into node statuses and other key system information, enhancing transparency and monitoring. by @nayskutzu
 - Introduced seamless SSO authentication support, enabling integration with WHMCS and other external platforms for a unified login experience. by @nayskutzu
 - Rolled out a comprehensive, user-friendly ticket system packed with advanced features and thoughtful enhancements for a seamless support experience. by @nayskutzu
+- Plugins can now create custom sidebar groups for server actions, allowing enhanced organization and grouping of plugin-related features directly in the server sidebar. by @nayskutzu
+- Introduced 15 stunning new base color themes for the FeatherPanel UI, allowing you to effortlessly personalize your experience with vibrant, modern palettes. by @nayskutzu
+- Added comprehensive plugin event support for database snapshot operations (create, restore, delete, download), enabling plugins to hook into database management workflows. by @nayskutzu
+- Added plugin event support for cloud plugin installation, allowing plugins to react to marketplace plugin installations and updates. by @nayskutzu
+- Implemented comprehensive activity tracking for database snapshot operations (create, restore, delete, download) to provide detailed audit logs for administrative actions. by @nayskutzu
+- Added activity tracking for cloud plugin installations and updates, ensuring all marketplace plugin operations are properly logged for security and auditing purposes. by @nayskutzu
 
 ### Updated
 
@@ -83,7 +90,7 @@
 - Unified access method selection menu - users now see all options (Cloudflare Tunnel, Nginx, Apache, Direct Access) in a single menu instead of multiple prompts, providing a cleaner and more intuitive installation experience. by @nayskutzu
 - Automatic SSL certificate setup during initial installation - when selecting Nginx or Apache, users can now create SSL certificates immediately and have the reverse proxy automatically configured with HTTPS, eliminating the need to manually configure SSL later. by @nayskutzu
 - Smart Cloudflare Tunnel management - tunnels now use unique names based on hostname to prevent conflicts when installing on multiple servers. The installer intelligently detects existing tunnels and offers to reuse them or create new ones, preventing accidental overwrites. by @nayskutzu
-- Automatic Certbot plugin installation - when users select Nginx or Apache during installation, the installer automatically installs the corresponding Certbot plugin without prompting, streamlining the SSL setup process.  by @nayskutzu
+- Automatic Certbot plugin installation - when users select Nginx or Apache during installation, the installer automatically installs the corresponding Certbot plugin without prompting, streamlining the SSL setup process. by @nayskutzu
 - Added an advanced Wings configuration file editor in the admin area, enabling effortless direct editing and management of Wings daemon settings. by @nayskutzu
 - Release notes are now written in markdown, enabling enhanced formatting and a more visually appealing presentation. by @nayskutzu
 - Added a stylish and dedicated section to display user social links on navbar, making it easy to connect and showcase your online presence. by @nayskutzu

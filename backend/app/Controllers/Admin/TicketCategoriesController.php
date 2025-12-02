@@ -37,6 +37,7 @@ use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\TicketEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -286,6 +287,22 @@ class TicketCategoriesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Get created category for event
+        $createdCategory = TicketCategory::getById($categoryId);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null && $createdCategory) {
+            $eventManager->emit(
+                TicketEvent::onTicketCategoryCreated(),
+                [
+                    'category' => $createdCategory,
+                    'category_id' => $categoryId,
+                    'user_uuid' => $currentUser['uuid'],
+                ]
+            );
+        }
+
         return ApiResponse::success(['category_id' => $categoryId], 'Category created successfully', 201);
     }
 
@@ -356,6 +373,23 @@ class TicketCategoriesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Get updated category for event
+        $updatedCategory = TicketCategory::getById($id);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null && $updatedCategory) {
+            $eventManager->emit(
+                TicketEvent::onTicketCategoryUpdated(),
+                [
+                    'category' => $updatedCategory,
+                    'updated_data' => $data,
+                    'category_id' => $id,
+                    'user_uuid' => $currentUser['uuid'],
+                ]
+            );
+        }
+
         return ApiResponse::success([], 'Category updated successfully', 200);
     }
 
@@ -415,6 +449,19 @@ class TicketCategoriesController
             'context' => 'Deleted ticket category: ' . $category['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                TicketEvent::onTicketCategoryDeleted(),
+                [
+                    'category' => $category,
+                    'category_id' => $id,
+                    'user_uuid' => $currentUser['uuid'],
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Category deleted successfully', 200);
     }

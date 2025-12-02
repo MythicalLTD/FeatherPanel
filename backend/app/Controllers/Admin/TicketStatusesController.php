@@ -35,6 +35,7 @@ use App\Chat\TicketStatus;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\TicketEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -263,6 +264,22 @@ class TicketStatusesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Get created status for event
+        $createdStatus = TicketStatus::getById($statusId);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null && $createdStatus) {
+            $eventManager->emit(
+                TicketEvent::onTicketStatusCreated(),
+                [
+                    'status' => $createdStatus,
+                    'status_id' => $statusId,
+                    'user_uuid' => $currentUser['uuid'] ?? null,
+                ]
+            );
+        }
+
         return ApiResponse::success(['status_id' => $statusId], 'Status created successfully', 201);
     }
 
@@ -331,6 +348,23 @@ class TicketStatusesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Get updated status for event
+        $updatedStatus = TicketStatus::getById($id);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null && $updatedStatus) {
+            $eventManager->emit(
+                TicketEvent::onTicketStatusUpdated(),
+                [
+                    'status' => $updatedStatus,
+                    'updated_data' => $data,
+                    'status_id' => $id,
+                    'user_uuid' => $currentUser['uuid'] ?? null,
+                ]
+            );
+        }
+
         return ApiResponse::success([], 'Status updated successfully', 200);
     }
 
@@ -385,6 +419,19 @@ class TicketStatusesController
             'context' => 'Deleted ticket status: ' . $status['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                TicketEvent::onTicketStatusDeleted(),
+                [
+                    'status' => $status,
+                    'status_id' => $id,
+                    'user_uuid' => $currentUser['uuid'] ?? null,
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Status deleted successfully', 200);
     }

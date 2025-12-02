@@ -38,6 +38,7 @@ use OpenApi\Attributes as OA;
 use App\Chat\TicketAttachment;
 use App\Config\ConfigInterface;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\TicketEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -302,6 +303,23 @@ class TicketAttachmentsController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Get created attachment for event
+        $createdAttachment = TicketAttachment::getById($attachmentId);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null && $createdAttachment) {
+            $eventManager->emit(
+                TicketEvent::onTicketAttachmentCreated(),
+                [
+                    'ticket' => $ticket,
+                    'attachment' => $createdAttachment,
+                    'attachment_id' => $attachmentId,
+                    'user_uuid' => $currentUser['uuid'] ?? null,
+                ]
+            );
+        }
+
         return ApiResponse::success([
             'attachment_id' => $attachmentId,
             'url' => $url,
@@ -436,6 +454,19 @@ class TicketAttachmentsController
             'context' => 'Deleted attachment ' . $attachmentId . ' for ticket ' . $uuid,
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                TicketEvent::onTicketAttachmentDeleted(),
+                [
+                    'ticket' => $ticket,
+                    'attachment_id' => $attachmentId,
+                    'user_uuid' => $currentUser['uuid'] ?? null,
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Attachment deleted successfully', 200);
     }

@@ -113,4 +113,92 @@ class TicketEvent implements PluginEvent
     {
         return 'featherpanel:ticket:reopened';
     }
+
+    /**
+     * Callback: array category data, int category id, string user uuid.
+     */
+    public static function onTicketCategoryCreated(): string
+    {
+        return 'featherpanel:ticket:category:created';
+    }
+
+    /**
+     * Callback: array category data, array updated data, int category id, string user uuid.
+     */
+    public static function onTicketCategoryUpdated(): string
+    {
+        return 'featherpanel:ticket:category:updated';
+    }
+
+    /**
+     * Callback: array category data, int category id, string user uuid.
+     */
+    public static function onTicketCategoryDeleted(): string
+    {
+        return 'featherpanel:ticket:category:deleted';
+    }
+
+    /**
+     * Callback: array status data, int status id, string user uuid.
+     */
+    public static function onTicketStatusCreated(): string
+    {
+        return 'featherpanel:ticket:status:created';
+    }
+
+    /**
+     * Callback: array status data, array updated data, int status id, string user uuid.
+     */
+    public static function onTicketStatusUpdated(): string
+    {
+        return 'featherpanel:ticket:status:updated';
+    }
+
+    /**
+     * Callback: array status data, int status id, string user uuid.
+     */
+    public static function onTicketStatusDeleted(): string
+    {
+        return 'featherpanel:ticket:status:deleted';
+    }
+
+    /**
+     * Callback: array priority data, int priority id, string user uuid.
+     */
+    public static function onTicketPriorityCreated(): string
+    {
+        return 'featherpanel:ticket:priority:created';
+    }
+
+    /**
+     * Callback: array priority data, array updated data, int priority id, string user uuid.
+     */
+    public static function onTicketPriorityUpdated(): string
+    {
+        return 'featherpanel:ticket:priority:updated';
+    }
+
+    /**
+     * Callback: array priority data, int priority id, string user uuid.
+     */
+    public static function onTicketPriorityDeleted(): string
+    {
+        return 'featherpanel:ticket:priority:deleted';
+    }
+
+    /**
+     * Callback: array ticket data, array message data, array updated data, int message id, string user uuid.
+     */
+    public static function onTicketMessageUpdated(): string
+    {
+        return 'featherpanel:ticket:message:updated';
+    }
+
+    /**
+     * Callback: array ticket data, array attachment data, array updated data, int attachment id, string user uuid.
+     */
+    public static function onTicketAttachmentUpdated(): string
+    {
+        return 'featherpanel:ticket:attachment:updated';
+    }
 }

@@ -32,13 +32,16 @@ namespace App\Controllers\Admin;
 
 use App\App;
 use App\Chat\User;
+use App\Chat\Activity;
 use App\Chat\Database;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
 use Ifsnop\Mysqldump\Mysqldump;
+use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Plugins\Events\Events\DatabaseSnapshotsEvent;
 
 class DatabaseSnapshotsController
 {
@@ -231,6 +234,28 @@ class DatabaseSnapshotsController
 
             $size = filesize($filepath);
 
+            // Log activity
+            $currentUser = $request->get('user');
+            Activity::createActivity([
+                'user_uuid' => $currentUser['uuid'] ?? null,
+                'name' => 'database_snapshot_created',
+                'context' => "Created database snapshot: {$filename}",
+                'ip_address' => CloudFlareRealIP::getRealIP(),
+            ]);
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    DatabaseSnapshotsEvent::onSnapshotCreated(),
+                    [
+                        'filename' => $filename,
+                        'size' => $size,
+                        'user_uuid' => $currentUser['uuid'] ?? null,
+                    ]
+                );
+            }
+
             return ApiResponse::success([
                 'filename' => $filename,
                 'size' => $size,
@@ -304,6 +329,27 @@ class DatabaseSnapshotsController
             $content = file_get_contents($filepath);
             if ($content === false) {
                 return ApiResponse::error('Failed to read snapshot file', 'READ_ERROR', 500);
+            }
+
+            // Log activity
+            $currentUser = $request->get('user');
+            Activity::createActivity([
+                'user_uuid' => $currentUser['uuid'] ?? null,
+                'name' => 'database_snapshot_downloaded',
+                'context' => "Downloaded database snapshot: {$filename}",
+                'ip_address' => CloudFlareRealIP::getRealIP(),
+            ]);
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    DatabaseSnapshotsEvent::onSnapshotDownloaded(),
+                    [
+                        'filename' => $filename,
+                        'user_uuid' => $currentUser['uuid'] ?? null,
+                    ]
+                );
             }
 
             return new Response($content, 200, [
@@ -415,7 +461,32 @@ class DatabaseSnapshotsController
                 return $validationError;
             }
 
-            return $this->performRestore($sql);
+            $restoreResult = $this->performRestore($sql);
+
+            // If restore was successful, log activity and emit event
+            if ($restoreResult->getStatusCode() === 200) {
+                $currentUser = $request->get('user');
+                Activity::createActivity([
+                    'user_uuid' => $currentUser['uuid'] ?? null,
+                    'name' => 'database_snapshot_restored',
+                    'context' => "Restored database from snapshot: {$filename}",
+                    'ip_address' => CloudFlareRealIP::getRealIP(),
+                ]);
+
+                // Emit event
+                global $eventManager;
+                if (isset($eventManager) && $eventManager !== null) {
+                    $eventManager->emit(
+                        DatabaseSnapshotsEvent::onSnapshotRestored(),
+                        [
+                            'filename' => $filename,
+                            'user_uuid' => $currentUser['uuid'] ?? null,
+                        ]
+                    );
+                }
+            }
+
+            return $restoreResult;
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to restore database: ' . $e->getMessage(), 500);
         }
@@ -496,6 +567,27 @@ class DatabaseSnapshotsController
 
             if (!unlink($filepath)) {
                 return ApiResponse::error('Failed to delete snapshot file', 'DELETE_ERROR', 500);
+            }
+
+            // Log activity
+            $currentUser = $request->get('user');
+            Activity::createActivity([
+                'user_uuid' => $currentUser['uuid'] ?? null,
+                'name' => 'database_snapshot_deleted',
+                'context' => "Deleted database snapshot: {$filename}",
+                'ip_address' => CloudFlareRealIP::getRealIP(),
+            ]);
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    DatabaseSnapshotsEvent::onSnapshotDeleted(),
+                    [
+                        'filename' => $filename,
+                        'user_uuid' => $currentUser['uuid'] ?? null,
+                    ]
+                );
             }
 
             return ApiResponse::success(['message' => 'Snapshot deleted successfully'], 'Snapshot deleted successfully');

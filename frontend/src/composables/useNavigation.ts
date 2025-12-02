@@ -101,6 +101,7 @@ interface PluginSidebarItem {
     pluginName: string;
     permission?: string;
     showBadge?: boolean;
+    group?: string; // Group name for organizing items (e.g., "Minecraft Java Edition")
 }
 
 interface PluginSidebarResponse {
@@ -293,6 +294,7 @@ export function useNavigation() {
                     showBadge: item.showBadge !== false,
                     description: item.description,
                     permission: item.permission, // Include permission for reference
+                    group: item.group, // Use group from plugin item, or undefined to fall back to default
                 };
             });
     };
@@ -910,8 +912,11 @@ export function useNavigation() {
         // Add plugin server items (with subuser permission filtering)
         if (pluginRoutes.value?.server) {
             const pluginItems = convertPluginItems(pluginRoutes.value.server, 'server', uuidShort as string);
+            // Only set default group if plugin didn't specify one
             pluginItems.forEach((item) => {
-                item.group = 'plugins';
+                if (!item.group) {
+                    item.group = 'plugins';
+                }
             });
             items.push(...pluginItems);
         }
@@ -1036,7 +1041,7 @@ export function useNavigation() {
             groups[groupKey].push(item);
         });
 
-        // Define group order and labels
+        // Define group order and labels for known groups
         const groupConfig: Record<string, () => string> = {
             management: () => t('navGroups.management'),
             files: () => t('navGroups.filesData'),
@@ -1046,12 +1051,18 @@ export function useNavigation() {
             plugins: () => t('navGroups.plugins'),
         };
 
-        // Return groups in specific order
-        return Object.keys(groupConfig)
+        // Get all group keys, prioritizing known groups first
+        const knownGroupKeys = Object.keys(groupConfig);
+        const customGroupKeys = Object.keys(groups).filter((key) => !knownGroupKeys.includes(key) && key !== 'other');
+        const allGroupKeys = [...knownGroupKeys, ...customGroupKeys];
+
+        // Return groups in specific order, including custom plugin groups
+        return allGroupKeys
             .filter((key) => groups[key] && groups[key].length > 0)
             .map((key) => {
                 const labelResolver = groupConfig[key];
-                const name = labelResolver ? labelResolver() : '';
+                // Use translated label if available, otherwise use the group key as-is (for custom plugin groups)
+                const name = labelResolver ? labelResolver() : key;
                 const items = groups[key];
                 if (!name || !items) {
                     return { name: '', items: [] };

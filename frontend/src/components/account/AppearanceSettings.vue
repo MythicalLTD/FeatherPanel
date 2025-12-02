@@ -37,7 +37,7 @@
                     <label class="text-sm font-medium">{{ $t('account.baseColorTheme') }}</label>
                     <p class="text-xs text-muted-foreground">{{ $t('account.baseColorThemeDescription') }}</p>
                 </div>
-                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                     <button
                         v-for="theme in availableColorThemes"
                         :key="theme"
@@ -822,29 +822,89 @@ const handleAccentColorChange = (accent: AccentColor) => {
     // Auto-sync will handle backend update every 5 minutes
 };
 
-// Get theme color style for preview (using actual oklch values)
+// Get theme color style for preview (using dark mode card colors for better visibility)
 const getThemeColorStyle = (theme: ColorTheme): Record<string, string> => {
-    // Use a gradient showing both light and dark variants for better visibility
+    // Use dark mode card colors which have more chroma and show theme character better
     const themeColorMap: Record<ColorTheme, { light: string; dark: string }> = {
         neutral: {
             light: 'oklch(0.97 0 0)',
-            dark: 'oklch(0.269 0 0)',
+            dark: 'oklch(0.145 0 0)',
         },
         stone: {
             light: 'oklch(0.968 0.007 247.896)',
-            dark: 'oklch(0.279 0.041 260.031)',
+            dark: 'oklch(0.208 0.042 265.755)',
         },
         zinc: {
             light: 'oklch(0.967 0.003 264.542)',
-            dark: 'oklch(0.278 0.033 256.848)',
+            dark: 'oklch(0.21 0.034 264.665)',
         },
         gray: {
             light: 'oklch(0.97 0 0)',
-            dark: 'oklch(0.269 0 0)',
+            dark: 'oklch(0.145 0 0)',
         },
         slate: {
             light: 'oklch(0.968 0.007 247.896)',
-            dark: 'oklch(0.279 0.041 260.031)',
+            dark: 'oklch(0.208 0.042 265.755)',
+        },
+        warm: {
+            light: 'oklch(0.97 0.008 65)',
+            dark: 'oklch(0.20 0.018 50)',
+        },
+        cool: {
+            light: 'oklch(0.967 0.005 225)',
+            dark: 'oklch(0.21 0.03 235)',
+        },
+        rose: {
+            light: 'oklch(0.97 0.008 350)',
+            dark: 'oklch(0.20 0.018 345)',
+        },
+        emerald: {
+            light: 'oklch(0.967 0.005 160)',
+            dark: 'oklch(0.21 0.025 165)',
+        },
+        amber: {
+            light: 'oklch(0.97 0.008 75)',
+            dark: 'oklch(0.20 0.018 75)',
+        },
+        violet: {
+            light: 'oklch(0.967 0.005 280)',
+            dark: 'oklch(0.21 0.03 270)',
+        },
+        teal: {
+            light: 'oklch(0.967 0.005 180)',
+            dark: 'oklch(0.21 0.025 180)',
+        },
+        indigo: {
+            light: 'oklch(0.967 0.005 270)',
+            dark: 'oklch(0.21 0.03 265)',
+        },
+        crimson: {
+            light: 'oklch(0.97 0.008 15)',
+            dark: 'oklch(0.20 0.018 20)',
+        },
+        sky: {
+            light: 'oklch(0.967 0.005 210)',
+            dark: 'oklch(0.21 0.025 210)',
+        },
+        lime: {
+            light: 'oklch(0.967 0.005 120)',
+            dark: 'oklch(0.21 0.025 120)',
+        },
+        sand: {
+            light: 'oklch(0.97 0.007 55)',
+            dark: 'oklch(0.20 0.015 50)',
+        },
+        ocean: {
+            light: 'oklch(0.967 0.006 200)',
+            dark: 'oklch(0.21 0.03 200)',
+        },
+        forest: {
+            light: 'oklch(0.967 0.005 140)',
+            dark: 'oklch(0.21 0.025 140)',
+        },
+        sunset: {
+            light: 'oklch(0.97 0.008 30)',
+            dark: 'oklch(0.20 0.018 25)',
         },
     };
 

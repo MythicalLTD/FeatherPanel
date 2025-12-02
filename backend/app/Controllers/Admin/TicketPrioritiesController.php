@@ -35,6 +35,7 @@ use App\Chat\TicketPriority;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\TicketEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -263,6 +264,22 @@ class TicketPrioritiesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Get created priority for event
+        $createdPriority = TicketPriority::getById($priorityId);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null && $createdPriority) {
+            $eventManager->emit(
+                TicketEvent::onTicketPriorityCreated(),
+                [
+                    'priority' => $createdPriority,
+                    'priority_id' => $priorityId,
+                    'user_uuid' => $currentUser['uuid'] ?? null,
+                ]
+            );
+        }
+
         return ApiResponse::success(['priority_id' => $priorityId], 'Priority created successfully', 201);
     }
 
@@ -331,6 +348,23 @@ class TicketPrioritiesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Get updated priority for event
+        $updatedPriority = TicketPriority::getById($id);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null && $updatedPriority) {
+            $eventManager->emit(
+                TicketEvent::onTicketPriorityUpdated(),
+                [
+                    'priority' => $updatedPriority,
+                    'updated_data' => $data,
+                    'priority_id' => $id,
+                    'user_uuid' => $currentUser['uuid'] ?? null,
+                ]
+            );
+        }
+
         return ApiResponse::success([], 'Priority updated successfully', 200);
     }
 
@@ -385,6 +419,19 @@ class TicketPrioritiesController
             'context' => 'Deleted ticket priority: ' . $priority['name'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                TicketEvent::onTicketPriorityDeleted(),
+                [
+                    'priority' => $priority,
+                    'priority_id' => $id,
+                    'user_uuid' => $currentUser['uuid'] ?? null,
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Priority deleted successfully', 200);
     }

@@ -65,8 +65,9 @@
 
             <!-- Iframe -->
             <iframe
+                ref="iframeRef"
                 :src="iframeSrc"
-                class="w-full h-full border-0 transition-all duration-500 ease-out"
+                class="w-full h-full border-0 transition-all duration-500 ease-out plugin-iframe"
                 :class="{ 'opacity-0 scale-95': iframeLoading, 'opacity-100 scale-100': !iframeLoading }"
                 @load="onIframeLoad"
                 @error="onIframeError"
@@ -158,6 +159,7 @@ const error = ref<string | null>(null);
 const iframeError = ref<string | null>(null);
 const iframeLoading = ref(true);
 const serverName = ref<string | null>(null);
+const iframeRef = ref<HTMLIFrameElement | null>(null);
 const pluginData = ref<{
     name: string;
     plugin: string;
@@ -325,9 +327,125 @@ const fetchPluginSidebar = async () => {
     }
 };
 
+const injectScrollbarStyles = () => {
+    if (!iframeRef.value) return;
+
+    try {
+        const iframe = iframeRef.value;
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+
+        if (!iframeDoc) return;
+
+        // Check if styles already injected
+        if (iframeDoc.getElementById('featherpanel-custom-scrollbar')) return;
+
+        // Create style element
+        const style = iframeDoc.createElement('style');
+        style.id = 'featherpanel-custom-scrollbar';
+        style.textContent = `
+            /* Custom Scrollbar Styles */
+            * {
+                scrollbar-width: thin;
+                scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+            }
+
+            /* Webkit browsers (Chrome, Safari, Edge) */
+            *::-webkit-scrollbar {
+                width: 10px;
+                height: 10px;
+            }
+
+            *::-webkit-scrollbar-track {
+                background: transparent;
+                border-radius: 10px;
+            }
+
+            *::-webkit-scrollbar-thumb {
+                background: rgba(148, 163, 184, 0.5);
+                border-radius: 10px;
+                border: 2px solid transparent;
+                background-clip: padding-box;
+            }
+
+            *::-webkit-scrollbar-thumb:hover {
+                background: rgba(148, 163, 184, 0.7);
+                background-clip: padding-box;
+            }
+
+            *::-webkit-scrollbar-thumb:active {
+                background: rgba(148, 163, 184, 0.9);
+                background-clip: padding-box;
+            }
+
+            /* Dark mode support */
+            @media (prefers-color-scheme: dark) {
+                * {
+                    scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
+                }
+
+                *::-webkit-scrollbar-thumb {
+                    background: rgba(100, 116, 139, 0.5);
+                    background-clip: padding-box;
+                }
+
+                *::-webkit-scrollbar-thumb:hover {
+                    background: rgba(100, 116, 139, 0.7);
+                    background-clip: padding-box;
+                }
+
+                *::-webkit-scrollbar-thumb:active {
+                    background: rgba(100, 116, 139, 0.9);
+                    background-clip: padding-box;
+                }
+            }
+
+            /* Light mode specific */
+            @media (prefers-color-scheme: light) {
+                * {
+                    scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+                }
+
+                *::-webkit-scrollbar-thumb {
+                    background: rgba(148, 163, 184, 0.4);
+                    background-clip: padding-box;
+                }
+
+                *::-webkit-scrollbar-thumb:hover {
+                    background: rgba(148, 163, 184, 0.6);
+                    background-clip: padding-box;
+                }
+
+                *::-webkit-scrollbar-thumb:active {
+                    background: rgba(148, 163, 184, 0.8);
+                    background-clip: padding-box;
+                }
+            }
+        `;
+
+        // Inject into iframe head
+        if (iframeDoc.head) {
+            iframeDoc.head.appendChild(style);
+        } else {
+            // Fallback: wait for head to be available
+            setTimeout(() => {
+                if (iframeDoc.head) {
+                    iframeDoc.head.appendChild(style);
+                }
+            }, 100);
+        }
+    } catch (err) {
+        // Cross-origin or other error - silently fail
+        console.debug('Could not inject scrollbar styles into iframe:', err);
+    }
+};
+
 const onIframeLoad = () => {
     iframeError.value = null;
     iframeLoading.value = false;
+    // Inject custom scrollbar styles after iframe loads
+    setTimeout(() => {
+        injectScrollbarStyles();
+    }, 100);
 };
 
 const onIframeError = (event: Event) => {
@@ -380,3 +498,58 @@ watch(
     },
 );
 </script>
+
+<style scoped>
+/* Custom scrollbar for iframe container (fallback) */
+.plugin-iframe-container {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+}
+
+.plugin-iframe-container::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.plugin-iframe-container::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+}
+
+.plugin-iframe-container::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.5);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+.plugin-iframe-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.7);
+    background-clip: padding-box;
+}
+
+.plugin-iframe-container::-webkit-scrollbar-thumb:active {
+    background: rgba(148, 163, 184, 0.9);
+    background-clip: padding-box;
+}
+
+/* Dark mode support */
+.dark .plugin-iframe-container {
+    scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
+}
+
+.dark .plugin-iframe-container::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.5);
+    background-clip: padding-box;
+}
+
+.dark .plugin-iframe-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.7);
+    background-clip: padding-box;
+}
+
+.dark .plugin-iframe-container::-webkit-scrollbar-thumb:active {
+    background: rgba(100, 116, 139, 0.9);
+    background-clip: padding-box;
+}
+</style>

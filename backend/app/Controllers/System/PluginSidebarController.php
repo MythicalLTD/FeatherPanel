@@ -58,6 +58,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'url', type: 'string', description: 'Sidebar item URL'),
         new OA\Property(property: 'icon', type: 'string', description: 'Sidebar item icon'),
         new OA\Property(property: 'permission', type: 'string', nullable: true, description: 'Required permission for this item'),
+        new OA\Property(property: 'group', type: 'string', nullable: true, description: 'Group name for organizing items (e.g., "Minecraft Java Edition"). Items with the same group name will be grouped together.'),
     ]
 )]
 class PluginSidebarController

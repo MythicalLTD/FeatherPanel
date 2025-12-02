@@ -37,6 +37,7 @@ use App\Chat\TicketMessage;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
+use App\Plugins\Events\Events\TicketEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -288,6 +289,23 @@ class TicketMessagesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Get created message for event
+        $createdMessage = TicketMessage::getById($messageId);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null && $createdMessage) {
+            $eventManager->emit(
+                TicketEvent::onTicketMessageCreated(),
+                [
+                    'ticket' => $ticket,
+                    'message' => $createdMessage,
+                    'message_id' => $messageId,
+                    'user_uuid' => $currentUser['uuid'],
+                ]
+            );
+        }
+
         return ApiResponse::success(['message_id' => $messageId], 'Message created successfully', 201);
     }
 
@@ -379,6 +397,24 @@ class TicketMessagesController
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
 
+        // Get updated message for event
+        $updatedMessage = TicketMessage::getById($id);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null && $updatedMessage) {
+            $eventManager->emit(
+                TicketEvent::onTicketMessageUpdated(),
+                [
+                    'ticket' => $ticket,
+                    'message' => $updatedMessage,
+                    'updated_data' => $data,
+                    'message_id' => $id,
+                    'user_uuid' => $currentUser['uuid'],
+                ]
+            );
+        }
+
         return ApiResponse::success([], 'Message updated successfully', 200);
     }
 
@@ -455,6 +491,19 @@ class TicketMessagesController
             'context' => 'Deleted message from ticket: ' . $ticket['title'],
             'ip_address' => CloudFlareRealIP::getRealIP(),
         ]);
+
+        // Emit event
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                TicketEvent::onTicketMessageDeleted(),
+                [
+                    'ticket' => $ticket,
+                    'message_id' => $id,
+                    'user_uuid' => $currentUser['uuid'],
+                ]
+            );
+        }
 
         return ApiResponse::success([], 'Message deleted successfully', 200);
     }
