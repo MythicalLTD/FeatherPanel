@@ -924,7 +924,7 @@ const widgetsBottomOfPage = computed(() => getWidgets('server-file-editor', 'bot
 const FILE_SIZE_LIMIT = 5 * 1024 * 1024;
 
 // Check if a file is editable based on extension
-const isFileEditable = (filename: string): boolean => {
+function isFileEditable(filename: string): boolean {
     const ext = filename.split('.').pop()?.toLowerCase() || '';
 
     // Binary file extensions that should NOT be editable
@@ -1019,7 +1019,7 @@ const isFileEditable = (filename: string): boolean => {
     ];
 
     return !binaryExtensions.includes(ext);
-};
+}
 
 // Computed breadcrumbs (following ServerFiles pattern with defensive checks)
 const breadcrumbs = computed(() => {
@@ -1086,6 +1086,7 @@ const loadFileContent = async () => {
             // Empty strings are valid - allow them
             fileContent.value = response.data;
         } else if (response.data && typeof response.data === 'object') {
+            // Check if this is an API response structure
             if (response.data.content !== undefined && response.data.content !== null) {
                 // Handle empty strings in content field
                 fileContent.value = String(response.data.content);
@@ -1095,9 +1096,30 @@ const loadFileContent = async () => {
             } else if (response.data.success === false) {
                 // If API explicitly says it failed, throw error
                 throw new Error(response.data.message || 'Failed to load file');
+            } else if (response.data.success === true) {
+                // API success response with data
+                if (response.data.data !== undefined && response.data.data !== null) {
+                    fileContent.value = String(response.data.data);
+                } else {
+                    fileContent.value = '';
+                }
             } else {
-                // Empty object or unknown structure - treat as empty file
-                fileContent.value = '';
+                // This is likely a JSON file that was parsed by Axios
+                // Check if file extension is .json to confirm
+                const isJsonFile = fileName.value.toLowerCase().endsWith('.json');
+                if (isJsonFile) {
+                    // Stringify the parsed JSON with proper formatting
+                    fileContent.value = JSON.stringify(response.data, null, 2);
+                } else {
+                    // For other object types, try to stringify
+                    // This handles cases where non-JSON files might be parsed as objects
+                    try {
+                        fileContent.value = JSON.stringify(response.data, null, 2);
+                    } catch {
+                        // If stringify fails, treat as empty
+                        fileContent.value = '';
+                    }
+                }
             }
         } else if (response.data === null || response.data === undefined) {
             // API returned null/undefined - treat as empty file (valid)

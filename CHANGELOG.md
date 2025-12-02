@@ -13,6 +13,8 @@
 - Resolved a query error that occurred when a database host was associated with active servers. by @nayskutzu
 - Resolved an issue preventing EULA and egg/spell features from functioning correctly—these are now properly included in server requests, restoring expected functionality. by @nayskutzu
 - Fixed an issue where role names and colors were not properly displayed on the frontend; these are now shown as intended. by @nayskutzu
+- Resolved an issue preventing JSON files from being opened and edited; you can now seamlessly edit JSON files as intended. by @nayskutzu
+- Improved the handling of the --skip-os-check flag: the installer will now correctly honor this option even if /etc/os-release is missing, ensuring a smoother and more flexible installation experience. by @nayskutzu
 
 ### Added
 

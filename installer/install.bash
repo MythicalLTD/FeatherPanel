@@ -2969,6 +2969,16 @@ check_eol_status() {
     local eol_extended_name=""
     local status="supported"
     
+    # Skip EOL check if OS or version is unknown
+    if [ -z "$os" ] || [ "$os" = "unknown" ] || [ -z "$version" ] || [ "$version" = "unknown" ]; then
+        EOL_STATUS="supported"
+        EOL_DATE=""
+        EOL_EXTENDED_DATE=""
+        EOL_NAME=""
+        EOL_EXTENDED_NAME=""
+        return 0
+    fi
+    
     # Define EOL dates (Unix timestamps)
     # Use GNU date format (works on Debian/Ubuntu)
     case "$os" in
@@ -3051,8 +3061,8 @@ check_eol_status() {
 if [ -f /etc/os-release ]; then
     # shellcheck source=/dev/null
     . /etc/os-release
-    OS=$ID
-    OS_VERSION=$VERSION_ID
+    OS="${ID:-unknown}"
+    OS_VERSION="${VERSION_ID:-unknown}"
     
     # Check if OS and version are supported
     SUPPORTED=false
@@ -3067,14 +3077,20 @@ if [ -f /etc/os-release ]; then
         fi
     fi
     
-    if [ "$SUPPORTED" = false ]; then
+    # Handle unsupported OS or missing/invalid OS information
+    if [ "$SUPPORTED" = false ] || [ "$OS" = "unknown" ] || [ "$OS_VERSION" = "unknown" ]; then
         if [ "$SKIP_OS_CHECK" = true ]; then
             log_warn "OS check skipped via --skip-os-check flag"
             echo ""
             draw_hr
             echo -e "${YELLOW}${BOLD}⚠️  Warning: OS Check Skipped${NC}"
             draw_hr
-            echo -e "${YELLOW}You are using an unsupported OS: $OS $OS_VERSION${NC}"
+            if [ "$OS" != "unknown" ] && [ "$OS_VERSION" != "unknown" ]; then
+                echo -e "${YELLOW}You are using an unsupported OS: $OS $OS_VERSION${NC}"
+            else
+                echo -e "${YELLOW}Could not determine OS information from /etc/os-release${NC}"
+                echo -e "${YELLOW}OS: ${OS:-not set}, Version: ${OS_VERSION:-not set}${NC}"
+            fi
             echo -e "${YELLOW}This installer officially supports:${NC}"
             echo -e "  ${GREEN}•${NC} Debian 11, 12, or 13"
             echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, or 25.04"
@@ -3083,15 +3099,22 @@ if [ -f /etc/os-release ]; then
             echo ""
             draw_hr
             sleep 3
-            # Still check EOL status even if skipping OS check
-            check_eol_status "$OS" "$OS_VERSION" || true
+            # Still check EOL status even if skipping OS check (if we have valid OS info)
+            if [ "$OS" != "unknown" ] && [ "$OS_VERSION" != "unknown" ]; then
+                check_eol_status "$OS" "$OS_VERSION" || true
+            fi
         else
             log_error "Unsupported OS or version: $OS $OS_VERSION"
             echo -e "${RED}${BOLD}This installer only supports:${NC}"
             echo -e "  ${GREEN}•${NC} Debian 11, 12, or 13"
             echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, or 25.04"
             echo -e ""
-            echo -e "${YELLOW}Your system: $OS $OS_VERSION${NC}"
+            if [ "$OS" != "unknown" ] && [ "$OS_VERSION" != "unknown" ]; then
+                echo -e "${YELLOW}Your system: $OS $OS_VERSION${NC}"
+            else
+                echo -e "${YELLOW}Could not determine OS information from /etc/os-release${NC}"
+                echo -e "${YELLOW}OS: ${OS:-not set}, Version: ${OS_VERSION:-not set}${NC}"
+            fi
             echo ""
             echo -e "${BLUE}To bypass this check, use: ${BOLD}--skip-os-check${NC}"
             support_hint
@@ -4610,10 +4633,33 @@ CF_HOSTNAME=""
             exit 1
         fi
 else
-    log_error "Cannot determine OS - /etc/os-release not found"
-    echo -e "${RED}${BOLD}This installer only supports:${NC}"
-    echo -e "  ${GREEN}•${NC} Debian 11, 12, or 13"
-    echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, or 25.04"
-    support_hint
-    exit 1
+    # /etc/os-release not found
+    if [ "$SKIP_OS_CHECK" = true ]; then
+        log_warn "OS check skipped via --skip-os-check flag"
+        echo ""
+        draw_hr
+        echo -e "${YELLOW}${BOLD}⚠️  Warning: OS Check Skipped${NC}"
+        draw_hr
+        echo -e "${YELLOW}Cannot determine OS - /etc/os-release not found${NC}"
+        echo -e "${YELLOW}This installer officially supports:${NC}"
+        echo -e "  ${GREEN}•${NC} Debian 11, 12, or 13"
+        echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, or 25.04"
+        echo ""
+        echo -e "${BLUE}Continuing with installation at your own risk...${NC}"
+        echo ""
+        draw_hr
+        sleep 3
+        # Set default values for OS variables to prevent errors later
+        OS="unknown"
+        OS_VERSION="unknown"
+    else
+        log_error "Cannot determine OS - /etc/os-release not found"
+        echo -e "${RED}${BOLD}This installer only supports:${NC}"
+        echo -e "  ${GREEN}•${NC} Debian 11, 12, or 13"
+        echo -e "  ${GREEN}•${NC} Ubuntu 22.04 LTS, 24.04 LTS, or 25.04"
+        echo ""
+        echo -e "${BLUE}To bypass this check, use: ${BOLD}--skip-os-check${NC}"
+        support_hint
+        exit 1
+    fi
 fi
