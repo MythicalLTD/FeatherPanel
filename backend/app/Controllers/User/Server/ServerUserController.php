@@ -1601,11 +1601,50 @@ class ServerUserController
             }
             if (str_starts_with($part, 'regex:')) {
                 $pattern = substr($part, strlen('regex:'));
-                // Expect pattern to include delimiters (e.g., /.../)
-                if (@preg_match($pattern, '') === false) {
-                    return 'Invalid regex rule';
+
+                if (empty($pattern)) {
+                    return 'Invalid regex rule: pattern is empty';
                 }
-                if (preg_match($pattern, $value) !== 1) {
+
+                // Normalize the pattern: add delimiters if missing
+                // Check if pattern already has delimiters (common delimiters: /, #, ~, `)
+                $hasDelimiters = false;
+                $firstChar = $pattern[0];
+                if (in_array($firstChar, ['/', '#', '~', '`'], true)) {
+                    // Check if there's a matching closing delimiter
+                    $lastDelimiterPos = strrpos($pattern, $firstChar);
+                    if ($lastDelimiterPos !== false && $lastDelimiterPos > 0) {
+                        // Check if there are flags after the closing delimiter
+                        $afterDelimiter = substr($pattern, $lastDelimiterPos + 1);
+                        if (empty($afterDelimiter) || preg_match('/^[gimsuxADSUX]*$/', $afterDelimiter)) {
+                            $hasDelimiters = true;
+                        }
+                    }
+                }
+
+                $normalizedPattern = $hasDelimiters ? $pattern : '/' . $pattern . '/';
+
+                // Validate the regex pattern is syntactically correct
+                $lastError = null;
+                set_error_handler(function ($errno, $errstr) use (&$lastError) {
+                    $lastError = $errstr;
+
+                    return true;
+                }, E_WARNING);
+
+                $isValid = @preg_match($normalizedPattern, '') !== false;
+                restore_error_handler();
+
+                if (!$isValid) {
+                    $errorMsg = $lastError ?? 'malformed pattern';
+                    // Clean up the error message
+                    $errorMsg = preg_replace('/.*: /', '', $errorMsg);
+
+                    return 'Invalid regex rule: ' . $errorMsg;
+                }
+
+                // Test the value against the pattern
+                if (preg_match($normalizedPattern, $value) !== 1) {
                     return 'Value does not match required format';
                 }
                 continue;

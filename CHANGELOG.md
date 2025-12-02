@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.1.0 STABLE
+
+### Fixed
+
+- Enhanced input validation on the server startup page with improved regex checks, replacing unclear "validation failed" errors with more informative messages. by @nayskutzu
+
 ## v1.0.6 BETA
 
 ### Fixed

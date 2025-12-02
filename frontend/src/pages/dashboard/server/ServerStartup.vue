@@ -361,7 +361,12 @@
                             <div
                                 v-for="v in viewableVariables"
                                 :key="v.variable_id"
+                                :data-variable-id="v.variable_id"
                                 class="group relative rounded-lg border-2 bg-card p-4 space-y-3 transition-all hover:border-primary/50 hover:shadow-md"
+                                :class="[
+                                    variableErrors[v.variable_id] &&
+                                        'border-red-500 dark:border-red-500 shadow-md shadow-red-500/20',
+                                ]"
                             >
                                 <!-- Variable Header -->
                                 <div class="flex items-start justify-between gap-3">
@@ -483,7 +488,12 @@
                             <div
                                 v-for="v in pendingSpellChange.variables"
                                 :key="v.variable_id"
+                                :data-variable-id="v.variable_id"
                                 class="group relative rounded-lg border-2 bg-card p-4 space-y-3 transition-all hover:border-primary/50"
+                                :class="[
+                                    newVariableErrors[v.variable_id] &&
+                                        'border-red-500 dark:border-red-500 shadow-md shadow-red-500/20',
+                                ]"
                             >
                                 <div class="flex items-start justify-between gap-3">
                                     <div class="flex-1 min-w-0">
@@ -1190,9 +1200,124 @@ async function saveChanges() {
         await fetchServer();
         toast.success(t('serverStartup.saveSuccess'));
     } catch (e: unknown) {
-        const err = e as { message?: string };
-        toast.error(err.message || t('serverStartup.saveError'));
-        console.error(e);
+        // Parse axios error response
+        const axiosError = e as {
+            response?: {
+                data?: {
+                    message?: string;
+                    error_message?: string;
+                    error_code?: string;
+                    errors?: Array<{ detail?: string; code?: string }>;
+                };
+                status?: number;
+            };
+            message?: string;
+        };
+
+        // Extract error message from response - check errors array first, then fallback to message fields
+        let errorMessage = t('serverStartup.saveError');
+        if (
+            axiosError.response?.data?.errors &&
+            Array.isArray(axiosError.response.data.errors) &&
+            axiosError.response.data.errors.length > 0
+        ) {
+            // Use the first error's detail if available
+            const firstError = axiosError.response.data.errors[0];
+            if (firstError) {
+                errorMessage = firstError.detail || firstError.code || errorMessage;
+            }
+        } else {
+            errorMessage =
+                axiosError.response?.data?.error_message ||
+                axiosError.response?.data?.message ||
+                axiosError.message ||
+                errorMessage;
+        }
+
+        // Check if this is a variable validation error
+        const errorCode = axiosError.response?.data?.error_code;
+        const isVariableError =
+            errorCode === 'INVALID_VARIABLE_VALUE' || errorMessage.includes('Validation failed for');
+
+        if (isVariableError) {
+            // Extract variable name from error message (format: "Validation failed for VARIABLE_NAME: error")
+            const variableMatch = errorMessage.match(/Validation failed for ([^:]+):/);
+            if (variableMatch && variableMatch[1]) {
+                const envVariableName = variableMatch[1].trim();
+
+                // Find the variable by env_variable name (check both current variables and new variables)
+                const failedVariable =
+                    variables.value.find((v) => v.env_variable === envVariableName) ||
+                    (pendingSpellChange.value?.variables.find((v) => v.env_variable === envVariableName) as
+                        | Variable
+                        | undefined);
+
+                if (failedVariable) {
+                    // Extract the actual error message (after the colon)
+                    const actualError = errorMessage.split(':').slice(1).join(':').trim() || errorMessage;
+
+                    // Set error on the specific variable
+                    // Check if it's a new variable (in modal) or existing variable
+                    if (pendingSpellChange.value?.variables.some((v) => v.variable_id === failedVariable.variable_id)) {
+                        // It's a new variable in the modal
+                        newVariableErrors.value = {
+                            ...newVariableErrors.value,
+                            [failedVariable.variable_id]: actualError,
+                        };
+                        // Re-open modal if it was closed
+                        if (!showVariableModal.value) {
+                            showVariableModal.value = true;
+                        }
+                        // Scroll to the error field in modal
+                        setTimeout(() => {
+                            const errorElement = document.querySelector(
+                                `[data-variable-id="${failedVariable.variable_id}"]`,
+                            );
+                            if (errorElement) {
+                                errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                const input = errorElement.querySelector('input');
+                                if (input) {
+                                    input.focus();
+                                }
+                            }
+                        }, 100);
+                    } else {
+                        // It's an existing variable
+                        variableErrors.value = {
+                            ...variableErrors.value,
+                            [failedVariable.variable_id]: actualError,
+                        };
+                        // Scroll to the error field
+                        setTimeout(() => {
+                            const errorElement = document.querySelector(
+                                `[data-variable-id="${failedVariable.variable_id}"]`,
+                            );
+                            if (errorElement) {
+                                errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                const input = errorElement.querySelector('input');
+                                if (input) {
+                                    input.focus();
+                                }
+                            }
+                        }, 100);
+                    }
+
+                    // Show toast with the error
+                    toast.error(errorMessage);
+                } else {
+                    // Variable not found, show generic error
+                    toast.error(errorMessage);
+                }
+            } else {
+                // Couldn't parse variable name, show error anyway
+                toast.error(errorMessage);
+            }
+        } else {
+            // Not a variable validation error, show generic error
+            toast.error(errorMessage);
+        }
+
+        console.error('Save error:', e);
     } finally {
         saving.value = false;
     }
