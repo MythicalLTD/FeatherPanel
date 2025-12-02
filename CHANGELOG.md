@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.0.6 Beta
+## v1.0.6 BETA
 
 ### Fixed
 
