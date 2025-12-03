@@ -396,6 +396,25 @@ class WingsAdminController
         return ApiResponse::success(['node' => $node, 'ips' => $ips], 'Node IPs', 200);
     }
 
+    /**
+     * Get node network information (alias for getIps with different response format).
+     */
+    public function getNetwork(Request $request, int $id): Response
+    {
+        $response = $this->getIps($request, $id);
+
+        // Transform response to match frontend expected format
+        if ($response->getStatusCode() === 200) {
+            $data = json_decode($response->getContent(), true);
+            if (isset($data['data']['ips'])) {
+                // Return just the ips structure expected by frontend
+                return ApiResponse::success(['ips' => $data['data']['ips']], 'Network information retrieved successfully', 200);
+            }
+        }
+
+        return $response;
+    }
+
     #[OA\Get(
         path: '/api/wings/admin/node/{id}/system',
         summary: 'Get node system information',
@@ -472,5 +491,350 @@ class WingsAdminController
         );
 
         return ApiResponse::success(['node' => $node, 'wings' => $system], 'Node system information', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/wings/admin/node/{id}/modules',
+        summary: 'List all modules',
+        description: 'Retrieve a list of all registered modules and their current status. Requires Wings node token authentication.',
+        tags: ['Wings - Admin'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Node ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Modules listed successfully',
+                content: new OA\JsonContent(type: 'object', properties: [
+                    new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')),
+                ])
+            ),
+        ]
+    )]
+    public function listModules(Request $request, int $id): Response
+    {
+        $admin = $request->get('user');
+        $node = Node::getNodeById($id);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $scheme = $node['scheme'];
+        $host = $node['fqdn'];
+        $port = $node['daemonListen'];
+        $token = $node['daemon_token'];
+
+        $timeout = (int) 30;
+
+        $wings = new Wings(
+            $host,
+            $port,
+            $scheme,
+            $token,
+            $timeout
+        );
+
+        if (APP_DEBUG) {
+            $wings->testConnection();
+        } else {
+            try {
+                if (!$wings->testConnection()) {
+                    return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
+                }
+            } catch (\Exception $e) {
+                return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
+            }
+        }
+
+        $modules = $wings->getModule()->listModules();
+
+        return ApiResponse::success($modules, 'Modules retrieved successfully', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/wings/admin/node/{id}/modules/{module}/config',
+        summary: 'Get module configuration',
+        description: 'Retrieve the current configuration for a specific module. Requires Wings node token authentication.',
+        tags: ['Wings - Admin'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Node ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'module',
+                in: 'path',
+                description: 'Module name',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Module configuration retrieved successfully',
+                content: new OA\JsonContent(type: 'object')
+            ),
+        ]
+    )]
+    public function getModuleConfig(Request $request, int $id, string $module): Response
+    {
+        $admin = $request->get('user');
+        $node = Node::getNodeById($id);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $scheme = $node['scheme'];
+        $host = $node['fqdn'];
+        $port = $node['daemonListen'];
+        $token = $node['daemon_token'];
+
+        $timeout = (int) 30;
+
+        $wings = new Wings(
+            $host,
+            $port,
+            $scheme,
+            $token,
+            $timeout
+        );
+
+        if (APP_DEBUG) {
+            $wings->testConnection();
+        } else {
+            try {
+                if (!$wings->testConnection()) {
+                    return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
+                }
+            } catch (\Exception $e) {
+                return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
+            }
+        }
+
+        $config = $wings->getModule()->getModuleConfig($module);
+
+        return ApiResponse::success($config, 'Module configuration retrieved successfully', 200);
+    }
+
+    #[OA\Put(
+        path: '/api/wings/admin/node/{id}/modules/{module}/config',
+        summary: 'Update module configuration',
+        description: 'Update the configuration for a specific module. The module must be disabled before configuration changes can be applied. Requires Wings node token authentication.',
+        tags: ['Wings - Admin'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Node ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'module',
+                in: 'path',
+                description: 'Module name',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Module configuration updated successfully',
+                content: new OA\JsonContent(type: 'object')
+            ),
+        ]
+    )]
+    public function updateModuleConfig(Request $request, int $id, string $module): Response
+    {
+        $admin = $request->get('user');
+        $node = Node::getNodeById($id);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $requestData = json_decode($request->getContent(), true);
+        if (!isset($requestData['config'])) {
+            return ApiResponse::error('Missing config in request body', 'INVALID_REQUEST', 400);
+        }
+
+        $scheme = $node['scheme'];
+        $host = $node['fqdn'];
+        $port = $node['daemonListen'];
+        $token = $node['daemon_token'];
+
+        $timeout = (int) 30;
+
+        $wings = new Wings(
+            $host,
+            $port,
+            $scheme,
+            $token,
+            $timeout
+        );
+
+        if (APP_DEBUG) {
+            $wings->testConnection();
+        } else {
+            try {
+                if (!$wings->testConnection()) {
+                    return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
+                }
+            } catch (\Exception $e) {
+                return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
+            }
+        }
+
+        $config = $wings->getModule()->updateModuleConfig($module, $requestData['config']);
+
+        return ApiResponse::success($config, 'Module configuration updated successfully', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/wings/admin/node/{id}/modules/{module}/enable',
+        summary: 'Enable module',
+        description: 'Enable a module. This will start the module and make it active. Requires Wings node token authentication.',
+        tags: ['Wings - Admin'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Node ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'module',
+                in: 'path',
+                description: 'Module name',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Module enabled successfully',
+                content: new OA\JsonContent(type: 'object')
+            ),
+        ]
+    )]
+    public function enableModule(Request $request, int $id, string $module): Response
+    {
+        $admin = $request->get('user');
+        $node = Node::getNodeById($id);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $scheme = $node['scheme'];
+        $host = $node['fqdn'];
+        $port = $node['daemonListen'];
+        $token = $node['daemon_token'];
+
+        $timeout = (int) 30;
+
+        $wings = new Wings(
+            $host,
+            $port,
+            $scheme,
+            $token,
+            $timeout
+        );
+
+        if (APP_DEBUG) {
+            $wings->testConnection();
+        } else {
+            try {
+                if (!$wings->testConnection()) {
+                    return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
+                }
+            } catch (\Exception $e) {
+                return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
+            }
+        }
+
+        $result = $wings->getModule()->enableModule($module);
+
+        return ApiResponse::success($result, 'Module enabled successfully', 200);
+    }
+
+    #[OA\Post(
+        path: '/api/wings/admin/node/{id}/modules/{module}/disable',
+        summary: 'Disable module',
+        description: 'Disable a module. This will stop the module and make it inactive. Requires Wings node token authentication.',
+        tags: ['Wings - Admin'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Node ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'module',
+                in: 'path',
+                description: 'Module name',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Module disabled successfully',
+                content: new OA\JsonContent(type: 'object')
+            ),
+        ]
+    )]
+    public function disableModule(Request $request, int $id, string $module): Response
+    {
+        $admin = $request->get('user');
+        $node = Node::getNodeById($id);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        $scheme = $node['scheme'];
+        $host = $node['fqdn'];
+        $port = $node['daemonListen'];
+        $token = $node['daemon_token'];
+
+        $timeout = (int) 30;
+
+        $wings = new Wings(
+            $host,
+            $port,
+            $scheme,
+            $token,
+            $timeout
+        );
+
+        if (APP_DEBUG) {
+            $wings->testConnection();
+        } else {
+            try {
+                if (!$wings->testConnection()) {
+                    return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
+                }
+            } catch (\Exception $e) {
+                return ApiResponse::error('Failed to connect to Wings', 'WINGS_CONNECTION_FAILED', 500);
+            }
+        }
+
+        $result = $wings->getModule()->disableModule($module);
+
+        return ApiResponse::success($result, 'Module disabled successfully', 200);
     }
 }

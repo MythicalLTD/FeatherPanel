@@ -48,8 +48,8 @@ importers:
         specifier: ^5.5.0
         version: 5.5.0
       ace-builds:
-        specifier: ^1.43.4
-        version: 1.43.4
+        specifier: ^1.43.5
+        version: 1.43.5
       ansi-to-html:
         specifier: ^0.7.2
         version: 0.7.2
@@ -154,7 +154,7 @@ importers:
         version: 1.0.11(vue@3.5.25(typescript@5.9.3))
       vue3-ace-editor:
         specifier: ^2.2.4
-        version: 2.2.4(ace-builds@1.43.4)(vue@3.5.25(typescript@5.9.3))
+        version: 2.2.4(ace-builds@1.43.5)(vue@3.5.25(typescript@5.9.3))
       vuedraggable:
         specifier: ^4.1.0
         version: 4.1.0(vue@3.5.25(typescript@5.9.3))
@@ -1161,8 +1161,8 @@ packages:
   '@xterm/xterm@5.5.0':
     resolution: {integrity: sha512-hqJHYaQb5OptNunnyAnkHyM8aCjZ1MEIDTQu1iIbbTD/xops91NB5yq1ZK/dC2JDbVWtF23zUtl9JE2NqwT87A==}
 
-  ace-builds@1.43.4:
-    resolution: {integrity: sha512-8hAxVfo2ImICd69BWlZwZlxe9rxDGDjuUhh+WeWgGDvfBCE+r3lkynkQvIovDz4jcMi8O7bsEaFygaDT+h9sBA==}
+  ace-builds@1.43.5:
+    resolution: {integrity: sha512-iH5FLBKdB7SVn9GR37UgA/tpQS8OTWIxWAuq3Ofaw+Qbc69FfPXsXd9jeW7KRG2xKpKMqBDnu0tHBrCWY5QI7A==}
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -3394,7 +3394,7 @@ snapshots:
 
   '@xterm/xterm@5.5.0': {}
 
-  ace-builds@1.43.4: {}
+  ace-builds@1.43.5: {}
 
   acorn-jsx@5.3.2(acorn@8.15.0):
     dependencies:
@@ -4509,9 +4509,9 @@ snapshots:
     dependencies:
       vue: 3.5.25(typescript@5.9.3)
 
-  vue3-ace-editor@2.2.4(ace-builds@1.43.4)(vue@3.5.25(typescript@5.9.3)):
+  vue3-ace-editor@2.2.4(ace-builds@1.43.5)(vue@3.5.25(typescript@5.9.3)):
     dependencies:
-      ace-builds: 1.43.4
+      ace-builds: 1.43.5
       resize-observer-polyfill: 1.5.1
       vue: 3.5.25(typescript@5.9.3)
 

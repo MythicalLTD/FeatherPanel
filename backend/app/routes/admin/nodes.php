@@ -230,4 +230,35 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_NODES_VIEW,
         ['GET']
     );
+    // Wings Config Routes (alias for /config routes)
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-nodes-wings-config-get',
+        '/api/admin/nodes/{id}/wings/config',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new NodesController())->getConfig($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_VIEW,
+        ['GET']
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-nodes-wings-config-put',
+        '/api/admin/nodes/{id}/wings/config',
+        function (Request $request, array $args) {
+            $id = $args['id'] ?? null;
+            if (!$id || !is_numeric($id)) {
+                return ApiResponse::error('Missing or invalid ID', 'INVALID_ID', 400);
+            }
+
+            return (new NodesController())->putConfig($request, (int) $id);
+        },
+        Permissions::ADMIN_NODES_EDIT,
+        ['PUT', 'POST']
+    );
 };

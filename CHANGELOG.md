@@ -6,6 +6,15 @@
 
 - Enhanced input validation on the server startup page with improved regex checks, replacing unclear "validation failed" errors with more informative messages. by @nayskutzu
 
+### Added
+
+- Powerful Wings modules support: create custom modules for Wings and seamlessly manage them through integrated admin pages in the panel. by @nayskutzu
+- Introduced robust "Always Online" server support—now featuring customizable MOTD and kick messages for a seamless, uninterrupted player experience. by @nayskutzu
+
+### Improved
+
+- Revamped node management interface: each node now has its own dedicated page for an improved and more intuitive management experience. by @nayskutzu
+
 ## v1.0.6 BETA
 
 ### Fixed

@@ -33,6 +33,7 @@ namespace App\Services\Wings;
 use App\Services\Wings\Services\JwtService;
 use App\Services\Wings\Services\ConfigService;
 use App\Services\Wings\Services\DockerService;
+use App\Services\Wings\Services\ModuleService;
 use App\Services\Wings\Services\ServerService;
 use App\Services\Wings\Services\SystemService;
 use App\Services\Wings\Services\TransferService;
@@ -52,6 +53,7 @@ class Wings
     private TransferService $transfer;
     private JwtService $jwt;
     private ConfigService $config;
+    private ModuleService $module;
 
     /**
      * Create a new Wings client instance.
@@ -77,6 +79,7 @@ class Wings
         $this->docker = new DockerService($this->connection);
         $this->transfer = new TransferService($this->connection);
         $this->config = new ConfigService($this->connection);
+        $this->module = new ModuleService($this->connection);
 
         // Initialize JWT service with node secret
         $this->jwt = new JwtService($authToken, '', $this->connection->getBaseUrl());
@@ -128,6 +131,14 @@ class Wings
     public function getConfig(): ConfigService
     {
         return $this->config;
+    }
+
+    /**
+     * Get the module service.
+     */
+    public function getModule(): ModuleService
+    {
+        return $this->module;
     }
 
     /**

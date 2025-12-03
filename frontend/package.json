@@ -65,7 +65,7 @@
         "@xterm/addon-fit": "^0.10.0",
         "@xterm/addon-web-links": "^0.11.0",
         "@xterm/xterm": "^5.5.0",
-        "ace-builds": "^1.43.4",
+        "ace-builds": "^1.43.5",
         "ansi-to-html": "^0.7.2",
         "axios": "^1.13.2",
         "chart.js": "^4.5.1",
