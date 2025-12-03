@@ -99,6 +99,7 @@ interface ConfigInterface
     public const SERVER_ALLOW_SUBUSERS = 'server_allow_subusers';
     public const SERVER_ALLOW_SCHEDULES = 'server_allow_schedules';
     public const SERVER_ALLOW_ALLOCATION_SELECT = 'server_allow_allocation_select';
+    public const SERVER_ALLOW_USER_MADE_FIREWALL = 'server_allow_user_made_firewall';
 
     /**
      * User Related Configs.

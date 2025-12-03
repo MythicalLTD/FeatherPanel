@@ -104,6 +104,7 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::SERVER_ALLOW_SUBUSERS => 'true',
             ConfigInterface::SERVER_ALLOW_SCHEDULES => 'true',
             ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT => 'false',
+            ConfigInterface::SERVER_ALLOW_USER_MADE_FIREWALL => 'false',
 
             // User related settings
             ConfigInterface::USER_ALLOW_AVATAR_CHANGE => 'true',

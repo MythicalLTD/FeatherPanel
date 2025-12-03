@@ -77,6 +77,8 @@ class SubuserPermissions
     public const SETTINGS_REINSTALL = 'settings.reinstall';
     public const ACTIVITY_READ = 'activity.read';
     public const SUBDOMAIN_MANAGE = 'subdomain.manage';
+    public const FIREWALL_READ = 'firewall.read';
+    public const FIREWALL_MANAGE = 'firewall.manage';
 
     // Array of all permissions
     public const PERMISSIONS = [
@@ -124,6 +126,8 @@ class SubuserPermissions
         self::SETTINGS_REINSTALL,
         self::ACTIVITY_READ,
         self::SUBDOMAIN_MANAGE,
+        self::FIREWALL_READ,
+        self::FIREWALL_MANAGE,
     ];
 
     /**
@@ -171,6 +175,9 @@ class SubuserPermissions
             ],
             'subdomain' => [
                 'permissions' => ['subdomain.manage'],
+            ],
+            'firewall' => [
+                'permissions' => ['firewall.read', 'firewall.manage'],
             ],
         ];
     }

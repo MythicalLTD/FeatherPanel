@@ -196,6 +196,7 @@ export const useSettingsStore = defineStore('settings', {
         serverAllowEggChange: (state) => getBooleanSetting(state, 'server_allow_egg_change'),
         serverAllowStartupChange: (state) => getBooleanSetting(state, 'server_allow_startup_change'),
         serverAllowAllocationSelect: (state) => getBooleanSetting(state, 'server_allow_allocation_select'),
+        serverAllowUserMadeFirewall: (state) => getBooleanSetting(state, 'server_allow_user_made_firewall'),
 
         /**
          * User-related settings

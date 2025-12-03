@@ -875,6 +875,17 @@ export function useNavigation() {
                 permission: 'allocation.read',
             },
             {
+                id: 'server-firewall',
+                name: t('nav.firewall'),
+                title: t('nav.firewall'),
+                url: `/server/${uuidShort}/firewall`,
+                icon: ShieldCheck,
+                isActive: currentPath.value.startsWith(`/server/${uuidShort}/firewall`),
+                category: 'server' as const,
+                group: 'networking',
+                permission: 'firewall.read',
+            },
+            {
                 id: 'server-subdomains',
                 name: t('nav.subdomains'),
                 title: t('nav.subdomains'),

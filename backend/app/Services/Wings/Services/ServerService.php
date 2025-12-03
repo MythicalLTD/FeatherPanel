@@ -659,4 +659,110 @@ class ServerService
             return new WingsResponse(['error' => $e->getMessage()], 500);
         }
     }
+
+    // ========================================
+    // Firewall Management
+    // ========================================
+
+    /**
+     * Get all firewall rules for a server.
+     */
+    public function getFirewallRules(string $serverUuid): WingsResponse
+    {
+        try {
+            $response = $this->connection->get("/api/servers/{$serverUuid}/firewall");
+
+            return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get a specific firewall rule by ID.
+     */
+    public function getFirewallRule(string $serverUuid, int $ruleId): WingsResponse
+    {
+        try {
+            $response = $this->connection->get("/api/servers/{$serverUuid}/firewall/{$ruleId}");
+
+            return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Create a new firewall rule.
+     *
+     * @param array<string,mixed> $data
+     */
+    public function createFirewallRule(string $serverUuid, array $data): WingsResponse
+    {
+        try {
+            $response = $this->connection->post("/api/servers/{$serverUuid}/firewall", $data);
+
+            return new WingsResponse($response, 201);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Update an existing firewall rule.
+     *
+     * @param array<string,mixed> $data
+     */
+    public function updateFirewallRule(string $serverUuid, int $ruleId, array $data): WingsResponse
+    {
+        try {
+            $response = $this->connection->put("/api/servers/{$serverUuid}/firewall/{$ruleId}", $data);
+
+            return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Delete a firewall rule.
+     */
+    public function deleteFirewallRule(string $serverUuid, int $ruleId): WingsResponse
+    {
+        try {
+            $response = $this->connection->delete("/api/servers/{$serverUuid}/firewall/{$ruleId}");
+
+            return new WingsResponse($response, 204);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get firewall rules for a specific port.
+     */
+    public function getFirewallRulesByPort(string $serverUuid, int $port): WingsResponse
+    {
+        try {
+            $response = $this->connection->get("/api/servers/{$serverUuid}/firewall/port/{$port}");
+
+            return new WingsResponse($response, 200);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Sync firewall rules for a server to iptables.
+     */
+    public function syncFirewallRules(string $serverUuid): WingsResponse
+    {
+        try {
+            $response = $this->connection->post("/api/servers/{$serverUuid}/firewall/sync");
+
+            return new WingsResponse($response, 202);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
 }

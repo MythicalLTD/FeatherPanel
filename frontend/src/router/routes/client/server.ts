@@ -164,6 +164,15 @@ const clientRoutes: RouteRecordRaw[] = [
         },
     },
     {
+        path: '/server/:uuidShort/firewall',
+        name: 'ServerFirewall',
+        component: () => import('@/pages/dashboard/server/ServerFirewall.vue'),
+        beforeEnter: (to, from, next) => {
+            Cookie.set('serverUuid', to.params.uuidShort as string);
+            next();
+        },
+    },
+    {
         path: '/server/:uuidShort/:pathMatch(.*)*',
         component: () => import('@/pages/dashboard/PluginRenderedPage.vue'),
         beforeEnter: (to, from, next) => {

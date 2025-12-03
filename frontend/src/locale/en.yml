@@ -999,6 +999,57 @@ serverAllocations:
     noSearchResults: 'No allocations found matching your search.'
     showingAllocations: 'Showing {from} to {to} of {total} allocations'
 
+# Server Firewall
+serverFirewall:
+    title: 'Firewall'
+    description: "Manage IP-based firewall rules for this server's allocated ports."
+    refresh: 'Refresh'
+    createRule: 'Create Rule'
+    editRule: 'Edit Rule'
+    syncRules: 'Sync Rules'
+    featureDisabled: 'Firewall Management Disabled'
+    featureDisabledDescription: 'Firewall management has been disabled by the administrator. Please contact support if you need to manage firewall rules for your server.'
+    rulesInfoTitle: 'Firewall Rules'
+    rulesInfoDescription: "This page lets you manage firewall rules for your server's ports. Be careful—changing these rules can affect your server's security and accessibility. Make sure you understand each rule you add or modify, as they can allow or block traffic. If you are unsure, please ask for help before making changes."
+    noRulesTitle: 'No Firewall Rules'
+    noRulesDescription: 'You have not configured any firewall rules yet. Create a rule to allow or block traffic for specific IPs and ports.'
+    rulesTitle: 'Firewall Rules'
+    rulesDescription: 'Ordered list of allow and block rules. Lower priority numbers are processed first.'
+    rule: 'rule'
+    rules: 'rules'
+    allocation: 'Allocation'
+    allocationPlaceholder: 'Select an allocated IP and port'
+    allocationHelp: 'Firewall rules can only target ports that are allocated to this server.'
+    noAllocations: 'This server has no network allocations yet. Create an allocation before adding firewall rules.'
+    allow: 'Allow'
+    block: 'Block'
+    priority: 'Priority'
+    priorityLabel: 'Priority {priority}'
+    priorityHelp: 'Lower numbers are processed first. Use higher priorities for more general rules.'
+    remoteIp: 'Remote IP / CIDR'
+    remoteIpPlaceholder: 'e.g. 192.168.1.100 or 10.0.0.0/24'
+    serverPort: 'Server Port'
+    protocol: 'Protocol'
+    protocolPlaceholder: 'Select protocol'
+    type: 'Rule Type'
+    typePlaceholder: 'Select rule type'
+    drawerDescription: 'Define which IPs are allowed or blocked from accessing specific ports on this server.'
+    createdAt: 'Created'
+    updatedAt: 'Updated'
+    errorTitle: 'Failed to save firewall rule'
+    fetchError: 'Failed to load firewall rules'
+    createSuccess: 'Firewall rule created successfully'
+    updateSuccess: 'Firewall rule updated successfully'
+    deleteSuccess: 'Firewall rule deleted successfully'
+    syncSuccess: 'Firewall rules synced successfully'
+    unknownError: 'An unknown error occurred while processing the firewall request.'
+    validation:
+        remoteIpRequired: 'Remote IP or CIDR is required'
+        portInvalid: 'Port must be between 1 and 65535'
+        priorityInvalid: 'Priority must be between 0 and 10000'
+        typeInvalid: 'Type must be either "allow" or "block"'
+        protocolInvalid: 'Protocol must be either "tcp" or "udp"'
+
 # Server Activities
 serverActivities:
     title: 'Server Activities'
@@ -1356,6 +1407,25 @@ serverSubusers:
     permissionsSelected: 'permission(s) selected'
     failedToUpdate: 'Failed to update permissions'
     permissionCategories:
+        subdomain:
+            name: 'Subdomain'
+            description: "Permissions that control a user's ability to manage subdomains for this server."
+            permissions:
+                create:
+                    name: 'Create'
+                    description: 'Allows a user to create new subdomains for this server.'
+                read:
+                    name: 'Read'
+                    description: 'Allows a user to view subdomains for this server.'
+                update:
+                    name: 'Update'
+                    description: 'Allows a user to update subdomains for this server.'
+                delete:
+                    name: 'Delete'
+                    description: 'Allows a user to delete subdomains for this server.'
+                manage:
+                    name: 'Manage'
+                    description: 'Allows a user to create, update, delete, and sync subdomains for this server.'
         websocket:
             name: 'WebSocket'
             description: 'Allows a user to connect to the server console via WebSocket.'
@@ -1533,6 +1603,16 @@ serverSubusers:
                 read:
                     name: 'Read'
                     description: 'Allows a user to view the activity logs for the server.'
+        firewall:
+            name: 'Firewall'
+            description: "Permissions that control a user's ability to manage firewall rules for this server."
+            permissions:
+                read:
+                    name: 'View Rules'
+                    description: 'Allows a user to view firewall rules configured for this server.'
+                manage:
+                    name: 'Manage Rules'
+                    description: 'Allows a user to create, update, delete, and sync firewall rules for this server.'
 
 # Server Files
 serverFiles:
@@ -2479,6 +2559,7 @@ nav:
     account: 'Account'
     main: 'Main'
     servers: 'Servers'
+    firewall: 'Firewall'
     serverManagement: 'Server Management'
     adminPanel: 'Admin Panel'
     users: 'Users'

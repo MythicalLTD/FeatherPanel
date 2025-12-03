@@ -149,7 +149,7 @@ support_hint() {
 upload_logs_on_fail() {
     if command -v curl >/dev/null 2>&1; then
         log_info "Uploading logs to mclo.gs for diagnostics..."
-        RESPONSE=$(curl -s -X POST --data-urlencode "content@${LOG_FILE}" "https://api.mclo.gs/1/log")
+        RESPONSE=$(curl -s -X POST --data-urlencode "content@${LOG_FILE}" "https://api.featherpanel.com/1/log")
         
         # Parse JSON response
         SUCCESS=$(echo "$RESPONSE" | grep -o '"success":[^,]*' | cut -d':' -f2 | tr -d '"' 2>/dev/null)

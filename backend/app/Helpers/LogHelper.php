@@ -30,6 +30,8 @@
 
 namespace App\Helpers;
 
+use App\App;
+
 /**
  * LogHelper - Utility class for log file operations and uploads.
  */
@@ -101,7 +103,7 @@ class LogHelper
     public static function uploadToMcloGs(string $content): array
     {
         try {
-            $ch = curl_init('https://api.mclo.gs/1/log');
+            $ch = curl_init('https://api.featherpanel.com/1/log');
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(['content' => $content]));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -111,9 +113,21 @@ class LogHelper
 
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
             // curl_close() is deprecated in PHP 8.5 (no-op since PHP 8.0)
 
+            if ($curlError) {
+                App::getInstance(true)->getLogger()->error('mclo.gs curl error: ' . $curlError);
+
+                return [
+                    'success' => false,
+                    'error' => 'Failed to connect to mclo.gs: ' . $curlError,
+                ];
+            }
+
             if ($httpCode !== 200) {
+                App::getInstance(true)->getLogger()->error('mclo.gs HTTP error: ' . $httpCode . ', Response: ' . substr($response, 0, 500));
+
                 return [
                     'success' => false,
                     'error' => 'Failed to upload to mclo.gs (HTTP ' . $httpCode . ')',
@@ -121,11 +135,24 @@ class LogHelper
             }
 
             $result = json_decode($response, true);
+            $jsonError = json_last_error();
 
-            if (!$result || !isset($result['success']) || !$result['success']) {
+            if ($jsonError !== JSON_ERROR_NONE) {
+                App::getInstance(true)->getLogger()->error('mclo.gs JSON decode error: ' . json_last_error_msg() . ', Response: ' . substr($response, 0, 500));
+
                 return [
                     'success' => false,
-                    'error' => $result['error'] ?? 'Unknown error from mclo.gs',
+                    'error' => 'Invalid response from mclo.gs: ' . json_last_error_msg(),
+                ];
+            }
+
+            if (!$result || !isset($result['success']) || !$result['success']) {
+                $errorMsg = $result['error'] ?? ($result['message'] ?? 'Unknown error from mclo.gs');
+                App::getInstance(true)->getLogger()->error('mclo.gs API error: ' . $errorMsg . ', Full response: ' . json_encode($result));
+
+                return [
+                    'success' => false,
+                    'error' => $errorMsg,
                 ];
             }
 
