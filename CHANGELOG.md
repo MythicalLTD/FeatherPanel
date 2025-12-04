@@ -15,6 +15,7 @@
 - Introduced a powerful and intuitive firewall manager for servers, easily enabled through the settings area, providing enhanced security and effortless control. by @nayskutzu
 - Seamless phpMyAdmin integration: effortlessly install, upgrade, and access phpMyAdmin directly through FeatherPanel for powerful database management. by @nayskutzu
 - Introduced an intuitive allocation template for creating new allocations, making the process faster and easier than ever! by @nayskutzu
+- Powerful custom CSS and JavaScript injection: admins can now easily inject their own CSS and JS through the settings panel for deep customization and tailored user experiences. by @nayskutzu
 
 ### Improved
 

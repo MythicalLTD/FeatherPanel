@@ -242,6 +242,8 @@ class SettingsController
                 ConfigInterface::LEGAL_TOS,
                 ConfigInterface::LEGAL_PRIVACY,
                 ConfigInterface::APP_DEVELOPER_MODE,
+				ConfigInterface::CUSTOM_JS,
+				ConfigInterface::CUSTOM_CSS,
             ],
         ],
     ];
@@ -1124,6 +1126,28 @@ class SettingsController
                 'validation' => 'required|integer|min:0|max:1000',
                 'options' => [],
                 'category' => 'ticket_system',
+            ],
+            ConfigInterface::CUSTOM_JS => [
+                'name' => ConfigInterface::CUSTOM_JS,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CUSTOM_JS, '// dummy script - does nothing'),
+                'description' => 'Custom JavaScript to inject into the page',
+                'type' => 'textarea',
+                'required' => false,
+                'placeholder' => '// dummy script - does nothing',
+                'validation' => 'string',
+                'options' => [],
+                'category' => 'other',
+            ],
+            ConfigInterface::CUSTOM_CSS => [
+                'name' => ConfigInterface::CUSTOM_CSS,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::CUSTOM_CSS, '/* dummy css - does nothing */'),
+                'description' => 'Custom CSS to inject into the page',
+                'type' => 'textarea',
+                'required' => false,
+                'placeholder' => '/* dummy css - does nothing */',
+                'validation' => 'string',
+                'options' => [],
+                'category' => 'other',
             ],
         ];
     }

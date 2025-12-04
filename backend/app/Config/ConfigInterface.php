@@ -177,4 +177,10 @@ interface ConfigInterface
     public const TICKET_SYSTEM_ENABLED = 'ticket_system_enabled';
     public const TICKET_SYSTEM_ALLOW_ATTACHMENTS = 'ticket_system_allow_attachments';
     public const TICKET_SYSTEM_MAX_OPEN_TICKETS = 'ticket_system_max_open_tickets';
+
+    /**
+     * Custom JS/CSS.
+     */
+    public const CUSTOM_JS = 'custom_js';
+    public const CUSTOM_CSS = 'custom_css';
 }

@@ -135,6 +135,10 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::TICKET_SYSTEM_ENABLED => 'true',
             ConfigInterface::TICKET_SYSTEM_ALLOW_ATTACHMENTS => 'true',
             ConfigInterface::TICKET_SYSTEM_MAX_OPEN_TICKETS => '10',
+
+			// Custom JS/CSS settings
+			ConfigInterface::CUSTOM_JS => '// dummy script - does nothing',
+			ConfigInterface::CUSTOM_CSS => "/* dummy css - does nothing */",
         ];
     }
 }
