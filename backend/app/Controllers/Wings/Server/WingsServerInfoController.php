@@ -211,6 +211,12 @@ class WingsServerInfoController
             $startupCommand = '# Added by FeatherPanel (No Startup Command)';
         }
 
+        // Replace placeholders in startup command
+        $startupCommand = $this->replacePlaceholders($startupCommand, $server, $allocation, $environment);
+
+        // Sanitize Java memory arguments to prevent invalid values like -Xmx0M
+        $startupCommand = $this->sanitizeJavaMemoryArguments($startupCommand, $server['memory']);
+
         // Parse spell features if available (from spell.features JSON field)
         $spellFeatures = [];
         if (!empty($spell['features'])) {
@@ -630,5 +636,72 @@ class WingsServerInfoController
         }
 
         return $mappings;
+    }
+
+    /**
+     * Sanitize Java memory arguments in startup command to prevent invalid values.
+     * Fixes issues like -Xmx0M, -Xms0M, etc. by removing invalid arguments or replacing with valid defaults.
+     *
+     * @param string $startupCommand The startup command to sanitize
+     * @param int $serverMemory Server memory in MB (used as fallback for -Xmx)
+     *
+     * @return string The sanitized startup command
+     */
+    private function sanitizeJavaMemoryArguments(string $startupCommand, int $serverMemory): string
+    {
+        // Pattern to match Java memory arguments: -Xmx128M, -Xms64M, -Xmx1024m, etc.
+        // Matches: -Xmx or -Xms, followed by digits, optionally followed by unit (k, K, m, M, g, G, t, T)
+        $pattern = '/(-Xm[xs])([0-9]+)([kKmMgGtT]?)/';
+
+        $sanitizedCommand = preg_replace_callback($pattern, function ($matches) use ($serverMemory) {
+            $flag = $matches[1]; // -Xmx or -Xms
+            $value = (int) $matches[2]; // Numeric value
+            $unit = strtoupper($matches[3] ?? 'M'); // Unit (k, m, g, t) or empty (defaults to M)
+
+            // Convert to MB for validation
+            $valueInMB = $value;
+            switch ($unit) {
+                case 'K':
+                    $valueInMB = $value / 1024;
+                    break;
+                case 'G':
+                    $valueInMB = $value * 1024;
+                    break;
+                case 'T':
+                    $valueInMB = $value * 1024 * 1024;
+                    break;
+                    // 'M' or empty stays as-is
+            }
+
+            // Check if value is invalid (0 or negative)
+            if ($valueInMB <= 0 || $value <= 0) {
+                // For -Xmx with invalid value, try to replace with server memory if available
+                if ($flag === '-Xmx' && $serverMemory > 0) {
+                    // Use server memory, but keep original unit if specified
+                    $fallbackValue = $serverMemory;
+                    if ($unit === 'K') {
+                        $fallbackValue = $serverMemory * 1024;
+                    } elseif ($unit === 'G') {
+                        $fallbackValue = max(1, (int) ($serverMemory / 1024));
+                    } elseif ($unit === 'T') {
+                        $fallbackValue = max(1, (int) ($serverMemory / (1024 * 1024)));
+                    }
+
+                    return $flag . $fallbackValue . $unit;
+                }
+
+                // For -Xms with invalid value or -Xmx when server memory is also invalid, remove the argument
+                return '';
+            }
+
+            // Return original if valid
+            return $matches[0];
+        }, $startupCommand);
+
+        // Clean up multiple spaces that might have been created
+        $sanitizedCommand = preg_replace('/\s+/', ' ', $sanitizedCommand);
+        $sanitizedCommand = trim($sanitizedCommand);
+
+        return $sanitizedCommand;
     }
 }
