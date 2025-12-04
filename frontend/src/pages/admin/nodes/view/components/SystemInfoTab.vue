@@ -30,10 +30,73 @@
                 <CardHeader>
                     <CardTitle class="text-lg">Wings Information</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent class="space-y-4">
                     <div>
-                        <div class="text-sm font-medium text-muted-foreground">Version</div>
+                        <div class="text-sm font-medium text-muted-foreground mb-1">Version</div>
                         <div class="text-sm font-mono">{{ data.wings.version }}</div>
+                    </div>
+
+                    <!-- Version Status Check -->
+                    <div v-if="versionStatusLoading" class="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
+                        <div class="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+                        <span class="text-sm text-muted-foreground">Checking for updates...</span>
+                    </div>
+
+                    <!-- Update Available -->
+                    <div
+                        v-else-if="versionStatus && versionStatus.update_available"
+                        class="flex items-start gap-3 p-4 rounded-lg border bg-orange-50/50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800"
+                    >
+                        <div class="h-8 w-8 rounded-lg bg-orange-500/10 dark:bg-orange-500/20 flex items-center justify-center shrink-0">
+                            <AlertTriangle class="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-sm text-orange-900 dark:text-orange-100 mb-1">
+                                Update Available
+                            </div>
+                            <div class="text-sm text-orange-800 dark:text-orange-200">
+                                <p>
+                                    Current: <span class="font-mono font-medium">{{ versionStatus.current_version }}</span> →
+                                    Latest: <span class="font-mono font-medium">v{{ versionStatus.latest_version }}</span>
+                                </p>
+                                <p class="mt-1.5 text-orange-700 dark:text-orange-300">
+                                    A new FeatherWings version is available. Please update for the latest features and security improvements.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Up to Date -->
+                    <div
+                        v-else-if="versionStatus && versionStatus.is_up_to_date"
+                        class="flex items-start gap-3 p-4 rounded-lg border bg-green-50/50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
+                    >
+                        <div class="h-8 w-8 rounded-lg bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center shrink-0">
+                            <Check class="h-4 w-4 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-sm text-green-900 dark:text-green-100 mb-1">
+                                Up to Date
+                            </div>
+                            <div class="text-sm text-green-800 dark:text-green-200">
+                                Running the latest version <span class="font-mono font-medium">{{ versionStatus.current_version }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GitHub Error -->
+                    <div
+                        v-else-if="versionStatus && versionStatus.github_error"
+                        class="flex items-start gap-3 p-4 rounded-lg border bg-muted/50 border-border"
+                    >
+                        <div class="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                            <AlertTriangle class="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm text-muted-foreground">
+                                Unable to check for updates. {{ versionStatus.github_error }}
+                            </div>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -141,19 +204,66 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+import { ref, onMounted, watch } from 'vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
+import { AlertTriangle, Check } from 'lucide-vue-next';
 import { formatBytes } from '@/lib/format';
+import axios from 'axios';
 import type { SystemInfoResponse } from '../types';
 
-defineProps<{
+const props = defineProps<{
     loading: boolean;
     data: SystemInfoResponse | null;
     error: string | null;
+    nodeId?: number;
 }>();
 
 defineEmits<{
     retry: [];
 }>();
+
+const versionStatus = ref<{
+    current_version: string;
+    latest_version: string | null;
+    is_up_to_date: boolean;
+    update_available: boolean;
+    github_error: string | null;
+} | null>(null);
+const versionStatusLoading = ref(false);
+
+async function fetchVersionStatus() {
+    if (!props.nodeId || !props.data) return;
+
+    versionStatusLoading.value = true;
+    try {
+        const { data } = await axios.get(`/api/admin/nodes/${props.nodeId}/version-status`);
+        if (data.success) {
+            versionStatus.value = data.data;
+        }
+    } catch {
+        // Silently fail - version check is not critical
+        versionStatus.value = null;
+    } finally {
+        versionStatusLoading.value = false;
+    }
+}
+
+// Fetch version status when data is loaded
+watch(
+    () => [props.data, props.nodeId],
+    ([newData, newNodeId]) => {
+        if (newData && newNodeId) {
+            fetchVersionStatus();
+        }
+    },
+    { immediate: true }
+);
+
+onMounted(() => {
+    if (props.data && props.nodeId) {
+        fetchVersionStatus();
+    }
+});
 </script>

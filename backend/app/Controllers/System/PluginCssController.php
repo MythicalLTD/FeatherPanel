@@ -31,8 +31,8 @@
 namespace App\Controllers\System;
 
 use App\App;
-use App\Config\ConfigInterface;
 use OpenApi\Attributes as OA;
+use App\Config\ConfigInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -79,13 +79,13 @@ class PluginCssController
             }
         }
 
-		$cssContent .= "\n// ===== FeatherPanel: Start of Custom CSS =====\n";
-		$cssContent .= "// This section is reserved for user-defined or system-injected CSS.\n";
-		$cssContent .= App::getInstance(true)->getConfig()->getSetting(
-			ConfigInterface::CUSTOM_CSS, 
-			"/* dummy css - does nothing */\n// Feel free to override the 'custom_css' setting in your configuration."
-		) . "\n";
-		$cssContent .= "// ===== FeatherPanel: End of Custom CSS =====\n";
+        $cssContent .= "\n/* ===== FeatherPanel: Start of Custom CSS ===== */\n";
+        $cssContent .= "/* This section is reserved for user-defined or system-injected CSS. */\n";
+        $cssContent .= App::getInstance(true)->getConfig()->getSetting(
+            ConfigInterface::CUSTOM_CSS,
+            "/* dummy css - does nothing */\n/* Feel free to override the 'custom_css' setting in your configuration. */"
+        ) . "\n";
+        $cssContent .= "/* ===== FeatherPanel: End of Custom CSS ===== */\n";
 
         return new Response($cssContent, 200, [
             'Content-Type' => 'text/css',

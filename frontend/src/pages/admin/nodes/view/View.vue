@@ -107,6 +107,7 @@ SOFTWARE.
                                 :loading="systemInfoLoading"
                                 :data="systemInfoData"
                                 :error="systemInfoError"
+                                :node-id="nodeId"
                                 @retry="fetchSystemInfo"
                             />
                         </TabsContent>

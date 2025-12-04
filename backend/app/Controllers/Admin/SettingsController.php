@@ -47,7 +47,7 @@ use Symfony\Component\HttpFoundation\Response;
         new OA\Property(property: 'name', type: 'string', description: 'Setting name/key'),
         new OA\Property(property: 'value', type: 'string', description: 'Current setting value'),
         new OA\Property(property: 'description', type: 'string', description: 'Setting description'),
-        new OA\Property(property: 'type', type: 'string', description: 'Setting input type', enum: ['text', 'select', 'number']),
+        new OA\Property(property: 'type', type: 'string', description: 'Setting input type', enum: ['text', 'select', 'number', 'textarea']),
         new OA\Property(property: 'required', type: 'boolean', description: 'Whether the setting is required'),
         new OA\Property(property: 'placeholder', type: 'string', description: 'Placeholder text for the input'),
         new OA\Property(property: 'validation', type: 'string', description: 'Validation rules'),

@@ -16,6 +16,7 @@
 - Seamless phpMyAdmin integration: effortlessly install, upgrade, and access phpMyAdmin directly through FeatherPanel for powerful database management. by @nayskutzu
 - Introduced an intuitive allocation template for creating new allocations, making the process faster and easier than ever! by @nayskutzu
 - Powerful custom CSS and JavaScript injection: admins can now easily inject their own CSS and JS through the settings panel for deep customization and tailored user experiences. by @nayskutzu
+- Introduced an automated update checker for nodes, ensuring you always stay informed about the latest available updates. by @nayskutzu
 
 ### Improved
 

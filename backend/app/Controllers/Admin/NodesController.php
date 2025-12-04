@@ -32,8 +32,10 @@ namespace App\Controllers\Admin;
 
 use App\App;
 use App\Chat\Node;
+use App\Cache\Cache;
 use App\Chat\Activity;
 use App\Chat\Location;
+use GuzzleHttp\Client;
 use App\Helpers\ApiResponse;
 use App\Services\Wings\Wings;
 use OpenApi\Attributes as OA;
@@ -1390,6 +1392,129 @@ class NodesController
             App::getInstance(true)->getLogger()->error('Failed to retrieve Wings configuration schema for node ' . $id . ': ' . $e->getMessage());
 
             return ApiResponse::error('Failed to retrieve schema', 'NODE_CONFIG_SCHEMA_FAILED', 500);
+        }
+    }
+
+    #[OA\Get(
+        path: '/api/admin/nodes/{id}/version-status',
+        summary: 'Check FeatherWings version status',
+        description: 'Check if the node\'s FeatherWings version matches the latest version available on GitHub. Compares the installed version with the latest release from mythicalltd/featherwings repository.',
+        tags: ['Admin - Nodes'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'Node ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Version status retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'current_version', type: 'string', description: 'Currently installed FeatherWings version'),
+                        new OA\Property(property: 'latest_version', type: 'string', nullable: true, description: 'Latest available version from GitHub'),
+                        new OA\Property(property: 'is_up_to_date', type: 'boolean', description: 'Whether the installed version matches the latest'),
+                        new OA\Property(property: 'update_available', type: 'boolean', description: 'Whether an update is available'),
+                        new OA\Property(property: 'github_error', type: 'string', nullable: true, description: 'Error message if GitHub check failed'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'Node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to check version status'),
+        ]
+    )]
+    public function getVersionStatus(Request $request, int $id): Response
+    {
+        $node = Node::getNodeById($id);
+        if (!$node) {
+            return ApiResponse::error('Node not found', 'NODE_NOT_FOUND', 404);
+        }
+
+        try {
+            $wings = new Wings(
+                $node['fqdn'],
+                (int) $node['daemonListen'],
+                $node['scheme'],
+                $node['daemon_token'],
+                10 // Short timeout for version check
+            );
+
+            // Get current Wings version
+            $systemInfo = $wings->getSystem()->getSystemInfo();
+            $currentVersion = $systemInfo['version'] ?? '';
+
+            if (empty($currentVersion)) {
+                return ApiResponse::error('Failed to retrieve Wings version', 'VERSION_RETRIEVAL_FAILED', 500);
+            }
+
+            // Remove 'v' prefix if present for comparison
+            $currentVersionClean = ltrim($currentVersion, 'v');
+
+            // Fetch latest version from GitHub (with caching)
+            $latestVersion = null;
+            $githubError = null;
+            $cacheKey = 'featherwings:latest_version';
+
+            // Try to get from cache first (cache for 1 hour)
+            $cachedVersion = Cache::get($cacheKey);
+            if ($cachedVersion !== null && is_string($cachedVersion) && !empty($cachedVersion)) {
+                $latestVersion = $cachedVersion;
+            } else {
+                // Cache miss or invalid cache - fetch from GitHub
+                try {
+                    $client = new Client([
+                        'timeout' => 5,
+                        'verify' => true,
+                        'headers' => [
+                            'User-Agent' => 'FeatherPanel',
+                            'Accept' => 'application/vnd.github.v3+json',
+                        ],
+                    ]);
+
+                    $response = $client->get('https://api.github.com/repos/mythicalltd/featherwings/releases/latest');
+                    $releaseData = json_decode($response->getBody()->getContents(), true);
+
+                    if (isset($releaseData['tag_name']) && is_string($releaseData['tag_name'])) {
+                        $latestVersion = ltrim($releaseData['tag_name'], 'v');
+                        // Only cache if we got a valid version
+                        if (!empty($latestVersion)) {
+                            // Cache for 1 hour (60 minutes)
+                            Cache::put($cacheKey, $latestVersion, 60);
+                        }
+                    }
+                } catch (\Exception $e) {
+                    $githubError = 'Failed to fetch latest version from GitHub: ' . $e->getMessage();
+                    App::getInstance(true)->getLogger()->warning('GitHub version check failed for node ' . $id . ': ' . $e->getMessage());
+                }
+            }
+
+            // Compare versions
+            $isUpToDate = false;
+            $updateAvailable = false;
+
+            if ($latestVersion !== null) {
+                // Simple version comparison (semantic versioning)
+                $isUpToDate = version_compare($currentVersionClean, $latestVersion, '>=');
+                $updateAvailable = !$isUpToDate;
+            }
+
+            return ApiResponse::success([
+                'current_version' => $currentVersion,
+                'latest_version' => $latestVersion,
+                'is_up_to_date' => $isUpToDate,
+                'update_available' => $updateAvailable,
+                'github_error' => $githubError,
+            ], 'Version status retrieved successfully', 200);
+        } catch (\Throwable $e) {
+            App::getInstance(true)->getLogger()->error('Failed to check version status for node ' . $id . ': ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to check version status', 'VERSION_CHECK_FAILED', 500);
         }
     }
 }
