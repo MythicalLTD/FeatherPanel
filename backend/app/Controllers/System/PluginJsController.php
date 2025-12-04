@@ -31,8 +31,8 @@
 namespace App\Controllers\System;
 
 use App\App;
-use App\Config\ConfigInterface;
 use OpenApi\Attributes as OA;
+use App\Config\ConfigInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -82,13 +82,13 @@ class PluginJsController
             }
         }
 
-		$jsContent .= "\n// ===== FeatherPanel: Start of Custom JS =====\n";
-		$jsContent .= "// This section is reserved for user-defined or system-injected JavaScript.\n";
-		$jsContent .= App::getInstance(true)->getConfig()->getSetting(
-			ConfigInterface::CUSTOM_JS, 
-			"// dummy script - does nothing\n// Feel free to override the 'custom_js' setting in your configuration."
-		) . "\n";
-		$jsContent .= "// ===== FeatherPanel: End of Custom JS =====\n";
+        $jsContent .= "\n// ===== FeatherPanel: Start of Custom JS =====\n";
+        $jsContent .= "// This section is reserved for user-defined or system-injected JavaScript.\n";
+        $jsContent .= App::getInstance(true)->getConfig()->getSetting(
+            ConfigInterface::CUSTOM_JS,
+            "// dummy script - does nothing\n// Feel free to override the 'custom_js' setting in your configuration."
+        ) . "\n";
+        $jsContent .= "// ===== FeatherPanel: End of Custom JS =====\n";
 
         return new Response($jsContent, 200, [
             'Content-Type' => 'application/javascript',

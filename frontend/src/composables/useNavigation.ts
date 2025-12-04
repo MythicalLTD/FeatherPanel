@@ -618,17 +618,6 @@ export function useNavigation() {
                 group: 'feathercloud',
             },
             {
-                id: 'admin-cloud-management',
-                name: 'Cloud',
-                title: 'FeatherCloud Cloud',
-                url: '/admin/cloud-management',
-                icon: Key,
-                isActive: currentPath.value.startsWith('/admin/cloud-management'),
-                category: 'admin' as const,
-                permission: Permissions.ADMIN_STATISTICS_VIEW,
-                group: 'feathercloud',
-            },
-            {
                 id: 'admin-feathercloud-ai-agent',
                 name: 'AI Agent',
                 title: 'AI Agent',

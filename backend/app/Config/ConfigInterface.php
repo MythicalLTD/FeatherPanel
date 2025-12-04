@@ -183,4 +183,9 @@ interface ConfigInterface
      */
     public const CUSTOM_JS = 'custom_js';
     public const CUSTOM_CSS = 'custom_css';
+
+    /**
+     * Cache Driver.
+     */
+    public const CACHE_DRIVER = 'cache_driver'; // file, redis
 }

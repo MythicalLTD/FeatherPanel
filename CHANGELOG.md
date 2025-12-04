@@ -17,6 +17,7 @@
 - Introduced an intuitive allocation template for creating new allocations, making the process faster and easier than ever! by @nayskutzu
 - Powerful custom CSS and JavaScript injection: admins can now easily inject their own CSS and JS through the settings panel for deep customization and tailored user experiences. by @nayskutzu
 - Introduced an automated update checker for nodes, ensuring you always stay informed about the latest available updates. by @nayskutzu
+- Introduced an experimental Redis-backed cache layer, offering an alternative to traditional file-based caching for improved performance and scalability. by @nayskutzu
 
 ### Improved
 

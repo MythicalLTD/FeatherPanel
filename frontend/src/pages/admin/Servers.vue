@@ -69,6 +69,12 @@
                     </template>
 
                     <!-- Custom cell templates -->
+                    <template #cell-name="{ item }">
+                        <div class="max-w-[200px] truncate" :title="(item as ApiServer).name">
+                            <span class="text-sm font-medium">{{ (item as ApiServer).name }}</span>
+                        </div>
+                    </template>
+
                     <template #cell-status="{ item }">
                         <Badge :variant="getStatusVariant(displayStatus(item as ApiServer))" class="capitalize">
                             {{ displayStatus(item as ApiServer) }}
@@ -1328,7 +1334,7 @@ const widgetsBottomOfPage = computed(() => getWidgets('admin-servers', 'bottom-o
 
 // Table columns configuration
 const tableColumns: TableColumn[] = [
-    { key: 'name', label: 'Name', searchable: true },
+    { key: 'name', label: 'Name', searchable: true, headerClass: 'max-w-[200px]' },
     { key: 'status', label: 'Status', searchable: true },
     { key: 'owner', label: 'Owner', searchable: true },
     { key: 'node', label: 'Node', searchable: true },

@@ -38,7 +38,9 @@
 
                     <!-- Version Status Check -->
                     <div v-if="versionStatusLoading" class="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-                        <div class="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+                        <div
+                            class="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"
+                        ></div>
                         <span class="text-sm text-muted-foreground">Checking for updates...</span>
                     </div>
 
@@ -47,7 +49,9 @@
                         v-else-if="versionStatus && versionStatus.update_available"
                         class="flex items-start gap-3 p-4 rounded-lg border bg-orange-50/50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800"
                     >
-                        <div class="h-8 w-8 rounded-lg bg-orange-500/10 dark:bg-orange-500/20 flex items-center justify-center shrink-0">
+                        <div
+                            class="h-8 w-8 rounded-lg bg-orange-500/10 dark:bg-orange-500/20 flex items-center justify-center shrink-0"
+                        >
                             <AlertTriangle class="h-4 w-4 text-orange-600 dark:text-orange-400" />
                         </div>
                         <div class="flex-1 min-w-0">
@@ -56,11 +60,14 @@
                             </div>
                             <div class="text-sm text-orange-800 dark:text-orange-200">
                                 <p>
-                                    Current: <span class="font-mono font-medium">{{ versionStatus.current_version }}</span> →
-                                    Latest: <span class="font-mono font-medium">v{{ versionStatus.latest_version }}</span>
+                                    Current:
+                                    <span class="font-mono font-medium">{{ versionStatus.current_version }}</span> →
+                                    Latest:
+                                    <span class="font-mono font-medium">v{{ versionStatus.latest_version }}</span>
                                 </p>
                                 <p class="mt-1.5 text-orange-700 dark:text-orange-300">
-                                    A new FeatherWings version is available. Please update for the latest features and security improvements.
+                                    A new FeatherWings version is available. Please update for the latest features and
+                                    security improvements.
                                 </p>
                             </div>
                         </div>
@@ -71,15 +78,16 @@
                         v-else-if="versionStatus && versionStatus.is_up_to_date"
                         class="flex items-start gap-3 p-4 rounded-lg border bg-green-50/50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
                     >
-                        <div class="h-8 w-8 rounded-lg bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center shrink-0">
+                        <div
+                            class="h-8 w-8 rounded-lg bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center shrink-0"
+                        >
                             <Check class="h-4 w-4 text-green-600 dark:text-green-400" />
                         </div>
                         <div class="flex-1 min-w-0">
-                            <div class="font-semibold text-sm text-green-900 dark:text-green-100 mb-1">
-                                Up to Date
-                            </div>
+                            <div class="font-semibold text-sm text-green-900 dark:text-green-100 mb-1">Up to Date</div>
                             <div class="text-sm text-green-800 dark:text-green-200">
-                                Running the latest version <span class="font-mono font-medium">{{ versionStatus.current_version }}</span>
+                                Running the latest version
+                                <span class="font-mono font-medium">{{ versionStatus.current_version }}</span>
                             </div>
                         </div>
                     </div>
@@ -258,7 +266,7 @@ watch(
             fetchVersionStatus();
         }
     },
-    { immediate: true }
+    { immediate: true },
 );
 
 onMounted(() => {

@@ -42,11 +42,17 @@ class Redis
         $app = App::getInstance(true);
         $app->loadEnv();
         $host = $_ENV['REDIS_HOST'];
-        $pwd = $_ENV['REDIS_PASSWORD'];
-        $client = new Client([
+        $port = $_ENV['REDIS_PORT'] ?? 6379;
+        $pwd = $_ENV['REDIS_PASSWORD'] ?? '';
+        $options = [
             'scheme' => 'tcp',
             'host' => $host,
-        ]);
+            'port' => (int) $port,
+        ];
+        if ($pwd !== '') {
+            $options['password'] = $pwd;
+        }
+        $client = new Client($options);
         $this->redis = $client;
     }
 

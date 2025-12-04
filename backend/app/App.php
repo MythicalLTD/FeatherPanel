@@ -30,7 +30,6 @@
 
 namespace App;
 
-use RateLimit\Rate;
 use App\Chat\Database;
 use App\Helpers\XChaCha20;
 use Random\RandomException;
@@ -38,14 +37,11 @@ use App\Helpers\ApiResponse;
 use App\Config\ConfigFactory;
 use App\Logger\LoggerFactory;
 use App\Config\ConfigInterface;
-use RateLimit\RedisRateLimiter;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\AdminMiddleware;
 use App\Middleware\WingsMiddleware;
-use App\CloudFlare\CloudFlareRealIP;
 use App\Middleware\ServerMiddleware;
 use Symfony\Component\Routing\Route;
-use RateLimit\Exception\LimitExceeded;
 use App\Plugins\Events\Events\AppEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RequestContext;
@@ -112,44 +108,9 @@ class App
             define('REDIS_ENABLED', false);
         } else {
             define('REDIS_ENABLED', true);
-        }
-
-        if (!defined('CRON_MODE')) {
-            // Properly connect \Redis to container service host
-            $redisHost = $_ENV['REDIS_HOST'] ?? 'redis';
-            $redisPort = (int) ($_ENV['REDIS_PORT'] ?? 6379);
-            $redisPassword = $_ENV['REDIS_PASSWORD'] ?? '';
-
-            $redisExt = new \Redis();
-            try {
-                $redisExt->connect($redisHost, $redisPort, 2.0);
-                if ($redisPassword !== '') {
-                    $redisExt->auth($redisPassword);
-                }
-            } catch (\Throwable $e) {
-                // Fall back to disabled rate limiting if Redis is unavailable
-                self::getLogger()->warning('Redis connection for rate limiter failed: ' . $e->getMessage());
-            }
-
-            // @phpstan-ignore-next-line
-            $rateLimiter = new RedisRateLimiter(Rate::perMinute(999999999), $redisExt, 'rate_limiting');
-            try {
-                $rateLimiter->limit(CloudFlareRealIP::getRealIP());
-            } catch (LimitExceeded $e) {
-                self::getLogger()->error('User: ' . $e->getMessage());
-                http_response_code(429);
-                header('Content-Type: application/json');
-                header('Cache-Control: no-cache, private');
-                echo json_encode([
-                    'status' => 'error',
-                    'message' => 'You are being rate limited!',
-                    'exception' => $e->getMessage(),
-                    'success' => false,
-                    'error_code' => 'RATE_LIMIT_EXCEEDED',
-                    'error_message' => 'You are being rate limited!',
-                ]);
-                exit;
-            }
+            define('REDIS_HOST', $_ENV['REDIS_HOST']);
+            define('REDIS_PORT', $_ENV['REDIS_PORT']);
+            define('REDIS_PASSWORD', $_ENV['REDIS_PASSWORD']);
         }
 
         /**
