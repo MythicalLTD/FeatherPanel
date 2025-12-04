@@ -31,6 +31,7 @@
 namespace App\Controllers\Admin;
 
 use App\Chat\Database;
+use App\Helpers\PhpMyAdmin;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
@@ -259,6 +260,125 @@ class DatabaseManagmentController
             ], $failed > 0 ? 'Migrations finished with errors' : 'Migrations executed', 200);
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to run migrations: ' . $e->getMessage(), 500);
+        }
+    }
+
+    #[OA\Post(
+        path: '/api/admin/databases/management/install-phpmyadmin',
+        summary: 'Install phpMyAdmin',
+        description: 'Download and install phpMyAdmin to the public directory. This will download the latest version, extract it, configure it, and install themes.',
+        tags: ['Admin - Database Management'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'phpMyAdmin installed successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message', example: 'phpMyAdmin installed successfully'),
+                        new OA\Property(property: 'already_installed', type: 'boolean', description: 'Whether phpMyAdmin was already installed', example: false),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to install phpMyAdmin'),
+        ]
+    )]
+    public function installPhpMyAdmin(Request $request): Response
+    {
+        try {
+            $publicDir = dirname(__DIR__, 3) . '/public';
+            $targetPath = $publicDir . '/pma';
+
+            // Check if phpMyAdmin is already installed
+            if (is_dir($targetPath)) {
+                return ApiResponse::success([
+                    'message' => 'phpMyAdmin is already installed',
+                    'already_installed' => true,
+                ], 'phpMyAdmin already installed', 200);
+            }
+
+            // Install phpMyAdmin using the helper
+            PhpMyAdmin::downloadPhpMyAdmin();
+
+            return ApiResponse::success([
+                'message' => 'phpMyAdmin installed successfully',
+                'already_installed' => false,
+            ], 'phpMyAdmin installed successfully', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to install phpMyAdmin: ' . $e->getMessage(), 500);
+        }
+    }
+
+    #[OA\Get(
+        path: '/api/admin/databases/management/phpmyadmin/status',
+        summary: 'Check phpMyAdmin installation status',
+        description: 'Check if phpMyAdmin is currently installed.',
+        tags: ['Admin - Database Management'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'phpMyAdmin installation status retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'installed', type: 'boolean', description: 'Whether phpMyAdmin is installed', example: true),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+        ]
+    )]
+    public function checkPhpMyAdminStatus(Request $request): Response
+    {
+        try {
+            $isInstalled = PhpMyAdmin::isInstalled();
+
+            return ApiResponse::success([
+                'installed' => $isInstalled,
+            ], 'phpMyAdmin status retrieved', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to check phpMyAdmin status: ' . $e->getMessage(), 500);
+        }
+    }
+
+    #[OA\Delete(
+        path: '/api/admin/databases/management/phpmyadmin',
+        summary: 'Delete phpMyAdmin',
+        description: 'Remove phpMyAdmin installation from the public directory.',
+        tags: ['Admin - Database Management'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'phpMyAdmin deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message', example: 'phpMyAdmin deleted successfully'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'phpMyAdmin is not installed'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to delete phpMyAdmin'),
+        ]
+    )]
+    public function deletePhpMyAdmin(Request $request): Response
+    {
+        try {
+            // Check if phpMyAdmin is installed
+            if (!PhpMyAdmin::isInstalled()) {
+                return ApiResponse::error('phpMyAdmin is not installed', 'NOT_INSTALLED', 404);
+            }
+
+            // Delete phpMyAdmin using the helper
+            PhpMyAdmin::deletePhpMyAdmin();
+
+            return ApiResponse::success([
+                'message' => 'phpMyAdmin deleted successfully',
+            ], 'phpMyAdmin deleted successfully', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to delete phpMyAdmin: ' . $e->getMessage(), 500);
         }
     }
 

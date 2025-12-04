@@ -53,6 +53,11 @@ const loading = ref(true);
 const status = ref<StatusResp['data'] | null>(null);
 const migRunning = ref(false);
 const migOutput = ref('');
+const pmaInstalling = ref(false);
+const pmaDeleting = ref(false);
+const pmaInstallMessage = ref('');
+const pmaInstalled = ref(false);
+const pmaStatusLoading = ref(false);
 
 // Plugin widgets
 const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('admin-database-management');
@@ -93,11 +98,72 @@ async function runMigrations() {
     }
 }
 
+async function checkPhpMyAdminStatus() {
+    pmaStatusLoading.value = true;
+    try {
+        const resp = await fetch('/api/admin/databases/management/phpmyadmin/status');
+        const json = await resp.json();
+        if (json.success) {
+            pmaInstalled.value = json.data.installed ?? false;
+        }
+    } catch (e: unknown) {
+        console.error('Failed to check phpMyAdmin status:', e);
+    } finally {
+        pmaStatusLoading.value = false;
+    }
+}
+
+async function installPhpMyAdmin() {
+    pmaInstalling.value = true;
+    pmaInstallMessage.value = '';
+    try {
+        const resp = await fetch('/api/admin/databases/management/install-phpmyadmin', { method: 'POST' });
+        const json = await resp.json();
+        if (json.success) {
+            pmaInstallMessage.value = json.data.already_installed
+                ? 'phpMyAdmin is already installed'
+                : 'phpMyAdmin installed successfully!';
+            // Refresh status after installation
+            await checkPhpMyAdminStatus();
+        } else {
+            pmaInstallMessage.value = json.message ?? 'Failed to install phpMyAdmin';
+        }
+    } catch (e: unknown) {
+        pmaInstallMessage.value = 'Error: ' + String(e);
+    } finally {
+        pmaInstalling.value = false;
+    }
+}
+
+async function deletePhpMyAdmin() {
+    if (!confirm('Are you sure you want to delete phpMyAdmin? This action cannot be undone.')) {
+        return;
+    }
+
+    pmaDeleting.value = true;
+    pmaInstallMessage.value = '';
+    try {
+        const resp = await fetch('/api/admin/databases/management/phpmyadmin', { method: 'DELETE' });
+        const json = await resp.json();
+        if (json.success) {
+            pmaInstallMessage.value = 'phpMyAdmin deleted successfully!';
+            // Refresh status after deletion
+            await checkPhpMyAdminStatus();
+        } else {
+            pmaInstallMessage.value = json.message ?? 'Failed to delete phpMyAdmin';
+        }
+    } catch (e: unknown) {
+        pmaInstallMessage.value = 'Error: ' + String(e);
+    } finally {
+        pmaDeleting.value = false;
+    }
+}
+
 onMounted(async () => {
     // Fetch plugin widgets
     await fetchPluginWidgets();
 
-    await fetchStatus();
+    await Promise.all([fetchStatus(), checkPhpMyAdminStatus()]);
 });
 </script>
 
@@ -136,6 +202,34 @@ onMounted(async () => {
                                 class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
                             ></span>
                             Run Migrations
+                        </Button>
+                        <Button
+                            v-if="!pmaInstalled"
+                            variant="outline"
+                            :disabled="pmaInstalling || pmaStatusLoading"
+                            class="w-full sm:w-auto"
+                            data-umami-event="Install phpMyAdmin"
+                            @click="installPhpMyAdmin"
+                        >
+                            <span
+                                v-if="pmaInstalling"
+                                class="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"
+                            ></span>
+                            Install phpMyAdmin
+                        </Button>
+                        <Button
+                            v-else
+                            variant="destructive"
+                            :disabled="pmaDeleting || pmaStatusLoading"
+                            class="w-full sm:w-auto"
+                            data-umami-event="Delete phpMyAdmin"
+                            @click="deletePhpMyAdmin"
+                        >
+                            <span
+                                v-if="pmaDeleting"
+                                class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                            ></span>
+                            Delete phpMyAdmin
                         </Button>
                     </div>
                 </div>
@@ -244,6 +338,21 @@ onMounted(async () => {
                         class="text-xs whitespace-pre-wrap bg-black text-green-300 p-4 min-h-[150px] overflow-x-auto"
                         >{{ migOutput }}</pre
                     >
+                </Card>
+
+                <!-- phpMyAdmin Installation Status -->
+                <Card v-if="pmaInstallMessage" class="p-4">
+                    <div class="flex items-center gap-2">
+                        <div
+                            :class="[
+                                'h-2 w-2 rounded-full',
+                                pmaInstallMessage.includes('already') || pmaInstallMessage.includes('successfully')
+                                    ? 'bg-green-500'
+                                    : 'bg-red-500',
+                            ]"
+                        ></div>
+                        <div class="text-sm">{{ pmaInstallMessage }}</div>
+                    </div>
                 </Card>
 
                 <!-- Plugin Widgets: After Migration Output -->

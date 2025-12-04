@@ -208,4 +208,49 @@ return function (RouteCollection $routes): void {
         'uuidShort',
         ['POST']
     );
+
+    // Check if phpMyAdmin is installed
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-databases-phpmyadmin-check',
+        '/api/user/servers/{uuidShort}/databases/phpmyadmin/check',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new ServerDatabaseController())->checkPhpMyAdminInstalled($request, $server['uuid']);
+        },
+        'uuidShort',
+        ['GET']
+    );
+
+    // Generate phpMyAdmin signon token
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-databases-phpmyadmin-token',
+        '/api/user/servers/{uuidShort}/databases/{databaseId}/phpmyadmin/token',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            $databaseId = $args['databaseId'] ?? null;
+            if (!$uuidShort || !$databaseId) {
+                return ApiResponse::error('Missing or invalid parameters', 'INVALID_PARAMETERS', 400);
+            }
+
+            $server = \App\Chat\Server::getServerByUuidShort($uuidShort);
+            if (!$server) {
+                return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+            }
+
+            return (new ServerDatabaseController())->generatePhpMyAdminToken($request, $server['uuid'], (int) $databaseId);
+        },
+        'uuidShort',
+        ['POST']
+    );
 };

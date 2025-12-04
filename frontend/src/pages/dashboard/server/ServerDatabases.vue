@@ -175,9 +175,25 @@
 
                                 <!-- Action Buttons -->
                                 <div
-                                    v-if="canViewPassword || canDeleteDatabases"
+                                    v-if="
+                                        canViewPassword ||
+                                        canDeleteDatabases ||
+                                        (phpMyAdminInstalled && canViewPassword)
+                                    "
                                     class="flex flex-wrap items-center gap-2"
                                 >
+                                    <Button
+                                        v-if="phpMyAdminInstalled && canViewPassword"
+                                        variant="outline"
+                                        size="sm"
+                                        class="flex items-center gap-2"
+                                        data-umami-event="Open phpMyAdmin"
+                                        :data-umami-event-database="db.database"
+                                        @click="openPhpMyAdmin(db)"
+                                    >
+                                        <Database class="h-3.5 w-3.5" />
+                                        <span class="hidden sm:inline">phpMyAdmin</span>
+                                    </Button>
                                     <Button
                                         v-if="canViewPassword"
                                         variant="outline"
@@ -846,6 +862,7 @@ import {
 } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
+import { useSettingsStore } from '@/stores/settings';
 
 type DatabaseItem = {
     id: number;
@@ -888,6 +905,8 @@ const canCreateDatabases = computed(() => hasServerPermission('database.create')
 const canDeleteDatabases = computed(() => hasServerPermission('database.delete'));
 const canViewPassword = computed(() => hasServerPermission('database.view_password'));
 
+const settingsStore = useSettingsStore();
+
 const databases = ref<DatabaseItem[]>([]);
 const availableHosts = ref<DatabaseHost[]>([]);
 const loading = ref(true);
@@ -895,6 +914,7 @@ const creating = ref(false);
 const searchQuery = ref('');
 const server = ref<{ name: string } | null>(null);
 const serverInfo = ref<{ database_limit: number } | null>(null);
+const phpMyAdminInstalled = ref(false);
 const pagination = ref({
     current_page: 1,
     per_page: 20,
@@ -963,7 +983,7 @@ onMounted(async () => {
         return;
     }
 
-    await Promise.all([fetchDatabases(), fetchAvailableHosts()]);
+    await Promise.all([fetchDatabases(), fetchAvailableHosts(), checkPhpMyAdminInstalled()]);
 
     // Fetch plugin widgets
     await fetchPluginWidgets();
@@ -1242,5 +1262,67 @@ function confirmViewSensitiveInfo() {
 
     showSensitiveInfoWarning.value = false;
     viewDrawerOpen.value = true; // Open the drawer
+}
+
+// Check if phpMyAdmin is installed
+async function checkPhpMyAdminInstalled(): Promise<void> {
+    try {
+        const { data } = await axios.get(`/api/user/servers/${route.params.uuidShort}/databases/phpmyadmin/check`);
+        if (data.success) {
+            phpMyAdminInstalled.value = data.data.installed || false;
+        }
+    } catch (error) {
+        console.error('Failed to check phpMyAdmin installation:', error);
+        phpMyAdminInstalled.value = false;
+    }
+}
+
+// Open phpMyAdmin with automatic login
+async function openPhpMyAdmin(database: DatabaseItem): Promise<void> {
+    try {
+        // Check if user has permission to view password
+        if (!canViewPassword.value) {
+            toast.error(t('serverDatabases.noPasswordPermission'));
+            return;
+        }
+
+        // Get phpMyAdmin URL with credentials
+        const { data } = await axios.post(
+            `/api/user/servers/${route.params.uuidShort}/databases/${database.id}/phpmyadmin/token`,
+        );
+
+        if (!data.success) {
+            toast.error(data.message || data.error_message || 'Failed to generate phpMyAdmin URL');
+            return;
+        }
+
+        // Ensure URL is absolute
+        let pmaUrl = data.data.url;
+        if (!pmaUrl.startsWith('http://') && !pmaUrl.startsWith('https://')) {
+            // If URL is relative, prepend the app URL from settings
+            const appUrl = settingsStore.appUrl || window.location.origin;
+            pmaUrl = appUrl + (pmaUrl.startsWith('/') ? '' : '/') + pmaUrl;
+        }
+
+        // Open phpMyAdmin in a new window/tab
+        // Credentials are passed as query parameters, token.php will set session and redirect
+        window.open(pmaUrl, '_blank');
+
+        toast.success('Opening phpMyAdmin...');
+    } catch (error: unknown) {
+        if (error && typeof error === 'object' && 'response' in error) {
+            const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } };
+            if (axiosError.response?.data?.message) {
+                toast.error(axiosError.response.data.message);
+            } else if (axiosError.response?.data?.error_message) {
+                toast.error(axiosError.response.data.error_message);
+            } else {
+                toast.error('Failed to open phpMyAdmin');
+            }
+        } else {
+            toast.error('Failed to open phpMyAdmin');
+        }
+        console.error('Error opening phpMyAdmin:', error);
+    }
 }
 </script>

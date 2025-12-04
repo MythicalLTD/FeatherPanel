@@ -11,6 +11,7 @@
 - Powerful Wings modules support: create custom modules for Wings and seamlessly manage them through integrated admin pages in the panel. by @nayskutzu
 - Introduced robust "Always Online" server support—now featuring customizable MOTD and kick messages for a seamless, uninterrupted player experience. by @nayskutzu
 - Introduced a powerful and intuitive firewall manager for servers, easily enabled through the settings area, providing enhanced security and effortless control. by @nayskutzu
+- Seamless phpMyAdmin integration: effortlessly install, upgrade, and access phpMyAdmin directly through FeatherPanel for powerful database management. by @nayskutzu
 
 ### Improved
 

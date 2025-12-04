@@ -817,6 +817,182 @@ class ServerDatabaseController
     }
 
     /**
+     * Check if phpMyAdmin module is installed.
+     *
+     * @param Request $request The HTTP request
+     *
+     * @return Response The HTTP response
+     */
+    #[OA\Get(
+        path: '/api/user/servers/{uuidShort}/databases/phpmyadmin/check',
+        summary: 'Check phpMyAdmin installation',
+        description: 'Check if phpMyAdmin module is installed and available.',
+        tags: ['User - Server Databases'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'phpMyAdmin installation status',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'installed', type: 'boolean', description: 'Whether phpMyAdmin is installed'),
+                    ]
+                )
+            ),
+        ]
+    )]
+    public function checkPhpMyAdminInstalled(Request $request, string $serverUuid): Response
+    {
+        // Get server info
+        $server = Server::getServerByUuid($serverUuid);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Check database.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::DATABASE_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
+        // Check if phpMyAdmin is installed
+        $pmaPath = dirname(__DIR__, 4) . '/public/pma';
+        $isInstalled = is_dir($pmaPath) && file_exists($pmaPath . '/index.php');
+
+        return ApiResponse::success([
+            'installed' => $isInstalled,
+        ]);
+    }
+
+    /**
+     * Generate phpMyAdmin signon token for a database.
+     *
+     * @param Request $request The HTTP request
+     * @param string $serverUuid The server UUID
+     * @param int $databaseId The database ID
+     *
+     * @return Response The HTTP response
+     */
+    #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/databases/{databaseId}/phpmyadmin/token',
+        summary: 'Generate phpMyAdmin signon token',
+        description: 'Generate an encrypted token for automatic phpMyAdmin login with database credentials.',
+        tags: ['User - Server Databases'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'databaseId',
+                in: 'path',
+                description: 'Database ID',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Token generated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'token', type: 'string', description: 'Encrypted signon token'),
+                        new OA\Property(property: 'url', type: 'string', description: 'phpMyAdmin URL with token'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing parameters'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server'),
+            new OA\Response(response: 404, description: 'Not found - Server, database, or phpMyAdmin not found'),
+        ]
+    )]
+    public function generatePhpMyAdminToken(Request $request, string $serverUuid, int $databaseId): Response
+    {
+        // Get server info
+        $server = Server::getServerByUuid($serverUuid);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Check database.read permission
+        $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::DATABASE_READ);
+        if ($permissionCheck !== null) {
+            return $permissionCheck;
+        }
+
+        // Check if phpMyAdmin is installed
+        $pmaPath = dirname(__DIR__, 4) . '/public/pma';
+        if (!is_dir($pmaPath) || !file_exists($pmaPath . '/index.php')) {
+            return ApiResponse::error('phpMyAdmin is not installed', 'PHPMYADMIN_NOT_INSTALLED', 404);
+        }
+
+        // Get database info with details
+        $database = ServerDatabase::getServerDatabaseWithDetails($databaseId);
+        if (!$database) {
+            return ApiResponse::error('Database not found', 'DATABASE_NOT_FOUND', 404);
+        }
+
+        // Verify database belongs to this server
+        if ($database['server_id'] != $server['id']) {
+            return ApiResponse::error('Database not found', 'DATABASE_NOT_FOUND', 404);
+        }
+
+        // Check if user has permission to view password
+        $user = $request->get('user');
+        $userId = $user['id'] ?? 0;
+        $serverId = $server['id'] ?? 0;
+
+        $canViewPassword = \App\Helpers\SubuserPermissionChecker::hasPermission($userId, $serverId, SubuserPermissions::DATABASE_VIEW_PASSWORD);
+        if (!$canViewPassword) {
+            return ApiResponse::error('Insufficient permissions to access database credentials', 'FORBIDDEN', 403);
+        }
+
+        // Get database host info
+        $databaseHost = DatabaseInstance::getDatabaseById($database['database_host_id']);
+        if (!$databaseHost) {
+            return ApiResponse::error('Database host not found', 'DATABASE_HOST_NOT_FOUND', 404);
+        }
+
+        // Get app URL from config
+        $app = App::getInstance(true);
+        $config = $app->getConfig();
+        $appUrl = $config->getSetting('APP_URL', 'https://featherpanel.mythical.systems');
+
+        // Ensure app URL is absolute (starts with http:// or https://)
+        if (!preg_match('/^https?:\/\//', $appUrl)) {
+            // If not absolute, use current request URL as fallback
+            $appUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
+                . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+        }
+
+        // Build phpMyAdmin URL with database credentials as query parameters
+        $pmaUrl = rtrim($appUrl, '/') . '/pma/token.php?' . http_build_query([
+            'db' => $database['database'],
+            'host' => $database['database_host'] ?? $databaseHost['database_host'],
+            'port' => $database['database_port'] ?? $databaseHost['database_port'] ?? 3306,
+            'user' => $database['username'],
+            'pass' => $database['password'],
+        ]);
+
+        return ApiResponse::success([
+            'url' => $pmaUrl,
+        ]);
+    }
+
+    /**
      * Test connection to a database host.
      *
      * @param Request $request The HTTP request

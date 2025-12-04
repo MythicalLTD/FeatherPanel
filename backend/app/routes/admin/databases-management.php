@@ -55,4 +55,36 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_DATABASES_MANAGE,
         ['POST']
     );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-databases-management-install-phpmyadmin',
+        '/api/admin/databases/management/install-phpmyadmin',
+        function (Request $request) {
+            return (new DatabaseManagmentController())->installPhpMyAdmin($request);
+        },
+        Permissions::ADMIN_DATABASES_MANAGE,
+        ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-databases-management-phpmyadmin-status',
+        '/api/admin/databases/management/phpmyadmin/status',
+        function (Request $request) {
+            return (new DatabaseManagmentController())->checkPhpMyAdminStatus($request);
+        },
+        Permissions::ADMIN_DATABASES_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-databases-management-delete-phpmyadmin',
+        '/api/admin/databases/management/phpmyadmin',
+        function (Request $request) {
+            return (new DatabaseManagmentController())->deletePhpMyAdmin($request);
+        },
+        Permissions::ADMIN_DATABASES_MANAGE,
+        ['DELETE']
+    );
 };
