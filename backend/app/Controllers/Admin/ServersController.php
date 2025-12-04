@@ -1454,12 +1454,16 @@ class ServersController
 
         (new SubdomainCleanupService())->cleanupServerSubdomains((int) $server['id']);
 
-        // Unclaim the allocation before deleting the server
-        if (isset($server['allocation_id'])) {
-            $allocationUnclaimed = Allocation::unassignFromServer($server['allocation_id']);
-            if (!$allocationUnclaimed) {
-                App::getInstance(true)->getLogger()->error('Failed to unclaim allocation for server ID: ' . $id);
+        // Unclaim all allocations (primary + additional) before deleting the server
+        $allAllocations = Allocation::getByServerId($id);
+        if (!empty($allAllocations)) {
+            $allocationIds = array_column($allAllocations, 'id');
+            $allocationsUnclaimed = Allocation::unassignMultiple($allocationIds);
+            if (!$allocationsUnclaimed) {
+                App::getInstance(true)->getLogger()->error('Failed to unclaim allocations for server ID: ' . $id);
                 // Continue with deletion even if unclaiming fails
+            } else {
+                App::getInstance(true)->getLogger()->info('Unclaimed ' . count($allocationIds) . ' allocation(s) for server ID: ' . $id);
             }
         }
 
@@ -1590,12 +1594,16 @@ class ServersController
 
         (new SubdomainCleanupService())->cleanupServerSubdomains((int) $server['id']);
 
-        // Unclaim the allocation before deleting the server
-        if (isset($server['allocation_id'])) {
-            $allocationUnclaimed = Allocation::unassignFromServer($server['allocation_id']);
-            if (!$allocationUnclaimed) {
-                App::getInstance(true)->getLogger()->error('Failed to unclaim allocation for server ID: ' . $id);
+        // Unclaim all allocations (primary + additional) before deleting the server
+        $allAllocations = Allocation::getByServerId($id);
+        if (!empty($allAllocations)) {
+            $allocationIds = array_column($allAllocations, 'id');
+            $allocationsUnclaimed = Allocation::unassignMultiple($allocationIds);
+            if (!$allocationsUnclaimed) {
+                App::getInstance(true)->getLogger()->error('Failed to unclaim allocations for server ID: ' . $id);
                 // Continue with deletion even if unclaiming fails
+            } else {
+                App::getInstance(true)->getLogger()->info('Unclaimed ' . count($allocationIds) . ' allocation(s) for server ID: ' . $id);
             }
         }
 

@@ -709,13 +709,16 @@ class ServerAllocationController
 
             $selectedAllocation = $requestedAllocation;
         } else {
-            // Get available free allocations (filtered by node)
-            $availableAllocations = Allocation::getAvailable(100, 0); // Get up to 100 free allocations
-
-            // Filter by node_id to only show allocations on the same node
-            $availableAllocations = array_filter($availableAllocations, function ($allocation) use ($server) {
-                return (int) $allocation['node_id'] === (int) $server['node_id'];
-            });
+            // Get available free allocations filtered by node_id
+            $nodeId = (int) $server['node_id'];
+            $availableAllocations = Allocation::getAll(
+                search: null,
+                nodeId: $nodeId,
+                serverId: null,
+                limit: 100,
+                offset: 0,
+                notUsed: true
+            );
 
             if (empty($availableAllocations)) {
                 return ApiResponse::error('No free allocations available on this node', 'NO_FREE_ALLOCATIONS', 400);

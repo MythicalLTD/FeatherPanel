@@ -5,6 +5,8 @@
 ### Fixed
 
 - Enhanced input validation on the server startup page with improved regex checks, replacing unclear "validation failed" errors with more informative messages. by @nayskutzu
+- Fixed an issue where extra server allocations were not properly unassigned when a server was deleted. by @nayskutzu
+- Fixed an issue where auto-assigning an allocation to a server would fail unless exactly 100 free allocations were available. by @nayskutzu
 
 ### Added
 
@@ -12,11 +14,13 @@
 - Introduced robust "Always Online" server support—now featuring customizable MOTD and kick messages for a seamless, uninterrupted player experience. by @nayskutzu
 - Introduced a powerful and intuitive firewall manager for servers, easily enabled through the settings area, providing enhanced security and effortless control. by @nayskutzu
 - Seamless phpMyAdmin integration: effortlessly install, upgrade, and access phpMyAdmin directly through FeatherPanel for powerful database management. by @nayskutzu
+- Introduced an intuitive allocation template for creating new allocations, making the process faster and easier than ever! by @nayskutzu
 
 ### Improved
 
 - Revamped node management interface: each node now has its own dedicated page for an improved and more intuitive management experience. by @nayskutzu
 - Log uploads now use the FeatherPanel API instead of mclogs, providing a more seamless and integrated experience. by @nayskutzu
+- Bulk deletion of allocations now offers the flexibility to target and remove allocations from a specific subnet, empowering more precise management. by @nayskutzu
 
 ## v1.0.6 BETA
 

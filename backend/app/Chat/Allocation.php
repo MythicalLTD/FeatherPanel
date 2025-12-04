@@ -508,10 +508,11 @@ class Allocation
      * Delete all unused allocations (where server_id IS NULL).
      *
      * @param int|null $nodeId Optional node ID to filter deletions
+     * @param string|null $ip Optional IP address to filter deletions by subnet/IP
      *
      * @return int Number of allocations deleted
      */
-    public static function deleteUnused(?int $nodeId = null): int
+    public static function deleteUnused(?int $nodeId = null, ?string $ip = null): int
     {
         $pdo = Database::getPdoConnection();
         $sql = 'DELETE FROM ' . self::$table . ' WHERE server_id IS NULL';
@@ -520,6 +521,11 @@ class Allocation
         if ($nodeId !== null) {
             $sql .= ' AND node_id = :node_id';
             $params['node_id'] = $nodeId;
+        }
+
+        if ($ip !== null && $ip !== '') {
+            $sql .= ' AND ip = :ip';
+            $params['ip'] = $ip;
         }
 
         $stmt = $pdo->prepare($sql);

@@ -65,7 +65,7 @@
                                 :title="
                                     nodeHealthStatus !== 'healthy'
                                         ? 'Node is unhealthy'
-                                        : 'Delete all unused allocations for this node'
+                                        : 'Delete unused allocations for this node (optionally filter by IP/subnet)'
                                 "
                                 data-umami-event="Delete unused allocations"
                                 @click="handleDeleteUnused"
@@ -439,6 +439,33 @@
                 <DrawerDescription>Fill in the details to create a new allocation.</DrawerDescription>
             </DrawerHeader>
             <form class="space-y-4 px-6 pb-6 pt-2" @submit.prevent="submitCreate">
+                <!-- Mode Toggle -->
+                <div class="space-y-2">
+                    <Label class="text-sm font-medium">Creation Mode</Label>
+                    <div class="flex gap-2">
+                        <Button
+                            type="button"
+                            :variant="createMode === 'manual' ? 'default' : 'outline'"
+                            class="flex-1"
+                            @click="createMode = 'manual'"
+                        >
+                            Manual
+                        </Button>
+                        <Button
+                            type="button"
+                            :variant="createMode === 'preset' ? 'default' : 'outline'"
+                            class="flex-1"
+                            @click="createMode = 'preset'"
+                        >
+                            Preset
+                        </Button>
+                    </div>
+                    <p class="text-xs text-muted-foreground">
+                        {{
+                            createMode === 'preset' ? 'Use game presets for quick setup' : 'Manually specify port range'
+                        }}
+                    </p>
+                </div>
                 <div>
                     <label for="create-ip" class="block mb-1 font-medium">IP Address</label>
                     <Select
@@ -511,8 +538,89 @@
                     </div>
                 </div>
 
-                <div>
-                    <label for="create-port" class="block mb-1 font-medium">Port</label>
+                <!-- Preset Mode -->
+                <template v-if="createMode === 'preset'">
+                    <div>
+                        <Label for="create-game-preset" class="block mb-1 font-medium">Game Preset</Label>
+                        <Select v-model="selectedGamePreset" required>
+                            <SelectTrigger id="create-game-preset">
+                                <SelectValue placeholder="Select a game preset" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem v-for="preset in gamePresets" :key="preset.id" :value="preset.id">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-medium">{{ preset.name }}</span>
+                                        <span class="text-muted-foreground">Default Port {{ preset.defaultPort }}</span>
+                                    </div>
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div v-if="selectedPreset">
+                        <Label for="create-preset-count" class="block mb-1 font-medium"> Number of Ports </Label>
+                        <Input
+                            id="create-preset-count"
+                            v-model.number="presetPortCount"
+                            type="number"
+                            min="1"
+                            max="1000"
+                            placeholder="100"
+                            required
+                        />
+                        <div class="text-xs text-muted-foreground mt-1">
+                            <template v-if="includeDefaultPort">
+                                Will create ports from
+                                <span class="font-mono font-medium">{{ selectedPreset.defaultPort }}</span> to
+                                <span class="font-mono font-medium">{{
+                                    selectedPreset.defaultPort + presetPortCount - 1
+                                }}</span>
+                                ({{ presetPortCount }} ports total, includes default port
+                                {{ selectedPreset.defaultPort }})
+                            </template>
+                            <template v-else>
+                                Will create ports from
+                                <span class="font-mono font-medium">{{ selectedPreset.defaultPort + 1 }}</span> to
+                                <span class="font-mono font-medium">{{
+                                    selectedPreset.defaultPort + presetPortCount
+                                }}</span>
+                                ({{ presetPortCount }} ports total, excludes default port
+                                {{ selectedPreset.defaultPort }})
+                            </template>
+                        </div>
+                    </div>
+
+                    <div
+                        v-if="selectedPreset"
+                        class="flex items-start gap-3 p-4 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                        @click="includeDefaultPort = !includeDefaultPort"
+                    >
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input
+                                id="include-default-port"
+                                v-model="includeDefaultPort"
+                                type="checkbox"
+                                class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-primary bg-background focus:ring-2 focus:ring-primary focus:ring-offset-0 cursor-pointer transition-colors"
+                            />
+                        </div>
+                        <div class="flex flex-col flex-1">
+                            <Label for="include-default-port" class="text-sm font-medium cursor-pointer">
+                                Include Default Port?
+                            </Label>
+                            <p class="text-xs text-muted-foreground mt-1">
+                                {{
+                                    includeDefaultPort
+                                        ? `Include port ${selectedPreset.defaultPort} in the range`
+                                        : `Start from port ${selectedPreset.defaultPort + 1} (exclude ${selectedPreset.defaultPort})`
+                                }}
+                            </p>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Manual Mode -->
+                <div v-else>
+                    <Label for="create-port" class="block mb-1 font-medium">Port</Label>
                     <Input
                         id="create-port"
                         v-model="createForm.port"
@@ -562,15 +670,31 @@
     <AlertDialog :open="showDeleteUnusedAlert" @update:open="showDeleteUnusedAlert = $event">
         <AlertDialogContent class="bg-background text-foreground">
             <AlertDialogHeader>
-                <AlertDialogTitle>Delete All Unused Allocations?</AlertDialogTitle>
+                <AlertDialogTitle>Delete Unused Allocations?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Are you sure you want to delete ALL unused allocations for this node? Only allocations that are not
-                    assigned to any server will be deleted. This action cannot be undone.
+                    Delete unused allocations that are not assigned to any server. Optionally filter by IP address
+                    (subnet) to delete only allocations from a specific IP. This action cannot be undone.
                 </AlertDialogDescription>
             </AlertDialogHeader>
+            <div class="space-y-4 py-4">
+                <div>
+                    <label for="delete-unused-ip" class="block mb-1 text-sm font-medium">IP Address (Optional)</label>
+                    <Input
+                        id="delete-unused-ip"
+                        v-model="deleteUnusedIpFilter"
+                        type="text"
+                        placeholder="e.g., 192.168.1.100 (leave empty for all IPs)"
+                        class="font-mono"
+                    />
+                    <p class="text-xs text-muted-foreground mt-1">
+                        Leave empty to delete all unused allocations, or enter a specific IP to delete only allocations
+                        from that subnet/IP.
+                    </p>
+                </div>
+            </div>
             <AlertDialogFooter>
                 <AlertDialogCancel as-child>
-                    <Button variant="outline">Cancel</Button>
+                    <Button variant="outline" @click="deleteUnusedIpFilter = ''">Cancel</Button>
                 </AlertDialogCancel>
                 <AlertDialogAction as-child>
                     <Button variant="destructive" @click="confirmDeleteUnused">Delete Unused</Button>
@@ -613,6 +737,7 @@ import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Plus, Eye, Edit, Trash2, Network, MapPin, Gamepad2, Shield } from 'lucide-vue-next';
 import axios from 'axios';
 import {
@@ -669,6 +794,7 @@ const isDeleteUnusedInProgress = ref(false);
 // Alert dialog state
 const showBulkDeleteAlert = ref(false);
 const showDeleteUnusedAlert = ref(false);
+const deleteUnusedIpFilter = ref('');
 
 // Pagination
 const currentPage = ref(1);
@@ -700,6 +826,39 @@ const createForm = ref({
     notes: '',
 });
 const createUsingCustomIP = ref(false);
+const createMode = ref<'manual' | 'preset'>('manual');
+const selectedGamePreset = ref<string>('');
+const presetPortCount = ref<number>(100);
+const includeDefaultPort = ref(true);
+
+// Game presets
+interface GamePreset {
+    id: string;
+    name: string;
+    defaultPort: number;
+}
+
+const gamePresets: GamePreset[] = [
+    { id: 'minecraft_java', name: 'Minecraft Java Edition', defaultPort: 25565 },
+    { id: 'minecraft_bedrock', name: 'Minecraft Bedrock Edition', defaultPort: 19132 },
+    { id: 'rust', name: 'Rust', defaultPort: 28015 },
+    { id: 'csgo', name: 'CS:GO / Source', defaultPort: 27015 },
+    { id: 'ark', name: 'ARK: Survival Evolved', defaultPort: 7777 },
+    { id: 'ark_query', name: 'ARK: Survival Evolved (Query)', defaultPort: 27015 },
+    { id: 'valheim', name: 'Valheim', defaultPort: 2456 },
+    { id: 'terraria', name: 'Terraria', defaultPort: 7777 },
+    { id: 'starbound', name: 'Starbound', defaultPort: 21025 },
+    { id: '7dtd', name: '7 Days to Die', defaultPort: 26900 },
+    { id: 'unturned', name: 'Unturned', defaultPort: 27015 },
+    { id: 'gmod', name: "Garry's Mod", defaultPort: 27015 },
+    { id: 'tf2', name: 'Team Fortress 2', defaultPort: 27015 },
+    { id: 'satisfactory', name: 'Satisfactory', defaultPort: 15777 },
+    { id: 'palworld', name: 'Palworld', defaultPort: 8211 },
+];
+
+const selectedPreset = computed(() => {
+    return gamePresets.find((p) => p.id === selectedGamePreset.value);
+});
 
 // Computed property for available IPs (node IPs + 0.0.0.0)
 const availableIPs = computed(() => {
@@ -971,20 +1130,57 @@ async function openCreateDrawer() {
     createDrawerOpen.value = true;
     createForm.value = { ip: '', port: '', ip_alias: '', notes: '' };
     createUsingCustomIP.value = false;
+    createMode.value = 'manual';
+    selectedGamePreset.value = '';
+    presetPortCount.value = 100;
+    includeDefaultPort.value = true;
 }
 
 function closeCreateDrawer() {
     createDrawerOpen.value = false;
     createUsingCustomIP.value = false;
+    createMode.value = 'manual';
+    selectedGamePreset.value = '';
+    presetPortCount.value = 100;
+    includeDefaultPort.value = true;
 }
 
 async function submitCreate() {
     try {
+        // Validate preset mode requirements
+        if (createMode.value === 'preset') {
+            if (!selectedGamePreset.value) {
+                toast.error('Please select a game preset');
+                return;
+            }
+            if (!selectedPreset.value) {
+                toast.error('Invalid game preset selected');
+                return;
+            }
+            if (presetPortCount.value < 1 || presetPortCount.value > 1000) {
+                toast.error('Port count must be between 1 and 1000');
+                return;
+            }
+        }
+
+        // Determine port range
+        let portRange: string;
+        if (createMode.value === 'preset' && selectedPreset.value) {
+            const defaultPort = selectedPreset.value.defaultPort;
+            const start = includeDefaultPort.value ? defaultPort : defaultPort + 1;
+            const end = start + presetPortCount.value - 1;
+            portRange = `${start}-${end}`;
+        } else {
+            portRange = createForm.value.port;
+        }
+
+        // Create allocations
         const { data } = await axios.put('/api/admin/allocations', {
             ...createForm.value,
             node_id: nodeIdParam.value,
-            port: createForm.value.port, // Send as string to support ranges
+            port: portRange,
         });
+
         if (data && data.success) {
             const createdCount = data.data.created_count || 1;
             const skippedCount = data.data.skipped_count || 0;
@@ -1066,6 +1262,7 @@ async function confirmBulkDelete() {
 
 // Delete all unused allocations for this node
 function handleDeleteUnused() {
+    deleteUnusedIpFilter.value = '';
     showDeleteUnusedAlert.value = true;
 }
 
@@ -1074,14 +1271,38 @@ async function confirmDeleteUnused() {
     isDeleteUnusedInProgress.value = true;
 
     try {
+        const requestData: { node_id?: number; ip?: string } = {
+            node_id: nodeIdParam.value ?? undefined,
+        };
+
+        // Add IP filter if provided
+        if (deleteUnusedIpFilter.value && deleteUnusedIpFilter.value.trim() !== '') {
+            const ip = deleteUnusedIpFilter.value.trim();
+            // Basic IP validation
+            const ipRegex =
+                /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+            if (!ipRegex.test(ip)) {
+                toast.error('Invalid IP address format');
+                isDeleteUnusedInProgress.value = false;
+                showDeleteUnusedAlert.value = true;
+                return;
+            }
+            requestData.ip = ip;
+        }
+
         const { data } = await axios.delete('/api/admin/allocations/delete-unused', {
-            data: { node_id: nodeIdParam.value },
+            data: requestData,
         });
 
         if (data && data.success) {
             const deletedCount = data.data.deleted_count || 0;
-            toast.success(`Successfully deleted ${deletedCount} unused allocation(s)`);
+            let message = `Successfully deleted ${deletedCount} unused allocation(s)`;
+            if (deleteUnusedIpFilter.value && deleteUnusedIpFilter.value.trim() !== '') {
+                message += ` from IP ${deleteUnusedIpFilter.value.trim()}`;
+            }
+            toast.success(message);
             selectedIds.value = [];
+            deleteUnusedIpFilter.value = '';
             await fetchAllocations();
         } else {
             toast.error(data?.message || 'Failed to delete unused allocations');

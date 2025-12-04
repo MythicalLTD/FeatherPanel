@@ -1021,13 +1021,14 @@ class AllocationsController
     #[OA\Delete(
         path: '/api/admin/allocations/delete-unused',
         summary: 'Delete unused allocations',
-        description: 'Delete all allocations that are not assigned to any server. Optionally filter by node ID.',
+        description: 'Delete all allocations that are not assigned to any server. Optionally filter by node ID and/or IP address (subnet).',
         tags: ['Admin - Allocations'],
         requestBody: new OA\RequestBody(
             required: false,
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: 'node_id', type: 'integer', nullable: true, description: 'Optional node ID to filter deletions', minimum: 1),
+                    new OA\Property(property: 'ip', type: 'string', nullable: true, description: 'Optional IP address to filter deletions by subnet/IP', example: '192.168.1.100'),
                 ]
             )
         ),
@@ -1041,7 +1042,7 @@ class AllocationsController
                     ]
                 )
             ),
-            new OA\Response(response: 400, description: 'Bad request - Invalid node ID'),
+            new OA\Response(response: 400, description: 'Bad request - Invalid node ID or IP address'),
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
         ]
@@ -1069,12 +1070,34 @@ class AllocationsController
             }
         }
 
-        $deletedCount = Allocation::deleteUnused($nodeId);
+        $ip = null;
+        if (isset($data['ip'])) {
+            if (!is_string($data['ip']) || trim($data['ip']) === '') {
+                return ApiResponse::error('IP address must be a non-empty string', 'INVALID_IP_FORMAT', 400);
+            }
+            $ip = trim($data['ip']);
+            // Validate IP format
+            if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+                return ApiResponse::error('Invalid IP address format', 'INVALID_IP_FORMAT', 400);
+            }
+        }
+
+        $deletedCount = Allocation::deleteUnused($nodeId, $ip);
 
         // Log activity
-        $context = $nodeId
-            ? "Deleted {$deletedCount} unused allocation(s) from node ID {$nodeId}"
-            : "Deleted {$deletedCount} unused allocation(s) from all nodes";
+        $contextParts = [];
+        if ($nodeId) {
+            $contextParts[] = "node ID {$nodeId}";
+        }
+        if ($ip) {
+            $contextParts[] = "IP {$ip}";
+        }
+        $context = "Deleted {$deletedCount} unused allocation(s)";
+        if (!empty($contextParts)) {
+            $context .= ' from ' . implode(' and ', $contextParts);
+        } else {
+            $context .= ' from all nodes';
+        }
 
         Activity::createActivity([
             'user_uuid' => $admin['uuid'] ?? null,
@@ -1091,6 +1114,7 @@ class AllocationsController
                 [
                     'deleted_count' => $deletedCount,
                     'node_id' => $nodeId,
+                    'ip' => $ip,
                     'deleted_by' => $admin,
                 ]
             );
