@@ -63,13 +63,6 @@ use App\Plugins\Events\Events\PluginManagerEvent;
         new OA\Property(property: 'dependencies_met', type: 'boolean', description: 'Whether dependencies are met'),
         new OA\Property(property: 'required_configs_set', type: 'boolean', description: 'Whether required configs are set'),
         new OA\Property(property: 'settings', type: 'object', description: 'Plugin settings'),
-        new OA\Property(property: 'files', type: 'array', items: new OA\Items(properties: [
-            new OA\Property(property: 'name', type: 'string'),
-            new OA\Property(property: 'path', type: 'string'),
-            new OA\Property(property: 'size', type: 'integer'),
-            new OA\Property(property: 'modified', type: 'string', format: 'date-time'),
-            new OA\Property(property: 'type', type: 'string'),
-        ])),
         new OA\Property(property: 'config', type: 'array', items: new OA\Items(type: 'object'), description: 'Plugin configuration schema'),
     ]
 )]
@@ -136,6 +129,20 @@ use App\Plugins\Events\Events\PluginManagerEvent;
         new OA\Property(property: 'description', type: 'string', description: 'File description'),
         new OA\Property(property: 'schedule', type: 'string', description: 'Schedule for cron jobs', default: '1H'),
         new OA\Property(property: 'file', type: 'string', format: 'binary', description: 'File to upload (for public_file type)'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'PluginWidget',
+    type: 'object',
+    required: ['id', 'component', 'page', 'location'],
+    properties: [
+        new OA\Property(property: 'id', type: 'string', description: 'Unique widget identifier'),
+        new OA\Property(property: 'component', type: 'string', description: 'Widget HTML component file path'),
+        new OA\Property(property: 'page', type: 'string', description: 'Target page identifier'),
+        new OA\Property(property: 'location', type: 'string', description: 'Widget location on page'),
+        new OA\Property(property: 'enabled', type: 'boolean', description: 'Whether widget is enabled', default: true),
+        new OA\Property(property: 'priority', type: 'integer', description: 'Rendering priority (higher = first)', default: 100),
+        new OA\Property(property: 'size', type: 'string', description: 'Widget size: full, half, third, or quarter', default: 'full'),
     ]
 )]
 #[OA\Schema(
@@ -223,7 +230,6 @@ class PluginManagerController
                     $plugin['dependencies_met'] = PluginDependencies::checkDependencies($config);
                     $plugin['required_configs_set'] = PluginRequiredConfigs::areRequiredConfigsSet($pluginDir);
                     $plugin['settings'] = PluginSettings::getSettings($pluginDir);
-                    $plugin['files'] = $this->getPluginFiles($pluginDir);
                     $plugin['config'] = $config['config'] ?? [];
                     $plugins[] = $plugin;
                 }
@@ -288,6 +294,7 @@ class PluginManagerController
             $name = $data['name'] ?? '';
             $description = $data['description'] ?? '';
             $version = $data['version'] ?? '1.0.0';
+            $template = $data['template'] ?? 'starter'; // Default to starter template
             $author = $data['author'] ?? [];
             $flags = $data['flags'] ?? [];
             $dependencies = $data['dependencies'] ?? [];
@@ -296,6 +303,11 @@ class PluginManagerController
 
             if (empty($identifier) || empty($name)) {
                 return ApiResponse::error('Identifier and name are required', 400);
+            }
+
+            // Validate template
+            if (!in_array($template, ['empty', 'starter', 'fresh'], true)) {
+                return ApiResponse::error('Invalid template. Must be one of: empty, starter, fresh', 400);
             }
 
             if (!PluginConfig::isValidIdentifier($identifier)) {
@@ -337,30 +349,57 @@ class PluginManagerController
 
             // Create main plugin class
             $className = $this->toCamelCase($name);
-            $phpContent = $this->generatePluginClass($className, $identifier);
+            $phpContent = $this->generatePluginClass($className, $identifier, $template);
             file_put_contents($pluginPath . '/' . $className . '.php', $phpContent);
 
-            // Create directories for different plugin assets
-            foreach ($this->directories as $dir) {
-                $dirPath = $pluginPath . '/' . $dir;
-                if (!is_dir($dirPath)) {
-                    mkdir($dirPath, 0755, true);
-                    file_put_contents($dirPath . '/.gitkeep', '');
-                    if ($dir === 'Events') {
-                        mkdir($dirPath . '/App', 0755, true);
-                        file_put_contents($dirPath . '/App/.gitkeep', '');
+            // Create directories and files based on template
+            if ($template === 'fresh') {
+                // Fresh template: Create all directories with .gitkeep files
+                foreach ($this->directories as $dir) {
+                    $dirPath = $pluginPath . '/' . $dir;
+                    if (!is_dir($dirPath)) {
+                        mkdir($dirPath, 0755, true);
+                        file_put_contents($dirPath . '/.gitkeep', '');
                     }
                 }
+                // Also create Frontend/Components directory for frontend components
+                $frontendComponentsPath = $pluginPath . '/Frontend/Components';
+                if (!is_dir($frontendComponentsPath)) {
+                    mkdir($frontendComponentsPath, 0755, true);
+                    file_put_contents($frontendComponentsPath . '/.gitkeep', '');
+                }
+                // Create Routes directory (auto-registered)
+                $routesPath = $pluginPath . '/Routes';
+                if (!is_dir($routesPath)) {
+                    mkdir($routesPath, 0755, true);
+                    file_put_contents($routesPath . '/.gitkeep', '');
+                }
+                // Create Controllers directory (auto-registered)
+                $controllersPath = $pluginPath . '/Controllers';
+                if (!is_dir($controllersPath)) {
+                    mkdir($controllersPath, 0755, true);
+                    file_put_contents($controllersPath . '/.gitkeep', '');
+                }
+                // Create Chat directory for database models
+                $chatPath = $pluginPath . '/Chat';
+                if (!is_dir($chatPath)) {
+                    mkdir($chatPath, 0755, true);
+                    file_put_contents($chatPath . '/.gitkeep', '');
+                }
+                // Create Events/App directory
+                $eventsAppPath = $pluginPath . '/Events/App';
+                if (!is_dir($eventsAppPath)) {
+                    mkdir($eventsAppPath, 0755, true);
+                    file_put_contents($eventsAppPath . '/.gitkeep', '');
+                }
+                // Create minimal files
+                $this->createFreshTemplate($pluginPath, $identifier, $className);
+            } elseif ($template === 'starter') {
+                // Starter template: Only create directories that will be used by example files
+                // Don't create empty directories, let createExampleFiles create them as needed
+                $this->createExampleFiles($pluginPath, $identifier, $className);
             }
-            // Also create Frontend/Components directory for frontend components
-            $frontendComponentsPath = $pluginPath . '/Frontend/Components';
-            if (!is_dir($frontendComponentsPath)) {
-                mkdir($frontendComponentsPath, 0755, true);
-                file_put_contents($frontendComponentsPath . '/.gitkeep', '');
-            }
-
-            // Create example files
-            $this->createExampleFiles($pluginPath, $identifier, $className);
+            // Empty template: no directories created, no example files, just conf.yml and main class
 
             // Create public assets symlink (like PluginsController does)
             $this->createPublicAssetsSymlink($pluginPath, $identifier);
@@ -995,6 +1034,307 @@ class PluginManagerController
         }
     }
 
+    #[OA\Get(
+        path: '/api/admin/plugin-manager/{identifier}/widgets',
+        summary: 'Get plugin widgets',
+        description: 'Retrieve all widgets configured for a specific plugin. Only available in developer mode.',
+        tags: ['Admin - Plugin Manager'],
+        parameters: [
+            new OA\Parameter(
+                name: 'identifier',
+                in: 'path',
+                description: 'Plugin identifier',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Widgets retrieved successfully',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: '#/components/schemas/PluginWidget')
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid plugin identifier'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Developer mode not enabled or insufficient permissions'),
+            new OA\Response(response: 404, description: 'Plugin not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to fetch widgets'),
+        ]
+    )]
+    public function getPluginWidgets(Request $request): Response
+    {
+        try {
+            $config = App::getInstance(true)->getConfig();
+            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+                return ApiResponse::error('You are not allowed to get plugin widgets in non-developer mode', 403);
+            }
+
+            $identifier = $request->attributes->get('identifier');
+
+            if (empty($identifier)) {
+                return ApiResponse::error('Plugin identifier is required', 400);
+            }
+
+            $pluginPath = $this->pluginsDir . '/' . $identifier;
+            if (!is_dir($pluginPath)) {
+                return ApiResponse::error('Plugin not found', 404);
+            }
+
+            $widgetsJsonPath = $pluginPath . '/Frontend/widgets.json';
+            $widgets = [];
+
+            if (file_exists($widgetsJsonPath)) {
+                $widgets = json_decode(file_get_contents($widgetsJsonPath), true);
+                if (!is_array($widgets)) {
+                    $widgets = [];
+                }
+            }
+
+            return ApiResponse::success($widgets, 'Widgets fetched successfully', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to fetch widgets: ' . $e->getMessage(), 500);
+        }
+    }
+
+    #[OA\Put(
+        path: '/api/admin/plugin-manager/{identifier}/widgets',
+        summary: 'Update plugin widgets',
+        description: 'Update the widgets configuration for a plugin. Replaces the entire widgets.json file. Only available in developer mode.',
+        tags: ['Admin - Plugin Manager'],
+        parameters: [
+            new OA\Parameter(
+                name: 'identifier',
+                in: 'path',
+                description: 'Plugin identifier',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'array',
+                items: new OA\Items(ref: '#/components/schemas/PluginWidget')
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Widgets updated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'identifier', type: 'string', description: 'Plugin identifier'),
+                        new OA\Property(property: 'widgets', type: 'array', items: new OA\Items(ref: '#/components/schemas/PluginWidget'), description: 'Updated widgets'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid widget configuration'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Developer mode not enabled or insufficient permissions'),
+            new OA\Response(response: 404, description: 'Plugin not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to update widgets'),
+        ]
+    )]
+    public function updatePluginWidgets(Request $request): Response
+    {
+        try {
+            $config = App::getInstance(true)->getConfig();
+            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+                return ApiResponse::error('You are not allowed to update plugin widgets in non-developer mode', 403);
+            }
+
+            $identifier = $request->attributes->get('identifier');
+            $data = json_decode($request->getContent(), true);
+
+            if (empty($identifier)) {
+                return ApiResponse::error('Plugin identifier is required', 400);
+            }
+
+            if (!is_array($data)) {
+                return ApiResponse::error('Widgets must be an array', 400);
+            }
+
+            $pluginPath = $this->pluginsDir . '/' . $identifier;
+            if (!is_dir($pluginPath)) {
+                return ApiResponse::error('Plugin not found', 404);
+            }
+
+            // Validate widgets
+            foreach ($data as $widget) {
+                if (!isset($widget['id']) || !isset($widget['component']) || !isset($widget['page']) || !isset($widget['location'])) {
+                    return ApiResponse::error('Invalid widget configuration: id, component, page, and location are required', 400);
+                }
+
+                // Check if component file exists
+                $componentPath = $pluginPath . '/Frontend/Components/' . $widget['component'];
+                if (!file_exists($componentPath)) {
+                    return ApiResponse::error('Widget component file not found: ' . $widget['component'], 400);
+                }
+            }
+
+            // Ensure Frontend directory exists
+            $frontendDir = $pluginPath . '/Frontend';
+            if (!is_dir($frontendDir)) {
+                mkdir($frontendDir, 0755, true);
+            }
+
+            // Save widgets.json
+            $widgetsJsonPath = $frontendDir . '/widgets.json';
+            $jsonContent = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            if (file_put_contents($widgetsJsonPath, $jsonContent) === false) {
+                return ApiResponse::error('Failed to save widgets.json', 500);
+            }
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    PluginManagerEvent::onPluginFileCreated(),
+                    [
+                        'identifier' => $identifier,
+                        'file_type' => 'widget_config',
+                        'file_data' => ['widgets' => $data],
+                        'created_by' => $request->get('user'),
+                    ]
+                );
+            }
+
+            return ApiResponse::success([
+                'identifier' => $identifier,
+                'widgets' => $data,
+            ], 'Widgets updated successfully', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to update widgets: ' . $e->getMessage(), 500);
+        }
+    }
+
+    #[OA\Delete(
+        path: '/api/admin/plugin-manager/{identifier}/widgets/{widget_id}',
+        summary: 'Delete plugin widget',
+        description: 'Delete a specific widget from a plugin. Removes the widget from widgets.json and optionally deletes the component file. Only available in developer mode.',
+        tags: ['Admin - Plugin Manager'],
+        parameters: [
+            new OA\Parameter(
+                name: 'identifier',
+                in: 'path',
+                description: 'Plugin identifier',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'widget_id',
+                in: 'path',
+                description: 'Widget identifier',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Widget deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'identifier', type: 'string', description: 'Plugin identifier'),
+                        new OA\Property(property: 'widget_id', type: 'string', description: 'Deleted widget ID'),
+                        new OA\Property(property: 'component_deleted', type: 'boolean', description: 'Whether component file was deleted'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid widget identifier'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Developer mode not enabled or insufficient permissions'),
+            new OA\Response(response: 404, description: 'Plugin or widget not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to delete widget'),
+        ]
+    )]
+    public function deletePluginWidget(Request $request): Response
+    {
+        try {
+            $config = App::getInstance(true)->getConfig();
+            if ($config->getSetting(ConfigInterface::APP_DEVELOPER_MODE, 'false') === 'false') {
+                return ApiResponse::error('You are not allowed to delete plugin widgets in non-developer mode', 403);
+            }
+
+            $identifier = $request->attributes->get('identifier');
+            $widgetId = $request->attributes->get('widget_id');
+
+            if (empty($identifier) || empty($widgetId)) {
+                return ApiResponse::error('Plugin identifier and widget ID are required', 400);
+            }
+
+            $pluginPath = $this->pluginsDir . '/' . $identifier;
+            if (!is_dir($pluginPath)) {
+                return ApiResponse::error('Plugin not found', 404);
+            }
+
+            $widgetsJsonPath = $pluginPath . '/Frontend/widgets.json';
+            if (!file_exists($widgetsJsonPath)) {
+                return ApiResponse::error('Widgets configuration not found', 404);
+            }
+
+            $widgets = json_decode(file_get_contents($widgetsJsonPath), true);
+            if (!is_array($widgets)) {
+                return ApiResponse::error('Invalid widgets configuration', 400);
+            }
+
+            // Find and remove widget
+            $widgetToDelete = null;
+            $updatedWidgets = [];
+            foreach ($widgets as $widget) {
+                if (isset($widget['id']) && $widget['id'] === $widgetId) {
+                    $widgetToDelete = $widget;
+                } else {
+                    $updatedWidgets[] = $widget;
+                }
+            }
+
+            if ($widgetToDelete === null) {
+                return ApiResponse::error('Widget not found', 404);
+            }
+
+            // Save updated widgets.json
+            $jsonContent = json_encode($updatedWidgets, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            if (file_put_contents($widgetsJsonPath, $jsonContent) === false) {
+                return ApiResponse::error('Failed to update widgets.json', 500);
+            }
+
+            // Optionally delete component file
+            $componentDeleted = false;
+            if (isset($widgetToDelete['component'])) {
+                $componentPath = $pluginPath . '/Frontend/Components/' . $widgetToDelete['component'];
+                if (file_exists($componentPath)) {
+                    $componentDeleted = @unlink($componentPath);
+                }
+            }
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    PluginManagerEvent::onPluginFileCreated(),
+                    [
+                        'identifier' => $identifier,
+                        'file_type' => 'widget_deleted',
+                        'file_data' => ['widget_id' => $widgetId],
+                        'created_by' => $request->get('user'),
+                    ]
+                );
+            }
+
+            return ApiResponse::success([
+                'identifier' => $identifier,
+                'widget_id' => $widgetId,
+                'component_deleted' => $componentDeleted,
+            ], 'Widget deleted successfully', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to delete widget: ' . $e->getMessage(), 500);
+        }
+    }
+
     private function getPluginStatus(string $identifier): string
     {
         // This would check if the plugin is enabled/disabled in the database
@@ -1233,29 +1573,54 @@ class PluginManagerController
         return '';
     }
 
-    private function generatePluginClass(string $className, string $identifier): string
+    private function generatePluginClass(string $className, string $identifier, string $template = 'starter'): string
     {
-        return "<?php
+        // Generate processEvents method based on template
+        $processEventsMethod = '';
+        $useStatements = 'use App\\Plugins\\AppPlugin;';
 
-namespace App\\Addons\\{$identifier};
-
-use App\\Plugins\\Events\\Events\\AppEvent;
-use App\\Plugins\\AppPlugin;
-use App\\Addons\\{$identifier}\\Events\\App\\AppReadyEvent;
-
-class {$className} implements AppPlugin
-{
-    /**
+        if ($template === 'starter') {
+            // Starter template includes full event handling
+            $useStatements .= "\nuse App\\Plugins\\Events\\Events\\AppEvent;\nuse App\\Addons\\{$identifier}\\Events\\App\\AppReadyEvent;";
+            $processEventsMethod = "    /**
      * @inheritDoc
      */
     public static function processEvents(\\App\\Plugins\\PluginEvents \$event): void
     {
+        // Process plugin events here
+        // Routes and Controllers are automatically registered from Routes/ and Controllers/ directories
+        
+        // Example: Listen to router ready event
         \$event->on(AppEvent::onRouterReady(), function (\$eventInstance) {
             new AppReadyEvent(\$eventInstance);
         });
-        // Process plugin events here
+        
+        // You can listen to other events here
         // Example: \$event->on('app.boot', function() { ... });
-    }
+    }";
+        } else {
+            // Fresh and empty templates have minimal or no event handling
+            $processEventsMethod = '    /**
+     * @inheritDoc
+     */
+    public static function processEvents(\\App\\Plugins\\PluginEvents $event): void
+    {
+        // Process plugin events here
+        // Routes and Controllers are automatically registered from Routes/ and Controllers/ directories
+        
+        // Add your event listeners here as needed
+    }';
+        }
+
+        return "<?php
+
+namespace App\\Addons\\{$identifier};
+
+{$useStatements}
+
+class {$className} implements AppPlugin
+{
+{$processEventsMethod}
 
     /**
      * @inheritDoc
@@ -1290,6 +1655,7 @@ class {$className} implements AppPlugin
 
     private function createExampleFiles(string $pluginPath, string $identifier, string $className): void
     {
+        // Create directories only as needed when writing files (not pre-created empty)
         // Create example migrations with proper timestamp naming
         $timestamp = date('Y-m-d-H.i');
 
@@ -1345,6 +1711,7 @@ class {$className}CronExample implements TimeTask
                     'js' => "if (window.{$className}Plugin) { window.{$className}Plugin.showDashboard(); } else { console.log('{$className} plugin not loaded'); }",
                     'description' => "View a summary of your plugin's data",
                     'category' => 'general',
+                    'showBadge' => false,
                 ],
             ],
             'admin' => [
@@ -1365,6 +1732,7 @@ class {$className}CronExample implements TimeTask
                     'component' => 'serverui.html',
                     'description' => 'View server logs related to the plugin',
                     'category' => 'server',
+                    'group' => 'Minecraft Java Edition',
                 ],
             ],
         ], JSON_PRETTY_PRINT);
@@ -1914,20 +2282,27 @@ A comprehensive example plugin created with FeatherPanel Plugin Manager that dem
 - **Dashboard Integration**: Shows how plugins can add pages to the user dashboard
 - **Admin Integration**: Demonstrates admin panel integration with permissions
 - **Server Integration**: Shows server-side functionality and monitoring
+- **Plugin Widgets**: Embeds custom HTML content into existing FeatherPanel pages
 - **Database Migrations**: Creates plugin-specific tables with proper naming
 - **Cron Jobs**: Runs scheduled tasks every hour
 - **CLI Commands**: Provides command-line interface
-- **Frontend Assets**: Includes CSS, JS, and sidebar configuration
+- **Frontend Assets**: Includes CSS, JS, sidebar configuration, and widgets
 
 ## Files created
 - `{$className}.php` - Main plugin class
 - `conf.yml` - Plugin configuration with enhanced schema
-- `migrations/{timestamp}-create-{$identifier}-logs.sql` - Database migration with proper naming
-- `cron/ExampleCron.php` - Hourly heartbeat cron job
+- `Migrations/{timestamp}-create-{$identifier}-logs.sql` - Database migration with proper naming
+- `Cron/{$className}CronExample.php` - Hourly heartbeat cron job
 - `Commands/{$className}Command.php` - CLI command
+- `Routes/example.php` - Example route file (auto-registered)
+- `Controllers/ExampleController.php` - Example controller (auto-registered)
+- `Chat/ExampleLog.php` - Example Chat model for database operations
+- `Events/App/AppReadyEvent.php` - Example event handler
 - `Frontend/index.css` - Plugin styling
 - `Frontend/index.js` - Frontend JavaScript with modal system
 - `Frontend/sidebar.json` - Sidebar configuration for all sections
+- `Frontend/widgets.json` - Widget configuration file (empty by default)
+- `Frontend/Components/example-widget.html` - Example widget component
 
 ## Sidebar Examples
 ### Dashboard Section
@@ -1942,12 +2317,29 @@ A comprehensive example plugin created with FeatherPanel Plugin Manager that dem
 - **Server Logs**: View plugin-related logs
 - **Scheduled Tasks**: Manage cron jobs and tasks
 
+### Routes & Controllers
+- **Routes**: Files in `Routes/` directory are automatically registered
+- **Controllers**: Controllers in `Controllers/` directory are automatically registered
+- **Chat Models**: Use `Chat/` directory for database operations (like `Chat/ExampleLog.php`)
+
+### Events
+- **Event Handlers**: Create event handlers in `Events/App/` directory
+- **Event Registration**: Register event listeners in `processEvents()` method
+- **Example**: See `Events/App/AppReadyEvent.php` for an example event handler
+
+### Widgets
+- **Widget Configuration**: See `Frontend/widgets.json` for widget setup (empty by default)
+- **Widget Component**: See `Frontend/Components/example-widget.html` for widget HTML example
+
 ## How to use
-1. **Dashboard**: Click sidebar buttons in dashboard to see user-facing modals
-2. **Admin**: Access admin sections to see admin panel integration
-3. **Server**: Check server sections for monitoring and logs
-4. **Cron**: The cron job runs automatically every hour
-5. **CLI**: Use the command: `php cli.php {$className}`
+1. **Routes**: Add route files to `Routes/` directory - they're automatically registered
+2. **Controllers**: Add controllers to `Controllers/` directory - they're automatically registered
+3. **Database**: Use Chat models in `Chat/` directory for database operations
+4. **Dashboard**: Click sidebar buttons in dashboard to see user-facing modals
+5. **Admin**: Access admin sections to see admin panel integration
+6. **Server**: Check server sections for monitoring and logs
+7. **Cron**: The cron job runs automatically every hour
+8. **CLI**: Use the command: `php cli.php {$className}`
 
 ## Migration Naming
 Migrations use timestamp format `YYYY-MM-DD-HH.MM-description.sql` to avoid conflicts with other plugins and the main system.
@@ -1959,35 +2351,242 @@ i am a public file :D
 just make sure to install me via the plugin interface :D
 not the plugin manager hence that won't add the symlinks!";
 
-        $appReadyEvent = "<?php
+        // Example Route file (auto-registered from Routes/ directory)
+        $routeExample = "<?php
 
-namespace App\Addons\\{$identifier}\\Events\App;
+/*
+ * This file is part of FeatherPanel.
+ *
+ * MIT License
+ *
+ * Copyright (c) 2025 MythicalSystems
+ * Copyright (c) 2025 Cassian Gherman (NaysKutzu)
+ * Copyright (c) 2018 - 2021 Dane Everitt <dane@daneeveritt.com> and Contributors
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the \"Software\"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-use Symfony\Component\Routing\Route;
-use App\Middleware\AuthMiddleware;
+use App\App;
+use App\Helpers\ApiResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\RouteCollection;
+use App\Addons\\{$identifier}\\Controllers\\ExampleController;
+
+return function (RouteCollection \$routes): void {
+    // Example route - automatically registered
+    App::getInstance(true)->registerApiRoute(
+        \$routes,
+        '{$identifier}-example',
+        '/api/addons/{$identifier}/example',
+        function (Request \$request) {
+            return (new ExampleController())->example(\$request);
+        }
+    );
+};";
+
+        // Example Controller
+        $controllerExample = "<?php
+
+/*
+ * This file is part of FeatherPanel.
+ *
+ * MIT License
+ *
+ * Copyright (c) 2025 MythicalSystems
+ * Copyright (c) 2025 Cassian Gherman (NaysKutzu)
+ * Copyright (c) 2018 - 2021 Dane Everitt <dane@daneeveritt.com> and Contributors
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the \"Software\"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+namespace App\Addons\\{$identifier}\\Controllers;
+
+use App\Helpers\ApiResponse;
+use App\Addons\\{$identifier}\\Chat\\ExampleLog;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class AppReadyEvent
+class ExampleController
 {
-	public function __construct(\$router) 
-	{
-		\$router->add('{$identifier}-settings', new Route(
-            '/api/{$identifier}-settings',
-            [
-                '_controller' => function (\$request, \$parameters) {
-                    return new Response('Hello, world!', 200, ['Content-Type' => 'text/plain']);
-                },
-                '_middleware' => [
-                    AuthMiddleware::class,
-                ],
-                '_permission' => 'admin.plugin.settings',
-            ],
-            [], // requirements
-            [], // options
-            '', // host
-            [], // schemes
-            ['GET']
-        ));
+    /**
+     * Example endpoint that demonstrates database operations using Chat models.
+     */
+    public function example(Request \$request): Response
+    {
+        try {
+            // Example: Get all logs from database using Chat model
+            \$logs = ExampleLog::getAll();
+
+            return ApiResponse::success([
+                'message' => 'Example endpoint working!',
+                'logs_count' => count(\$logs),
+                'logs' => \$logs,
+            ], 'Example data retrieved successfully', 200);
+        } catch (\\Exception \$e) {
+            return ApiResponse::error('Failed to retrieve example data: ' . \$e->getMessage(), 500);
+        }
+    }
+}";
+
+        // Example Chat model for database operations
+        $chatExample = "<?php
+
+/*
+ * This file is part of FeatherPanel.
+ *
+ * MIT License
+ *
+ * Copyright (c) 2025 MythicalSystems
+ * Copyright (c) 2025 Cassian Gherman (NaysKutzu)
+ * Copyright (c) 2018 - 2021 Dane Everitt <dane@daneeveritt.com> and Contributors
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the \"Software\"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+namespace App\Addons\\{$identifier}\\Chat;
+
+use App\App;
+
+class ExampleLog
+{
+    private static string \$table = 'featherpanel_{$identifier}_logs';
+
+    /**
+     * Get all logs.
+     *
+     * @return array Array of logs
+     */
+    public static function getAll(): array
+    {
+        try {
+            \$db = App::getInstance(true)->getDatabase()->getPdo();
+            \$stmt = \$db->query('SELECT * FROM ' . self::\$table . ' ORDER BY created_at DESC');
+
+            return \$stmt->fetchAll(\\PDO::FETCH_ASSOC);
+        } catch (\\Exception \$e) {
+            App::getInstance(true)->getLogger()->error('Failed to get logs: ' . \$e->getMessage());
+
+            return [];
+        }
+    }
+
+    /**
+     * Get log by ID.
+     *
+     * @param int \$id Log ID
+     *
+     * @return array|null Log data or null if not found
+     */
+    public static function getById(int \$id): ?array
+    {
+        try {
+            \$db = App::getInstance(true)->getDatabase()->getPdo();
+            \$stmt = \$db->prepare('SELECT * FROM ' . self::\$table . ' WHERE id = :id LIMIT 1');
+            \$stmt->execute(['id' => \$id]);
+            \$result = \$stmt->fetch(\\PDO::FETCH_ASSOC);
+
+            return \$result ?: null;
+        } catch (\\Exception \$e) {
+            App::getInstance(true)->getLogger()->error('Failed to get log: ' . \$e->getMessage());
+
+            return null;
+        }
+    }
+
+    /**
+     * Create a new log entry.
+     *
+     * @param string \$message Log message
+     * @param string \$level Log level (default: 'info')
+     *
+     * @return bool Success status
+     */
+    public static function create(string \$message, string \$level = 'info'): bool
+    {
+        try {
+            \$db = App::getInstance(true)->getDatabase()->getPdo();
+            \$stmt = \$db->prepare('INSERT INTO ' . self::\$table . ' (message, level) VALUES (:message, :level)');
+            \$stmt->execute([
+                'message' => \$message,
+                'level' => \$level,
+            ]);
+
+            return true;
+        } catch (\\Exception \$e) {
+            App::getInstance(true)->getLogger()->error('Failed to create log: ' . \$e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Delete a log entry.
+     *
+     * @param int \$id Log ID
+     *
+     * @return bool Success status
+     */
+    public static function delete(int \$id): bool
+    {
+        try {
+            \$db = App::getInstance(true)->getDatabase()->getPdo();
+            \$stmt = \$db->prepare('DELETE FROM ' . self::\$table . ' WHERE id = :id');
+            \$stmt->execute(['id' => \$id]);
+
+            return true;
+        } catch (\\Exception \$e) {
+            App::getInstance(true)->getLogger()->error('Failed to delete log: ' . \$e->getMessage());
+
+            return false;
+        }
     }
 }";
 
@@ -2038,17 +2637,238 @@ class AppReadyEvent
 </html>
 HTML;
 
-        file_put_contents($pluginPath . '/README.md', $readmeContent);
-        file_put_contents($pluginPath . '/Commands/' . $className . 'Command.php', $cliCommandExample);
-        file_put_contents($pluginPath . '/Frontend/index.css', $frontendCssExample);
-        file_put_contents($pluginPath . '/Frontend/index.js', $frontendJsExample);
-        file_put_contents($pluginPath . '/Frontend/sidebar.json', $frontendSideBarExample);
-        file_put_contents($pluginPath . '/Frontend/Components/serverui.html', $serverUiHtml);
-        file_put_contents($pluginPath . '/Migrations/' . $timestamp . '-create-' . $identifier . '-logs.sql', $migrationContent);
-        file_put_contents($pluginPath . '/Cron/' . $className . 'CronExample.php', $cronContent);
-        file_put_contents($pluginPath . '/Public/hello.txt', $publicFileTemplate);
+        // Create example widget
+        $widgetHtmlExample = "<!DOCTYPE html>
+<html lang=\"en\">
+    <head>
+        <meta charset=\"UTF-8\" />
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
+        <title>{$className} Example Widget</title>
+        <style>
+            .widget-container {
+                background: rgba(18, 19, 21, 0.8);
+                border-radius: 0.75rem;
+                padding: 1.5rem;
+                border: 1px solid rgba(255, 255, 255, 0.07);
+                margin-bottom: 1rem;
+            }
 
-        file_put_contents($pluginPath . '/Events/App/AppReadyEvent.php', $appReadyEvent);
+            .widget-title {
+                font-size: 1.125rem;
+                font-weight: 600;
+                margin-bottom: 0.75rem;
+                color: #fafafa;
+            }
+
+            .widget-content {
+                color: #e5e5e5;
+            }
+
+            .widget-stat {
+                display: inline-block;
+                padding: 0.5rem 1rem;
+                background: rgba(59, 130, 246, 0.1);
+                border-radius: 0.5rem;
+                margin-right: 0.5rem;
+                margin-bottom: 0.5rem;
+            }
+        </style>
+    </head>
+    <body>
+        <div class=\"widget-container\">
+            <h3 class=\"widget-title\">🚀 {$className} Plugin Status</h3>
+            <div class=\"widget-content\" id=\"widget-content\">
+                <div class=\"widget-stat\">Status: Active</div>
+                <div class=\"widget-stat\">Version: 1.0.0</div>
+                <p style=\"margin-top: 1rem; color: #a1a1aa;\">This is an example widget for the {$className} plugin. You can customize this to display any information you need!</p>
+            </div>
+        </div>
+
+        <script>
+            // Widgets automatically receive context
+            const context = window.FeatherPanel?.widgetContext || {};
+            const serverUuid = context.serverUuid;
+            const userUuid = context.userUuid;
+
+            if (serverUuid) {
+                console.log('Widget context - Server UUID:', serverUuid);
+            }
+            if (userUuid) {
+                console.log('Widget context - User UUID:', userUuid);
+            }
+        </script>
+    </body>
+</html>";
+
+        $widgetsJsonExample = json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+        // Example Event handler
+        $eventExample = "<?php
+
+/*
+ * This file is part of FeatherPanel.
+ *
+ * MIT License
+ *
+ * Copyright (c) 2025 MythicalSystems
+ * Copyright (c) 2025 Cassian Gherman (NaysKutzu)
+ * Copyright (c) 2018 - 2021 Dane Everitt <dane@daneeveritt.com> and Contributors
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the \"Software\"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+namespace App\Addons\\{$identifier}\\Events\\App;
+
+use App\App;
+
+/**
+ * Example event handler that listens to AppEvent::onRouterReady().
+ * 
+ * This demonstrates how to use events in your plugin.
+ * Routes and Controllers are automatically registered, so you typically
+ * use events for other purposes like logging, initialization, etc.
+ */
+class AppReadyEvent
+{
+    /**
+     * Constructor called when the router is ready.
+     * 
+     * @param array \$eventData Event data passed from the event system
+     */
+    public function __construct(array \$eventData)
+    {
+        // Access event data
+        \$router = \$eventData['router'] ?? null;
+        \$logger = App::getInstance(true)->getLogger();
+
+        // Example: Log that the plugin's event handler was triggered
+        \$logger->info('{$className} plugin: Router ready event triggered');
+
+        // Example: Perform any initialization that needs to happen after routes are registered
+        // Note: Routes and Controllers are auto-registered, so you don't need to register them here
+        
+        // You can perform other initialization tasks here
+        // For example: initialize cache, set up hooks, etc.
+    }
+}";
+
+        // Helper function to ensure directory exists before writing file
+        $ensureDir = function ($filePath) {
+            $dir = dirname($filePath);
+            if (!is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+        };
+
+        file_put_contents($pluginPath . '/README.md', $readmeContent);
+
+        // Commands directory
+        $commandsFile = $pluginPath . '/Commands/' . $className . 'Command.php';
+        $ensureDir($commandsFile);
+        file_put_contents($commandsFile, $cliCommandExample);
+
+        // Frontend files
+        $frontendCssFile = $pluginPath . '/Frontend/index.css';
+        $ensureDir($frontendCssFile);
+        file_put_contents($frontendCssFile, $frontendCssExample);
+
+        $frontendJsFile = $pluginPath . '/Frontend/index.js';
+        $ensureDir($frontendJsFile);
+        file_put_contents($frontendJsFile, $frontendJsExample);
+
+        $frontendSidebarFile = $pluginPath . '/Frontend/sidebar.json';
+        $ensureDir($frontendSidebarFile);
+        file_put_contents($frontendSidebarFile, $frontendSideBarExample);
+
+        $frontendComponentsPath = $pluginPath . '/Frontend/Components';
+        if (!is_dir($frontendComponentsPath)) {
+            mkdir($frontendComponentsPath, 0755, true);
+        }
+        file_put_contents($pluginPath . '/Frontend/Components/serverui.html', $serverUiHtml);
+        file_put_contents($pluginPath . '/Frontend/Components/example-widget.html', $widgetHtmlExample);
+
+        $frontendWidgetsFile = $pluginPath . '/Frontend/widgets.json';
+        $ensureDir($frontendWidgetsFile);
+        file_put_contents($frontendWidgetsFile, $widgetsJsonExample);
+
+        // Migrations directory
+        $migrationFile = $pluginPath . '/Migrations/' . $timestamp . '-create-' . $identifier . '-logs.sql';
+        $ensureDir($migrationFile);
+        file_put_contents($migrationFile, $migrationContent);
+
+        // Cron directory
+        $cronFile = $pluginPath . '/Cron/' . $className . 'CronExample.php';
+        $ensureDir($cronFile);
+        file_put_contents($cronFile, $cronContent);
+
+        // Public directory
+        $publicFile = $pluginPath . '/Public/hello.txt';
+        $ensureDir($publicFile);
+        file_put_contents($publicFile, $publicFileTemplate);
+
+        // Routes directory
+        $routesFile = $pluginPath . '/Routes/example.php';
+        $ensureDir($routesFile);
+        file_put_contents($routesFile, $routeExample);
+
+        // Controllers directory
+        $controllersFile = $pluginPath . '/Controllers/ExampleController.php';
+        $ensureDir($controllersFile);
+        file_put_contents($controllersFile, $controllerExample);
+
+        // Chat directory
+        $chatFile = $pluginPath . '/Chat/ExampleLog.php';
+        $ensureDir($chatFile);
+        file_put_contents($chatFile, $chatExample);
+
+        // Events/App directory
+        $eventsFile = $pluginPath . '/Events/App/AppReadyEvent.php';
+        $ensureDir($eventsFile);
+        file_put_contents($eventsFile, $eventExample);
+    }
+
+    /**
+     * Create fresh template with minimal examples.
+     */
+    private function createFreshTemplate(string $pluginPath, string $identifier, string $className): void
+    {
+        // Create a simple README
+        $readmeContent = "# {$className} Plugin
+
+A fresh plugin template for FeatherPanel.
+
+## Structure
+
+This plugin includes:
+- Main plugin class: `{$className}.php`
+- Configuration: `conf.yml`
+- Basic directory structure
+
+## Getting Started
+
+1. Edit `{$className}.php` to add your plugin logic
+2. Configure your plugin in `conf.yml`
+3. Add routes in the `Routes/` directory
+4. Add controllers in the `Controllers/` directory
+";
+
+        file_put_contents($pluginPath . '/README.md', $readmeContent);
     }
 
     private function validatePluginFiles(string $identifier): bool
@@ -2382,5 +3202,181 @@ HTML;
             'size' => $fileSize, // Use the size we captured earlier
             'type' => 'public_file',
         ];
+    }
+
+    private function createPluginWidget(string $pluginPath, string $pluginId, string $name, string $description, string $page, string $location, string $size, int $priority): array
+    {
+        // Sanitize widget name for component filename
+        $componentName = preg_replace('/[^a-zA-Z0-9_-]/', '-', strtolower($name));
+        $componentFilename = $componentName . '.html';
+        $componentPath = $pluginPath . '/Frontend/Components/' . $componentFilename;
+
+        // Ensure Components directory exists
+        $componentsDir = $pluginPath . '/Frontend/Components';
+        if (!is_dir($componentsDir)) {
+            mkdir($componentsDir, 0755, true);
+        }
+
+        // Create widget HTML file
+        $widgetHtml = $this->generateWidgetHtml($pluginId, $name, $description);
+
+        if (file_put_contents($componentPath, $widgetHtml) === false) {
+            return ['success' => false, 'message' => 'Failed to create widget HTML file'];
+        }
+
+        // Create or update widgets.json
+        $widgetsJsonPath = $pluginPath . '/Frontend/widgets.json';
+        $widgets = [];
+
+        if (file_exists($widgetsJsonPath)) {
+            $existingWidgets = json_decode(file_get_contents($widgetsJsonPath), true);
+            if (is_array($existingWidgets)) {
+                $widgets = $existingWidgets;
+            }
+        }
+
+        // Generate unique widget ID
+        $widgetId = $pluginId . '-' . $componentName;
+        $widgetIndex = 0;
+        while (isset(array_column($widgets, 'id')[$widgetIndex]) && in_array($widgetId, array_column($widgets, 'id'))) {
+            ++$widgetIndex;
+            $widgetId = $pluginId . '-' . $componentName . '-' . $widgetIndex;
+        }
+
+        // Add new widget to array
+        $newWidget = [
+            'id' => $widgetId,
+            'component' => $componentFilename,
+            'page' => $page,
+            'location' => $location,
+            'enabled' => true,
+            'priority' => $priority,
+            'size' => $size,
+        ];
+
+        $widgets[] = $newWidget;
+
+        // Save widgets.json
+        $jsonContent = json_encode($widgets, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        if (file_put_contents($widgetsJsonPath, $jsonContent) === false) {
+            return ['success' => false, 'message' => 'Failed to create/update widgets.json'];
+        }
+
+        return [
+            'success' => true,
+            'filename' => $componentFilename,
+            'filepath' => $componentPath,
+            'widget_id' => $widgetId,
+            'widget_config' => $newWidget,
+            'type' => 'widget',
+        ];
+    }
+
+    private function generateWidgetHtml(string $pluginId, string $name, string $description): string
+    {
+        $widgetTitle = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+        $widgetDescription = htmlspecialchars($description, ENT_QUOTES, 'UTF-8');
+
+        return "<!DOCTYPE html>
+<html lang=\"en\">
+    <head>
+        <meta charset=\"UTF-8\" />
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
+        <title>{$widgetTitle}</title>
+        <style>
+            .widget-container {
+                background: rgba(18, 19, 21, 0.8);
+                border-radius: 0.75rem;
+                padding: 1.5rem;
+                border: 1px solid rgba(255, 255, 255, 0.07);
+                margin-bottom: 1rem;
+            }
+
+            .widget-title {
+                font-size: 1.125rem;
+                font-weight: 600;
+                margin-bottom: 0.75rem;
+                color: #fafafa;
+            }
+
+            .widget-description {
+                color: #a1a1aa;
+                font-size: 0.875rem;
+                margin-bottom: 1rem;
+            }
+
+            .widget-content {
+                color: #e5e5e5;
+            }
+
+            .widget-loading {
+                color: #6b7280;
+                font-style: italic;
+            }
+        </style>
+    </head>
+    <body>
+        <div class=\"widget-container\">
+            <h3 class=\"widget-title\">{$widgetTitle}</h3>
+            " . (!empty($description) ? "<p class=\"widget-description\">{$widgetDescription}</p>" : '') . "
+            <div class=\"widget-content\" id=\"widget-content\">
+                <p class=\"widget-loading\">Loading widget data...</p>
+            </div>
+        </div>
+
+        <script>
+            // Widgets automatically receive context
+            // Access via window.FeatherPanel.widgetContext
+
+            async function loadWidgetData() {
+                // Get context (automatically provided by FeatherPanel)
+                const context = window.FeatherPanel?.widgetContext || {};
+                const serverUuid = context.serverUuid;
+                const userUuid = context.userUuid;
+
+                const contentEl = document.getElementById('widget-content');
+
+                if (!contentEl) {
+                    return;
+                }
+
+                try {
+                    // Example: Make API call to your plugin endpoint
+                    // Replace with your actual endpoint
+                    let apiUrl = '/api/user/addons/{$pluginId}/widget-data';
+                    
+                    if (serverUuid) {
+                        apiUrl = `/api/user/servers/\${serverUuid}/addons/{$pluginId}/widget-data`;
+                    }
+
+                    const response = await fetch(apiUrl);
+                    const result = await response.json();
+
+                    if (result.success) {
+                        // Update widget content with your data
+                        contentEl.innerHTML = `
+                            <p>Widget loaded successfully!</p>
+                            <p>Server UUID: \${serverUuid || 'N/A'}</p>
+                            <p>User UUID: \${userUuid || 'N/A'}</p>
+                            <pre>\${JSON.stringify(result.data, null, 2)}</pre>
+                        `;
+                    } else {
+                        contentEl.innerHTML = '<p>Error: ' + (result.message || 'Failed to load data') + '</p>';
+                    }
+                } catch (error) {
+                    console.error('Failed to load widget data:', error);
+                    contentEl.innerHTML = '<p class=\"widget-loading\">Error loading widget data. Check console for details.</p>';
+                }
+            }
+
+            // Initialize widget when loaded
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', loadWidgetData);
+            } else {
+                loadWidgetData();
+            }
+        </script>
+    </body>
+</html>";
     }
 }

@@ -108,9 +108,6 @@ class App
             define('REDIS_ENABLED', false);
         } else {
             define('REDIS_ENABLED', true);
-            define('REDIS_HOST', $_ENV['REDIS_HOST']);
-            define('REDIS_PORT', $_ENV['REDIS_PORT']);
-            define('REDIS_PASSWORD', $_ENV['REDIS_PASSWORD']);
         }
 
         /**

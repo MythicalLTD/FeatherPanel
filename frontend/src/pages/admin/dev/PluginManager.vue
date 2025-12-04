@@ -23,17 +23,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted, computed, reactive, watch } from 'vue';
+import { ref, onMounted, computed, reactive } from 'vue';
+import { useRouter } from 'vue-router';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from 'vue-toastification';
-import { Database, Terminal, Clock, Plus, Upload, Download } from 'lucide-vue-next';
+import { Database, Terminal, Clock, Plus, Upload, Download, Trash2 } from 'lucide-vue-next';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -48,6 +48,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
+    DialogClose,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 
@@ -71,36 +72,12 @@ interface Plugin {
         value: string;
         locked: boolean;
     }>;
-    files: Array<{
-        name: string;
-        path: string;
-        size: number;
-        modified: string;
-        type: string;
-    }>;
 }
 
 interface PluginResponse {
     success: boolean;
     data: Plugin[];
     message?: string;
-}
-
-interface CreatePluginData {
-    identifier: string;
-    name: string;
-    description: string;
-    version: string;
-    target: string;
-    author: string[];
-    flags: string[];
-    dependencies: DependencyItem[];
-    requiredConfigs: ConfigField[];
-}
-
-interface DependencyItem {
-    type: 'php' | 'php-ext' | 'composer' | 'plugin';
-    value: string;
 }
 
 interface ConfigField {
@@ -118,41 +95,14 @@ interface ConfigField {
     default: string;
 }
 
+const router = useRouter();
 const plugins = ref<Plugin[]>([]);
 const isLoading = ref(false);
-const showCreateDialog = ref(false);
 const showDetailsDialog = ref(false);
 const selectedPlugin = ref<Plugin | null>(null);
 // Removed unused availableFlags variable
 
 const toast = useToast();
-
-const createForm = ref<CreatePluginData>({
-    identifier: '',
-    name: '',
-    description: '',
-    version: '1.0.0',
-    target: 'v3',
-    author: [''],
-    flags: [],
-    dependencies: [],
-    requiredConfigs: [],
-});
-
-const editForm = ref<CreatePluginData>({
-    identifier: '',
-    name: '',
-    description: '',
-    version: '1.0.0',
-    target: 'v3',
-    author: [''],
-    flags: [],
-    dependencies: [],
-    requiredConfigs: [],
-});
-
-const showEditDialog = ref(false);
-const editingPlugin = ref<Plugin | null>(null);
 
 const settingsForm = ref<Record<string, string>>({});
 
@@ -183,42 +133,6 @@ const isCreatingAction = ref(false);
 const creationOptions = ref<CreationOption[]>([]);
 const selectedPluginForAction = ref<Plugin | null>(null);
 
-// Available plugin flags
-const pluginFlags = [
-    'hasInstallScript',
-    'hasRemovalScript',
-    'hasUpdateScript',
-    'developerIgnoreInstallScript',
-    'developerEscalateInstallScript',
-    'userEscalateInstallScript',
-    'hasEvents',
-];
-
-// Available dependency types and values
-const dependencyTypes = [
-    { value: 'php', label: 'PHP Version' },
-    { value: 'php-ext', label: 'PHP Extension' },
-    { value: 'composer', label: 'Composer Package' },
-    { value: 'plugin', label: 'Plugin' },
-];
-
-const phpVersions = ['8.0', '8.1', '8.2', '8.3', '8.4', '8.5'];
-const phpExtensions = ['pdo', 'curl', 'json', 'mbstring', 'gd', 'zip', 'xml', 'openssl', 'sqlite3', 'mysql', 'pgsql'];
-const composerPackages = ['laravel/framework', 'symfony/console', 'monolog/monolog', 'guzzlehttp/guzzle'];
-
-// Available targets
-const availableTargets = ['v1', 'v2', 'v3'];
-
-// Available field types for config
-const fieldTypes = [
-    { value: 'text', label: 'Text' },
-    { value: 'email', label: 'Email' },
-    { value: 'url', label: 'URL' },
-    { value: 'password', label: 'Password' },
-    { value: 'number', label: 'Number' },
-    { value: 'boolean', label: 'Boolean' },
-];
-
 const filteredPlugins = computed(() => {
     return plugins.value;
 });
@@ -247,122 +161,6 @@ async function fetchPlugins() {
     } catch (e) {
         console.error('Failed to fetch plugins:', e);
         toast.error('Failed to fetch plugins: Network error');
-    } finally {
-        isLoading.value = false;
-    }
-}
-
-function generateIdentifier(name: string): string {
-    return name
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '') // Remove all non-alphanumeric characters (including spaces)
-        .substring(0, 32); // Allow up to 32 characters
-}
-
-function handleNameInput(event: Event) {
-    const target = event.target as HTMLInputElement;
-    const value = target.value;
-    // Remove spaces and other non-alphanumeric characters from name
-    const cleanedValue = value.replace(/[^a-zA-Z0-9]/g, '');
-    createForm.value.name = cleanedValue;
-}
-
-async function createPlugin() {
-    if (!createForm.value.identifier || !createForm.value.name) {
-        toast.error('Identifier and name are required');
-        return;
-    }
-
-    // Check if plugin has at least one author, flag, or dependency
-    const hasValidAuthors = createForm.value.author.some((author) => author.trim() !== '');
-    const hasValidFlags = createForm.value.flags.length > 0;
-    const hasValidDependencies = createForm.value.dependencies.length > 0;
-
-    if (!hasValidAuthors && !hasValidFlags && !hasValidDependencies) {
-        toast.error('Plugin must have at least one author, flag, or dependency');
-        return;
-    }
-
-    // Convert dependencies to the format expected by the backend
-    const formattedData = {
-        ...createForm.value,
-        dependencies: createForm.value.dependencies.map((dep) => `${dep.type}=${dep.value}`),
-        requiredConfigs: createForm.value.requiredConfigs.map((config) => config.name),
-        configSchema: createForm.value.requiredConfigs,
-    };
-
-    isLoading.value = true;
-    try {
-        const resp = await fetch('/api/admin/plugin-manager', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formattedData),
-        });
-
-        const json = await resp.json();
-
-        if (json.success) {
-            toast.success('Plugin created successfully');
-            showCreateDialog.value = false;
-            resetCreateForm();
-            await fetchPlugins();
-        } else {
-            toast.error('Failed to create plugin: ' + (json.message || 'Unknown error'));
-        }
-    } catch (e) {
-        console.error('Failed to create plugin:', e);
-        toast.error('Failed to create plugin: Network error');
-    } finally {
-        isLoading.value = false;
-    }
-}
-
-async function updatePlugin() {
-    if (!editingPlugin.value) return;
-
-    // Check if plugin has at least one author, flag, or dependency
-    const hasValidAuthors = editForm.value.author.some((author) => author.trim() !== '');
-    const hasValidFlags = editForm.value.flags.length > 0;
-    const hasValidDependencies = editForm.value.dependencies.length > 0;
-
-    if (!hasValidAuthors && !hasValidFlags && !hasValidDependencies) {
-        toast.error('Plugin must have at least one author, flag, or dependency');
-        return;
-    }
-
-    // Convert dependencies to the format expected by the backend
-    const formattedData = {
-        ...editForm.value,
-        dependencies: editForm.value.dependencies.map((dep) => `${dep.type}=${dep.value}`),
-        requiredConfigs: editForm.value.requiredConfigs.map((config) => config.name),
-        configSchema: editForm.value.requiredConfigs,
-    };
-
-    isLoading.value = true;
-    try {
-        const resp = await fetch(`/api/admin/plugin-manager/${editingPlugin.value.identifier}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formattedData),
-        });
-
-        const json = await resp.json();
-
-        if (json.success) {
-            toast.success('Plugin updated successfully');
-            showEditDialog.value = false;
-            editingPlugin.value = null;
-            await fetchPlugins();
-        } else {
-            toast.error('Failed to update plugin: ' + (json.message || 'Unknown error'));
-        }
-    } catch (e) {
-        console.error('Failed to update plugin:', e);
-        toast.error('Failed to update plugin: Network error');
     } finally {
         isLoading.value = false;
     }
@@ -416,113 +214,6 @@ async function updatePluginSettings() {
     } finally {
         isLoading.value = false;
     }
-}
-
-function resetCreateForm() {
-    createForm.value = {
-        identifier: '',
-        name: '',
-        description: '',
-        version: '1.0.0',
-        target: 'v2',
-        author: [''],
-        flags: [],
-        dependencies: [],
-        requiredConfigs: [],
-    };
-}
-
-// Removed unused resetEditForm function
-
-function addAuthor() {
-    createForm.value.author.push('');
-}
-
-function removeAuthor(index: number) {
-    createForm.value.author.splice(index, 1);
-}
-
-function addDependency() {
-    createForm.value.dependencies.push({ type: 'php', value: '' });
-}
-
-function removeDependency(index: number) {
-    createForm.value.dependencies.splice(index, 1);
-}
-
-function addEditDependency() {
-    editForm.value.dependencies.push({ type: 'php', value: '' });
-}
-
-function removeEditDependency(index: number) {
-    editForm.value.dependencies.splice(index, 1);
-}
-
-function editPlugin(plugin: Plugin) {
-    editingPlugin.value = plugin;
-
-    // Convert dependencies from string format to object format
-    const dependencies: DependencyItem[] = plugin.dependencies.map((dep) => {
-        const [type, value] = dep.split('=');
-        return { type: type as 'php' | 'php-ext' | 'composer' | 'plugin', value: value || '' };
-    });
-
-    editForm.value = {
-        identifier: plugin.identifier,
-        name: plugin.name,
-        description: plugin.description,
-        version: plugin.version,
-        target: plugin.target || 'v2',
-        author: [...plugin.author],
-        flags: [...plugin.flags],
-        dependencies,
-        requiredConfigs:
-            plugin.config && Array.isArray(plugin.config)
-                ? plugin.config.map((config) => ({
-                      name: config.name || '',
-                      display_name: config.display_name || '',
-                      type: config.type || 'text',
-                      description: config.description || '',
-                      required: config.required !== undefined ? config.required : true,
-                      validation: config.validation || {},
-                      default: config.default || '',
-                  }))
-                : [],
-    };
-
-    showEditDialog.value = true;
-}
-
-function addRequiredConfig() {
-    createForm.value.requiredConfigs.push({
-        name: '',
-        display_name: '',
-        type: 'text',
-        description: '',
-        required: true,
-        validation: {},
-        default: '',
-    });
-}
-
-function removeRequiredConfig(index: number) {
-    createForm.value.requiredConfigs.splice(index, 1);
-}
-
-function addFlag() {
-    createForm.value.flags.push('');
-}
-
-function removeFlag(index: number) {
-    createForm.value.flags.splice(index, 1);
-}
-
-function formatFileSize(bytes: number): string {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 function getStatusColor(status: string): string {
@@ -580,6 +271,11 @@ const validateCreateActionForm = (): boolean => {
 };
 
 const selectedFileToUpload = ref<File | null>(null);
+
+// Uninstall states
+const confirmUninstallOpen = ref(false);
+const selectedPluginForUninstall = ref<Plugin | null>(null);
+const isUninstalling = ref(false);
 
 const handleFileUpload = (event: Event, key: string) => {
     const target = event.target as HTMLInputElement;
@@ -686,17 +382,6 @@ const getIconComponent = (iconName: string) => {
     }
 };
 
-// Watch for changes in the name field and update identifier live
-watch(
-    () => createForm.value.name,
-    (newName) => {
-        if (newName) {
-            createForm.value.identifier = generateIdentifier(newName);
-        }
-    },
-    { immediate: false },
-);
-
 const exportPlugin = async (plugin: Plugin) => {
     try {
         const resp = await fetch(`/api/admin/plugins/${plugin.identifier}/export`, {
@@ -721,6 +406,40 @@ const exportPlugin = async (plugin: Plugin) => {
         const errorMessage = e instanceof Error ? e.message : 'Failed to export plugin';
         toast.error(errorMessage);
         console.error('Export error:', e);
+    }
+};
+
+const requestUninstall = (plugin: Plugin) => {
+    selectedPluginForUninstall.value = plugin;
+    confirmUninstallOpen.value = true;
+};
+
+const onUninstall = async (plugin: Plugin) => {
+    isUninstalling.value = true;
+    try {
+        const resp = await fetch(`/api/admin/plugins/${plugin.identifier}/uninstall`, {
+            method: 'POST',
+            credentials: 'include',
+        });
+        if (!resp.ok) {
+            const errorData = await resp.json();
+            throw new Error(errorData.message || 'Failed to uninstall plugin');
+        }
+        await fetchPlugins();
+        toast.success(`${plugin.name || plugin.identifier} uninstalled successfully`);
+
+        // Reload page to remove plugin CSS/JS
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+    } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : 'Failed to uninstall plugin';
+        toast.error(errorMessage);
+        console.error('Uninstall error:', e);
+    } finally {
+        isUninstalling.value = false;
+        confirmUninstallOpen.value = false;
+        selectedPluginForUninstall.value = null;
     }
 };
 
@@ -754,7 +473,7 @@ onMounted(() => {
                         >
                             Refresh
                         </Button>
-                        <Button data-umami-event="Create plugin" @click="showCreateDialog = true">
+                        <Button data-umami-event="Create plugin" @click="router.push({ name: 'AdminPluginCreate' })">
                             Create Plugin
                         </Button>
                     </div>
@@ -778,12 +497,10 @@ onMounted(() => {
                         </span>
                     </div>
                     <div>
-                        <div class="font-semibold text-blue-900 mb-1">SDK: v3.2 (Aurora) 10.10.2025</div>
+                        <div class="font-semibold text-blue-900 mb-1">SDK: v3.5 (Aurora) 04.12.2025</div>
                         <div class="text-blue-800 text-sm">
-                            <strong>Latest change:</strong> Full event plugin support for users, admins, and servers!
-                            Several other improvements and fixes have been made to the plugin manager. Plugins can now
-                            seamlessly register custom pages with fully custom HTML UI—unleash your creativity and
-                            integrate rich, interactive interfaces directly within FeatherPanel.
+                            <strong>Latest update:</strong> Plugins now support custom group assignments, allowing for
+                            enhanced organization and seamless management.
                         </div>
                     </div>
                 </div>
@@ -819,10 +536,6 @@ onMounted(() => {
                                 <span>Author:</span>
                                 <span class="font-medium">{{ plugin.author.join(', ') }}</span>
                             </div>
-                            <div class="flex items-center justify-between text-sm">
-                                <span>Files:</span>
-                                <span class="font-medium">{{ plugin.files.length }}</span>
-                            </div>
                         </div>
 
                         <div class="flex items-center gap-2 mb-4">
@@ -851,7 +564,9 @@ onMounted(() => {
                                 size="sm"
                                 data-umami-event="Edit plugin"
                                 :data-umami-event-plugin="plugin.name"
-                                @click="editPlugin(plugin)"
+                                @click="
+                                    router.push({ name: 'AdminPluginEdit', params: { identifier: plugin.identifier } })
+                                "
                             >
                                 Edit
                             </Button>
@@ -864,6 +579,16 @@ onMounted(() => {
                             >
                                 <Download :size="14" class="mr-1" />
                                 Export
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                data-umami-event="Delete plugin"
+                                :data-umami-event-plugin="plugin.name"
+                                @click.stop="requestUninstall(plugin)"
+                            >
+                                <Trash2 :size="14" class="mr-1" />
+                                Delete
                             </Button>
 
                             <!-- Plugin-specific Create Action Dropdown -->
@@ -906,671 +631,11 @@ onMounted(() => {
                     </div>
                     <h3 class="text-lg font-semibold mb-2">No plugins found</h3>
                     <p class="text-muted-foreground mb-4">Create your first plugin to get started</p>
-                    <Button data-umami-event="Create first plugin" @click="showCreateDialog = true">
+                    <Button data-umami-event="Create first plugin" @click="router.push({ name: 'AdminPluginCreate' })">
                         Create Plugin
                     </Button>
                 </div>
             </div>
-        </div>
-
-        <!-- Create Plugin Dialog -->
-        <div v-if="showCreateDialog" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <Card class="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <div class="p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-xl font-semibold">Create New Plugin</h2>
-                        <Button variant="ghost" size="sm" @click="showCreateDialog = false"> ✕ </Button>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-sm font-medium mb-2 block">Name *</label>
-                                <Input
-                                    v-model="createForm.name"
-                                    placeholder="MyAwesomePlugin"
-                                    maxlength="32"
-                                    @input="handleNameInput"
-                                />
-                                <p class="text-xs text-muted-foreground mt-1">
-                                    Plugin name cannot contain spaces or special characters
-                                </p>
-                            </div>
-                            <div>
-                                <label class="text-sm font-medium mb-2 block">Identifier *</label>
-                                <Input
-                                    v-model="createForm.identifier"
-                                    placeholder="myawesomeplugin"
-                                    maxlength="32"
-                                    class="lowercase"
-                                />
-                                <p class="text-xs text-muted-foreground mt-1">
-                                    Must be unique, lowercase, and contain only letters and numbers
-                                </p>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-medium mb-2 block">Description</label>
-                            <Textarea
-                                v-model="createForm.description"
-                                placeholder="A brief description of what this plugin does..."
-                                rows="3"
-                            />
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-sm font-medium mb-2 block">Version</label>
-                                <Input v-model="createForm.version" placeholder="1.0.0" />
-                            </div>
-                            <div>
-                                <label class="text-sm font-medium mb-2 block">Target</label>
-                                <Select v-model="createForm.target">
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select target version" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem v-for="target in availableTargets" :key="target" :value="target">
-                                            {{ target }}
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-medium mb-2 block">
-                                Authors
-                                <span class="text-xs text-muted-foreground ml-1"
-                                    >(at least one author, flag, or dependency required)</span
-                                >
-                            </label>
-                            <div class="space-y-2">
-                                <div v-for="(author, index) in createForm.author" :key="index" class="flex gap-2">
-                                    <Input
-                                        v-model="createForm.author[index]"
-                                        placeholder="Author name"
-                                        class="flex-1"
-                                    />
-                                    <Button
-                                        v-if="createForm.author.length > 1"
-                                        variant="outline"
-                                        size="sm"
-                                        @click="removeAuthor(index)"
-                                    >
-                                        Remove
-                                    </Button>
-                                </div>
-                                <Button variant="outline" size="sm" @click="addAuthor"> Add Author </Button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-medium mb-2 block">Plugin Flags</label>
-                            <div class="space-y-2">
-                                <div v-for="(flag, index) in createForm.flags" :key="index" class="flex gap-2">
-                                    <Select v-model="createForm.flags[index]" class="flex-1">
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a flag" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem
-                                                v-for="availableFlag in pluginFlags"
-                                                :key="availableFlag"
-                                                :value="availableFlag"
-                                            >
-                                                {{ availableFlag }}
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <Button variant="outline" size="sm" @click="removeFlag(index)"> Remove </Button>
-                                </div>
-                                <Button variant="outline" size="sm" @click="addFlag"> Add Flag </Button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-medium mb-2 block">Dependencies</label>
-                            <div class="space-y-2">
-                                <div v-for="(dep, index) in createForm.dependencies" :key="index" class="flex gap-2">
-                                    <Select v-model="dep.type" class="w-32">
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem
-                                                v-for="type in dependencyTypes"
-                                                :key="type.value"
-                                                :value="type.value"
-                                            >
-                                                {{ type.label }}
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <div v-if="dep.type === 'php'" class="flex-1">
-                                        <Select v-model="dep.value">
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="PHP Version" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem
-                                                    v-for="version in phpVersions"
-                                                    :key="version"
-                                                    :value="version"
-                                                >
-                                                    {{ version }}
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <Input
-                                            v-model="dep.value"
-                                            placeholder="Or enter custom version (e.g., 8.1.5)"
-                                            class="mt-1"
-                                        />
-                                    </div>
-                                    <div v-else-if="dep.type === 'php-ext'" class="flex-1">
-                                        <Select v-model="dep.value">
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="PHP Extension" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem v-for="ext in phpExtensions" :key="ext" :value="ext">
-                                                    {{ ext }}
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <Input
-                                            v-model="dep.value"
-                                            placeholder="Or enter custom extension"
-                                            class="mt-1"
-                                        />
-                                    </div>
-                                    <div v-else-if="dep.type === 'composer'" class="flex-1">
-                                        <Select v-model="dep.value">
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Composer Package" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem v-for="pkg in composerPackages" :key="pkg" :value="pkg">
-                                                    {{ pkg }}
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <Input
-                                            v-model="dep.value"
-                                            placeholder="Or enter custom package (vendor/package)"
-                                            class="mt-1"
-                                        />
-                                    </div>
-                                    <Input
-                                        v-else-if="dep.type === 'plugin'"
-                                        v-model="dep.value"
-                                        placeholder="Plugin identifier"
-                                        class="flex-1"
-                                    />
-                                    <Button variant="outline" size="sm" @click="removeDependency(index)">
-                                        Remove
-                                    </Button>
-                                </div>
-                                <Button variant="outline" size="sm" @click="addDependency"> Add Dependency </Button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-medium mb-2 block">Configuration Fields</label>
-                            <div class="space-y-4">
-                                <div
-                                    v-for="(config, index) in createForm.requiredConfigs"
-                                    :key="index"
-                                    class="p-4 border rounded-lg space-y-3"
-                                >
-                                    <div class="flex items-center justify-between">
-                                        <h4 class="font-medium">Configuration Field {{ index + 1 }}</h4>
-                                        <Button variant="outline" size="sm" @click="removeRequiredConfig(index)">
-                                            Remove
-                                        </Button>
-                                    </div>
-
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <div>
-                                            <label class="text-xs font-medium mb-1 block">Field Name *</label>
-                                            <Input v-model="config.name" placeholder="api_key" class="text-sm" />
-                                        </div>
-                                        <div>
-                                            <label class="text-xs font-medium mb-1 block">Display Name *</label>
-                                            <Input
-                                                v-model="config.display_name"
-                                                placeholder="API Key"
-                                                class="text-sm"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <div>
-                                            <label class="text-xs font-medium mb-1 block">Field Type</label>
-                                            <Select v-model="config.type">
-                                                <SelectTrigger class="text-sm">
-                                                    <SelectValue placeholder="Select type" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem
-                                                        v-for="type in fieldTypes"
-                                                        :key="type.value"
-                                                        :value="type.value"
-                                                    >
-                                                        {{ type.label }}
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div>
-                                            <label class="text-xs font-medium mb-1 block">Default Value</label>
-                                            <Input
-                                                v-model="config.default"
-                                                placeholder="Default value"
-                                                class="text-sm"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label class="text-xs font-medium mb-1 block">Description</label>
-                                        <Textarea
-                                            v-model="config.description"
-                                            placeholder="Describe what this configuration field is used for..."
-                                            rows="2"
-                                            class="text-sm"
-                                        />
-                                    </div>
-
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <div>
-                                            <label class="text-xs font-medium mb-1 block"
-                                                >Validation Regex (optional)</label
-                                            >
-                                            <Input
-                                                v-model="config.validation.regex"
-                                                placeholder="/^[a-zA-Z0-9]+$/"
-                                                class="text-sm"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label class="text-xs font-medium mb-1 block">Validation Message</label>
-                                            <Input
-                                                v-model="config.validation.message"
-                                                placeholder="Error message for validation"
-                                                class="text-sm"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div class="flex items-center gap-2">
-                                        <input :id="`required-${index}`" v-model="config.required" type="checkbox" />
-                                        <label :for="`required-${index}`" class="text-sm">Required field</label>
-                                    </div>
-                                </div>
-                                <Button variant="outline" size="sm" @click="addRequiredConfig">
-                                    Add Configuration Field
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end gap-2 mt-6">
-                        <Button
-                            variant="outline"
-                            data-umami-event="Cancel plugin creation"
-                            @click="showCreateDialog = false"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            :disabled="isLoading"
-                            data-umami-event="Create plugin"
-                            :data-umami-event-name="createForm.name"
-                            @click="createPlugin"
-                        >
-                            Create Plugin
-                        </Button>
-                    </div>
-                </div>
-            </Card>
-        </div>
-
-        <!-- Edit Plugin Dialog -->
-        <div
-            v-if="showEditDialog && editingPlugin"
-            class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-        >
-            <Card class="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <div class="p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-xl font-semibold">Edit Plugin: {{ editingPlugin.name }}</h2>
-                        <Button variant="ghost" size="sm" @click="showEditDialog = false"> ✕ </Button>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-sm font-medium mb-2 block">Identifier</label>
-                                <Input v-model="editForm.identifier" disabled class="bg-muted" />
-                                <p class="text-xs text-muted-foreground mt-1">
-                                    Identifier cannot be changed after creation
-                                </p>
-                            </div>
-                            <div>
-                                <label class="text-sm font-medium mb-2 block">Name *</label>
-                                <Input v-model="editForm.name" placeholder="My Awesome Plugin" maxlength="32" />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-medium mb-2 block">Description</label>
-                            <Textarea
-                                v-model="editForm.description"
-                                placeholder="A brief description of what this plugin does..."
-                                rows="3"
-                            />
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-sm font-medium mb-2 block">Version</label>
-                                <Input v-model="editForm.version" placeholder="1.0.0" />
-                            </div>
-                            <div>
-                                <label class="text-sm font-medium mb-2 block">Target</label>
-                                <Select v-model="editForm.target">
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select target version" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem v-for="target in availableTargets" :key="target" :value="target">
-                                            {{ target }}
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-medium mb-2 block">
-                                Authors
-                                <span class="text-xs text-muted-foreground ml-1"
-                                    >(at least one author, flag, or dependency required)</span
-                                >
-                            </label>
-                            <div class="space-y-2">
-                                <div v-for="(author, index) in editForm.author" :key="index" class="flex gap-2">
-                                    <Input v-model="editForm.author[index]" placeholder="Author name" class="flex-1" />
-                                    <Button
-                                        v-if="editForm.author.length > 1"
-                                        variant="outline"
-                                        size="sm"
-                                        @click="editForm.author.splice(index, 1)"
-                                    >
-                                        Remove
-                                    </Button>
-                                </div>
-                                <Button variant="outline" size="sm" @click="editForm.author.push('')">
-                                    Add Author
-                                </Button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-medium mb-2 block">Plugin Flags</label>
-                            <div class="space-y-2">
-                                <div v-for="(flag, index) in editForm.flags" :key="index" class="flex gap-2">
-                                    <Select v-model="editForm.flags[index]" class="flex-1">
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a flag" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem
-                                                v-for="availableFlag in pluginFlags"
-                                                :key="availableFlag"
-                                                :value="availableFlag"
-                                            >
-                                                {{ availableFlag }}
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <Button variant="outline" size="sm" @click="editForm.flags.splice(index, 1)">
-                                        Remove
-                                    </Button>
-                                </div>
-                                <Button variant="outline" size="sm" @click="editForm.flags.push('')"> Add Flag </Button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-medium mb-2 block">Dependencies</label>
-                            <div class="space-y-2">
-                                <div v-for="(dep, index) in editForm.dependencies" :key="index" class="flex gap-2">
-                                    <Select v-model="dep.type" class="w-32">
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem
-                                                v-for="type in dependencyTypes"
-                                                :key="type.value"
-                                                :value="type.value"
-                                            >
-                                                {{ type.label }}
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <div v-if="dep.type === 'php'" class="flex-1">
-                                        <Select v-model="dep.value">
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="PHP Version" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem
-                                                    v-for="version in phpVersions"
-                                                    :key="version"
-                                                    :value="version"
-                                                >
-                                                    {{ version }}
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <Input
-                                            v-model="dep.value"
-                                            placeholder="Or enter custom version (e.g., 8.1.5)"
-                                            class="mt-1"
-                                        />
-                                    </div>
-                                    <div v-else-if="dep.type === 'php-ext'" class="flex-1">
-                                        <Select v-model="dep.value">
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="PHP Extension" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem v-for="ext in phpExtensions" :key="ext" :value="ext">
-                                                    {{ ext }}
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <Input
-                                            v-model="dep.value"
-                                            placeholder="Or enter custom extension"
-                                            class="mt-1"
-                                        />
-                                    </div>
-                                    <div v-else-if="dep.type === 'composer'" class="flex-1">
-                                        <Select v-model="dep.value">
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Composer Package" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem v-for="pkg in composerPackages" :key="pkg" :value="pkg">
-                                                    {{ pkg }}
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <Input
-                                            v-model="dep.value"
-                                            placeholder="Or enter custom package (vendor/package)"
-                                            class="mt-1"
-                                        />
-                                    </div>
-                                    <Input
-                                        v-else-if="dep.type === 'plugin'"
-                                        v-model="dep.value"
-                                        placeholder="Plugin identifier"
-                                        class="flex-1"
-                                    />
-                                    <Button variant="outline" size="sm" @click="removeEditDependency(index)">
-                                        Remove
-                                    </Button>
-                                </div>
-                                <Button variant="outline" size="sm" @click="addEditDependency"> Add Dependency </Button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-medium mb-2 block">Configuration Fields</label>
-                            <div class="space-y-4">
-                                <div
-                                    v-for="(config, index) in editForm.requiredConfigs"
-                                    :key="index"
-                                    class="p-4 border rounded-lg space-y-3"
-                                >
-                                    <div class="flex items-center justify-between">
-                                        <h4 class="font-medium">Configuration Field {{ index + 1 }}</h4>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            @click="editForm.requiredConfigs.splice(index, 1)"
-                                        >
-                                            Remove
-                                        </Button>
-                                    </div>
-
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <div>
-                                            <label class="text-xs font-medium mb-1 block">Field Name *</label>
-                                            <Input v-model="config.name" placeholder="api_key" class="text-sm" />
-                                        </div>
-                                        <div>
-                                            <label class="text-xs font-medium mb-1 block">Display Name *</label>
-                                            <Input
-                                                v-model="config.display_name"
-                                                placeholder="API Key"
-                                                class="text-sm"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <div>
-                                            <label class="text-xs font-medium mb-1 block">Field Type</label>
-                                            <Select v-model="config.type">
-                                                <SelectTrigger class="text-sm">
-                                                    <SelectValue placeholder="Select type" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem
-                                                        v-for="type in fieldTypes"
-                                                        :key="type.value"
-                                                        :value="type.value"
-                                                    >
-                                                        {{ type.label }}
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div>
-                                            <label class="text-xs font-medium mb-1 block">Default Value</label>
-                                            <Input
-                                                v-model="config.default"
-                                                placeholder="Default value"
-                                                class="text-sm"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label class="text-xs font-medium mb-1 block">Description</label>
-                                        <Textarea
-                                            v-model="config.description"
-                                            placeholder="Describe what this configuration field is used for..."
-                                            rows="2"
-                                            class="text-sm"
-                                        />
-                                    </div>
-
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <div>
-                                            <label class="text-xs font-medium mb-1 block"
-                                                >Validation Regex (optional)</label
-                                            >
-                                            <Input
-                                                v-model="config.validation.regex"
-                                                placeholder="/^[a-zA-Z0-9]+$/"
-                                                class="text-sm"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label class="text-xs font-medium mb-1 block">Validation Message</label>
-                                            <Input
-                                                v-model="config.validation.message"
-                                                placeholder="Error message for validation"
-                                                class="text-sm"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div class="flex items-center gap-2">
-                                        <input
-                                            :id="`edit-required-${index}`"
-                                            v-model="config.required"
-                                            type="checkbox"
-                                        />
-                                        <label :for="`edit-required-${index}`" class="text-sm">Required field</label>
-                                    </div>
-                                </div>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    @click="
-                                        editForm.requiredConfigs.push({
-                                            name: '',
-                                            display_name: '',
-                                            type: 'text',
-                                            description: '',
-                                            required: true,
-                                            validation: {},
-                                            default: '',
-                                        })
-                                    "
-                                >
-                                    Add Configuration Field
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end gap-2 mt-6">
-                        <Button variant="outline" data-umami-event="Cancel plugin edit" @click="showEditDialog = false">
-                            Cancel
-                        </Button>
-                        <Button
-                            :disabled="isLoading"
-                            data-umami-event="Update plugin"
-                            :data-umami-event-plugin="editingPlugin?.name"
-                            @click="updatePlugin"
-                        >
-                            Update Plugin
-                        </Button>
-                    </div>
-                </div>
-            </Card>
         </div>
 
         <!-- Plugin Details Dialog -->
@@ -1635,25 +700,8 @@ onMounted(() => {
                             </div>
                         </div>
 
-                        <!-- Files and Settings -->
+                        <!-- Settings -->
                         <div class="space-y-4">
-                            <h3 class="font-semibold">Files</h3>
-                            <div class="max-h-48 overflow-y-auto space-y-1">
-                                <div
-                                    v-for="file in selectedPlugin.files"
-                                    :key="file.path"
-                                    class="flex items-center justify-between text-sm p-2 bg-muted/50 rounded"
-                                >
-                                    <div>
-                                        <span class="font-medium">{{ file.name }}</span>
-                                        <span class="text-muted-foreground ml-2">({{ file.type }})</span>
-                                    </div>
-                                    <span class="text-muted-foreground">{{ formatFileSize(file.size) }}</span>
-                                </div>
-                            </div>
-
-                            <Separator />
-
                             <h3 class="font-semibold">Configuration</h3>
                             <div class="space-y-4">
                                 <!-- Enhanced Config Fields -->
@@ -1830,6 +878,36 @@ onMounted(() => {
                     >
                         <span v-if="isCreatingAction">Creating...</span>
                         <span v-else>Create</span>
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <!-- Confirm Uninstall Dialog -->
+        <Dialog v-model:open="confirmUninstallOpen">
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Delete Plugin</DialogTitle>
+                    <DialogDescription>
+                        Are you sure you want to delete
+                        {{ selectedPluginForUninstall?.name || selectedPluginForUninstall?.identifier }}? This action
+                        cannot be undone.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <DialogClose as-child>
+                        <Button variant="outline" :disabled="isUninstalling">Cancel</Button>
+                    </DialogClose>
+                    <Button
+                        variant="destructive"
+                        :disabled="isUninstalling"
+                        @click="selectedPluginForUninstall && onUninstall(selectedPluginForUninstall)"
+                    >
+                        <div
+                            v-if="isUninstalling"
+                            class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                        ></div>
+                        {{ isUninstalling ? 'Deleting...' : 'Delete' }}
                     </Button>
                 </DialogFooter>
             </DialogContent>

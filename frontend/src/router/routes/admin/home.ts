@@ -233,6 +233,16 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/dev/PluginManager.vue'),
     },
     {
+        path: '/admin/dev/plugins/create',
+        name: 'AdminPluginCreate',
+        component: () => import('@/pages/admin/dev/PluginCreate.vue'),
+    },
+    {
+        path: '/admin/dev/plugins/:identifier/edit',
+        name: 'AdminPluginEdit',
+        component: () => import('@/pages/admin/dev/PluginEdit.vue'),
+    },
+    {
         path: '/admin/featherzerotrust',
         name: 'AdminFeatherZeroTrust',
         component: () => import('@/pages/admin/featherzerotrust/FeatherZeroTrust.vue'),

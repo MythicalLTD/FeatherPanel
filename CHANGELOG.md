@@ -24,6 +24,7 @@
 - Revamped node management interface: each node now has its own dedicated page for an improved and more intuitive management experience. by @nayskutzu
 - Log uploads now use the FeatherPanel API instead of mclogs, providing a more seamless and integrated experience. by @nayskutzu
 - Bulk deletion of allocations now offers the flexibility to target and remove allocations from a specific subnet, empowering more precise management. by @nayskutzu
+- Developer plugin creation has been completely revamped, now offering a streamlined and intuitive experience for effortless management and customization. by @nayskutzu
 
 ## v1.0.6 BETA
 
