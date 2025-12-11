@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use App\Controllers\User\ChatbotController;
 use Symfony\Component\HttpFoundation\Request;
@@ -42,7 +43,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new ChatbotController())->chat($request);
         },
-        ['POST']
+        ['POST'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-chatbot'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -52,7 +55,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new ChatbotController())->getConversations($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-chatbot'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -67,7 +72,9 @@ return function (RouteCollection $routes): void {
 
             return (new ChatbotController())->getConversation($request, (int) $id);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-chatbot'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -82,7 +89,9 @@ return function (RouteCollection $routes): void {
 
             return (new ChatbotController())->deleteConversation($request, (int) $id);
         },
-        ['DELETE']
+        ['DELETE'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-chatbot'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -97,6 +106,8 @@ return function (RouteCollection $routes): void {
 
             return (new ChatbotController())->updateMemory($request, (int) $id);
         },
-        ['PATCH']
+        ['PATCH'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-chatbot'
     );
 };

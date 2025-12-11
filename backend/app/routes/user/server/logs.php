@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\User\Server\Logs\ServerLogsController;
@@ -45,7 +46,9 @@ return function (RouteCollection $routes): void {
             return (new ServerLogsController())->getLogs($request, $uuidShort);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-logs'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -58,7 +61,9 @@ return function (RouteCollection $routes): void {
             return (new ServerLogsController())->getInstallLogs($request, $uuidShort);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-logs'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -71,7 +76,9 @@ return function (RouteCollection $routes): void {
             return (new ServerLogsController())->uploadLogs($request, $uuidShort);
         },
         'uuidShort',
-        ['POST']
+        ['POST'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-logs'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -84,6 +91,8 @@ return function (RouteCollection $routes): void {
             return (new ServerLogsController())->uploadInstallLogs($request, $uuidShort);
         },
         'uuidShort',
-        ['POST']
+        ['POST'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-logs'
     );
 };

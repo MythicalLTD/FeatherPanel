@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
@@ -42,7 +43,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new NotificationController())->index($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-notifications'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -57,6 +60,8 @@ return function (RouteCollection $routes): void {
 
             return (new NotificationController())->dismiss($request, (int) $id);
         },
-        ['POST']
+        ['POST'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-notifications'
     );
 };

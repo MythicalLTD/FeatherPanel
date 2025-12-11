@@ -767,6 +767,10 @@ const breadcrumbs = computed(() => [
     { text: t('serverStartup.title'), isCurrent: true, href: `/server/${route.params.uuidShort}/startup` },
 ]);
 
+function getAxiosErrorMessage(err: unknown, fallback: string): string {
+    return axios.isAxiosError(err) && err.response?.data?.message ? err.response.data.message : fallback;
+}
+
 const viewableVariables = computed(() => variables.value.filter((v) => v.user_viewable === 1));
 
 const editableVariables = computed(() => variables.value.filter((v) => v.user_editable === 1));
@@ -902,7 +906,7 @@ async function fetchAvailableRealms() {
         }
     } catch (e: unknown) {
         console.error('Failed to fetch realms:', e);
-        toast.error(t('serverStartup.failedToFetchRealms'));
+        toast.error(getAxiosErrorMessage(e, t('serverStartup.failedToFetchRealms')));
     } finally {
         loadingRealms.value = false;
     }
@@ -927,7 +931,7 @@ async function fetchAvailableSpells(realmId?: string) {
         }
     } catch (e: unknown) {
         console.error('Failed to fetch spells:', e);
-        toast.error(t('serverStartup.failedToFetchSpells'));
+        toast.error(getAxiosErrorMessage(e, t('serverStartup.failedToFetchSpells')));
     } finally {
         loadingSpells.value = false;
     }
@@ -1144,7 +1148,7 @@ async function confirmSpellChange(): Promise<void> {
         toast.info(t('serverStartup.spellChanged'));
     } catch (e: unknown) {
         console.error('Error confirming spell change:', e);
-        toast.error(t('serverStartup.failedToApplySpellChange'));
+        toast.error(getAxiosErrorMessage(e, t('serverStartup.failedToApplySpellChange')));
     }
 }
 

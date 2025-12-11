@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
@@ -36,6 +37,7 @@ use App\Controllers\User\Server\ServerUserController;
 
 return function (RouteCollection $routes): void {
 
+    // Rate limit: Admin can override in ratelimit.json, default is 2 per second
     App::getInstance(true)->registerAuthRoute(
         $routes,
         'session-servers',
@@ -43,9 +45,12 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new ServerUserController())->getUserServers($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perSecond(2), // Default: Admin can override in ratelimit.json
+        'user-servers'
     );
 
+    // Rate limit: Admin can override in ratelimit.json, default is 30 per minute
     App::getInstance(true)->registerServerRoute(
         $routes,
         'session-server-get',
@@ -59,9 +64,11 @@ return function (RouteCollection $routes): void {
             return (new ServerUserController())->getServer($request, $uuidShort);
         },
         'uuidShort', // Pass the server UUID for middleware
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30) // Default: Admin can override in ratelimit.json
     );
 
+    // Rate limit: Admin can override in ratelimit.json, default is 10 per minute
     App::getInstance(true)->registerServerRoute(
         $routes,
         'session-server-jwt',
@@ -78,6 +85,7 @@ return function (RouteCollection $routes): void {
         ['POST']
     );
 
+    // Rate limit: Admin can override in ratelimit.json, default is 1 per minute
     App::getInstance(true)->registerServerRoute(
         $routes,
         'session-server-update',
@@ -91,9 +99,12 @@ return function (RouteCollection $routes): void {
             return (new ServerUserController())->updateServer($request, $uuidShort);
         },
         'uuidShort', // Pass the server UUID for middleware
-        ['PUT']
+        ['PUT'],
+        Rate::perMinute(2), // Default: Admin can override in ratelimit.json
+        'user-server-update'
     );
 
+    // Rate limit: Admin can override in ratelimit.json, default is 1 per minute
     App::getInstance(true)->registerServerRoute(
         $routes,
         'session-server-reinstall',
@@ -104,9 +115,11 @@ return function (RouteCollection $routes): void {
             return (new ServerUserController())->reinstallServer($request, $uuidShort);
         },
         'uuidShort', // Pass the server UUID for middleware
-        ['POST']
+        ['POST'],
+        Rate::perMinute(1) // Default: Admin can override in ratelimit.json
     );
 
+    // Rate limit: Admin can override in ratelimit.json, default is 30 per minute
     App::getInstance(true)->registerServerRoute(
         $routes,
         'session-server-command',
@@ -120,6 +133,7 @@ return function (RouteCollection $routes): void {
             return (new ServerUserController())->sendCommand($request, $uuidShort);
         },
         'uuidShort', // Pass the server UUID for middleware
-        ['POST']
+        ['POST'],
+        Rate::perMinute(30) // Default: Admin can override in ratelimit.json
     );
 };

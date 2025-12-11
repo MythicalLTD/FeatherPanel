@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use Symfony\Component\HttpFoundation\Request;
 use App\Controllers\User\NodeStatusController;
 use Symfony\Component\Routing\RouteCollection;
@@ -42,7 +43,8 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new NodeStatusController())->getStatus($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-status'
     );
 };
-

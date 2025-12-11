@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
@@ -55,7 +56,9 @@ return function (RouteCollection $routes): void {
             return (new \App\Controllers\User\Server\TaskController())->getTasks($request, $server['uuid'], (int) $scheduleId);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-tasks'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -100,7 +103,9 @@ return function (RouteCollection $routes): void {
             return (new \App\Controllers\User\Server\TaskController())->getTask($request, $server['uuid'], (int) $scheduleId, (int) $taskId);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-tasks'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -123,7 +128,9 @@ return function (RouteCollection $routes): void {
             return (new \App\Controllers\User\Server\TaskController())->updateTask($request, $server['uuid'], (int) $scheduleId, (int) $taskId);
         },
         'uuidShort',
-        ['PUT']
+        ['PUT'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-tasks'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -169,7 +176,9 @@ return function (RouteCollection $routes): void {
             return (new \App\Controllers\User\Server\TaskController())->updateTaskSequence($request, $server['uuid'], (int) $scheduleId, (int) $taskId);
         },
         'uuidShort',
-        ['PUT']
+        ['PUT'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-tasks'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -192,7 +201,9 @@ return function (RouteCollection $routes): void {
             return (new \App\Controllers\User\Server\TaskController())->toggleTaskQueuedStatus($request, $server['uuid'], (int) $scheduleId, (int) $taskId);
         },
         'uuidShort',
-        ['PUT']
+        ['PUT'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-tasks'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -214,7 +225,9 @@ return function (RouteCollection $routes): void {
             return (new \App\Controllers\User\Server\TaskController())->getTasksWithSchedule($request, $server['uuid'], (int) $scheduleId);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-tasks'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -235,7 +248,9 @@ return function (RouteCollection $routes): void {
             return (new \App\Controllers\User\Server\TaskController())->getQueuedTasks($request, $server['uuid']);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-tasks'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -256,6 +271,8 @@ return function (RouteCollection $routes): void {
             return (new \App\Controllers\User\Server\TaskController())->getReadyTasks($request, $server['uuid']);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-tasks'
     );
 };

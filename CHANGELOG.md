@@ -7,6 +7,7 @@
 - Enhanced input validation on the server startup page with improved regex checks, replacing unclear "validation failed" errors with more informative messages. by @nayskutzu
 - Fixed an issue where extra server allocations were not properly unassigned when a server was deleted. by @nayskutzu
 - Fixed an issue where auto-assigning an allocation to a server would fail unless exactly 100 free allocations were available. by @nayskutzu
+- Improved error handling for /server routes: pages now gracefully display the API error message when a request fails, ensuring clearer feedback for users. by @nayskutzu
 
 ### Added
 
@@ -18,6 +19,7 @@
 - Powerful custom CSS and JavaScript injection: admins can now easily inject their own CSS and JS through the settings panel for deep customization and tailored user experiences. by @nayskutzu
 - Introduced an automated update checker for nodes, ensuring you always stay informed about the latest available updates. by @nayskutzu
 - Introduced an experimental Redis-backed cache layer, offering an alternative to traditional file-based caching for improved performance and scalability. by @nayskutzu
+- Introduced robust API rate limiting to effectively safeguard against abuse and ensure fair use for all users. by @nayskutzu
 
 ### Improved
 

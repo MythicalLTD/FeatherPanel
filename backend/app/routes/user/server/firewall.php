@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Chat\Server;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -55,7 +56,9 @@ return function (RouteCollection $routes): void {
             return (new ServerFirewallController())->listRules($request, (int) $server['id']);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-firewall'
     );
 
     // Create firewall rule
@@ -101,7 +104,9 @@ return function (RouteCollection $routes): void {
             return (new ServerFirewallController())->updateRule($request, (int) $server['id'], (int) $ruleId);
         },
         'uuidShort',
-        ['PUT']
+        ['PUT'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-firewall'
     );
 
     // Delete firewall rule
@@ -125,7 +130,9 @@ return function (RouteCollection $routes): void {
             return (new ServerFirewallController())->deleteRule($request, (int) $server['id'], (int) $ruleId);
         },
         'uuidShort',
-        ['DELETE']
+        ['DELETE'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-firewall'
     );
 
     // Get rules by port
@@ -149,7 +156,9 @@ return function (RouteCollection $routes): void {
             return (new ServerFirewallController())->getRulesByPort($request, (int) $server['id'], (int) $port);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-firewall'
     );
 
     // Sync firewall rules
@@ -172,6 +181,8 @@ return function (RouteCollection $routes): void {
             return (new ServerFirewallController())->syncRules($request, (int) $server['id']);
         },
         'uuidShort',
-        ['POST']
+        ['POST'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-server-firewall'
     );
 };

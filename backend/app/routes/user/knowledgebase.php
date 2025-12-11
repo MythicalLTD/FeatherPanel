@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\User\KnowledgebaseController;
@@ -42,7 +43,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new KnowledgebaseController())->categoriesIndex($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-knowledgebase'
     );
 
     // GET - GET /api/user/knowledgebase/categories/{id}
@@ -58,7 +61,9 @@ return function (RouteCollection $routes): void {
 
             return (new KnowledgebaseController())->categoriesShow($request, (int) $id);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-knowledgebase'
     );
 
     // GET - GET /api/user/knowledgebase/articles
@@ -69,7 +74,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new KnowledgebaseController())->articlesIndex($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-knowledgebase'
     );
 
     // GET - GET /api/user/knowledgebase/articles/{id}
@@ -85,7 +92,9 @@ return function (RouteCollection $routes): void {
 
             return (new KnowledgebaseController())->articlesShow($request, (int) $id);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-knowledgebase'
     );
 
     // GET - GET /api/user/knowledgebase/categories/{id}/articles
@@ -101,6 +110,8 @@ return function (RouteCollection $routes): void {
 
             return (new KnowledgebaseController())->categoryArticles($request, (int) $id);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-knowledgebase'
     );
 };

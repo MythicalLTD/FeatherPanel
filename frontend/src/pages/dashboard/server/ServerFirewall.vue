@@ -472,6 +472,10 @@ const breadcrumbs = computed<BreadcrumbEntry[]>(() => [
     { text: t('serverFirewall.title'), isCurrent: true, href: `/server/${route.params.uuidShort}/firewall` },
 ]);
 
+function getAxiosErrorMessage(err: unknown, fallback: string): string {
+    return axios.isAxiosError(err) && err.response?.data?.message ? err.response.data.message : fallback;
+}
+
 const loading = ref<boolean>(false);
 const syncing = ref<boolean>(false);
 const rules = ref<FirewallRule[]>([]);
@@ -573,7 +577,7 @@ async function fetchServerAllocations(): Promise<void> {
         }
     } catch (error) {
         console.error('Failed to fetch server allocations for firewall:', error);
-        toast.error(t('serverAllocations.failedToFetch'));
+        toast.error(getAxiosErrorMessage(error, t('serverAllocations.failedToFetch')));
     } finally {
         loadingAllocations.value = false;
     }

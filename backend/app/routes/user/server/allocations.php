@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
@@ -54,7 +55,9 @@ return function (RouteCollection $routes): void {
             return (new \App\Controllers\User\Server\ServerAllocationController())->getServerAllocations($request, (int) $server['id']);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-allocations'
     );
 
     // Delete allocation from server
@@ -77,7 +80,9 @@ return function (RouteCollection $routes): void {
             return (new \App\Controllers\User\Server\ServerAllocationController())->deleteAllocation($request, (int) $server['id'], (int) $allocationId);
         },
         'uuidShort',
-        ['DELETE']
+        ['DELETE'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-allocations'
     );
 
     // Set allocation as primary
@@ -100,7 +105,9 @@ return function (RouteCollection $routes): void {
             return (new \App\Controllers\User\Server\ServerAllocationController())->setPrimaryAllocation($request, (int) $server['id'], (int) $allocationId);
         },
         'uuidShort',
-        ['POST']
+        ['POST'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-server-allocations'
     );
 
     // Get available allocations for selection
@@ -122,7 +129,9 @@ return function (RouteCollection $routes): void {
             return (new \App\Controllers\User\Server\ServerAllocationController())->getAvailableAllocations($request, (int) $server['id']);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-allocations'
     );
 
     // Auto-allocate free allocations to server
@@ -146,6 +155,8 @@ return function (RouteCollection $routes): void {
             return (new \App\Controllers\User\Server\ServerAllocationController())->autoAllocate($request, (int) $server['id']);
         },
         'uuidShort',
-        ['POST']
+        ['POST'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-server-allocations'
     );
 };

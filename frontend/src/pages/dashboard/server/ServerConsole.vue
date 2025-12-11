@@ -1119,6 +1119,10 @@ const breadcrumbs = computed(() => [
     { text: t('common.console'), isCurrent: true, href: `/server/${route.params.uuidShort}` },
 ]);
 
+function getAxiosErrorMessage(err: unknown, fallback: string): string {
+    return axios.isAxiosError(err) && err.response?.data?.message ? err.response.data.message : fallback;
+}
+
 // Wings connection status display
 const wingsConnectionInfo = computed(() => {
     const pingMs = wingsWebSocket.ping?.value;
@@ -1988,11 +1992,11 @@ async function fetchServer(): Promise<void> {
         if (response.data.success) {
             server.value = response.data.data;
         } else {
-            toast.error(t('serverConsole.failedToFetch'));
+            toast.error(response.data.message || t('serverConsole.failedToFetch'));
             router.push('/dashboard');
         }
-    } catch {
-        toast.error(t('serverConsole.failedToFetch'));
+    } catch (err) {
+        toast.error(getAxiosErrorMessage(err, t('serverConsole.failedToFetch')));
         router.push('/dashboard');
     } finally {
         loading.value = false;

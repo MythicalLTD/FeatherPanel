@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
@@ -55,7 +56,9 @@ return function (RouteCollection $routes): void {
             return (new ServerScheduleController())->getSchedules($request, $server['uuid']);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-schedules'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -76,7 +79,9 @@ return function (RouteCollection $routes): void {
             return (new ServerScheduleController())->createSchedule($request, $server['uuid']);
         },
         'uuidShort',
-        ['POST']
+        ['POST'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-schedules'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -120,7 +125,9 @@ return function (RouteCollection $routes): void {
             return (new ServerScheduleController())->updateSchedule($request, $server['uuid'], (int) $scheduleId);
         },
         'uuidShort',
-        ['PUT']
+        ['PUT'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-schedules'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -164,7 +171,9 @@ return function (RouteCollection $routes): void {
             return (new ServerScheduleController())->toggleScheduleStatus($request, $server['uuid'], (int) $scheduleId);
         },
         'uuidShort',
-        ['POST']
+        ['POST'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-schedules'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -185,7 +194,9 @@ return function (RouteCollection $routes): void {
             return (new ServerScheduleController())->getActiveSchedules($request, $server['uuid']);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-schedules'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -201,6 +212,8 @@ return function (RouteCollection $routes): void {
             return (new ServerScheduleController())->getDueSchedules($request, $uuidShort);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-schedules'
     );
 };

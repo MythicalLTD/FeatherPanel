@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
@@ -54,6 +55,8 @@ return function (RouteCollection $routes): void {
             return (new ServerActivityController())->getServerActivities($request, (int) $server['id']);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-activities-by-server'    // Default: Admin can override in ratelimit.json
     );
 };

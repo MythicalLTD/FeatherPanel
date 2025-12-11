@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
@@ -54,7 +55,9 @@ return function (RouteCollection $routes): void {
             return (new ServerDatabaseController())->getServerDatabases($request, $server['uuid']);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-databases'
     );
 
     // Create a new database for a server
@@ -76,7 +79,9 @@ return function (RouteCollection $routes): void {
             return (new ServerDatabaseController())->createServerDatabase($request, $server['uuid']);
         },
         'uuidShort',
-        ['POST']
+        ['POST'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-server-databases'
     );
 
     // Get available database hosts for a server (MUST be before {databaseId} routes)
@@ -98,7 +103,9 @@ return function (RouteCollection $routes): void {
             return (new ServerDatabaseController())->getAvailableDatabaseHosts($request, $server['uuid']);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-databases'
     );
 
     // Get a specific database for a server
@@ -125,7 +132,9 @@ return function (RouteCollection $routes): void {
             return (new ServerDatabaseController())->getServerDatabase($request, $server['uuid'], (int) $databaseId);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-databases'
     );
 
     // Update a database for a server
@@ -152,7 +161,9 @@ return function (RouteCollection $routes): void {
             return (new ServerDatabaseController())->updateServerDatabase($request, $server['uuid'], (int) $databaseId);
         },
         'uuidShort',
-        ['PATCH']
+        ['PATCH'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-databases'
     );
 
     // Delete a database for a server
@@ -206,7 +217,9 @@ return function (RouteCollection $routes): void {
             return (new ServerDatabaseController())->testDatabaseHostConnection($request, $server['uuid'], (int) $databaseHostId);
         },
         'uuidShort',
-        ['POST']
+        ['POST'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-server-databases'
     );
 
     // Check if phpMyAdmin is installed
@@ -228,7 +241,9 @@ return function (RouteCollection $routes): void {
             return (new ServerDatabaseController())->checkPhpMyAdminInstalled($request, $server['uuid']);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-databases'
     );
 
     // Generate phpMyAdmin signon token
@@ -251,6 +266,8 @@ return function (RouteCollection $routes): void {
             return (new ServerDatabaseController())->generatePhpMyAdminToken($request, $server['uuid'], (int) $databaseId);
         },
         'uuidShort',
-        ['POST']
+        ['POST'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-databases'
     );
 };

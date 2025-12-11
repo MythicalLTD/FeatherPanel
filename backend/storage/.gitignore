@@ -8,3 +8,4 @@
 /caches/other/
 .env
 .env-copy
+config/ratelimit.json

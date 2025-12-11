@@ -2130,6 +2130,10 @@ const breadcrumbs = computed(() => [
     { text: t('serverFiles.title'), isCurrent: true, href: `/server/${route.params.uuidShort}/files` },
 ]);
 
+function getAxiosErrorMessage(err: unknown, fallback: string): string {
+    return axios.isAxiosError(err) && err.response?.data?.message ? err.response.data.message : fallback;
+}
+
 const pathSegments = computed(() => {
     return currentPath.value.split('/').filter((segment) => segment.length > 0);
 });
@@ -2597,11 +2601,11 @@ async function fetchServer(): Promise<void> {
         if (response.data.success) {
             server.value = response.data.data;
         } else {
-            toast.error(t('serverFiles.failedToFetchServer'));
+            toast.error(response.data.message || t('serverFiles.failedToFetchServer'));
             router.push('/dashboard');
         }
-    } catch {
-        toast.error(t('serverFiles.failedToFetchServer'));
+    } catch (err) {
+        toast.error(getAxiosErrorMessage(err, t('serverFiles.failedToFetchServer')));
         router.push('/dashboard');
     }
 }

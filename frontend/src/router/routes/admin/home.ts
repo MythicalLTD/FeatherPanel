@@ -103,6 +103,11 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/Settings.vue'),
     },
     {
+        path: '/admin/rate-limits',
+        name: 'AdminRateLimits',
+        component: () => import('@/pages/admin/RateLimits.vue'),
+    },
+    {
         path: '/admin/mail-templates',
         name: 'AdminMailTemplates',
         component: () => import('@/pages/admin/MailTemplates.vue'),

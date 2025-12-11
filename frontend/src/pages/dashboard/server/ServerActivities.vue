@@ -794,8 +794,12 @@ async function fetchActivities(page = pagination.value.current_page) {
             from: p.from ?? 0,
             to: p.to ?? 0,
         };
-    } catch {
-        toast.error(t('serverActivities.failedToFetch'));
+    } catch (err) {
+        const message =
+            axios.isAxiosError(err) && err.response?.data?.message
+                ? err.response.data.message
+                : t('serverActivities.failedToFetch');
+        toast.error(message);
     } finally {
         loading.value = false;
     }

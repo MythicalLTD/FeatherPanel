@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
@@ -55,7 +56,9 @@ return function (RouteCollection $routes): void {
             return (new ServerBackupController())->getBackups($request, $server['uuid']);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-backups'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -76,7 +79,9 @@ return function (RouteCollection $routes): void {
             return (new ServerBackupController())->createBackup($request, $server['uuid']);
         },
         'uuidShort',
-        ['POST']
+        ['POST'],
+        Rate::perMinute(2), // Default: Admin can override in ratelimit.json
+        'user-server-backups'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -98,7 +103,9 @@ return function (RouteCollection $routes): void {
             return (new ServerBackupController())->getBackup($request, $server['uuid'], $backupUuid);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-backups'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -120,7 +127,9 @@ return function (RouteCollection $routes): void {
             return (new ServerBackupController())->restoreBackup($request, $server['uuid'], $backupUuid);
         },
         'uuidShort',
-        ['POST']
+        ['POST'],
+        Rate::perMinute(1), // Default: Admin can override in ratelimit.json
+        'user-server-backups'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -142,7 +151,9 @@ return function (RouteCollection $routes): void {
             return (new ServerBackupController())->deleteBackup($request, $server['uuid'], $backupUuid);
         },
         'uuidShort',
-        ['DELETE']
+        ['DELETE'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-backups'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -164,7 +175,9 @@ return function (RouteCollection $routes): void {
             return (new ServerBackupController())->getBackupDownloadUrl($request, $server['uuid'], $backupUuid);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-backups'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -186,7 +199,9 @@ return function (RouteCollection $routes): void {
             return (new ServerBackupController())->lockBackup($request, $server['uuid'], $backupUuid);
         },
         'uuidShort',
-        ['POST']
+        ['POST'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-backups'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -208,6 +223,8 @@ return function (RouteCollection $routes): void {
             return (new ServerBackupController())->unlockBackup($request, $server['uuid'], $backupUuid);
         },
         'uuidShort',
-        ['POST']
+        ['POST'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-backups'
     );
 };

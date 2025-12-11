@@ -611,7 +611,7 @@ async function fetchSubusers(page = 1) {
             };
         }
     } catch (error) {
-        toast.error(t('serverSubusers.failedToFetch'));
+        toast.error(getErrorMessage(error, t('serverSubusers.failedToFetch')));
         console.error('Error fetching subusers:', error);
     } finally {
         loading.value = false;

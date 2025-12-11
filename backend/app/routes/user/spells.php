@@ -31,6 +31,7 @@
 use App\App;
 use App\Chat\Realm;
 use App\Chat\Spell;
+use RateLimit\Rate;
 use App\Chat\SpellVariable;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -47,7 +48,9 @@ return function (RouteCollection $routes): void {
 
             return ApiResponse::success(['realms' => $realms], 'Realms fetched successfully', 200);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-spells'
     );
 
     // Get spells (optionally filtered by realm)
@@ -81,7 +84,9 @@ return function (RouteCollection $routes): void {
 
             return ApiResponse::success(['spells' => array_values($spells)], 'Spells fetched successfully', 200);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-spells'
     );
 
     // Get spell details with variables
@@ -107,6 +112,8 @@ return function (RouteCollection $routes): void {
                 'variables' => $variables,
             ], 'Spell details fetched successfully', 200);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-spells'
     );
 };

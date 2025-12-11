@@ -682,7 +682,11 @@ async function saveServerInfo(): Promise<void> {
         }
     } catch (err) {
         console.error('Error updating server:', err);
-        toast.error(t('serverSettings.failedToUpdateServer'));
+        const message =
+            axios.isAxiosError(err) && err.response?.data?.message
+                ? err.response.data.message
+                : t('serverSettings.failedToUpdateServer');
+        toast.error(message);
     } finally {
         saving.value = false;
     }

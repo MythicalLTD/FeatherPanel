@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
@@ -53,7 +54,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new ApiClientController())->createApiClient($request);
         },
-        ['POST']
+        ['POST'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-api-clients'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -83,7 +86,9 @@ return function (RouteCollection $routes): void {
 
             return (new ApiClientController())->updateApiClient($request, $id);
         },
-        ['PUT']
+        ['PUT'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-api-clients'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -98,7 +103,9 @@ return function (RouteCollection $routes): void {
 
             return (new ApiClientController())->deleteApiClient($request, $id);
         },
-        ['DELETE']
+        ['DELETE'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-api-clients'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -113,7 +120,9 @@ return function (RouteCollection $routes): void {
 
             return (new ApiClientController())->regenerateApiKeys($request, $id);
         },
-        ['POST']
+        ['POST'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-api-clients'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -123,7 +132,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new ApiClientController())->getApiClientActivities($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-api-clients'
     );
 
     App::getInstance(true)->registerApiRoute(
@@ -133,6 +144,8 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new ApiClientController())->validateApiClient($request);
         },
-        ['POST']
+        ['POST'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-api-clients'
     );
 };

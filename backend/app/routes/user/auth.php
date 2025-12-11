@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use Symfony\Component\HttpFoundation\Request;
 use App\Controllers\User\Auth\LoginController;
 use Symfony\Component\Routing\RouteCollection;
@@ -48,7 +49,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new RegisterController())->put($request);
         },
-        ['PUT']
+        ['PUT'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-auth'
     );
 
     // PUT (login)
@@ -59,7 +62,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new LoginController())->put($request);
         },
-        ['PUT']
+        ['PUT'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-auth'
     );
 
     // PUT (forgot password)
@@ -70,7 +75,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new ForgotPasswordController())->put($request);
         },
-        ['PUT']
+        ['PUT'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-auth'
     );
 
     // GET (reset password)
@@ -81,7 +88,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new ResetPasswordController())->get($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-auth'
     );
 
     // PUT (reset password)
@@ -92,7 +101,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new ResetPasswordController())->put($request);
         },
-        ['PUT']
+        ['PUT'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-auth'
     );
 
     // PUT (two factor)
@@ -103,7 +114,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new TwoFactorController())->put($request);
         },
-        ['PUT']
+        ['PUT'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-auth'
     );
 
     // GET (two factor)
@@ -124,7 +137,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new AuthLogoutController())->get($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-auth'
     );
 
     App::getInstance(true)->registerApiRoute(
@@ -134,7 +149,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new TwoFactorController())->post($request);
         },
-        ['POST']
+        ['POST'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-auth'
     );
 
     // Discord OAuth routes
@@ -155,7 +172,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new DiscordController())->callback($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-auth-discord'
     );
 
     App::getInstance(true)->registerApiRoute(
@@ -165,7 +184,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new DiscordController())->link($request);
         },
-        ['PUT']
+        ['PUT'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-auth-discord'
     );
 
     App::getInstance(true)->registerApiRoute(
@@ -175,6 +196,8 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new DiscordController())->unlink($request);
         },
-        ['DELETE']
+        ['DELETE'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-auth-discord'
     );
 };

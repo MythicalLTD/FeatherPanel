@@ -222,6 +222,10 @@ const breadcrumbs = computed(() => [
     { text: t('common.logs'), isCurrent: true, href: `/server/${route.params.uuidShort}/logs/install` },
 ]);
 
+function getAxiosErrorMessage(err: unknown, fallback: string): string {
+    return axios.isAxiosError(err) && err.response?.data?.message ? err.response.data.message : fallback;
+}
+
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect(router);
     await settingsStore.fetchSettings();
@@ -251,11 +255,11 @@ async function fetchServer(): Promise<void> {
         if (response.data.success) {
             server.value = response.data.data;
         } else {
-            toast.error(t('serverInstallLogs.failedToFetchServer'));
+            toast.error(response.data.message || t('serverInstallLogs.failedToFetchServer'));
             router.push('/dashboard');
         }
-    } catch {
-        toast.error(t('serverInstallLogs.failedToFetchServer'));
+    } catch (err) {
+        toast.error(getAxiosErrorMessage(err, t('serverInstallLogs.failedToFetchServer')));
         router.push('/dashboard');
     }
 }
@@ -281,7 +285,7 @@ async function fetchLogs(): Promise<void> {
         }
     } catch (error) {
         console.error('Error fetching install logs:', error);
-        toast.error(t('serverInstallLogs.failedToFetchLogs'));
+        toast.error(getAxiosErrorMessage(error, t('serverInstallLogs.failedToFetchLogs')));
     } finally {
         loading.value = false;
     }

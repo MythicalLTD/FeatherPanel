@@ -19,3 +19,5 @@ count-results/
 tis/
 pelican/
 fdocs/
+backend/app/storage/config/ratelimit.json
+backend/storage/config/ratelimit.json

@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
@@ -43,7 +44,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new UserSshKeyController())->getUserSshKeys($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-ssh-keys'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -68,7 +71,9 @@ return function (RouteCollection $routes): void {
 
             return (new UserSshKeyController())->getUserSshKey($request, $id);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-ssh-keys'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -83,7 +88,9 @@ return function (RouteCollection $routes): void {
 
             return (new UserSshKeyController())->updateUserSshKey($request, $id);
         },
-        ['PUT']
+        ['PUT'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-ssh-keys'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -98,7 +105,9 @@ return function (RouteCollection $routes): void {
 
             return (new UserSshKeyController())->deleteUserSshKey($request, $id);
         },
-        ['DELETE']
+        ['DELETE'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-ssh-keys'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -128,7 +137,9 @@ return function (RouteCollection $routes): void {
 
             return (new UserSshKeyController())->hardDeleteUserSshKey($request, $id);
         },
-        ['DELETE']
+        ['DELETE'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-ssh-keys'
     );
 
     App::getInstance(true)->registerAuthRoute(
@@ -148,6 +159,8 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new UserSshKeyController())->getUserSshKeyActivities($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-ssh-keys'
     );
 };

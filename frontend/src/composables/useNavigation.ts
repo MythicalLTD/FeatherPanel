@@ -62,6 +62,7 @@ import {
     BookOpen,
     Mail,
     Ticket,
+    Gauge,
 } from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
 import Permissions from '@/lib/permissions';
@@ -588,6 +589,17 @@ export function useNavigation() {
                 url: '/admin/settings',
                 icon: Settings,
                 isActive: currentPath.value.startsWith('/admin/settings'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_SETTINGS_VIEW,
+                group: 'system',
+            },
+            {
+                id: 'admin-rate-limits',
+                name: 'Rate Limits',
+                title: 'Rate Limits',
+                url: '/admin/rate-limits',
+                icon: Gauge,
+                isActive: currentPath.value.startsWith('/admin/rate-limits'),
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_SETTINGS_VIEW,
                 group: 'system',

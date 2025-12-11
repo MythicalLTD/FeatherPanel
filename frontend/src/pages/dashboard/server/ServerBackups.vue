@@ -683,6 +683,10 @@ const breadcrumbs = computed(() => [
     { text: t('serverBackups.title'), isCurrent: true, href: `/server/${route.params.uuidShort}/backups` },
 ]);
 
+function getAxiosErrorMessage(err: unknown, fallback: string): string {
+    return axios.isAxiosError(err) && err.response?.data?.message ? err.response.data.message : fallback;
+}
+
 onMounted(async () => {
     // Wait for permission check to complete
     while (permissionsLoading.value) {
@@ -743,8 +747,8 @@ async function fetchBackups(page = pagination.value.current_page) {
             from: p.from,
             to: p.to,
         };
-    } catch {
-        toast.error(t('serverBackups.failedToFetch'));
+    } catch (err) {
+        toast.error(getAxiosErrorMessage(err, t('serverBackups.failedToFetch')));
     } finally {
         loading.value = false;
     }
@@ -785,8 +789,8 @@ async function createBackup() {
 
         // Refresh list
         await fetchBackups();
-    } catch {
-        toast.error(t('serverBackups.createFailed'));
+    } catch (err) {
+        toast.error(getAxiosErrorMessage(err, t('serverBackups.createFailed')));
     } finally {
         creatingBackup.value = false;
     }
@@ -855,8 +859,8 @@ async function downloadBackup(backup: BackupItem) {
         // Open download URL in new tab
         window.open(data.data.download_url, '_blank');
         toast.success(t('serverBackups.downloadSuccess'));
-    } catch {
-        toast.error(t('serverBackups.downloadFailed'));
+    } catch (err) {
+        toast.error(getAxiosErrorMessage(err, t('serverBackups.downloadFailed')));
     }
 }
 
@@ -936,8 +940,8 @@ async function lockBackup(backup: BackupItem) {
 
             toast.success(t('serverBackups.lockSuccess'));
             await fetchBackups();
-        } catch {
-            toast.error(t('serverBackups.lockFailed'));
+        } catch (err) {
+            toast.error(getAxiosErrorMessage(err, t('serverBackups.lockFailed')));
         } finally {
             loading.value = false;
         }
@@ -966,8 +970,8 @@ async function unlockBackup(backup: BackupItem) {
 
             toast.success(t('serverBackups.unlockSuccess'));
             await fetchBackups();
-        } catch {
-            toast.error(t('serverBackups.unlockFailed'));
+        } catch (err) {
+            toast.error(getAxiosErrorMessage(err, t('serverBackups.unlockFailed')));
         } finally {
             loading.value = false;
         }

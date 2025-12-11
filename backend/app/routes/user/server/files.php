@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
@@ -49,7 +50,9 @@ return function (RouteCollection $routes): void {
             return (new ServerFilesController())->getFiles($request, $uuidShort);
         },
         'uuidShort', // Pass the server UUID for middleware
-        ['GET']
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-server-files'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -66,7 +69,9 @@ return function (RouteCollection $routes): void {
             return (new ServerFilesController())->getFile($request, $uuidShort);
         },
         'uuidShort', // Pass the server UUID for middleware
-        ['GET']
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-server-files'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -105,7 +110,9 @@ return function (RouteCollection $routes): void {
             return (new ServerFilesController())->deleteFiles($request, $uuidShort);
         },
         'uuidShort', // Pass the server UUID for middleware
-        ['DELETE']
+        ['DELETE'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-files'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -131,7 +138,9 @@ return function (RouteCollection $routes): void {
             return (new ServerFilesController())->createDirectory($request, $uuidShort);
         },
         'uuidShort', // Pass the server UUID for middleware
-        ['POST']
+        ['POST'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-files'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -144,7 +153,9 @@ return function (RouteCollection $routes): void {
             return (new ServerFilesController())->compressFiles($request, $uuidShort);
         },
         'uuidShort', // Pass the server UUID for middleware
-        ['POST']
+        ['POST'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-server-files'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -157,7 +168,9 @@ return function (RouteCollection $routes): void {
             return (new ServerFilesController())->decompressArchive($request, $uuidShort);
         },
         'uuidShort', // Pass the server UUID for middleware
-        ['POST']
+        ['POST'],
+        Rate::perMinute(20), // Default: Admin can override in ratelimit.json
+        'user-server-files'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -170,7 +183,9 @@ return function (RouteCollection $routes): void {
             return (new ServerFilesController())->changeFilePermissions($request, $uuidShort);
         },
         'uuidShort', // Pass the server UUID for middleware
-        ['POST']
+        ['POST'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-server-files'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -196,7 +211,9 @@ return function (RouteCollection $routes): void {
             return (new ServerFilesController())->getDownloadsList($request, $uuidShort);
         },
         'uuidShort', // Pass the server UUID for middleware
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-files'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -214,7 +231,9 @@ return function (RouteCollection $routes): void {
             return (new ServerFilesController())->deletePullProcess($request, $uuidShort, $pullId);
         },
         'uuidShort', // Pass the server UUID for middleware
-        ['DELETE']
+        ['DELETE'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-files'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -227,7 +246,9 @@ return function (RouteCollection $routes): void {
             return (new ServerFilesController())->uploadFile($request, $uuidShort);
         },
         'uuidShort', // Pass the server UUID for middleware
-        ['POST']
+        ['POST'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-files'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -240,6 +261,8 @@ return function (RouteCollection $routes): void {
             return (new ServerFilesController())->downloadFile($request, $uuidShort);
         },
         'uuidShort', // Pass the server UUID for middleware
-        ['GET']
+        ['GET'],
+        Rate::perMinute(20), // Default: Admin can override in ratelimit.json
+        'user-server-files'
     );
 };

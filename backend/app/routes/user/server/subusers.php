@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
@@ -120,7 +121,9 @@ return function (RouteCollection $routes): void {
             return (new \App\Controllers\User\Server\SubuserController())->getSubusersWithDetails($request, $server['uuid']);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-subusers'
     );
 
     // Search for users to add as subusers (MUST be before parameterized routes)
@@ -142,7 +145,9 @@ return function (RouteCollection $routes): void {
             return (new \App\Controllers\User\Server\SubuserController())->searchUsers($request, $server['uuid']);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-subusers'
     );
 
     // Get a specific subuser
@@ -165,7 +170,9 @@ return function (RouteCollection $routes): void {
             return (new \App\Controllers\User\Server\SubuserController())->getSubuser($request, $server['uuid'], (int) $subuserId);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-subusers'
     );
 
     // Delete a subuser
@@ -234,6 +241,8 @@ return function (RouteCollection $routes): void {
             return (new \App\Controllers\User\Server\SubuserController())->updateSubuser($request, $server['uuid'], (int) $subuserId);
         },
         'uuidShort',
-        ['PATCH']
+        ['PATCH'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-subusers'
     );
 };

@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Chat\Server;
 use App\Helpers\ApiResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -54,7 +55,9 @@ return function (RouteCollection $routes): void {
             return (new SubdomainController())->index($request, $server);
         },
         'uuidShort',
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-server-subdomains'
     );
 
     App::getInstance(true)->registerServerRoute(
@@ -97,6 +100,8 @@ return function (RouteCollection $routes): void {
             return (new SubdomainController())->delete($request, $server, $uuid);
         },
         'uuidShort',
-        ['DELETE']
+        ['DELETE'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-server-subdomains'
     );
 };

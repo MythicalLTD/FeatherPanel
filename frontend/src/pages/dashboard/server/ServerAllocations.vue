@@ -666,6 +666,10 @@ const breadcrumbs = computed(() => [
     { text: t('common.allocations'), isCurrent: true, href: `/server/${route.params.uuidShort}/allocations` },
 ]);
 
+function getAxiosErrorMessage(err: unknown, fallback: string): string {
+    return axios.isAxiosError(err) && err.response?.data?.message ? err.response.data.message : fallback;
+}
+
 // Methods
 async function fetchAllocations() {
     try {
@@ -680,7 +684,7 @@ async function fetchAllocations() {
         serverInfo.value = data.data.server;
         allocations.value = data.data.allocations;
     } catch (error) {
-        toast.error(t('serverAllocations.failedToFetch'));
+        toast.error(getAxiosErrorMessage(error, t('serverAllocations.failedToFetch')));
         console.error('Error fetching allocations:', error);
     } finally {
         loading.value = false;
@@ -713,7 +717,7 @@ async function deleteAllocationConfirm(allocationId: number) {
         await fetchAllocations();
         showConfirmDialog.value = false;
     } catch (error) {
-        toast.error(t('serverAllocations.failedToDelete'));
+        toast.error(getAxiosErrorMessage(error, t('serverAllocations.failedToDelete')));
         console.error('Error deleting allocation:', error);
     } finally {
         deletingAllocation.value = null;
@@ -749,7 +753,7 @@ async function setPrimaryAllocationConfirm(allocationId: number) {
         await fetchAllocations();
         showConfirmDialog.value = false;
     } catch (error) {
-        toast.error(t('serverAllocations.failedToSetPrimary'));
+        toast.error(getAxiosErrorMessage(error, t('serverAllocations.failedToSetPrimary')));
         console.error('Error setting primary allocation:', error);
     } finally {
         settingPrimary.value = null;
@@ -818,7 +822,7 @@ async function fetchAvailableAllocations() {
             }
         }
     } catch (error) {
-        toast.error(t('serverAllocations.failedToFetchAvailable'));
+        toast.error(getAxiosErrorMessage(error, t('serverAllocations.failedToFetchAvailable')));
         console.error('Error fetching available allocations:', error);
     } finally {
         loadingAvailableAllocations.value = false;
@@ -875,7 +879,7 @@ async function performAutoAllocate(allocationId?: number | null) {
         // Refresh data to show new allocations
         await fetchAllocations();
     } catch (error) {
-        toast.error(t('serverAllocations.failedToAutoAllocate'));
+        toast.error(getAxiosErrorMessage(error, t('serverAllocations.failedToAutoAllocate')));
         console.error('Error auto-allocating:', error);
     } finally {
         autoAllocating.value = false;

@@ -775,6 +775,10 @@ const breadcrumbs = computed(() => [
     },
 ]);
 
+function getAxiosErrorMessage(err: unknown, fallback: string): string {
+    return axios.isAxiosError(err) && err.response?.data?.message ? err.response.data.message : fallback;
+}
+
 const sortedTasks = computed(() => {
     return [...tasks.value].sort((a, b) => a.sequence_id - b.sequence_id);
 });
@@ -837,8 +841,8 @@ async function fetchTasks(page = pagination.value.current_page) {
         } else {
             toast.error(data.message || t('serverTasks.failedToFetch'));
         }
-    } catch {
-        toast.error(t('serverTasks.failedToFetch'));
+    } catch (error) {
+        toast.error(getAxiosErrorMessage(error, t('serverTasks.failedToFetch')));
     } finally {
         loading.value = false;
     }

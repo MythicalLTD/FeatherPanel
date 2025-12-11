@@ -30,6 +30,7 @@
 
 namespace App;
 
+use RateLimit\Rate;
 use App\Chat\Database;
 use App\Helpers\XChaCha20;
 use Random\RandomException;
@@ -37,6 +38,7 @@ use App\Helpers\ApiResponse;
 use App\Config\ConfigFactory;
 use App\Logger\LoggerFactory;
 use App\Config\ConfigInterface;
+use App\Helpers\RateLimitConfig;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\AdminMiddleware;
 use App\Middleware\WingsMiddleware;
@@ -57,6 +59,7 @@ class App
     public Database $db;
     public RouteCollection $routes;
     public array $middleware = [];
+    private ?\Redis $redisConnection = null;
 
     public function __construct(bool $softBoot, bool $isCron = false, bool $isCli = false)
     {
@@ -95,20 +98,40 @@ class App
         }
 
         /**
-         * @global \App\Plugins\PluginManager $pluginManager
-         * @global \App\Plugins\Events\PluginEvent $eventManager
-         */
-        global $pluginManager, $eventManager;
-
-        /**
          * Redis.
          */
         $redis = new FastChat\Redis();
         if (!$redis->testConnection()) {
             define('REDIS_ENABLED', false);
+            $this->redisConnection = null;
         } else {
             define('REDIS_ENABLED', true);
+            // Initialize Redis connection for rate limiting
+            try {
+                $this->redisConnection = new \Redis();
+                $host = $_ENV['REDIS_HOST'] ?? '127.0.0.1';
+                $port = (int) ($_ENV['REDIS_PORT'] ?? 6379);
+                $password = $_ENV['REDIS_PASSWORD'] ?? null;
+
+                if ($password) {
+                    $this->redisConnection->connect($host, $port);
+                    $this->redisConnection->auth($password);
+                } else {
+                    $this->redisConnection->connect($host, $port);
+                }
+            } catch (\Exception $e) {
+                self::getLogger()->error('Failed to initialize Redis connection for rate limiting: ' . $e->getMessage());
+                $this->redisConnection = null;
+            }
+            $redis = $this->redisConnection;
         }
+
+        /**
+         * @global \App\Plugins\PluginManager $pluginManager
+         * @global \App\Plugins\Events\PluginEvent $eventManager
+         * @global \Redis $redis
+         */
+        global $pluginManager, $eventManager, $redis;
 
         /**
          * Database Connection.
@@ -333,19 +356,44 @@ class App
      * @param callable $controller The controller to handle the request
      * @param Permissions|string $permission The permission node required to access this route
      * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
+     * @param Rate|null $rateLimit Optional default rate limit for this route (e.g., Rate::perMinute(60))
+     *                             Admin can override this in ratelimit.json
+     * @param string|null $rateLimitNamespace Optional default namespace for rate limiting (default: 'rate_limit')
      */
-    public function registerAdminRoute(RouteCollection $routes, string $name, string $path, callable $controller, Permissions | string $permission, array $methods = ['GET']): void
-    {
+    public function registerAdminRoute(
+        RouteCollection $routes,
+        string $name,
+        string $path,
+        callable $controller,
+        Permissions | string $permission,
+        array $methods = ['GET'],
+        ?Rate $rateLimit = null,
+        ?string $rateLimitNamespace = null,
+    ): void {
+        $middleware = [
+            AuthMiddleware::class,
+            AdminMiddleware::class,
+        ];
+
+        $routeAttributes = [
+            '_controller' => $controller,
+            '_middleware' => $middleware,
+            '_permission' => $permission,
+        ];
+
+        // Get rate limit from config (admin can override) or use default
+        $rateLimitConfig = $this->getRouteRateLimit($name, $rateLimit, $rateLimitNamespace);
+
+        // Add rate limiting if configured
+        if ($rateLimitConfig !== null) {
+            $middleware[] = Middleware\RateLimitMiddleware::class;
+            $routeAttributes['_middleware'] = $middleware;
+            $routeAttributes['_rate_limit'] = $rateLimitConfig;
+        }
+
         $routes->add($name, new Route(
             $path,
-            [
-                '_controller' => $controller,
-                '_middleware' => [
-                    AuthMiddleware::class,
-                    AdminMiddleware::class,
-                ],
-                '_permission' => $permission,
-            ],
+            $routeAttributes,
             [], // requirements
             [], // options
             '', // host
@@ -364,17 +412,41 @@ class App
      * @param string $path The URL path for the route (e.g. '/api/user/profile')
      * @param callable $controller The controller to handle the request
      * @param array $methods the HTTP methods allowed for this route (default: ['GET'])
+     * @param Rate|null $rateLimit Optional default rate limit for this route (e.g., Rate::perMinute(60))
+     *                             Admin can override this in ratelimit.json
+     * @param string|null $rateLimitNamespace Optional default namespace for rate limiting (default: 'rate_limit')
      *
      * This will automatically add the AuthMiddleware to the route, ensuring only authenticated users can access it
      */
-    public function registerAuthRoute(RouteCollection $routes, string $name, string $path, callable $controller, array $methods = ['GET']): void
-    {
+    public function registerAuthRoute(
+        RouteCollection $routes,
+        string $name,
+        string $path,
+        callable $controller,
+        array $methods = ['GET'],
+        ?Rate $rateLimit = null,
+        ?string $rateLimitNamespace = null,
+    ): void {
+        $middleware = [AuthMiddleware::class];
+
+        $routeAttributes = [
+            '_controller' => $controller,
+            '_middleware' => $middleware,
+        ];
+
+        // Get rate limit from config (admin can override) or use default
+        $rateLimitConfig = $this->getRouteRateLimit($name, $rateLimit, $rateLimitNamespace);
+
+        // Add rate limiting if configured
+        if ($rateLimitConfig !== null) {
+            $middleware[] = Middleware\RateLimitMiddleware::class;
+            $routeAttributes['_middleware'] = $middleware;
+            $routeAttributes['_rate_limit'] = $rateLimitConfig;
+        }
+
         $routes->add($name, new Route(
             $path,
-            [
-                '_controller' => $controller,
-                '_middleware' => [AuthMiddleware::class],
-            ],
+            $routeAttributes,
             [], // requirements
             [], // options
             '', // host
@@ -392,17 +464,43 @@ class App
      * @param string $name The name of the route
      * @param string $path The URL path for the route (e.g. '/api/server/data')
      * @param callable $controller The controller to handle the request
+     * @param string $serverShortUuid The server short UUID
      * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
+     * @param Rate|null $rateLimit Optional default rate limit for this route (e.g., Rate::perMinute(60))
+     *                             Admin can override this in ratelimit.json
+     * @param string|null $rateLimitNamespace Optional default namespace for rate limiting (default: 'rate_limit')
      */
-    public function registerServerRoute(RouteCollection $routes, string $name, string $path, callable $controller, string $serverShortUuid, array $methods = ['GET']): void
-    {
+    public function registerServerRoute(
+        RouteCollection $routes,
+        string $name,
+        string $path,
+        callable $controller,
+        string $serverShortUuid,
+        array $methods = ['GET'],
+        ?Rate $rateLimit = null,
+        ?string $rateLimitNamespace = null,
+    ): void {
+        $middleware = [AuthMiddleware::class, ServerMiddleware::class];
+
+        $routeAttributes = [
+            '_controller' => $controller,
+            '_middleware' => $middleware,
+            '_server' => $serverShortUuid,
+        ];
+
+        // Get rate limit from config (admin can override) or use default
+        $rateLimitConfig = $this->getRouteRateLimit($name, $rateLimit, $rateLimitNamespace);
+
+        // Add rate limiting if configured
+        if ($rateLimitConfig !== null) {
+            $middleware[] = Middleware\RateLimitMiddleware::class;
+            $routeAttributes['_middleware'] = $middleware;
+            $routeAttributes['_rate_limit'] = $rateLimitConfig;
+        }
+
         $routes->add($name, new Route(
             $path,
-            [
-                '_controller' => $controller,
-                '_middleware' => [AuthMiddleware::class, ServerMiddleware::class],
-                '_server' => $serverShortUuid,
-            ],
+            $routeAttributes,
             [], // requirements
             [], // options
             '', // host
@@ -421,15 +519,39 @@ class App
      * @param string $path The URL path for the route (e.g. '/api/public/data')
      * @param callable $controller The controller to handle the request
      * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
+     * @param Rate|null $rateLimit Optional default rate limit for this route (e.g., Rate::perMinute(60))
+     *                             Admin can override this in ratelimit.json
+     * @param string|null $rateLimitNamespace Optional default namespace for rate limiting (default: 'rate_limit')
      */
-    public function registerApiRoute(RouteCollection $routes, string $name, string $path, callable $controller, array $methods = ['GET']): void
-    {
+    public function registerApiRoute(
+        RouteCollection $routes,
+        string $name,
+        string $path,
+        callable $controller,
+        array $methods = ['GET'],
+        ?Rate $rateLimit = null,
+        ?string $rateLimitNamespace = null,
+    ): void {
+        $middleware = [];
+
+        $routeAttributes = [
+            '_controller' => $controller,
+            '_middleware' => $middleware,
+        ];
+
+        // Get rate limit from config (admin can override) or use default
+        $rateLimitConfig = $this->getRouteRateLimit($name, $rateLimit, $rateLimitNamespace);
+
+        // Add rate limiting if configured
+        if ($rateLimitConfig !== null) {
+            $middleware[] = Middleware\RateLimitMiddleware::class;
+            $routeAttributes['_middleware'] = $middleware;
+            $routeAttributes['_rate_limit'] = $rateLimitConfig;
+        }
+
         $routes->add($name, new Route(
             $path,
-            [
-                '_controller' => $controller,
-                '_middleware' => [],
-            ],
+            $routeAttributes,
             [], // requirements
             [], // options
             '', // host
@@ -448,15 +570,39 @@ class App
      * @param string $path The URL path for the route (e.g. '/api/wings/data')
      * @param callable $controller The controller to handle the request
      * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
+     * @param Rate|null $rateLimit Optional default rate limit for this route (e.g., Rate::perMinute(60))
+     *                             Admin can override this in ratelimit.json
+     * @param string|null $rateLimitNamespace Optional default namespace for rate limiting (default: 'rate_limit')
      */
-    public function registerWingsRoute(RouteCollection $routes, string $name, string $path, callable $controller, array $methods = ['GET']): void
-    {
+    public function registerWingsRoute(
+        RouteCollection $routes,
+        string $name,
+        string $path,
+        callable $controller,
+        array $methods = ['GET'],
+        ?Rate $rateLimit = null,
+        ?string $rateLimitNamespace = null,
+    ): void {
+        $middleware = [WingsMiddleware::class];
+
+        $routeAttributes = [
+            '_controller' => $controller,
+            '_middleware' => $middleware,
+        ];
+
+        // Get rate limit from config (admin can override) or use default
+        $rateLimitConfig = $this->getRouteRateLimit($name, $rateLimit, $rateLimitNamespace);
+
+        // Add rate limiting if configured
+        if ($rateLimitConfig !== null) {
+            $middleware[] = Middleware\RateLimitMiddleware::class;
+            $routeAttributes['_middleware'] = $middleware;
+            $routeAttributes['_rate_limit'] = $rateLimitConfig;
+        }
+
         $routes->add($name, new Route(
             $path,
-            [
-                '_controller' => $controller,
-                '_middleware' => [WingsMiddleware::class],
-            ],
+            $routeAttributes,
             [], // requirements
             [], // options
             '', // host
@@ -699,5 +845,280 @@ class App
         $baseUrl = sprintf('%s://%s', $protocol, $host);
 
         return rtrim($baseUrl, '/');
+    }
+
+    /**
+     * Get the Redis connection instance.
+     *
+     * @return \Redis|null The Redis connection or null if not available
+     */
+    public function getRedisConnection(): ?\Redis
+    {
+        return $this->redisConnection;
+    }
+
+    /**
+     * Get the rate limiter instance (for backward compatibility).
+     * Note: Rate limiters are now created per-route with specific rates.
+     *
+     * @return null Always returns null as rate limiters are created per-route
+     */
+    public function getRateLimiter(): ?object
+    {
+        // Rate limiters are now created per-route, so we return null here
+        // The middleware will create the rate limiter as needed
+        return null;
+    }
+
+    /**
+     * Register an admin route with rate limiting.
+     *
+     * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
+     * @param string $name The name of the route
+     * @param string $path The URL path for the route (e.g. '/api/admin/dashboard')
+     * @param callable $controller The controller to handle the request
+     * @param Permissions|string $permission The permission node required to access this route
+     * @param Rate|null $rateLimit The rate limit for this route (e.g., Rate::perMinute(60))
+     * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
+     * @param string|null $rateLimitNamespace Optional namespace for rate limiting (default: 'rate_limit')
+     */
+    public function registerAdminRouteWithRateLimit(
+        RouteCollection $routes,
+        string $name,
+        string $path,
+        callable $controller,
+        Permissions | string $permission,
+        ?Rate $rateLimit = null,
+        array $methods = ['GET'],
+        ?string $rateLimitNamespace = null,
+    ): void {
+        $middleware = [
+            AuthMiddleware::class,
+            AdminMiddleware::class,
+        ];
+
+        $routeAttributes = [
+            '_controller' => $controller,
+            '_middleware' => $middleware,
+            '_permission' => $permission,
+        ];
+
+        // Add rate limiting if configured
+        if ($rateLimit !== null) {
+            $middleware[] = Middleware\RateLimitMiddleware::class;
+            $routeAttributes['_middleware'] = $middleware;
+            $routeAttributes['_rate_limit'] = [
+                'rate' => $rateLimit,
+                'namespace' => $rateLimitNamespace ?? 'rate_limit',
+            ];
+        }
+
+        $routes->add($name, new Route(
+            $path,
+            $routeAttributes,
+            [], // requirements
+            [], // options
+            '', // host
+            [], // schemes
+            $methods
+        ));
+    }
+
+    /**
+     * Register an auth route with rate limiting.
+     *
+     * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
+     * @param string $name The name of the route
+     * @param string $path The URL path for the route (e.g. '/api/user/profile')
+     * @param callable $controller The controller to handle the request
+     * @param Rate|null $rateLimit The rate limit for this route (e.g., Rate::perMinute(60))
+     * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
+     * @param string|null $rateLimitNamespace Optional namespace for rate limiting (default: 'rate_limit')
+     */
+    public function registerAuthRouteWithRateLimit(
+        RouteCollection $routes,
+        string $name,
+        string $path,
+        callable $controller,
+        ?Rate $rateLimit = null,
+        array $methods = ['GET'],
+        ?string $rateLimitNamespace = null,
+    ): void {
+        $middleware = [AuthMiddleware::class];
+
+        $routeAttributes = [
+            '_controller' => $controller,
+            '_middleware' => $middleware,
+        ];
+
+        // Add rate limiting if configured
+        if ($rateLimit !== null) {
+            $middleware[] = Middleware\RateLimitMiddleware::class;
+            $routeAttributes['_middleware'] = $middleware;
+            $routeAttributes['_rate_limit'] = [
+                'rate' => $rateLimit,
+                'namespace' => $rateLimitNamespace ?? 'rate_limit',
+            ];
+        }
+
+        $routes->add($name, new Route(
+            $path,
+            $routeAttributes,
+            [], // requirements
+            [], // options
+            '', // host
+            [], // schemes
+            $methods
+        ));
+    }
+
+    /**
+     * Register a public API route with rate limiting.
+     *
+     * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
+     * @param string $name The name of the route
+     * @param string $path The URL path for the route (e.g. '/api/public/data')
+     * @param callable $controller The controller to handle the request
+     * @param Rate|null $rateLimit The rate limit for this route (e.g., Rate::perMinute(60))
+     * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
+     * @param string|null $rateLimitNamespace Optional namespace for rate limiting (default: 'rate_limit')
+     */
+    public function registerApiRouteWithRateLimit(
+        RouteCollection $routes,
+        string $name,
+        string $path,
+        callable $controller,
+        ?Rate $rateLimit = null,
+        array $methods = ['GET'],
+        ?string $rateLimitNamespace = null,
+    ): void {
+        $middleware = [];
+
+        $routeAttributes = [
+            '_controller' => $controller,
+            '_middleware' => $middleware,
+        ];
+
+        // Add rate limiting if configured
+        if ($rateLimit !== null) {
+            $middleware[] = Middleware\RateLimitMiddleware::class;
+            $routeAttributes['_middleware'] = $middleware;
+            $routeAttributes['_rate_limit'] = [
+                'rate' => $rateLimit,
+                'namespace' => $rateLimitNamespace ?? 'rate_limit',
+            ];
+        }
+
+        $routes->add($name, new Route(
+            $path,
+            $routeAttributes,
+            [], // requirements
+            [], // options
+            '', // host
+            [], // schemes
+            $methods
+        ));
+    }
+
+    /**
+     * Register a route with custom rate limiting configuration.
+     *
+     * This method allows you to register any route with flexible rate limiting options.
+     *
+     * @param RouteCollection $routes The Symfony RouteCollection instance to add the route to
+     * @param string $name The name of the route
+     * @param string $path The URL path for the route
+     * @param callable $controller The controller to handle the request
+     * @param array $middleware Array of middleware class names
+     * @param array $methods The HTTP methods allowed for this route (default: ['GET'])
+     * @param Rate|null $rateLimit The rate limit for this route (e.g., Rate::perMinute(60))
+     * @param string|null $rateLimitNamespace Optional namespace for rate limiting (default: 'rate_limit')
+     * @param string|null $rateLimitIdentifier Optional custom identifier for rate limiting (default: client IP)
+     * @param array $routeAttributes Additional route attributes (e.g., '_permission', '_server')
+     */
+    public function registerRouteWithRateLimit(
+        RouteCollection $routes,
+        string $name,
+        string $path,
+        callable $controller,
+        array $middleware = [],
+        array $methods = ['GET'],
+        ?Rate $rateLimit = null,
+        ?string $rateLimitNamespace = null,
+        ?string $rateLimitIdentifier = null,
+        array $routeAttributes = [],
+    ): void {
+        $routeAttributes['_controller'] = $controller;
+        $routeAttributes['_middleware'] = $middleware;
+
+        // Add rate limiting if configured
+        if ($rateLimit !== null) {
+            $middleware[] = Middleware\RateLimitMiddleware::class;
+            $routeAttributes['_middleware'] = $middleware;
+            $routeAttributes['_rate_limit'] = [
+                'rate' => $rateLimit,
+                'namespace' => $rateLimitNamespace ?? 'rate_limit',
+                'identifier' => $rateLimitIdentifier, // null means use client IP
+            ];
+        }
+
+        $routes->add($name, new Route(
+            $path,
+            $routeAttributes,
+            [], // requirements
+            [], // options
+            '', // host
+            [], // schemes
+            $methods
+        ));
+    }
+
+    /**
+     * Get rate limit configuration for a route.
+     * Rate limits are OPT-IN only - they must be explicitly configured in ratelimit.json.
+     * Developer defaults are only used to auto-populate the config file for admin visibility.
+     *
+     * @param string $routeName The route name
+     * @param Rate|null $defaultRate The default rate limit from developer (used for auto-population only)
+     * @param string|null $defaultNamespace The default namespace
+     *
+     * @return array|null Returns ['rate' => Rate, 'namespace' => string] or null if no rate limit configured
+     */
+    private function getRouteRateLimit(string $routeName, ?Rate $defaultRate = null, ?string $defaultNamespace = null): ?array
+    {
+        // Check if route exists in admin config
+        $config = RateLimitConfig::getRateLimit($routeName, null, $defaultNamespace);
+
+        // If route has config, use it
+        if ($config !== null) {
+            return $config;
+        }
+
+        // If route doesn't exist in config but has a default rate limit, auto-add it to config
+        // This ensures new routes automatically appear in the admin panel for configuration
+        // Routes are enabled by default if they have values (admin can disable individually)
+        if ($defaultRate !== null && !RateLimitConfig::routeExistsInConfig($routeName)) {
+            try {
+                // Convert Rate object to config format
+                $rateConfig = RateLimitConfig::rateToConfig($defaultRate);
+                if ($rateConfig) {
+                    $routeConfig = [
+                        ...$rateConfig,
+                        'namespace' => $defaultNamespace ?? 'rate_limit',
+                        // Don't set _enabled - routes with values are enabled by default
+                    ];
+
+                    // Auto-save to config file (silently fail if file is not writable)
+                    RateLimitConfig::updateRouteConfig($routeName, $routeConfig);
+                    RateLimitConfig::reloadConfig();
+                }
+            } catch (\Exception $e) {
+                // Log error but don't fail
+                self::getLogger()->warning('Failed to auto-add route to rate limit config: ' . $e->getMessage());
+            }
+        }
+
+        // Return null - rate limiting is disabled by default unless explicitly configured
+        return null;
     }
 }

@@ -220,6 +220,10 @@ const breadcrumbs = computed(() => [
     { text: t('common.logs'), isCurrent: true, href: `/server/${route.params.uuidShort}/logs` },
 ]);
 
+function getAxiosErrorMessage(err: unknown, fallback: string): string {
+    return axios.isAxiosError(err) && err.response?.data?.message ? err.response.data.message : fallback;
+}
+
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect(router);
     await settingsStore.fetchSettings();
@@ -249,11 +253,11 @@ async function fetchServer(): Promise<void> {
         if (response.data.success) {
             server.value = response.data.data;
         } else {
-            toast.error(t('serverLogs.failedToFetchServer'));
+            toast.error(response.data.message || t('serverLogs.failedToFetchServer'));
             router.push('/dashboard');
         }
-    } catch {
-        toast.error(t('serverLogs.failedToFetchServer'));
+    } catch (err) {
+        toast.error(getAxiosErrorMessage(err, t('serverLogs.failedToFetchServer')));
         router.push('/dashboard');
     }
 }
@@ -279,7 +283,7 @@ async function fetchLogs(): Promise<void> {
         }
     } catch (error) {
         console.error('Error fetching logs:', error);
-        toast.error(t('serverLogs.failedToFetchLogs'));
+        toast.error(getAxiosErrorMessage(error, t('serverLogs.failedToFetchLogs')));
     } finally {
         loading.value = false;
     }

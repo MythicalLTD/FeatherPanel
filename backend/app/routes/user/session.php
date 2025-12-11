@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\User\User\SessionController;
@@ -41,7 +42,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new SessionController())->get($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-session'
     );
     App::getInstance(true)->registerAuthRoute(
         $routes,
@@ -50,7 +53,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new SessionController())->put($request);
         },
-        ['PATCH']
+        ['PATCH'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-session'
     );
     App::getInstance(true)->registerAuthRoute(
         $routes,
@@ -59,7 +64,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new SessionController())->uploadAvatar($request);
         },
-        ['POST']
+        ['POST'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-session'
     );
     App::getInstance(true)->registerAuthRoute(
         $routes,
@@ -77,7 +84,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new SessionController())->updatePreferences($request);
         },
-        ['PATCH']
+        ['PATCH'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-session'
     );
     App::getInstance(true)->registerAuthRoute(
         $routes,
@@ -86,7 +95,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new SessionController())->getMails($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-session'
     );
     App::getInstance(true)->registerAuthRoute(
         $routes,
@@ -104,6 +115,8 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new \App\Controllers\User\Auth\DiscordController())->unlink($request);
         },
-        ['DELETE']
+        ['DELETE'],
+        Rate::perMinute(5), // Default: Admin can override in ratelimit.json
+        'user-auth-discord'
     );
 };

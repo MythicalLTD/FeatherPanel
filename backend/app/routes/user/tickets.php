@@ -29,6 +29,7 @@
  */
 
 use App\App;
+use RateLimit\Rate;
 use App\Helpers\ApiResponse;
 use App\Controllers\User\TicketsController;
 use Symfony\Component\HttpFoundation\Request;
@@ -43,7 +44,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new TicketsController())->index($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-tickets'
     );
 
     // PUT - PUT /api/user/tickets
@@ -65,7 +68,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new TicketsController())->getCategories($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-tickets'
     );
 
     // GET - GET /api/user/tickets/priorities (must come before /api/user/tickets/{uuid})
@@ -76,7 +81,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new TicketsController())->getPriorities($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-tickets'
     );
 
     // GET - GET /api/user/tickets/statuses (must come before /api/user/tickets/{uuid})
@@ -98,7 +105,9 @@ return function (RouteCollection $routes): void {
         function (Request $request) {
             return (new TicketsController())->getServers($request);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(60), // Default: Admin can override in ratelimit.json
+        'user-tickets'
     );
 
     // POST - POST /api/user/tickets/{uuid}/reply (must come before /api/user/tickets/{uuid})
@@ -130,7 +139,9 @@ return function (RouteCollection $routes): void {
 
             return (new TicketsController())->uploadAttachment($request, $uuid);
         },
-        ['POST']
+        ['POST'],
+        Rate::perMinute(10), // Default: Admin can override in ratelimit.json
+        'user-tickets'
     );
 
     // DELETE - DELETE /api/user/tickets/{uuid}/messages/{id} (must come before /api/user/tickets/{uuid})
@@ -182,6 +193,8 @@ return function (RouteCollection $routes): void {
 
             return (new TicketsController())->show($request, $uuid);
         },
-        ['GET']
+        ['GET'],
+        Rate::perMinute(30), // Default: Admin can override in ratelimit.json
+        'user-tickets'
     );
 };

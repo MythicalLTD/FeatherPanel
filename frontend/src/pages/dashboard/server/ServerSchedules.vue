@@ -796,6 +796,10 @@ const breadcrumbs = computed(() => [
     { text: t('serverSchedules.title'), isCurrent: true, href: `/server/${route.params.uuidShort}/schedules` },
 ]);
 
+function getAxiosErrorMessage(err: unknown, fallback: string): string {
+    return axios.isAxiosError(err) && err.response?.data?.message ? err.response.data.message : fallback;
+}
+
 onMounted(async () => {
     await fetchServer();
 
@@ -841,8 +845,8 @@ async function fetchSchedules(page = pagination.value.current_page) {
             from: p.from,
             to: p.to,
         };
-    } catch {
-        toast.error(t('serverSchedules.failedToFetch'));
+    } catch (error) {
+        toast.error(getAxiosErrorMessage(error, t('serverSchedules.failedToFetch')));
     } finally {
         loading.value = false;
     }
