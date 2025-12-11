@@ -201,3 +201,4 @@ class NodeStatusController
         return ApiResponse::success($responseData, 'Status data retrieved successfully', 200);
     }
 }
+

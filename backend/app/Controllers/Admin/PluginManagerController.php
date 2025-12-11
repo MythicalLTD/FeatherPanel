@@ -1591,8 +1591,8 @@ class PluginManagerController
         // Routes and Controllers are automatically registered from Routes/ and Controllers/ directories
         
         // Example: Listen to router ready event
-        \$event->on(AppEvent::onRouterReady(), function (\$eventInstance) {
-            new AppReadyEvent(\$eventInstance);
+        \$event->on(AppEvent::onRouterReady(), function (\$router) {
+            new AppReadyEvent(['router' => \$router]);
         });
         
         // You can listen to other events here
