@@ -23,10 +23,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { defineComponent, ref, onMounted, onUnmounted } from 'vue';
+import { defineComponent, ref, computed, onMounted, onUnmounted } from 'vue';
+import { useSettingsStore } from './stores/settings';
 import DebugPanel from './components/DebugPanel.vue';
 import GlobalContextMenu from './components/GlobalContextMenu.vue';
 import ChatbotWidget from './components/ai/ChatbotWidget.vue';
+import BootingUp from './components/BootingUp.vue';
 
 export default defineComponent({
     name: 'App',
@@ -34,11 +36,16 @@ export default defineComponent({
         DebugPanel,
         GlobalContextMenu,
         ChatbotWidget,
+        BootingUp,
     },
     setup() {
+        const settingsStore = useSettingsStore();
         const debugPanel = ref<InstanceType<typeof DebugPanel> | null>(null);
         const globalContextMenu = ref<InstanceType<typeof GlobalContextMenu> | null>(null);
         const customContextMenuEnabled = ref(false);
+        
+        // Check if we should show the booting screen
+        const showBootingScreen = computed(() => settingsStore.booting);
 
         const handleGlobalContextMenu = (event: MouseEvent) => {
             // Check if custom context menu is disabled
@@ -72,7 +79,7 @@ export default defineComponent({
             customContextMenuEnabled.value = event.detail.enabled;
         };
 
-        onMounted(() => {
+        onMounted(async () => {
             // Load custom context menu setting from localStorage (default: disabled)
             const savedSetting = localStorage.getItem('custom-context-menu-enabled');
             if (savedSetting !== null) {
@@ -81,6 +88,12 @@ export default defineComponent({
 
             document.addEventListener('contextmenu', handleGlobalContextMenu);
             window.addEventListener('custom-context-menu-toggle', handleContextMenuToggle as EventListener);
+
+            // Try to fetch settings early to detect if backend is booting
+            // This will catch 500 errors and show the booting screen
+            if (!settingsStore.loaded && !settingsStore.loading) {
+                await settingsStore.fetchSettings();
+            }
         });
 
         onUnmounted(() => {
@@ -91,24 +104,30 @@ export default defineComponent({
         return {
             debugPanel,
             globalContextMenu,
+            showBootingScreen,
         };
     },
 });
 </script>
 <template>
     <div class="app-container">
+        <!-- Show booting screen if backend is still booting -->
+        <BootingUp v-if="showBootingScreen" />
+
         <!-- Router view without global transitions - layouts handle their own content transitions -->
-        <router-view v-slot="{ Component }">
-            <component :is="Component" />
-        </router-view>
+        <template v-else>
+            <router-view v-slot="{ Component }">
+                <component :is="Component" />
+            </router-view>
 
-        <!-- Debug Panel -->
-        <DebugPanel ref="debugPanel" />
+            <!-- Debug Panel -->
+            <DebugPanel ref="debugPanel" />
 
-        <!-- Global Context Menu -->
-        <GlobalContextMenu ref="globalContextMenu" />
+            <!-- Global Context Menu -->
+            <GlobalContextMenu ref="globalContextMenu" />
 
-        <!-- AI Chatbot Widget -->
-        <ChatbotWidget />
+            <!-- AI Chatbot Widget -->
+            <ChatbotWidget />
+        </template>
     </div>
 </template>

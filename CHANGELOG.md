@@ -33,6 +33,7 @@
 - Introduced fully public knowledgebases, allowing anyone to access helpful documentation and resources without needing to log in. by @nayskutzu
 - Introduced fully public status pages, allowing anyone to view real-time server and system status without logging in. by @nayskutzu
 - Added a user-friendly cookies consent banner to ensure compliance with EU regulations and provide greater transparency for panel visitors. by @nayskutzu
+- Introduced an elegant and informative loading screen that appears while FeatherPanel is starting up, ensuring users are greeted with a polished experience even before the panel is fully ready. by @nayskutzu
 
 ### Improved
 

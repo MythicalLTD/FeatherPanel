@@ -42,6 +42,7 @@ export const useSettingsStore = defineStore('settings', {
         settings: null as null | Record<string, unknown>,
         loaded: false,
         loading: false,
+        booting: false,
     }),
     actions: {
         async fetchSettings() {
@@ -63,6 +64,8 @@ export const useSettingsStore = defineStore('settings', {
                 if (json.success && json.data?.settings) {
                     this.settings = json.data.settings;
                     this.loaded = true;
+                    // Clear booting state if we successfully loaded settings
+                    this.booting = false;
 
                     // Only set localStorage values if they don't exist or if server has different values
                     // This preserves custom branding that users might have set
@@ -104,11 +107,22 @@ export const useSettingsStore = defineStore('settings', {
                 }
             } catch (e) {
                 console.error('Failed to fetch settings:', e);
+                
+                // Check if this is a 500 error specifically
+                const error = e as { response?: { status?: number } };
+                if (error.response?.status === 500) {
+                    // Backend is still booting, set booting state
+                    this.booting = true;
+                }
+                
                 this.settings = null;
                 this.loaded = false;
             } finally {
                 this.loading = false;
             }
+        },
+        setBooting(isBooting: boolean) {
+            this.booting = isBooting;
         },
         setSettings(settings: Record<string, unknown>) {
             this.settings = settings;
