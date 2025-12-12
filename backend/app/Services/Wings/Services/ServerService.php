@@ -765,4 +765,41 @@ class ServerService
             return new WingsResponse(['error' => $e->getMessage()], 500);
         }
     }
+
+    // ========================================
+    // Proxy Management
+    // ========================================
+
+    /**
+     * Create a reverse proxy configuration.
+     *
+     * @param array<string,mixed> $data
+     */
+    public function createProxy(string $serverUuid, array $data): WingsResponse
+    {
+        try {
+            $response = $this->connection->post("/api/servers/{$serverUuid}/proxy/create", $data);
+
+            return new WingsResponse($response, 202);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Delete a reverse proxy configuration.
+     */
+    public function deleteProxy(string $serverUuid, string $domain, string $port): WingsResponse
+    {
+        try {
+            $response = $this->connection->post("/api/servers/{$serverUuid}/proxy/delete", [
+                'domain' => $domain,
+                'port' => $port,
+            ]);
+
+            return new WingsResponse($response, 202);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
 }

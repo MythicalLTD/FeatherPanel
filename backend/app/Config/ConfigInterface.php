@@ -100,6 +100,8 @@ interface ConfigInterface
     public const SERVER_ALLOW_SCHEDULES = 'server_allow_schedules';
     public const SERVER_ALLOW_ALLOCATION_SELECT = 'server_allow_allocation_select';
     public const SERVER_ALLOW_USER_MADE_FIREWALL = 'server_allow_user_made_firewall';
+    public const SERVER_ALLOW_USER_MADE_PROXY = 'server_allow_user_made_proxy';
+    public const SERVER_PROXY_MAX_PER_SERVER = 'server_proxy_max_per_server';
 
     /**
      * User Related Configs.

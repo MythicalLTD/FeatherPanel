@@ -25,6 +25,7 @@
 - Introduced robust API rate limiting to effectively safeguard against abuse and ensure fair use for all users. by @nayskutzu
 - Newly registered panel users now receive their password details directly in their welcome email, making onboarding smoother and more convenient. by @nayskutzu
 - Introducing elegant image previews in the file manager—supported image formats now display crisp, in-panel thumbnails for a more intuitive and visually engaging browsing experience. by @nayskutzu
+- Introduced advanced server reverse proxy support, allowing you to seamlessly expose server ports to the web with optional SSL certificate integration for secure connections! by @nayskutzu
 
 ### Improved
 

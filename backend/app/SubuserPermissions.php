@@ -79,6 +79,8 @@ class SubuserPermissions
     public const SUBDOMAIN_MANAGE = 'subdomain.manage';
     public const FIREWALL_READ = 'firewall.read';
     public const FIREWALL_MANAGE = 'firewall.manage';
+    public const PROXY_READ = 'proxy.read';
+    public const PROXY_MANAGE = 'proxy.manage';
 
     // Array of all permissions
     public const PERMISSIONS = [
@@ -128,6 +130,8 @@ class SubuserPermissions
         self::SUBDOMAIN_MANAGE,
         self::FIREWALL_READ,
         self::FIREWALL_MANAGE,
+        self::PROXY_READ,
+        self::PROXY_MANAGE,
     ];
 
     /**
@@ -178,6 +182,9 @@ class SubuserPermissions
             ],
             'firewall' => [
                 'permissions' => ['firewall.read', 'firewall.manage'],
+            ],
+            'proxy' => [
+                'permissions' => ['proxy.read', 'proxy.manage'],
             ],
         ];
     }

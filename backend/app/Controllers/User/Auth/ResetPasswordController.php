@@ -196,7 +196,7 @@ class ResetPasswordController
         $app = App::getInstance(true);
         try {
             $token = $request->query->get('token');
-			$app->getLogger()->info('Validating password reset token: ' . $token . ' - IP: ' . CloudFlareRealIP::getRealIP());
+            $app->getLogger()->info('Validating password reset token: ' . $token . ' - IP: ' . CloudFlareRealIP::getRealIP());
             if (!$token || trim($token) === '') {
                 return ApiResponse::error('Token is required', 'TOKEN_REQUIRED');
             }
@@ -206,6 +206,7 @@ class ResetPasswordController
                     'token' => $token,
                 ]);
             }
+
             return ApiResponse::success(null, 'Token is valid', 200);
         } catch (\Exception $e) {
             return ApiResponse::exception('An error occurred: ' . $e->getMessage(), $e->getCode());

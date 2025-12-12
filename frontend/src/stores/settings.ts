@@ -197,6 +197,11 @@ export const useSettingsStore = defineStore('settings', {
         serverAllowStartupChange: (state) => getBooleanSetting(state, 'server_allow_startup_change'),
         serverAllowAllocationSelect: (state) => getBooleanSetting(state, 'server_allow_allocation_select'),
         serverAllowUserMadeFirewall: (state) => getBooleanSetting(state, 'server_allow_user_made_firewall'),
+        serverAllowUserMadeProxy: (state) => getBooleanSetting(state, 'server_allow_user_made_proxy'),
+        serverProxyMaxPerServer: (state) => {
+            const value = state.settings?.server_proxy_max_per_server;
+            return value ? Number(value) : 5;
+        },
 
         /**
          * User-related settings

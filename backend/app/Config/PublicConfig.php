@@ -105,6 +105,8 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::SERVER_ALLOW_SCHEDULES => 'true',
             ConfigInterface::SERVER_ALLOW_ALLOCATION_SELECT => 'false',
             ConfigInterface::SERVER_ALLOW_USER_MADE_FIREWALL => 'false',
+            ConfigInterface::SERVER_ALLOW_USER_MADE_PROXY => 'false',
+            ConfigInterface::SERVER_PROXY_MAX_PER_SERVER => '5',
 
             // User related settings
             ConfigInterface::USER_ALLOW_AVATAR_CHANGE => 'true',

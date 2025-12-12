@@ -63,6 +63,7 @@ import {
     Mail,
     Ticket,
     Gauge,
+    ArrowRightLeft,
 } from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
 import Permissions from '@/lib/permissions';
@@ -885,6 +886,17 @@ export function useNavigation() {
                 category: 'server' as const,
                 group: 'networking',
                 permission: 'firewall.read',
+            },
+            {
+                id: 'server-proxy',
+                name: t('nav.proxy'),
+                title: t('nav.proxy'),
+                url: `/server/${uuidShort}/proxy`,
+                icon: ArrowRightLeft,
+                isActive: currentPath.value.startsWith(`/server/${uuidShort}/proxy`),
+                category: 'server' as const,
+                group: 'networking',
+                permission: 'proxy.read',
             },
             {
                 id: 'server-subdomains',

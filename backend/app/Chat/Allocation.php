@@ -139,6 +139,23 @@ class Allocation
     }
 
     /**
+     * Get allocation by server ID and port.
+     */
+    public static function getByServerIdAndPort(int $serverId, int $port): ?array
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE server_id = :server_id AND port = :port LIMIT 1');
+        $stmt->execute([
+            'server_id' => $serverId,
+            'port' => $port,
+        ]);
+
+        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $result ?: null;
+    }
+
+    /**
      * Get available allocations (not assigned to any server).
      */
     public static function getAvailable(int $limit = 10, int $offset = 0): array
