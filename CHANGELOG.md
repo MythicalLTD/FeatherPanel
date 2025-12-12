@@ -10,6 +10,7 @@
 - Fixed an issue where auto-assigning an allocation to a server would fail unless exactly 100 free allocations were available. by @nayskutzu
 - Improved error handling for /server routes: pages now gracefully display the API error message when a request fails, ensuring clearer feedback for users. by @nayskutzu
 - Enhanced the success notification for password reset requests, providing users with a clearer and more polished confirmation when a reset link is sent to their email address. by @nayskutzu
+- Improved autoscroll behavior for a smoother and more consistent user experience. by @nayskutzu
 
 ### Added
 

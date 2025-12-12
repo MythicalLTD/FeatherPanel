@@ -1420,12 +1420,17 @@ function writeToTerminal(data: string): void {
 
             // Auto-scroll if enabled and user was at bottom before the write
             if (autoScrollEnabled.value && wasAtBottom) {
-                scrollToBottom();
+                // Use requestAnimationFrame to ensure DOM updates are complete before scrolling
+                requestAnimationFrame(() => {
+                    scrollToBottom();
+                });
             }
-            // Update scroll position state after write
-            setTimeout(() => {
-                checkScrollPosition();
-            }, 10);
+            // Update scroll position state after write (with delay to ensure DOM update)
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    checkScrollPosition();
+                }, 0);
+            });
         }, WRITE_DELAY);
     }
 }
@@ -1449,16 +1454,17 @@ function writeToTerminalImmediate(data: string): void {
 
     // Auto-scroll if enabled and user was at bottom before the write
     if (autoScrollEnabled.value && wasAtBottom) {
-        // Use nextTick to ensure the write has been rendered
-        setTimeout(() => {
+        // Use requestAnimationFrame to ensure the write has been rendered
+        requestAnimationFrame(() => {
             scrollToBottom();
-            checkScrollPosition();
-        }, 10);
+        });
     } else {
         // Still update scroll position state
-        setTimeout(() => {
-            checkScrollPosition();
-        }, 10);
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                checkScrollPosition();
+            }, 0);
+        });
     }
 }
 
@@ -1488,8 +1494,8 @@ function checkScrollPositionBeforeWrite(): boolean {
     const scrollHeight = viewportElement.scrollHeight;
     const clientHeight = viewportElement.clientHeight;
 
-    // Check if scrolled to bottom (with 5px threshold for rounding errors)
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 5;
+    // Check if scrolled to bottom (with 10px threshold for rounding errors and fractional pixels)
+    const isAtBottom = scrollHeight - scrollTop - clientHeight <= 10;
     return isAtBottom;
 }
 
@@ -1511,8 +1517,8 @@ function checkScrollPosition(): void {
     const scrollHeight = viewportElement.scrollHeight;
     const clientHeight = viewportElement.clientHeight;
 
-    // Check if scrolled to bottom (with 5px threshold for rounding errors)
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 5;
+    // Check if scrolled to bottom (with 10px threshold for rounding errors and fractional pixels)
+    const isAtBottom = scrollHeight - scrollTop - clientHeight <= 10;
     showScrollToBottom.value = !isAtBottom;
 }
 
@@ -1525,15 +1531,25 @@ function setupScrollMonitoring(): void {
             clearInterval(scrollCheckInterval);
         }
 
-        // Check scroll position periodically
+        // Check scroll position periodically (reduced interval for more responsive updates)
         scrollCheckInterval = window.setInterval(() => {
             checkScrollPosition();
-        }, 100);
+        }, 50);
 
-        // Also check on scroll events
+        // Also check on scroll events with throttling
         const viewportElement = terminalContainer.value?.querySelector('.xterm-viewport') as HTMLElement;
         if (viewportElement) {
-            viewportElement.addEventListener('scroll', checkScrollPosition);
+            let scrollTimeout: number | null = null;
+            viewportElement.addEventListener('scroll', () => {
+                // Throttle scroll events to avoid excessive checks
+                if (scrollTimeout !== null) {
+                    clearTimeout(scrollTimeout);
+                }
+                scrollTimeout = window.setTimeout(() => {
+                    checkScrollPosition();
+                    scrollTimeout = null;
+                }, 10);
+            });
         }
 
         // Initial check
@@ -1541,21 +1557,37 @@ function setupScrollMonitoring(): void {
     }, 200);
 }
 
-// Scroll terminal to bottom
+// Scroll terminal to bottom with proper timing
 function scrollToBottom(): void {
     if (!terminal) return;
 
-    // Scroll terminal to bottom
-    terminal.scrollToBottom();
+    // Use requestAnimationFrame to ensure DOM updates are complete
+    requestAnimationFrame(() => {
+        if (!terminal) return;
 
-    // Also ensure viewport is scrolled
-    const viewportElement = terminalContainer.value?.querySelector('.xterm-viewport') as HTMLElement;
-    if (viewportElement) {
-        viewportElement.scrollTop = viewportElement.scrollHeight;
-    }
+        // Scroll terminal to bottom using XTerm API
+        terminal.scrollToBottom();
 
-    // Update button state
-    checkScrollPosition();
+        // Also ensure viewport is scrolled (double-check for reliability)
+        const viewportElement = terminalContainer.value?.querySelector('.xterm-viewport') as HTMLElement;
+        if (viewportElement) {
+            // Use requestAnimationFrame again to ensure terminal.scrollToBottom() has taken effect
+            requestAnimationFrame(() => {
+                if (viewportElement) {
+                    viewportElement.scrollTop = viewportElement.scrollHeight;
+                    // Update button state after a small delay to ensure scroll is complete
+                    setTimeout(() => {
+                        checkScrollPosition();
+                    }, 0);
+                }
+            });
+        } else {
+            // Update button state even if viewport not found
+            setTimeout(() => {
+                checkScrollPosition();
+            }, 0);
+        }
+    });
 }
 
 // Upload console logs to mclo.gs
