@@ -37,6 +37,7 @@ use App\Controllers\Wings\Backup\WingsBackupController;
 use App\Controllers\Wings\Activity\WingsActivityController;
 use App\Controllers\Wings\Server\WingsServerInfoController;
 use App\Controllers\Wings\Server\WingsServerListController;
+use App\Controllers\Wings\Server\WingsImportStatusController;
 use App\Controllers\Wings\Server\WingsServersResetController;
 use App\Controllers\Wings\Server\WingsServerStatusController;
 use App\Controllers\Wings\Server\WingsServerInstallController;
@@ -249,5 +250,31 @@ return function (RouteCollection $routes): void {
             return (new WingsTransferStatusController())->transferSuccess($request, $uuid);
         },
         ['POST']
+    );
+
+    // Import-related remote API routes
+    // Wings calls POST to /import to report status (SetImportStatus callback)
+    // Note: Wings may also make GET requests to check endpoint existence
+    App::getInstance(true)->registerWingsRoute(
+        $routes,
+        'wings-import-status',
+        '/api/remote/servers/{uuid}/import',
+        function (Request $request, array $args) {
+            $uuid = $args['uuid'] ?? null;
+            if (!$uuid) {
+                return ApiResponse::error('Missing server UUID', 'MISSING_SERVER_UUID', 400);
+            }
+
+            $controller = new WingsImportStatusController();
+
+            // Handle GET requests
+            if ($request->getMethod() === 'GET') {
+                return $controller->handleGetRequest($request, $uuid);
+            }
+
+            // Handle POST requests (actual status callback)
+            return $controller->setImportStatus($request, $uuid);
+        },
+        ['GET', 'POST']
     );
 };

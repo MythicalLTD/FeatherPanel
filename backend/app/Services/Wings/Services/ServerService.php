@@ -802,4 +802,24 @@ class ServerService
             return new WingsResponse(['error' => $e->getMessage()], 500);
         }
     }
+
+    // ========================================
+    // Server Import Management
+    // ========================================
+
+    /**
+     * Import server files from a remote SFTP or FTP server.
+     *
+     * @param array<string,mixed> $data Import configuration data
+     */
+    public function importServer(string $serverUuid, array $data): WingsResponse
+    {
+        try {
+            $response = $this->connection->post("/api/servers/{$serverUuid}/import", $data);
+
+            return new WingsResponse($response, 202);
+        } catch (\Exception $e) {
+            return new WingsResponse(['error' => $e->getMessage()], 500);
+        }
+    }
 }

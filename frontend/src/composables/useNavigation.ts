@@ -64,6 +64,7 @@ import {
     Ticket,
     Gauge,
     ArrowRightLeft,
+    Upload,
 } from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
 import Permissions from '@/lib/permissions';
@@ -897,6 +898,17 @@ export function useNavigation() {
                 category: 'server' as const,
                 group: 'networking',
                 permission: 'proxy.read',
+            },
+            {
+                id: 'server-import',
+                name: t('nav.import'),
+                title: t('nav.import'),
+                url: `/server/${uuidShort}/import`,
+                icon: Upload,
+                isActive: currentPath.value.startsWith(`/server/${uuidShort}/import`),
+                category: 'server' as const,
+                group: 'files',
+                permission: 'import.read',
             },
             {
                 id: 'server-subdomains',

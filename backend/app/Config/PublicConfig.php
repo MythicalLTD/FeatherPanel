@@ -108,6 +108,7 @@ class PublicConfig extends ConfigFactory
             ConfigInterface::SERVER_ALLOW_USER_MADE_PROXY => 'false',
             ConfigInterface::SERVER_PROXY_MAX_PER_SERVER => '5',
             ConfigInterface::SERVER_ALLOW_CROSS_REALM_SPELL_CHANGE => 'false',
+            ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT => 'false',
 
             // User related settings
             ConfigInterface::USER_ALLOW_AVATAR_CHANGE => 'true',

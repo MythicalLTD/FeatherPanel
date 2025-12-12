@@ -133,6 +133,17 @@
                         <span>{{ t('serverFiles.uploadFile') }}</span>
                     </Button>
                     <Button
+                        v-if="canDeleteFiles && currentPath === '/'"
+                        variant="destructive"
+                        size="sm"
+                        :disabled="loading"
+                        class="flex items-center gap-2"
+                        @click="showWipeAllDialog = true"
+                    >
+                        <Trash2 class="h-4 w-4" />
+                        <span>{{ t('serverFiles.wipeAllFiles') }}</span>
+                    </Button>
+                    <Button
                         v-if="canCreateFiles"
                         variant="outline"
                         size="sm"
@@ -1294,6 +1305,35 @@
             </DialogContent>
         </Dialog>
 
+        <!-- Wipe All Files Confirmation Dialog -->
+        <Dialog v-model:open="showWipeAllDialog">
+            <DialogContent class="mx-4 sm:mx-0 sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>{{ t('serverFiles.confirmWipeAllTitle') }}</DialogTitle>
+                    <DialogDescription>
+                        <div class="space-y-2">
+                            <p>{{ t('serverFiles.confirmWipeAllDescription') }}</p>
+                            <p class="text-destructive font-semibold">{{ t('serverFiles.confirmWipeAllWarning') }}</p>
+                        </div>
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <Button variant="outline" class="w-full sm:w-auto" @click="showWipeAllDialog = false">{{
+                        t('common.cancel')
+                    }}</Button>
+                    <Button
+                        variant="destructive"
+                        class="w-full sm:w-auto"
+                        :disabled="wipingAllFiles"
+                        @click="confirmWipeAllProceed"
+                    >
+                        <span v-if="wipingAllFiles">{{ t('common.deleting') }}</span>
+                        <span v-else>{{ t('serverFiles.wipeAllFiles') }}</span>
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
         <!-- Rename Dialog -->
         <Dialog v-model:open="showRenameDialog">
             <DialogContent class="mx-4 sm:mx-0 sm:max-w-md">
@@ -2141,6 +2181,8 @@ const showMoveDialog = ref(false);
 const showCompressDialog = ref(false);
 const showIgnoredContentDialog = ref(false);
 const showImagePreviewDialog = ref(false);
+const showWipeAllDialog = ref(false);
+const wipingAllFiles = ref(false);
 
 // Image preview state
 const previewImageUrl = ref<string | null>(null);
@@ -4156,6 +4198,31 @@ const confirmDeleteProceed = async () => {
     } finally {
         loading.value = false;
         showDeleteDialog.value = false;
+    }
+};
+
+const confirmWipeAllProceed = async () => {
+    try {
+        wipingAllFiles.value = true;
+        const response = await axios.post(`/api/user/servers/${route.params.uuidShort}/wipe-all-files`);
+
+        if (response.data.success) {
+            toast.success(
+                t('serverFiles.wipeAllSuccess', {
+                    count: response.data.data?.deleted_count || 0,
+                }),
+            );
+            showWipeAllDialog.value = false;
+            clearSelection();
+            await refreshFiles();
+        } else {
+            toast.error(response.data.message || t('serverFiles.wipeAllError'));
+        }
+    } catch (error: unknown) {
+        console.error('Error wiping all files:', error);
+        toast.error(getAxiosErrorMessage(error, t('serverFiles.wipeAllError')));
+    } finally {
+        wipingAllFiles.value = false;
     }
 };
 

@@ -603,6 +603,122 @@ class ServerFilesController
     }
 
     #[OA\Post(
+        path: '/api/user/servers/{uuidShort}/wipe-all-files',
+        summary: 'Wipe all server files',
+        description: 'Delete all files and folders in the server root directory. This action cannot be undone.',
+        tags: ['User - Server Files'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'All files wiped successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                        new OA\Property(property: 'deleted_count', type: 'integer', description: 'Number of files/folders deleted'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Missing UUID'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server or missing file.delete permission'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to wipe files'),
+        ]
+    )]
+    public function wipeAllFiles(Request $request, string $serverUuid): Response
+    {
+        try {
+            $user = $this->validateUser($request);
+            $server = $this->validateServer($serverUuid);
+            $node = $this->validateNode($server['node_id']);
+
+            // Check file.delete permission
+            $permissionCheck = $this->checkPermission($request, $server, SubuserPermissions::FILE_DELETE);
+            if ($permissionCheck !== null) {
+                return $permissionCheck;
+            }
+
+            $wings = $this->createWingsConnection($node);
+
+            // List all files in root directory
+            $listResponse = $wings->getServer()->listDirectory($server['uuid'], '/');
+            if (!$listResponse->isSuccessful()) {
+                return ApiResponse::error('Failed to list server files: ' . $listResponse->getError(), 'WINGS_ERROR', $listResponse->getStatusCode());
+            }
+
+            $responseData = $listResponse->getData();
+
+            // Handle different response structures
+            if (is_array($responseData) && isset($responseData['contents']) && is_array($responseData['contents'])) {
+                $files = $responseData['contents'];
+            } elseif (is_array($responseData)) {
+                $files = $responseData;
+            } else {
+                $files = [];
+            }
+
+            if (empty($files) || !is_array($files)) {
+                return ApiResponse::success(['deleted_count' => 0], 'No files found to delete');
+            }
+
+            // Extract file names from the list
+            $fileNames = [];
+            foreach ($files as $file) {
+                if (is_array($file)) {
+                    if (isset($file['name'])) {
+                        $fileNames[] = $file['name'];
+                    } elseif (isset($file['path'])) {
+                        $fileNames[] = basename($file['path']);
+                    }
+                } elseif (is_string($file)) {
+                    $fileNames[] = $file;
+                }
+            }
+
+            if (empty($fileNames)) {
+                return ApiResponse::success(['deleted_count' => 0], 'No files found to delete');
+            }
+
+            // Delete all files in root
+            $deleteResponse = $wings->getServer()->deleteFiles($server['uuid'], '/', $fileNames);
+            if (!$deleteResponse->isSuccessful()) {
+                return ApiResponse::error('Failed to delete files: ' . $deleteResponse->getError(), 'WINGS_ERROR', $deleteResponse->getStatusCode());
+            }
+
+            // Log activity
+            $this->logActivity($server, $node, 'files_wiped', [
+                'root' => '/',
+                'file_count' => count($fileNames),
+            ], $user);
+
+            // Emit event
+            global $eventManager;
+            if (isset($eventManager) && $eventManager !== null) {
+                $eventManager->emit(
+                    ServerFilesEvent::onServerFilesDeleted(),
+                    [
+                        'user_uuid' => $user['uuid'],
+                        'server_uuid' => $server['uuid'],
+                    ]
+                );
+            }
+
+            return ApiResponse::success(['deleted_count' => count($fileNames)], 'All server files wiped successfully');
+        } catch (\Exception $e) {
+            return $this->handleWingsError($e, 'wipe all files');
+        }
+    }
+
+    #[OA\Post(
         path: '/api/user/servers/{uuidShort}/copy-files',
         summary: 'Copy files',
         description: 'Copy multiple files or folders to a new location on the server.',

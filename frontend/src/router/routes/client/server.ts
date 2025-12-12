@@ -182,6 +182,15 @@ const clientRoutes: RouteRecordRaw[] = [
         },
     },
     {
+        path: '/server/:uuidShort/import',
+        name: 'ServerImport',
+        component: () => import('@/pages/dashboard/server/ServerImport.vue'),
+        beforeEnter: (to, from, next) => {
+            Cookie.set('serverUuid', to.params.uuidShort as string);
+            next();
+        },
+    },
+    {
         path: '/server/:uuidShort/:pathMatch(.*)*',
         component: () => import('@/pages/dashboard/PluginRenderedPage.vue'),
         beforeEnter: (to, from, next) => {

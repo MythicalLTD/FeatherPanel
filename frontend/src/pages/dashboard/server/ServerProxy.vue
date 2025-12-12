@@ -27,6 +27,8 @@ SOFTWARE.
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 pb-8">
+            <WidgetRenderer v-if="widgetsTopOfPage.length > 0" :widgets="widgetsTopOfPage" />
+
             <!-- Header Section -->
             <div class="flex flex-col gap-4">
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -36,13 +38,26 @@ SOFTWARE.
                         </h1>
                         <p class="text-sm text-muted-foreground">
                             {{ t('serverProxy.description') }}
+                            <span v-if="proxyEnabled" class="font-medium">
+                                ({{ proxies.length }}/{{ settingsStore.serverProxyMaxPerServer }})
+                            </span>
                         </p>
                     </div>
                     <div class="flex gap-2">
                         <Button
-                            v-if="canManageProxy && proxyEnabled"
+                            variant="outline"
                             size="sm"
                             :disabled="loading"
+                            class="flex items-center gap-2"
+                            @click="refresh"
+                        >
+                            <RefreshCw :class="['h-4 w-4', loading && 'animate-spin']" />
+                            <span>{{ t('common.refresh') }}</span>
+                        </Button>
+                        <Button
+                            v-if="canManageProxy && proxyEnabled"
+                            size="sm"
+                            :disabled="loading || proxies.length >= settingsStore.serverProxyMaxPerServer"
                             class="flex items-center gap-2"
                             @click="openCreateDrawer"
                         >
@@ -70,6 +85,8 @@ SOFTWARE.
                 </div>
             </div>
 
+            <WidgetRenderer v-if="widgetsAfterHeader.length > 0" :widgets="widgetsAfterHeader" />
+
             <!-- Feature Disabled State -->
             <Alert v-if="!proxyEnabled" variant="destructive" class="border-2">
                 <AlertTitle>{{ t('serverProxy.featureDisabled') }}</AlertTitle>
@@ -78,83 +95,76 @@ SOFTWARE.
                 </AlertDescription>
             </Alert>
 
-            <!-- Main Content -->
-            <Card v-else class="border-2">
+            <!-- Loading State -->
+            <div v-else-if="loading && proxies.length === 0" class="flex flex-col items-center justify-center py-16">
+                <div class="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full"></div>
+                <span class="mt-4 text-muted-foreground">{{ t('common.loading') }}</span>
+            </div>
+
+            <!-- Empty State -->
+            <div
+                v-else-if="!loading && proxies.length === 0"
+                class="flex flex-col items-center justify-center py-16 px-4"
+            >
+                <div class="text-center max-w-md space-y-6">
+                    <div class="flex justify-center">
+                        <div class="relative">
+                            <div class="absolute inset-0 animate-ping opacity-20">
+                                <div class="w-32 h-32 rounded-full bg-primary/20"></div>
+                            </div>
+                            <div class="relative p-8 rounded-full bg-linear-to-br from-primary/20 to-primary/5">
+                                <ArrowRightLeft class="h-16 w-16 text-primary" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <h3 class="text-2xl sm:text-3xl font-bold text-foreground">
+                            {{ t('serverProxy.noProxiesTitle') }}
+                        </h3>
+                        <p class="text-sm sm:text-base text-muted-foreground">
+                            {{ t('serverProxy.noProxiesDescription') }}
+                        </p>
+                    </div>
+                    <Button
+                        v-if="canManageProxy && proxyEnabled"
+                        size="lg"
+                        class="gap-2 shadow-lg"
+                        :disabled="proxies.length >= settingsStore.serverProxyMaxPerServer"
+                        @click="openCreateDrawer"
+                    >
+                        <Plus class="h-5 w-5" />
+                        {{ t('serverProxy.createProxy') }}
+                    </Button>
+                </div>
+            </div>
+
+            <!-- Plugin Widgets: Before Proxies List -->
+            <WidgetRenderer
+                v-if="!loading && proxies.length > 0 && widgetsBeforeTable.length > 0"
+                :widgets="widgetsBeforeTable"
+            />
+
+            <!-- Proxies List -->
+            <Card v-if="!loading && proxies.length > 0" class="border-2 hover:border-primary/50 transition-colors">
                 <CardHeader>
-                    <div class="flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3">
-                            <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                                <ArrowRightLeft class="h-5 w-5 text-primary" />
-                            </div>
-                            <div class="flex-1">
-                                <CardTitle class="text-lg">{{ t('serverProxy.proxiesTitle') }}</CardTitle>
-                                <CardDescription class="text-sm">
-                                    {{ t('serverProxy.proxiesDescription') }}
-                                    <span class="text-muted-foreground">
-                                        ({{ proxies.length }}/{{ settingsStore.serverProxyMaxPerServer }})
-                                    </span>
-                                </CardDescription>
-                            </div>
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <ArrowRightLeft class="h-5 w-5 text-primary" />
                         </div>
-                        <div class="flex items-center gap-2">
-                            <Button
-                                v-if="canManageProxy"
-                                variant="outline"
-                                size="sm"
-                                :disabled="loadingProxies"
-                                @click="fetchProxies"
-                            >
-                                <RefreshCw :class="['h-4 w-4', loadingProxies && 'animate-spin']" />
-                                <span class="hidden sm:inline">{{ t('common.refresh') }}</span>
-                            </Button>
-                            <Button
-                                v-if="canManageProxy"
-                                size="sm"
-                                class="gap-2"
-                                :disabled="proxies.length >= settingsStore.serverProxyMaxPerServer"
-                                @click="openCreateDrawer"
-                            >
-                                <Plus class="h-4 w-4" />
-                                <span>{{ t('serverProxy.createProxy') }}</span>
-                            </Button>
+                        <div class="flex-1">
+                            <CardTitle class="text-lg">{{ t('serverProxy.proxiesTitle') }}</CardTitle>
+                            <CardDescription class="text-sm">
+                                {{ t('serverProxy.proxiesDescription') }}
+                            </CardDescription>
                         </div>
+                        <Badge variant="secondary" class="text-xs">
+                            {{ proxies.length }}
+                            {{ proxies.length === 1 ? 'proxy' : 'proxies' }}
+                        </Badge>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <!-- Loading State -->
-                    <div v-if="loadingProxies" class="flex flex-col items-center justify-center py-12">
-                        <RefreshCw class="h-8 w-8 animate-spin text-muted-foreground mb-3" />
-                        <p class="text-sm text-muted-foreground">{{ t('serverProxy.loading') }}</p>
-                    </div>
-
-                    <!-- Empty State -->
-                    <div
-                        v-else-if="!loadingProxies && proxies.length === 0"
-                        class="flex flex-col items-center justify-center py-12 space-y-4"
-                    >
-                        <div class="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-                            <ArrowRightLeft class="h-8 w-8 text-muted-foreground" />
-                        </div>
-                        <div class="text-center space-y-2">
-                            <h3 class="text-lg font-semibold">{{ t('serverProxy.noProxiesTitle') }}</h3>
-                            <p class="text-sm text-muted-foreground max-w-md">
-                                {{ t('serverProxy.noProxiesDescription') }}
-                            </p>
-                        </div>
-                        <Button
-                            v-if="canManageProxy"
-                            size="lg"
-                            class="gap-2 shadow-lg"
-                            :disabled="proxies.length >= settingsStore.serverProxyMaxPerServer"
-                            @click="openCreateDrawer"
-                        >
-                            <Plus class="h-5 w-5" />
-                            {{ t('serverProxy.createProxy') }}
-                        </Button>
-                    </div>
-
-                    <!-- Proxies List -->
-                    <div v-else class="space-y-3">
+                    <div class="space-y-3">
                         <div
                             v-for="proxy in proxies"
                             :key="proxy.id"
@@ -201,7 +211,7 @@ SOFTWARE.
                                         variant="destructive"
                                         size="sm"
                                         class="flex items-center gap-2"
-                                        :disabled="deletingProxyId === proxy.id"
+                                        :disabled="deletingProxyId === proxy.id || loading"
                                         @click="deleteProxy(proxy)"
                                     >
                                         <Trash2 class="h-3.5 w-3.5" />
@@ -213,6 +223,14 @@ SOFTWARE.
                     </div>
                 </CardContent>
             </Card>
+
+            <!-- Plugin Widgets: After Proxies List -->
+            <WidgetRenderer
+                v-if="!loading && proxies.length > 0 && widgetsAfterTable.length > 0"
+                :widgets="widgetsAfterTable"
+            />
+
+            <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
 
             <!-- DNS Records Dialog -->
             <Dialog v-model:open="showDnsRecords">
@@ -313,7 +331,14 @@ SOFTWARE.
             </Dialog>
 
             <!-- Create/Edit Proxy Drawer -->
-            <Drawer v-model:open="drawerOpen">
+            <Drawer
+                :open="drawerOpen"
+                @update:open="
+                    (val) => {
+                        if (!val) closeDrawer();
+                    }
+                "
+            >
                 <DrawerContent>
                     <DrawerHeader>
                         <DrawerTitle>{{ t('serverProxy.createProxy') }}</DrawerTitle>
@@ -604,7 +629,10 @@ import type { BreadcrumbEntry } from '@/layouts/DashboardLayout.vue';
 import { useToast } from 'vue-toastification';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
+import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
+import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -670,8 +698,16 @@ const serverInfo = ref<ServerInfo | null>(null);
 const allocations = ref<ServerAllocation[]>([]);
 const loadingAllocations = ref<boolean>(false);
 const proxies = ref<Proxy[]>([]);
-const loadingProxies = ref<boolean>(false);
+const loading = ref<boolean>(false);
 const deletingProxyId = ref<number | null>(null);
+
+// Plugin widgets
+const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('server-proxy');
+const widgetsTopOfPage = computed(() => getWidgets('server-proxy', 'top-of-page'));
+const widgetsAfterHeader = computed(() => getWidgets('server-proxy', 'after-header'));
+const widgetsBeforeTable = computed(() => getWidgets('server-proxy', 'before-proxies-list'));
+const widgetsAfterTable = computed(() => getWidgets('server-proxy', 'after-proxies-list'));
+const widgetsBottomOfPage = computed(() => getWidgets('server-proxy', 'bottom-of-page'));
 
 interface Proxy {
     id: number;
@@ -699,7 +735,6 @@ function getAxiosErrorMessage(err: unknown, fallback: string): string {
     return axios.isAxiosError(err) && err.response?.data?.message ? err.response.data.message : fallback;
 }
 
-const loading = ref<boolean>(false);
 const drawerOpen = ref<boolean>(false);
 const saving = ref<boolean>(false);
 const formError = ref<string | null>(null);
@@ -1107,7 +1142,7 @@ async function saveProxy(): Promise<void> {
 async function fetchProxies(): Promise<void> {
     if (!serverUuid.value) return;
 
-    loadingProxies.value = true;
+    loading.value = true;
     try {
         const { data } = await axios.get(`/api/user/servers/${serverUuid.value}/proxy`);
 
@@ -1121,8 +1156,12 @@ async function fetchProxies(): Promise<void> {
         console.error('Failed to fetch proxies:', error);
         toast.error(getAxiosErrorMessage(error, t('serverProxy.failedToFetch')));
     } finally {
-        loadingProxies.value = false;
+        loading.value = false;
     }
+}
+
+function refresh(): void {
+    void fetchProxies();
 }
 
 async function deleteProxy(proxy: Proxy): Promise<void> {
@@ -1176,6 +1215,9 @@ watch([() => form.ssl, () => form.use_lets_encrypt], () => {
 });
 
 onMounted(async () => {
+    // Fetch plugin widgets
+    await fetchPluginWidgets();
+
     // Fetch settings first to check if proxy is enabled
     await settingsStore.fetchSettings();
 

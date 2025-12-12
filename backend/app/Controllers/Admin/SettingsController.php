@@ -200,6 +200,7 @@ class SettingsController
                 ConfigInterface::SERVER_ALLOW_USER_MADE_PROXY,
                 ConfigInterface::SERVER_PROXY_MAX_PER_SERVER,
                 ConfigInterface::SERVER_ALLOW_CROSS_REALM_SPELL_CHANGE,
+                ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT,
             ],
         ],
         'chatbot' => [
@@ -782,6 +783,17 @@ class SettingsController
                 'placeholder' => '5',
                 'validation' => 'required|integer|min:1|max:10',
                 'options' => [],
+                'category' => 'servers',
+            ],
+            ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT => [
+                'name' => ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_USER_MADE_IMPORT, 'false'),
+                'description' => 'Allow users to import server files from remote SFTP or FTP servers. The server must be offline for imports to work.',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
                 'category' => 'servers',
             ],
             ConfigInterface::CHATBOT_ENABLED => [

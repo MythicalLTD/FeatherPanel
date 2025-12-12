@@ -117,6 +117,21 @@ return function (RouteCollection $routes): void {
 
     App::getInstance(true)->registerServerRoute(
         $routes,
+        'session-server-wipe-all-files',
+        '/api/user/servers/{uuidShort}/wipe-all-files',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+
+            return (new ServerFilesController())->wipeAllFiles($request, $uuidShort);
+        },
+        'uuidShort', // Pass the server UUID for middleware
+        ['POST'],
+        Rate::perMinute(2), // Lower rate limit for destructive action
+        'user-server-files'
+    );
+
+    App::getInstance(true)->registerServerRoute(
+        $routes,
         'session-server-copy-files',
         '/api/user/servers/{uuidShort}/copy-files',
         function (Request $request, array $args) {

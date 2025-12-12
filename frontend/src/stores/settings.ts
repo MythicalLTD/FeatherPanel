@@ -203,6 +203,7 @@ export const useSettingsStore = defineStore('settings', {
             return value ? Number(value) : 5;
         },
         serverAllowCrossRealmSpellChange: (state) => getBooleanSetting(state, 'server_allow_cross_realm_spell_change'),
+        serverAllowUserMadeImport: (state) => getBooleanSetting(state, 'server_allow_user_made_import'),
 
         /**
          * User-related settings
