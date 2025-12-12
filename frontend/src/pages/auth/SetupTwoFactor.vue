@@ -66,6 +66,7 @@ const form = ref({
     turnstile_token: '',
     code: '',
 });
+const turnstileKey = ref(0);
 
 const router = useRouter();
 onMounted(async () => {
@@ -120,6 +121,13 @@ function validateForm(): string | null {
     return null;
 }
 
+function resetTurnstile() {
+    if (settingsStore.turnstile_enabled) {
+        form.value.turnstile_token = '';
+        turnstileKey.value += 1;
+    }
+}
+
 async function verify2FA(e: Event) {
     e.preventDefault();
     const validationError = validateForm();
@@ -151,9 +159,11 @@ async function verify2FA(e: Event) {
             }, 1200);
         } else {
             toast.error(t(`api_errors.${res.data.code}`) || t('api_errors.INVALID_CODE'));
+            resetTurnstile();
         }
     } catch {
         toast.error(t('api_errors.TWO_FACTOR_VERIFY_FAILED'));
+        resetTurnstile();
     } finally {
         loading.value = false;
     }
@@ -199,6 +209,7 @@ async function verify2FA(e: Event) {
                         </div>
                         <div v-if="settingsStore.turnstile_enabled" class="grid gap-3">
                             <Turnstile
+                                :key="turnstileKey"
                                 v-model="form.turnstile_token"
                                 :site-key="settingsStore.turnstile_key_pub as string"
                             />

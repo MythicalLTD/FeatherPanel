@@ -63,6 +63,7 @@ const form = ref({
 const loading = ref(false);
 const error = ref('');
 const success = ref('');
+const turnstileKey = ref(0);
 
 // Plugin widgets
 const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('auth-register');
@@ -147,6 +148,13 @@ function validateForm(): string | null {
         return $t('api_errors.INVALID_USERNAME_FORMAT');
     }
     return null;
+}
+
+function resetTurnstile() {
+    if (settingsStore.turnstile_enabled) {
+        form.value.turnstile_token = '';
+        turnstileKey.value += 1;
+    }
 }
 
 function getErrorMessage(err: unknown): string {
@@ -237,9 +245,11 @@ async function onSubmit(e: Event) {
             }
         } else {
             error.value = getErrorMessage(res.data);
+            resetTurnstile();
         }
     } catch (err: unknown) {
         error.value = getErrorMessage(err);
+        resetTurnstile();
     } finally {
         loading.value = false;
     }
@@ -310,6 +320,7 @@ async function onSubmit(e: Event) {
                     </div>
                     <Turnstile
                         v-if="settingsStore.turnstile_enabled"
+                        :key="turnstileKey"
                         v-model="form.turnstile_token"
                         :site-key="settingsStore.turnstile_key_pub as string"
                     />

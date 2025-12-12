@@ -26,6 +26,7 @@
 
 ### Improved
 
+- No more frustrating page refreshes after failed captcha attempts—requests to captcha-protected endpoints are now automatically retried for a seamless experience! by @nayskutzu
 - Revamped node management interface: each node now has its own dedicated page for an improved and more intuitive management experience. by @nayskutzu
 - Log uploads now use the FeatherPanel API instead of mclogs, providing a more seamless and integrated experience. by @nayskutzu
 - Bulk deletion of allocations now offers the flexibility to target and remove allocations from a specific subnet, empowering more precise management. by @nayskutzu

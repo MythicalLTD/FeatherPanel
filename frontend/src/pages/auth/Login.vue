@@ -93,6 +93,7 @@ const loading = ref(false);
 const error = ref('');
 const success = ref('');
 const discordLinkToken = ref<string | null>(null);
+const turnstileKey = ref(0);
 
 // SSO login state
 const isSsoLogin = ref(false);
@@ -211,13 +212,16 @@ async function handleDiscordLink(): Promise<void> {
                     }
                 } catch (loginError) {
                     error.value = getErrorMessage(loginError);
+                    resetTurnstile();
                 }
             }, 1000);
         } else {
             error.value = getErrorMessage(res.data);
+            resetTurnstile();
         }
     } catch (err: unknown) {
         error.value = getErrorMessage(err);
+        resetTurnstile();
     } finally {
         loading.value = false;
     }
@@ -268,9 +272,11 @@ async function handleDiscordLogin(token: string): Promise<void> {
             }
         } else {
             error.value = getErrorMessage(res.data);
+            resetTurnstile();
         }
     } catch (err: unknown) {
         error.value = getErrorMessage(err);
+        resetTurnstile();
     } finally {
         loading.value = false;
     }
@@ -325,6 +331,13 @@ async function handleSsoLogin(token: string): Promise<void> {
         error.value = getErrorMessage(err);
     } finally {
         loading.value = false;
+    }
+}
+
+function resetTurnstile() {
+    if (settingsStore.turnstile_enabled) {
+        form.value.turnstile_token = '';
+        turnstileKey.value += 1;
     }
 }
 
@@ -416,6 +429,7 @@ async function onSubmit(e: Event) {
             }
         } else {
             error.value = getErrorMessage(res.data);
+            resetTurnstile();
         }
     } catch (err: unknown) {
         let errorCode: string | undefined;
@@ -437,6 +451,7 @@ async function onSubmit(e: Event) {
             return;
         }
         error.value = getErrorMessage(err);
+        resetTurnstile();
     } finally {
         loading.value = false;
     }
@@ -476,6 +491,7 @@ async function onSubmit(e: Event) {
                     </div>
                     <Turnstile
                         v-if="settingsStore.turnstile_enabled"
+                        :key="turnstileKey"
                         v-model="form.turnstile_token"
                         :site-key="settingsStore.turnstile_key_pub as string"
                     />

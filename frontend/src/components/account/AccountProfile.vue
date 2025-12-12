@@ -104,7 +104,11 @@
 
             <div class="space-y-4 pt-4">
                 <div v-if="settingsStore.turnstile_enabled" class="flex justify-start">
-                    <Turnstile v-model="turnstileToken" :site-key="settingsStore.turnstile_key_pub as string" />
+                    <Turnstile
+                        :key="turnstileKey"
+                        v-model="turnstileToken"
+                        :site-key="settingsStore.turnstile_key_pub as string"
+                    />
                 </div>
                 <div class="flex gap-3">
                     <Button
@@ -213,6 +217,7 @@ const loading = ref(true);
 const avatarFile = ref<File | null>(null);
 const isUploadingAvatar = ref(false);
 const turnstileToken = ref<string>('');
+const turnstileKey = ref(0);
 
 // Plugin widgets
 const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('account');
@@ -253,7 +258,15 @@ const initializeForm = async () => {
 const resetForm = () => {
     initializeForm();
     avatarFile.value = null;
+    resetTurnstile();
 };
+
+function resetTurnstile() {
+    if (settingsStore.turnstile_enabled) {
+        turnstileToken.value = '';
+        turnstileKey.value += 1;
+    }
+}
 
 // Handle avatar file selection from the component
 const handleAvatarFileSelect = (file: File | null) => {
@@ -322,6 +335,7 @@ const handleSubmit = async () => {
                             submitData.avatar = uploadResponse.data.data.avatar_url;
                         } else {
                             toast.error(uploadResponse.data.message || $t('account.avatarUploadFailed'));
+                            resetTurnstile();
                             return;
                         }
                     } finally {
@@ -352,6 +366,7 @@ const handleSubmit = async () => {
         const changedKeys = Object.keys(submitData).filter((key) => key !== 'turnstile_token');
         if (changedKeys.length === 0) {
             toast.info($t('account.noChanges'));
+            resetTurnstile();
             return;
         }
 
@@ -369,6 +384,7 @@ const handleSubmit = async () => {
             formData.value.password = '';
         } else {
             toast.error(response.data.message || $t('account.updateFailed'));
+            resetTurnstile();
         }
     } catch (error: unknown) {
         console.error('Error updating profile:', error);
@@ -383,6 +399,7 @@ const handleSubmit = async () => {
         } else {
             toast.error($t('account.unexpectedError'));
         }
+        resetTurnstile();
     } finally {
         isSubmitting.value = false;
     }

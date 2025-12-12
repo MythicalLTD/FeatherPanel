@@ -54,6 +54,7 @@ const error = ref('');
 const success = ref('');
 const tokenValid = ref(false);
 const submitting = ref(false);
+const turnstileKey = ref(0);
 
 // Plugin widgets
 const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('auth-reset-password');
@@ -126,6 +127,13 @@ function validateForm(): string | null {
     return null;
 }
 
+function resetTurnstile() {
+    if (settingsStore.turnstile_enabled) {
+        form.value.turnstile_token = '';
+        turnstileKey.value += 1;
+    }
+}
+
 function getErrorMessage(err: unknown): string {
     if (typeof err === 'object' && err !== null) {
         const e = err as { response?: { data?: { message?: string; error_code?: string } }; message?: string };
@@ -177,9 +185,11 @@ async function onSubmit(e: Event) {
             router.replace('/auth/login');
         } else {
             error.value = getErrorMessage(res.data);
+            resetTurnstile();
         }
     } catch (err: unknown) {
         error.value = getErrorMessage(err);
+        resetTurnstile();
     } finally {
         submitting.value = false;
     }
@@ -208,6 +218,7 @@ async function onSubmit(e: Event) {
                         </div>
                         <Turnstile
                             v-if="settingsStore.turnstile_enabled"
+                            :key="turnstileKey"
                             v-model="form.turnstile_token"
                             :site-key="settingsStore.turnstile_key_pub as string"
                         />
