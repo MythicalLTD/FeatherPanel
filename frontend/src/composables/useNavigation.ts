@@ -393,8 +393,12 @@ export function useNavigation() {
                 category: 'main' as const,
                 group: 'account',
             },
-            // Support section
-            {
+            // Support section - conditionally add based on settings
+        ];
+
+        // Only add knowledgebase if enabled
+        if (settingsStore.knowledgebaseEnabled) {
+            items.push({
                 id: 'knowledgebase',
                 name: 'Knowledgebase',
                 title: 'Knowledgebase',
@@ -403,8 +407,12 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith('/dashboard/knowledgebase'),
                 category: 'main' as const,
                 group: 'support',
-            },
-            {
+            });
+        }
+
+        // Only add tickets if enabled
+        if (settingsStore.ticketSystemEnabled) {
+            items.push({
                 id: 'tickets',
                 name: 'Support Tickets',
                 title: 'Support Tickets',
@@ -413,8 +421,8 @@ export function useNavigation() {
                 isActive: currentPath.value.startsWith('/dashboard/tickets'),
                 category: 'main' as const,
                 group: 'support',
-            },
-        ];
+            });
+        }
 
         // Only add status page if enabled
         if (settingsStore.statusPageEnabled) {

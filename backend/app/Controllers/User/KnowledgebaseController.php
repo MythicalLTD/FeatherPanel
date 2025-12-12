@@ -209,7 +209,8 @@ class KnowledgebaseController
             $tags = KnowledgebaseArticleTag::getByArticleId($id);
         }
 
-        $viewer = $request->get('user');
+        // Get user if authenticated (may be null for public access)
+        $viewer = $request->attributes->has('user') ? $request->get('user') : null;
 
         // Emit event
         global $eventManager;

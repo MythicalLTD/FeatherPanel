@@ -1,8 +1,6 @@
 <template>
-    <DashboardLayout
-        :breadcrumbs="[{ text: t('dashboard.knowledgebase.title'), isCurrent: true, href: '/dashboard/knowledgebase' }]"
-    >
-        <div class="min-h-screen bg-background">
+    <PublicLayout>
+        <div class="min-h-screen">
             <!-- Loading State -->
             <div v-if="loading" class="flex items-center justify-center py-12">
                 <div class="flex items-center gap-3">
@@ -12,7 +10,7 @@
             </div>
 
             <!-- Categories Grid -->
-            <div v-else class="p-6">
+            <div v-else>
                 <div class="mb-6">
                     <h1 class="text-3xl font-bold mb-2">{{ t('dashboard.knowledgebase.title') }}</h1>
                     <p class="text-muted-foreground">{{ t('dashboard.knowledgebase.browseByCategory') }}</p>
@@ -57,7 +55,7 @@
                 </div>
             </div>
         </div>
-    </DashboardLayout>
+    </PublicLayout>
 </template>
 
 <script setup lang="ts">
@@ -88,7 +86,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import PublicLayout from '@/layouts/PublicLayout.vue';
 import { BookOpen, ChevronRight } from 'lucide-vue-next';
 import axios from 'axios';
 
@@ -133,7 +131,7 @@ async function fetchCategories() {
 }
 
 function viewCategory(category: Category) {
-    router.push(`/dashboard/knowledgebase/category/${category.id}`);
+    router.push(`/knowledgebase/category/${category.id}`);
 }
 
 function handleImageError(event: Event) {

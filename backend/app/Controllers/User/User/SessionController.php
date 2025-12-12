@@ -130,6 +130,8 @@ class SessionController
             if (!CloudFlareTurnstile::validate($data['turnstile_token'], CloudFlareRealIP::getRealIP(), $turnstileKeySecret)) {
                 return ApiResponse::error('Turnstile validation failed', 'TURNSTILE_VALIDATION_FAILED');
             }
+            // Remove turnstile_token from data after validation (it's not a user field)
+            unset($data['turnstile_token']);
         }
 
         $user = AuthMiddleware::getCurrentUser($request);
@@ -137,7 +139,7 @@ class SessionController
             return ApiResponse::error('You are not allowed to access this resource!', 'INVALID_ACCOUNT_TOKEN', 400, []);
         }
 
-        $data = json_decode($request->getContent(), true);
+        // Data was already decoded above, no need to decode again
         if ($data == null) {
             return ApiResponse::error('Invalid request data', 'INVALID_REQUEST_DATA', 400, []);
         }

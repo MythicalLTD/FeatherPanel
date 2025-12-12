@@ -1,16 +1,7 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
-    <DashboardLayout
-        :breadcrumbs="[
-            { text: t('dashboard.knowledgebase.title'), href: '/dashboard/knowledgebase' },
-            {
-                text: category?.name || t('dashboard.knowledgebase.article'),
-                href: category ? `/dashboard/knowledgebase/category/${category.id}` : undefined,
-            },
-            { text: article?.title || t('dashboard.knowledgebase.article'), isCurrent: true },
-        ]"
-    >
-        <div class="min-h-screen bg-background">
+    <PublicLayout>
+        <div class="min-h-screen">
             <!-- Loading State -->
             <div v-if="loading" class="flex items-center justify-center py-12">
                 <div class="flex items-center gap-3">
@@ -20,7 +11,7 @@
             </div>
 
             <!-- Article Content -->
-            <div v-else-if="article" class="p-6">
+            <div v-else-if="article" class="max-w-4xl mx-auto">
                 <div class="mb-4">
                     <Button variant="ghost" size="sm" @click="goBack">
                         <ChevronLeft class="h-4 w-4 mr-2" />
@@ -115,7 +106,7 @@
                 </Card>
             </div>
         </div>
-    </DashboardLayout>
+    </PublicLayout>
 </template>
 
 <script setup lang="ts">
@@ -146,7 +137,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import PublicLayout from '@/layouts/PublicLayout.vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -232,7 +223,7 @@ async function fetchArticle() {
         }
     } catch (error) {
         console.error('Failed to fetch article:', error);
-        router.push('/dashboard/knowledgebase');
+        router.push('/knowledgebase');
     } finally {
         loading.value = false;
     }
@@ -240,9 +231,9 @@ async function fetchArticle() {
 
 function goBack() {
     if (category.value) {
-        router.push(`/dashboard/knowledgebase/category/${category.value.id}`);
+        router.push(`/knowledgebase/category/${category.value.id}`);
     } else {
-        router.push('/dashboard/knowledgebase');
+        router.push('/knowledgebase');
     }
 }
 
@@ -269,3 +260,4 @@ onMounted(() => {
     fetchArticle();
 });
 </script>
+

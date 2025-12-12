@@ -219,5 +219,15 @@ export const useSettingsStore = defineStore('settings', {
          * Chatbot-related settings
          */
         chatbotEnabled: (state) => getBooleanSetting(state, 'chatbot_enabled'),
+
+        /**
+         * Knowledgebase settings
+         */
+        knowledgebaseEnabled: (state) => getBooleanSetting(state, 'knowledgebase_enabled'),
+
+        /**
+         * Ticket system settings
+         */
+        ticketSystemEnabled: (state) => getBooleanSetting(state, 'ticket_system_enabled'),
     },
 });

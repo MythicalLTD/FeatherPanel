@@ -11,6 +11,7 @@
 - Improved error handling for /server routes: pages now gracefully display the API error message when a request fails, ensuring clearer feedback for users. by @nayskutzu
 - Enhanced the success notification for password reset requests, providing users with a clearer and more polished confirmation when a reset link is sent to their email address. by @nayskutzu
 - Improved autoscroll behavior for a smoother and more consistent user experience. by @nayskutzu
+- Status pages, tickets, and knowledgebases will now be automatically hidden from the sidebar when disabled, ensuring a cleaner and more relevant navigation experience!
 
 ### Added
 
@@ -29,6 +30,8 @@
 - Introducing seamless server import capabilities: effortlessly migrate servers from other hosts using SFTP or FTP with a powerful, intuitive importer! by @nayskutzu
 - Added granular control to zero trust verification: now you can selectively skip zero trust checks on individual servers if desired, providing greater flexibility and customization. by @nayskutzu
 - Added the ability to seamlessly edit a server's external ID, offering enhanced flexibility and management control. by @nayskutzu
+- Introduced fully public knowledgebases, allowing anyone to access helpful documentation and resources without needing to log in. by @nayskutzu
+- Introduced fully public status pages, allowing anyone to view real-time server and system status without logging in. by @nayskutzu
 
 ### Improved
 

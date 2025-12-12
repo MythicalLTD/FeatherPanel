@@ -1,11 +1,6 @@
 <template>
-    <DashboardLayout
-        :breadcrumbs="[
-            { text: t('dashboard.knowledgebase.title'), href: '/dashboard/knowledgebase' },
-            { text: category?.name || t('dashboard.knowledgebase.category'), isCurrent: true },
-        ]"
-    >
-        <div class="min-h-screen bg-background">
+    <PublicLayout>
+        <div class="min-h-screen">
             <!-- Loading State -->
             <div v-if="loading" class="flex items-center justify-center py-12">
                 <div class="flex items-center gap-3">
@@ -15,9 +10,9 @@
             </div>
 
             <!-- Articles List -->
-            <div v-else class="p-6">
+            <div v-else class="max-w-4xl mx-auto">
                 <div class="mb-6">
-                    <Button variant="ghost" size="sm" class="mb-4" @click="router.push('/dashboard/knowledgebase')">
+                    <Button variant="ghost" size="sm" class="mb-4" @click="router.push('/knowledgebase')">
                         <ChevronLeft class="h-4 w-4 mr-2" />
                         {{ t('dashboard.knowledgebase.backToCategories') }}
                     </Button>
@@ -132,7 +127,7 @@
                 </div>
             </div>
         </div>
-    </DashboardLayout>
+    </PublicLayout>
 </template>
 
 <script setup lang="ts">
@@ -163,7 +158,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import DashboardLayout from '@/layouts/DashboardLayout.vue';
+import PublicLayout from '@/layouts/PublicLayout.vue';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -239,7 +234,7 @@ async function fetchCategoryArticles() {
         };
     } catch (error) {
         console.error('Failed to fetch category articles:', error);
-        router.push('/dashboard/knowledgebase');
+        router.push('/knowledgebase');
     } finally {
         loading.value = false;
     }
@@ -251,7 +246,7 @@ function changePage(page: number) {
 }
 
 function viewArticle(article: Article) {
-    router.push(`/dashboard/knowledgebase/article/${article.id}`);
+    router.push(`/knowledgebase/article/${article.id}`);
 }
 
 function handleImageError(event: Event) {
@@ -276,3 +271,4 @@ watch(
     },
 );
 </script>
+
