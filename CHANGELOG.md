@@ -32,6 +32,7 @@
 - Added the ability to seamlessly edit a server's external ID, offering enhanced flexibility and management control. by @nayskutzu
 - Introduced fully public knowledgebases, allowing anyone to access helpful documentation and resources without needing to log in. by @nayskutzu
 - Introduced fully public status pages, allowing anyone to view real-time server and system status without logging in. by @nayskutzu
+- Added a user-friendly cookies consent banner to ensure compliance with EU regulations and provide greater transparency for panel visitors. by @nayskutzu
 
 ### Improved
 

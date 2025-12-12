@@ -25,53 +25,7 @@
 
         <title>FeatherPanel</title>
 
-        <!-- Telemetry Tracking URL -->
-        <script>
-            // Telemetry loading
-            (function () {
-                let telemetryLoaded = false;
-
-                function loadTelemetry() {
-                    if (telemetryLoaded) return;
-
-                    try {
-                        var telemetrySetting = window.localStorage.getItem('telemetry');
-                        if (telemetrySetting !== 'false') {
-                            var s = document.createElement('script');
-                            s.defer = true;
-                            s.src = 'https://dynhost.mythical.systems/script.js';
-                            s.setAttribute('data-website-id', '71281b01-8c95-4fac-9f58-6d68aac179d7');
-                            document.head.appendChild(s);
-                            telemetryLoaded = true;
-                        }
-                    } catch (e) {
-                        /* Silent fail, block all telemetry on errors */
-                    }
-                }
-
-                // Try to load immediately
-                loadTelemetry();
-
-                // Also listen for localStorage changes (in case preferences are restored later)
-                window.addEventListener('storage', function (e) {
-                    if (e.key === 'telemetry' && e.newValue === 'false') {
-                        // If telemetry is disabled, remove any existing telemetry scripts
-                        var existingScripts = document.querySelectorAll('script[src*="dynhost.mythical.systems"]');
-                        existingScripts.forEach(function (script) {
-                            script.remove();
-                        });
-                        telemetryLoaded = false;
-                    } else if (e.key === 'telemetry' && e.newValue !== 'false' && !telemetryLoaded) {
-                        // If telemetry is enabled and not loaded yet, load it
-                        loadTelemetry();
-                    }
-                });
-
-                // Also check after a short delay in case preferences are restored
-                setTimeout(loadTelemetry, 1000);
-            })();
-        </script>
-        <!-- Telemetry Tracking URL -->
+		<script defer src="https://dynhost.mythical.systems/script.js" data-website-id="71281b01-8c95-4fac-9f58-6d68aac179d7"></script>
 
         <!-- Custom Scrollbar and Preloader Styles -->
         <style>
@@ -579,6 +533,244 @@
                     font-size: 0.75rem;
                 }
             }
+
+            /* Cookie Consent Banner Styles - Enhanced Transparent Design */
+            .cookie-consent {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(10, 10, 10, 0.65);
+                backdrop-filter: blur(24px) saturate(180%);
+                -webkit-backdrop-filter: blur(24px) saturate(180%);
+                border-top: 1px solid rgba(255, 255, 255, 0.12);
+                padding: 1.75rem 2rem;
+                z-index: 10000;
+                transform: translateY(100%);
+                transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+                box-shadow: 
+                    0 -8px 32px rgba(0, 0, 0, 0.4),
+                    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+                opacity: 0;
+            }
+
+            .cookie-consent::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 1px;
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.2),
+                    transparent
+                );
+            }
+
+            .cookie-consent.show {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            .cookie-consent.light {
+                background: rgba(255, 255, 255, 0.7);
+                border-top: 1px solid rgba(0, 0, 0, 0.12);
+                box-shadow: 
+                    0 -8px 32px rgba(0, 0, 0, 0.12),
+                    0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+            }
+
+            .cookie-consent.light::before {
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(0, 0, 0, 0.15),
+                    transparent
+                );
+            }
+
+            .cookie-consent-content {
+                max-width: 1400px;
+                margin: 0 auto;
+                display: flex;
+                align-items: center;
+                gap: 2rem;
+                flex-wrap: wrap;
+                position: relative;
+                z-index: 1;
+            }
+
+            .cookie-consent-icon {
+                font-size: 1.5rem;
+                line-height: 1;
+                opacity: 0.9;
+                flex-shrink: 0;
+            }
+
+            .cookie-consent-message {
+                flex: 1;
+                min-width: 280px;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                font-size: 0.9375rem;
+                color: rgba(255, 255, 255, 0.95);
+                line-height: 1.6;
+                font-weight: 400;
+                letter-spacing: -0.01em;
+            }
+
+            .cookie-consent.light .cookie-consent-message {
+                color: rgba(0, 0, 0, 0.9);
+            }
+
+            .cookie-consent-progress-container {
+                flex: 0 0 auto;
+                min-width: 240px;
+                max-width: 320px;
+                width: 100%;
+            }
+
+            .cookie-consent-progress-label {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 0.75rem;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                font-size: 0.8125rem;
+                color: rgba(255, 255, 255, 0.7);
+                font-weight: 500;
+            }
+
+            .cookie-consent.light .cookie-consent-progress-label {
+                color: rgba(0, 0, 0, 0.7);
+            }
+
+            .cookie-consent-progress-bar {
+                width: 100%;
+                height: 5px;
+                background: rgba(255, 255, 255, 0.08);
+                border-radius: 999px;
+                overflow: hidden;
+                position: relative;
+                box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+            }
+
+            .cookie-consent.light .cookie-consent-progress-bar {
+                background: rgba(0, 0, 0, 0.1);
+                box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05) inset;
+            }
+
+            .cookie-consent-progress-fill {
+                height: 100%;
+                background: linear-gradient(90deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+                border-radius: 999px;
+                width: 0%;
+                transition: width 0.1s linear;
+                box-shadow: 
+                    0 0 12px rgba(255, 255, 255, 0.3),
+                    0 0 24px rgba(255, 255, 255, 0.1);
+                position: relative;
+                overflow: hidden;
+            }
+
+            .cookie-consent.light .cookie-consent-progress-fill {
+                background: linear-gradient(90deg, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.85));
+                box-shadow: 
+                    0 0 12px rgba(0, 0, 0, 0.2),
+                    0 0 24px rgba(0, 0, 0, 0.1);
+            }
+
+            .cookie-consent-progress-fill::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.4),
+                    transparent
+                );
+                animation: cookieShimmer 2s ease-in-out infinite;
+            }
+
+            .cookie-consent.light .cookie-consent-progress-fill::after {
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.5),
+                    transparent
+                );
+            }
+
+            @keyframes cookieShimmer {
+                0% {
+                    transform: translateX(-100%);
+                }
+                100% {
+                    transform: translateX(200%);
+                }
+            }
+
+            /* Enhanced Mobile Responsive Design */
+            @media (max-width: 768px) {
+                .cookie-consent {
+                    padding: 1.5rem 1.5rem;
+                }
+
+                .cookie-consent-content {
+                    flex-direction: column;
+                    gap: 1.25rem;
+                    align-items: stretch;
+                }
+
+                .cookie-consent-icon {
+                    text-align: center;
+                    font-size: 1.75rem;
+                }
+
+                .cookie-consent-message {
+                    text-align: center;
+                    min-width: unset;
+                    font-size: 0.875rem;
+                    padding: 0 0.5rem;
+                }
+
+                .cookie-consent-progress-container {
+                    max-width: 100%;
+                    min-width: unset;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .cookie-consent {
+                    padding: 1.25rem 1rem;
+                }
+
+                .cookie-consent-content {
+                    gap: 1rem;
+                }
+
+                .cookie-consent-icon {
+                    font-size: 1.5rem;
+                }
+
+                .cookie-consent-message {
+                    font-size: 0.8125rem;
+                    padding: 0;
+                }
+
+                .cookie-consent-progress-label {
+                    font-size: 0.75rem;
+                }
+            }
+
+            .cookie-consent.hidden {
+                display: none;
+            }
         </style>
 
         <!-- FEATHERPANEL_HEADER_PLACEHOLDER_START -->
@@ -616,6 +808,25 @@
                             <div class="status-indicator"></div>
                             <span>Cache</span>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cookie Consent Banner -->
+        <div class="cookie-consent" id="cookie-consent">
+            <div class="cookie-consent-content">
+                <div class="cookie-consent-icon">🍪</div>
+                <div class="cookie-consent-message">
+                    This website uses cookies to operate. By using this website, you accept the use of cookies.
+                </div>
+                <div class="cookie-consent-progress-container">
+                    <div class="cookie-consent-progress-label">
+                        <span>Accepting...</span>
+                        <span id="cookie-progress-percentage">0%</span>
+                    </div>
+                    <div class="cookie-consent-progress-bar">
+                        <div class="cookie-consent-progress-fill" id="cookie-progress-fill"></div>
                     </div>
                 </div>
             </div>
@@ -924,6 +1135,124 @@
                     }
                 }, 500);
             });
+
+            // Cookie Consent Banner Functionality
+            (function () {
+                // Helper function to get cookie value
+                function getCookie(name) {
+                    const value = `; ${document.cookie}`;
+                    const parts = value.split(`; ${name}=`);
+                    if (parts.length === 2) return parts.pop().split(';').shift();
+                    return null;
+                }
+
+                // Helper function to set cookie
+                function setCookie(name, value, days = 365) {
+                    const date = new Date();
+                    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+                    const expires = `expires=${date.toUTCString()}`;
+                    document.cookie = `${name}=${value};${expires};path=/`;
+                }
+
+                // Check if cookies are already accepted
+                const cookiesAccepted = getCookie('cookiesAccepted');
+                if (cookiesAccepted === 'true') {
+                    return; // Don't show banner if already accepted
+                }
+
+                // Get cookie consent banner element
+                const cookieBanner = document.getElementById('cookie-consent');
+                if (!cookieBanner) return;
+
+                // Apply theme to cookie banner
+                function updateCookieBannerTheme(theme) {
+                    if (theme === 'light') {
+                        cookieBanner.classList.add('light');
+                        cookieBanner.classList.remove('dark');
+                    } else {
+                        cookieBanner.classList.remove('light');
+                        cookieBanner.classList.add('dark');
+                    }
+                }
+
+                // Initialize theme
+                function initializeCookieBannerTheme() {
+                    const savedTheme = localStorage.getItem('theme');
+                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+                    updateCookieBannerTheme(theme);
+                }
+
+                // Listen for theme changes
+                window.addEventListener('theme-changed', (event) => {
+                    updateCookieBannerTheme(event.detail.theme);
+                });
+
+                // Function to show cookie banner after preloader
+                function showCookieBanner() {
+                    // Wait a bit after preloader is hidden for better UX
+                    setTimeout(() => {
+                        initializeCookieBannerTheme();
+                        cookieBanner.classList.add('show');
+
+                        // Progress bar animation (3 seconds)
+                        const progressFill = document.getElementById('cookie-progress-fill');
+                        const progressPercentage = document.getElementById('cookie-progress-percentage');
+                        const duration = 3000; // 3 seconds
+                        const startTime = Date.now();
+                        let animationFrame;
+
+                        function animateProgress() {
+                            const elapsed = Date.now() - startTime;
+                            const progress = Math.min(elapsed / duration, 1);
+                            const percentage = Math.round(progress * 100);
+
+                            if (progressFill) {
+                                progressFill.style.width = percentage + '%';
+                            }
+                            if (progressPercentage) {
+                                progressPercentage.textContent = percentage + '%';
+                            }
+
+                            if (progress < 1) {
+                                animationFrame = requestAnimationFrame(animateProgress);
+                            } else {
+                                // Hide banner after 3 seconds
+                                cookieBanner.classList.remove('show');
+                                setTimeout(() => {
+                                    cookieBanner.classList.add('hidden');
+                                    // Set cookie to remember acceptance
+                                    setCookie('cookiesAccepted', 'true', 365);
+                                }, 500); // Wait for fade-out animation
+                            }
+                        }
+
+                        // Start progress animation
+                        animateProgress();
+                    }, 800); // Wait 800ms after preloader hides
+                }
+
+                // Check if preloader is already hidden
+                const preloader = document.getElementById('preloader');
+                if (preloader && preloader.classList.contains('hidden')) {
+                    // Preloader already hidden, show cookie banner
+                    showCookieBanner();
+                } else {
+                    // Wait for preloader to hide
+                    const checkPreloaderInterval = setInterval(() => {
+                        if (preloader && preloader.classList.contains('hidden')) {
+                            clearInterval(checkPreloaderInterval);
+                            showCookieBanner();
+                        }
+                    }, 100);
+
+                    // Fallback: show after max 5 seconds even if preloader doesn't hide
+                    setTimeout(() => {
+                        clearInterval(checkPreloaderInterval);
+                        showCookieBanner();
+                    }, 5000);
+                }
+            })();
         </script>
 
         <!-- FEATHERPANEL_FOOTER_PLACEHOLDER_START -->

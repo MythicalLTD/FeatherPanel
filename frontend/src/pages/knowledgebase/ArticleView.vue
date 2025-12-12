@@ -260,4 +260,3 @@ onMounted(() => {
     fetchArticle();
 });
 </script>
-
