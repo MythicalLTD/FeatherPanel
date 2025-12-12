@@ -52,7 +52,7 @@
         "ui:add": "npx shadcn-vue@latest add select"
     },
     "dependencies": {
-        "@eslint/js": "^9.39.1",
+        "@eslint/js": "^9.39.2",
         "@modyfi/vite-plugin-yaml": "^1.1.1",
         "@tailwindcss/vite": "^4.1.18",
         "@tanstack/vue-table": "^8.21.3",

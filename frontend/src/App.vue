@@ -43,7 +43,7 @@ export default defineComponent({
         const debugPanel = ref<InstanceType<typeof DebugPanel> | null>(null);
         const globalContextMenu = ref<InstanceType<typeof GlobalContextMenu> | null>(null);
         const customContextMenuEnabled = ref(false);
-        
+
         // Check if we should show the booting screen
         const showBootingScreen = computed(() => settingsStore.booting);
 
