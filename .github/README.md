@@ -74,8 +74,8 @@ _Last updated: 2025-12-12T23:36:44.607Z_
 ### Linux
 
 ```bash
-# Install Beta Build!
-curl -sSL https://get.featherpanel.com/beta.sh | bash
+# Install stable Build!
+curl -sSL https://get.featherpanel.com/stable.sh | bash
 ```
 
 ### Windows
@@ -83,13 +83,13 @@ curl -sSL https://get.featherpanel.com/beta.sh | bash
 **PowerShell:**
 
 ```powershell
-iwr https://get.featherpanel.com/beta.ps1 | iex
+iwr https://get.featherpanel.com/stable.ps1 | iex
 ```
 
 **Command Prompt (CMD):**
 
 ```cmd
-powershell -ExecutionPolicy Bypass -Command "iwr https://get.featherpanel.com/beta.ps1 | iex"
+powershell -ExecutionPolicy Bypass -Command "iwr https://get.featherpanel.com/stable.ps1 | iex"
 ```
 
 **Note:** The installer will automatically request Administrator privileges via UAC when needed.

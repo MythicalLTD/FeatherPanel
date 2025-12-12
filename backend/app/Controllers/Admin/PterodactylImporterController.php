@@ -150,7 +150,7 @@ class PterodactylImporterController
     public function import(Request $request): Response
     {
         return ApiResponse::error(
-            'Direct HTTP import is no longer supported. Please use the Pterodactyl Migration Agent (curl -sSL https://get.featherpanel.com/beta.sh | bash).',
+            'Direct HTTP import is no longer supported. Please use the Pterodactyl Migration Agent (curl -sSL https://get.featherpanel.com/stable.sh | bash).',
             'PTERODACTYL_IMPORT_DEPRECATED',
             410
         );

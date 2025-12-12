@@ -1831,7 +1831,7 @@ install_featherpanel_command() {
 # Handle special "run-script" command
 if [ "$1" = "run-script" ]; then
     echo "Running featherpanel installer script..."
-    curl -sSL https://get.featherpanel.com/beta.sh | bash
+    curl -sSL https://get.featherpanel.com/stable.sh | bash
     exit $?
 fi
 

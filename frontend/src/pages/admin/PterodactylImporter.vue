@@ -725,7 +725,7 @@ onMounted(async () => {
                         </p>
                         <div class="bg-background rounded-lg p-3 border border-border/50">
                             <code class="text-xs text-foreground font-mono block whitespace-pre-wrap"
-                                >curl -sSL https://get.featherpanel.com/beta.sh | bash</code
+                                >curl -sSL https://get.featherpanel.com/stable.sh | bash</code
                             >
                         </div>
                         <p class="text-xs text-muted-foreground">

@@ -1864,7 +1864,7 @@ param(
 # Handle special "run-script" command
 if ($Arguments.Count -gt 0 -and $Arguments[0] -eq "run-script") {
     Write-Host "Running featherpanel installer script..." -ForegroundColor Cyan
-    Invoke-WebRequest -Uri "https://get.featherpanel.com/beta.ps1" -UseBasicParsing | Invoke-Expression
+    Invoke-WebRequest -Uri "https://get.featherpanel.com/stable.ps1" -UseBasicParsing | Invoke-Expression
     exit $LASTEXITCODE
 }
 
