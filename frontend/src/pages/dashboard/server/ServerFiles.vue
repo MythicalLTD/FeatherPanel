@@ -749,6 +749,15 @@
                                                     {{ t('serverFiles.rename') }}
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
+                                                    v-if="canReadContent && file.file && isImageSafeToPreview(file)"
+                                                    data-umami-event="Preview image"
+                                                    :data-umami-event-file="file.name"
+                                                    @click="previewImage(file)"
+                                                >
+                                                    <Eye class="h-4 w-4 mr-2" />
+                                                    {{ t('serverFiles.preview') }}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
                                                     v-if="canReadContent && file.file"
                                                     data-umami-event="Download file"
                                                     :data-umami-event-file="file.name"
@@ -900,6 +909,17 @@
                                                             {{ t('serverFiles.rename') }}
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
+                                                            v-if="
+                                                                canReadContent &&
+                                                                file.file &&
+                                                                isImageSafeToPreview(file)
+                                                            "
+                                                            @click="previewImage(file)"
+                                                        >
+                                                            <Eye class="h-4 w-4 mr-2" />
+                                                            {{ t('serverFiles.preview') }}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
                                                             v-if="canReadContent && file.file"
                                                             @click="downloadFile(file)"
                                                         >
@@ -957,6 +977,13 @@
                                         <ContextMenuItem v-if="canUpdateFiles" @click="renameFile(file)">
                                             <FileEdit class="h-4 w-4 mr-2" />
                                             {{ t('serverFiles.rename') }}
+                                        </ContextMenuItem>
+                                        <ContextMenuItem
+                                            v-if="canReadContent && file.file && isImageSafeToPreview(file)"
+                                            @click="previewImage(file)"
+                                        >
+                                            <Eye class="h-4 w-4 mr-2" />
+                                            {{ t('serverFiles.preview') }}
                                         </ContextMenuItem>
                                         <ContextMenuItem v-if="canReadContent && file.file" @click="downloadFile(file)">
                                             <Download class="h-4 w-4 mr-2" />
@@ -1828,6 +1855,64 @@
             </Button>
         </div>
 
+        <!-- Image Preview Dialog -->
+        <Dialog v-model:open="showImagePreviewDialog" @update:open="(val) => !val && closeImagePreview()">
+            <DialogContent class="mx-4 sm:mx-0 sm:max-w-4xl max-h-[90vh]">
+                <DialogHeader>
+                    <DialogTitle class="flex items-center gap-2">
+                        <Image class="h-5 w-5 text-primary" />
+                        {{ t('serverFiles.imagePreview') }}
+                    </DialogTitle>
+                    <DialogDescription>{{ previewImageName }}</DialogDescription>
+                </DialogHeader>
+                <div
+                    class="relative flex items-center justify-center min-h-[400px] max-h-[70vh] bg-muted/30 rounded-lg overflow-hidden"
+                >
+                    <div v-if="previewImageLoading" class="flex flex-col items-center gap-4 py-12">
+                        <div
+                            class="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"
+                        ></div>
+                        <p class="text-sm text-muted-foreground">{{ t('serverFiles.loadingImage') }}</p>
+                    </div>
+                    <img
+                        v-else-if="previewImageUrl"
+                        :src="previewImageUrl"
+                        :alt="previewImageName"
+                        class="max-w-full max-h-[70vh] object-contain"
+                        @error="
+                            () => {
+                                toast.error(t('serverFiles.imagePreviewError'));
+                                closeImagePreview();
+                            }
+                        "
+                    />
+                    <div v-else class="flex flex-col items-center gap-4 py-12 text-muted-foreground">
+                        <Image class="h-12 w-12 opacity-50" />
+                        <p class="text-sm">{{ t('serverFiles.imagePreviewError') }}</p>
+                    </div>
+                </div>
+                <DialogFooter class="flex flex-col sm:flex-row gap-3">
+                    <Button
+                        v-if="previewImageUrl && canReadContent"
+                        variant="outline"
+                        class="w-full sm:w-auto"
+                        @click="
+                            () => {
+                                const file = files.find((f) => f.name === previewImageName);
+                                if (file) downloadFile(file);
+                            }
+                        "
+                    >
+                        <Download class="h-4 w-4 mr-2" />
+                        {{ t('serverFiles.download') }}
+                    </Button>
+                    <Button variant="outline" class="w-full sm:w-auto" @click="closeImagePreview">
+                        {{ t('common.close') }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
         <!-- Navigation Guard Dialog -->
         <Dialog v-model:open="showNavigationGuardDialog">
             <DialogContent class="mx-4 sm:mx-0 sm:max-w-md">
@@ -1986,6 +2071,7 @@ import {
     Search,
     Plus,
     AlertTriangle,
+    Eye,
 } from 'lucide-vue-next';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
@@ -2054,6 +2140,12 @@ const showCopyDialog = ref(false);
 const showMoveDialog = ref(false);
 const showCompressDialog = ref(false);
 const showIgnoredContentDialog = ref(false);
+const showImagePreviewDialog = ref(false);
+
+// Image preview state
+const previewImageUrl = ref<string | null>(null);
+const previewImageName = ref('');
+const previewImageLoading = ref(false);
 
 // Drag and drop state
 const isDraggingOver = ref(false);
@@ -2590,6 +2682,9 @@ onUnmounted(() => {
     window.removeEventListener('dragover', handleGlobalDragOver);
     window.removeEventListener('beforeunload', handleBeforeUnload);
 
+    // Clean up image preview blob URL
+    closeImagePreview();
+
     // Stop downloads polling
     stopDownloadsPolling();
 });
@@ -2989,8 +3084,63 @@ const isFileSizeValid = (file: FileItem): boolean => {
     return file.size <= FILE_SIZE_LIMIT;
 };
 
+// Check if an image is safe to preview (exclude SVG and other dangerous formats)
+const isImageSafeToPreview = (file: FileItem): boolean => {
+    if (!file.file) return false;
+
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const mime = file.mime?.toLowerCase() || '';
+
+    // Exclude SVG - can contain scripts and is dangerous
+    if (ext === 'svg' || mime.includes('svg')) {
+        return false;
+    }
+
+    // Exclude HTML files that might be disguised as images
+    if (ext === 'html' || ext === 'htm' || mime.includes('html')) {
+        return false;
+    }
+
+    // Safe image formats
+    const safeImageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'ico', 'tiff', 'tif'];
+    const safeImageMimes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'image/bmp',
+        'image/x-icon',
+        'image/vnd.microsoft.icon',
+        'image/tiff',
+    ];
+
+    // Check by extension
+    if (ext && safeImageExtensions.includes(ext)) {
+        return true;
+    }
+
+    // Check by MIME type
+    if (mime && safeImageMimes.some((safeMime) => mime.includes(safeMime))) {
+        return true;
+    }
+
+    // Additional check: if MIME starts with image/ but not svg
+    if (mime.startsWith('image/') && !mime.includes('svg')) {
+        return true;
+    }
+
+    return false;
+};
+
 const handleFileClick = (file: FileItem) => {
     if (file.file) {
+        // Check if it's a safe image to preview first
+        if (isImageSafeToPreview(file)) {
+            previewImage(file);
+            return;
+        }
+
         // Check if file is editable before opening
         if (!isFileEditable(file)) {
             toast.warning(t('serverFiles.cannotEditFile'));
@@ -3849,6 +3999,68 @@ const downloadFile = (file: FileItem) => {
 
     const url = `/api/user/servers/${route.params.uuidShort}/download-file?path=${encodeURIComponent(filePath)}`;
     window.open(url, '_blank');
+};
+
+// Preview image securely
+const previewImage = async (file: FileItem) => {
+    if (!isImageSafeToPreview(file)) {
+        toast.warning(t('serverFiles.imagePreviewNotSupported'));
+        return;
+    }
+
+    previewImageLoading.value = true;
+    previewImageName.value = file.name;
+    previewImageUrl.value = null;
+    showImagePreviewDialog.value = true;
+
+    try {
+        const filePath = currentPath.value.endsWith('/')
+            ? currentPath.value + file.name
+            : currentPath.value + '/' + file.name;
+
+        // Fetch image as blob to ensure safe handling
+        const response = await axios.get(
+            `/api/user/servers/${route.params.uuidShort}/download-file?path=${encodeURIComponent(filePath)}`,
+            {
+                responseType: 'blob',
+            },
+        );
+
+        // Verify the blob is actually an image
+        const blob = response.data;
+        const blobType = blob.type?.toLowerCase() || '';
+
+        // Double-check: ensure it's a safe image type
+        if (
+            !blobType.startsWith('image/') ||
+            blobType.includes('svg') ||
+            blobType.includes('html') ||
+            blobType.includes('xml')
+        ) {
+            throw new Error('Unsafe image type detected');
+        }
+
+        // Create a safe blob URL
+        const blobUrl = URL.createObjectURL(blob);
+        previewImageUrl.value = blobUrl;
+    } catch (error) {
+        console.error('Error loading image preview:', error);
+        toast.error(t('serverFiles.imagePreviewError'));
+        showImagePreviewDialog.value = false;
+        previewImageUrl.value = null;
+    } finally {
+        previewImageLoading.value = false;
+    }
+};
+
+// Clean up blob URL when dialog closes
+const closeImagePreview = () => {
+    if (previewImageUrl.value) {
+        URL.revokeObjectURL(previewImageUrl.value);
+        previewImageUrl.value = null;
+    }
+    previewImageName.value = '';
+    showImagePreviewDialog.value = false;
 };
 
 const renameFile = (file: FileItem) => {

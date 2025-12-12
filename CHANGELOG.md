@@ -24,6 +24,7 @@
 - Introduced an experimental Redis-backed cache layer, offering an alternative to traditional file-based caching for improved performance and scalability. by @nayskutzu
 - Introduced robust API rate limiting to effectively safeguard against abuse and ensure fair use for all users. by @nayskutzu
 - Newly registered panel users now receive their password details directly in their welcome email, making onboarding smoother and more convenient. by @nayskutzu
+- Introducing elegant image previews in the file manager—supported image formats now display crisp, in-panel thumbnails for a more intuitive and visually engaging browsing experience. by @nayskutzu
 
 ### Improved
 
