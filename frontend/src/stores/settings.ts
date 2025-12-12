@@ -107,14 +107,14 @@ export const useSettingsStore = defineStore('settings', {
                 }
             } catch (e) {
                 console.error('Failed to fetch settings:', e);
-                
-                // Check if this is a 500 error specifically
+
+                // Check if this is a 500 or 502 error (backend still booting or unavailable)
                 const error = e as { response?: { status?: number } };
-                if (error.response?.status === 500) {
+                if (error.response?.status === 500 || error.response?.status === 502) {
                     // Backend is still booting, set booting state
                     this.booting = true;
                 }
-                
+
                 this.settings = null;
                 this.loaded = false;
             } finally {
