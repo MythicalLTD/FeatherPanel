@@ -202,6 +202,7 @@ export const useSettingsStore = defineStore('settings', {
             const value = state.settings?.server_proxy_max_per_server;
             return value ? Number(value) : 5;
         },
+        serverAllowCrossRealmSpellChange: (state) => getBooleanSetting(state, 'server_allow_cross_realm_spell_change'),
 
         /**
          * User-related settings

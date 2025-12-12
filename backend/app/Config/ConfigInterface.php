@@ -102,6 +102,7 @@ interface ConfigInterface
     public const SERVER_ALLOW_USER_MADE_FIREWALL = 'server_allow_user_made_firewall';
     public const SERVER_ALLOW_USER_MADE_PROXY = 'server_allow_user_made_proxy';
     public const SERVER_PROXY_MAX_PER_SERVER = 'server_proxy_max_per_server';
+    public const SERVER_ALLOW_CROSS_REALM_SPELL_CHANGE = 'server_allow_cross_realm_spell_change';
 
     /**
      * User Related Configs.

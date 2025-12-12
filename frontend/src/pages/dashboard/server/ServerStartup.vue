@@ -220,7 +220,9 @@
                             </Label>
                             <Select
                                 v-model="selectedRealmId"
-                                :disabled="loadingRealms || loadingSpells"
+                                :disabled="
+                                    loadingRealms || loadingSpells || !settingsStore.serverAllowCrossRealmSpellChange
+                                "
                                 @update:model-value="onRealmChange"
                             >
                                 <SelectTrigger id="realmSelect">
@@ -247,6 +249,12 @@
                             </Select>
                             <p v-if="selectedRealmInfo" class="text-xs text-muted-foreground">
                                 {{ selectedRealmInfo.description }}
+                            </p>
+                            <p
+                                v-if="!settingsStore.serverAllowCrossRealmSpellChange"
+                                class="text-xs text-muted-foreground italic mt-1"
+                            >
+                                {{ t('serverStartup.crossRealmRestricted') }}
                             </p>
                         </div>
 
@@ -706,7 +714,8 @@ interface ServerResponse {
     image?: string;
     variables?: Variable[];
     spell?: { id?: number; name?: string; docker_images?: string | Record<string, string>; startup?: string } | null;
-    realm?: { id?: number; name?: string } | null;
+    realm?: { id?: number; name?: string; description?: string } | null;
+    realms_id?: number;
 }
 
 const server = ref<ServerResponse | null>(null);
@@ -850,7 +859,9 @@ async function fetchServer() {
 
         // Set current realm selection
         if (server.value?.realm) {
-            const realmId = (server.value.realm as { id?: number }).id || 0;
+            // Get realm ID from server's realms_id if realm.id is not available
+            const realmId =
+                (server.value.realm as { id?: number }).id || (server.value as { realms_id?: number }).realms_id || 0;
             selectedRealmId.value = String(realmId);
             if (server.value.realm.name) {
                 selectedRealmInfo.value = {
@@ -863,6 +874,8 @@ async function fetchServer() {
 
         // Fetch available realms and spells if spell change is allowed
         if (canChangeSpell.value) {
+            // Ensure settings are loaded for cross-realm check
+            await settingsStore.fetchSettings();
             await fetchAvailableRealms();
             if (selectedRealmId.value) {
                 await fetchAvailableSpells(selectedRealmId.value);
@@ -902,7 +915,20 @@ async function fetchAvailableRealms() {
         const { data } = await axios.get('/api/user/realms');
 
         if (data.success && data.data.realms) {
-            availableRealms.value = data.data.realms;
+            // If cross-realm spell changes are disabled, only show the current realm
+            if (!settingsStore.serverAllowCrossRealmSpellChange && server.value) {
+                const currentRealmId =
+                    (server.value.realm as { id?: number })?.id ||
+                    (server.value as { realms_id?: number }).realms_id ||
+                    0;
+                if (currentRealmId > 0) {
+                    availableRealms.value = data.data.realms.filter((r: { id: number }) => r.id === currentRealmId);
+                } else {
+                    availableRealms.value = data.data.realms;
+                }
+            } else {
+                availableRealms.value = data.data.realms;
+            }
         }
     } catch (e: unknown) {
         console.error('Failed to fetch realms:', e);
@@ -939,6 +965,26 @@ async function fetchAvailableSpells(realmId?: string) {
 
 function onRealmChange(value: unknown) {
     const realmId = value != null && typeof value !== 'object' ? String(value) : null;
+
+    // Prevent realm change if cross-realm is disabled
+    if (!settingsStore.serverAllowCrossRealmSpellChange && server.value) {
+        const currentRealmId =
+            (server.value.realm as { id?: number })?.id || (server.value as { realms_id?: number }).realms_id || 0;
+        if (realmId && currentRealmId > 0 && String(currentRealmId) !== realmId) {
+            toast.warning(t('serverStartup.crossRealmRestricted'));
+            // Reset to current realm
+            selectedRealmId.value = String(currentRealmId);
+            const currentRealm = availableRealms.value.find((r) => r.id === currentRealmId);
+            selectedRealmInfo.value = currentRealm
+                ? {
+                      id: currentRealm.id,
+                      name: currentRealm.name,
+                      description: currentRealm.description,
+                  }
+                : null;
+            return;
+        }
+    }
 
     if (!realmId) {
         selectedRealmId.value = '';

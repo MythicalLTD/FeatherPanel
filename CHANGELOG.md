@@ -35,6 +35,7 @@
 - Bulk deletion of allocations now offers the flexibility to target and remove allocations from a specific subnet, empowering more precise management. by @nayskutzu
 - Developer plugin creation has been completely revamped, now offering a streamlined and intuitive experience for effortless management and customization. by @nayskutzu
 - Optimized mail sending: the system now processes only pending emails, significantly improving efficiency and performance! by @nayskutzu
+- Introduced the option to restrict users from switching realms, providing enhanced administrative control and flexibility. by @nayskutzu
 
 ## v1.0.6 BETA
 

@@ -881,6 +881,24 @@ class ServerUserController
 
             // Get the new spell's realm_id
             $newRealmId = (int) $newSpell['realm_id'];
+            $currentRealmId = (int) $server['realms_id'];
+
+            // Check if cross-realm spell changes are allowed
+            $app = App::getInstance(true);
+            $allowCrossRealm = $app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_CROSS_REALM_SPELL_CHANGE, 'false');
+            $allowCrossRealm = ($allowCrossRealm === 'true' || $allowCrossRealm === true || $allowCrossRealm === '1' || $allowCrossRealm === 1);
+
+            // If cross-realm is not allowed, enforce same-realm restriction
+            if (!$allowCrossRealm && $newRealmId !== $currentRealmId) {
+                $currentRealm = \App\Chat\Realm::getById($currentRealmId);
+                $currentRealmName = $currentRealm['name'] ?? 'current realm';
+
+                return ApiResponse::error(
+                    'Spell must be from the same realm as the server (' . $currentRealmName . '). Cross-realm spell changes are disabled.',
+                    'CROSS_REALM_SPELL_CHANGE_DISABLED',
+                    403
+                );
+            }
 
             // Verify the new realm exists (for realm verification)
             $newRealm = \App\Chat\Realm::getById($newRealmId);
@@ -888,8 +906,8 @@ class ServerUserController
                 return ApiResponse::error('Invalid realm_id: Realm not found for the selected spell', 'INVALID_REALM_ID', 404);
             }
 
-            // Update realm_id to match the new spell's realm (allow cross-realm spell changes)
-            if ($newRealmId !== (int) $server['realms_id']) {
+            // Update realm_id to match the new spell's realm (only if cross-realm is allowed or realm actually changed)
+            if ($newRealmId !== $currentRealmId) {
                 $updateData['realms_id'] = $newRealmId;
             }
         }

@@ -199,6 +199,7 @@ class SettingsController
                 ConfigInterface::SERVER_ALLOW_USER_MADE_FIREWALL,
                 ConfigInterface::SERVER_ALLOW_USER_MADE_PROXY,
                 ConfigInterface::SERVER_PROXY_MAX_PER_SERVER,
+                ConfigInterface::SERVER_ALLOW_CROSS_REALM_SPELL_CHANGE,
             ],
         ],
         'chatbot' => [
@@ -687,7 +688,18 @@ class SettingsController
             ConfigInterface::SERVER_ALLOW_EGG_CHANGE => [
                 'name' => ConfigInterface::SERVER_ALLOW_EGG_CHANGE,
                 'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_EGG_CHANGE, 'false'),
-                'description' => 'Allow users to change the server egg',
+                'description' => 'Allow users to change the server spells/eggs',
+                'type' => 'select',
+                'required' => true,
+                'placeholder' => 'false',
+                'validation' => 'required|string|max:255',
+                'options' => ['true', 'false'],
+                'category' => 'servers',
+            ],
+            ConfigInterface::SERVER_ALLOW_CROSS_REALM_SPELL_CHANGE => [
+                'name' => ConfigInterface::SERVER_ALLOW_CROSS_REALM_SPELL_CHANGE,
+                'value' => $this->app->getConfig()->getSetting(ConfigInterface::SERVER_ALLOW_CROSS_REALM_SPELL_CHANGE, 'false'),
+                'description' => 'Allow users to change server spells/eggs across different realms. When disabled, users can only select spells from the same realm as their server.',
                 'type' => 'select',
                 'required' => true,
                 'placeholder' => 'false',

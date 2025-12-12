@@ -766,6 +766,7 @@ serverStartup:
     selectRealmPlaceholder: 'Choose a realm...'
     selectRealmFirst: 'Please select a realm first'
     noRealmsAvailable: 'No realms available'
+    crossRealmRestricted: 'You can only select spells from the same realm as your server. Cross-realm spell changes are disabled by the administrator.'
     failedToFetchRealms: 'Failed to fetch available realms'
     selectSpell: 'Select Spell'
     selectSpellPlaceholder: 'Choose a spell...'
