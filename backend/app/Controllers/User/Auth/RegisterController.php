@@ -250,6 +250,7 @@ class RegisterController
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
             'username' => $data['username'],
+            'password' => $data['password'],
             'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
             'uuid' => $userInfo['uuid'],
             'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),

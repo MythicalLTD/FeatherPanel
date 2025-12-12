@@ -4,10 +4,12 @@
 
 ### Fixed
 
+- Resolved multiple common captcha-related issues, ensuring a smoother and more reliable verification experience. by @nayskutzu
 - Enhanced input validation on the server startup page with improved regex checks, replacing unclear "validation failed" errors with more informative messages. by @nayskutzu
 - Fixed an issue where extra server allocations were not properly unassigned when a server was deleted. by @nayskutzu
 - Fixed an issue where auto-assigning an allocation to a server would fail unless exactly 100 free allocations were available. by @nayskutzu
 - Improved error handling for /server routes: pages now gracefully display the API error message when a request fails, ensuring clearer feedback for users. by @nayskutzu
+- Enhanced the success notification for password reset requests, providing users with a clearer and more polished confirmation when a reset link is sent to their email address. by @nayskutzu
 
 ### Added
 
@@ -20,6 +22,7 @@
 - Introduced an automated update checker for nodes, ensuring you always stay informed about the latest available updates. by @nayskutzu
 - Introduced an experimental Redis-backed cache layer, offering an alternative to traditional file-based caching for improved performance and scalability. by @nayskutzu
 - Introduced robust API rate limiting to effectively safeguard against abuse and ensure fair use for all users. by @nayskutzu
+- Newly registered panel users now receive their password details directly in their welcome email, making onboarding smoother and more convenient. by @nayskutzu
 
 ### Improved
 
@@ -27,6 +30,7 @@
 - Log uploads now use the FeatherPanel API instead of mclogs, providing a more seamless and integrated experience. by @nayskutzu
 - Bulk deletion of allocations now offers the flexibility to target and remove allocations from a specific subnet, empowering more precise management. by @nayskutzu
 - Developer plugin creation has been completely revamped, now offering a streamlined and intuitive experience for effortless management and customization. by @nayskutzu
+- Optimized mail sending: the system now processes only pending emails, significantly improving efficiency and performance! by @nayskutzu
 
 ## v1.0.6 BETA
 

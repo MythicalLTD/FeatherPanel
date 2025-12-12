@@ -29,12 +29,21 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import Turnstile from 'vue-turnstile';
 import { useSettingsStore } from '@/stores/settings';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
+import { CheckCircle2 } from 'lucide-vue-next';
 
 const settingsStore = useSettingsStore();
 onMounted(async () => {
@@ -55,7 +64,7 @@ const form = ref({
 });
 const loading = ref(false);
 const error = ref('');
-const success = ref('');
+const showSuccessDialog = ref(false);
 
 // Plugin widgets
 const { fetchWidgets: fetchPluginWidgets } = usePluginWidgets('auth-forgot-password');
@@ -118,7 +127,6 @@ function getErrorMessage(err: unknown): string {
 async function onSubmit(e: Event) {
     e.preventDefault();
     error.value = '';
-    success.value = '';
     const validationError = validateForm();
     if (validationError) {
         error.value = validationError;
@@ -126,15 +134,17 @@ async function onSubmit(e: Event) {
     }
     loading.value = true;
     try {
-        const payload = {
+        const payload: Record<string, string> = {
             email: form.value.email,
         };
+        if (settingsStore.turnstile_enabled) {
+            payload.turnstile_token = form.value.turnstile_token;
+        }
         const res = await axios.put('/api/user/auth/forgot-password', payload, {
             headers: { 'Content-Type': 'application/json' },
         });
         if (res.data && res.data.success) {
-            success.value = res.data.message || $t('api_errors.FORGOT_PASSWORD_SUCCESS');
-            router.replace('/auth/login');
+            showSuccessDialog.value = true;
         } else {
             error.value = getErrorMessage(res.data);
         }
@@ -143,6 +153,11 @@ async function onSubmit(e: Event) {
     } finally {
         loading.value = false;
     }
+}
+
+function handleDialogClose() {
+    showSuccessDialog.value = false;
+    router.replace('/auth/login');
 }
 </script>
 
@@ -177,7 +192,6 @@ async function onSubmit(e: Event) {
                         <span v-else>{{ $t('auth.sendReset') }}</span>
                     </Button>
                     <div v-if="error" class="text-center text-sm text-red-500">{{ error }}</div>
-                    <div v-if="success" class="text-center text-sm text-green-500">{{ success }}</div>
                     <div class="text-center text-sm">
                         {{ $t('auth.remembered') }}
                         <button
@@ -198,5 +212,27 @@ async function onSubmit(e: Event) {
 
         <!-- Plugin Widgets: Bottom of Page -->
         <WidgetRenderer v-if="widgetsBottomOfPage.length > 0" :widgets="widgetsBottomOfPage" />
+
+        <!-- Success Dialog -->
+        <Dialog v-model:open="showSuccessDialog">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle class="flex items-center gap-2">
+                        <div class="h-10 w-10 rounded-lg flex items-center justify-center bg-green-500/10">
+                            <CheckCircle2 class="h-5 w-5 text-green-500" />
+                        </div>
+                        <span>{{ $t('auth.forgotPasswordSuccessTitle') }}</span>
+                    </DialogTitle>
+                    <DialogDescription class="text-sm">
+                        {{ $t('auth.forgotPasswordSuccessMessage') }}
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button class="w-full" @click="handleDialogClose">
+                        {{ $t('auth.goToLogin') }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>

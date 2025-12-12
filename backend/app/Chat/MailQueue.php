@@ -88,6 +88,17 @@ class MailQueue
         return $byId;
     }
 
+    public static function getPending(int $limit = 15): array
+    {
+        $pdo = Database::getPdoConnection();
+        $sql = 'SELECT * FROM ' . self::$table . " WHERE status = 'pending' AND locked = 'false' ORDER BY created_at DESC LIMIT ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindValue(1, $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
     public static function getAll(bool $includeDeleted = false): array
     {
         $pdo = Database::getPdoConnection();

@@ -105,15 +105,38 @@ onMounted(async () => {
     }
 });
 
+function validateForm(): string | null {
+    if (!code.value || code.value.trim() === '') {
+        return t('api_errors.MISSING_REQUIRED_FIELDS');
+    }
+    if (code.value.length !== 6) {
+        return t('api_errors.INVALID_CODE');
+    }
+    if (settingsStore.turnstile_enabled) {
+        if (!form.value.turnstile_token) {
+            return t('api_errors.TURNSTILE_TOKEN_REQUIRED');
+        }
+    }
+    return null;
+}
+
 async function verify2FA(e: Event) {
     e.preventDefault();
+    const validationError = validateForm();
+    if (validationError) {
+        toast.error(validationError);
+        return;
+    }
     loading.value = true;
     try {
-        const res = await axios.put('/api/user/auth/two-factor', {
+        const payload: Record<string, string> = {
             code: code.value,
             secret: secret.value,
-            turnstile_token: form.value.turnstile_token,
-        });
+        };
+        if (settingsStore.turnstile_enabled) {
+            payload.turnstile_token = form.value.turnstile_token;
+        }
+        const res = await axios.put('/api/user/auth/two-factor', payload);
         if (res.data && res.data.success) {
             toast.success(t('api_errors.TWO_FACTOR_ENABLED_SUCCESS'));
 

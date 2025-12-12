@@ -49,6 +49,7 @@ class Welcome
                 'last_name' => $data['last_name'],
                 'email' => $data['email'],
                 'username' => $data['username'],
+                'password' => $data['password'] ?? '',
                 'dashboard_url' => $data['app_url'] . '/dashboard',
                 'support_url' => $data['app_support_url'],
             ]);
@@ -68,6 +69,7 @@ class Welcome
         $template = str_replace('{last_name}', $data['last_name'], $template);
         $template = str_replace('{email}', $data['email'], $template);
         $template = str_replace('{username}', $data['username'], $template);
+        $template = str_replace('{password}', $data['password'] ?? '', $template);
         $template = str_replace('{dashboard_url}', $data['dashboard_url'], $template);
         $template = str_replace('{support_url}', $data['support_url'], $template);
 

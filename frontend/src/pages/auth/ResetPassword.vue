@@ -104,7 +104,7 @@ function validateForm(): string | null {
         return $t('api_errors.MISSING_REQUIRED_FIELDS');
     }
     if (settingsStore.turnstile_enabled) {
-        if (settingsStore.turnstile_enabled) {
+        if (!form.value.turnstile_token) {
             return $t('api_errors.TURNSTILE_TOKEN_REQUIRED');
         }
     }
@@ -162,10 +162,13 @@ async function onSubmit(e: Event) {
     submitting.value = true;
     try {
         const token = route.query.token as string;
-        const payload = {
+        const payload: Record<string, string> = {
             token,
             password: form.value.password,
         };
+        if (settingsStore.turnstile_enabled) {
+            payload.turnstile_token = form.value.turnstile_token;
+        }
         const res = await axios.put('/api/user/auth/reset-password', payload, {
             headers: { 'Content-Type': 'application/json' },
         });

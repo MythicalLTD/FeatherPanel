@@ -162,7 +162,7 @@ class ForgotPasswordController
 
         if (User::updateUser($userInfo['uuid'], ['mail_verify' => $resetToken])) {
             // Send reset password email
-            $appUrl = $config->getSetting(ConfigInterface::APP_URL, 'cloud.mythical.systems');
+            $appUrl = $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems');
             if (!preg_match('#^https?://#i', $appUrl)) {
                 $appUrl = 'https://' . ltrim($appUrl, '/');
             }

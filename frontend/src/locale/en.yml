@@ -97,6 +97,10 @@ auth:
     invalidToken: 'Invalid token.'
     tokenExpired: 'This password reset link is invalid or has expired.'
     unknownError: 'An unknown error occurred. Please try again.'
+    # Success dialog
+    forgotPasswordSuccessTitle: 'Reset Link Sent'
+    forgotPasswordSuccessMessage: 'If an account exists with that email address, we have sent a password reset link. Please check your email inbox and follow the instructions to reset your password.'
+    goToLogin: 'Go to Login'
     # Logout translations
     loggingOut: 'Logging Out'
     logoutMessage: 'Please wait while we securely log you out and clean up your session data.'

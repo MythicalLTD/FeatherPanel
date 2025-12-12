@@ -95,7 +95,6 @@ class ResetPasswordController
             $app = App::getInstance(true);
             $config = $app->getConfig();
             $data = json_decode($request->getContent(), true);
-
             if ($config->getSetting(ConfigInterface::TURNSTILE_ENABLED, 'false') == 'true') {
                 $turnstileKeyPublic = $config->getSetting(ConfigInterface::TURNSTILE_KEY_PUB, 'NULL');
                 $turnstileKeySecret = $config->getSetting(ConfigInterface::TURNSTILE_KEY_PRIV, 'NULL');
@@ -137,7 +136,7 @@ class ResetPasswordController
                     );
                 }
 
-                return ApiResponse::error('Invalid token', 'INVALID_TOKEN');
+                return ApiResponse::error('Looks like the token is invalid or expired or already used', 'INVALID_TOKEN');
             }
 
             if (User::updateUser($userInfo['uuid'], ['password' => password_hash($data['password'], PASSWORD_BCRYPT), 'remember_token' => User::generateAccountToken()]) && User::updateUser($userInfo['uuid'], ['mail_verify' => null])) {
@@ -197,16 +196,16 @@ class ResetPasswordController
         $app = App::getInstance(true);
         try {
             $token = $request->query->get('token');
+			$app->getLogger()->info('Validating password reset token: ' . $token . ' - IP: ' . CloudFlareRealIP::getRealIP());
             if (!$token || trim($token) === '') {
                 return ApiResponse::error('Token is required', 'TOKEN_REQUIRED');
             }
             $userInfo = User::getUserByMailVerify($token);
             if ($userInfo == null) {
-                return ApiResponse::error('Invalid token', 'INVALID_TOKEN', 400, [
+                return ApiResponse::error('Looks like the token is invalid or expired', 'INVALID_TOKEN', 400, [
                     'token' => $token,
                 ]);
             }
-
             return ApiResponse::success(null, 'Token is valid', 200);
         } catch (\Exception $e) {
             return ApiResponse::exception('An error occurred: ' . $e->getMessage(), $e->getCode());

@@ -78,6 +78,11 @@ function validateForm(): string | null {
             return $t('api_errors.MISSING_REQUIRED_FIELDS');
         }
     }
+    if (settingsStore.turnstile_enabled) {
+        if (!form.value.turnstile_token) {
+            return $t('api_errors.TURNSTILE_TOKEN_REQUIRED');
+        }
+    }
     for (const field of requiredFields) {
         if (typeof form.value[field] !== 'string') {
             switch (field) {
