@@ -27,6 +27,8 @@
 - Introducing elegant image previews in the file manager—supported image formats now display crisp, in-panel thumbnails for a more intuitive and visually engaging browsing experience. by @nayskutzu
 - Introduced advanced server reverse proxy support, allowing you to seamlessly expose server ports to the web with optional SSL certificate integration for secure connections! by @nayskutzu
 - Introducing seamless server import capabilities: effortlessly migrate servers from other hosts using SFTP or FTP with a powerful, intuitive importer! by @nayskutzu
+- Added granular control to zero trust verification: now you can selectively skip zero trust checks on individual servers if desired, providing greater flexibility and customization. by @nayskutzu
+- Added the ability to seamlessly edit a server's external ID, offering enhanced flexibility and management control. by @nayskutzu
 
 ### Improved
 

@@ -47,8 +47,10 @@ class MailSender implements TimeTask
     {
         $cron = new Cron('mail-sender', '1M');
         try {
-            $this->sendMails();
-            TimedTask::markRun('mail-sender', true, 'Mail sender heartbeat');
+            $cron->runIfDue(function () {
+                $this->sendMails();
+                TimedTask::markRun('mail-sender', true, 'Mail sender heartbeat');
+            });
         } catch (\Exception $e) {
             $app = \App\App::getInstance(false, true);
             $app->getLogger()->error('Failed to send mail: ' . $e->getMessage());

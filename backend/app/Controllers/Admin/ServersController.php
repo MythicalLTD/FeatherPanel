@@ -992,7 +992,7 @@ class ServersController
         }
 
         // Validate boolean fields
-        $booleanFields = ['skip_scripts', 'oom_disabled', 'oom_killer'];
+        $booleanFields = ['skip_scripts', 'skip_zerotrust', 'oom_disabled', 'oom_killer'];
         foreach ($data as $field => $value) {
             if (in_array($field, $booleanFields) && isset($data[$field])) {
                 if (!is_bool($value) && !in_array($value, [0, 1, '0', '1'], true)) {

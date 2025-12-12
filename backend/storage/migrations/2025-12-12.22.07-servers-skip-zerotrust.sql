@@ -1,0 +1,1 @@
+ALTER TABLE `featherpanel_servers` ADD COLUMN `skip_zerotrust` TINYINT (1) NOT NULL DEFAULT 0 AFTER `skip_scripts`;

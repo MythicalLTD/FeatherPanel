@@ -137,6 +137,11 @@ class FeatherZeroTrustScanner implements TimeTask
                 // Scan each server
                 foreach ($servers as $server) {
                     try {
+						if ($server['skip_zerotrust']) {
+							MinecraftColorCodeSupport::sendOutputWithNewLine("&eSkipping zero trust checks for server {$server['name']}");
+							continue;
+						}
+
                         $serverStartTime = microtime(true);
                         MinecraftColorCodeSupport::sendOutputWithNewLine("&aScanning server: {$server['name']} ({$server['uuidShort']})");
 

@@ -79,30 +79,77 @@
                                     Email address of the Server Owner.
                                 </p>
                             </div>
+                            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="skip-scripts" class="block mb-2 font-medium">Skip Scripts</label>
+                                    <Select
+                                        :model-value="String(form.skip_scripts)"
+                                        @update:model-value="
+                                            (value: any) => (form.skip_scripts = String(value) === 'true')
+                                        "
+                                    >
+                                        <SelectTrigger :class="{ 'border-red-500': validationErrors.skip_scripts }">
+                                            <SelectValue placeholder="Select script behavior..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem
+                                                v-for="option in SKIP_SCRIPTS_OPTIONS"
+                                                :key="String(option.value)"
+                                                :value="String(option.value)"
+                                            >
+                                                {{ option.label }}
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <p v-if="validationErrors.skip_scripts" class="text-xs text-red-500 mt-1">
+                                        {{ validationErrors.skip_scripts }}
+                                    </p>
+                                    <p v-else class="text-xs text-muted-foreground mt-1">
+                                        Whether to skip startup scripts during server initialization.
+                                    </p>
+                                </div>
+                                <div>
+                                    <label for="skip-zerotrust" class="block mb-2 font-medium">Skip Zero Trust</label>
+                                    <Select
+                                        :model-value="String(form.skip_zerotrust)"
+                                        @update:model-value="
+                                            (value: any) => (form.skip_zerotrust = String(value) === 'true')
+                                        "
+                                    >
+                                        <SelectTrigger :class="{ 'border-red-500': validationErrors.skip_zerotrust }">
+                                            <SelectValue placeholder="Select zero trust behavior..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem
+                                                v-for="option in SKIP_ZEROTRUST_OPTIONS"
+                                                :key="String(option.value)"
+                                                :value="String(option.value)"
+                                            >
+                                                {{ option.label }}
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <p v-if="validationErrors.skip_zerotrust" class="text-xs text-red-500 mt-1">
+                                        {{ validationErrors.skip_zerotrust }}
+                                    </p>
+                                    <p v-else class="text-xs text-muted-foreground mt-1">
+                                        Whether to skip zero trust checks during server operations.
+                                    </p>
+                                </div>
+                            </div>
                             <div class="mt-6">
-                                <label for="skip-scripts" class="block mb-2 font-medium">Skip Scripts</label>
-                                <Select
-                                    :model-value="String(form.skip_scripts)"
-                                    @update:model-value="(value: any) => (form.skip_scripts = String(value) === 'true')"
-                                >
-                                    <SelectTrigger :class="{ 'border-red-500': validationErrors.skip_scripts }">
-                                        <SelectValue placeholder="Select script behavior..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem
-                                            v-for="option in SKIP_SCRIPTS_OPTIONS"
-                                            :key="String(option.value)"
-                                            :value="String(option.value)"
-                                        >
-                                            {{ option.label }}
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <p v-if="validationErrors.skip_scripts" class="text-xs text-red-500 mt-1">
-                                    {{ validationErrors.skip_scripts }}
+                                <label for="external-id" class="block mb-2 font-medium">External ID</label>
+                                <Input
+                                    id="external-id"
+                                    v-model="form.external_id"
+                                    placeholder="External ID (optional)"
+                                    :class="{ 'border-red-500': validationErrors.external_id }"
+                                />
+                                <p v-if="validationErrors.external_id" class="text-xs text-red-500 mt-1">
+                                    {{ validationErrors.external_id }}
                                 </p>
                                 <p v-else class="text-xs text-muted-foreground mt-1">
-                                    Whether to skip startup scripts during server initialization.
+                                    External identifier for this server (e.g., from an external system or import).
                                 </p>
                             </div>
                         </div>
@@ -1105,6 +1152,7 @@ import type {
     SubmitData,
     AxiosError,
 } from '@/composables/types/admin/server';
+import { SKIP_ZEROTRUST_OPTIONS } from '@/composables/types/admin/server';
 
 const router = useRouter();
 const route = useRoute();
@@ -1182,6 +1230,8 @@ const form = ref<EditForm>({
     allocation_limit: 0,
     backup_limit: 0,
     skip_scripts: false,
+    skip_zerotrust: false,
+    external_id: '',
     location_id: '',
 });
 
@@ -1539,6 +1589,8 @@ async function loadServerData() {
                 allocation_limit: server.allocation_limit || 0,
                 backup_limit: server.backup_limit || 0,
                 skip_scripts: Boolean(server.skip_scripts),
+                skip_zerotrust: Boolean(server.skip_zerotrust ?? 0),
+                external_id: server.external_id || '',
                 location_id: String(server.node?.location_id || ''),
             };
 
@@ -1758,6 +1810,13 @@ function validateForm(): boolean {
         validationErrors.value.backup_limit = 'Backup limit cannot be negative';
     }
 
+    // External ID validation (optional, but if provided must be valid)
+    if (form.value.external_id && form.value.external_id.trim()) {
+        if (form.value.external_id.length > 191) {
+            validationErrors.value.external_id = 'External ID must be less than 191 characters';
+        }
+    }
+
     // Spell variables validation
     if (spellVariables.value.length > 0) {
         spellVariables.value.forEach((variable) => {
@@ -1863,6 +1922,7 @@ async function submitUpdate() {
     try {
         const serverId = route.params.id;
         const descriptionValue: string | null = form.value.description?.trim() || null;
+        const externalIdValue: string | null = form.value.external_id?.trim() || null;
         const submitDataBase: SubmitData = {
             node_id: Number(form.value.node_id),
             name: form.value.name,
@@ -1882,6 +1942,8 @@ async function submitUpdate() {
             allocation_limit: form.value.allocation_limit,
             backup_limit: form.value.backup_limit,
             skip_scripts: form.value.skip_scripts,
+            skip_zerotrust: form.value.skip_zerotrust,
+            external_id: externalIdValue,
             // Always include variables as an array of { variable_id, variable_value }
             variables: [],
         };

@@ -103,6 +103,8 @@ export interface ApiServer {
     allocation_limit?: number;
     backup_limit?: number;
     skip_scripts: number;
+    skip_zerotrust?: number;
+    external_id?: string | null;
     node?: { location_id: number };
     variables?: Array<{
         id: number;
@@ -166,6 +168,8 @@ export interface EditForm {
     allocation_limit: number;
     backup_limit: number;
     skip_scripts: boolean;
+    skip_zerotrust: boolean;
+    external_id: string;
     location_id: string; // For UI filtering only, not sent to API
 }
 
@@ -188,6 +192,8 @@ export interface SubmitData {
     allocation_limit: number;
     backup_limit: number;
     skip_scripts: boolean;
+    skip_zerotrust?: boolean;
+    external_id?: string | null;
     variables: Array<{ variable_id: number; variable_value: string }>;
 }
 
@@ -208,6 +214,17 @@ export interface SkipScriptsOption {
 export const SKIP_SCRIPTS_OPTIONS: SkipScriptsOption[] = [
     { value: false, label: 'No - Run scripts normally' },
     { value: true, label: 'Yes - Skip startup scripts' },
+];
+
+// Skip zero trust options
+export interface SkipZeroTrustOption {
+    value: boolean;
+    label: string;
+}
+
+export const SKIP_ZEROTRUST_OPTIONS: SkipZeroTrustOption[] = [
+    { value: false, label: 'No - Run zero trust checks normally' },
+    { value: true, label: 'Yes - Skip zero trust checks' },
 ];
 
 // Server transfer status

@@ -147,4 +147,21 @@ class MailTemplate
 
         return $stmt->execute(['id' => $id]);
     }
+
+    /**
+     * Hard delete all soft-deleted mail templates.
+     *
+     * @return int Number of templates deleted
+     */
+    public static function deleteSoftDeletedTemplates(): int
+    {
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('DELETE FROM ' . self::$table . " WHERE deleted = 'true'");
+
+        if ($stmt->execute()) {
+            return $stmt->rowCount();
+        }
+
+        return 0;
+    }
 }

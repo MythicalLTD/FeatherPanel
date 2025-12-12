@@ -139,4 +139,28 @@ class SsoToken
 
         return $stmt->execute(['id' => $id]);
     }
+
+    /**
+     * Delete old SSO tokens (expired or used).
+     *
+     * @param int $olderThanDays Delete tokens older than this many days (default: 7)
+     *
+     * @return int Number of tokens deleted
+     */
+    public static function deleteOldTokens(int $olderThanDays = 7): int
+    {
+        $pdo = Database::getPdoConnection();
+        $cutoffDate = (new \DateTimeImmutable(sprintf('-%d days', $olderThanDays)))->format('Y-m-d H:i:s');
+
+        // Delete tokens that are either expired, used, or older than cutoff date
+        $stmt = $pdo->prepare(
+            'DELETE FROM ' . self::$table . ' WHERE (expires_at < NOW() OR used = \'true\' OR created_at < :cutoff_date)'
+        );
+
+        if ($stmt->execute(['cutoff_date' => $cutoffDate])) {
+            return $stmt->rowCount();
+        }
+
+        return 0;
+    }
 }
