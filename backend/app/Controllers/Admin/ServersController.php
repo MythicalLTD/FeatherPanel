@@ -1274,6 +1274,7 @@ class ServersController
             'database_limit',
             'backup_limit',
             'skip_scripts',
+            'skip_zerotrust',
             'oom_disabled',
             'suspended',
         ];
