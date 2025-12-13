@@ -175,7 +175,7 @@ const clientRoutes: RouteRecordRaw[] = [
     {
         path: '/server/:uuidShort/proxy',
         name: 'ServerProxy',
-        component: () => import('@/pages/dashboard/server/ServerProxy.vue'),
+        component: () => import('@/pages/dashboard/server/ServerProxyNew.vue'),
         beforeEnter: (to, from, next) => {
             Cookie.set('serverUuid', to.params.uuidShort as string);
             next();

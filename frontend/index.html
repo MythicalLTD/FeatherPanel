@@ -19,13 +19,22 @@
         <link rel="apple-touch-icon" href="https://cdn.mythical.systems/featherpanel/logo.png" />
         <meta author="FeatherPanel" />
         <meta name="robots" content="index, follow" />
+        
+        <!-- Disable Cloudflare Rocket Loader -->
+        <meta name="cf-2fa-verify" content="" />
+        <script>
+            // Disable Cloudflare Rocket Loader globally
+            if (window.cfAsync) {
+                window.cfAsync = false;
+            }
+        </script>
 
         <!-- PWA Manifest and Service Worker Registration -->
         <link rel="manifest" href="/api/manifest.webmanifest" />
 
         <title>FeatherPanel</title>
 
-		<script defer src="https://dynhost.mythical.systems/script.js" data-website-id="71281b01-8c95-4fac-9f58-6d68aac179d7"></script>
+		<script defer src="https://dynhost.mythical.systems/script.js" data-website-id="71281b01-8c95-4fac-9f58-6d68aac179d7" data-cfasync="false"></script>
 
         <!-- Custom Scrollbar and Preloader Styles -->
         <style>
@@ -838,10 +847,10 @@
             <!-- FEATHERPANEL_APP_PLACEHOLDER_END -->
         </div>
 
-        <script type="module" src="/src/main.ts" crossorigin></script>
+        <script type="module" src="/src/main.ts" crossorigin data-cfasync="false"></script>
 
         <!-- Preloader Script -->
-        <script>
+        <script data-cfasync="false">
             // Theme management for preloader - Initialize immediately
             let currentTheme = 'dark';
 
