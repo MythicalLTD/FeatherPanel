@@ -272,15 +272,18 @@ const fetchPluginSidebar = async () => {
             // Find the matching sidebar item
             let matchingItem = sidebarSection[pluginPath];
 
-            // If not found, try to find by matching the plugin and redirect
+            // If not found, try to find by matching redirect or other close patterns
             if (!matchingItem) {
-                // Try to match using the last part of the path
+                // Try to match using redirect or key equality before any looser matching
                 for (const [key, value] of Object.entries(sidebarSection)) {
                     const sidebarItem = value;
                     if (
+                        // Exact key match (e.g. "/billingcore/invoices")
                         key === pluginPath ||
-                        (sidebarItem.redirect && pluginPath.endsWith(sidebarItem.redirect)) ||
-                        pluginPath.includes(sidebarItem.plugin)
+                        // Exact redirect match (e.g. "/billingcore/invoices")
+                        (sidebarItem.redirect && pluginPath === sidebarItem.redirect) ||
+                        // Fallback: pluginPath ends with the redirect (handles prefixed routes)
+                        (sidebarItem.redirect && pluginPath.endsWith(sidebarItem.redirect))
                     ) {
                         matchingItem = sidebarItem;
                         break;

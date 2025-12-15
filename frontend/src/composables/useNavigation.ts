@@ -442,9 +442,14 @@ export function useNavigation() {
         // Add plugin client items (with permission filtering)
         if (pluginRoutes.value?.client) {
             const pluginItems = convertPluginItems(pluginRoutes.value.client, 'main');
-            // Group all client plugins under the "plugins" main group
+            // Default client plugins to the "plugins" group if no group is provided,
+            // but allow plugins to define their own custom groups.
             pluginItems.forEach((item) => {
-                item.group = 'plugins';
+                // Only set default group if group is undefined, null, or empty string
+                // Preserve plugin-defined groups (e.g., "Billing")
+                if (!item.group || (typeof item.group === 'string' && item.group.trim() === '')) {
+                    item.group = 'plugins';
+                }
             });
             items.push(...pluginItems);
         }
@@ -770,9 +775,13 @@ export function useNavigation() {
         // Add plugin admin items (with permission filtering)
         if (pluginRoutes.value?.admin) {
             const pluginItems = convertPluginItems(pluginRoutes.value.admin, 'admin');
-            // Assign plugins to a 'plugins' group
+            // Default admin plugins to the "plugins" group if no group is provided,
+            // but allow plugins to define their own custom groups.
             pluginItems.forEach((item) => {
-                item.group = 'plugins';
+                // Only set default group if group is undefined, null, or empty string
+                if (!item.group || (typeof item.group === 'string' && item.group.trim() === '')) {
+                    item.group = 'plugins';
+                }
             });
             items.push(...pluginItems);
         }
@@ -1045,7 +1054,7 @@ export function useNavigation() {
             groups[groupKey].push(item);
         });
 
-        // Define group order and labels
+        // Define group order and labels for known groups
         const groupConfig: Record<string, () => string> = {
             overview: () => t('navGroups.overview'),
             feathercloud: () => 'FeatherCloud',
@@ -1058,12 +1067,27 @@ export function useNavigation() {
             plugins: () => t('navGroups.plugins'),
         };
 
-        // Return groups in specific order
-        return Object.keys(groupConfig)
+        // Get all group keys:
+        // - keep known (built-in) groups in their defined order
+        // - insert custom plugin groups
+        // - put the generic "plugins" group last so specific plugin groups (e.g. "Billing") have priority
+        const allGroupNames = Object.keys(groups).filter((key) => key !== 'other');
+        const pluginsKey = 'plugins';
+        const knownGroupKeys = Object.keys(groupConfig).filter((key) => key !== pluginsKey);
+        const customGroupKeys = allGroupNames.filter((key) => !knownGroupKeys.includes(key) && key !== pluginsKey);
+        const allGroupKeys = [
+            ...knownGroupKeys,
+            ...customGroupKeys,
+            ...(allGroupNames.includes(pluginsKey) ? [pluginsKey] : []),
+        ];
+
+        // Return groups in specific order, including custom plugin groups
+        return allGroupKeys
             .filter((key) => groups[key] && groups[key].length > 0)
             .map((key) => {
                 const labelResolver = groupConfig[key];
-                const name = labelResolver ? labelResolver() : '';
+                // Use translated label if available, otherwise use the group key as-is (for custom plugin groups)
+                const name = labelResolver ? labelResolver() : key;
                 const items = groups[key];
                 if (!name || !items) {
                     return { name: '', items: [] };
@@ -1095,10 +1119,19 @@ export function useNavigation() {
             plugins: () => t('navGroups.plugins'),
         };
 
-        // Get all group keys, prioritizing known groups first
-        const knownGroupKeys = Object.keys(groupConfig);
-        const customGroupKeys = Object.keys(groups).filter((key) => !knownGroupKeys.includes(key) && key !== 'other');
-        const allGroupKeys = [...knownGroupKeys, ...customGroupKeys];
+        // Get all group keys:
+        // - keep known (built-in) groups in their defined order
+        // - insert custom plugin groups
+        // - put the generic "plugins" group last so specific plugin groups (e.g. from plugins) have priority
+        const allGroupNames = Object.keys(groups).filter((key) => key !== 'other');
+        const pluginsKey = 'plugins';
+        const knownGroupKeys = Object.keys(groupConfig).filter((key) => key !== pluginsKey);
+        const customGroupKeys = allGroupNames.filter((key) => !knownGroupKeys.includes(key) && key !== pluginsKey);
+        const allGroupKeys = [
+            ...knownGroupKeys,
+            ...customGroupKeys,
+            ...(allGroupNames.includes(pluginsKey) ? [pluginsKey] : []),
+        ];
 
         // Return groups in specific order, including custom plugin groups
         return allGroupKeys
@@ -1135,11 +1168,25 @@ export function useNavigation() {
             plugins: () => t('navGroups.plugins'),
         };
 
-        return Object.keys(groupConfig)
+        // Get all group keys:
+        // - keep known (built-in) groups in their defined order
+        // - insert custom plugin groups
+        // - put the generic "plugins" group last so specific plugin groups (e.g. "Billing") have priority
+        const allGroupNames = Object.keys(groups).filter((key) => key !== 'other');
+        const pluginsKey = 'plugins';
+        const knownGroupKeys = Object.keys(groupConfig).filter((key) => key !== pluginsKey);
+        const customGroupKeys = allGroupNames.filter((key) => !knownGroupKeys.includes(key) && key !== pluginsKey);
+        const allGroupKeys = [
+            ...knownGroupKeys,
+            ...customGroupKeys,
+            ...(allGroupNames.includes(pluginsKey) ? [pluginsKey] : []),
+        ];
+
+        return allGroupKeys
             .filter((key) => groups[key] && groups[key].length > 0)
             .map((key) => {
                 const labelResolver = groupConfig[key];
-                const name = labelResolver ? labelResolver() : '';
+                const name = labelResolver ? labelResolver() : key;
                 const items = groups[key];
                 if (!name || !items) {
                     return { name: '', items: [] };

@@ -1704,13 +1704,13 @@ class {$className}CronExample implements TimeTask
 
         // Complete sidebar configuration showing all plugin capabilities
         $frontendSideBarExample = json_encode([
-            'dashboard' => [
+            'client' => [
                 '/overview' => [
                     'name' => "Overview {$className}",
                     'icon' => '📊',
                     'js' => "if (window.{$className}Plugin) { window.{$className}Plugin.showDashboard(); } else { console.log('{$className} plugin not loaded'); }",
                     'description' => "View a summary of your plugin's data",
-                    'category' => 'general',
+                    'category' => 'client',
                     'showBadge' => false,
                 ],
             ],

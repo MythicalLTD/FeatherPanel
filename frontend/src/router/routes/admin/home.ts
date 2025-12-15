@@ -38,6 +38,11 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/Users.vue'),
     },
     {
+        path: '/admin/users/:uuid/edit',
+        name: 'AdminUsersEdit',
+        component: () => import('@/pages/admin/Users/Edit.vue'),
+    },
+    {
         path: '/admin/locations',
         name: 'AdminLocations',
         component: () => import('@/pages/admin/Locations.vue'),

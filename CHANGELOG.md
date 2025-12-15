@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.1.1 STABLE
+
+## Fixed
+
+- Plugins now support rendering multiple pages, enabling richer and more versatile plugin experiences! by @nayskutzu
+
+## Improved
+
+- Plugins now support grouped navigation sections on both dashboard and admin pages, enabling more organized and intuitive plugin experiences! by @nayskutzu
+
+## Added
+
+- Introduced a dedicated user detail page for viewing and editing users, replacing the previous drawer approach—delivering a much improved and more intuitive UX/UI. by @nayskutzu
+
 ## v1.1.0 STABLE
 
 ### Fixed

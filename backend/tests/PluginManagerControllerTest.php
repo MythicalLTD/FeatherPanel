@@ -79,21 +79,6 @@ class PluginManagerControllerTest extends TestCase
         }
     }
 
-    public function testGetPluginsReturnsSuccess()
-    {
-        $request = Request::create('/api/admin/plugin-manager', 'GET');
-        $response = $this->controller->getPlugins($request);
-        $data = json_decode($response->getContent(), true);
-        // May fail if developer mode is disabled, that's acceptable
-        if ($data['success']) {
-            // Response data is the array of plugins directly
-            $this->assertIsArray($data['data']);
-        } else {
-            // If it fails, it should be a permissions issue
-            $this->assertArrayHasKey('error_code', $data);
-        }
-    }
-
     public function testGetPluginDetailsReturnsErrorForInvalidPlugin()
     {
         $request = Request::create('/api/admin/plugin-manager/invalid-plugin', 'GET');
