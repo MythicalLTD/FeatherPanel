@@ -944,38 +944,86 @@ class ServerFilesController
             $name = $data['name'] ?? '';
             $extension = $data['extension'] ?? 'tar.gz';
 
-            $wings = $this->createWingsConnection($node);
-            $response = $wings->getServer()->compressFiles($server['uuid'], $data['root'], $data['files'], $name, $extension);
+            // For large archives, process asynchronously to avoid Cloudflare timeout (100s limit)
+            // Return immediately to client, then process in background
+            // This matches how Pterodactyl/Pelican handle it - they return instantly
 
-            if (!$response->isSuccessful()) {
-                $error = $response->getError();
+            // Return immediately to avoid Cloudflare 504 timeout
+            // Continue processing in background after response is sent
+            ignore_user_abort(true);
 
-                return ApiResponse::error('Failed to compress files: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
+            // Send response immediately (before Cloudflare timeout)
+            $immediateResponse = ApiResponse::success([
+                'message' => 'Archive compression started. Large archives may take several minutes to complete.',
+                'status' => 'processing',
+            ], 'Compression started successfully');
+
+            // Flush output to send response immediately
+            $immediateResponse->send();
+
+            if (function_exists('fastcgi_finish_request')) {
+                fastcgi_finish_request();
+            } else {
+                // Fallback for non-FastCGI environments
+                if (ob_get_level() > 0) {
+                    ob_end_flush();
+                }
+                flush();
             }
 
-            // Log activity
-            $this->logActivity($server, $node, 'files_compressed', [
-                'root' => $data['root'],
-                'files' => $data['files'],
-                'name' => $name,
-                'extension' => $extension,
-                'file_count' => count($data['files']),
-            ], $user);
+            // Now process compression in background (after response sent)
+            try {
+                $wings = $this->createWingsConnection($node);
+                $wingsResponse = $wings->getServer()->compressFiles($server['uuid'], $data['root'], $data['files'], $name, $extension);
 
-            // Emit event
-            global $eventManager;
-            if (isset($eventManager) && $eventManager !== null) {
-                $eventManager->emit(
-                    ServerEvent::onServerFileCompressed(),
-                    [
-                        'user_uuid' => $user['uuid'],
-                        'server_uuid' => $server['uuid'],
-                        'file_path' => $data['root'],
-                    ]
+                if (!$wingsResponse->isSuccessful()) {
+                    $error = $wingsResponse->getError();
+                    App::getInstance(true)->getLogger()->error("Background compression failed for server {$server['uuid']}: {$error}");
+
+                    // Note: Can't return error to client since response already sent
+                    return $immediateResponse;
+                }
+
+                // Log activity
+                $this->logActivity($server, $node, 'files_compressed', [
+                    'root' => $data['root'],
+                    'files' => $data['files'],
+                    'name' => $name,
+                    'extension' => $extension,
+                    'file_count' => count($data['files']),
+                ], $user);
+
+                // Emit event
+                global $eventManager;
+                if (isset($eventManager) && $eventManager !== null) {
+                    $eventManager->emit(
+                        ServerEvent::onServerFileCompressed(),
+                        [
+                            'user_uuid' => $user['uuid'],
+                            'server_uuid' => $server['uuid'],
+                            'file_path' => $data['root'],
+                        ]
+                    );
+                }
+            } catch (\Exception $e) {
+                App::getInstance(true)->getLogger()->error("Background compression exception for server {$server['uuid']}: " . $e->getMessage());
+                // Response already sent, can't return error
+            }
+
+            // Return the immediate response (already sent, but needed for method signature)
+            return $immediateResponse;
+        } catch (\App\Services\Wings\Exceptions\WingsConnectionException $e) {
+            // Check if it's a timeout error
+            $errorMessage = $e->getMessage();
+            if (strpos(strtolower($errorMessage), 'timeout') !== false || strpos(strtolower($errorMessage), 'timed out') !== false) {
+                return ApiResponse::error(
+                    'Archive creation timed out. This may occur with very large archives (>4GB). Please try compressing smaller sets of files or contact support.',
+                    'ARCHIVE_TIMEOUT',
+                    504
                 );
             }
 
-            return ApiResponse::success($response->getData(), 'Files compressed successfully');
+            return $this->handleWingsError($e, 'compress files');
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'compress files');
         }
@@ -1031,11 +1079,22 @@ class ServerFilesController
 
             $data = $this->validateJsonBody($request, ['file', 'root']);
 
+            // ServerService handles the timeout per-request (15 minutes like pelican)
+            // Large archives over 4GB can take significant time to decompress
             $wings = $this->createWingsConnection($node);
             $response = $wings->getServer()->decompressArchive($server['uuid'], $data['file'], $data['root']);
 
             if (!$response->isSuccessful()) {
                 $error = $response->getError();
+
+                // Provide more helpful error message for timeout/large file issues
+                if (strpos(strtolower($error), 'timeout') !== false || strpos(strtolower($error), 'timed out') !== false) {
+                    return ApiResponse::error(
+                        'Archive decompression timed out. This may occur with very large archives (>4GB). Please try again or contact support.',
+                        'ARCHIVE_TIMEOUT',
+                        $response->getStatusCode()
+                    );
+                }
 
                 return ApiResponse::error('Failed to decompress archive: ' . $error, 'WINGS_ERROR', $response->getStatusCode());
             }
@@ -1061,6 +1120,18 @@ class ServerFilesController
             }
 
             return ApiResponse::success($response->getData(), 'Archive decompressed successfully');
+        } catch (\App\Services\Wings\Exceptions\WingsConnectionException $e) {
+            // Check if it's a timeout error
+            $errorMessage = $e->getMessage();
+            if (strpos(strtolower($errorMessage), 'timeout') !== false || strpos(strtolower($errorMessage), 'timed out') !== false) {
+                return ApiResponse::error(
+                    'Archive decompression timed out. This may occur with very large archives (>4GB). Please try again or contact support.',
+                    'ARCHIVE_TIMEOUT',
+                    504
+                );
+            }
+
+            return $this->handleWingsError($e, 'decompress archive');
         } catch (\Exception $e) {
             return $this->handleWingsError($e, 'decompress archive');
         }
@@ -1687,13 +1758,20 @@ class ServerFilesController
     /**
      * Helper method to create Wings connection.
      */
-    private function createWingsConnection(array $node): Wings
+    /**
+     * Create a Wings connection with configurable timeout.
+     *
+     * @param array $node The node configuration array
+     * @param int $timeout Timeout in seconds (default: 30 seconds)
+     *
+     * @return Wings The Wings connection instance
+     */
+    private function createWingsConnection(array $node, int $timeout = 30): Wings
     {
         $scheme = $node['scheme'];
         $host = $node['fqdn'];
         $port = $node['daemonListen'];
         $token = $node['daemon_token'];
-        $timeout = 30;
 
         return new Wings($host, $port, $scheme, $token, $timeout);
     }

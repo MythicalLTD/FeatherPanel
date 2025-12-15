@@ -1890,6 +1890,11 @@ serverFiles:
     archiveNamePlaceholder: 'Leave empty for auto-generated name'
     archiveNameHint: 'Leave empty to auto-generate the archive name'
     compress: 'Compress'
+    compressing: 'Compressing...'
+    compressingInProgress: 'Compression in progress'
+    compressingLargeArchiveHint: 'Large archives (>4GB) may take several minutes. Please wait...'
+    compressionStarted: 'Compression started. The archive will appear in the file list when ready.'
+    compressionTimeout: 'Compression is taking longer than expected. Please refresh the file list manually.'
     # Extract
     fileExtracted: 'Archive extracted successfully'
     extractError: 'Failed to extract archive'

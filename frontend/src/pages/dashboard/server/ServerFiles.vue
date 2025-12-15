@@ -1577,6 +1577,51 @@
                     </DialogDescription>
                 </DialogHeader>
                 <div class="space-y-4">
+                    <!-- Compression in progress indicator -->
+                    <Transition
+                        enter-active-class="transition-all duration-300 ease-out"
+                        enter-from-class="opacity-0 scale-95"
+                        enter-to-class="opacity-100 scale-100"
+                        leave-active-class="transition-all duration-200 ease-in"
+                        leave-from-class="opacity-100 scale-100"
+                        leave-to-class="opacity-0 scale-95"
+                    >
+                        <div
+                            v-if="compressing"
+                            class="p-4 rounded-lg bg-blue-500/10 border-2 border-blue-500/30 shadow-sm"
+                        >
+                            <div class="flex items-start gap-3">
+                                <div class="relative shrink-0">
+                                    <!-- Pulsing ring animation -->
+                                    <div class="absolute inset-0 -m-2">
+                                        <div class="absolute inset-0 animate-ping opacity-20">
+                                            <div class="w-full h-full rounded-full bg-blue-500"></div>
+                                        </div>
+                                    </div>
+                                    <!-- Spinning icon -->
+                                    <div class="relative p-2 rounded-full bg-blue-500/20">
+                                        <Archive class="h-5 w-5 text-blue-600 dark:text-blue-400 animate-spin" />
+                                    </div>
+                                </div>
+                                <div class="flex-1 space-y-2">
+                                    <p class="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                        {{ t('serverFiles.compressingInProgress') }}
+                                    </p>
+                                    <p class="text-xs text-muted-foreground">
+                                        {{ t('serverFiles.compressingLargeArchiveHint') }}
+                                    </p>
+                                    <!-- Animated progress bar -->
+                                    <div class="w-full bg-secondary rounded-full h-2 overflow-hidden">
+                                        <div
+                                            class="bg-blue-500 h-2 rounded-full transition-all duration-300 animate-pulse"
+                                            style="width: 100%; animation: compress-progress 2s ease-in-out infinite"
+                                        ></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </Transition>
+
                     <div class="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
                         <p class="text-sm text-orange-600 dark:text-orange-400">
                             {{ t('serverFiles.compressingFilesFromCurrent', { count: compressionTargets.length }) }}
@@ -1584,7 +1629,7 @@
                     </div>
                     <div class="space-y-2">
                         <Label for="compressArchiveType">{{ t('serverFiles.archiveType') }} *</Label>
-                        <Select v-model="compressArchiveType">
+                        <Select v-model="compressArchiveType" :disabled="compressing">
                             <SelectTrigger>
                                 <SelectValue :placeholder="compressArchiveType" />
                             </SelectTrigger>
@@ -1609,6 +1654,7 @@
                             id="compressArchiveName"
                             v-model="compressArchiveName"
                             :placeholder="t('serverFiles.archiveNamePlaceholder')"
+                            :disabled="compressing"
                         />
                         <p class="text-xs text-muted-foreground">{{ t('serverFiles.archiveNameHint') }}</p>
                     </div>
@@ -1622,12 +1668,18 @@
                     </div>
                 </div>
                 <DialogFooter class="flex flex-col sm:flex-row gap-3">
-                    <Button variant="outline" class="w-full sm:w-auto" @click="showCompressDialog = false">
+                    <Button
+                        variant="outline"
+                        class="w-full sm:w-auto"
+                        :disabled="compressing"
+                        @click="showCompressDialog = false"
+                    >
                         {{ t('common.cancel') }}
                     </Button>
-                    <Button :disabled="loading" class="w-full sm:w-auto" @click="confirmCompress">
-                        <Archive class="h-4 w-4 mr-2" />
-                        {{ t('serverFiles.compress') }}
+                    <Button :disabled="compressing || loading" class="w-full sm:w-auto" @click="confirmCompress">
+                        <Archive :class="['h-4 w-4 mr-2', compressing && 'animate-spin']" />
+                        <span v-if="compressing">{{ t('serverFiles.compressing') }}</span>
+                        <span v-else>{{ t('serverFiles.compress') }}</span>
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -2179,6 +2231,7 @@ const showPullDialog = ref(false);
 const showCopyDialog = ref(false);
 const showMoveDialog = ref(false);
 const showCompressDialog = ref(false);
+const compressing = ref(false);
 const showIgnoredContentDialog = ref(false);
 const showImagePreviewDialog = ref(false);
 const showWipeAllDialog = ref(false);
@@ -2729,6 +2782,9 @@ onUnmounted(() => {
 
     // Stop downloads polling
     stopDownloadsPolling();
+
+    // Stop compression polling
+    stopCompressionPolling();
 });
 
 // Server fetching (following ServerLogs pattern)
@@ -4253,6 +4309,7 @@ const confirmCompress = async () => {
         return;
     }
 
+    compressing.value = true;
     loading.value = true;
     try {
         const response = await axios.post(`/api/user/servers/${route.params.uuidShort}/compress-files`, {
@@ -4263,11 +4320,23 @@ const confirmCompress = async () => {
         });
 
         if (response.data.success) {
-            toast.success(t('serverFiles.filesCompressed', { count: compressionTargets.value.length }));
-            showCompressDialog.value = false;
-            clearSelection();
-            compressionTargets.value = [];
-            refreshFiles();
+            // Check if compression is processing in background
+            if (response.data.data?.status === 'processing') {
+                toast.info(t('serverFiles.compressionStarted'));
+                showCompressDialog.value = false;
+                clearSelection();
+                compressionTargets.value = [];
+
+                // Start polling for the archive file to appear
+                startCompressionPolling();
+            } else {
+                // Immediate completion (small archives)
+                toast.success(t('serverFiles.filesCompressed', { count: compressionTargets.value.length }));
+                showCompressDialog.value = false;
+                clearSelection();
+                compressionTargets.value = [];
+                refreshFiles();
+            }
         } else {
             toast.error(response.data.message || t('serverFiles.compressError'));
         }
@@ -4276,10 +4345,44 @@ const confirmCompress = async () => {
         const err = error as { response?: { data?: { message?: string } } };
         toast.error(err.response?.data?.message || t('serverFiles.compressError'));
     } finally {
+        compressing.value = false;
         loading.value = false;
         if (!showCompressDialog.value) {
             compressionTargets.value = [];
         }
+    }
+};
+
+// Poll for archive file to appear (for async compression)
+let compressionPollInterval: ReturnType<typeof setInterval> | null = null;
+
+const startCompressionPolling = () => {
+    // Clear any existing polling
+    if (compressionPollInterval) {
+        clearInterval(compressionPollInterval);
+    }
+
+    let pollCount = 0;
+    const maxPolls = 60; // Poll for up to 5 minutes (60 * 5 seconds)
+
+    compressionPollInterval = setInterval(async () => {
+        pollCount++;
+
+        // Refresh file list to check for new archive
+        await refreshFiles();
+
+        // Check if we should stop polling (archive found or timeout)
+        if (pollCount >= maxPolls) {
+            stopCompressionPolling();
+            toast.warning(t('serverFiles.compressionTimeout'));
+        }
+    }, 5000); // Poll every 5 seconds
+};
+
+const stopCompressionPolling = () => {
+    if (compressionPollInterval) {
+        clearInterval(compressionPollInterval);
+        compressionPollInterval = null;
     }
 };
 
@@ -4464,3 +4567,17 @@ const clearAllIgnoredPatterns = () => {
     toast.success(t('serverFiles.allPatternsCleared'));
 };
 </script>
+
+<style scoped>
+@keyframes compress-progress {
+    0% {
+        transform: translateX(-100%);
+    }
+    50% {
+        transform: translateX(0%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+</style>

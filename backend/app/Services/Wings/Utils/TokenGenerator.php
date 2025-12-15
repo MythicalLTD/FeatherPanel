@@ -257,6 +257,7 @@ class TokenGenerator
         array $additionalClaims = [],
     ): string {
         $currentTime = time();
+        $jti = $this->generateJti(); // Generate unique JWT ID
 
         $payload = [
             // Standard JWT claims
@@ -266,16 +267,22 @@ class TokenGenerator
             'iat' => $currentTime, // Issued at
             'nbf' => $currentTime - 300, // Not valid before (5 minutes ago)
             'exp' => $currentTime + $this->expiration, // Expiration
-            'jti' => $this->generateJti(), // JWT ID
+            'jti' => $jti, // JWT ID
 
             // Wings-specific claims
             'user_uuid' => $userUuid,
             'server_uuid' => $serverUuid,
             'permissions' => $permissions,
 
-            // Additional claims
+            // Additional claims (may override above fields if they conflict)
             ...$additionalClaims,
         ];
+
+        // Wings tracks token usage by unique_id, so set it to match jti
+        // This ensures each token has a unique identifier for tracking.
+        // Set after additionalClaims to ensure it always matches jti even if
+        // additionalClaims contains a unique_id field.
+        $payload['unique_id'] = $jti;
 
         return $this->encodeToken($payload);
     }

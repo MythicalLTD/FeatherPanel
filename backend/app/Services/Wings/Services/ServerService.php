@@ -406,8 +406,9 @@ class ServerService
      * @param array $files Array of file names (relative to root)
      * @param string $name Optional archive name (empty for auto-generated)
      * @param string $extension Archive extension (zip, tar.gz, tgz, tar.bz2, tbz2, tar.xz, txz)
+     * @param int|null $timeout Optional timeout in seconds (default: 15 minutes for large archives)
      */
-    public function compressFiles(string $serverUuid, string $root, array $files, string $name = '', string $extension = 'tar.gz'): WingsResponse
+    public function compressFiles(string $serverUuid, string $root, array $files, string $name = '', string $extension = 'tar.gz', ?int $timeout = null): WingsResponse
     {
         try {
             // Ensure $files is an array
@@ -446,7 +447,9 @@ class ServerService
                 $data['extension'] = $extension;
             }
 
-            $response = $this->connection->post("/api/servers/{$serverUuid}/files/compress", $data);
+            // Use 15 minute timeout for archive operations (like pelican) if not specified
+            $requestTimeout = $timeout ?? (60 * 15);
+            $response = $this->connection->post("/api/servers/{$serverUuid}/files/compress", $data, [], 3, $requestTimeout);
 
             return new WingsResponse($response, 200);
         } catch (\Exception $e) {
@@ -456,15 +459,23 @@ class ServerService
 
     /**
      * Decompress archive.
+     *
+     * @param string $serverUuid The server UUID
+     * @param string $file The archive file path
+     * @param string $root The root directory path
+     * @param int|null $timeout Optional timeout in seconds (default: 15 minutes for large archives)
      */
-    public function decompressArchive(string $serverUuid, string $file, string $root): WingsResponse
+    public function decompressArchive(string $serverUuid, string $file, string $root, ?int $timeout = null): WingsResponse
     {
         try {
             $data = [
                 'file' => $file,
                 'root' => $root,
             ];
-            $response = $this->connection->post("/api/servers/{$serverUuid}/files/decompress", $data);
+
+            // Use 15 minute timeout for archive operations (like pelican) if not specified
+            $requestTimeout = $timeout ?? (60 * 15);
+            $response = $this->connection->post("/api/servers/{$serverUuid}/files/decompress", $data, [], 3, $requestTimeout);
 
             return new WingsResponse($response, 204);
         } catch (\Exception $e) {

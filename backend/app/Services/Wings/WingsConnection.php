@@ -260,6 +260,7 @@ class WingsConnection
      * @param array $data The data to send
      * @param array $headers Additional headers to include
      * @param int $maxRetries Maximum number of retry attempts
+     * @param int|null $timeout Optional timeout in seconds (overrides default timeout)
      *
      * @throws WingsConnectionException
      * @throws WingsAuthenticationException
@@ -267,9 +268,9 @@ class WingsConnection
      *
      * @return array The response data
      */
-    public function post(string $endpoint, array $data = [], array $headers = [], int $maxRetries = 3): array
+    public function post(string $endpoint, array $data = [], array $headers = [], int $maxRetries = 3, ?int $timeout = null): array
     {
-        return $this->request('POST', $endpoint, $data, $headers, $maxRetries);
+        return $this->request('POST', $endpoint, $data, $headers, $maxRetries, $timeout);
     }
 
     /**
@@ -419,6 +420,7 @@ class WingsConnection
      * @param array $data The data to send (for POST, PUT, PATCH)
      * @param array $headers Additional headers to include
      * @param int $maxRetries Maximum number of retry attempts (default: 3)
+     * @param int|null $timeout Optional timeout in seconds (overrides default timeout)
      *
      * @throws WingsConnectionException
      * @throws WingsAuthenticationException
@@ -426,10 +428,13 @@ class WingsConnection
      *
      * @return array The response data
      */
-    public function request(string $method, string $endpoint, array $data = [], array $headers = [], int $maxRetries = 3): array
+    public function request(string $method, string $endpoint, array $data = [], array $headers = [], int $maxRetries = 3, ?int $timeout = null): array
     {
         $url = $this->baseUrl . $endpoint;
         $lastException = null;
+
+        // Use per-request timeout if provided, otherwise use default
+        $requestTimeout = $timeout ?? $this->timeout;
 
         for ($attempt = 0; $attempt <= $maxRetries; ++$attempt) {
             try {
@@ -445,8 +450,16 @@ class WingsConnection
                 // Create request
                 $request = new Request($method, $url, $requestHeaders, $body);
 
-                // Send request asynchronously and wait for response
-                $response = $this->client->sendAsync($request)->wait();
+                // Send request asynchronously with per-request timeout options
+                // Always apply timeout - use per-request timeout if provided, otherwise use default
+                // This ensures timeout is always set correctly (like pelican's ->timeout() chaining)
+                $options = [
+                    'timeout' => $requestTimeout,
+                    'curl' => [
+                        CURLOPT_TIMEOUT => $requestTimeout,
+                    ],
+                ];
+                $response = $this->client->sendAsync($request, $options)->wait();
                 $httpCode = $response->getStatusCode();
                 $responseBody = $response->getBody()->getContents();
                 $responseData = json_decode($responseBody, true);

@@ -1034,6 +1034,11 @@ class ServerBackupController
             return $permissionCheck;
         }
 
+        // Validate backup is successful before allowing download
+        if (!isset($backup['is_successful']) || $backup['is_successful'] != 1) {
+            return ApiResponse::error('Backup is not available for download. The backup may have failed or is still in progress.', 'BACKUP_NOT_SUCCESSFUL', 400);
+        }
+
         // Get node info
         $node = Node::getNodeById($server['node_id']);
         if (!$node) {
@@ -1059,10 +1064,14 @@ class ServerBackupController
                 $scheme . '://' . $host . ':' . $port // Wings URL
             );
 
-            // Get user permissions (you'll need to implement this based on your permission system)
-            $permissions = ['backup.download']; // Basic backup download permission
+            // Get user permissions
+            $permissions = ['backup.download'];
 
             // Generate backup download token
+            // Note: Each token has a unique jti (JWT ID) via bin2hex(random_bytes(16)).
+            // The unique_id field in the token payload is set to match the jti value,
+            // ensuring Wings can track each token uniquely and allow multiple download
+            // tokens for the same backup.
             $jwtToken = $jwtService->generateBackupToken(
                 $serverUuid,
                 $user['uuid'],
@@ -1070,6 +1079,24 @@ class ServerBackupController
                 $backupUuid,
                 'download'
             );
+
+            // Decode token to extract details for logging (for debugging token reuse issues)
+            try {
+                $tokenParts = explode('.', $jwtToken);
+                if (count($tokenParts) === 3) {
+                    $payload = json_decode(base64_decode(strtr($tokenParts[1], '-_', '+/')), true);
+                    $tokenDetails = [
+                        'jti' => $payload['jti'] ?? 'unknown',
+                        'iat' => $payload['iat'] ?? 'unknown',
+                        'exp' => $payload['exp'] ?? 'unknown',
+                        'backup_uuid' => $payload['backup_uuid'] ?? 'unknown',
+                        'operation' => $payload['operation'] ?? 'unknown',
+                    ];
+                }
+            } catch (\Exception $e) {
+                // Logging failure should not break the flow
+                App::getInstance(true)->getLogger()->warning('Failed to decode token for logging: ' . $e->getMessage());
+            }
 
             // Construct the download URL
             $baseUrl = rtrim($scheme . '://' . $host . ':' . $port, '/');

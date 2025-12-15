@@ -147,21 +147,30 @@ class CompressFilesTool implements ToolInterface
         }
 
         // Compress files via Wings
+        // ServerService handles the timeout per-request (15 minutes like pelican)
+        // Large archives over 4GB can take significant time to compress
         try {
             $wings = new Wings(
                 $node['fqdn'],
                 $node['daemonListen'],
                 $node['scheme'],
-                $node['daemon_token'],
-                30
+                $node['daemon_token']
             );
 
             $response = $wings->getServer()->compressFiles($server['uuid'], $root, $files, $name, $extension);
 
             if (!$response->isSuccessful()) {
+                $error = $response->getError();
+                $errorMessage = 'Failed to compress files: ' . $error;
+
+                // Provide more helpful error message for timeout/large file issues
+                if (strpos(strtolower($error), 'timeout') !== false || strpos(strtolower($error), 'timed out') !== false) {
+                    $errorMessage = 'Archive creation timed out. This may occur with very large archives (>4GB). Please try compressing smaller sets of files.';
+                }
+
                 return [
                     'success' => false,
-                    'error' => 'Failed to compress files: ' . $response->getError(),
+                    'error' => $errorMessage,
                     'action_type' => 'compress_files',
                 ];
             }

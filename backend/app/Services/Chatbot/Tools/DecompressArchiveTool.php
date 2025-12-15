@@ -127,21 +127,30 @@ class DecompressArchiveTool implements ToolInterface
         }
 
         // Decompress archive via Wings
+        // ServerService handles the timeout per-request (15 minutes like pelican)
+        // Large archives over 4GB can take significant time to decompress
         try {
             $wings = new Wings(
                 $node['fqdn'],
                 $node['daemonListen'],
                 $node['scheme'],
-                $node['daemon_token'],
-                30
+                $node['daemon_token']
             );
 
             $response = $wings->getServer()->decompressArchive($server['uuid'], $file, $root);
 
             if (!$response->isSuccessful()) {
+                $error = $response->getError();
+                $errorMessage = 'Failed to decompress archive: ' . $error;
+
+                // Provide more helpful error message for timeout/large file issues
+                if (strpos(strtolower($error), 'timeout') !== false || strpos(strtolower($error), 'timed out') !== false) {
+                    $errorMessage = 'Archive decompression timed out. This may occur with very large archives (>4GB). Please try again.';
+                }
+
                 return [
                     'success' => false,
-                    'error' => 'Failed to decompress archive: ' . $response->getError(),
+                    'error' => $errorMessage,
                     'action_type' => 'decompress_archive',
                 ];
             }
