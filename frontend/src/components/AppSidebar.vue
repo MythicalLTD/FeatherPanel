@@ -49,6 +49,7 @@ import { useSidebarState } from '@/composables/useSidebarState';
 import { useServerContext } from '@/composables/useServerContext';
 import { useWingsWebSocketServersList } from '@/composables/useWingsWebSocketServersList';
 import { Copy, Check, Play, Square, RotateCw, Skull } from 'lucide-vue-next';
+import Permissions from '@/lib/permissions';
 
 const { t } = useI18n();
 
@@ -116,7 +117,7 @@ const user = computed(() => {
         email: sessionStore.user?.email || '',
         avatar: sessionStore.user?.avatar || '',
         avatar_alt: sessionStore.user?.username?.charAt(0) || '',
-        hasAdminPanel: sessionStore.hasPermission('ADMIN_DASHBOARD_VIEW') || false,
+        hasAdminPanel: sessionStore.hasPermission(Permissions.ADMIN_DASHBOARD_VIEW) || false,
         role: sessionStore.user?.role || null,
     };
 });

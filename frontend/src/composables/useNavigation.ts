@@ -60,7 +60,6 @@ import {
     Package,
     Bell,
     BookOpen,
-    Mail,
     Ticket,
     Gauge,
     ArrowRightLeft,
@@ -319,79 +318,6 @@ export function useNavigation() {
                 isActive: currentPath.value === '/dashboard',
                 category: 'main' as const,
                 group: 'overview',
-            },
-            // Account section - individual entries for each account tab
-            {
-                id: 'account-profile',
-                name: t('nav.account'),
-                title: t('account.profile'),
-                url: '/dashboard/account?tab=profile',
-                icon: Users,
-                isActive:
-                    currentPath.value.startsWith('/dashboard/account') &&
-                    (!route.query.tab || route.query.tab === 'profile'),
-                category: 'main' as const,
-                group: 'account',
-            },
-            {
-                id: 'account-settings',
-                name: t('nav.account'),
-                title: t('account.settings'),
-                url: '/dashboard/account?tab=settings',
-                icon: Settings,
-                isActive: currentPath.value.startsWith('/dashboard/account') && route.query.tab === 'settings',
-                category: 'main' as const,
-                group: 'account',
-            },
-            {
-                id: 'account-appearance',
-                name: t('nav.account'),
-                title: t('account.appearance'),
-                url: '/dashboard/account?tab=appearance',
-                icon: Activity,
-                isActive: currentPath.value.startsWith('/dashboard/account') && route.query.tab === 'appearance',
-                category: 'main' as const,
-                group: 'account',
-            },
-            {
-                id: 'account-ssh-keys',
-                name: t('nav.account'),
-                title: t('account.sshKeys.title'),
-                url: '/dashboard/account?tab=ssh-keys',
-                icon: Key,
-                isActive: currentPath.value.startsWith('/dashboard/account') && route.query.tab === 'ssh-keys',
-                category: 'main' as const,
-                group: 'account',
-            },
-            {
-                id: 'account-api-keys',
-                name: t('nav.account'),
-                title: t('account.apiKeys.title'),
-                url: '/dashboard/account?tab=api-keys',
-                icon: Key,
-                isActive: currentPath.value.startsWith('/dashboard/account') && route.query.tab === 'api-keys',
-                category: 'main' as const,
-                group: 'account',
-            },
-            {
-                id: 'account-activity',
-                name: t('nav.account'),
-                title: t('account.activity.title'),
-                url: '/dashboard/account?tab=activity',
-                icon: Clock,
-                isActive: currentPath.value.startsWith('/dashboard/account') && route.query.tab === 'activity',
-                category: 'main' as const,
-                group: 'account',
-            },
-            {
-                id: 'account-mail',
-                name: t('nav.account'),
-                title: t('account.mail.title'),
-                url: '/dashboard/account?tab=mail',
-                icon: Mail,
-                isActive: currentPath.value.startsWith('/dashboard/account') && route.query.tab === 'mail',
-                category: 'main' as const,
-                group: 'account',
             },
             // Support section - conditionally add based on settings
         ];
@@ -710,7 +636,11 @@ export function useNavigation() {
                 permission: Permissions.ADMIN_NOTIFICATIONS_VIEW,
                 group: 'users',
             },
-            {
+        ];
+
+        // Only add knowledgebase admin item if enabled
+        if (settingsStore.knowledgebaseEnabled) {
+            items.push({
                 id: 'admin-knowledgebase',
                 name: 'Knowledgebase',
                 title: 'Knowledgebase',
@@ -720,57 +650,62 @@ export function useNavigation() {
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW,
                 group: 'users',
-            },
-            // Ticket System
-            {
-                id: 'admin-tickets',
-                name: 'Tickets',
-                title: 'Support Tickets',
-                url: '/admin/tickets',
-                icon: Ticket,
-                isActive:
-                    currentPath.value.startsWith('/admin/tickets') &&
-                    !currentPath.value.startsWith('/admin/tickets/categories') &&
-                    !currentPath.value.startsWith('/admin/tickets/priorities') &&
-                    !currentPath.value.startsWith('/admin/tickets/statuses'),
-                category: 'admin' as const,
-                permission: Permissions.ADMIN_TICKETS_VIEW,
-                group: 'tickets',
-            },
-            {
-                id: 'admin-ticket-categories',
-                name: 'Ticket Categories',
-                title: 'Ticket Categories',
-                url: '/admin/tickets/categories',
-                icon: Ticket,
-                isActive: currentPath.value.startsWith('/admin/tickets/categories'),
-                category: 'admin' as const,
-                permission: Permissions.ADMIN_TICKET_CATEGORIES_VIEW,
-                group: 'tickets',
-            },
-            {
-                id: 'admin-ticket-priorities',
-                name: 'Ticket Priorities',
-                title: 'Ticket Priorities',
-                url: '/admin/tickets/priorities',
-                icon: Ticket,
-                isActive: currentPath.value.startsWith('/admin/tickets/priorities'),
-                category: 'admin' as const,
-                permission: Permissions.ADMIN_TICKET_PRIORITIES_VIEW,
-                group: 'tickets',
-            },
-            {
-                id: 'admin-ticket-statuses',
-                name: 'Ticket Statuses',
-                title: 'Ticket Statuses',
-                url: '/admin/tickets/statuses',
-                icon: Ticket,
-                isActive: currentPath.value.startsWith('/admin/tickets/statuses'),
-                category: 'admin' as const,
-                permission: Permissions.ADMIN_TICKET_STATUSES_VIEW,
-                group: 'tickets',
-            },
-        ];
+            });
+        }
+
+        // Only add ticket system admin items if enabled
+        if (settingsStore.ticketSystemEnabled) {
+            items.push(
+                {
+                    id: 'admin-tickets',
+                    name: 'Tickets',
+                    title: 'Support Tickets',
+                    url: '/admin/tickets',
+                    icon: Ticket,
+                    isActive:
+                        currentPath.value.startsWith('/admin/tickets') &&
+                        !currentPath.value.startsWith('/admin/tickets/categories') &&
+                        !currentPath.value.startsWith('/admin/tickets/priorities') &&
+                        !currentPath.value.startsWith('/admin/tickets/statuses'),
+                    category: 'admin' as const,
+                    permission: Permissions.ADMIN_TICKETS_VIEW,
+                    group: 'tickets',
+                },
+                {
+                    id: 'admin-ticket-categories',
+                    name: 'Ticket Categories',
+                    title: 'Ticket Categories',
+                    url: '/admin/tickets/categories',
+                    icon: Ticket,
+                    isActive: currentPath.value.startsWith('/admin/tickets/categories'),
+                    category: 'admin' as const,
+                    permission: Permissions.ADMIN_TICKET_CATEGORIES_VIEW,
+                    group: 'tickets',
+                },
+                {
+                    id: 'admin-ticket-priorities',
+                    name: 'Ticket Priorities',
+                    title: 'Ticket Priorities',
+                    url: '/admin/tickets/priorities',
+                    icon: Ticket,
+                    isActive: currentPath.value.startsWith('/admin/tickets/priorities'),
+                    category: 'admin' as const,
+                    permission: Permissions.ADMIN_TICKET_PRIORITIES_VIEW,
+                    group: 'tickets',
+                },
+                {
+                    id: 'admin-ticket-statuses',
+                    name: 'Ticket Statuses',
+                    title: 'Ticket Statuses',
+                    url: '/admin/tickets/statuses',
+                    icon: Ticket,
+                    isActive: currentPath.value.startsWith('/admin/tickets/statuses'),
+                    category: 'admin' as const,
+                    permission: Permissions.ADMIN_TICKET_STATUSES_VIEW,
+                    group: 'tickets',
+                },
+            );
+        }
 
         // Add plugin admin items (with permission filtering)
         if (pluginRoutes.value?.admin) {
@@ -1163,7 +1098,6 @@ export function useNavigation() {
 
         const groupConfig: Record<string, () => string> = {
             overview: () => t('navGroups.overview'),
-            account: () => t('navGroups.account'),
             support: () => t('navGroups.support'),
             plugins: () => t('navGroups.plugins'),
         };

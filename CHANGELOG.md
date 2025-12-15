@@ -7,10 +7,12 @@
 - Plugins now support rendering multiple pages, enabling richer and more versatile plugin experiences! by @nayskutzu
 - Resolved an issue where backup downloads were unavailable due to JID and JWT token handling errors; downloads now work seamlessly. by @nayskutzu
 - Resolved an issue where large archives were failing to complete and timing out during the archiving process. by @nayskutzu
+- Resolved an issue where the admin.dashboard.view permission was not being recognized in the frontend, ensuring proper access control for admin features. by @nayskutzu
 
 ## Improved
 
 - Plugins now support grouped navigation sections on both dashboard and admin pages, enabling more organized and intuitive plugin experiences! by @nayskutzu
+- The admin page now automatically hides tickets, knowledgebases, and other modules when disabled, creating a cleaner and more focused interface. by @nayskutzu
 
 ## Added
 
