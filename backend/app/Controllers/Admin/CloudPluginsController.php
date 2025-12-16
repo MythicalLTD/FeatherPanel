@@ -79,25 +79,25 @@ use App\Plugins\Events\Events\CloudPluginsEvent;
 )]
 class CloudPluginsController
 {
-	/**
-	 * Oh, hello there, curious skiddie!
-	 *
-	 * You've found the ultra-top-secret addon installer password.
-	 * Congrats. This means:
-	 *  1. You can open a ZIP file, and
-	 *  2. You love poking around in code that isn't yours.
-	 *
-	 * Yes, .fpa files are literally password-protected ZIPs.
-	 * No, this isn't Fort Knox—just a speed bump for script kiddies like you.
-	 *
-	 * If you're READING this, hats off: you're not just any skid, you're LEVEL 2.
-	 * Maybe even aspiring to the boss round of Skid Life.
-	 *
-	 * If you insist on "borrowing"—try not to embarrass yourself by flexing this as your work.
-	 * (Bonus points if you actually contribute instead of vandalize.)
-	 *
-	 * Now please enjoy your exclusive invite to the “Skid Hall of Fame.” 😉
-	 */
+    /**
+     * Oh, hello there, curious skiddie!
+     *
+     * You've found the ultra-top-secret addon installer password.
+     * Congrats. This means:
+     *  1. You can open a ZIP file, and
+     *  2. You love poking around in code that isn't yours.
+     *
+     * Yes, .fpa files are literally password-protected ZIPs.
+     * No, this isn't Fort Knox—just a speed bump for script kiddies like you.
+     *
+     * If you're READING this, hats off: you're not just any skid, you're LEVEL 2.
+     * Maybe even aspiring to the boss round of Skid Life.
+     *
+     * If you insist on "borrowing"—try not to embarrass yourself by flexing this as your work.
+     * (Bonus points if you actually contribute instead of vandalize.)
+     *
+     * Now please enjoy your exclusive invite to the “Skid Hall of Fame.” 😉
+     */
     public const PASSWORD = 'featherpanel_development_kit_2025_addon_password';
 
     private static ?self $instance = null;

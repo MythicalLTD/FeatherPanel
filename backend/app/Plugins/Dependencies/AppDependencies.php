@@ -30,13 +30,15 @@
 
 namespace App\Plugins\Dependencies;
 
+use App\Plugins\PluginHelper;
+
 class AppDependencies implements Dependencies
 {
     public static function isInstalled(string $identifier): bool
     {
-        global $pluginManager;
-        $installedPlugins = $pluginManager->getLoadedMemoryPlugins();
-        if (in_array($identifier, $installedPlugins)) {
+        // Check if plugin exists in filesystem (has valid config)
+        $config = PluginHelper::getPluginConfig($identifier);
+        if (!empty($config)) {
             return true;
         }
 

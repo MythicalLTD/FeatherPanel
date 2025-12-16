@@ -30,6 +30,7 @@
 
 namespace App\Plugins;
 
+use App\App;
 use App\Plugins\Dependencies\AppDependencies;
 use App\Plugins\Dependencies\ComposerDependencies;
 use App\Plugins\Dependencies\PhpVersionDependencies;
@@ -45,6 +46,8 @@ class PluginDependencies
             if (strpos($dependency, 'composer=') === 0) {
                 $composerVersion = substr($dependency, strlen('composer='));
                 if (!ComposerDependencies::isInstalled($composerVersion)) {
+                    App::getInstance(true)->getLogger()->error('Composer package ' . $composerVersion . ' is not installed!');
+
                     return false;
                 }
             }
@@ -53,6 +56,8 @@ class PluginDependencies
             if (strpos($dependency, 'php=') === 0) {
                 $phpVersion = substr($dependency, strlen('php='));
                 if (!PhpVersionDependencies::isInstalled($phpVersion)) {
+                    App::getInstance(true)->getLogger()->error('PHP version ' . $phpVersion . ' is not installed!');
+
                     return false;
                 }
             }
@@ -61,6 +66,8 @@ class PluginDependencies
             if (strpos($dependency, 'php-ext=') === 0) {
                 $ext = substr($dependency, strlen('php-ext='));
                 if (!PhpExtensionDependencies::isInstalled($ext)) {
+                    App::getInstance(true)->getLogger()->error('PHP extension ' . $ext . ' is not installed!');
+
                     return false;
                 }
             }
@@ -69,6 +76,8 @@ class PluginDependencies
             if (strpos($dependency, 'plugin=') === 0) {
                 $plugin = substr($dependency, strlen('plugin='));
                 if (!AppDependencies::isInstalled($plugin)) {
+                    App::getInstance(true)->getLogger()->error('Plugin ' . $plugin . ' is not installed!');
+
                     return false;
                 }
             }

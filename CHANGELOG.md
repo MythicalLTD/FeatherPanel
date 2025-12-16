@@ -2,9 +2,14 @@
 
 ## v1.1.2 STABLE
 
+### Added
+
+- Plugins can now seamlessly integrate with and extend existing sidebar routes, including injecting custom previews! by @nayskutzu
+
 ### Improved
 
 - Significant performance enhancements—optimized resource usage for a faster, more efficient app experience. by @nayskutzu
+- Plugin dependency checks are now performed directly via config files instead of in-memory loading, preventing possible conflicts and ensuring more reliable operation. by @nayskutzu
 
 ### Removed
 

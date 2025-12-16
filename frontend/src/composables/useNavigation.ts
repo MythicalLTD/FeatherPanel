@@ -135,6 +135,44 @@ export function useNavigation() {
     // Point to the shared cache
     const pluginRoutes = sharedPluginRoutes;
 
+    // Initialize and watch plugin sidebar store
+    let pluginSidebarStore: ReturnType<typeof import('@/stores/pluginSidebar').usePluginSidebarStore> | null = null;
+
+    // Sync store data to local ref
+    const syncPluginRoutes = () => {
+        if (pluginSidebarStore?.sidebar) {
+            pluginRoutes.value = pluginSidebarStore.sidebar as PluginSidebarResponse['data']['sidebar'];
+        }
+    };
+
+    // Initialize plugin sidebar store and watch for changes
+    const initializePluginStore = async () => {
+        try {
+            const { usePluginSidebarStore } = await import('@/stores/pluginSidebar');
+            pluginSidebarStore = usePluginSidebarStore();
+
+            // Sync immediately if data is already loaded
+            syncPluginRoutes();
+
+            // Watch for store changes and sync to local ref
+            // Pinia stores are reactive, so we can watch the sidebar property directly
+            watch(
+                () => pluginSidebarStore?.sidebar,
+                (newSidebar) => {
+                    if (newSidebar) {
+                        syncPluginRoutes();
+                    }
+                },
+                { immediate: true, deep: true },
+            );
+        } catch (error) {
+            console.error('Failed to initialize plugin sidebar store:', error);
+        }
+    };
+
+    // Initialize immediately (non-blocking)
+    void initializePluginStore();
+
     const currentPath = computed(() => router.currentRoute.value.path);
 
     // Store current server's subuser permissions
@@ -208,13 +246,15 @@ export function useNavigation() {
 
     // Fetch plugin sidebar routes (uses store)
     const fetchPluginRoutes = async () => {
-        const { usePluginSidebarStore } = await import('@/stores/pluginSidebar');
-        const pluginSidebarStore = usePluginSidebarStore();
-        await pluginSidebarStore.fetchPluginSidebar();
-        if (pluginSidebarStore.sidebar) {
-            // Cast to match local PluginSidebarItem interface (store has optional fields, local has required)
-            pluginRoutes.value = pluginSidebarStore.sidebar as PluginSidebarResponse['data']['sidebar'];
+        // Use existing store instance if available, otherwise import and initialize
+        if (!pluginSidebarStore) {
+            const { usePluginSidebarStore } = await import('@/stores/pluginSidebar');
+            pluginSidebarStore = usePluginSidebarStore();
         }
+
+        await pluginSidebarStore.fetchPluginSidebar();
+        // Sync store data to local ref (watch will also trigger, but this ensures immediate sync)
+        syncPluginRoutes();
     };
 
     // Handle plugin navigation click
@@ -239,6 +279,22 @@ export function useNavigation() {
         category: 'main' | 'admin' | 'server',
         uuidShort?: string,
     ): NavigationItem[] => {
+        // Define built-in groups for each category (case-insensitive matching)
+        const builtInGroups: Record<'main' | 'admin' | 'server', string[]> = {
+            server: ['management', 'files', 'networking', 'automation', 'configuration'],
+            admin: [
+                'overview',
+                'feathercloud',
+                'users',
+                'tickets',
+                'networking',
+                'infrastructure',
+                'content',
+                'system',
+            ],
+            main: ['overview', 'support'],
+        };
+
         return Object.entries(pluginItems)
             .filter(([, item]) => {
                 // If plugin has a permission requirement, check it
@@ -279,6 +335,26 @@ export function useNavigation() {
                     fullRedirect = fullUrl;
                 }
 
+                // Normalize group name: only normalize if it matches a built-in group (case-insensitive)
+                // This allows plugins to inject into existing categories while preserving custom group names
+                let normalizedGroup: string | undefined = undefined;
+                if (item.group) {
+                    const trimmedGroup = item.group.trim();
+                    const lowerGroup = trimmedGroup.toLowerCase();
+                    const builtInGroupsForCategory = builtInGroups[category];
+
+                    // Check if this group matches a built-in group (case-insensitive)
+                    const matchingBuiltIn = builtInGroupsForCategory.find((bg) => bg.toLowerCase() === lowerGroup);
+
+                    if (matchingBuiltIn) {
+                        // Normalize to the exact built-in group name (lowercase)
+                        normalizedGroup = matchingBuiltIn;
+                    } else {
+                        // Preserve original casing for custom plugin groups
+                        normalizedGroup = trimmedGroup;
+                    }
+                }
+
                 return {
                     id: `plugin-${item.plugin}-${url.replace(/\//g, '-')}`,
                     name: item.name,
@@ -295,7 +371,7 @@ export function useNavigation() {
                     showBadge: item.showBadge !== false,
                     description: item.description,
                     permission: item.permission, // Include permission for reference
-                    group: item.group, // Use group from plugin item, or undefined to fall back to default
+                    group: normalizedGroup, // Normalized only for built-in groups, preserved for custom groups
                 };
             });
     };
@@ -900,6 +976,8 @@ export function useNavigation() {
         if (pluginRoutes.value?.server) {
             const pluginItems = convertPluginItems(pluginRoutes.value.server, 'server', uuidShort as string);
             // Only set default group if plugin didn't specify one
+            // Plugins can inject into existing groups (management, files, networking, automation, configuration)
+            // by specifying the group name in their sidebar.json (case-insensitive)
             pluginItems.forEach((item) => {
                 if (!item.group) {
                     item.group = 'plugins';

@@ -186,7 +186,7 @@ class PluginManager
         }
 
         if (!PluginDependencies::checkDependencies($config)) {
-            $this->logger->error('Plugin ' . $plugin . ' has unmet dependencies!');
+            $this->logger->error('Plugin ' . $plugin . ' has unmet dependencies! ' . json_encode($config));
 
             return;
         }
