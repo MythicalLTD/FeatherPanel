@@ -197,32 +197,6 @@ class PreferencesService {
         if (dockOpacity) {
             document.documentElement.style.setProperty('--dock-opacity', `${parseInt(dockOpacity) / 100}`);
         }
-
-        // Dispatch custom events for context menu and other features
-        const contextMenuEnabled = localStorage.getItem('custom-context-menu-enabled');
-        if (contextMenuEnabled) {
-            window.dispatchEvent(
-                new CustomEvent('custom-context-menu-toggle', {
-                    detail: { enabled: contextMenuEnabled === 'true' },
-                }),
-            );
-        }
-
-        const showNavigation = localStorage.getItem('context-menu-show-navigation');
-        const showClipboard = localStorage.getItem('context-menu-show-clipboard');
-        const showQuickActions = localStorage.getItem('context-menu-show-quick-actions');
-
-        if (showNavigation || showClipboard || showQuickActions) {
-            window.dispatchEvent(
-                new CustomEvent('context-menu-options-change', {
-                    detail: {
-                        showNavigation: showNavigation === 'true',
-                        showClipboard: showClipboard === 'true',
-                        showQuickActions: showQuickActions === 'true',
-                    },
-                }),
-            );
-        }
     }
 
     /**

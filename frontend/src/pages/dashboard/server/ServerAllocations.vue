@@ -909,7 +909,7 @@ function onConfirmDialog() {
 onMounted(async () => {
     // Load settings if not already loaded
     if (!settingsStore.loaded) {
-        await settingsStore.fetchSettings();
+        // Settings are fetched once in App.vue - no need to fetch here
     }
 
     // Wait for permission check to complete

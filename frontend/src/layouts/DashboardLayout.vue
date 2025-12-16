@@ -44,8 +44,8 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useLocalStorage } from '@vueuse/core';
-import { computed, onMounted, watch, watchEffect } from 'vue';
-import { useSettingsStore } from '@/stores/settings'; // <-- Import settings store
+import { computed, onMounted, onUnmounted, watch, ref } from 'vue';
+import { useSettingsStore } from '@/stores/settings';
 
 export interface BreadcrumbEntry {
     text: string;
@@ -60,19 +60,101 @@ const isSidebarVisible = computed(() => useLocalStorage('sidebar-visibility', 'v
 // Use the settings store to get appName for the title
 const settingsStore = useSettingsStore();
 
-// -- Fix: always use up-to-date settingsStore.appName instead of hardcoded fallback --
-const getAppName = () => settingsStore.appName || 'FeatherPanel';
+// Memoize appName to avoid repeated getter calls
+const appName = computed(() => settingsStore.appName || 'FeatherPanel');
+
+// Track favicon resources for cleanup
+const faviconBlobUrls = ref<Set<string>>(new Set());
+const faviconImageLoaders = ref<Set<HTMLImageElement>>(new Set());
+let faviconUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
+let lastAppLogo: string | null = null;
+
+// Debounced favicon update function
+const updateFavicon = (appLogo: string) => {
+    // Clear any pending updates
+    if (faviconUpdateTimeout) {
+        clearTimeout(faviconUpdateTimeout);
+        faviconUpdateTimeout = null;
+    }
+
+    // Debounce favicon updates (only update if logo actually changed)
+    if (lastAppLogo === appLogo) {
+        return;
+    }
+    lastAppLogo = appLogo;
+
+    // Clean up previous blob URLs
+    faviconBlobUrls.value.forEach((url) => {
+        try {
+            URL.revokeObjectURL(url);
+        } catch {
+            // Ignore errors during cleanup
+        }
+    });
+    faviconBlobUrls.value.clear();
+
+    // Clean up previous image loaders
+    faviconImageLoaders.value.forEach((img) => {
+        img.onload = null;
+        img.onerror = null;
+        img.src = '';
+    });
+    faviconImageLoaders.value.clear();
+
+    // Remove existing favicon links
+    const existingIcons = Array.from(
+        document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]'),
+    );
+    existingIcons.forEach((el) => el.parentNode?.removeChild(el));
+
+    // Helper to append a favicon link with cache-busting
+    const appendFavicon = (rel: string, type: string, href: string, isBlob = false) => {
+        const link = document.createElement('link');
+        link.rel = rel;
+        if (type) link.type = type;
+        const cacheBust = `fpfcache=${Date.now()}`;
+        link.href = href.includes('?') ? `${href}&${cacheBust}` : `${href}?${cacheBust}`;
+        document.head.appendChild(link);
+
+        // Track blob URLs for cleanup
+        if (isBlob) {
+            faviconBlobUrls.value.add(href);
+        }
+    };
+
+    const logoStr = String(appLogo);
+    const logoLower = logoStr.toLowerCase();
+
+    // Standard favicon links
+    appendFavicon('icon', 'image/png', logoStr);
+    appendFavicon('shortcut icon', 'image/png', logoStr);
+    appendFavicon('apple-touch-icon', '', logoStr);
+
+    // Handle ICO files
+    if (logoLower.endsWith('.ico')) {
+        appendFavicon('icon', 'image/x-icon', logoStr);
+        appendFavicon('shortcut icon', 'image/x-icon', logoStr);
+    }
+    // Handle PNG files - only convert if necessary (skip heavy conversion for better performance)
+    else if (logoLower.endsWith('.png')) {
+        // For PNG files, browsers can handle them directly, so we skip the heavy canvas conversion
+        // This significantly reduces memory usage and improves performance
+        appendFavicon('icon', 'image/png', logoStr);
+        appendFavicon('shortcut icon', 'image/png', logoStr);
+    }
+};
 
 // Ensure appName is always loaded on mount
 onMounted(async () => {
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
+    // The store guards against duplicate fetches, so we can safely access settings
 
     // Always set document.title for the initial load
-    let title = getAppName();
+    let title = appName.value;
     if (props.breadcrumbs && props.breadcrumbs.length > 0) {
         const currentBreadcrumb = props.breadcrumbs.find((crumb) => crumb.isCurrent);
         if (currentBreadcrumb) {
-            title = `${currentBreadcrumb.text} - ${getAppName()}`;
+            title = `${currentBreadcrumb.text} - ${appName.value}`;
         }
     }
     document.title = String(title);
@@ -99,17 +181,50 @@ onMounted(async () => {
     if (savedDockOpacity) {
         document.documentElement.style.setProperty('--dock-opacity', `${parseInt(savedDockOpacity) / 100}`);
     }
+
+    // Initial favicon update
+    const initialLogo = settingsStore.appLogo;
+    if (initialLogo && typeof initialLogo === 'string') {
+        updateFavicon(initialLogo);
+    }
 });
 
-// Update page title and always use fresh settingsStore.appName
+// Cleanup on unmount
+onUnmounted(() => {
+    // Clear pending timeout
+    if (faviconUpdateTimeout) {
+        clearTimeout(faviconUpdateTimeout);
+        faviconUpdateTimeout = null;
+    }
+
+    // Clean up blob URLs
+    faviconBlobUrls.value.forEach((url) => {
+        try {
+            URL.revokeObjectURL(url);
+        } catch {
+            // Ignore errors during cleanup
+        }
+    });
+    faviconBlobUrls.value.clear();
+
+    // Clean up image loaders
+    faviconImageLoaders.value.forEach((img) => {
+        img.onload = null;
+        img.onerror = null;
+        img.src = '';
+    });
+    faviconImageLoaders.value.clear();
+});
+
+// Update page title when breadcrumbs or appName changes
 watch(
-    [() => props.breadcrumbs, () => settingsStore.appName],
+    [() => props.breadcrumbs, appName],
     ([breadcrumbs]) => {
-        let title = getAppName();
+        let title = appName.value;
         if (breadcrumbs && breadcrumbs.length > 0) {
             const currentBreadcrumb = breadcrumbs.find((crumb) => crumb.isCurrent);
             if (currentBreadcrumb) {
-                title = `${currentBreadcrumb.text} - ${getAppName()}`;
+                title = `${currentBreadcrumb.text} - ${appName.value}`;
             }
         }
         document.title = String(title);
@@ -117,73 +232,24 @@ watch(
     { immediate: false },
 );
 
-// Dynamically update favicon whenever appLogo changes (force reloads for browsers that cache aggressively)
-watchEffect(() => {
-    const appLogo = settingsStore.appLogo;
-    if (!appLogo) return;
+// Watch for appLogo changes with debouncing
+watch(
+    () => settingsStore.appLogo,
+    (newLogo) => {
+        if (!newLogo || typeof newLogo !== 'string') return;
 
-    // Remove any existing favicon links to avoid browser confusion
-    const existingIcons = Array.from(
-        document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]'),
-    );
-    existingIcons.forEach((el) => el.parentNode?.removeChild(el));
+        // Debounce favicon updates to avoid excessive DOM manipulation
+        if (faviconUpdateTimeout) {
+            clearTimeout(faviconUpdateTimeout);
+        }
 
-    // Helper to append a favicon link, with cache-busting query
-    const appendFavicon = (rel: string, type: string, href: string) => {
-        const link = document.createElement('link');
-        link.rel = rel;
-        if (type) link.type = type;
-        // Add a cache-buster so browser reloads favicon (changes each time appLogo changes!)
-        const cacheBust = `fpfcache=${Date.now()}`;
-        // Don't double cache-bust
-        link.href = href.includes('?') ? `${href}&${cacheBust}` : `${href}?${cacheBust}`;
-        document.head.appendChild(link);
-    };
-
-    // Standard PNG favicon
-    appendFavicon('icon', 'image/png', String(appLogo));
-    // Legacy shortcut icon (for IE/Edge and some Firefox versions, can be PNG or ICO)
-    appendFavicon('shortcut icon', 'image/png', String(appLogo));
-    // Apple Touch icon for iOS
-    appendFavicon('apple-touch-icon', '', String(appLogo));
-
-    // If appLogo is already a .ico, add as x-icon explicitly for best browser support
-    if (String(appLogo).toLowerCase().endsWith('.ico')) {
-        appendFavicon('icon', 'image/x-icon', String(appLogo));
-        appendFavicon('shortcut icon', 'image/x-icon', String(appLogo));
-    }
-    // If appLogo is a PNG, try to convert to ICO and add as favicon (in-memory conversion)
-    // (This does not create a true ICO, just a fallback for some browsers.)
-    else if (String(appLogo).toLowerCase().endsWith('.png')) {
-        const image = new window.Image();
-        image.crossOrigin = 'anonymous';
-        image.onload = () => {
-            try {
-                const canvas = document.createElement('canvas');
-                canvas.width = 32;
-                canvas.height = 32;
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                    ctx.clearRect(0, 0, 32, 32);
-                    ctx.drawImage(image, 0, 0, 32, 32);
-                    canvas.toBlob((blob) => {
-                        if (blob) {
-                            const url = URL.createObjectURL(blob);
-                            appendFavicon('icon', 'image/x-icon', url);
-                            appendFavicon('shortcut icon', 'image/x-icon', url);
-                            // Revoke object URL after a short time
-                            setTimeout(() => URL.revokeObjectURL(url), 4000);
-                        }
-                    }, 'image/png');
-                }
-            } catch {
-                // If conversion fails, do nothing (already added PNG favicons above)
-            }
-        };
-        // Force reload (in case src is the same as before)
-        image.src = String(appLogo) + (String(appLogo).includes('?') ? '&' : '?') + `fpfcache=${Date.now()}`;
-    }
-});
+        faviconUpdateTimeout = setTimeout(() => {
+            updateFavicon(newLogo);
+            faviconUpdateTimeout = null;
+        }, 100); // 100ms debounce
+    },
+    { immediate: false },
+);
 </script>
 
 <template>

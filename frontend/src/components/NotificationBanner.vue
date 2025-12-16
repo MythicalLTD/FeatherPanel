@@ -23,34 +23,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { computed, onMounted, ref, onUnmounted } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import axios from 'axios';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { X, Info, AlertTriangle, CheckCircle2, XCircle } from 'lucide-vue-next';
 import { useLocalStorage } from '@vueuse/core';
-
-interface Notification {
-    id: number;
-    title: string;
-    message_markdown: string;
-    type: 'info' | 'warning' | 'danger' | 'success' | 'error';
-    is_dismissible: boolean;
-    is_sticky: boolean;
-    created_at: string;
-    updated_at: string | null;
-}
+import { useNotificationsStore, type Notification } from '@/stores/notifications';
 
 // Store dismissed notification IDs in localStorage
 const dismissedNotifications = useLocalStorage<number[]>('dismissed-notifications', []);
 
-const notifications = ref<Notification[]>([]);
-const loading = ref(true);
+const notificationsStore = useNotificationsStore();
 const dismissing = ref<Set<number>>(new Set());
 const route = useRoute();
+
+// Use notifications from store
+const notifications = computed(() => notificationsStore.notifications);
+const loading = computed(() => notificationsStore.loading);
 
 // Check if user is in admin area - don't show notifications there
 const isAdminArea = computed(() => {
@@ -69,22 +61,17 @@ const visibleNotifications = computed(() => {
     });
 });
 
-const fetchNotifications = async () => {
-    try {
-        loading.value = true;
-        const response = await axios.get('/api/user/notifications');
-        notifications.value = response.data.data.notifications || [];
-
+// Watch for notifications changes and clean up localStorage
+watch(
+    notifications,
+    (newNotifications) => {
         // Clean up localStorage - remove IDs that no longer exist
         dismissedNotifications.value = dismissedNotifications.value.filter((id) =>
-            notifications.value.some((n) => n.id === id),
+            newNotifications.some((n) => n.id === id),
         );
-    } catch (error) {
-        console.error('Failed to fetch notifications:', error);
-    } finally {
-        loading.value = false;
-    }
-};
+    },
+    { immediate: true },
+);
 
 const dismissNotification = async (notification: Notification) => {
     if (!notification.is_dismissible) return;
@@ -96,13 +83,8 @@ const dismissNotification = async (notification: Notification) => {
         // Save to localStorage immediately for instant UI update
         dismissedNotifications.value = [...dismissedNotifications.value, notificationId];
 
-        // Try to dismiss on backend (don't fail if this fails)
-        try {
-            await axios.post(`/api/user/notifications/${notificationId}/dismiss`);
-        } catch (error) {
-            console.warn('Failed to dismiss notification on backend:', error);
-            // Keep it dismissed in localStorage even if backend call fails
-        }
+        // Dismiss via store (handles backend call)
+        await notificationsStore.dismissNotification(notificationId);
     } catch (error) {
         // If something goes wrong, remove from localStorage
         dismissedNotifications.value = dismissedNotifications.value.filter((id) => id !== notificationId);
@@ -192,19 +174,8 @@ const getTypeStyles = (type: Notification['type']) => {
     }
 };
 
-let refreshInterval: ReturnType<typeof setInterval> | null = null;
-
-onMounted(() => {
-    fetchNotifications();
-    // Refresh notifications every 5 minutes
-    refreshInterval = setInterval(fetchNotifications, 5 * 60 * 1000);
-});
-
-onUnmounted(() => {
-    if (refreshInterval) {
-        clearInterval(refreshInterval);
-    }
-});
+// Notifications are fetched once in App.vue and auto-refreshed by the store
+// No need to fetch or set up intervals here
 </script>
 
 <template>

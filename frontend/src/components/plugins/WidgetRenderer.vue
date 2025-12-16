@@ -246,7 +246,7 @@ const isReloadingAll = ref(false);
 
 // Initialize loading states
 onMounted(async () => {
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
 
     props.widgets.forEach((widget) => {
         loadingStates.value[widget.id] = true;

@@ -70,8 +70,8 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
 };
 
 onMounted(async () => {
-    // Fetch settings to check if chatbot is enabled
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
+    // The store guards against duplicate fetches, so we can safely access settings
     document.addEventListener('keydown', handleKeyboardShortcut);
 });
 

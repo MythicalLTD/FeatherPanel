@@ -312,7 +312,7 @@ onMounted(async () => {
     await fetchPluginWidgets();
 
     widgetsStore.loadWidgets();
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
     await sessionStore.checkSessionOrRedirect();
     await dashboardStore.fetchDashboardStats();
 

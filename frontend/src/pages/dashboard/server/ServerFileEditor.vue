@@ -597,7 +597,6 @@ import BannedPlayersEditor from '@/pages/dashboard/server/features/minecraft/Ban
 import OpsEditor from '@/pages/dashboard/server/features/minecraft/OpsEditor.vue';
 import WhitelistEditor from '@/pages/dashboard/server/features/minecraft/WhitelistEditor.vue';
 import { useSessionStore } from '@/stores/session';
-import { useSettingsStore } from '@/stores/settings';
 import { useServerPermissions } from '@/composables/useServerPermissions';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
@@ -608,7 +607,6 @@ const router = useRouter();
 const { t } = useI18n();
 const toast = useToast();
 const sessionStore = useSessionStore();
-const settingsStore = useSettingsStore();
 
 // Check server permissions
 const { hasPermission: hasServerPermission, isLoading: permissionsLoading } = useServerPermissions();
@@ -1472,7 +1470,7 @@ onMounted(async () => {
         }
 
         await sessionStore.checkSessionOrRedirect(router);
-        await settingsStore.fetchSettings();
+        // Settings are fetched once in App.vue - no need to fetch here
         await fetchServer();
 
         // Wait for permission check to complete

@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.1.2 STABLE
+
+### Improved
+
+- Significant performance enhancements—optimized resource usage for a faster, more efficient app experience. by @nayskutzu
+
+### Removed
+
+- Removed the unused global context menu for a cleaner, more streamlined experience. by @nayskutzu
+- The API debug menu is now disabled in production, helping conserve resources and further boost app performance. by @nayskutzu
+
 ## v1.1.1 STABLE
 
 ### Fixed

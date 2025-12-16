@@ -750,7 +750,7 @@ function openApiDocumentation() {
 // Lifecycle
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect();
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
     await fetchApiClients();
 
     // Fetch plugin widgets

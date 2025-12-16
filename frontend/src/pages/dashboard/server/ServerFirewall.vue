@@ -829,7 +829,7 @@ async function syncRules(): Promise<void> {
 
 onMounted(async () => {
     // Fetch settings first to check if firewall is enabled
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
 
     // Only fetch firewall data if the feature is enabled
     if (settingsStore.serverAllowUserMadeFirewall) {

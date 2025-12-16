@@ -472,8 +472,7 @@ function formatDate(dateString: string): string {
 }
 
 onMounted(async () => {
-    // Ensure settings are loaded
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
 
     // Check if developer mode is enabled
     if (!settingsStore.appDeveloperMode) {

@@ -25,9 +25,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import {
@@ -64,29 +63,22 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
+import { useNotificationsStore, type Notification } from '@/stores/notifications';
 import { useLocalStorage } from '@vueuse/core';
 import { useServerContext } from '@/composables/useServerContext';
 
 const router = useRouter();
 const sessionStore = useSessionStore();
 const settingsStore = useSettingsStore();
+const notificationsStore = useNotificationsStore();
 const { currentServer } = useServerContext();
 
-interface Notification {
-    id: number;
-    title: string;
-    message_markdown: string;
-    type: 'info' | 'warning' | 'danger' | 'success' | 'error';
-    is_dismissible: boolean;
-    is_sticky: boolean;
-    created_at: string;
-    updated_at: string | null;
-}
-
-const notifications = ref<Notification[]>([]);
-const loading = ref(true);
 const notificationPopoverOpen = ref(false);
 const dismissedNotifications = useLocalStorage<number[]>('dismissed-notifications', []);
+
+// Use notifications from store
+const notifications = computed(() => notificationsStore.notifications);
+const loading = computed(() => notificationsStore.loading);
 
 const user = computed(() => ({
     name: sessionStore.user?.username || '',
@@ -105,21 +97,16 @@ const visibleNotifications = computed(() => {
 
 const unreadCount = computed(() => visibleNotifications.value.length);
 
-const fetchNotifications = async () => {
-    try {
-        loading.value = true;
-        const response = await axios.get('/api/user/notifications');
-        notifications.value = response.data.data.notifications || [];
-
-        dismissedNotifications.value = dismissedNotifications.value.filter((id) =>
-            notifications.value.some((n) => n.id === id),
+// Watch for notifications changes and clean up localStorage
+watch(
+    notifications,
+    (newNotifications: Notification[]) => {
+        dismissedNotifications.value = dismissedNotifications.value.filter((id: number) =>
+            newNotifications.some((n: Notification) => n.id === id),
         );
-    } catch (error) {
-        console.error('Failed to fetch notifications:', error);
-    } finally {
-        loading.value = false;
-    }
-};
+    },
+    { immediate: true },
+);
 
 const dismissNotification = async (notification: Notification) => {
     if (!notification.is_dismissible) return;
@@ -127,11 +114,8 @@ const dismissNotification = async (notification: Notification) => {
     const notificationId = notification.id;
     dismissedNotifications.value = [...dismissedNotifications.value, notificationId];
 
-    try {
-        await axios.post(`/api/user/notifications/${notificationId}/dismiss`);
-    } catch (error) {
-        console.warn('Failed to dismiss notification on backend:', error);
-    }
+    // Dismiss via store (handles backend call)
+    await notificationsStore.dismissNotification(notificationId);
 };
 
 const renderMarkdown = (markdown: string): string => {
@@ -394,18 +378,8 @@ const openExternalLink = (url: string | undefined): void => {
     }
 };
 
-let refreshInterval: ReturnType<typeof setInterval> | null = null;
-
-onMounted(() => {
-    fetchNotifications();
-    refreshInterval = setInterval(fetchNotifications, 5 * 60 * 1000);
-});
-
-onUnmounted(() => {
-    if (refreshInterval) {
-        clearInterval(refreshInterval);
-    }
-});
+// Notifications are fetched once in App.vue and auto-refreshed by the store
+// No need to fetch or set up intervals here
 </script>
 
 <template>

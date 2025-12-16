@@ -226,7 +226,7 @@ function getAxiosErrorMessage(err: unknown, fallback: string): string {
 
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect(router);
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
     await fetchServer();
 
     // Wait for permission check to complete

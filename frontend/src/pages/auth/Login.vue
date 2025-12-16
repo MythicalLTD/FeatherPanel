@@ -41,7 +41,7 @@ const settingsStore = useSettingsStore();
 const preferencesStore = usePreferencesStore();
 
 onMounted(async () => {
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
 
     // Fetch plugin widgets
     await fetchPluginWidgets();

@@ -1079,7 +1079,7 @@ watch([() => form.ssl, () => form.use_lets_encrypt], () => {
 
 onMounted(async () => {
     await fetchPluginWidgets();
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
 
     if (settingsStore.serverAllowUserMadeProxy) {
         await Promise.all([fetchServerAllocations(), fetchProxies()]);

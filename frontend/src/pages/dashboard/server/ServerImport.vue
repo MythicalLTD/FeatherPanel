@@ -911,7 +911,7 @@ onMounted(async () => {
     await fetchPluginWidgets();
 
     // Fetch settings to check if import is enabled
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
 
     // Fetch imports list
     if (importEnabled.value) {

@@ -23,16 +23,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useSettingsStore } from '@/stores/settings';
 import { Heart, ExternalLink } from 'lucide-vue-next';
 import { Separator } from '@/components/ui/separator';
 
 const settingsStore = useSettingsStore();
 
-onMounted(async () => {
-    await settingsStore.fetchSettings();
-});
+// Settings are fetched once in App.vue - no need to fetch here
+// The store guards against duplicate fetches, so we can safely access settings
 
 const currentYear = computed(() => new Date().getFullYear());
 const appName = computed(() => String(settingsStore.appName || 'FeatherPanel'));

@@ -511,7 +511,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useToast } from 'vue-toastification';
 import { useSessionStore } from '@/stores/session';
-import { useSettingsStore } from '@/stores/settings';
 import { useServerPermissions } from '@/composables/useServerPermissions';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import axios from 'axios';
@@ -585,7 +584,6 @@ const router = useRouter();
 const { t } = useI18n();
 const toast = useToast();
 const sessionStore = useSessionStore();
-const settingsStore = useSettingsStore();
 
 // Check server permissions
 const { hasPermission: hasServerPermission, isLoading: permissionsLoading } = useServerPermissions();
@@ -748,7 +746,7 @@ async function confirmReinstall(): Promise<void> {
 // Lifecycle
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect(router);
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
 
     // Wait for permission check to complete
     while (permissionsLoading.value) {

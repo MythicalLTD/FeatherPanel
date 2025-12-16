@@ -364,128 +364,6 @@
             </div>
         </div>
 
-        <!-- Custom Context Menu Settings -->
-        <div class="space-y-4">
-            <h4 class="text-base font-semibold">{{ $t('account.customContextMenuSettings') }}</h4>
-
-            <div class="space-y-4">
-                <!-- Enable/Disable Context Menu -->
-                <div class="space-y-2">
-                    <Label for="context-menu-enabled">{{ $t('account.enableCustomContextMenu') }}</Label>
-                    <Select
-                        :model-value="customContextMenuEnabled ? 'enabled' : 'disabled'"
-                        @update:model-value="handleContextMenuChange"
-                    >
-                        <SelectTrigger id="context-menu-enabled">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="enabled">
-                                <div class="flex items-center gap-2">
-                                    <Eye class="h-4 w-4" />
-                                    {{ $t('common.enable') }}
-                                </div>
-                            </SelectItem>
-                            <SelectItem value="disabled">
-                                <div class="flex items-center gap-2">
-                                    <EyeOff class="h-4 w-4" />
-                                    {{ $t('common.disable') }}
-                                </div>
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <p class="text-xs text-muted-foreground">{{ $t('account.customContextMenuDescription') }}</p>
-                </div>
-
-                <!-- Context Menu Options (only show when enabled) -->
-                <div v-if="customContextMenuEnabled" class="space-y-3 p-4 bg-muted/30 rounded-lg border border-border">
-                    <!-- Show Navigation Actions -->
-                    <div class="space-y-2">
-                        <Label for="context-menu-nav">{{ $t('account.showNavigationActions') }}</Label>
-                        <Select
-                            :model-value="contextMenuShowNavigation ? 'show' : 'hide'"
-                            @update:model-value="handleContextMenuNavigationChange"
-                        >
-                            <SelectTrigger id="context-menu-nav">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="show">
-                                    <div class="flex items-center gap-2">
-                                        <Eye class="h-4 w-4" />
-                                        {{ $t('common.show') }}
-                                    </div>
-                                </SelectItem>
-                                <SelectItem value="hide">
-                                    <div class="flex items-center gap-2">
-                                        <EyeOff class="h-4 w-4" />
-                                        {{ $t('common.hide') }}
-                                    </div>
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <p class="text-xs text-muted-foreground">{{ $t('account.navigationActionsDescription') }}</p>
-                    </div>
-
-                    <!-- Show Clipboard Actions -->
-                    <div class="space-y-2">
-                        <Label for="context-menu-clipboard">{{ $t('account.showClipboardActions') }}</Label>
-                        <Select
-                            :model-value="contextMenuShowClipboard ? 'show' : 'hide'"
-                            @update:model-value="handleContextMenuClipboardChange"
-                        >
-                            <SelectTrigger id="context-menu-clipboard">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="show">
-                                    <div class="flex items-center gap-2">
-                                        <Eye class="h-4 w-4" />
-                                        {{ $t('common.show') }}
-                                    </div>
-                                </SelectItem>
-                                <SelectItem value="hide">
-                                    <div class="flex items-center gap-2">
-                                        <EyeOff class="h-4 w-4" />
-                                        {{ $t('common.hide') }}
-                                    </div>
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <p class="text-xs text-muted-foreground">{{ $t('account.clipboardActionsDescription') }}</p>
-                    </div>
-
-                    <!-- Show Quick Actions -->
-                    <div class="space-y-2">
-                        <Label for="context-menu-quick">{{ $t('account.showQuickActions') }}</Label>
-                        <Select
-                            :model-value="contextMenuShowQuickActions ? 'show' : 'hide'"
-                            @update:model-value="handleContextMenuQuickActionsChange"
-                        >
-                            <SelectTrigger id="context-menu-quick">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="show">
-                                    <div class="flex items-center gap-2">
-                                        <Eye class="h-4 w-4" />
-                                        {{ $t('common.show') }}
-                                    </div>
-                                </SelectItem>
-                                <SelectItem value="hide">
-                                    <div class="flex items-center gap-2">
-                                        <EyeOff class="h-4 w-4" />
-                                        {{ $t('common.hide') }}
-                                    </div>
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <p class="text-xs text-muted-foreground">{{ $t('account.quickActionsDescription') }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Reset Button -->
         <div class="pt-4 border-t border-border">
             <Button
@@ -587,12 +465,6 @@ const showDock = ref(false);
 const dockSize = ref(48);
 const dockOpacity = ref(80);
 
-// Custom context menu state
-const customContextMenuEnabled = ref(false);
-const contextMenuShowNavigation = ref(true);
-const contextMenuShowClipboard = ref(true);
-const contextMenuShowQuickActions = ref(true);
-
 // Loading state for sidebar changes
 const isReloading = ref(false);
 
@@ -690,29 +562,6 @@ const loadSettings = () => {
         dockOpacity.value = parseInt(savedDockOpacity);
         updateDockOpacity();
     }
-
-    // Custom context menu settings (default: disabled)
-    const savedCustomContextMenu = localStorage.getItem('custom-context-menu-enabled');
-    if (savedCustomContextMenu !== null) {
-        customContextMenuEnabled.value = savedCustomContextMenu === 'true';
-    } else {
-        customContextMenuEnabled.value = false;
-    }
-
-    const savedShowNavigation = localStorage.getItem('context-menu-show-navigation');
-    if (savedShowNavigation !== null) {
-        contextMenuShowNavigation.value = savedShowNavigation === 'true';
-    }
-
-    const savedShowClipboard = localStorage.getItem('context-menu-show-clipboard');
-    if (savedShowClipboard !== null) {
-        contextMenuShowClipboard.value = savedShowClipboard === 'true';
-    }
-
-    const savedShowQuickActions = localStorage.getItem('context-menu-show-quick-actions');
-    if (savedShowQuickActions !== null) {
-        contextMenuShowQuickActions.value = savedShowQuickActions === 'true';
-    }
 };
 
 // Handle dock visibility change from select
@@ -721,70 +570,6 @@ const handleDockVisibilityChange = (value: string | number | boolean | bigint | 
         const enabled = value === 'enabled';
         showDock.value = enabled;
         updateDockVisibility(enabled);
-    }
-};
-
-// Handle context menu change from select
-const handleContextMenuChange = (value: string | number | boolean | bigint | Record<string, unknown> | null) => {
-    if (typeof value === 'string') {
-        updateCustomContextMenuEnabled(value === 'enabled');
-    }
-};
-
-// Handle context menu navigation visibility
-const handleContextMenuNavigationChange = (
-    value: string | number | boolean | bigint | Record<string, unknown> | null,
-) => {
-    if (typeof value === 'string') {
-        contextMenuShowNavigation.value = value === 'show';
-        localStorage.setItem('context-menu-show-navigation', (value === 'show').toString());
-        window.dispatchEvent(
-            new CustomEvent('context-menu-options-change', {
-                detail: {
-                    showNavigation: value === 'show',
-                    showClipboard: contextMenuShowClipboard.value,
-                    showQuickActions: contextMenuShowQuickActions.value,
-                },
-            }),
-        );
-    }
-};
-
-// Handle context menu clipboard visibility
-const handleContextMenuClipboardChange = (
-    value: string | number | boolean | bigint | Record<string, unknown> | null,
-) => {
-    if (typeof value === 'string') {
-        contextMenuShowClipboard.value = value === 'show';
-        localStorage.setItem('context-menu-show-clipboard', (value === 'show').toString());
-        window.dispatchEvent(
-            new CustomEvent('context-menu-options-change', {
-                detail: {
-                    showNavigation: contextMenuShowNavigation.value,
-                    showClipboard: value === 'show',
-                    showQuickActions: contextMenuShowQuickActions.value,
-                },
-            }),
-        );
-    }
-};
-
-// Handle context menu quick actions visibility
-const handleContextMenuQuickActionsChange = (
-    value: string | number | boolean | bigint | Record<string, unknown> | null,
-) => {
-    if (typeof value === 'string') {
-        contextMenuShowQuickActions.value = value === 'show';
-        localStorage.setItem('context-menu-show-quick-actions', (value === 'show').toString());
-        window.dispatchEvent(
-            new CustomEvent('context-menu-options-change', {
-                detail: {
-                    showNavigation: contextMenuShowNavigation.value,
-                    showClipboard: contextMenuShowClipboard.value,
-                    showQuickActions: value === 'show',
-                },
-            }),
-        );
     }
 };
 
@@ -1142,14 +927,6 @@ const updateDockOpacity = () => {
     // Auto-sync will handle backend update every 5 minutes
 };
 
-// Custom context menu functions
-const updateCustomContextMenuEnabled = (enabled: boolean) => {
-    customContextMenuEnabled.value = enabled;
-    localStorage.setItem('custom-context-menu-enabled', enabled.toString());
-    window.dispatchEvent(new CustomEvent('custom-context-menu-toggle', { detail: { enabled } }));
-    // Auto-sync will handle backend update every 5 minutes
-};
-
 // Reset all settings
 const resetAllSettings = () => {
     // Reset theme
@@ -1179,15 +956,6 @@ const resetAllSettings = () => {
     localStorage.setItem('dock-opacity', '80');
     updateDockSize();
     updateDockOpacity();
-
-    // Reset custom context menu
-    updateCustomContextMenuEnabled(false);
-    contextMenuShowNavigation.value = true;
-    contextMenuShowClipboard.value = true;
-    contextMenuShowQuickActions.value = true;
-    localStorage.setItem('context-menu-show-navigation', 'true');
-    localStorage.setItem('context-menu-show-clipboard', 'true');
-    localStorage.setItem('context-menu-show-quick-actions', 'true');
 };
 
 // Watch for theme changes and clear background when switching to light mode

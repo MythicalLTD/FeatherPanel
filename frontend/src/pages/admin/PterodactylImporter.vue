@@ -244,10 +244,7 @@ async function createApiKey(): Promise<void> {
 }
 
 onMounted(async () => {
-    // Ensure settings are loaded for panel URL
-    if (!settingsStore.loaded) {
-        await settingsStore.fetchSettings();
-    }
+    // Settings are fetched once in App.vue - no need to fetch here
     void fetchPrerequisites();
     void fetchApiClients();
 });

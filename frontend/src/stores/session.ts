@@ -73,7 +73,12 @@ export const useSessionStore = defineStore('session', {
         permissions: [] as Permissions,
     }),
     actions: {
-        async checkSessionOrRedirect(router?: Router) {
+        async fetchSession() {
+            // Prevent multiple simultaneous fetches
+            if (this.isSessionChecked && this.user) {
+                return true;
+            }
+
             try {
                 const res = await axios.get('/api/user/session');
                 if (res.data && res.data.success && res.data.data && res.data.data.user_info) {
@@ -82,21 +87,40 @@ export const useSessionStore = defineStore('session', {
                     this.isSessionChecked = true;
                     return true;
                 } else {
-                    if (router)
-                        router.replace({
-                            name: 'Login',
-                            query: { redirect: router.currentRoute.value.path, e: 'Invalid session' },
-                        });
+                    this.isSessionChecked = true; // Mark as checked even if failed
                     return false;
                 }
             } catch {
-                if (router)
+                this.isSessionChecked = true; // Mark as checked even if failed
+                return false;
+            }
+        },
+        async checkSessionOrRedirect(router?: Router) {
+            // If session already checked and user exists, return true
+            if (this.isSessionChecked && this.user) {
+                return true;
+            }
+
+            // If session checked but no user, redirect
+            if (this.isSessionChecked && !this.user) {
+                if (router) {
                     router.replace({
                         name: 'Login',
                         query: { redirect: router.currentRoute.value.path, e: 'Invalid session' },
                     });
+                }
                 return false;
             }
+
+            // Fetch session if not checked yet
+            const success = await this.fetchSession();
+            if (!success && router) {
+                router.replace({
+                    name: 'Login',
+                    query: { redirect: router.currentRoute.value.path, e: 'Invalid session' },
+                });
+            }
+            return success;
         },
         clearSession() {
             this.user = null;

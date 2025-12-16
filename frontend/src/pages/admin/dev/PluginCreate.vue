@@ -301,8 +301,7 @@ watch(
 
 // Update authors with current username and app name when component mounts (in case session/settings weren't loaded yet)
 onMounted(async () => {
-    // Fetch settings to ensure app name is available
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
 
     // Update first author (username) if not set
     if (sessionStore.user?.username && createForm.value.author[0] === '') {

@@ -29,7 +29,6 @@ import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
-import axios from 'axios';
 import {
     Home,
     Users,
@@ -145,26 +144,32 @@ export function useNavigation() {
     // Fetch server permissions when on a server page
     const fetchServerPermissions = async (uuidShort: string) => {
         try {
-            const response = await axios.get(`/api/user/servers`);
-            const data = response.data;
+            // Use servers store to get cached server list (avoids redundant API calls)
+            const { useServersStore } = await import('@/stores/servers');
+            const serversStore = useServersStore();
 
-            if (data.success && data.data?.servers) {
-                // Find the current server in the list
-                const server = data.data.servers.find((s: { uuidShort: string }) => s.uuidShort === uuidShort);
+            // Fetch servers if not cached or cache expired
+            await serversStore.fetchServers();
 
-                if (server) {
-                    isServerOwner.value = !server.is_subuser;
+            // Find the current server in the cached list
+            const server = serversStore.getServerByUuid(uuidShort);
 
-                    // If user is a subuser, get their permissions
-                    if (server.is_subuser && server.subuser_permissions) {
-                        serverPermissions.value = server.subuser_permissions;
-                    } else if (isServerOwner.value) {
-                        // Owner has all permissions
-                        serverPermissions.value = ['*'];
-                    } else {
-                        serverPermissions.value = [];
-                    }
+            if (server) {
+                isServerOwner.value = !server.is_subuser;
+
+                // If user is a subuser, get their permissions
+                if (server.is_subuser && server.subuser_permissions) {
+                    serverPermissions.value = server.subuser_permissions;
+                } else if (isServerOwner.value) {
+                    // Owner has all permissions
+                    serverPermissions.value = ['*'];
+                } else {
+                    serverPermissions.value = [];
                 }
+            } else {
+                // Server not found in cache, default to owner
+                isServerOwner.value = true;
+                serverPermissions.value = ['*'];
             }
         } catch (error) {
             console.error('Failed to fetch server permissions:', error);
@@ -201,20 +206,14 @@ export function useNavigation() {
         { immediate: true },
     );
 
-    // Fetch plugin sidebar routes
+    // Fetch plugin sidebar routes (uses store)
     const fetchPluginRoutes = async () => {
-        try {
-            // Avoid refetching if we already have data
-            if (pluginRoutes.value) return;
-
-            const response = await fetch('/api/system/plugin-sidebar');
-            const data: PluginSidebarResponse = await response.json();
-
-            if (data.success) {
-                pluginRoutes.value = data.data.sidebar;
-            }
-        } catch (error) {
-            console.error('Failed to fetch plugin routes:', error);
+        const { usePluginSidebarStore } = await import('@/stores/pluginSidebar');
+        const pluginSidebarStore = usePluginSidebarStore();
+        await pluginSidebarStore.fetchPluginSidebar();
+        if (pluginSidebarStore.sidebar) {
+            // Cast to match local PluginSidebarItem interface (store has optional fields, local has required)
+            pluginRoutes.value = pluginSidebarStore.sidebar as PluginSidebarResponse['data']['sidebar'];
         }
     };
 

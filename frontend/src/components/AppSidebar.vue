@@ -59,7 +59,7 @@ const settingsStore = useSettingsStore();
 onMounted(async () => {
     const ok = await sessionStore.checkSessionOrRedirect(router);
     if (!ok) return;
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
     // Connect to live status for current server
     const uuid = currentServer.value?.uuidShort;
     if (uuid) {

@@ -23,88 +23,80 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { defineComponent, ref, computed, onMounted, onUnmounted } from 'vue';
+import { defineComponent, ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useSettingsStore } from './stores/settings';
-import DebugPanel from './components/DebugPanel.vue';
-import GlobalContextMenu from './components/GlobalContextMenu.vue';
+import { useSessionStore } from './stores/session';
+import { useNotificationsStore } from './stores/notifications';
+import { usePluginSidebarStore } from './stores/pluginSidebar';
 import ChatbotWidget from './components/ai/ChatbotWidget.vue';
 import BootingUp from './components/BootingUp.vue';
+
+// Conditionally import DebugPanel only in development
+// Vite will tree-shake unused imports in production when the component is conditionally registered and rendered
+// The import statement itself will be included, but Vite's production build will eliminate unused code
+import DebugPanelModule from './components/DebugPanel.vue';
+const DebugPanel = import.meta.env.DEV ? DebugPanelModule : null;
 
 export default defineComponent({
     name: 'App',
     components: {
-        DebugPanel,
-        GlobalContextMenu,
+        ...(DebugPanel ? { DebugPanel } : {}),
         ChatbotWidget,
         BootingUp,
     },
     setup() {
         const settingsStore = useSettingsStore();
-        const debugPanel = ref<InstanceType<typeof DebugPanel> | null>(null);
-        const globalContextMenu = ref<InstanceType<typeof GlobalContextMenu> | null>(null);
-        const customContextMenuEnabled = ref(false);
+        const sessionStore = useSessionStore();
+        const notificationsStore = useNotificationsStore();
+        const pluginSidebarStore = usePluginSidebarStore();
+        const debugPanel = ref<InstanceType<typeof DebugPanelModule> | null>(null);
+        const isDevelopment = import.meta.env.DEV;
+        let initializationPromise: Promise<void> | null = null;
 
-        // Check if we should show the booting screen
+        // Memoize booting screen state to avoid unnecessary re-computations
         const showBootingScreen = computed(() => settingsStore.booting);
 
-        const handleGlobalContextMenu = (event: MouseEvent) => {
-            // Check if custom context menu is disabled
-            if (!customContextMenuEnabled.value) {
-                return;
-            }
-
-            // Check if the click is on an element that has its own context menu
-            const target = event.target as HTMLElement;
-
-            // Don't prevent context menu on input fields, textareas, or elements with contenteditable
-            if (
-                target.tagName === 'INPUT' ||
-                target.tagName === 'TEXTAREA' ||
-                target.isContentEditable ||
-                target.closest('[data-radix-context-menu-trigger]') // Don't interfere with shadcn context menus
-            ) {
-                return;
-            }
-
-            // Prevent default browser context menu
-            event.preventDefault();
-
-            // Show our custom global context menu
-            if (globalContextMenu.value) {
-                globalContextMenu.value.show(event.clientX, event.clientY);
-            }
-        };
-
-        const handleContextMenuToggle = (event: CustomEvent) => {
-            customContextMenuEnabled.value = event.detail.enabled;
-        };
-
         onMounted(async () => {
-            // Load custom context menu setting from localStorage (default: disabled)
-            const savedSetting = localStorage.getItem('custom-context-menu-enabled');
-            if (savedSetting !== null) {
-                customContextMenuEnabled.value = savedSetting === 'true';
-            }
+            // Initialize all core data once on app mount
+            // These stores guard against duplicate fetches, so this is safe to call
+            if (!initializationPromise) {
+                initializationPromise = (async () => {
+                    // Fetch settings first (needed for booting screen detection)
+                    await settingsStore.fetchSettings();
 
-            document.addEventListener('contextmenu', handleGlobalContextMenu);
-            window.addEventListener('custom-context-menu-toggle', handleContextMenuToggle as EventListener);
+                    // Only fetch session, notifications, and plugin sidebar if backend is ready
+                    if (!settingsStore.booting) {
+                        // Fetch session (needed for authenticated routes)
+                        await sessionStore.fetchSession();
 
-            // Try to fetch settings early to detect if backend is booting
-            // This will catch 500 errors and show the booting screen
-            if (!settingsStore.loaded && !settingsStore.loading) {
-                await settingsStore.fetchSettings();
+                        // Fetch notifications and start auto-refresh (only if authenticated)
+                        if (sessionStore.user) {
+                            await notificationsStore.fetchNotifications();
+                            notificationsStore.startAutoRefresh();
+                        }
+
+                        // Fetch plugin sidebar (public endpoint, safe to call)
+                        await pluginSidebarStore.fetchPluginSidebar();
+                    }
+                })().finally(() => {
+                    initializationPromise = null;
+                });
+                await initializationPromise;
             }
         });
 
-        onUnmounted(() => {
-            document.removeEventListener('contextmenu', handleGlobalContextMenu);
-            window.removeEventListener('custom-context-menu-toggle', handleContextMenuToggle as EventListener);
+        // Cleanup on unmount
+        onBeforeUnmount(() => {
+            // Clear any pending promises
+            initializationPromise = null;
+            // Stop notification auto-refresh
+            notificationsStore.stopAutoRefresh();
         });
 
         return {
             debugPanel,
-            globalContextMenu,
             showBootingScreen,
+            isDevelopment,
         };
     },
 });
@@ -120,8 +112,8 @@ export default defineComponent({
                 <component :is="Component" />
             </router-view>
 
-            <!-- Debug Panel -->
-            <DebugPanel ref="debugPanel" />
+            <!-- Debug Panel (development only) -->
+            <DebugPanel v-if="isDevelopment" ref="debugPanel" />
 
             <!-- Global Context Menu -->
             <GlobalContextMenu ref="globalContextMenu" />

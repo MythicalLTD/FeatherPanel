@@ -64,8 +64,17 @@ export default defineConfig({
                 console.warn('[App/YML⚠️] Yaml parser warning: ' + warning);
             },
         }),
-        vue({}),
-        vueDevTools(),
+        vue({
+            // Performance: Enable template compilation optimizations
+            template: {
+                compilerOptions: {
+                    // Remove whitespace in production
+                    whitespace: 'condense',
+                },
+            },
+        }),
+        // Only enable devtools in development
+        ...(process.env.NODE_ENV === 'development' ? [vueDevTools()] : []),
         tailwindcss(),
         htmlMinifyPlugin(),
     ],
@@ -78,6 +87,15 @@ export default defineConfig({
         host: '0.0.0.0',
         strictPort: true,
         allowedHosts: ['localhost', '127.0.0.1', '0.0.0.0', 'devsv.mythical.systems'],
+        // Performance: Optimize HMR
+        hmr: {
+            overlay: true,
+        },
+        // Performance: Reduce file watching overhead
+        watch: {
+            usePolling: false,
+            ignored: ['**/node_modules/**', '**/.git/**', '**/dist/**'],
+        },
         proxy: {
             '/api': {
                 target: 'http://localhost:8721',
@@ -102,15 +120,139 @@ export default defineConfig({
                 changeOrigin: true,
                 secure: false,
                 rewrite: (path) => path,
-            }
+            },
         },
     },
     build: {
-        minify: true,
-        sourcemap: true,
-        assetsInlineLimit: 0,
-        chunkSizeWarningLimit: 120000,
+        // Performance: Use esbuild for faster minification (lower RAM usage than terser)
+        minify: 'esbuild',
+        // Performance: Disable sourcemaps in production (saves RAM and build time)
+        sourcemap: process.env.NODE_ENV === 'development',
+        // Performance: Inline small assets to reduce HTTP requests
+        assetsInlineLimit: 4096, // 4kb - inline small assets
+        // Performance: Split CSS into separate files for better caching
+        cssCodeSplit: true,
+        // Performance: Target modern browsers for smaller bundles
+        target: 'esnext',
+        // Performance: Use rollup for better tree-shaking
         rollupOptions: {
+            output: {
+                // Performance: Manual chunk splitting for better caching and smaller initial bundles
+                manualChunks: (id) => {
+                    // Vendor chunks - split large dependencies aggressively
+                    if (id.includes('node_modules')) {
+                        // Large editor libraries - split individually
+                        if (id.includes('ace-builds')) {
+                            return 'ace-editor';
+                        }
+                        if (id.includes('@xterm')) {
+                            return 'xterm';
+                        }
+                        if (id.includes('vue3-ace-editor')) {
+                            return 'vue-ace-editor';
+                        }
+
+                        // Chart libraries - split individually
+                        if (id.includes('chart.js')) {
+                            return 'chartjs';
+                        }
+                        if (id.includes('vue-chartjs')) {
+                            return 'vue-chartjs';
+                        }
+
+                        // Large UI libraries - split individually
+                        if (id.includes('@tanstack/vue-table')) {
+                            return 'tanstack-table';
+                        }
+                        if (id.includes('reka-ui')) {
+                            return 'reka-ui';
+                        }
+                        if (id.includes('vaul-vue')) {
+                            return 'vaul-vue';
+                        }
+                        if (id.includes('lucide-vue-next')) {
+                            return 'lucide-icons';
+                        }
+
+                        // Form/validation libraries - split individually
+                        if (id.includes('vee-validate')) {
+                            return 'vee-validate';
+                        }
+                        if (id.includes('dompurify')) {
+                            return 'dompurify';
+                        }
+                        if (id.includes('marked')) {
+                            return 'marked';
+                        }
+
+                        // Vue ecosystem - keep together but separate from other vendors
+                        if (id.includes('vue') && !id.includes('vue-chartjs') && !id.includes('vue3-ace-editor')) {
+                            if (id.includes('vue-router')) {
+                                return 'vue-router';
+                            }
+                            if (id.includes('pinia')) {
+                                return 'pinia';
+                            }
+                            if (id.includes('vue-i18n')) {
+                                return 'vue-i18n';
+                            }
+                            if (id.includes('vue-toastification')) {
+                                return 'vue-toastification';
+                            }
+                            return 'vue-core';
+                        }
+
+                        // Utility libraries - split individually
+                        if (id.includes('@vueuse')) {
+                            return 'vueuse';
+                        }
+                        if (id.includes('axios')) {
+                            return 'axios';
+                        }
+                        if (id.includes('yaml')) {
+                            return 'yaml';
+                        }
+
+                        // Other large dependencies - split by package name
+                        if (id.includes('vuedraggable')) {
+                            return 'vuedraggable';
+                        }
+                        if (id.includes('vue-qrcode') || id.includes('qrcode')) {
+                            return 'qrcode';
+                        }
+                        if (id.includes('vue-turnstile')) {
+                            return 'vue-turnstile';
+                        }
+                        if (id.includes('vue-animejs')) {
+                            return 'vue-animejs';
+                        }
+
+                        // Group smaller dependencies
+                        return 'vendor';
+                    }
+                },
+                // Performance: Optimize chunk file names for better caching
+                chunkFileNames: (chunkInfo) => {
+                    const facadeModuleId = chunkInfo.facadeModuleId
+                        ? chunkInfo.facadeModuleId
+                              .split('/')
+                              .pop()
+                              ?.replace(/\.[^.]*$/, '')
+                        : 'chunk';
+                    return `js/${facadeModuleId}-[hash].js`;
+                },
+                assetFileNames: (assetInfo) => {
+                    const info = assetInfo.name?.split('.') || [];
+                    const ext = info[info.length - 1];
+                    if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext || '')) {
+                        return `img/[name]-[hash][extname]`;
+                    }
+                    if (/woff2?|eot|ttf|otf/i.test(ext || '')) {
+                        return `fonts/[name]-[hash][extname]`;
+                    }
+                    return `assets/[name]-[hash][extname]`;
+                },
+            },
             onwarn(warning, warn) {
                 // Suppress eval warnings from Rolldown
                 if (
@@ -132,9 +274,43 @@ export default defineConfig({
                 warn(warning);
             },
         },
+        // Performance: Reduce chunk size warning limit (helps identify optimization opportunities)
+        chunkSizeWarningLimit: 200000,
+        // Performance: Enable CSS minification
+        cssMinify: true,
+        // Performance: Report compressed size
+        reportCompressedSize: true,
     },
     optimizeDeps: {
-        include: ['vue', 'vue-router', 'pinia', 'vue-i18n'],
+        // Performance: Pre-bundle common dependencies to reduce dev server startup time
+        include: [
+            'vue',
+            'vue-router',
+            'pinia',
+            'vue-i18n',
+            'axios',
+            '@vueuse/core',
+            'lucide-vue-next',
+            'vue-toastification',
+            'marked',
+            'dompurify',
+        ],
+        // Performance: Exclude large dependencies that don't need pre-bundling
+        exclude: ['vue-demi'],
+        // Note: Rolldown is used by default in Vite 7+ for dependency optimization
+        // No additional configuration needed - Rolldown automatically optimizes dependencies
     },
+    // Performance: Use custom cache directory
     cacheDir: '.vite',
+    // Performance: Optimize CSS processing
+    css: {
+        devSourcemap: false, // Disable CSS sourcemaps in dev (saves RAM)
+    },
+    // Performance: Reduce memory usage during build
+    esbuild: {
+        // Drop console and debugger in production
+        drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
+        // Target modern browsers
+        target: 'esnext',
+    },
 });

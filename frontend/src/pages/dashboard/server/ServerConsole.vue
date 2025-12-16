@@ -1843,7 +1843,7 @@ async function saveAndApplyCustomization(): Promise<void> {
 
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect(router);
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
 
     // Fetch plugin widgets
     await fetchPluginWidgets();

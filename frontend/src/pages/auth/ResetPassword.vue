@@ -64,7 +64,7 @@ const widgetsAfterForm = computed(() => getWidgets('auth-reset-password', 'after
 const widgetsBottomOfPage = computed(() => getWidgets('auth-reset-password', 'bottom-of-page'));
 
 onMounted(async () => {
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
 
     // Fetch plugin widgets
     await fetchPluginWidgets();

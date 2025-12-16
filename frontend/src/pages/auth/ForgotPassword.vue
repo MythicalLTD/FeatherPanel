@@ -47,7 +47,7 @@ import { CheckCircle2 } from 'lucide-vue-next';
 
 const settingsStore = useSettingsStore();
 onMounted(async () => {
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
 
     // Fetch plugin widgets
     await fetchPluginWidgets();

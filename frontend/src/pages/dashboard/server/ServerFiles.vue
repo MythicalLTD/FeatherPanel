@@ -2105,7 +2105,6 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import { useSessionStore } from '@/stores/session';
-import { useSettingsStore } from '@/stores/settings';
 import { useServerPermissions } from '@/composables/useServerPermissions';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import { Button } from '@/components/ui/button';
@@ -2175,7 +2174,6 @@ import type { Server } from '@/composables/types/server';
 const route = useRoute();
 const router = useRouter();
 const sessionStore = useSessionStore();
-const settingsStore = useSettingsStore();
 const { t } = useI18n();
 const toast = useToast();
 
@@ -2730,7 +2728,7 @@ watch(
 // Lifecycle
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect(router);
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
     await fetchServer();
 
     // Wait for permission check to complete

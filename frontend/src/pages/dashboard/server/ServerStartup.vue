@@ -874,8 +874,7 @@ async function fetchServer() {
 
         // Fetch available realms and spells if spell change is allowed
         if (canChangeSpell.value) {
-            // Ensure settings are loaded for cross-realm check
-            await settingsStore.fetchSettings();
+            // Settings are fetched once in App.vue - no need to fetch here
             await fetchAvailableRealms();
             if (selectedRealmId.value) {
                 await fetchAvailableSpells(selectedRealmId.value);
@@ -1374,8 +1373,7 @@ async function saveChanges() {
 }
 
 onMounted(async () => {
-    // Fetch settings first
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
 
     // Wait for permission check to complete
     while (permissionsLoading.value) {

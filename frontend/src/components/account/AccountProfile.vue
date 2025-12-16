@@ -411,7 +411,7 @@ onMounted(async () => {
         loading.value = true;
         await sessionStore.checkSessionOrRedirect();
         await initializeForm();
-        await settingsStore.fetchSettings();
+        // Settings are fetched once in App.vue - no need to fetch here
         // Fetch plugin widgets
         await fetchPluginWidgets();
     } finally {

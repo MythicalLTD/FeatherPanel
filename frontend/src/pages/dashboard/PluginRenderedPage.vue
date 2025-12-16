@@ -478,7 +478,7 @@ const retryLoad = () => {
 
 onMounted(async () => {
     // Fetch settings for debug mode and other configuration
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
 
     // Fetch server name if in server context
     await fetchServerName();

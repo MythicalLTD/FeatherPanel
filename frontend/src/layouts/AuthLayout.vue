@@ -167,7 +167,8 @@ const handleThemeChange = (e: MediaQueryListEvent) => {
 
 // Initialize theme on mount
 onMounted(async () => {
-    await settingsStore.fetchSettings();
+    // Settings are fetched once in App.vue - no need to fetch here
+    // The store guards against duplicate fetches, so we can safely access settings
 
     // Initialize theme
     const savedTheme = localStorage.getItem('theme');
