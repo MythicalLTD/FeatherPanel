@@ -69,6 +69,10 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
     }
 };
 
+const shouldShowChatbot = computed(() => {
+    return isDesktop.value && isChatbotEnabled.value && window.location.pathname.includes('/dashboard');
+});
+
 onMounted(async () => {
     // Settings are fetched once in App.vue - no need to fetch here
     // The store guards against duplicate fetches, so we can safely access settings
@@ -81,8 +85,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <!-- Only show chatbot widget on desktop devices and if chatbot is enabled -->
-    <div v-if="isDesktop && isChatbotEnabled" class="fixed bottom-6 right-6 z-50">
+    <!-- Only show chatbot widget on desktop devices, if chatbot is enabled, and on /dashboard pages -->
+    <div v-if="shouldShowChatbot" class="fixed bottom-6 right-6 z-50">
         <!-- Floating Widget Button -->
         <div v-if="!isOpen" class="relative">
             <!-- Pulse animation ring -->
