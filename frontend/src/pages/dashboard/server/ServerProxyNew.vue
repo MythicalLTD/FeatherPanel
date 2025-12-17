@@ -269,7 +269,7 @@ SOFTWARE.
                                     :key="allocation.id"
                                     :value="String(allocation.port)"
                                 >
-                                    {{ allocation.ip }}:{{ allocation.port }}
+                                    {{ getDisplayIp(allocation.ip) }}:{{ allocation.port }}
                                     <span v-if="allocation.is_primary" class="ml-2 text-xs text-muted-foreground">
                                         (Primary)
                                     </span>
@@ -564,6 +564,7 @@ interface Proxy {
 
 const serverInfo = ref<ServerInfo | null>(null);
 const allocations = ref<ServerAllocation[]>([]);
+const nodePublicIpv4 = ref<string | null>(null);
 const loadingAllocations = ref<boolean>(false);
 const proxies = ref<Proxy[]>([]);
 const loading = ref<boolean>(false);
@@ -696,6 +697,7 @@ async function fetchServerAllocations(): Promise<void> {
             name: data.data.server.name,
             uuid: data.data.server.uuid,
         };
+        nodePublicIpv4.value = data.data.node?.public_ip_v4 || null;
         allocations.value = data.data.allocations ?? [];
 
         // Set default port from primary allocation
@@ -735,6 +737,14 @@ function resetForm(): void {
     targetIp.value = null;
 }
 
+function getDisplayIp(allocationIp: string): string {
+    const internalIps = ['127.0.0.1', '0.0.0.0', 'localhost', '::1'];
+    if (internalIps.includes(allocationIp) && nodePublicIpv4.value) {
+        return nodePublicIpv4.value;
+    }
+    return allocationIp;
+}
+
 async function calculateTargetIp(): Promise<void> {
     if (!form.domain.trim() || !form.port) {
         targetIp.value = null;
@@ -749,7 +759,7 @@ async function calculateTargetIp(): Promise<void> {
         return;
     }
 
-    targetIp.value = allocation.ip;
+    targetIp.value = getDisplayIp(allocation.ip);
 }
 
 async function handleVerifyDns(): Promise<void> {

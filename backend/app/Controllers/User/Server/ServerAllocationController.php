@@ -161,6 +161,10 @@ class ServerAllocationController
         // Get server allocations
         $allocations = Allocation::getByServerId($serverId);
 
+        // Get node information
+        $node = Node::getNodeById($server['node_id']);
+        $nodePublicIpv4 = $node['public_ip_v4'] ?? null;
+
         // Mark which allocation is primary
         foreach ($allocations as &$allocation) {
             $allocation['is_primary'] = ((int) $allocation['id'] === (int) $server['allocation_id']);
@@ -179,6 +183,9 @@ class ServerAllocationController
                 'current_allocations' => $currentAllocations,
                 'can_add_more' => $currentAllocations < $allocationLimit,
                 'primary_allocation_id' => $server['allocation_id'],
+            ],
+            'node' => [
+                'public_ip_v4' => $nodePublicIpv4,
             ],
             'allocations' => $allocations,
         ], 'Server allocations fetched successfully');
