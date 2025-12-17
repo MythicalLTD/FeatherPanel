@@ -33,9 +33,9 @@ SOFTWARE.
             <div class="flex flex-col gap-4">
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     <div class="space-y-1">
-                        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">{{ t('serverProxy.title') }}</h1>
+                        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Reverse Proxy</h1>
                         <p class="text-sm text-muted-foreground">
-                            {{ t('serverProxy.description') }}
+                            Configure reverse proxy domains for your server
                             <span v-if="proxyEnabled" class="font-medium">
                                 ({{ proxies.length }}/{{ settingsStore.serverProxyMaxPerServer }})
                             </span>
@@ -50,7 +50,7 @@ SOFTWARE.
                             @click="handleRefresh"
                         >
                             <RefreshCw :class="['h-4 w-4', loading && 'animate-spin']" />
-                            <span>{{ t('serverProxy.refresh') }}</span>
+                            <span>Refresh</span>
                         </Button>
                         <Button
                             v-if="canManageProxy && proxyEnabled"
@@ -60,7 +60,7 @@ SOFTWARE.
                             @click="handleOpenCreateDrawer"
                         >
                             <Plus class="h-4 w-4" />
-                            <span>{{ t('serverProxy.createProxy') }}</span>
+                            <span>Create Proxy</span>
                         </Button>
                     </div>
                 </div>
@@ -73,11 +73,10 @@ SOFTWARE.
                         <Info class="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div class="flex-1 min-w-0 space-y-1">
-                        <h3 class="font-semibold text-blue-800 dark:text-blue-200">
-                            {{ t('serverProxy.reverseProxyConfiguration') }}
-                        </h3>
+                        <h3 class="font-semibold text-blue-800 dark:text-blue-200">Reverse Proxy Configuration</h3>
                         <p class="text-sm text-blue-700 dark:text-blue-300">
-                            {{ t('serverProxy.infoDescription') }}
+                            Configure custom domains to point to your server's ports. SSL certificates can be
+                            automatically generated using Let's Encrypt or manually uploaded.
                         </p>
                     </div>
                 </div>
@@ -87,16 +86,17 @@ SOFTWARE.
 
             <!-- Feature Disabled State -->
             <Alert v-if="!proxyEnabled" variant="destructive" class="border-2">
-                <AlertTitle>{{ t('serverProxy.proxyManagementDisabled') }}</AlertTitle>
+                <AlertTitle>Proxy Management Disabled</AlertTitle>
                 <AlertDescription>
-                    {{ t('serverProxy.proxyManagementDisabledDescription') }}
+                    Proxy management has been disabled for this server. Please contact an administrator if you need this
+                    feature enabled.
                 </AlertDescription>
             </Alert>
 
             <!-- Loading State -->
             <div v-else-if="loading && proxies.length === 0" class="flex flex-col items-center justify-center py-16">
                 <div class="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full"></div>
-                <span class="mt-4 text-muted-foreground">{{ t('serverProxy.loading') }}</span>
+                <span class="mt-4 text-muted-foreground">Loading...</span>
             </div>
 
             <!-- Empty State -->
@@ -116,11 +116,10 @@ SOFTWARE.
                         </div>
                     </div>
                     <div class="space-y-3">
-                        <h3 class="text-2xl sm:text-3xl font-bold text-foreground">
-                            {{ t('serverProxy.noProxyConfigurations') }}
-                        </h3>
+                        <h3 class="text-2xl sm:text-3xl font-bold text-foreground">No Proxy Configurations</h3>
                         <p class="text-sm sm:text-base text-muted-foreground">
-                            {{ t('serverProxy.noProxyConfigurationsDescription') }}
+                            You haven't configured any reverse proxy domains yet. Create your first proxy configuration
+                            to get started.
                         </p>
                     </div>
                     <Button
@@ -131,7 +130,7 @@ SOFTWARE.
                         @click="handleOpenCreateDrawer"
                     >
                         <Plus class="h-5 w-5" />
-                        {{ t('serverProxy.createProxy') }}
+                        Create Proxy
                     </Button>
                 </div>
             </div>
@@ -150,14 +149,14 @@ SOFTWARE.
                             <ArrowRightLeft class="h-5 w-5 text-primary" />
                         </div>
                         <div class="flex-1">
-                            <CardTitle class="text-lg">{{ t('serverProxy.proxyConfigurations') }}</CardTitle>
+                            <CardTitle class="text-lg">Proxy Configurations</CardTitle>
                             <CardDescription class="text-sm">
-                                {{ t('serverProxy.proxyConfigurationsDescription') }}
+                                Manage your reverse proxy domain configurations
                             </CardDescription>
                         </div>
                         <Badge variant="secondary" class="text-xs">
                             {{ proxies.length }}
-                            {{ proxies.length === 1 ? t('serverProxy.proxy') : t('serverProxy.proxies') }}
+                            {{ proxies.length === 1 ? 'proxy' : 'proxies' }}
                         </Badge>
                     </div>
                 </CardHeader>
@@ -195,11 +194,9 @@ SOFTWARE.
                                         <div
                                             class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground"
                                         >
-                                            <span>
-                                                {{ t('serverProxy.created') }}: {{ formatDate(proxy.created_at) }}
-                                            </span>
+                                            <span> Created: {{ formatDate(proxy.created_at) }} </span>
                                             <span v-if="proxy.use_lets_encrypt && proxy.client_email">
-                                                {{ t('serverProxy.email') }}: {{ proxy.client_email }}
+                                                Email: {{ proxy.client_email }}
                                             </span>
                                         </div>
                                     </div>
@@ -213,7 +210,7 @@ SOFTWARE.
                                         @click="handleDeleteProxy(proxy)"
                                     >
                                         <Trash2 class="h-3.5 w-3.5" />
-                                        <span class="hidden sm:inline">{{ t('serverProxy.delete') }}</span>
+                                        <span class="hidden sm:inline">Delete</span>
                                     </Button>
                                 </div>
                             </div>
@@ -243,34 +240,28 @@ SOFTWARE.
     >
         <DrawerContent>
             <DrawerHeader>
-                <DrawerTitle>{{ t('serverProxy.drawerTitle') }}</DrawerTitle>
-                <DrawerDescription>
-                    {{ t('serverProxy.drawerDescription') }}
-                </DrawerDescription>
+                <DrawerTitle>Create Reverse Proxy</DrawerTitle>
+                <DrawerDescription> Configure a new reverse proxy domain for your server </DrawerDescription>
             </DrawerHeader>
             <div class="px-4 pb-4 space-y-4 overflow-y-auto max-h-[calc(100vh-200px)]">
                 <form class="space-y-4" @submit.prevent="handleSaveProxy">
                     <!-- Domain -->
                     <div class="space-y-2">
-                        <Label for="domain">{{ t('serverProxy.domain') }}</Label>
-                        <Input
-                            id="domain"
-                            v-model="form.domain"
-                            :placeholder="t('serverProxy.domainPlaceholder')"
-                            :disabled="saving"
-                        />
+                        <Label for="domain">Domain</Label>
+                        <Input id="domain" v-model="form.domain" placeholder="example.com" :disabled="saving" />
                         <p v-if="errors.domain" class="text-sm text-destructive">{{ errors.domain }}</p>
                         <p class="text-xs text-muted-foreground">
-                            {{ t('serverProxy.domainHelp') }}
+                            Enter the domain name you want to use for this proxy (e.g., example.com or
+                            subdomain.example.com)
                         </p>
                     </div>
 
                     <!-- Port -->
                     <div class="space-y-2">
-                        <Label for="port">{{ t('serverProxy.targetPort') }}</Label>
+                        <Label for="port">Target Port</Label>
                         <Select v-model="form.port" :disabled="saving || loadingAllocations">
                             <SelectTrigger>
-                                <SelectValue :placeholder="t('serverProxy.selectPort')" />
+                                <SelectValue placeholder="Select a port" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem
@@ -280,21 +271,21 @@ SOFTWARE.
                                 >
                                     {{ allocation.ip }}:{{ allocation.port }}
                                     <span v-if="allocation.is_primary" class="ml-2 text-xs text-muted-foreground">
-                                        ({{ t('serverProxy.primary') }})
+                                        (Primary)
                                     </span>
                                 </SelectItem>
                             </SelectContent>
                         </Select>
                         <p v-if="errors.port" class="text-sm text-destructive">{{ errors.port }}</p>
                         <p class="text-xs text-muted-foreground">
-                            {{ t('serverProxy.portHelp') }}
+                            Select the server port that this domain should proxy to
                         </p>
                     </div>
 
                     <!-- SSL Toggle -->
                     <div class="space-y-2">
                         <div class="flex items-center justify-between">
-                            <Label for="ssl">{{ t('serverProxy.enableSsl') }}</Label>
+                            <Label for="ssl">Enable SSL</Label>
                             <Button
                                 type="button"
                                 :variant="sslButtonVariant"
@@ -306,7 +297,7 @@ SOFTWARE.
                                 {{ sslButtonText }}
                             </Button>
                         </div>
-                        <p class="text-xs text-muted-foreground">{{ t('serverProxy.sslHelp') }}</p>
+                        <p class="text-xs text-muted-foreground">Enable SSL/TLS encryption for this proxy domain</p>
                     </div>
 
                     <!-- DNS Instructions (shown when SSL/Let's Encrypt is enabled) -->
@@ -321,10 +312,14 @@ SOFTWARE.
                                     </div>
                                     <div class="flex-1">
                                         <CardTitle class="text-base text-blue-900 dark:text-blue-100">
-                                            {{ t('serverProxy.dnsVerificationRequired') }}
+                                            DNS Verification Required
                                         </CardTitle>
                                         <CardDescription class="text-blue-700 dark:text-blue-300 mt-1">
-                                            {{ t('serverProxy.dnsVerificationDescription') }}
+                                            Before creating the proxy, you must configure a DNS A record pointing your
+                                            domain to the server's IP address.
+                                            <span v-if="form.ssl && form.use_lets_encrypt">
+                                                This is required for Let's Encrypt certificate issuance.
+                                            </span>
                                         </CardDescription>
                                     </div>
                                 </div>
@@ -332,15 +327,11 @@ SOFTWARE.
                             <CardContent class="space-y-4">
                                 <!-- DNS Records Display -->
                                 <div v-if="targetIp" class="space-y-3">
-                                    <div class="text-sm font-medium text-foreground">
-                                        {{ t('serverProxy.aRecord') }}
-                                    </div>
+                                    <div class="text-sm font-medium text-foreground">A Record</div>
                                     <div class="rounded-lg border-2 bg-card p-4 space-y-3">
                                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <div class="space-y-1.5">
-                                                <Label class="text-xs font-medium text-muted-foreground">
-                                                    {{ t('serverProxy.type') }}
-                                                </Label>
+                                                <Label class="text-xs font-medium text-muted-foreground"> Type </Label>
                                                 <div
                                                     class="flex items-center gap-2 px-3 py-2 rounded-md bg-muted font-mono text-sm"
                                                 >
@@ -348,17 +339,13 @@ SOFTWARE.
                                                 </div>
                                             </div>
                                             <div class="space-y-1.5">
-                                                <Label class="text-xs font-medium text-muted-foreground">
-                                                    {{ t('serverProxy.name') }}
-                                                </Label>
+                                                <Label class="text-xs font-medium text-muted-foreground"> Name </Label>
                                                 <div class="px-3 py-2 rounded-md bg-muted font-mono text-sm break-all">
                                                     {{ displayDomain }}
                                                 </div>
                                             </div>
                                             <div class="space-y-1.5">
-                                                <Label class="text-xs font-medium text-muted-foreground">
-                                                    {{ t('serverProxy.value') }}
-                                                </Label>
+                                                <Label class="text-xs font-medium text-muted-foreground"> Value </Label>
                                                 <div class="px-3 py-2 rounded-md bg-muted font-mono text-sm break-all">
                                                     {{ targetIp }}
                                                 </div>
@@ -382,10 +369,10 @@ SOFTWARE.
                                             <span
                                                 class="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin"
                                             ></span>
-                                            {{ t('serverProxy.verifying') }}
+                                            Verifying...
                                         </span>
-                                        <span v-else-if="dnsVerified"> {{ t('serverProxy.dnsVerified') }} </span>
-                                        <span v-else> {{ t('serverProxy.verifyDns') }} </span>
+                                        <span v-else-if="dnsVerified"> DNS Verified </span>
+                                        <span v-else> Verify DNS </span>
                                     </Button>
                                     <div class="flex-1 min-w-0">
                                         <Alert v-if="dnsVerificationError" variant="destructive" class="border-2">
@@ -400,7 +387,7 @@ SOFTWARE.
                                         >
                                             <CheckCircle class="h-4 w-4 text-green-600 dark:text-green-400" />
                                             <AlertDescription class="text-sm text-green-800 dark:text-green-200">
-                                                {{ t('serverProxy.dnsRecordCorrectlyConfigured') }}
+                                                DNS record is correctly configured
                                             </AlertDescription>
                                         </Alert>
                                     </div>
@@ -414,7 +401,7 @@ SOFTWARE.
                         <!-- Use Let's Encrypt -->
                         <div class="space-y-2">
                             <div class="flex items-center justify-between">
-                                <Label for="use_lets_encrypt">{{ t('serverProxy.useLetsEncrypt') }}</Label>
+                                <Label for="use_lets_encrypt">Use Let's Encrypt</Label>
                                 <Button
                                     type="button"
                                     :variant="letsEncryptButtonVariant"
@@ -427,36 +414,36 @@ SOFTWARE.
                                 </Button>
                             </div>
                             <p class="text-xs text-muted-foreground">
-                                {{ t('serverProxy.letsEncryptHelp') }}
+                                Automatically obtain and renew SSL certificates from Let's Encrypt
                             </p>
                         </div>
 
                         <!-- Let's Encrypt Email (shown when using Let's Encrypt) -->
                         <div v-if="form.use_lets_encrypt" class="space-y-2">
-                            <Label for="client_email">{{ t('serverProxy.emailAddress') }}</Label>
+                            <Label for="client_email">Email Address</Label>
                             <Input
                                 id="client_email"
                                 v-model="form.client_email"
                                 type="email"
-                                :placeholder="t('serverProxy.emailPlaceholder')"
+                                placeholder="your@email.com"
                                 :disabled="saving"
                             />
                             <p v-if="errors.client_email" class="text-sm text-destructive">
                                 {{ errors.client_email }}
                             </p>
                             <p class="text-xs text-muted-foreground">
-                                {{ t('serverProxy.emailHelp') }}
+                                Email address used for Let's Encrypt certificate notifications and account recovery
                             </p>
                         </div>
 
                         <!-- Custom SSL Certificate (shown when NOT using Let's Encrypt) -->
                         <div v-if="!form.use_lets_encrypt" class="space-y-4">
                             <div class="space-y-2">
-                                <Label for="ssl_cert">{{ t('serverProxy.sslCertificate') }}</Label>
+                                <Label for="ssl_cert">SSL Certificate</Label>
                                 <Textarea
                                     id="ssl_cert"
                                     v-model="form.ssl_cert"
-                                    :placeholder="t('serverProxy.sslCertificatePlaceholder')"
+                                    placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
                                     :disabled="saving"
                                     rows="6"
                                     class="font-mono text-xs"
@@ -465,16 +452,16 @@ SOFTWARE.
                                     {{ errors.ssl_cert }}
                                 </p>
                                 <p class="text-xs text-muted-foreground">
-                                    {{ t('serverProxy.sslCertificateHelp') }}
+                                    Paste your SSL certificate (including the BEGIN and END lines)
                                 </p>
                             </div>
 
                             <div class="space-y-2">
-                                <Label for="ssl_key">{{ t('serverProxy.sslPrivateKey') }}</Label>
+                                <Label for="ssl_key">SSL Private Key</Label>
                                 <Textarea
                                     id="ssl_key"
                                     v-model="form.ssl_key"
-                                    :placeholder="t('serverProxy.sslPrivateKeyPlaceholder')"
+                                    placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
                                     :disabled="saving"
                                     rows="6"
                                     class="font-mono text-xs"
@@ -483,7 +470,7 @@ SOFTWARE.
                                     {{ errors.ssl_key }}
                                 </p>
                                 <p class="text-xs text-muted-foreground">
-                                    {{ t('serverProxy.sslPrivateKeyHelp') }}
+                                    Paste your SSL private key (including the BEGIN and END lines)
                                 </p>
                             </div>
                         </div>
@@ -491,18 +478,16 @@ SOFTWARE.
 
                     <!-- Error Message -->
                     <Alert v-if="formError" variant="destructive" class="border-2">
-                        <AlertTitle>{{ t('serverProxy.failedToCreateProxy') }}</AlertTitle>
+                        <AlertTitle>Failed to Create Proxy</AlertTitle>
                         <AlertDescription>{{ formError }}</AlertDescription>
                     </Alert>
                 </form>
             </div>
             <DrawerFooter>
-                <Button variant="outline" :disabled="saving" @click="handleCloseDrawer">
-                    {{ t('serverProxy.cancel') }}
-                </Button>
+                <Button variant="outline" :disabled="saving" @click="handleCloseDrawer"> Cancel </Button>
                 <Button :disabled="saving || loadingAllocations" @click="handleSaveProxy">
-                    <span v-if="saving">{{ t('serverProxy.saving') }}</span>
-                    <span v-else>{{ t('serverProxy.createProxyButton') }}</span>
+                    <span v-if="saving">Saving...</span>
+                    <span v-else>Create Proxy</span>
                 </Button>
             </DrawerFooter>
         </DrawerContent>
@@ -512,7 +497,6 @@ SOFTWARE.
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import type { BreadcrumbEntry } from '@/layouts/DashboardLayout.vue';
@@ -540,7 +524,6 @@ import {
 import { Info, ArrowRightLeft, Plus, Network, CheckCircle, AlertTriangle, Trash2, RefreshCw } from 'lucide-vue-next';
 
 const route = useRoute();
-const { t } = useI18n();
 const toast = useToast();
 const sessionStore = useSessionStore();
 const settingsStore = useSettingsStore();
@@ -595,10 +578,10 @@ const widgetsAfterTable = computed(() => getWidgets('server-proxy', 'after-proxi
 const widgetsBottomOfPage = computed(() => getWidgets('server-proxy', 'bottom-of-page'));
 
 const breadcrumbs = computed<BreadcrumbEntry[]>(() => [
-    { text: t('common.dashboard'), href: '/dashboard' },
-    { text: t('common.servers'), href: '/dashboard' },
-    { text: serverInfo.value?.name || t('common.server'), href: `/server/${route.params.uuidShort}` },
-    { text: t('serverProxy.title'), isCurrent: true, href: `/server/${route.params.uuidShort}/proxy` },
+    { text: 'Dashboard', href: '/dashboard' },
+    { text: 'Servers', href: '/dashboard' },
+    { text: serverInfo.value?.name || 'Server', href: `/server/${route.params.uuidShort}` },
+    { text: 'Reverse Proxy', isCurrent: true, href: `/server/${route.params.uuidShort}/proxy` },
 ]);
 
 const drawerOpen = ref<boolean>(false);
@@ -650,7 +633,7 @@ const isMaxProxiesReached = computed<boolean>(() => {
 });
 
 const sslButtonText = computed<string>(() => {
-    return form.ssl ? t('serverProxy.on') : t('serverProxy.off');
+    return form.ssl ? 'On' : 'Off';
 });
 
 const sslButtonVariant = computed<'default' | 'outline'>(() => {
@@ -658,7 +641,7 @@ const sslButtonVariant = computed<'default' | 'outline'>(() => {
 });
 
 const letsEncryptButtonText = computed<string>(() => {
-    return form.use_lets_encrypt ? t('serverProxy.on') : t('serverProxy.off');
+    return form.use_lets_encrypt ? 'On' : 'Off';
 });
 
 const letsEncryptButtonVariant = computed<'default' | 'outline'>(() => {
@@ -666,11 +649,11 @@ const letsEncryptButtonVariant = computed<'default' | 'outline'>(() => {
 });
 
 const showDnsInstructions = computed<boolean>(() => {
-    return form.ssl && form.use_lets_encrypt;
+    return Boolean(form.domain.trim() && form.port);
 });
 
 const displayDomain = computed<string>(() => {
-    return form.domain.trim() || t('serverProxy.yourDomainCom');
+    return form.domain.trim() || 'yourdomain.com';
 });
 
 const canVerifyDns = computed<boolean>(() => {
@@ -693,7 +676,7 @@ function formatDate(value: string): string {
 }
 
 function getSslTypeLabel(useLetsEncrypt: boolean): string {
-    return useLetsEncrypt ? t('serverProxy.sslTypeLetsEncrypt') : t('serverProxy.sslTypeSsl');
+    return useLetsEncrypt ? "Let's Encrypt" : 'SSL';
 }
 
 async function fetchServerAllocations(): Promise<void> {
@@ -704,7 +687,7 @@ async function fetchServerAllocations(): Promise<void> {
         const { data } = await axios.get(`/api/user/servers/${serverUuid.value}/allocations`);
 
         if (!data.success) {
-            toast.error(data.message || t('serverProxy.failedToFetchAllocations'));
+            toast.error(data.message || 'Failed to fetch server allocations');
             return;
         }
 
@@ -727,7 +710,7 @@ async function fetchServerAllocations(): Promise<void> {
         }
     } catch (error) {
         console.error('Failed to fetch server allocations for proxy:', error);
-        toast.error(getAxiosErrorMessage(error, t('serverProxy.failedToFetchAllocations')));
+        toast.error(getAxiosErrorMessage(error, 'Failed to fetch server allocations'));
     } finally {
         loadingAllocations.value = false;
     }
@@ -771,7 +754,7 @@ async function calculateTargetIp(): Promise<void> {
 
 async function handleVerifyDns(): Promise<void> {
     if (!canVerifyDns.value) {
-        dnsVerificationError.value = t('serverProxy.domainAndPortRequired');
+        dnsVerificationError.value = 'Domain and port are required';
         return;
     }
 
@@ -791,18 +774,18 @@ async function handleVerifyDns(): Promise<void> {
 
             if (data.data.verified) {
                 dnsVerificationError.value = null;
-                toast.success(data.data.message || t('serverProxy.dnsRecordCorrectlyConfigured'));
+                toast.success(data.data.message || 'DNS record is correctly configured');
             } else {
-                dnsVerificationError.value = data.data.message || t('serverProxy.dnsRecordDoesNotPoint');
+                dnsVerificationError.value = data.data.message || 'DNS record does not point to the correct IP address';
             }
         } else {
             dnsVerified.value = false;
-            dnsVerificationError.value = data.message || t('serverProxy.dnsRecordDoesNotPoint');
+            dnsVerificationError.value = data.message || 'DNS record does not point to the correct IP address';
         }
     } catch (error) {
         console.error('DNS verification failed:', error);
         dnsVerified.value = false;
-        dnsVerificationError.value = getAxiosErrorMessage(error, t('serverProxy.dnsRecordDoesNotPoint'));
+        dnsVerificationError.value = getAxiosErrorMessage(error, 'DNS record does not point to the correct IP address');
     } finally {
         verifyingDns.value = false;
     }
@@ -847,27 +830,27 @@ function validateForm(): boolean {
 
     const domainTrimmed = form.domain?.trim() || '';
     if (!domainTrimmed) {
-        errors.domain = t('serverProxy.domainRequired');
+        errors.domain = 'Domain is required';
         valid = false;
     } else {
         if (!domainTrimmed.includes('.')) {
-            errors.domain = t('serverProxy.invalidDomainFormat');
+            errors.domain = 'Invalid domain format';
             valid = false;
         } else {
             if (domainTrimmed.length > 253) {
-                errors.domain = t('serverProxy.invalidDomainFormat');
+                errors.domain = 'Invalid domain format';
                 valid = false;
             } else {
                 const domainRegex =
                     /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
                 if (!domainRegex.test(domainTrimmed)) {
-                    errors.domain = t('serverProxy.invalidDomainFormat');
+                    errors.domain = 'Invalid domain format';
                     valid = false;
                 } else {
                     const labels = domainTrimmed.split('.');
                     for (const label of labels) {
                         if (label.length > 63 || label.length === 0) {
-                            errors.domain = t('serverProxy.invalidDomainFormat');
+                            errors.domain = 'Invalid domain format';
                             valid = false;
                             break;
                         }
@@ -879,17 +862,17 @@ function validateForm(): boolean {
 
     const portTrimmed = form.port?.trim() || '';
     if (!portTrimmed) {
-        errors.port = t('serverProxy.portRequired');
+        errors.port = 'Port is required';
         valid = false;
     } else {
         const portNum = parseInt(portTrimmed, 10);
         if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
-            errors.port = t('serverProxy.portInvalid');
+            errors.port = 'Port must be between 1 and 65535';
             valid = false;
         } else {
             const hasMatchingAllocation = allocations.value.some((a) => a.port === portNum);
             if (!hasMatchingAllocation) {
-                errors.port = t('serverProxy.portMustBeFromAllocations');
+                errors.port = 'Port must be from available allocations';
                 valid = false;
             }
         }
@@ -899,12 +882,12 @@ function validateForm(): boolean {
         if (form.use_lets_encrypt === true) {
             const emailTrimmed = form.client_email?.trim() || '';
             if (!emailTrimmed) {
-                errors.client_email = t('serverProxy.emailRequiredForLetsEncrypt');
+                errors.client_email = "Email is required for Let's Encrypt";
                 valid = false;
             } else {
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!emailRegex.test(emailTrimmed)) {
-                    errors.client_email = t('serverProxy.invalidEmailFormat');
+                    errors.client_email = 'Invalid email format';
                     valid = false;
                 }
             }
@@ -912,11 +895,11 @@ function validateForm(): boolean {
             const certTrimmed = form.ssl_cert?.trim() || '';
             const keyTrimmed = form.ssl_key?.trim() || '';
             if (!certTrimmed) {
-                errors.ssl_cert = t('serverProxy.sslCertificateRequired');
+                errors.ssl_cert = 'SSL certificate is required';
                 valid = false;
             }
             if (!keyTrimmed) {
-                errors.ssl_key = t('serverProxy.sslKeyRequired');
+                errors.ssl_key = 'SSL private key is required';
                 valid = false;
             }
         }
@@ -947,7 +930,7 @@ function getErrorMessage(err: unknown): string {
                     if (certErrorMatch && certErrorMatch[1]) {
                         return certErrorMatch[1].trim();
                     }
-                    return t('serverProxy.failedToRequestCertificate');
+                    return "Failed to request certificate from Let's Encrypt";
                 }
 
                 return message;
@@ -968,14 +951,14 @@ function getErrorMessage(err: unknown): string {
             }
         }
 
-        return err.message || t('serverProxy.unknownError');
+        return err.message || 'An unknown error occurred';
     }
 
     if (err instanceof Error) {
         return err.message;
     }
 
-    return t('serverProxy.unknownError');
+    return 'An unknown error occurred';
 }
 
 async function handleSaveProxy(): Promise<void> {
@@ -983,8 +966,8 @@ async function handleSaveProxy(): Promise<void> {
         return;
     }
 
-    if (form.ssl && form.use_lets_encrypt && !dnsVerified.value) {
-        toast.error(t('serverProxy.mustVerifyDns'));
+    if (!dnsVerified.value) {
+        toast.error('You must verify DNS before creating a proxy');
         return;
     }
 
@@ -1000,7 +983,7 @@ async function handleSaveProxy(): Promise<void> {
             ssl_key: form.use_lets_encrypt ? '' : form.ssl_key.trim(),
         });
 
-        toast.success(t('serverProxy.proxyCreatedSuccessfully'));
+        toast.success('Proxy created successfully');
 
         handleCloseDrawer();
         await fetchProxies();
@@ -1021,14 +1004,14 @@ async function fetchProxies(): Promise<void> {
         const { data } = await axios.get(`/api/user/servers/${serverUuid.value}/proxy`);
 
         if (!data.success) {
-            toast.error(data.message || t('serverProxy.failedToFetchProxies'));
+            toast.error(data.message || 'Failed to fetch proxies');
             return;
         }
 
         proxies.value = data.data.proxies ?? [];
     } catch (error) {
         console.error('Failed to fetch proxies:', error);
-        toast.error(getAxiosErrorMessage(error, t('serverProxy.failedToFetchProxies')));
+        toast.error(getAxiosErrorMessage(error, 'Failed to fetch proxies'));
     } finally {
         loading.value = false;
     }
@@ -1047,11 +1030,11 @@ async function handleDeleteProxy(proxy: Proxy): Promise<void> {
             id: proxy.id,
         });
 
-        toast.success(t('serverProxy.proxyDeletedSuccessfully'));
+        toast.success('Proxy deleted successfully');
         await fetchProxies();
     } catch (error) {
         console.error('Failed to delete proxy:', error);
-        toast.error(getAxiosErrorMessage(error, t('serverProxy.failedToDeleteProxy')));
+        toast.error(getAxiosErrorMessage(error, 'Failed to delete proxy'));
     } finally {
         deletingProxyId.value = null;
     }
@@ -1059,20 +1042,17 @@ async function handleDeleteProxy(proxy: Proxy): Promise<void> {
 
 // Watch for domain/port changes to reset DNS verification
 watch([() => form.domain, () => form.port], () => {
-    if (form.ssl && form.use_lets_encrypt) {
-        dnsVerified.value = false;
-        dnsVerificationError.value = null;
-        void calculateTargetIp();
-    }
+    dnsVerified.value = false;
+    dnsVerificationError.value = null;
+    void calculateTargetIp();
 });
 
 // Watch for SSL/Let's Encrypt changes
 watch([() => form.ssl, () => form.use_lets_encrypt], () => {
-    if (!form.ssl || !form.use_lets_encrypt) {
-        dnsVerified.value = false;
-        dnsVerificationError.value = null;
-        targetIp.value = null;
-    } else {
+    // Reset DNS verification when SSL settings change
+    dnsVerified.value = false;
+    dnsVerificationError.value = null;
+    if (form.domain.trim() && form.port) {
         void calculateTargetIp();
     }
 });

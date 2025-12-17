@@ -17,6 +17,10 @@
 - Removed the unused global context menu for a cleaner, more streamlined experience. by @nayskutzu
 - The API debug menu is now disabled in production, helping conserve resources and further boost app performance. by @nayskutzu
 
+### Fixed
+
+- Resolved an issue where the server proxy page could crash when enabling Let's Encrypt due to a conflict with the language manager. by @nayskutzu
+
 ## v1.1.1 STABLE
 
 ### Fixed
