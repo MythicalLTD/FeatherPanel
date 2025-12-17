@@ -6,6 +6,7 @@
 
 - Plugins can now seamlessly integrate with and extend existing sidebar routes, including injecting custom previews! by @nayskutzu
 - Introduced a seamless option to resynchronize plugin symlinks, ensuring all plugins remain properly linked and up to date. by @nayskutzu
+- Added a new, interactive flow for users to delete their own servers—requiring completion of one math, one reading, and one spelling challenge for extra security. by @nayskutzu
 
 ### Improved
 

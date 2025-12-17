@@ -36,21 +36,28 @@ use App\Chat\Spell;
 use App\Chat\Server;
 use App\Permissions;
 use App\Chat\Subuser;
+use App\Chat\Activity;
 use App\Chat\Location;
+use App\Chat\Allocation;
 use App\Chat\SpellVariable;
 use App\SubuserPermissions;
 use App\Chat\ServerActivity;
+use App\Chat\ServerDatabase;
 use App\Chat\ServerVariable;
 use App\Helpers\ApiResponse;
 use OpenApi\Attributes as OA;
+use App\Chat\DatabaseInstance;
 use App\Config\ConfigInterface;
 use App\Helpers\PermissionHelper;
+use App\CloudFlare\CloudFlareRealIP;
+use App\Mail\templates\ServerDeleted;
 use App\Services\Wings\Services\Wings;
 use App\Plugins\Events\Events\ServerEvent;
 use App\Services\Wings\Services\JwtService;
 use Symfony\Component\HttpFoundation\Request;
 use App\Plugins\Events\Events\ServerUserEvent;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Subdomain\SubdomainCleanupService;
 
 #[OA\Schema(
     schema: 'UserServer',
@@ -427,7 +434,7 @@ class ServerUserController
                 'description' => $server['spell']['description'] ?? null,
                 'banner' => $server['spell']['banner'] ?? null,
             ];
-            $server['allocation'] = \App\Chat\Allocation::getAllocationById($server['allocation_id']);
+            $server['allocation'] = Allocation::getAllocationById($server['allocation_id']);
             $server['allocation'] = [
                 'ip' => $server['allocation']['ip'] ?? null,
                 'port' => $server['allocation']['port'] ?? null,
@@ -558,7 +565,7 @@ class ServerUserController
             'config_logs' => $spellData['config_logs'] ?? null,
         ] : null;
 
-        $server['allocation'] = \App\Chat\Allocation::getAllocationById($server['allocation_id']);
+        $server['allocation'] = Allocation::getAllocationById($server['allocation_id']);
         $sftp = [
             'host' => $server['node']['fqdn'],
             'port' => $server['node']['daemonSFTP'] ?? 2022,
@@ -1556,6 +1563,171 @@ class ServerUserController
     }
 
     /**
+     * Delete a server. Only server owners can delete their servers (subusers cannot delete servers).
+     *
+     * @param Request $request The HTTP request
+     * @param string $uuidShort The server's short UUID
+     *
+     * @return Response The API response
+     */
+    #[OA\Delete(
+        path: '/api/user/servers/{uuidShort}',
+        summary: 'Delete server',
+        description: 'Permanently delete a server. Only server owners can delete their servers. This action cannot be undone and will delete all server data, files, databases, and configurations.',
+        tags: ['User - Server Management'],
+        parameters: [
+            new OA\Parameter(
+                name: 'uuidShort',
+                in: 'path',
+                description: 'Server short UUID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server deleted successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', description: 'Success message'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid server configuration'),
+            new OA\Response(response: 401, description: 'Unauthorized - User not authenticated'),
+            new OA\Response(response: 403, description: 'Forbidden - Access denied to server or user is not the server owner'),
+            new OA\Response(response: 404, description: 'Not found - Server or node not found'),
+            new OA\Response(response: 422, description: 'Unprocessable Entity - Invalid server data'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to delete server'),
+        ]
+    )]
+    public function deleteServer(Request $request, string $uuidShort): Response
+    {
+        // Get authenticated user
+        $user = $request->get('user');
+        if (!$user) {
+            return ApiResponse::error('User not authenticated', 'UNAUTHORIZED', 401);
+        }
+
+        // Get server details
+        $server = Server::getServerByUuidShort($uuidShort);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'NOT_FOUND', 404);
+        }
+
+        // Only server owners can delete servers (subusers cannot delete servers)
+        $isOwner = (int) $server['owner_id'] === (int) $user['id'];
+        if (!$isOwner) {
+            return ApiResponse::error('Only server owners can delete servers', 'PERMISSION_DENIED', 403);
+        }
+
+        // Clean up subdomains
+        (new SubdomainCleanupService())->cleanupServerSubdomains((int) $server['id']);
+
+        // Unclaim all allocations (primary + additional) before deleting the server
+        $allAllocations = Allocation::getByServerId((int) $server['id']);
+        if (!empty($allAllocations)) {
+            $allocationIds = array_column($allAllocations, 'id');
+            $allocationsUnclaimed = Allocation::unassignMultiple($allocationIds);
+            if (!$allocationsUnclaimed) {
+                App::getInstance(true)->getLogger()->error('Failed to unclaim allocations for server ID: ' . $server['id']);
+                // Continue with deletion even if unclaiming fails
+            } else {
+                App::getInstance(true)->getLogger()->info('Unclaimed ' . count($allocationIds) . ' allocation(s) for server ID: ' . $server['id']);
+            }
+        }
+
+        // Clean up server databases before deleting the server
+        $this->cleanupServerDatabases((int) $server['id']);
+
+        $config = App::getInstance(true)->getConfig();
+
+        // Get node info and owner info BEFORE deleting from database (needed for logging and email)
+        $nodeInfo = Node::getNodeById($server['node_id']);
+        $owner = \App\Chat\User::getUserById($server['owner_id']);
+
+        // Log user activity (doesn't require server_id, so can be done before or after deletion)
+        Activity::createActivity([
+            'user_uuid' => $user['uuid'],
+            'name' => 'delete_server',
+            'context' => 'Deleted their own server: ' . $server['name'] . ' (UUID: ' . $server['uuid'] . ')',
+            'ip_address' => CloudFlareRealIP::getRealIP(),
+        ]);
+
+        // Emit event BEFORE deleting from database
+        global $eventManager;
+        if (isset($eventManager) && $eventManager !== null) {
+            $eventManager->emit(
+                ServerEvent::onServerDeleted(),
+                [
+                    'server' => $server,
+                    'deleted_by' => $user,
+                ]
+            );
+        }
+
+        // Send email notification BEFORE deleting from database
+        try {
+            if ($owner) {
+                ServerDeleted::send([
+                    'email' => $owner['email'],
+                    'subject' => 'Server deleted on ' . $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                    'app_name' => $config->getSetting(ConfigInterface::APP_NAME, 'FeatherPanel'),
+                    'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
+                    'first_name' => $owner['first_name'],
+                    'last_name' => $owner['last_name'],
+                    'username' => $owner['username'],
+                    'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
+                    'uuid' => $owner['uuid'],
+                    'enabled' => $config->getSetting(ConfigInterface::SMTP_ENABLED, 'false'),
+                    'server_name' => $server['name'],
+                    'deletion_time' => date('Y-m-d H:i:s'),
+                ]);
+            }
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to send server deleted email: ' . $e->getMessage());
+        }
+
+        // Hard delete from database (must be done AFTER logging/events/email since they need server_id)
+        $deleted = Server::hardDeleteServer((int) $server['id']);
+        if (!$deleted) {
+            return ApiResponse::error('Failed to delete server', 'FAILED_TO_DELETE_SERVER', 500);
+        }
+
+        // Delete from Wings daemon (after database deletion)
+        if ($nodeInfo) {
+            $scheme = $nodeInfo['scheme'];
+            $host = $nodeInfo['fqdn'];
+            $port = $nodeInfo['daemonListen'];
+            $token = $nodeInfo['daemon_token'];
+
+            $timeout = (int) 30;
+            try {
+                $wings = new \App\Services\Wings\Wings(
+                    $host,
+                    $port,
+                    $scheme,
+                    $token,
+                    $timeout
+                );
+
+                $response = $wings->getServer()->deleteServer($server['uuid']);
+                if (!$response->isSuccessful()) {
+                    $error = $response->getError();
+                    App::getInstance(true)->getLogger()->warning('Failed to delete server from Wings: ' . $error);
+                    // Continue even if Wings deletion fails - server is already deleted from database
+                }
+            } catch (\Exception $e) {
+                App::getInstance(true)->getLogger()->error('Failed to delete server from Wings: ' . $e->getMessage());
+                // Continue even if Wings deletion fails - server is already deleted from database
+            }
+        }
+
+        return ApiResponse::success([], 'Server deleted successfully', 200);
+    }
+
+    /**
      * Validate a variable value against a rules string (e.g., "required|string|max:20", "required|regex:/^foo$/").
      * Returns an error message string if invalid, or null if valid.
      */
@@ -1845,5 +2017,142 @@ class ServerUserController
             'event' => $event,
             'metadata' => json_encode($metadata),
         ]);
+    }
+
+    /**
+     * Clean up server databases when deleting a server.
+     * This method handles database cleanup gracefully without breaking the deletion process.
+     *
+     * @param int $serverId The server ID
+     */
+    private function cleanupServerDatabases(int $serverId): void
+    {
+        try {
+            // Get all databases for this server
+            $databases = ServerDatabase::getServerDatabasesWithDetailsByServerId($serverId);
+
+            if (empty($databases)) {
+                App::getInstance(true)->getLogger()->info('No databases found for server ID: ' . $serverId);
+
+                return;
+            }
+
+            App::getInstance(true)->getLogger()->info('Cleaning up ' . count($databases) . ' databases for server ID: ' . $serverId);
+
+            foreach ($databases as $database) {
+                try {
+                    // Get database host info
+                    $databaseHost = DatabaseInstance::getDatabaseById($database['database_host_id']);
+                    if (!$databaseHost) {
+                        App::getInstance(true)->getLogger()->warning('Database host not found for database ID: ' . $database['id']);
+                        continue;
+                    }
+
+                    // Delete database and user from the database host
+                    $this->deleteDatabaseFromHost($databaseHost, $database['database'], $database['username']);
+
+                    // Delete server database record
+                    if (!ServerDatabase::deleteServerDatabase($database['id'])) {
+                        App::getInstance(true)->getLogger()->error('Failed to delete server database record for database ID: ' . $database['id']);
+                    } else {
+                        App::getInstance(true)->getLogger()->info('Successfully deleted database: ' . $database['database'] . ' (ID: ' . $database['id'] . ')');
+                    }
+                } catch (\Exception $e) {
+                    // Log the error but continue with other databases
+                    App::getInstance(true)->getLogger()->error('Failed to delete database ID ' . $database['id'] . ': ' . $e->getMessage());
+                }
+            }
+        } catch (\Exception $e) {
+            // Log the error but don't break the server deletion process
+            App::getInstance(true)->getLogger()->error('Failed to cleanup databases for server ID ' . $serverId . ': ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete database and user from the database host.
+     *
+     * @param array $databaseHost Database host information
+     * @param string $databaseName Database name to delete
+     * @param string $username Username to delete
+     *
+     * @throws \Exception If deletion fails
+     */
+    private function deleteDatabaseFromHost(array $databaseHost, string $databaseName, string $username): void
+    {
+        try {
+            // Connect directly to the external database host (not the panel's database)
+            $options = [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_TIMEOUT => 10, // 10 second timeout
+            ];
+
+            // Handle different database types
+            switch ($databaseHost['database_type']) {
+                case 'mysql':
+                case 'mariadb':
+                    $safeDbName = $this->quoteIdentifierMySQL($databaseName);
+                    $safeUser = $this->quoteIdentifierMySQL($username);
+                    $dsn = "mysql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
+                    $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
+
+                    // Revoke privileges from the user
+                    $pdo->exec("REVOKE ALL PRIVILEGES ON {$safeDbName}.* FROM {$safeUser}@'%'");
+
+                    // Drop the user
+                    $pdo->exec("DROP USER IF EXISTS {$safeUser}@'%'");
+
+                    // Drop the database
+                    $pdo->exec("DROP DATABASE IF EXISTS {$safeDbName}");
+
+                    // Flush privileges
+                    $pdo->exec('FLUSH PRIVILEGES');
+                    break;
+
+                case 'postgresql':
+                    $safeDbName = $this->quoteIdentifier($databaseName);
+                    $safeUser = $this->quoteIdentifier($username);
+                    $dsn = "pgsql:host={$databaseHost['database_host']};port={$databaseHost['database_port']}";
+                    $pdo = new \PDO($dsn, $databaseHost['database_username'], $databaseHost['database_password'], $options);
+
+                    // Revoke privileges from the user
+                    $pdo->exec("REVOKE ALL PRIVILEGES ON DATABASE {$safeDbName} FROM {$safeUser}");
+
+                    // Drop the user
+                    $pdo->exec("DROP USER IF EXISTS {$safeUser}");
+
+                    // Drop the database
+                    $pdo->exec("DROP DATABASE IF EXISTS {$safeDbName}");
+                    break;
+
+                default:
+                    throw new \Exception("Unsupported database type: {$databaseHost['database_type']}");
+            }
+        } catch (\PDOException $e) {
+            throw new \Exception("Failed to delete database from host {$databaseHost['name']}: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Safely quote a PostgreSQL identifier by escaping double quotes.
+     *
+     * @param string $identifier The identifier to quote
+     *
+     * @return string The safely quoted identifier
+     */
+    private function quoteIdentifier(string $identifier): string
+    {
+        return '"' . str_replace('"', '""', $identifier) . '"';
+    }
+
+    /**
+     * Safely quote a MySQL/MariaDB identifier by escaping backticks.
+     *
+     * @param string $identifier The identifier to quote
+     *
+     * @return string The safely quoted identifier
+     */
+    private function quoteIdentifierMySQL(string $identifier): string
+    {
+        return '`' . str_replace('`', '``', $identifier) . '`';
     }
 }

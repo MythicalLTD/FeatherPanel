@@ -104,6 +104,25 @@ return function (RouteCollection $routes): void {
         'user-server-update'
     );
 
+    // Rate limit: Admin can override in ratelimit.json, default is 1 per hour (very restrictive for deletion)
+    App::getInstance(true)->registerServerRoute(
+        $routes,
+        'session-server-delete',
+        '/api/user/servers/{uuidShort}',
+        function (Request $request, array $args) {
+            $uuidShort = $args['uuidShort'] ?? null;
+            if (!$uuidShort) {
+                return ApiResponse::error('Missing or invalid UUID short', 'INVALID_UUID_SHORT', 400);
+            }
+
+            return (new ServerUserController())->deleteServer($request, $uuidShort);
+        },
+        'uuidShort', // Pass the server UUID for middleware
+        ['DELETE'],
+        Rate::perHour(1), // Very restrictive rate limit for deletion
+        'user-server-delete'
+    );
+
     // Rate limit: Admin can override in ratelimit.json, default is 1 per minute
     App::getInstance(true)->registerServerRoute(
         $routes,

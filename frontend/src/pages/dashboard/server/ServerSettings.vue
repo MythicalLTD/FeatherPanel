@@ -343,6 +343,71 @@
                     v-if="!loading && server && canReinstallServer && widgetsAfterServerActions.length > 0"
                     :widgets="widgetsAfterServerActions"
                 />
+
+                <!-- Delete Server Section -->
+                <Card
+                    class="border-2 border-red-200 dark:border-red-800 hover:border-red-300 dark:hover:border-red-700 transition-colors"
+                >
+                    <CardHeader>
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 rounded-lg bg-red-500/10 flex items-center justify-center">
+                                <AlertTriangle class="h-5 w-5 text-red-500" />
+                            </div>
+                            <div>
+                                <CardTitle class="text-lg">{{ t('serverSettings.deleteServer') }}</CardTitle>
+                                <CardDescription class="text-sm">
+                                    {{ t('serverSettings.deleteServerDescription') }}
+                                </CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div
+                            class="p-4 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800"
+                        >
+                            <div class="flex items-start gap-3">
+                                <div
+                                    class="h-10 w-10 rounded-lg bg-red-500/20 flex items-center justify-center shrink-0"
+                                >
+                                    <AlertTriangle class="h-5 w-5 text-red-600 dark:text-red-400" />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="font-semibold text-red-800 dark:text-red-200 mb-2">
+                                        {{ t('serverSettings.deleteServerWarning') }}
+                                    </h4>
+                                    <p class="text-sm text-red-700 dark:text-red-300 mb-4">
+                                        {{ t('serverSettings.deleteServerDescription') }}
+                                    </p>
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        :disabled="deleting"
+                                        class="flex items-center gap-2"
+                                        @click="
+                                            () => {
+                                                showDeleteDialog = true;
+                                                deleteStep = 1;
+                                                confirmIrreversible = false;
+                                                mathAnswer = '';
+                                                confirmServerName = '';
+                                                generateMathQuestion();
+                                            }
+                                        "
+                                    >
+                                        <AlertTriangle :class="['h-4 w-4', deleting && 'animate-pulse']" />
+                                        <span>{{ t('serverSettings.deleteServer') }}</span>
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <!-- Plugin Widgets: After Delete Server -->
+                <WidgetRenderer
+                    v-if="!loading && server && widgetsAfterDeleteServer.length > 0"
+                    :widgets="widgetsAfterDeleteServer"
+                />
             </div>
 
             <!-- Plugin Widgets: Bottom of Page -->
@@ -361,6 +426,231 @@
                     {{ t('serverSettings.tryAgain') }}
                 </Button>
             </div>
+
+            <!-- Delete Server Multi-Step Confirmation Dialog -->
+            <Dialog v-model:open="showDeleteDialog">
+                <DialogContent class="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle class="flex items-center gap-2">
+                            <div class="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                                <AlertTriangle class="h-5 w-5 text-destructive" />
+                            </div>
+                            <span>{{ t('serverSettings.deleteServer') }}</span>
+                        </DialogTitle>
+                        <DialogDescription class="text-sm">
+                            {{ t('serverSettings.deleteServerDescription') }}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <!-- Step 1: Data Deletion Warning -->
+                    <div v-if="deleteStep === 1" class="space-y-4">
+                        <div class="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
+                            <div class="flex items-start gap-3">
+                                <AlertTriangle class="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                                <div class="text-sm min-w-0">
+                                    <p class="font-semibold text-destructive mb-2">
+                                        {{ t('serverSettings.deleteServerStep1Title') }}
+                                    </p>
+                                    <p class="text-muted-foreground mb-3">
+                                        {{ t('serverSettings.deleteServerStep1Description') }}
+                                    </p>
+                                    <ul class="space-y-1.5 text-muted-foreground">
+                                        <li class="flex items-start gap-2">
+                                            <div class="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 shrink-0"></div>
+                                            {{ t('serverSettings.deleteServerStep1Item1') }}
+                                        </li>
+                                        <li class="flex items-start gap-2">
+                                            <div class="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 shrink-0"></div>
+                                            {{ t('serverSettings.deleteServerStep1Item2') }}
+                                        </li>
+                                        <li class="flex items-start gap-2">
+                                            <div class="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 shrink-0"></div>
+                                            {{ t('serverSettings.deleteServerStep1Item3') }}
+                                        </li>
+                                        <li class="flex items-start gap-2">
+                                            <div class="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 shrink-0"></div>
+                                            {{ t('serverSettings.deleteServerStep1Item4') }}
+                                        </li>
+                                        <li class="flex items-start gap-2">
+                                            <div class="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 shrink-0"></div>
+                                            {{ t('serverSettings.deleteServerStep1Item5') }}
+                                        </li>
+                                        <li class="flex items-start gap-2">
+                                            <div class="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 shrink-0"></div>
+                                            {{ t('serverSettings.deleteServerStep1Item6') }}
+                                        </li>
+                                        <li class="flex items-start gap-2">
+                                            <div class="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 shrink-0"></div>
+                                            {{ t('serverSettings.deleteServerStep1Item7') }}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Are you sure? -->
+                    <div v-if="deleteStep === 2" class="space-y-4">
+                        <div class="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
+                            <div class="flex items-start gap-3">
+                                <AlertTriangle class="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                                <div class="text-sm min-w-0">
+                                    <p class="font-semibold text-destructive mb-2">
+                                        {{ t('serverSettings.deleteServerStep2Title') }}
+                                    </p>
+                                    <p class="text-muted-foreground mb-4">
+                                        {{ t('serverSettings.deleteServerStep2Description') }}
+                                    </p>
+                                    <div class="flex items-center gap-2">
+                                        <input
+                                            id="confirmIrreversible"
+                                            v-model="confirmIrreversible"
+                                            type="checkbox"
+                                            class="w-4 h-4 text-destructive bg-background border-gray-300 rounded focus:ring-destructive focus:ring-2"
+                                        />
+                                        <Label
+                                            for="confirmIrreversible"
+                                            class="text-sm font-medium cursor-pointer text-foreground"
+                                        >
+                                            {{ t('serverSettings.deleteServerStep2Confirm') }}
+                                        </Label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Math Question -->
+                    <div v-if="deleteStep === 3" class="space-y-4">
+                        <div
+                            class="p-4 border border-orange-200 dark:border-orange-800 rounded-lg bg-orange-50 dark:bg-orange-950/20"
+                        >
+                            <div class="flex items-start gap-3">
+                                <Info class="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5 shrink-0" />
+                                <div class="text-sm min-w-0">
+                                    <p class="font-semibold text-orange-800 dark:text-orange-200 mb-2">
+                                        {{ t('serverSettings.deleteServerStep3Title') }}
+                                    </p>
+                                    <p class="text-muted-foreground mb-4">
+                                        {{ t('serverSettings.deleteServerStep3Description') }}
+                                    </p>
+                                    <div class="space-y-2">
+                                        <Label class="text-sm font-medium">
+                                            {{
+                                                t('serverSettings.deleteServerStep3Question', {
+                                                    num1: mathQuestion.num1,
+                                                    num2: mathQuestion.num2,
+                                                })
+                                            }}
+                                        </Label>
+                                        <Input
+                                            v-model="mathAnswer"
+                                            :placeholder="t('serverSettings.deleteServerStep3Placeholder')"
+                                            type="number"
+                                            class="text-sm font-mono"
+                                            @keyup.enter="if (isMathCorrect) deleteStep = 4;"
+                                        />
+                                        <p v-if="mathAnswer && !isMathCorrect" class="text-xs text-destructive">
+                                            {{ t('serverSettings.deleteServerStep3Wrong') }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Server Name Confirmation -->
+                    <div v-if="deleteStep === 4" class="space-y-4">
+                        <div class="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
+                            <div class="flex items-start gap-3">
+                                <AlertTriangle class="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                                <div class="text-sm min-w-0 flex-1">
+                                    <p class="font-semibold text-destructive mb-2">
+                                        {{ t('serverSettings.deleteServerStep4Title') }}
+                                    </p>
+                                    <p class="text-muted-foreground mb-4">
+                                        {{ t('serverSettings.deleteServerStep4Description') }}
+                                    </p>
+                                    <div class="space-y-2">
+                                        <p class="text-sm font-mono text-muted-foreground mb-2">
+                                            {{
+                                                t('serverSettings.deleteServerStep4ServerName', {
+                                                    name: server?.name || '',
+                                                })
+                                            }}
+                                        </p>
+                                        <Input
+                                            v-model="confirmServerName"
+                                            :placeholder="t('serverSettings.deleteServerStep4Placeholder')"
+                                            class="text-sm font-mono"
+                                            @keyup.enter="if (isServerNameCorrect) confirmDelete();"
+                                        />
+                                        <p
+                                            v-if="confirmServerName && !isServerNameCorrect"
+                                            class="text-xs text-destructive"
+                                        >
+                                            {{ t('serverSettings.deleteServerStep4Wrong') }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter class="gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="deleting"
+                            @click="
+                                () => {
+                                    showDeleteDialog = false;
+                                    deleteStep = 1;
+                                    confirmIrreversible = false;
+                                    mathAnswer = '';
+                                    confirmServerName = '';
+                                    generateMathQuestion();
+                                }
+                            "
+                        >
+                            {{ t('serverSettings.deleteServerCancel') }}
+                        </Button>
+                        <Button
+                            v-if="deleteStep < 4"
+                            variant="default"
+                            size="sm"
+                            :disabled="!canProceedToNextStep"
+                            @click="deleteStep++"
+                        >
+                            {{ t('serverSettings.deleteServerNext') }}
+                        </Button>
+                        <Button
+                            v-if="deleteStep > 1"
+                            variant="outline"
+                            size="sm"
+                            :disabled="deleting"
+                            @click="deleteStep--"
+                        >
+                            {{ t('serverSettings.deleteServerBack') }}
+                        </Button>
+                        <Button
+                            v-if="deleteStep === 4"
+                            variant="destructive"
+                            size="sm"
+                            :disabled="deleting || !isServerNameCorrect"
+                            class="flex items-center gap-2"
+                            @click="confirmDelete"
+                        >
+                            <AlertTriangle :class="['h-4 w-4', deleting && 'animate-spin']" />
+                            <span>{{
+                                deleting
+                                    ? t('serverSettings.deleteServerDeleting')
+                                    : t('serverSettings.deleteServerConfirm')
+                            }}</span>
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <!-- Reinstall Confirmation Dialog -->
             <Dialog v-model:open="showReinstallDialog">
@@ -597,11 +887,18 @@ const hasAnySettingsPermission = computed(() => canRenameServer.value || canRein
 const loading = ref(true);
 const saving = ref(false);
 const reinstalling = ref(false);
+const deleting = ref(false);
 const error = ref<string | null>(null);
 const server = ref<ServerData | null>(null);
 const showReinstallDialog = ref(false);
 const confirmReinstallText = ref('');
 const wipeFilesOnReinstall = ref(false);
+const showDeleteDialog = ref(false);
+const deleteStep = ref(1);
+const confirmIrreversible = ref(false);
+const mathQuestion = ref({ num1: 0, num2: 0, answer: 0 });
+const mathAnswer = ref('');
+const confirmServerName = ref('');
 
 // Form
 const editForm = ref<EditForm>({
@@ -616,6 +913,7 @@ const widgetsAfterHeader = computed(() => getWidgets('server-settings', 'after-h
 const widgetsAfterServerInfo = computed(() => getWidgets('server-settings', 'after-server-information'));
 const widgetsAfterSftpDetails = computed(() => getWidgets('server-settings', 'after-sftp-details'));
 const widgetsAfterServerActions = computed(() => getWidgets('server-settings', 'after-server-actions'));
+const widgetsAfterDeleteServer = computed(() => getWidgets('server-settings', 'after-delete-server'));
 const widgetsBottomOfPage = computed(() => getWidgets('server-settings', 'bottom-of-page'));
 
 // Computed
@@ -743,6 +1041,64 @@ async function confirmReinstall(): Promise<void> {
     }
 }
 
+function generateMathQuestion(): void {
+    const num1 = Math.floor(Math.random() * 20) + 1;
+    const num2 = Math.floor(Math.random() * 20) + 1;
+    mathQuestion.value = {
+        num1,
+        num2,
+        answer: num1 + num2,
+    };
+    mathAnswer.value = '';
+}
+
+const isMathCorrect = computed(() => {
+    if (!mathAnswer.value) return false;
+    return parseInt(mathAnswer.value, 10) === mathQuestion.value.answer;
+});
+
+const isServerNameCorrect = computed(() => {
+    if (!server.value || !confirmServerName.value) return false;
+    return confirmServerName.value.trim() === server.value.name.trim();
+});
+
+const canProceedToNextStep = computed(() => {
+    if (deleteStep.value === 1) return true;
+    if (deleteStep.value === 2) return confirmIrreversible.value;
+    if (deleteStep.value === 3) return isMathCorrect.value;
+    return false;
+});
+
+async function confirmDelete(): Promise<void> {
+    if (!server.value || !isServerNameCorrect.value) {
+        return;
+    }
+
+    try {
+        deleting.value = true;
+
+        const response = await axios.delete(`/api/user/servers/${route.params.uuidShort}`);
+
+        if (response.data.success) {
+            toast.success(t('serverSettings.deleteServerSuccess'));
+            showDeleteDialog.value = false;
+            // Redirect to dashboard after deletion
+            await router.push('/dashboard');
+        } else {
+            toast.error(response.data.message || t('serverSettings.deleteServerFailed'));
+        }
+    } catch (err) {
+        console.error('Error deleting server:', err);
+        const message =
+            axios.isAxiosError(err) && err.response?.data?.message
+                ? err.response.data.message
+                : t('serverSettings.deleteServerFailed');
+        toast.error(message);
+    } finally {
+        deleting.value = false;
+    }
+}
+
 // Lifecycle
 onMounted(async () => {
     await sessionStore.checkSessionOrRedirect(router);
@@ -764,5 +1120,8 @@ onMounted(async () => {
 
     // Fetch plugin widgets
     await fetchPluginWidgets();
+
+    // Generate initial math question for delete confirmation
+    generateMathQuestion();
 });
 </script>
