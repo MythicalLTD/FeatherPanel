@@ -144,4 +144,20 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_PLUGINS_MANAGE,
         ['POST']
     );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-plugins-resync-symlinks',
+        '/api/admin/plugins/{identifier}/resync-symlinks',
+        function (Request $request, array $args) {
+            $identifier = $args['identifier'] ?? null;
+            if (!$identifier || !is_string($identifier)) {
+                return \App\Helpers\ApiResponse::error('Missing or invalid identifier', 'INVALID_IDENTIFIER', 400);
+            }
+
+            return (new PluginsController())->resyncSymlinks($request, $identifier);
+        },
+        Permissions::ADMIN_PLUGINS_MANAGE,
+        ['POST']
+    );
 };

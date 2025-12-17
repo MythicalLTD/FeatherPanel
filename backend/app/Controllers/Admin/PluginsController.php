@@ -725,6 +725,112 @@ class PluginsController
         }
     }
 
+    #[OA\Post(
+        path: '/api/admin/plugins/{identifier}/resync-symlinks',
+        summary: 'Resync plugin symlinks',
+        description: 'Recreate symlinks for plugin public assets and frontend components without reinstalling the plugin. Useful when symlinks are broken or missing.',
+        tags: ['Admin - Plugins'],
+        parameters: [
+            new OA\Parameter(
+                name: 'identifier',
+                in: 'path',
+                description: 'Plugin identifier to resync symlinks for',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Symlinks resynced successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'identifier', type: 'string', description: 'Plugin identifier'),
+                        new OA\Property(property: 'public_assets', type: 'boolean', description: 'Whether public assets symlink was created'),
+                        new OA\Property(property: 'frontend_components', type: 'boolean', description: 'Whether frontend components symlink was created'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid plugin identifier'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'Plugin not found'),
+            new OA\Response(response: 500, description: 'Internal server error - Failed to resync symlinks'),
+        ]
+    )]
+    public function resyncSymlinks(Request $request, string $identifier): Response
+    {
+        try {
+            if (!defined('APP_ADDONS_DIR')) {
+                define('APP_ADDONS_DIR', dirname(__DIR__, 3) . '/storage/addons');
+            }
+
+            $pluginDir = APP_ADDONS_DIR . '/' . $identifier;
+            if (!file_exists($pluginDir) || !is_dir($pluginDir)) {
+                return ApiResponse::error('Plugin not found', 'PLUGIN_NOT_FOUND', 404);
+            }
+
+            $publicAssetsCreated = false;
+            $frontendComponentsCreated = false;
+
+            // Expose public assets at public/addons/{identifier} using ln -s (fallback to copy)
+            $pluginPublic = $pluginDir . '/Public';
+            $publicAddonsBase = dirname(__DIR__, 3) . '/public/addons';
+            if (is_dir($pluginPublic)) {
+                if (!is_dir($publicAddonsBase)) {
+                    @mkdir($publicAddonsBase, 0755, true);
+                }
+                $linkPath = $publicAddonsBase . '/' . $identifier;
+                @exec('rm -rf ' . escapeshellarg($linkPath));
+                $lnCmd = 'ln -s ' . escapeshellarg($pluginPublic) . ' ' . escapeshellarg($linkPath);
+                exec($lnCmd, $lnOut, $lnCode);
+                if ($lnCode !== 0) {
+                    @mkdir($linkPath, 0755, true);
+                    $copyPubCmd = sprintf('cp -r %s/* %s', escapeshellarg($pluginPublic), escapeshellarg($linkPath));
+                    exec($copyPubCmd);
+                }
+                $publicAssetsCreated = true;
+            }
+
+            // Expose Frontend/Components at public/components/{identifier} using ln -s (fallback to copy)
+            $pluginComponents = $pluginDir . '/Frontend/Components';
+            if (is_dir($pluginComponents)) {
+                $publicComponentsBase = dirname(__DIR__, 3) . '/public/components';
+
+                // Create /public/components directory if it doesn't exist
+                if (!is_dir($publicComponentsBase)) {
+                    @mkdir($publicComponentsBase, 0755, true);
+                }
+
+                // Create symlink at /public/components/{identifier}
+                $linkPath = $publicComponentsBase . '/' . $identifier;
+                @exec('rm -rf ' . escapeshellarg($linkPath));
+                $lnCmd = 'ln -s ' . escapeshellarg($pluginComponents) . ' ' . escapeshellarg($linkPath);
+                exec($lnCmd, $lnOut, $lnCode);
+
+                // Fallback to copy if symlink fails
+                if ($lnCode !== 0) {
+                    @mkdir($linkPath, 0755, true);
+                    $copyCmd = sprintf('cp -r %s/* %s', escapeshellarg($pluginComponents), escapeshellarg($linkPath));
+                    exec($copyCmd);
+                }
+                $frontendComponentsCreated = true;
+            }
+
+            App::getInstance(true)->getLogger()->info("Resynced symlinks for plugin: {$identifier}");
+
+            return ApiResponse::success([
+                'identifier' => $identifier,
+                'public_assets' => $publicAssetsCreated,
+                'frontend_components' => $frontendComponentsCreated,
+            ], 'Symlinks resynced successfully', 200);
+        } catch (\Exception $e) {
+            App::getInstance(true)->getLogger()->error('Failed to resync symlinks for ' . $identifier . ': ' . $e->getMessage());
+
+            return ApiResponse::error('Failed to resync symlinks: ' . $e->getMessage(), 500);
+        }
+    }
+
     #[OA\Get(
         path: '/api/admin/plugins/{identifier}/export',
         summary: 'Export addon',

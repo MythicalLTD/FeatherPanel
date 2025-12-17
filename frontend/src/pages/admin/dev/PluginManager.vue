@@ -33,7 +33,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from 'vue-toastification';
-import { Database, Terminal, Clock, Plus, Upload, Download, Trash2 } from 'lucide-vue-next';
+import { Database, Terminal, Clock, Plus, Upload, Download, Trash2, RefreshCw } from 'lucide-vue-next';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -443,6 +443,37 @@ const onUninstall = async (plugin: Plugin) => {
     }
 };
 
+const isResyncingSymlinks = ref(false);
+const resyncingPlugin = ref<string | null>(null);
+
+const resyncSymlinks = async (plugin: Plugin) => {
+    isResyncingSymlinks.value = true;
+    resyncingPlugin.value = plugin.identifier;
+    try {
+        const resp = await fetch(`/api/admin/plugins/${plugin.identifier}/resync-symlinks`, {
+            method: 'POST',
+            credentials: 'include',
+        });
+        if (!resp.ok) {
+            const errorData = await resp.json();
+            throw new Error(errorData.message || 'Failed to resync symlinks');
+        }
+        const result = await resp.json();
+        if (result.success) {
+            toast.success(`Symlinks resynced successfully for ${plugin.name || plugin.identifier}`);
+        } else {
+            throw new Error(result.message || 'Failed to resync symlinks');
+        }
+    } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : 'Failed to resync symlinks';
+        toast.error(errorMessage);
+        console.error('Resync symlinks error:', e);
+    } finally {
+        isResyncingSymlinks.value = false;
+        resyncingPlugin.value = null;
+    }
+};
+
 onMounted(() => {
     fetchPlugins();
     loadCreationOptions();
@@ -579,6 +610,23 @@ onMounted(() => {
                             >
                                 <Download :size="14" class="mr-1" />
                                 Export
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                :disabled="isResyncingSymlinks && resyncingPlugin === plugin.identifier"
+                                data-umami-event="Resync symlinks"
+                                :data-umami-event-plugin="plugin.name"
+                                @click="resyncSymlinks(plugin)"
+                            >
+                                <RefreshCw
+                                    :size="14"
+                                    class="mr-1"
+                                    :class="{
+                                        'animate-spin': isResyncingSymlinks && resyncingPlugin === plugin.identifier,
+                                    }"
+                                />
+                                Resync Links
                             </Button>
                             <Button
                                 variant="destructive"
