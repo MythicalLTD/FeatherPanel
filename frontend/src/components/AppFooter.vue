@@ -41,7 +41,7 @@ const appVersion = computed(() => String(settingsStore.appVersion || '1.0.0'));
 </script>
 
 <template>
-    <footer class="border-t border-border/40 bg-background/95 backdrop-blur-sm">
+    <footer class="border-t border-border/40 bg-background/95 backdrop-blur-sm fixed bottom-0 left-0 right-0">
         <div class="container mx-auto px-3 sm:px-4">
             <!-- Mobile: Centered minimal layout -->
             <div class="flex sm:hidden flex-col items-center justify-center py-3 text-xs text-muted-foreground gap-2">

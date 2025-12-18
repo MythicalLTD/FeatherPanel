@@ -1,12 +1,25 @@
 <template>
-    <DashboardLayout :breadcrumbs="breadcrumbs">
-        <div v-if="loading" class="flex items-center justify-center h-full">
+    <DashboardLayout :breadcrumbs="breadcrumbs" :hide-footer="true">
+        <div v-if="loading" class="flex items-center justify-center min-h-[calc(100vh-250px)]">
             <div class="text-gray-500">{{ t('common.loading') }}...</div>
         </div>
-        <div v-else-if="error" class="flex items-center justify-center h-full">
+        <div v-else-if="error" class="flex items-center justify-center min-h-[calc(100vh-250px)]">
             <div class="text-red-500">{{ error }}</div>
         </div>
-        <div v-else-if="iframeSrc" class="relative w-full h-[calc(100vh-120px)] overflow-hidden">
+        <div
+            v-else-if="iframeSrc"
+            class="fixed overflow-hidden plugin-iframe-container"
+            style="
+                top: 64px;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: calc(100vh - 64px);
+                padding-bottom: max(env(safe-area-inset-bottom), 20px);
+                z-index: 1;
+                box-sizing: border-box;
+            "
+        >
             <!-- Developer Mode: Floating Reload Button -->
             <div v-if="settingsStore.appDeveloperMode" class="absolute bottom-6 right-6 z-30">
                 <button

@@ -70,7 +70,7 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
 };
 
 const shouldShowChatbot = computed(() => {
-    return isDesktop.value && isChatbotEnabled.value && window.location.pathname.includes('/dashboard');
+    return isDesktop.value && isChatbotEnabled.value && window.location.pathname.includes('/server');
 });
 
 onMounted(async () => {

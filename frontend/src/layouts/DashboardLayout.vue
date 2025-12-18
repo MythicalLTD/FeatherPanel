@@ -53,7 +53,7 @@ export interface BreadcrumbEntry {
     isCurrent?: boolean;
 }
 
-const props = defineProps<{ breadcrumbs?: BreadcrumbEntry[] }>();
+const props = defineProps<{ breadcrumbs?: BreadcrumbEntry[]; hideFooter?: boolean }>();
 
 const isSidebarVisible = computed(() => useLocalStorage('sidebar-visibility', 'visible').value !== 'hidden');
 
@@ -302,7 +302,7 @@ watch(
             </div>
 
             <!-- Footer -->
-            <AppFooter />
+            <AppFooter v-if="!hideFooter" />
         </SidebarInset>
 
         <!-- macOS Dock -->

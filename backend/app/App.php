@@ -229,7 +229,6 @@ class App
                                     $register = require $file->getPathname();
                                     if (is_callable($register)) {
                                         $register($routes);
-                                        self::getLogger()->debug('Loaded plugin routes from: ' . $file->getPathname());
                                     }
                                 } catch (\Exception $e) {
                                     self::getLogger()->error('Failed to load plugin routes from ' . $file->getPathname() . ': ' . $e->getMessage());
@@ -261,15 +260,8 @@ class App
                 'methods' => $route->getMethods(),
             ];
         }
-        self::getLogger()->debug('Registered routes: ' . json_encode($routeList));
-
-        // Log the incoming request
-        self::getLogger()->debug('Attempting to match route: ' . $request->getMethod() . ' ' . $request->getPathInfo());
-
         try {
             $parameters = $matcher->match($request->getPathInfo());
-            self::getLogger()->debug('Matched route: ' . ($parameters['_route'] ?? 'unknown') . ' with params: ' . json_encode($parameters));
-
             $controller = $parameters['_controller'];
             unset($parameters['_controller'], $parameters['_route']);
 

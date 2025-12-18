@@ -12,6 +12,7 @@
 
 - Significant performance enhancements—optimized resource usage for a faster, more efficient app experience. by @nayskutzu
 - Plugin dependency checks are now performed directly via config files instead of in-memory loading, preventing possible conflicts and ensuring more reliable operation. by @nayskutzu
+- Plugin-rendered pages now feature improved layouts with the footer automatically hidden, resulting in a cleaner, more spacious, and visually appealing experience. by @nayskutzu
 
 ### Removed
 

@@ -124,8 +124,18 @@ export default defineConfig({
         },
     },
     build: {
-        // Performance: Use esbuild for faster minification (lower RAM usage than terser)
-        minify: 'esbuild',
+        // Performance: Use terser for minification (rolldown-vite compatible)
+        minify: 'terser',
+        // Terser options for production builds
+        terserOptions:
+            process.env.NODE_ENV === 'production'
+                ? {
+                      compress: {
+                          drop_console: true,
+                          drop_debugger: true,
+                      },
+                  }
+                : undefined,
         // Performance: Disable sourcemaps in production (saves RAM and build time)
         sourcemap: process.env.NODE_ENV === 'development',
         // Performance: Inline small assets to reduce HTTP requests
@@ -307,10 +317,6 @@ export default defineConfig({
         devSourcemap: false, // Disable CSS sourcemaps in dev (saves RAM)
     },
     // Performance: Reduce memory usage during build
-    esbuild: {
-        // Drop console and debugger in production
-        drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
-        // Target modern browsers
-        target: 'esnext',
-    },
+    // Note: esbuild config removed - rolldown-vite handles minification differently
+    // Console/debugger removal is handled by the minifier (terser) in production builds
 });
