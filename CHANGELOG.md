@@ -7,6 +7,9 @@
 - Plugins can now seamlessly integrate with and extend existing sidebar routes, including injecting custom previews! by @nayskutzu
 - Introduced a seamless option to resynchronize plugin symlinks, ensuring all plugins remain properly linked and up to date. by @nayskutzu
 - Added a new, interactive flow for users to delete their own servers—requiring completion of one math, one reading, and one spelling challenge for extra security. by @nayskutzu
+- The standard plugins page now also supports update checking, not just the marketplace! by @nayskutzu
+- Plugins can now specify a unique cloud plugin ID, enabling them to automatically detect and fetch their own updates from the cloud. by @nayskutzu
+- Plugins can now specify an exact panel version requirement, not just an SDK version—offering greater precision and reliability for compatibility! by @nayskutzu
 
 ### Improved
 

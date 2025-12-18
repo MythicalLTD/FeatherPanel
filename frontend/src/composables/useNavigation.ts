@@ -63,6 +63,7 @@ import {
     Gauge,
     ArrowRightLeft,
     Upload,
+	Cloud,
 } from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
 import Permissions from '@/lib/permissions';
@@ -643,6 +644,17 @@ export function useNavigation() {
                     currentPath.value.startsWith('/admin/feathercloud/spells'),
                 category: 'admin' as const,
                 permission: Permissions.ADMIN_PLUGINS_VIEW,
+                group: 'feathercloud',
+            },
+            {
+                id: 'admin-cloud-management',
+                name: 'Cloud Management',
+                title: 'Cloud Management',
+                url: '/admin/cloud-management',
+                icon: Cloud,
+                isActive: currentPath.value.startsWith('/admin/cloud-management'),
+                category: 'admin' as const,
+                permission: Permissions.ADMIN_ROOT,
                 group: 'feathercloud',
             },
             {

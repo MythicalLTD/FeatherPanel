@@ -51,6 +51,20 @@ class PluginConfig
     }
 
     /**
+     * Get optional plugin config fields and their expected types.
+     *
+     * @return array Optional fields with their types
+     */
+    public static function getOptional(): array
+    {
+        return [
+            'plugin_cloud_id' => ['string', 'integer'],
+            'minimum_panel_version' => 'string',
+            'maximum_panel_version' => 'string',
+        ];
+    }
+
+    /**
      * Check if the plugin config is valid.
      *
      * @param string $identifier The plugin identifier
@@ -132,6 +146,11 @@ class PluginConfig
             if (isset($config['mixins']) && !self::validateMixins($config['mixins'], $config['identifier'])) {
                 $app->getLogger()->warning('Invalid mixins configuration for plugin: ' . $config['identifier']);
 
+                return false;
+            }
+
+            // Validate optional fields if they exist
+            if (!self::validateOptionalFields($config, $config['identifier'])) {
                 return false;
             }
 
@@ -264,6 +283,235 @@ class PluginConfig
         }
 
         return $defaults;
+    }
+
+    /**
+     * Get the plugin cloud ID (package manager ID).
+     *
+     * @param string $identifier The plugin identifier
+     *
+     * @return string|int|null The plugin cloud ID or null if not set
+     */
+    public static function getPluginCloudId(string $identifier): string | int | null
+    {
+        $config = self::getConfig($identifier);
+        $pluginConfig = $config['plugin'] ?? [];
+
+        return $pluginConfig['plugin_cloud_id'] ?? null;
+    }
+
+    /**
+     * Get the minimum panel version requirement.
+     *
+     * @param string $identifier The plugin identifier
+     *
+     * @return string|null The minimum panel version or null if not set
+     */
+    public static function getMinimumPanelVersion(string $identifier): ?string
+    {
+        $config = self::getConfig($identifier);
+        $pluginConfig = $config['plugin'] ?? [];
+
+        return $pluginConfig['minimum_panel_version'] ?? null;
+    }
+
+    /**
+     * Get the maximum panel version requirement.
+     *
+     * @param string $identifier The plugin identifier
+     *
+     * @return string|null The maximum panel version or null if not set
+     */
+    public static function getMaximumPanelVersion(string $identifier): ?string
+    {
+        $config = self::getConfig($identifier);
+        $pluginConfig = $config['plugin'] ?? [];
+
+        return $pluginConfig['maximum_panel_version'] ?? null;
+    }
+
+    /**
+     * Get the current panel version (without 'v' prefix).
+     *
+     * @return string The current panel version
+     */
+    public static function getCurrentPanelVersion(): string
+    {
+        $version = defined('APP_VERSION') ? APP_VERSION : '0.0.0';
+
+        // Remove 'v' prefix if present
+        return ltrim($version, 'vV');
+    }
+
+    /**
+     * Check if the current panel version is compatible with the plugin's version requirements.
+     *
+     * @param string $identifier The plugin identifier
+     *
+     * @return array Array with 'compatible' boolean and 'message' string
+     */
+    public static function isPanelVersionCompatible(string $identifier): array
+    {
+        $minVersion = self::getMinimumPanelVersion($identifier);
+        $maxVersion = self::getMaximumPanelVersion($identifier);
+
+        // If no version requirements, always compatible
+        if ($minVersion === null && $maxVersion === null) {
+            return [
+                'compatible' => true,
+                'message' => null,
+            ];
+        }
+
+        $currentVersion = self::getCurrentPanelVersion();
+        $normalizeVersion = static function (string $version): string {
+            return ltrim($version, 'vV');
+        };
+
+        $currentNormalized = $normalizeVersion($currentVersion);
+
+        // Check minimum version
+        if ($minVersion !== null) {
+            $minNormalized = $normalizeVersion($minVersion);
+            if (version_compare($currentNormalized, $minNormalized, '<')) {
+                return [
+                    'compatible' => false,
+                    'message' => "Requires panel version {$minVersion} or higher (current: {$currentVersion})",
+                ];
+            }
+        }
+
+        // Check maximum version
+        if ($maxVersion !== null) {
+            $maxNormalized = $normalizeVersion($maxVersion);
+            if (version_compare($currentNormalized, $maxNormalized, '>')) {
+                return [
+                    'compatible' => false,
+                    'message' => "Requires panel version {$maxVersion} or lower (current: {$currentVersion})",
+                ];
+            }
+        }
+
+        return [
+            'compatible' => true,
+            'message' => null,
+        ];
+    }
+
+    /**
+     * Validate optional plugin config fields.
+     *
+     * @param array $config The plugin config
+     * @param string $pluginIdentifier The plugin identifier
+     *
+     * @return bool True if valid, false otherwise
+     */
+    private static function validateOptionalFields(array $config, string $pluginIdentifier): bool
+    {
+        try {
+            $app = App::getInstance(true);
+            $logger = $app->getLogger();
+            $optionalFields = self::getOptional();
+
+            foreach ($optionalFields as $field => $expectedTypes) {
+                if (!isset($config[$field])) {
+                    continue;
+                }
+
+                $value = $config[$field];
+                $isValid = false;
+
+                // Handle fields that can be multiple types
+                if (is_array($expectedTypes)) {
+                    foreach ($expectedTypes as $type) {
+                        if (self::validateType($value, $type)) {
+                            $isValid = true;
+                            break;
+                        }
+                    }
+                } else {
+                    $isValid = self::validateType($value, $expectedTypes);
+                }
+
+                if (!$isValid) {
+                    $expectedTypeStr = is_array($expectedTypes) ? implode(' or ', $expectedTypes) : $expectedTypes;
+                    $logger->warning("Invalid type for optional field '{$field}' in plugin: {$pluginIdentifier}. Expected: {$expectedTypeStr}");
+
+                    return false;
+                }
+
+                // Additional validation for version fields
+                if ($field === 'minimum_panel_version' || $field === 'maximum_panel_version') {
+                    if (!self::isValidVersionFormat($value)) {
+                        $logger->warning("Invalid version format for '{$field}' in plugin: {$pluginIdentifier}. Value: {$value}");
+
+                        return false;
+                    }
+                }
+
+                // Additional validation for plugin_cloud_id
+                if ($field === 'plugin_cloud_id') {
+                    if (is_string($value) && empty(trim($value))) {
+                        $logger->warning("plugin_cloud_id cannot be empty in plugin: {$pluginIdentifier}");
+
+                        return false;
+                    }
+                    if (is_int($value) && $value <= 0) {
+                        $logger->warning("plugin_cloud_id must be a positive integer in plugin: {$pluginIdentifier}");
+
+                        return false;
+                    }
+                }
+            }
+
+            // Validate version range if both are present
+            if (isset($config['minimum_panel_version']) && isset($config['maximum_panel_version'])) {
+                if (version_compare($config['minimum_panel_version'], $config['maximum_panel_version'], '>')) {
+                    $logger->warning("minimum_panel_version cannot be greater than maximum_panel_version in plugin: {$pluginIdentifier}");
+
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            $app->getLogger()->error('Error validating optional fields: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Validate a value against an expected type.
+     *
+     * @param mixed $value The value to validate
+     * @param string $type The expected type
+     *
+     * @return bool True if valid, false otherwise
+     */
+    private static function validateType(mixed $value, string $type): bool
+    {
+        return match ($type) {
+            'string' => is_string($value),
+            'integer', 'int' => is_int($value),
+            'float', 'double' => is_float($value),
+            'boolean', 'bool' => is_bool($value),
+            'array' => is_array($value),
+            default => false,
+        };
+    }
+
+    /**
+     * Validate version format (semantic versioning).
+     *
+     * @param string $version The version string
+     *
+     * @return bool True if valid format, false otherwise
+     */
+    private static function isValidVersionFormat(string $version): bool
+    {
+        // Basic semantic version validation (e.g., 2.0.0, 2.1.0-beta, 2.0.0-alpha.1)
+        return (bool) preg_match('/^\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?$/', $version);
     }
 
     /**

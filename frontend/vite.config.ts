@@ -304,9 +304,10 @@ export default defineConfig({
             'vue-toastification',
             'marked',
             'dompurify',
+            'vue-demi', // Required for Vue 2/3 compatibility in many libraries
         ],
         // Performance: Exclude large dependencies that don't need pre-bundling
-        exclude: ['vue-demi'],
+        // Note: vue-demi is now included to fix resolution issues
         // Note: Rolldown is used by default in Vite 7+ for dependency optimization
         // No additional configuration needed - Rolldown automatically optimizes dependencies
     },

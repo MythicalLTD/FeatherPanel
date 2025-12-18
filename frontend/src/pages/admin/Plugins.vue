@@ -47,6 +47,47 @@
                     </div>
                 </div>
 
+                <!-- Update Available Banner -->
+                <div v-if="showUpdatesBanner && pluginsWithUpdates.length > 0" class="mb-4">
+                    <div
+                        class="rounded-md border border-blue-500/30 bg-blue-500/10 p-4 text-blue-700 dark:text-blue-400"
+                    >
+                        <div class="flex items-start gap-3">
+                            <RefreshCw class="h-5 w-5 shrink-0 mt-0.5" />
+                            <div class="flex-1">
+                                <div class="font-semibold mb-2">Updates Available</div>
+                                <p class="text-sm mb-2">
+                                    Hey! It looks like there is an update for the following plugins:
+                                </p>
+                                <div class="flex flex-wrap gap-2 mb-2">
+                                    <Badge
+                                        v-for="plugin in pluginsWithUpdates"
+                                        :key="plugin.identifier"
+                                        variant="secondary"
+                                        class="text-xs cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                                        @click="checkForUpdate(plugin)"
+                                    >
+                                        {{ plugin.name || plugin.identifier }}
+                                        <RefreshCw class="h-3 w-3 ml-1 inline" />
+                                    </Badge>
+                                </div>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <Button size="sm" variant="outline" class="text-xs" @click="checkAllUpdates">
+                                        <RefreshCw class="h-3 w-3 mr-1" />
+                                        Check All Updates
+                                    </Button>
+                                </div>
+                            </div>
+                            <button
+                                class="text-xs underline hover:no-underline shrink-0"
+                                @click="showUpdatesBanner = false"
+                            >
+                                Dismiss
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Banner -->
                 <div v-if="banner" class="mb-4">
                     <div
@@ -74,6 +115,16 @@
                             >
                                 <RefreshCw class="h-4 w-4 mr-2" />
                                 Refresh
+                            </Button>
+                            <Button
+                                variant="outline"
+                                class="w-full sm:w-auto"
+                                :disabled="updateCheckLoading"
+                                data-umami-event="Check plugin updates"
+                                @click="checkAllUpdates"
+                            >
+                                <RefreshCw :class="['h-4 w-4 mr-2', updateCheckLoading && 'animate-spin']" />
+                                Check Updates
                             </Button>
                             <label class="inline-block w-full sm:w-auto">
                                 <Button
@@ -138,9 +189,18 @@
                                         <p class="text-xs text-muted-foreground truncate mb-1">
                                             {{ plugin.identifier }}
                                         </p>
-                                        <Badge variant="secondary" class="text-xs">
-                                            v{{ plugin.version || 'Unknown' }}
-                                        </Badge>
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <Badge variant="secondary" class="text-xs">
+                                                v{{ plugin.version || 'Unknown' }}
+                                            </Badge>
+                                            <Badge
+                                                v-if="hasUpdateAvailable(plugin)"
+                                                class="text-xs bg-blue-500 text-white border-0 animate-pulse"
+                                            >
+                                                <RefreshCw class="h-3 w-3 inline mr-1" />
+                                                Update Available
+                                            </Badge>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -242,6 +302,22 @@
                                     </Button>
                                     <div class="grid grid-cols-2 gap-2">
                                         <Button
+                                            v-if="hasUpdateAvailable(plugin)"
+                                            size="sm"
+                                            variant="default"
+                                            class="w-full justify-center hover:scale-110 hover:shadow-md transition-all duration-200 bg-blue-600 hover:bg-blue-700"
+                                            title="Check for update"
+                                            :disabled="checkingUpdateId === plugin.identifier"
+                                            @click.stop="checkForUpdate(plugin)"
+                                        >
+                                            <RefreshCw
+                                                v-if="checkingUpdateId === plugin.identifier"
+                                                class="h-4 w-4 animate-spin"
+                                            />
+                                            <RefreshCw v-else class="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            v-else
                                             size="sm"
                                             variant="outline"
                                             class="w-full justify-center hover:scale-110 hover:shadow-md transition-all duration-200"
@@ -731,6 +807,92 @@
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        <!-- Update Plugin Dialog -->
+        <Dialog v-model:open="updateDialogOpen">
+            <DialogContent class="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Update Plugin</DialogTitle>
+                    <DialogDescription v-if="updateRequirements && selectedPlugin">
+                        {{ updateRequirements.package.name }} ({{ updateRequirements.package.identifier }})
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div v-if="updateRequirementsLoading" class="flex items-center justify-center py-8">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"
+                        ></div>
+                        <span class="text-muted-foreground">Checking update requirements...</span>
+                    </div>
+                </div>
+
+                <div v-else-if="updateRequirements" class="space-y-4">
+                    <!-- Update Info -->
+                    <div
+                        class="rounded-md border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-600"
+                    >
+                        <div class="flex items-start gap-2">
+                            <RefreshCw class="h-5 w-5 shrink-0 mt-0.5" />
+                            <div class="flex-1">
+                                <div class="font-semibold mb-1">Update Available</div>
+                                <p>
+                                    Update from
+                                    <span class="font-medium">{{
+                                        updateRequirements.installed_version || 'unknown'
+                                    }}</span>
+                                    to
+                                    <span class="font-medium">{{
+                                        updateRequirements.latest_version || 'unknown'
+                                    }}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Warning -->
+                    <div
+                        class="rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-700 dark:text-yellow-600"
+                    >
+                        <div class="flex items-start gap-2">
+                            <AlertCircle class="h-5 w-5 shrink-0 mt-0.5" />
+                            <div>
+                                <div class="font-semibold mb-1">Backup Recommended</div>
+                                <p>
+                                    It's recommended to backup your plugin configuration and data before updating. The
+                                    update will replace the current plugin files.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <DialogClose as-child>
+                        <Button variant="outline">Cancel</Button>
+                    </DialogClose>
+                    <Button
+                        v-if="updateRequirements && selectedPlugin"
+                        :disabled="
+                            installingUpdateId === selectedPlugin.identifier ||
+                            !updateRequirements.can_install ||
+                            updateRequirementsLoading
+                        "
+                        @click="installUpdate(selectedPlugin)"
+                    >
+                        <div
+                            v-if="installingUpdateId === selectedPlugin.identifier"
+                            class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                        ></div>
+                        {{
+                            installingUpdateId === selectedPlugin.identifier
+                                ? 'Updating...'
+                                : `Update to v${updateRequirements.latest_version || 'latest'}`
+                        }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </DashboardLayout>
 </template>
 
@@ -870,6 +1032,26 @@ const confirmUploadOpen = ref(false);
 const selectedPluginForUninstall = ref<Plugin | null>(null);
 const pendingUploadFile = ref<File | null>(null);
 
+// Update checking states
+const checkingUpdateId = ref<string | null>(null);
+const onlinePluginsCache = ref<Map<string, { version: string; identifier: string }>>(new Map());
+const updateCheckLoading = ref(false);
+const updateDialogOpen = ref(false);
+const updateRequirements = ref<{
+    can_install: boolean;
+    update_available: boolean;
+    installed_version?: string | null;
+    latest_version?: string | null;
+    package: {
+        identifier: string;
+        name: string;
+        version?: string;
+    };
+} | null>(null);
+const updateRequirementsLoading = ref(false);
+const installingUpdateId = ref<string | null>(null);
+const showUpdatesBanner = ref(true);
+
 // Computed
 const configFields = computed(() => {
     if (!pluginConfig.value?.configSchema) return [];
@@ -881,10 +1063,210 @@ const hasConfigSchema = computed(() => {
     return schema && Array.isArray(schema) && schema.length > 0;
 });
 
+/**
+ * Get all plugins that have updates available
+ */
+const pluginsWithUpdates = computed(() => {
+    return plugins.value.filter((plugin) => hasUpdateAvailable(plugin));
+});
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getPluginIcon = (_plugin: Plugin) => {
     // You can customize this based on plugin type or add icon mapping
     return Settings;
+};
+
+/**
+ * Normalize version string (remove 'v' prefix)
+ */
+const normalizeVersion = (v: string): string => {
+    return v.replace(/^v/i, '');
+};
+
+/**
+ * Compare two version strings
+ */
+const compareVersions = (v1: string, v2: string): number => {
+    const parts1 = normalizeVersion(v1).split('.').map(Number);
+    const parts2 = normalizeVersion(v2).split('.').map(Number);
+    const maxLength = Math.max(parts1.length, parts2.length);
+
+    for (let i = 0; i < maxLength; i++) {
+        const part1 = parts1[i] || 0;
+        const part2 = parts2[i] || 0;
+        if (part1 < part2) return -1;
+        if (part1 > part2) return 1;
+    }
+    return 0;
+};
+
+/**
+ * Check if an update is available for a plugin
+ */
+const hasUpdateAvailable = (plugin: Plugin): boolean => {
+    if (!plugin.identifier || !plugin.version) {
+        return false;
+    }
+
+    const onlinePlugin = onlinePluginsCache.value.get(plugin.identifier);
+    if (!onlinePlugin || !onlinePlugin.version) {
+        return false;
+    }
+
+    const installedVersion = plugin.version;
+    const latestVersion = onlinePlugin.version;
+
+    return compareVersions(installedVersion, latestVersion) < 0;
+};
+
+/**
+ * Fetch online plugin information for update checking
+ */
+const fetchOnlinePluginInfo = async (identifier: string): Promise<void> => {
+    if (onlinePluginsCache.value.has(identifier)) {
+        return; // Already cached
+    }
+
+    try {
+        const resp = await fetch(`/api/admin/plugins/online/${encodeURIComponent(identifier)}`, {
+            credentials: 'include',
+        });
+
+        if (resp.ok) {
+            const data = await resp.json();
+            const packageData = data.data?.package;
+            if (packageData?.latest_version?.version) {
+                onlinePluginsCache.value.set(identifier, {
+                    version: packageData.latest_version.version,
+                    identifier: packageData.identifier,
+                });
+            }
+        }
+    } catch (error) {
+        console.error(`Failed to fetch online info for plugin ${identifier}:`, error);
+        // Silently fail - update checking is optional
+    }
+};
+
+/**
+ * Check for updates for all installed plugins
+ */
+const checkAllUpdates = async (): Promise<void> => {
+    if (updateCheckLoading.value) return;
+
+    updateCheckLoading.value = true;
+    try {
+        // Fetch online info for all installed plugins in parallel
+        const promises = plugins.value.map((plugin) => fetchOnlinePluginInfo(plugin.identifier));
+        await Promise.all(promises);
+
+        // Show banner if updates are found
+        if (pluginsWithUpdates.value.length > 0) {
+            showUpdatesBanner.value = true;
+        }
+    } catch (error) {
+        console.error('Failed to check for updates:', error);
+    } finally {
+        updateCheckLoading.value = false;
+    }
+};
+
+/**
+ * Check for update for a specific plugin and open install dialog
+ */
+const checkForUpdate = async (plugin: Plugin): Promise<void> => {
+    checkingUpdateId.value = plugin.identifier;
+    updateRequirementsLoading.value = true;
+    selectedPlugin.value = plugin;
+
+    try {
+        // Fetch requirements check which includes update info
+        const resp = await fetch(`/api/admin/plugins/online/${encodeURIComponent(plugin.identifier)}/check`, {
+            credentials: 'include',
+        });
+
+        if (!resp.ok) {
+            const errorMessage = await parseApiError(resp);
+            throw new Error(errorMessage);
+        }
+
+        const data = await resp.json();
+        const requirements = data.data;
+
+        if (requirements?.update_available) {
+            // Open install dialog for update
+            await openUpdateInstallDialog(plugin, requirements);
+        } else {
+            banner.value = {
+                type: 'info',
+                text: `${plugin.name || plugin.identifier} is already up to date`,
+            };
+        }
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to check for update';
+        banner.value = { type: 'error', text: errorMessage };
+    } finally {
+        checkingUpdateId.value = null;
+        updateRequirementsLoading.value = false;
+    }
+};
+
+/**
+ * Open update install dialog
+ */
+const openUpdateInstallDialog = async (plugin: Plugin, requirements: unknown): Promise<void> => {
+    updateDialogOpen.value = true;
+    updateRequirements.value = requirements as typeof updateRequirements.value;
+};
+
+/**
+ * Install update for a plugin
+ */
+const installUpdate = async (plugin: Plugin): Promise<void> => {
+    installingUpdateId.value = plugin.identifier;
+
+    try {
+        const resp = await fetch('/api/admin/plugins/online/install', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identifier: plugin.identifier }),
+        });
+
+        if (!resp.ok) {
+            const errorMessage = await parseApiError(resp);
+            throw new Error(errorMessage);
+        }
+
+        await resp.json();
+        await fetchPlugins();
+        await checkAllUpdates(); // Refresh update status
+
+        const oldVersion = updateRequirements.value?.installed_version || 'unknown';
+        const newVersion = updateRequirements.value?.latest_version || 'unknown';
+        banner.value = {
+            type: 'success',
+            text: `Updated ${plugin.name || plugin.identifier} from v${oldVersion} to v${newVersion} successfully`,
+        };
+
+        // Update banner visibility based on remaining updates
+        if (pluginsWithUpdates.value.length === 0) {
+            showUpdatesBanner.value = false;
+        }
+
+        updateDialogOpen.value = false;
+        updateRequirements.value = null;
+
+        // Reload page to load updated plugin CSS/JS
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to install update';
+        banner.value = { type: 'error', text: errorMessage };
+    } finally {
+        installingUpdateId.value = null;
+    }
 };
 
 /**
@@ -1264,6 +1646,8 @@ onMounted(async () => {
     if (!ok) return;
 
     await fetchPlugins();
+    // Check for updates in the background
+    checkAllUpdates();
 });
 </script>
 

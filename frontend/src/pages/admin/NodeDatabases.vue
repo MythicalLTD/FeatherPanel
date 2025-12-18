@@ -275,7 +275,6 @@
                                 :disabled="formLoading"
                                 placeholder="Enter password"
                             />
-                            <div class="text-xs text-muted-foreground">The password will not be encrypted!!!!</div>
                             <div v-if="formErrors.database_password" class="text-red-500 text-xs mt-1">
                                 {{ formErrors.database_password }}
                             </div>

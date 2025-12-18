@@ -33,21 +33,28 @@ import { Input } from '@/components/ui/input';
 import { useToast } from 'vue-toastification';
 import {
     AlertTriangle,
-    BarChart3,
+    CheckCircle2,
+    Cloud,
     Copy,
+    CreditCard,
+    Download,
     Eye,
     EyeOff,
     Key,
+    Link2,
     LockKeyhole,
+    LogIn,
+    Package,
     PlugZap,
     RefreshCw,
     Rocket,
     ShieldCheck,
     Sparkles,
+    TrendingUp,
+    Unlink,
     X,
     Zap,
 } from 'lucide-vue-next';
-// Dialog removed - using Teleport for full-screen overlay
 
 interface CredentialPair {
     publicKey: string;
@@ -60,10 +67,40 @@ interface CredentialResponse {
     cloudCredentials: CredentialPair;
 }
 
+interface CloudAccount {
+    provider: 'featherpanel' | 'mythicalcloud';
+    email?: string;
+    username?: string;
+    connected: boolean;
+    lastConnectedAt?: string;
+    apiToken?: string;
+}
+
+interface AIUsage {
+    totalRequests: number;
+    totalTokens: number;
+    currentPeriodCost: number;
+    currency: string;
+    periodStart: string;
+    periodEnd: string;
+}
+
+interface PremiumPlugin {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    currency: string;
+    version: string;
+    author: string;
+    installed: boolean;
+    icon?: string;
+}
+
 const breadcrumbs: BreadcrumbEntry[] = [
     { text: 'Dashboard', href: '/admin' },
     {
-        text: 'FeatherCloud Cloud Management',
+        text: 'Cloud Management',
         href: '/admin/cloud-management',
         isCurrent: true,
     },
@@ -99,6 +136,43 @@ const revealManualCloud = ref<boolean>(false);
 const isSavingManual = ref<boolean>(false);
 const isSavingCloud = ref<boolean>(false);
 const showExperimentalDialog = ref<boolean>(false);
+
+// Cloud account management
+const featherPanelAccount = reactive<CloudAccount>({
+    provider: 'featherpanel',
+    connected: false,
+});
+const mythicalCloudAccount = reactive<CloudAccount>({
+    provider: 'mythicalcloud',
+    connected: false,
+});
+
+const featherPanelLogin = reactive({
+    email: '',
+    password: '',
+    apiToken: '',
+    useApiToken: false,
+});
+const mythicalCloudLogin = reactive({
+    email: '',
+    password: '',
+    apiToken: '',
+    useApiToken: false,
+});
+
+const isConnectingFeatherPanel = ref<boolean>(false);
+const isConnectingMythicalCloud = ref<boolean>(false);
+const isDisconnectingFeatherPanel = ref<boolean>(false);
+const isDisconnectingMythicalCloud = ref<boolean>(false);
+
+// AI Usage billing
+const aiUsage = ref<AIUsage | null>(null);
+const isLoadingAIUsage = ref<boolean>(false);
+
+// Premium plugins
+const premiumPlugins = ref<PremiumPlugin[]>([]);
+const isLoadingPlugins = ref<boolean>(false);
+const installingPluginId = ref<string | null>(null);
 
 const hasPanelKeys = computed(() => Boolean(keys.panelCredentials.publicKey && keys.panelCredentials.privateKey));
 const hasCloudKeys = computed(() => Boolean(keys.cloudCredentials.publicKey && keys.cloudCredentials.privateKey));
@@ -229,8 +303,194 @@ const saveCloudKeys = async (): Promise<void> => {
 
 const EXPERIMENTAL_DIALOG_DISMISSED_KEY = 'feathercloud-experimental-dialog-dismissed';
 
+const connectFeatherPanelAccount = async (): Promise<void> => {
+    if (
+        !featherPanelLogin.email ||
+        (!featherPanelLogin.useApiToken && !featherPanelLogin.password) ||
+        (featherPanelLogin.useApiToken && !featherPanelLogin.apiToken)
+    ) {
+        toast.error('Please provide email and password or API token');
+        return;
+    }
+
+    isConnectingFeatherPanel.value = true;
+    try {
+        const response = await axios.put('/api/admin/cloud/accounts/featherpanel', {
+            email: featherPanelLogin.email,
+            password: featherPanelLogin.useApiToken ? undefined : featherPanelLogin.password,
+            api_token: featherPanelLogin.useApiToken ? featherPanelLogin.apiToken : undefined,
+        });
+
+        if (response.data && response.data.success) {
+            const data = response.data.data;
+            featherPanelAccount.email = data.email;
+            featherPanelAccount.username = data.username;
+            featherPanelAccount.connected = true;
+            featherPanelAccount.lastConnectedAt = data.last_connected_at;
+            featherPanelLogin.password = '';
+            featherPanelLogin.apiToken = '';
+            toast.success('FeatherPanel Cloud account connected successfully');
+            await fetchAIUsage();
+            await fetchPremiumPlugins();
+        }
+    } catch (error) {
+        toast.error('Failed to connect FeatherPanel Cloud account');
+        console.error(error);
+    } finally {
+        isConnectingFeatherPanel.value = false;
+    }
+};
+
+const connectMythicalCloudAccount = async (): Promise<void> => {
+    if (
+        !mythicalCloudLogin.email ||
+        (!mythicalCloudLogin.useApiToken && !mythicalCloudLogin.password) ||
+        (mythicalCloudLogin.useApiToken && !mythicalCloudLogin.apiToken)
+    ) {
+        toast.error('Please provide email and password or API token');
+        return;
+    }
+
+    isConnectingMythicalCloud.value = true;
+    try {
+        const response = await axios.put('/api/admin/cloud/accounts/mythicalcloud', {
+            email: mythicalCloudLogin.email,
+            password: mythicalCloudLogin.useApiToken ? undefined : mythicalCloudLogin.password,
+            api_token: mythicalCloudLogin.useApiToken ? mythicalCloudLogin.apiToken : undefined,
+        });
+
+        if (response.data && response.data.success) {
+            const data = response.data.data;
+            mythicalCloudAccount.email = data.email;
+            mythicalCloudAccount.username = data.username;
+            mythicalCloudAccount.connected = true;
+            mythicalCloudAccount.lastConnectedAt = data.last_connected_at;
+            mythicalCloudLogin.password = '';
+            mythicalCloudLogin.apiToken = '';
+            toast.success('MythicalCloud account connected successfully');
+            await fetchAIUsage();
+            await fetchPremiumPlugins();
+        }
+    } catch (error) {
+        toast.error('Failed to connect MythicalCloud account');
+        console.error(error);
+    } finally {
+        isConnectingMythicalCloud.value = false;
+    }
+};
+
+const disconnectFeatherPanelAccount = async (): Promise<void> => {
+    isDisconnectingFeatherPanel.value = true;
+    try {
+        await axios.delete('/api/admin/cloud/accounts/featherpanel');
+        featherPanelAccount.connected = false;
+        featherPanelAccount.email = undefined;
+        featherPanelAccount.username = undefined;
+        featherPanelAccount.lastConnectedAt = undefined;
+        toast.success('FeatherPanel Cloud account disconnected');
+        aiUsage.value = null;
+        premiumPlugins.value = [];
+    } catch (error) {
+        toast.error('Failed to disconnect FeatherPanel Cloud account');
+        console.error(error);
+    } finally {
+        isDisconnectingFeatherPanel.value = false;
+    }
+};
+
+const disconnectMythicalCloudAccount = async (): Promise<void> => {
+    isDisconnectingMythicalCloud.value = true;
+    try {
+        await axios.delete('/api/admin/cloud/accounts/mythicalcloud');
+        mythicalCloudAccount.connected = false;
+        mythicalCloudAccount.email = undefined;
+        mythicalCloudAccount.username = undefined;
+        mythicalCloudAccount.lastConnectedAt = undefined;
+        toast.success('MythicalCloud account disconnected');
+        aiUsage.value = null;
+        premiumPlugins.value = [];
+    } catch (error) {
+        toast.error('Failed to disconnect MythicalCloud account');
+        console.error(error);
+    } finally {
+        isDisconnectingMythicalCloud.value = false;
+    }
+};
+
+const fetchAIUsage = async (): Promise<void> => {
+    if (!featherPanelAccount.connected && !mythicalCloudAccount.connected) {
+        return;
+    }
+
+    isLoadingAIUsage.value = true;
+    try {
+        const response = await axios.get('/api/admin/cloud/ai-usage');
+        if (response.data && response.data.success) {
+            aiUsage.value = response.data.data;
+        }
+    } catch (error) {
+        console.error('Failed to fetch AI usage:', error);
+    } finally {
+        isLoadingAIUsage.value = false;
+    }
+};
+
+const fetchPremiumPlugins = async (): Promise<void> => {
+    if (!featherPanelAccount.connected && !mythicalCloudAccount.connected) {
+        return;
+    }
+
+    isLoadingPlugins.value = true;
+    try {
+        const response = await axios.get('/api/admin/cloud/plugins');
+        if (response.data && response.data.success) {
+            premiumPlugins.value = response.data.data.plugins || [];
+        }
+    } catch (error) {
+        console.error('Failed to fetch premium plugins:', error);
+    } finally {
+        isLoadingPlugins.value = false;
+    }
+};
+
+const installPlugin = async (pluginId: string): Promise<void> => {
+    installingPluginId.value = pluginId;
+    try {
+        const response = await axios.post(`/api/admin/cloud/plugins/${pluginId}/install`);
+        if (response.data && response.data.success) {
+            toast.success('Plugin installed successfully');
+            await fetchPremiumPlugins();
+        }
+    } catch (error) {
+        toast.error('Failed to install plugin');
+        console.error(error);
+    } finally {
+        installingPluginId.value = null;
+    }
+};
+
+const fetchAccountStatus = async (): Promise<void> => {
+    try {
+        const response = await axios.get('/api/admin/cloud/accounts');
+        if (response.data && response.data.success) {
+            const data = response.data.data;
+            if (data.featherpanel) {
+                Object.assign(featherPanelAccount, data.featherpanel);
+            }
+            if (data.mythicalcloud) {
+                Object.assign(mythicalCloudAccount, data.mythicalcloud);
+            }
+        }
+    } catch (error) {
+        console.error('Failed to fetch account status:', error);
+    }
+};
+
 onMounted(() => {
     void fetchKeys();
+    void fetchAccountStatus();
+    void fetchAIUsage();
+    void fetchPremiumPlugins();
 
     // Show experimental dialog if not dismissed
     const isDismissed = localStorage.getItem(EXPERIMENTAL_DIALOG_DISMISSED_KEY);
@@ -514,11 +774,11 @@ watch(
                         </Badge>
                         <div class="space-y-4">
                             <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-                                FeatherCloud Cloud Management
+                                Cloud Management
                             </h1>
                             <p class="max-w-2xl text-base text-muted-foreground sm:text-lg">
-                                Securely manage the keys that allow FeatherCloud infrastructure to authenticate and
-                                communicate with your FeatherPanel deployment.
+                                Connect your FeatherPanel Cloud and MythicalCloud accounts to access premium plugins,
+                                track AI usage billing, and manage cloud credentials—all without logging in every time.
                             </p>
                         </div>
                         <div class="flex flex-wrap gap-3">
@@ -691,6 +951,385 @@ watch(
                 </div>
             </section>
 
+            <!-- Cloud Account Connections -->
+            <section class="grid gap-6 lg:grid-cols-2">
+                <Card class="border border-border/70 bg-background/95">
+                    <CardHeader>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <CardTitle class="text-xl font-semibold text-foreground flex items-center gap-2">
+                                    <Cloud class="h-5 w-5 text-primary" />
+                                    FeatherPanel Cloud
+                                </CardTitle>
+                                <CardDescription class="text-sm text-muted-foreground mt-1">
+                                    Connect your FeatherPanel Cloud account to access premium plugins and AI services.
+                                </CardDescription>
+                            </div>
+                            <Badge
+                                v-if="featherPanelAccount.connected"
+                                variant="outline"
+                                class="border-green-500/30 bg-green-500/10 text-green-600"
+                            >
+                                <CheckCircle2 class="h-3 w-3 mr-1" />
+                                Connected
+                            </Badge>
+                            <Badge v-else variant="outline" class="border-muted-foreground/30"> Disconnected </Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent class="space-y-4">
+                        <div v-if="featherPanelAccount.connected" class="space-y-3">
+                            <div class="rounded-lg border border-border/60 bg-muted/30 p-3">
+                                <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                    Account
+                                </p>
+                                <p class="text-sm font-medium text-foreground">
+                                    {{ featherPanelAccount.email || featherPanelAccount.username }}
+                                </p>
+                                <p
+                                    v-if="featherPanelAccount.lastConnectedAt"
+                                    class="text-[11px] text-muted-foreground mt-1"
+                                >
+                                    Connected: {{ new Date(featherPanelAccount.lastConnectedAt).toLocaleString() }}
+                                </p>
+                            </div>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                :disabled="isDisconnectingFeatherPanel"
+                                class="w-full"
+                                @click="disconnectFeatherPanelAccount"
+                            >
+                                <Unlink class="h-4 w-4 mr-2" />
+                                <span v-if="isDisconnectingFeatherPanel">Disconnecting...</span>
+                                <span v-else>Disconnect Account</span>
+                            </Button>
+                        </div>
+                        <div v-else class="space-y-4">
+                            <div class="space-y-2">
+                                <label class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                    Email
+                                </label>
+                                <Input
+                                    v-model="featherPanelLogin.email"
+                                    type="email"
+                                    placeholder="your@email.com"
+                                    class="text-sm"
+                                    autocomplete="off"
+                                />
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input
+                                    id="fp-use-token"
+                                    v-model="featherPanelLogin.useApiToken"
+                                    type="checkbox"
+                                    class="h-4 w-4 rounded border-border"
+                                />
+                                <label for="fp-use-token" class="text-sm text-muted-foreground cursor-pointer">
+                                    Use API token instead of password
+                                </label>
+                            </div>
+                            <div v-if="!featherPanelLogin.useApiToken" class="space-y-2">
+                                <label class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                    Password
+                                </label>
+                                <Input
+                                    v-model="featherPanelLogin.password"
+                                    type="password"
+                                    placeholder="Enter your password"
+                                    class="text-sm"
+                                    autocomplete="off"
+                                />
+                            </div>
+                            <div v-else class="space-y-2">
+                                <label class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                    API Token
+                                </label>
+                                <Input
+                                    v-model="featherPanelLogin.apiToken"
+                                    type="password"
+                                    placeholder="Enter your API token"
+                                    class="text-sm"
+                                    autocomplete="off"
+                                />
+                            </div>
+                            <Button
+                                :disabled="isConnectingFeatherPanel"
+                                class="w-full"
+                                @click="connectFeatherPanelAccount"
+                            >
+                                <LogIn class="h-4 w-4 mr-2" />
+                                <span v-if="isConnectingFeatherPanel">Connecting...</span>
+                                <span v-else>Connect Account</span>
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card class="border border-border/70 bg-background/95">
+                    <CardHeader>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <CardTitle class="text-xl font-semibold text-foreground flex items-center gap-2">
+                                    <Sparkles class="h-5 w-5 text-primary" />
+                                    MythicalCloud
+                                </CardTitle>
+                                <CardDescription class="text-sm text-muted-foreground mt-1">
+                                    Connect your MythicalCloud account for additional services and integrations.
+                                </CardDescription>
+                            </div>
+                            <Badge
+                                v-if="mythicalCloudAccount.connected"
+                                variant="outline"
+                                class="border-green-500/30 bg-green-500/10 text-green-600"
+                            >
+                                <CheckCircle2 class="h-3 w-3 mr-1" />
+                                Connected
+                            </Badge>
+                            <Badge v-else variant="outline" class="border-muted-foreground/30"> Disconnected </Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent class="space-y-4">
+                        <div v-if="mythicalCloudAccount.connected" class="space-y-3">
+                            <div class="rounded-lg border border-border/60 bg-muted/30 p-3">
+                                <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                    Account
+                                </p>
+                                <p class="text-sm font-medium text-foreground">
+                                    {{ mythicalCloudAccount.email || mythicalCloudAccount.username }}
+                                </p>
+                                <p
+                                    v-if="mythicalCloudAccount.lastConnectedAt"
+                                    class="text-[11px] text-muted-foreground mt-1"
+                                >
+                                    Connected: {{ new Date(mythicalCloudAccount.lastConnectedAt).toLocaleString() }}
+                                </p>
+                            </div>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                :disabled="isDisconnectingMythicalCloud"
+                                class="w-full"
+                                @click="disconnectMythicalCloudAccount"
+                            >
+                                <Unlink class="h-4 w-4 mr-2" />
+                                <span v-if="isDisconnectingMythicalCloud">Disconnecting...</span>
+                                <span v-else>Disconnect Account</span>
+                            </Button>
+                        </div>
+                        <div v-else class="space-y-4">
+                            <div class="space-y-2">
+                                <label class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                    Email
+                                </label>
+                                <Input
+                                    v-model="mythicalCloudLogin.email"
+                                    type="email"
+                                    placeholder="your@email.com"
+                                    class="text-sm"
+                                    autocomplete="off"
+                                />
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input
+                                    id="mc-use-token"
+                                    v-model="mythicalCloudLogin.useApiToken"
+                                    type="checkbox"
+                                    class="h-4 w-4 rounded border-border"
+                                />
+                                <label for="mc-use-token" class="text-sm text-muted-foreground cursor-pointer">
+                                    Use API token instead of password
+                                </label>
+                            </div>
+                            <div v-if="!mythicalCloudLogin.useApiToken" class="space-y-2">
+                                <label class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                    Password
+                                </label>
+                                <Input
+                                    v-model="mythicalCloudLogin.password"
+                                    type="password"
+                                    placeholder="Enter your password"
+                                    class="text-sm"
+                                    autocomplete="off"
+                                />
+                            </div>
+                            <div v-else class="space-y-2">
+                                <label class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                    API Token
+                                </label>
+                                <Input
+                                    v-model="mythicalCloudLogin.apiToken"
+                                    type="password"
+                                    placeholder="Enter your API token"
+                                    class="text-sm"
+                                    autocomplete="off"
+                                />
+                            </div>
+                            <Button
+                                :disabled="isConnectingMythicalCloud"
+                                class="w-full"
+                                @click="connectMythicalCloudAccount"
+                            >
+                                <LogIn class="h-4 w-4 mr-2" />
+                                <span v-if="isConnectingMythicalCloud">Connecting...</span>
+                                <span v-else>Connect Account</span>
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </section>
+
+            <!-- AI Usage Billing -->
+            <section v-if="featherPanelAccount.connected || mythicalCloudAccount.connected">
+                <Card class="border border-border/70 bg-background/95">
+                    <CardHeader>
+                        <CardTitle class="text-xl font-semibold text-foreground flex items-center gap-2">
+                            <TrendingUp class="h-5 w-5 text-primary" />
+                            AI Usage & Billing
+                        </CardTitle>
+                        <CardDescription class="text-sm text-muted-foreground">
+                            Track your AI usage and billing information across connected cloud accounts.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div v-if="isLoadingAIUsage" class="flex items-center justify-center py-8">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"
+                                ></div>
+                                <span class="text-sm text-muted-foreground">Loading usage data...</span>
+                            </div>
+                        </div>
+                        <div v-else-if="aiUsage" class="grid gap-4 md:grid-cols-3">
+                            <div class="rounded-xl border border-border/60 bg-muted/30 p-4">
+                                <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+                                    Total Requests
+                                </p>
+                                <p class="text-2xl font-bold text-foreground">
+                                    {{ aiUsage.totalRequests.toLocaleString() }}
+                                </p>
+                            </div>
+                            <div class="rounded-xl border border-border/60 bg-muted/30 p-4">
+                                <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+                                    Total Tokens
+                                </p>
+                                <p class="text-2xl font-bold text-foreground">
+                                    {{ aiUsage.totalTokens.toLocaleString() }}
+                                </p>
+                            </div>
+                            <div class="rounded-xl border border-border/60 bg-muted/30 p-4">
+                                <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+                                    Current Period Cost
+                                </p>
+                                <p class="text-2xl font-bold text-foreground">
+                                    {{ aiUsage.currency }}{{ aiUsage.currentPeriodCost.toFixed(2) }}
+                                </p>
+                                <p class="text-[11px] text-muted-foreground mt-1">
+                                    {{ new Date(aiUsage.periodStart).toLocaleDateString() }} -
+                                    {{ new Date(aiUsage.periodEnd).toLocaleDateString() }}
+                                </p>
+                            </div>
+                        </div>
+                        <div v-else class="text-center py-8">
+                            <p class="text-sm text-muted-foreground">No usage data available</p>
+                        </div>
+                    </CardContent>
+                </Card>
+            </section>
+
+            <!-- Premium Plugins -->
+            <section v-if="featherPanelAccount.connected || mythicalCloudAccount.connected">
+                <Card class="border border-border/70 bg-background/95">
+                    <CardHeader>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <CardTitle class="text-xl font-semibold text-foreground flex items-center gap-2">
+                                    <Package class="h-5 w-5 text-primary" />
+                                    Premium Plugins
+                                </CardTitle>
+                                <CardDescription class="text-sm text-muted-foreground">
+                                    Browse and install premium plugins from the marketplace.
+                                </CardDescription>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                :disabled="isLoadingPlugins"
+                                @click="fetchPremiumPlugins"
+                            >
+                                <RefreshCw :class="['h-4 w-4', isLoadingPlugins && 'animate-spin']" />
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div v-if="isLoadingPlugins" class="flex items-center justify-center py-8">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"
+                                ></div>
+                                <span class="text-sm text-muted-foreground">Loading plugins...</span>
+                            </div>
+                        </div>
+                        <div v-else-if="premiumPlugins.length > 0" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            <Card
+                                v-for="plugin in premiumPlugins"
+                                :key="plugin.id"
+                                class="border border-border/70 bg-background/95 hover:border-primary/50 transition-colors"
+                            >
+                                <CardHeader>
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <CardTitle class="text-lg font-semibold text-foreground">
+                                                {{ plugin.name }}
+                                            </CardTitle>
+                                            <CardDescription class="text-sm text-muted-foreground mt-1">
+                                                {{ plugin.description }}
+                                            </CardDescription>
+                                        </div>
+                                        <Badge v-if="plugin.installed" variant="outline" class="border-green-500/30">
+                                            Installed
+                                        </Badge>
+                                    </div>
+                                </CardHeader>
+                                <CardContent class="space-y-3">
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span class="text-muted-foreground">Version</span>
+                                        <span class="font-medium text-foreground">{{ plugin.version }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span class="text-muted-foreground">Author</span>
+                                        <span class="font-medium text-foreground">{{ plugin.author }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span class="text-muted-foreground">Price</span>
+                                        <span class="font-bold text-foreground">
+                                            {{ plugin.currency }}{{ plugin.price.toFixed(2) }}
+                                        </span>
+                                    </div>
+                                    <Button
+                                        v-if="!plugin.installed"
+                                        :disabled="installingPluginId === plugin.id"
+                                        class="w-full"
+                                        @click="installPlugin(plugin.id)"
+                                    >
+                                        <Download class="h-4 w-4 mr-2" />
+                                        <span v-if="installingPluginId === plugin.id">Installing...</span>
+                                        <span v-else>Install Plugin</span>
+                                    </Button>
+                                    <Button v-else variant="outline" class="w-full" disabled>
+                                        <CheckCircle2 class="h-4 w-4 mr-2" />
+                                        Installed
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </div>
+                        <div v-else class="text-center py-8">
+                            <p class="text-sm text-muted-foreground">No premium plugins available</p>
+                        </div>
+                    </CardContent>
+                </Card>
+            </section>
+
+            <!-- Credential Management Section -->
             <section class="grid gap-6 lg:grid-cols-2">
                 <Card class="border border-border/70 bg-background/95">
                     <CardHeader>
@@ -897,32 +1536,32 @@ watch(
                 <Card
                     v-for="block in [
                         {
-                            id: 'auth',
-                            title: 'Authenticated API calls',
+                            id: 'accounts',
+                            title: 'Cloud Accounts',
                             description:
-                                'Use these credentials when calling FeatherPanel APIs from FeatherCloud to deploy, scale, or monitor workloads.',
-                            icon: PlugZap,
+                                'Connect FeatherPanel Cloud and MythicalCloud accounts to access premium features without logging in every time.',
+                            icon: Cloud,
+                        },
+                        {
+                            id: 'plugins',
+                            title: 'Premium Plugins',
+                            description:
+                                'Browse and install premium plugins directly from the marketplace with automatic updates and support.',
+                            icon: Package,
+                        },
+                        {
+                            id: 'billing',
+                            title: 'AI Usage Billing',
+                            description:
+                                'Track your AI usage, token consumption, and billing information in real-time across all connected accounts.',
+                            icon: CreditCard,
                         },
                         {
                             id: 'security',
-                            title: 'Security best practices',
+                            title: 'Secure Storage',
                             description:
-                                'Store keys in your secrets manager, rotate them on a scheduled basis, and restrict access to automation pipelines.',
+                                'Account credentials are encrypted and stored securely, allowing seamless access without repeated logins.',
                             icon: ShieldCheck,
-                        },
-                        {
-                            id: 'scoped',
-                            title: 'Scoped integrations',
-                            description:
-                                'Keys inherit the permissions granted to the issuing administrator, ensuring tight control over FeatherCloud actions.',
-                            icon: LockKeyhole,
-                        },
-                        {
-                            id: 'observability',
-                            title: 'Observability ready',
-                            description:
-                                'Every API call performed with these keys is logged within FeatherPanel for traceability and auditing.',
-                            icon: BarChart3,
                         },
                     ]"
                     :key="block.id"
@@ -948,29 +1587,43 @@ watch(
             <section class="grid gap-6 lg:grid-cols-2">
                 <Card class="border border-border/70 bg-background/95">
                     <CardHeader>
-                        <CardTitle class="text-xl font-semibold text-foreground">Integration checklist</CardTitle>
+                        <CardTitle class="text-xl font-semibold text-foreground flex items-center gap-2">
+                            <Link2 class="h-5 w-5 text-primary" />
+                            Getting Started
+                        </CardTitle>
                         <CardDescription class="text-sm text-muted-foreground">
-                            Follow these steps to connect FeatherCloud services to your FeatherPanel deployment.
+                            Follow these steps to connect your cloud accounts and start using premium features.
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-4">
                         <ol class="space-y-3 text-sm text-muted-foreground">
-                            <li>
-                                <strong class="text-foreground">1. Store keys securely:</strong> Add both keys to your
-                                automation environment variables or secret manager.
+                            <li class="flex items-start gap-2">
+                                <span class="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                                <span>
+                                    <strong class="text-foreground">Connect your accounts:</strong> Use your email and
+                                    password or API token to connect FeatherPanel Cloud and/or MythicalCloud accounts.
+                                </span>
                             </li>
-                            <li>
-                                <strong class="text-foreground">2. Configure FeatherCloud:</strong> Supply keys when you
-                                register your panel endpoint in FeatherCloud.
+                            <li class="flex items-start gap-2">
+                                <span class="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                                <span>
+                                    <strong class="text-foreground">Browse premium plugins:</strong> Once connected, you
+                                    can browse and install premium plugins directly from the marketplace.
+                                </span>
                             </li>
-                            <li>
-                                <strong class="text-foreground">3. Confirm in settings:</strong> Visit
-                                <span class="font-semibold text-foreground">Settings → Security → FeatherCloud</span> to
-                                verify the rotated keys are stored and scoped correctly.
+                            <li class="flex items-start gap-2">
+                                <span class="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                                <span>
+                                    <strong class="text-foreground">Track AI usage:</strong> Monitor your AI usage,
+                                    token consumption, and billing information in real-time.
+                                </span>
                             </li>
-                            <li>
-                                <strong class="text-foreground">4. Monitor usage:</strong> Review audit logs and usage
-                                KPIs inside FeatherPanel to ensure integrations are behaving as expected.
+                            <li class="flex items-start gap-2">
+                                <span class="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                                <span>
+                                    <strong class="text-foreground">No repeated logins:</strong> Your credentials are
+                                    stored securely, so you won't need to log in every time you use cloud features.
+                                </span>
                             </li>
                         </ol>
                     </CardContent>
@@ -978,26 +1631,26 @@ watch(
 
                 <Card class="border border-border/70 bg-background/95">
                     <CardHeader>
-                        <CardTitle class="text-xl font-semibold text-foreground">Manage keys from settings</CardTitle>
+                        <CardTitle class="text-xl font-semibold text-foreground flex items-center gap-2">
+                            <ShieldCheck class="h-5 w-5 text-primary" />
+                            Security & Privacy
+                        </CardTitle>
                         <CardDescription class="text-sm text-muted-foreground">
-                            FeatherPanel settings remain the source of truth for cloud credentials—rotate or revoke
-                            access without leaving the admin panel.
+                            Your account credentials are encrypted and stored securely.
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-4 text-sm text-muted-foreground">
                         <p>
-                            Access
-                            <span class="font-semibold text-foreground">Settings → Security → FeatherCloud</span> to
-                            create or revoke keys, then return here to copy them into your automation pipelines.
+                            All account credentials are encrypted at rest and transmitted over secure connections. API
+                            tokens are preferred over passwords for enhanced security.
                         </p>
                         <p>
-                            Restrict who can rotate credentials by managing the
-                            <code>admin.settings.edit</code> permission on administrator roles. Every rotation is logged
-                            for auditing.
+                            You can disconnect your accounts at any time, which will immediately revoke access and clear
+                            stored credentials. Reconnect when needed to restore access to premium features.
                         </p>
                         <p>
-                            Once keys are in place, configure FeatherCloud services to authenticate using the public and
-                            private pair shown above—no additional endpoint knowledge required.
+                            AI usage data and billing information are fetched in real-time from your connected accounts
+                            and are not stored locally.
                         </p>
                     </CardContent>
                 </Card>
