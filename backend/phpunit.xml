@@ -26,7 +26,6 @@
 			<file>tests/FileManagerControllerTest.php</file>
 			<file>tests/ImagesControllerTest.php</file>
 			<file>tests/LocationsControllerTest.php</file>
-			<file>tests/LogViewerControllerTest.php</file>
 			<file>tests/MailTemplatesControllerTest.php</file>
 			<file>tests/NodesControllerTest.php</file>
 			<file>tests/PermissionsControllerTest.php</file>
