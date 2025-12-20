@@ -33,20 +33,13 @@ jobs:
       run:
         working-directory: backend
     services:
-      mysql:
+      database:
         image: mariadb:11
         env:
-          MYSQL_ROOT_PASSWORD: rootpassword
-          MYSQL_DATABASE: featherpanel_test
-          MYSQL_USER: testuser
-          MYSQL_PASSWORD: testpassword
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: testing
         ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping --silent"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
+          - 3306
     steps:
       - name: Code Checkout
         uses: actions/checkout@v4
@@ -68,25 +61,15 @@ jobs:
         run: |
           cat > storage/config/.env <<EOF
           DATABASE_HOST=127.0.0.1
-          DATABASE_PORT=3306
-          DATABASE_DATABASE=featherpanel_test
-          DATABASE_USER=testuser
-          DATABASE_PASSWORD=testpassword
+          DATABASE_PORT=${{ job.services.database.ports[3306] }}
+          DATABASE_DATABASE=testing
+          DATABASE_USER=root
+          DATABASE_PASSWORD=
           DATABASE_ENCRYPTION="xchacha20"
           DATABASE_ENCRYPTION_KEY="${{ steps.encryption_key.outputs.key }}"
           REDIS_HOST=127.0.0.1
           REDIS_PASSWORD=testredis
           EOF
-      - name: Wait for MySQL
-        run: |
-          echo "Waiting for MySQL to be ready..."
-          for i in {1..30}; do
-            if php -r "try { \$pdo = new PDO('mysql:host=127.0.0.1;port=3306;dbname=featherpanel_test', 'testuser', 'testpassword'); echo 'MySQL is ready!'; exit(0); } catch (Exception \$e) { exit(1); }" 2>/dev/null; then
-              break
-            fi
-            echo "Attempt $i/30: MySQL not ready yet, waiting..."
-            sleep 2
-          done
       - name: Run migrations
         run: php cli migrate
       - name: Run tests
