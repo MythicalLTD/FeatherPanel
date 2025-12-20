@@ -11,6 +11,7 @@
 - Plugins can now specify a unique cloud plugin ID, enabling them to automatically detect and fetch their own updates from the cloud. by @nayskutzu
 - Plugins can now specify an exact panel version requirement, not just an SDK version—offering greater precision and reliability for compatibility! by @nayskutzu
 - Introduced the new `--skip-path-check` command-line option, allowing developers and advanced users to bypass automatic path validation when running CLI actions. by @nayskutzu
+- Instantly sync your appearance settings to the cloud with the new one click option—no more 5-minute wait times. by @nayskutzu
 
 ### Improved
 

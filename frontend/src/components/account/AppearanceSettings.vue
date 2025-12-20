@@ -364,8 +364,19 @@
             </div>
         </div>
 
-        <!-- Reset Button -->
-        <div class="pt-4 border-t border-border">
+        <!-- Sync and Reset Buttons -->
+        <div class="pt-4 border-t border-border space-y-3">
+            <Button
+                variant="default"
+                class="w-full"
+                :disabled="preferencesStore.isSyncing"
+                data-umami-event="Sync preferences to cloud"
+                @click="handleSyncNow"
+            >
+                <CloudUpload class="h-4 w-4 mr-2" />
+                <span v-if="preferencesStore.isSyncing">{{ $t('account.syncing') }}</span>
+                <span v-else>{{ $t('account.syncToCloud') }}</span>
+            </Button>
             <Button
                 variant="outline"
                 class="w-full"
@@ -412,7 +423,7 @@ import { useI18n } from 'vue-i18n';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Sun, Moon, Upload, RotateCcw, Eye, EyeOff, PanelLeft } from 'lucide-vue-next';
+import { Sun, Moon, Upload, RotateCcw, Eye, EyeOff, PanelLeft, CloudUpload } from 'lucide-vue-next';
 import { useTheme } from '@/composables/useTheme';
 import { useColorTheme, type ColorTheme, type AccentColor } from '@/composables/useColorTheme';
 import { useLanguage } from '@/composables/useLanguage';
@@ -420,8 +431,12 @@ import { useSidebarState, type SidebarVisibility } from '@/composables/useSideba
 import { useBackground } from '@/composables/useBackground';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
+import { usePreferencesStore } from '@/stores/preferences';
+import { useToast } from 'vue-toastification';
 
 const { t: $t } = useI18n();
+const toast = useToast();
+const preferencesStore = usePreferencesStore();
 const { isDark, toggleTheme, setTheme } = useTheme();
 const {
     currentColorTheme,
@@ -925,6 +940,16 @@ const updateDockOpacity = () => {
     document.documentElement.style.setProperty('--dock-opacity', `${dockOpacity.value / 100}`);
     localStorage.setItem('dock-opacity', dockOpacity.value.toString());
     // Auto-sync will handle backend update every 5 minutes
+};
+
+// Handle manual sync to cloud
+const handleSyncNow = async () => {
+    const success = await preferencesStore.syncNow();
+    if (success) {
+        toast.success($t('account.syncSuccess') || 'Preferences synced to cloud successfully!');
+    } else {
+        toast.error($t('account.syncError') || 'Failed to sync preferences to cloud');
+    }
 };
 
 // Reset all settings
