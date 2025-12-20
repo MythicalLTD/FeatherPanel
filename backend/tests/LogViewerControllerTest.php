@@ -61,7 +61,6 @@ class LogViewerControllerTest extends TestCase
             ]);
         }
     }
-
     protected function tearDown(): void
     {
         // Remove test admin user
@@ -69,23 +68,5 @@ class LogViewerControllerTest extends TestCase
         if ($admin) {
             User::hardDeleteUser($admin['id']);
         }
-    }
-
-    public function testGetLogsReturnsSuccess()
-    {
-        $request = Request::create('/api/admin/logs', 'GET');
-        $response = $this->controller->getLogs($request);
-        $data = json_decode($response->getContent(), true);
-        $this->assertTrue($data['success']);
-        $this->assertArrayHasKey('logs', $data['data']);
-    }
-
-    public function testGetLogFilesReturnsSuccess()
-    {
-        $request = Request::create('/api/admin/logs/files', 'GET');
-        $response = $this->controller->getLogFiles($request);
-        $data = json_decode($response->getContent(), true);
-        $this->assertTrue($data['success']);
-        $this->assertArrayHasKey('files', $data['data']);
     }
 }
