@@ -51,14 +51,24 @@ class App extends Utils\MinecraftColorCodeSupport
 
         self::$instance = $this;
 
-        $cwd = getcwd();
-        $validDirs = [
-            '/var/www/featherpanel',
-            '/var/www/html',
-            '/var/www/featherpanel/backend',
-        ];
-        if (!in_array($cwd, $validDirs, true)) {
-            exit('We detected that you are not running this command from the root directory of App. Please run this command from the root directory.');
+        // Check for the --skip-path-check flag and skip path validation if present
+        $skipPathCheck = in_array('--skip-path-check', $args, true);
+        if ($skipPathCheck) {
+            // Remove --skip-path-check from $args so it's not passed to the command handlers
+            $args = array_values(array_diff($args, ['--skip-path-check']));
+        }
+
+        // Only validate path if --skip-path-check is not set
+        if (!$skipPathCheck) {
+            $cwd = getcwd();
+            $validDirs = [
+                '/var/www/featherpanel',
+                '/var/www/html',
+                '/var/www/featherpanel/backend',
+            ];
+            if (!in_array($cwd, $validDirs, true)) {
+                exit('We detected that you are not running this command from the root directory of App. Please run this command from the root directory.');
+            }
         }
 
         // Check for the --no-colors flag and set color output accordingly

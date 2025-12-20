@@ -89,7 +89,7 @@ jobs:
           "
       - name: Run migrations
         run: |
-          php cli migrate
+          php cli migrate --skip-path-check
           MIGRATION_EXIT=$?
           if [ $MIGRATION_EXIT -ne 0 ]; then
             echo "Migration command exited with code $MIGRATION_EXIT"
