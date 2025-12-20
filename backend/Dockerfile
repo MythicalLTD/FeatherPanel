@@ -56,8 +56,8 @@ RUN --mount=type=cache,target=/tmp/pecl-cache \
     pecl install redis && docker-php-ext-enable redis
 
 # Install MongoDB extension with BuildKit cache mount
-RUN --mount=type=cache,target=/tmp/pecl-cache \
-    pecl install mongodb && docker-php-ext-enable mongodb
+#RUN --mount=type=cache,target=/tmp/pecl-cache \
+#    pecl install mongodb && docker-php-ext-enable mongodb
 
 # Reset environment variables
 ENV DEBIAN_FRONTEND=
