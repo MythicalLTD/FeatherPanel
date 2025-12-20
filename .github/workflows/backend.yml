@@ -73,11 +73,14 @@ jobs:
       - name: Verify database connection
         run: |
           php -r "
-          require_once 'boot/kernel.php';
-          \$app = \App\App::getInstance(true);
-          \$app->loadEnv();
+          \$env = parse_ini_file('storage/config/.env');
           try {
-            \$db = new \App\Chat\Database(\$_ENV['DATABASE_HOST'], \$_ENV['DATABASE_DATABASE'], \$_ENV['DATABASE_USER'], \$_ENV['DATABASE_PASSWORD'], \$_ENV['DATABASE_PORT']);
+            \$pdo = new PDO(
+              'mysql:host=' . \$env['DATABASE_HOST'] . ';port=' . \$env['DATABASE_PORT'] . ';dbname=' . \$env['DATABASE_DATABASE'],
+              \$env['DATABASE_USER'],
+              \$env['DATABASE_PASSWORD']
+            );
+            \$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             echo 'Database connection successful!' . PHP_EOL;
           } catch (Exception \$e) {
             echo 'Database connection failed: ' . \$e->getMessage() . PHP_EOL;
@@ -95,11 +98,13 @@ jobs:
       - name: Verify migrations ran
         run: |
           php -r "
-          require_once 'boot/kernel.php';
-          \$app = \App\App::getInstance(true);
-          \$app->loadEnv();
-          \$db = new \App\Chat\Database(\$_ENV['DATABASE_HOST'], \$_ENV['DATABASE_DATABASE'], \$_ENV['DATABASE_USER'], \$_ENV['DATABASE_PASSWORD'], \$_ENV['DATABASE_PORT']);
-          \$pdo = \$db->getPdo();
+          \$env = parse_ini_file('storage/config/.env');
+          \$pdo = new PDO(
+            'mysql:host=' . \$env['DATABASE_HOST'] . ';port=' . \$env['DATABASE_PORT'] . ';dbname=' . \$env['DATABASE_DATABASE'],
+            \$env['DATABASE_USER'],
+            \$env['DATABASE_PASSWORD']
+          );
+          \$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
           \$tables = \$pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
           echo 'Tables created: ' . count(\$tables) . PHP_EOL;
           if (count(\$tables) < 5) {
