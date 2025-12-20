@@ -922,35 +922,31 @@ class CloudPluginsController
                 return ApiResponse::error('Failed to prepare addons directory', 'ADDONS_DIR_CREATE_FAILED', 500);
             }
 
-            // Fetch package metadata to get download URL from the new API
-            $metaUrl = 'https://api.featherpanel.com/packages';
+            // Fetch package metadata directly by identifier (same approach as show method)
+            $base = 'https://api.featherpanel.com/packages/' . urlencode($identifier);
             $context = stream_context_create([
                 'http' => [
                     'timeout' => 15,
                     'ignore_errors' => true,
                 ],
             ]);
-            $metaResp = @file_get_contents($metaUrl, false, $context);
-            if ($metaResp === false) {
-                return ApiResponse::error('Failed to query packages API', 'PACKAGES_API_FAILED', 500);
+            $response = @file_get_contents($base, false, $context);
+            if ($response === false) {
+                return ApiResponse::error('Failed to fetch package details', 'PACKAGE_DETAILS_FETCH_FAILED', 500);
             }
-            $meta = json_decode($metaResp, true);
-            $packages = is_array($meta) && isset($meta['data']['packages']) && is_array($meta['data']['packages']) ? $meta['data']['packages'] : [];
-            $match = null;
-            foreach ($packages as $pkg) {
-                if (($pkg['name'] ?? '') === $identifier) {
-                    $match = $pkg;
-                    break;
-                }
-            }
-            if (!$match || !isset($match['latest_version']['download_url'])) {
+
+            $data = json_decode($response, true);
+            if (!is_array($data) || !isset($data['data']['package'])) {
                 return ApiResponse::error('Package not found in registry', 'PACKAGE_NOT_FOUND', 404);
             }
 
+            $pkg = $data['data']['package'];
+            $latestVersion = $data['data']['latest_version'] ?? [];
+
             // Check if addon is premium
-            $isPremium = isset($match['premium']) && (int) $match['premium'] === 1;
+            $isPremium = isset($pkg['premium']) && (int) $pkg['premium'] === 1;
             if ($isPremium) {
-                $premiumLink = $match['premium_link'] ?? null;
+                $premiumLink = $pkg['premium_link'] ?? null;
 
                 return ApiResponse::error(
                     'This is a premium addon and must be purchased',
@@ -958,11 +954,17 @@ class CloudPluginsController
                     402,
                     [
                         'premium_link' => $premiumLink,
-                        'premium_price' => $match['premium_price'] ?? null,
+                        'premium_price' => $pkg['premium_price'] ?? null,
                     ]
                 );
             }
-            $downloadUrl = 'https://api.featherpanel.com' . $match['latest_version']['download_url'];
+
+            // Get download URL from latest version
+            if (!isset($latestVersion['download_url'])) {
+                return ApiResponse::error('Package has no download URL available', 'PACKAGE_NO_DOWNLOAD_URL', 404);
+            }
+
+            $downloadUrl = 'https://api.featherpanel.com' . $latestVersion['download_url'];
             $fileContent = @file_get_contents($downloadUrl, false, $context);
             if ($fileContent === false) {
                 return ApiResponse::error('Failed to download addon package', 'ADDON_DOWNLOAD_FAILED', 500);

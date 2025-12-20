@@ -260,16 +260,14 @@ const sendServerCommand = async (command: 'start' | 'stop' | 'restart' | 'kill')
                         <span v-if="settingsStore.appName" class="font-semibold text-base truncate transition-opacity">
                             {{ settingsStore.appName }}
                         </span>
-                        <div
-                            v-if="router.currentRoute.value.path.startsWith('/admin')"
-                            class="inline-flex items-center gap-1.5"
-                        >
+                        <div class="inline-flex items-center gap-1.5">
                             <span
                                 class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-primary/10 text-primary border border-primary/20"
                             >
                                 v{{ settingsStore.appVersion }}
                             </span>
                             <span
+                                v-if="router.currentRoute.value.path.startsWith('/admin')"
                                 class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
                             >
                                 Admin Panel

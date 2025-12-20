@@ -1,5 +1,5 @@
 <template>
-    <DashboardLayout :breadcrumbs="breadcrumbs" :hide-footer="true">
+    <DashboardLayout :breadcrumbs="breadcrumbs">
         <div v-if="loading" class="flex items-center justify-center min-h-[calc(100vh-250px)]">
             <div class="text-gray-500">{{ t('common.loading') }}...</div>
         </div>

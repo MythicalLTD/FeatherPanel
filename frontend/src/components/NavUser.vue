@@ -23,7 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ChevronsUpDown, LogOut, Sparkles, User, Sun, Moon } from 'lucide-vue-next';
+import { ChevronsUpDown, LogOut, Sparkles, User, Sun, Moon, ArrowLeft } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 
@@ -155,6 +155,15 @@ const roleBadgeStyle = computed(() => {
 
                     <!-- Navigation Items -->
                     <DropdownMenuGroup class="space-y-1">
+                        <DropdownMenuItem
+                            v-if="isAdminRoute"
+                            class="cursor-pointer rounded-lg px-2 py-2.5 group hover:bg-primary/10"
+                            @click="router.push('/dashboard')"
+                        >
+                            <ArrowLeft class="size-4 mr-2 text-primary group-hover:scale-110 transition-transform" />
+                            <span class="font-medium">Back to Dashboard View</span>
+                        </DropdownMenuItem>
+
                         <DropdownMenuItem
                             v-if="user.hasAdminPanel && !isAdminRoute"
                             class="cursor-pointer rounded-lg px-2 py-2.5 group hover:bg-primary/10"

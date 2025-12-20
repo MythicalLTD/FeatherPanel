@@ -30,7 +30,6 @@ export const containerClass = 'w-full h-full';
 
 <script setup lang="ts">
 import AppSidebar from '@/components/AppSidebar.vue';
-import AppFooter from '@/components/AppFooter.vue';
 import MacDock from '@/components/MacDock.vue';
 import NotificationBanner from '@/components/NotificationBanner.vue';
 import HeaderActions from '@/components/HeaderActions.vue';
@@ -53,7 +52,7 @@ export interface BreadcrumbEntry {
     isCurrent?: boolean;
 }
 
-const props = defineProps<{ breadcrumbs?: BreadcrumbEntry[]; hideFooter?: boolean }>();
+const props = defineProps<{ breadcrumbs?: BreadcrumbEntry[] }>();
 
 const isSidebarVisible = computed(() => useLocalStorage('sidebar-visibility', 'visible').value !== 'hidden');
 
@@ -300,9 +299,6 @@ watch(
             <div class="flex flex-1 flex-col gap-4 p-3 sm:p-4 pt-0">
                 <slot />
             </div>
-
-            <!-- Footer -->
-            <AppFooter v-if="!hideFooter" />
         </SidebarInset>
 
         <!-- macOS Dock -->

@@ -39,9 +39,11 @@ const props = defineProps<{
 }>();
 import { useSettingsStore } from '@/stores/settings';
 import { usePreferencesStore } from '@/stores/preferences';
+import { useSessionStore } from '@/stores/session';
 
 const settingsStore = useSettingsStore();
 const preferencesStore = usePreferencesStore();
+const sessionStore = useSessionStore();
 const { t: $t } = useI18n();
 const router = useRouter();
 
@@ -211,6 +213,9 @@ async function onSubmit(e: Event) {
         });
         if (res.data && res.data.success) {
             success.value = res.data.message || $t('auth.registrationSuccess');
+
+            // Refresh session to get the new valid session data
+            await sessionStore.refreshSession();
 
             // Load and sync user preferences after successful registration (user is auto-logged in)
             try {

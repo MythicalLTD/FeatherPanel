@@ -73,9 +73,9 @@ export const useSessionStore = defineStore('session', {
         permissions: [] as Permissions,
     }),
     actions: {
-        async fetchSession() {
-            // Prevent multiple simultaneous fetches
-            if (this.isSessionChecked && this.user) {
+        async fetchSession(force = false) {
+            // Prevent multiple simultaneous fetches (unless forced)
+            if (!force && this.isSessionChecked && this.user) {
                 return true;
             }
 
@@ -94,6 +94,11 @@ export const useSessionStore = defineStore('session', {
                 this.isSessionChecked = true; // Mark as checked even if failed
                 return false;
             }
+        },
+        async refreshSession() {
+            // Force refresh by resetting the checked flag first
+            this.isSessionChecked = false;
+            return await this.fetchSession(true);
         },
         async checkSessionOrRedirect(router?: Router) {
             // If session already checked and user exists, return true

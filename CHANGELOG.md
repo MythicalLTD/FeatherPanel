@@ -25,6 +25,7 @@
 ### Fixed
 
 - Resolved an issue where the server proxy page could crash when enabling Let's Encrypt due to a conflict with the language manager. by @nayskutzu
+- Fixed an issue preventing registry packages from being detected and found correctly. by @nayskutzu
 
 ## v1.1.1 STABLE
 

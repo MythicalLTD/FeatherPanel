@@ -33,12 +33,14 @@ import { useI18n } from 'vue-i18n';
 import Turnstile from 'vue-turnstile';
 import { useSettingsStore } from '@/stores/settings';
 import { usePreferencesStore } from '@/stores/preferences';
+import { useSessionStore } from '@/stores/session';
 import { useRouter } from 'vue-router';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 
 const settingsStore = useSettingsStore();
 const preferencesStore = usePreferencesStore();
+const sessionStore = useSessionStore();
 
 onMounted(async () => {
     // Settings are fetched once in App.vue - no need to fetch here
@@ -185,6 +187,9 @@ async function handleDiscordLink(): Promise<void> {
                     if (loginRes.data && loginRes.data.success) {
                         success.value = loginRes.data.message || $t('auth.loginSuccess');
 
+                        // Refresh session to get the new valid session data
+                        await sessionStore.refreshSession();
+
                         // Load and sync user preferences after successful login
                         try {
                             // Initialize the store (set up listeners and load lastSyncTime)
@@ -238,6 +243,9 @@ async function handleDiscordLogin(token: string): Promise<void> {
         });
         if (res.data && res.data.success) {
             success.value = res.data.message || $t('auth.loginSuccess');
+
+            // Refresh session to get the new valid session data
+            await sessionStore.refreshSession();
 
             // Load and sync user preferences after successful login
             try {
@@ -297,6 +305,9 @@ async function handleSsoLogin(token: string): Promise<void> {
         });
         if (res.data && res.data.success) {
             success.value = res.data.message || $t('auth.loginSuccess');
+
+            // Refresh session to get the new valid session data
+            await sessionStore.refreshSession();
 
             // Load and sync user preferences after successful login
             try {
@@ -395,6 +406,9 @@ async function onSubmit(e: Event) {
         });
         if (res.data && res.data.success) {
             success.value = res.data.message || $t('auth.loginSuccess');
+
+            // Refresh session to get the new valid session data
+            await sessionStore.refreshSession();
 
             // Load and sync user preferences after successful login
             try {

@@ -52,12 +52,13 @@
                                     <option value="api-keys">{{ $t('account.apiKeys.title') }}</option>
                                     <option value="activity">{{ $t('account.activity.title') }}</option>
                                     <option value="mail">{{ $t('account.mail.title') }}</option>
+                                    <option value="licenses">Licenses & Third Party</option>
                                 </select>
                             </div>
 
                             <!-- Desktop: Use normal tabs -->
                             <div class="hidden sm:block">
-                                <TabsList class="grid w-full grid-cols-7">
+                                <TabsList class="grid w-full grid-cols-8">
                                     <TabsTrigger value="profile">{{ $t('account.profile') }}</TabsTrigger>
                                     <TabsTrigger value="settings">{{ $t('account.settings') }}</TabsTrigger>
                                     <TabsTrigger value="appearance">{{ $t('account.appearance') }}</TabsTrigger>
@@ -65,6 +66,7 @@
                                     <TabsTrigger value="api-keys">{{ $t('account.apiKeys.title') }}</TabsTrigger>
                                     <TabsTrigger value="activity">{{ $t('account.activity.title') }}</TabsTrigger>
                                     <TabsTrigger value="mail">{{ $t('account.mail.title') }}</TabsTrigger>
+                                    <TabsTrigger value="licenses">Licenses</TabsTrigger>
                                 </TabsList>
                             </div>
                             <TabsContent value="profile" class="mt-4 sm:mt-6">
@@ -87,6 +89,9 @@
                             </TabsContent>
                             <TabsContent value="mail" class="mt-4 sm:mt-6">
                                 <MailList />
+                            </TabsContent>
+                            <TabsContent value="licenses" class="mt-4 sm:mt-6">
+                                <LicensesAndThirdParty />
                             </TabsContent>
                         </Tabs>
                     </div>
@@ -142,6 +147,7 @@ import Activity from '@/components/account/Activity.vue';
 import MailList from '@/components/account/MailList.vue';
 import SshKeys from '@/components/account/SshKeys.vue';
 import ApiKeys from '@/components/account/ApiKeys.vue';
+import LicensesAndThirdParty from '@/components/account/LicensesAndThirdParty.vue';
 import WidgetRenderer from '@/components/plugins/WidgetRenderer.vue';
 import { usePluginWidgets, getWidgets } from '@/composables/usePluginWidgets';
 import type { UserInfo } from '@/stores/session';
@@ -152,7 +158,7 @@ const router = useRouter();
 const sessionStore = useSessionStore();
 
 // Valid tab values
-const validTabs = ['profile', 'settings', 'appearance', 'ssh-keys', 'api-keys', 'activity', 'mail'];
+const validTabs = ['profile', 'settings', 'appearance', 'ssh-keys', 'api-keys', 'activity', 'mail', 'licenses'];
 
 // Active tab state - initialize from URL query parameter or default to 'profile'
 const activeTab = ref(validTabs.includes(route.query.tab as string) ? (route.query.tab as string) : 'profile');
