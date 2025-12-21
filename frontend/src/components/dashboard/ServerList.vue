@@ -357,19 +357,19 @@
                                             </div>
 
                                             <!-- Resources -->
-                                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                                                 <!-- Memory -->
                                                 <div
-                                                    class="p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                    class="p-2.5 sm:p-3 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div class="space-y-1">
-                                                        <div class="flex items-center justify-between gap-1">
+                                                    <div class="space-y-1.5">
+                                                        <div class="flex items-center justify-between gap-2">
                                                             <span
-                                                                class="text-muted-foreground text-[10px] sm:text-xs truncate"
+                                                                class="text-muted-foreground text-xs sm:text-sm truncate"
                                                                 >{{ $t('servers.memory') }}</span
                                                             >
                                                             <span
-                                                                class="font-semibold text-[10px] sm:text-xs shrink-0"
+                                                                class="font-semibold text-xs sm:text-sm shrink-0"
                                                                 :class="
                                                                     getServerMemoryLimit(server) === 0
                                                                         ? 'text-blue-500'
@@ -383,7 +383,7 @@
                                                                 }}
                                                             </span>
                                                         </div>
-                                                        <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                        <div class="w-full h-2 bg-muted rounded-full overflow-hidden">
                                                             <div
                                                                 class="h-full transition-all duration-300"
                                                                 :class="
@@ -407,16 +407,16 @@
                                                 </div>
                                                 <!-- Disk -->
                                                 <div
-                                                    class="p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                    class="p-2.5 sm:p-3 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div class="space-y-1">
-                                                        <div class="flex items-center justify-between gap-1">
+                                                    <div class="space-y-1.5">
+                                                        <div class="flex items-center justify-between gap-2">
                                                             <span
-                                                                class="text-muted-foreground text-[10px] sm:text-xs truncate"
+                                                                class="text-muted-foreground text-xs sm:text-sm truncate"
                                                                 >{{ $t('servers.disk') }}</span
                                                             >
                                                             <span
-                                                                class="font-semibold text-[10px] sm:text-xs shrink-0"
+                                                                class="font-semibold text-xs sm:text-sm shrink-0"
                                                                 :class="
                                                                     getServerDiskLimit(server) === 0
                                                                         ? 'text-blue-500'
@@ -430,7 +430,7 @@
                                                                 }}
                                                             </span>
                                                         </div>
-                                                        <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                        <div class="w-full h-2 bg-muted rounded-full overflow-hidden">
                                                             <div
                                                                 class="h-full transition-all duration-300"
                                                                 :class="
@@ -454,16 +454,16 @@
                                                 </div>
                                                 <!-- CPU -->
                                                 <div
-                                                    class="p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                    class="p-2.5 sm:p-3 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div class="space-y-1">
-                                                        <div class="flex items-center justify-between gap-1">
+                                                    <div class="space-y-1.5">
+                                                        <div class="flex items-center justify-between gap-2">
                                                             <span
-                                                                class="text-muted-foreground text-[10px] sm:text-xs truncate"
+                                                                class="text-muted-foreground text-xs sm:text-sm truncate"
                                                                 >{{ $t('servers.cpu') }}</span
                                                             >
                                                             <span
-                                                                class="font-semibold text-[10px] sm:text-xs shrink-0"
+                                                                class="font-semibold text-xs sm:text-sm shrink-0"
                                                                 :class="
                                                                     getServerCpuLimit(server) === 0
                                                                         ? 'text-blue-500'
@@ -477,7 +477,7 @@
                                                                 }}
                                                             </span>
                                                         </div>
-                                                        <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                        <div class="w-full h-2 bg-muted rounded-full overflow-hidden">
                                                             <div
                                                                 class="h-full transition-all duration-300"
                                                                 :class="
@@ -712,19 +712,19 @@
                                             </div>
 
                                             <!-- Resources -->
-                                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                                                 <!-- Memory -->
                                                 <div
-                                                    class="p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                    class="p-2.5 sm:p-3 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div class="space-y-1">
-                                                        <div class="flex items-center justify-between gap-1">
+                                                    <div class="space-y-1.5">
+                                                        <div class="flex items-center justify-between gap-2">
                                                             <span
-                                                                class="text-muted-foreground text-[10px] sm:text-xs truncate"
+                                                                class="text-muted-foreground text-xs sm:text-sm truncate"
                                                                 >{{ $t('servers.memory') }}</span
                                                             >
                                                             <span
-                                                                class="font-semibold text-[10px] sm:text-xs shrink-0"
+                                                                class="font-semibold text-xs sm:text-sm shrink-0"
                                                                 :class="
                                                                     getServerMemoryLimit(server) === 0
                                                                         ? 'text-blue-500'
@@ -738,7 +738,7 @@
                                                                 }}
                                                             </span>
                                                         </div>
-                                                        <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                        <div class="w-full h-2 bg-muted rounded-full overflow-hidden">
                                                             <div
                                                                 class="h-full transition-all duration-300"
                                                                 :class="
@@ -762,16 +762,16 @@
                                                 </div>
                                                 <!-- Disk -->
                                                 <div
-                                                    class="p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                    class="p-2.5 sm:p-3 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div class="space-y-1">
-                                                        <div class="flex items-center justify-between gap-1">
+                                                    <div class="space-y-1.5">
+                                                        <div class="flex items-center justify-between gap-2">
                                                             <span
-                                                                class="text-muted-foreground text-[10px] sm:text-xs truncate"
+                                                                class="text-muted-foreground text-xs sm:text-sm truncate"
                                                                 >{{ $t('servers.disk') }}</span
                                                             >
                                                             <span
-                                                                class="font-semibold text-[10px] sm:text-xs shrink-0"
+                                                                class="font-semibold text-xs sm:text-sm shrink-0"
                                                                 :class="
                                                                     getServerDiskLimit(server) === 0
                                                                         ? 'text-blue-500'
@@ -785,7 +785,7 @@
                                                                 }}
                                                             </span>
                                                         </div>
-                                                        <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                        <div class="w-full h-2 bg-muted rounded-full overflow-hidden">
                                                             <div
                                                                 class="h-full transition-all duration-300"
                                                                 :class="
@@ -809,16 +809,16 @@
                                                 </div>
                                                 <!-- CPU -->
                                                 <div
-                                                    class="p-1.5 sm:p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                                    class="p-2.5 sm:p-3 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                                 >
-                                                    <div class="space-y-1">
-                                                        <div class="flex items-center justify-between gap-1">
+                                                    <div class="space-y-1.5">
+                                                        <div class="flex items-center justify-between gap-2">
                                                             <span
-                                                                class="text-muted-foreground text-[10px] sm:text-xs truncate"
+                                                                class="text-muted-foreground text-xs sm:text-sm truncate"
                                                                 >{{ $t('servers.cpu') }}</span
                                                             >
                                                             <span
-                                                                class="font-semibold text-[10px] sm:text-xs shrink-0"
+                                                                class="font-semibold text-xs sm:text-sm shrink-0"
                                                                 :class="
                                                                     getServerCpuLimit(server) === 0
                                                                         ? 'text-blue-500'
@@ -832,7 +832,7 @@
                                                                 }}
                                                             </span>
                                                         </div>
-                                                        <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                        <div class="w-full h-2 bg-muted rounded-full overflow-hidden">
                                                             <div
                                                                 class="h-full transition-all duration-300"
                                                                 :class="
@@ -1028,18 +1028,18 @@
                                     </div>
 
                                     <!-- Resources -->
-                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                                         <!-- Memory -->
                                         <div
-                                            class="p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                            class="p-2.5 sm:p-3 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div class="space-y-1">
-                                                <div class="flex items-center justify-between gap-1">
-                                                    <span class="text-muted-foreground text-xs">{{
+                                            <div class="space-y-1.5">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span class="text-muted-foreground text-xs sm:text-sm">{{
                                                         $t('servers.memory')
                                                     }}</span>
                                                     <span
-                                                        class="font-semibold text-xs shrink-0"
+                                                        class="font-semibold text-xs sm:text-sm shrink-0"
                                                         :class="
                                                             getServerMemoryLimit(server) === 0
                                                                 ? 'text-blue-500'
@@ -1077,15 +1077,15 @@
                                         </div>
                                         <!-- Disk -->
                                         <div
-                                            class="p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                            class="p-2.5 sm:p-3 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div class="space-y-1">
-                                                <div class="flex items-center justify-between gap-1">
-                                                    <span class="text-muted-foreground text-xs">{{
+                                            <div class="space-y-1.5">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span class="text-muted-foreground text-xs sm:text-sm">{{
                                                         $t('servers.disk')
                                                     }}</span>
                                                     <span
-                                                        class="font-semibold text-xs shrink-0"
+                                                        class="font-semibold text-xs sm:text-sm shrink-0"
                                                         :class="
                                                             getServerDiskLimit(server) === 0
                                                                 ? 'text-blue-500'
@@ -1123,15 +1123,15 @@
                                         </div>
                                         <!-- CPU -->
                                         <div
-                                            class="p-2 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
+                                            class="p-2.5 sm:p-3 bg-muted/50 rounded-lg border border-border/50 group-hover:bg-muted/70 transition-colors"
                                         >
-                                            <div class="space-y-1">
-                                                <div class="flex items-center justify-between gap-1">
-                                                    <span class="text-muted-foreground text-xs">{{
+                                            <div class="space-y-1.5">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span class="text-muted-foreground text-xs sm:text-sm">{{
                                                         $t('servers.cpu')
                                                     }}</span>
                                                     <span
-                                                        class="font-semibold text-xs shrink-0"
+                                                        class="font-semibold text-xs sm:text-sm shrink-0"
                                                         :class="
                                                             getServerCpuLimit(server) === 0
                                                                 ? 'text-blue-500'
