@@ -1,16 +1,12 @@
 <template>
     <DashboardLayout :breadcrumbs="breadcrumbs">
-        <div v-if="loading" class="flex items-center justify-center min-h-[calc(100vh-250px)]">
+        <div v-if="loading" class="flex items-center justify-center h-full">
             <div class="text-gray-500">{{ t('common.loading') }}...</div>
         </div>
-        <div v-else-if="error" class="flex items-center justify-center min-h-[calc(100vh-250px)]">
+        <div v-else-if="error" class="flex items-center justify-center h-full">
             <div class="text-red-500">{{ error }}</div>
         </div>
-        <div
-            v-else-if="iframeSrc"
-            class="absolute inset-0 overflow-hidden plugin-iframe-container bg-background"
-            style="top: 0; left: 0; right: 0; bottom: 0; height: 100%; width: 100%"
-        >
+        <div v-else-if="iframeSrc" class="relative w-full h-[calc(100vh-120px)] overflow-hidden">
             <!-- Developer Mode: Floating Reload Button -->
             <div v-if="settingsStore.appDeveloperMode" class="absolute bottom-6 right-6 z-30">
                 <button
@@ -350,28 +346,6 @@ const injectScrollbarStyles = () => {
         const style = iframeDoc.createElement('style');
         style.id = 'featherpanel-custom-scrollbar';
         style.textContent = `
-            /* Hide window control dots/buttons */
-            .window-controls,
-            [class*="window-control"],
-            [class*="windowControl"],
-            [data-window-controls],
-            .mac-window-controls,
-            .traffic-lights,
-            .titlebar-controls {
-                display: none !important;
-                visibility: hidden !important;
-                opacity: 0 !important;
-            }
-
-            /* Hide any elements with red, yellow, green circles (macOS window controls) */
-            [class*="close"],
-            [class*="minimize"],
-            [class*="maximize"],
-            [class*="traffic-light"],
-            [class*="trafficLight"] {
-                display: none !important;
-            }
-
             /* Custom Scrollbar Styles */
             * {
                 scrollbar-width: thin;
@@ -468,125 +442,13 @@ const injectScrollbarStyles = () => {
     }
 };
 
-const removeWindowControls = () => {
-    if (!iframeRef.value) return;
-
-    try {
-        const iframe = iframeRef.value;
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-
-        if (!iframeDoc) return;
-
-        // Remove window control elements by various selectors
-        const selectors = [
-            '.window-controls',
-            '[class*="window-control"]',
-            '[class*="windowControl"]',
-            '[data-window-controls]',
-            '.mac-window-controls',
-            '.traffic-lights',
-            '.titlebar-controls',
-            '[class*="close"]:first-child',
-            '[class*="minimize"]:first-child',
-            '[class*="maximize"]:first-child',
-            '[class*="traffic-light"]',
-            '[class*="trafficLight"]',
-        ];
-
-        selectors.forEach((selector) => {
-            try {
-                const elements = iframeDoc.querySelectorAll(selector);
-                elements.forEach((el) => {
-                    // Check if it looks like window controls (has red/yellow/green colors or is in top-left)
-                    const rect = el.getBoundingClientRect();
-                    const styles = window.getComputedStyle(el);
-                    const bgColor = styles.backgroundColor;
-                    const isTopLeft = rect.top < 50 && rect.left < 100;
-
-                    // Remove if it's in the top-left area and has window control-like styling
-                    if (isTopLeft && (bgColor.includes('rgb(255') || bgColor.includes('rgb(254'))) {
-                        el.remove();
-                    }
-                });
-            } catch {
-                // Ignore selector errors
-            }
-        });
-
-        // Also try to find and remove elements with specific colors (red, yellow, green)
-        const allElements = iframeDoc.querySelectorAll('*');
-        allElements.forEach((el) => {
-            const rect = el.getBoundingClientRect();
-            if (rect.top < 50 && rect.left < 100 && rect.width < 20 && rect.height < 20) {
-                const styles = window.getComputedStyle(el);
-                const bgColor = styles.backgroundColor.toLowerCase();
-                // Check for red, yellow, or green colors
-                if (
-                    bgColor.includes('rgb(255, 59, 48)') ||
-                    bgColor.includes('rgb(255, 204, 0)') ||
-                    bgColor.includes('rgb(52, 199, 89)') ||
-                    bgColor.includes('#ff3b30') ||
-                    bgColor.includes('#ffcc00') ||
-                    bgColor.includes('#34c759')
-                ) {
-                    el.remove();
-                }
-            }
-        });
-    } catch (err) {
-        // Cross-origin or other error - silently fail
-        console.debug('Could not remove window controls from iframe:', err);
-    }
-};
-
 const onIframeLoad = () => {
     iframeError.value = null;
     iframeLoading.value = false;
     // Inject custom scrollbar styles after iframe loads
     setTimeout(() => {
         injectScrollbarStyles();
-        removeWindowControls();
-
-        // Set up MutationObserver to watch for dynamically added window controls
-        try {
-            const iframe = iframeRef.value;
-            const iframeDoc = iframe?.contentDocument || iframe?.contentWindow?.document;
-            if (iframeDoc) {
-                const observer = new MutationObserver(() => {
-                    removeWindowControls();
-                });
-                observer.observe(iframeDoc.body || iframeDoc.documentElement, {
-                    childList: true,
-                    subtree: true,
-                });
-
-                // Store observer for cleanup if needed
-                (iframe as unknown as { __windowControlObserver?: MutationObserver }).__windowControlObserver =
-                    observer;
-            }
-        } catch {
-            // Ignore errors
-        }
     }, 100);
-
-    // Also try again after a longer delay in case content loads dynamically
-    setTimeout(() => {
-        removeWindowControls();
-    }, 500);
-
-    // Keep checking periodically
-    const checkInterval = setInterval(() => {
-        if (!iframeRef.value) {
-            clearInterval(checkInterval);
-            return;
-        }
-        removeWindowControls();
-    }, 1000);
-
-    // Clear interval after 10 seconds (should be enough time)
-    setTimeout(() => {
-        clearInterval(checkInterval);
-    }, 10000);
 };
 
 const onIframeError = (event: Event) => {
@@ -616,7 +478,7 @@ const retryLoad = () => {
 
 onMounted(async () => {
     // Fetch settings for debug mode and other configuration
-    // Settings are fetched once in App.vue - no need to fetch here
+    await settingsStore.fetchSettings();
 
     // Fetch server name if in server context
     await fetchServerName();
@@ -641,17 +503,10 @@ watch(
 </script>
 
 <style scoped>
-/* Ensure background is always set for iframe container */
-/* TailwindCSS v4 uses HSL space-separated values in @layer base */
+/* Custom scrollbar for iframe container (fallback) */
 .plugin-iframe-container {
-    background-color: hsl(var(--background)) !important;
     scrollbar-width: thin;
     scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
-}
-
-/* Ensure background applies even without custom background image */
-body:not(.has-custom-background) .plugin-iframe-container {
-    background-color: hsl(var(--background)) !important;
 }
 
 .plugin-iframe-container::-webkit-scrollbar {
