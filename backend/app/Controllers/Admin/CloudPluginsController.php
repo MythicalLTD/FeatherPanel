@@ -357,7 +357,8 @@ class CloudPluginsController
     public function popular(Request $request): Response
     {
         try {
-            $base = 'https://api.featherpanel.com/packages/popular';
+            // Use the main packages endpoint with downloads sorting by default
+            $base = 'https://api.featherpanel.com/packages';
             $limit = (int) ($request->query->get('limit') ?? 10);
             if ($limit < 1) {
                 $limit = 10;
@@ -365,7 +366,16 @@ class CloudPluginsController
             if ($limit > 50) {
                 $limit = 50;
             }
-            $url = $base . '?limit=' . $limit;
+
+            // Build query parameters - sort by downloads descending by default
+            $query = [
+                'page' => '1',
+                'per_page' => (string) $limit,
+                'sort_by' => 'downloads',
+                'sort_order' => 'DESC',
+            ];
+
+            $url = $base . '?' . http_build_query($query);
             $context = stream_context_create([
                 'http' => [
                     'timeout' => 10,
@@ -379,10 +389,20 @@ class CloudPluginsController
 
             $data = json_decode($response, true);
             if (!is_array($data) || !isset($data['data']['packages']) || !is_array($data['data']['packages'])) {
+                App::getInstance(true)->getLogger()->error('Invalid popular packages API response: ' . json_encode($data));
+
                 return ApiResponse::error('Invalid response from popular packages API', 'POPULAR_INVALID', 500);
             }
 
             $packages = $data['data']['packages'];
+
+            // Ensure packages are sorted by downloads (descending) in case API doesn't sort properly
+            usort($packages, static function (array $a, array $b): int {
+                $downloadsA = (int) ($a['downloads'] ?? 0);
+                $downloadsB = (int) ($b['downloads'] ?? 0);
+
+                return $downloadsB <=> $downloadsA; // Descending order
+            });
             $addons = array_map(static function (array $pkg): array {
                 $latest = $pkg['latest_version'] ?? [];
                 $downloadUrl = isset($latest['download_url']) ? ('https://api.featherpanel.com' . $latest['download_url']) : null;

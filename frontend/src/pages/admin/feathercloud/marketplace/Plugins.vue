@@ -1727,16 +1727,17 @@ const fetchPreviouslyInstalledPlugins = async () => {
         }
         const data = await resp.json();
         if (data.success && data.data?.plugins) {
-            // Filter to only show uninstalled plugins (those with uninstalled_at set)
-            const uninstalled = data.data.plugins.filter(
-                (p: { uninstalled_at: string | null }) => p.uninstalled_at !== null,
-            );
-            // Only show plugins that are not currently installed
-            const uninstalledNotCurrent = uninstalled.filter(
+            // Show plugins that are in the database but NOT currently installed in filesystem
+            const notCurrentlyInstalled = data.data.plugins.filter(
                 (p: { identifier: string }) => !installedIds.value.has(p.identifier),
             );
-            previouslyInstalledPlugins.value = uninstalledNotCurrent;
-            showPreviouslyInstalledBanner.value = uninstalledNotCurrent.length > 0;
+            previouslyInstalledPlugins.value = notCurrentlyInstalled;
+            showPreviouslyInstalledBanner.value = notCurrentlyInstalled.length > 0;
+
+            // Debug logging
+            if (notCurrentlyInstalled.length > 0) {
+                console.log('Previously installed plugins (not currently installed):', notCurrentlyInstalled);
+            }
         }
     } catch (e) {
         console.error('Failed to fetch previously installed plugins:', e);
