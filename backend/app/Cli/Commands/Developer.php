@@ -38,6 +38,7 @@ class Developer extends App implements CommandBuilder
     private const PID_DIR = '/tmp/featherpanel-dev';
     private const PID_FILE = '/tmp/featherpanel-dev/vscode-tunnel.pid';
     private const LOG_FILE = '/tmp/featherpanel-dev/vscode-tunnel.log';
+    private const TUNNEL_INFO_FILE = '/tmp/featherpanel-dev/vscode-tunnel-info.txt';
 
     public static function execute(array $args): void
     {
@@ -434,6 +435,9 @@ class Developer extends App implements CommandBuilder
                 $logSize = filesize(self::LOG_FILE);
                 $app->send('&7Log file: &f' . self::LOG_FILE . ' &7(' . self::formatBytes($logSize) . ')');
             }
+
+            // Extract and display tunnel information
+            self::displayTunnelInfo($app);
         } else {
             $app->send('&c&lStatus: &fStopped');
         }
@@ -441,6 +445,96 @@ class Developer extends App implements CommandBuilder
         $app->send('');
         $app->send('&7Use &ffeatherpanel developer start &7to start the server');
         $app->send('&7Use &ffeatherpanel developer logs &7to view logs');
+    }
+
+    private static function displayTunnelInfo(App $app): void
+    {
+        $tunnelName = null;
+        $tunnelUrl = null;
+        $authCode = null;
+        $authUrl = null;
+
+        // Try to read from info file first
+        if (file_exists(self::TUNNEL_INFO_FILE)) {
+            $info = file_get_contents(self::TUNNEL_INFO_FILE);
+            if ($info) {
+                $lines = explode("\n", $info);
+                foreach ($lines as $line) {
+                    if (strpos($line, 'TUNNEL_NAME=') === 0) {
+                        $tunnelName = trim(substr($line, 12));
+                    } elseif (strpos($line, 'TUNNEL_URL=') === 0) {
+                        $tunnelUrl = trim(substr($line, 11));
+                    }
+                }
+            }
+        }
+
+        // If not in info file, try to extract from logs
+        if (!$tunnelName && file_exists(self::LOG_FILE)) {
+            $logContent = file_get_contents(self::LOG_FILE);
+
+            // Extract tunnel name (e.g., "Creating tunnel with the name: d03fded1d09c")
+            if (preg_match('/Creating tunnel with the name:\s*([a-zA-Z0-9\-]+)/', $logContent, $matches)) {
+                $tunnelName = $matches[1];
+            } elseif (preg_match('/tunnel\/([a-zA-Z0-9\-]+)\//', $logContent, $matches)) {
+                $tunnelName = $matches[1];
+            }
+
+            // Extract tunnel URL
+            if (preg_match('/https:\/\/vscode\.dev\/tunnel\/([a-zA-Z0-9\-]+)\/([^\s]+)/', $logContent, $matches)) {
+                $tunnelUrl = $matches[0];
+                if (!$tunnelName) {
+                    $tunnelName = $matches[1];
+                }
+            }
+
+            // Extract auth code and URL
+            if (preg_match('/use code ([A-Z0-9\-]+)/', $logContent, $matches)) {
+                $authCode = $matches[1];
+            }
+            if (preg_match('/(https:\/\/[^\s]+login[^\s]+device[^\s]+)/', $logContent, $matches)) {
+                $authUrl = $matches[1];
+            }
+        }
+
+        // Display tunnel information
+        if ($tunnelName || $tunnelUrl) {
+            $app->send('');
+            $app->send($app->color2 . '&lTunnel Information:');
+
+            if ($tunnelUrl) {
+                $app->send('&7Tunnel URL: &a&l' . $tunnelUrl);
+                $app->send('&7Open this link in your browser to access VS Code remotely!');
+            } elseif ($tunnelName) {
+                $tunnelUrl = 'https://vscode.dev/tunnel/' . $tunnelName . '/var/www/html';
+                $app->send('&7Tunnel Name: &f' . $tunnelName);
+                $app->send('&7Tunnel URL: &a&l' . $tunnelUrl);
+                $app->send('&7Open this link in your browser to access VS Code remotely!');
+            }
+
+            // Save for future reference
+            if ($tunnelName && !file_exists(self::TUNNEL_INFO_FILE)) {
+                $info = "TUNNEL_NAME=$tunnelName\n";
+                if ($tunnelUrl) {
+                    $info .= "TUNNEL_URL=$tunnelUrl\n";
+                }
+                file_put_contents(self::TUNNEL_INFO_FILE, $info);
+            }
+        } elseif ($authCode || $authUrl) {
+            $app->send('');
+            $app->send($app->color3 . '&lAuthentication Required:');
+            if ($authUrl) {
+                $app->send('&7Visit: &a' . $authUrl);
+            }
+            if ($authCode) {
+                $app->send('&7Enter code: &e&l' . $authCode);
+            }
+            $app->send('&7After authentication, the tunnel URL will appear here.');
+        } else {
+            $app->send('');
+            $app->send($app->color3 . '&7Tunnel is starting... Check logs for authentication URL.');
+            $app->send('&7Run: &ftail -f ' . self::LOG_FILE);
+        }
     }
 
     private static function showLogs(App $app, int $lines = 50): void

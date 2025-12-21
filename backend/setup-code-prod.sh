@@ -114,6 +114,7 @@ PID_DIR="/tmp/featherpanel-dev"
 mkdir -p "$PID_DIR"
 PID_FILE="$PID_DIR/vscode-tunnel.pid"
 LOG_FILE="$PID_DIR/vscode-tunnel.log"
+TUNNEL_INFO_FILE="$PID_DIR/vscode-tunnel-info.txt"
 
 # Ensure PID directory is accessible by www-data
 chown -R www-data:www-data "$PID_DIR" 2>/dev/null || true
@@ -174,6 +175,32 @@ if command -v tee > /dev/null 2>&1; then
     
     # Note: The process is backgrounded but output goes through tee to stdout
     # PHP's proc_open will capture this output and display it
+    
+    # Start a background process to extract tunnel info from logs
+    (
+        sleep 5
+        # Wait for tunnel to be created and extract info
+        for i in {1..30}; do
+            if [ -f "$LOG_FILE" ]; then
+                # Extract tunnel name
+                TUNNEL_NAME=$(grep -oP 'Creating tunnel with the name:\s*\K[a-zA-Z0-9\-]+' "$LOG_FILE" 2>/dev/null | tail -n 1)
+                if [ -n "$TUNNEL_NAME" ]; then
+                    # Extract full URL if available
+                    TUNNEL_URL=$(grep -oP 'https://vscode\.dev/tunnel/[^\s]+' "$LOG_FILE" 2>/dev/null | tail -n 1)
+                    if [ -n "$TUNNEL_URL" ]; then
+                        echo "TUNNEL_NAME=$TUNNEL_NAME" > "$TUNNEL_INFO_FILE"
+                        echo "TUNNEL_URL=$TUNNEL_URL" >> "$TUNNEL_INFO_FILE"
+                        break
+                    elif [ -n "$TUNNEL_NAME" ]; then
+                        echo "TUNNEL_NAME=$TUNNEL_NAME" > "$TUNNEL_INFO_FILE"
+                        echo "TUNNEL_URL=https://vscode.dev/tunnel/$TUNNEL_NAME/var/www/html" >> "$TUNNEL_INFO_FILE"
+                        break
+                    fi
+                fi
+            fi
+            sleep 2
+        done
+    ) &
 else
     # Fallback if tee not available
     echo -e "${YELLOW}Note: Output will be logged. Starting tunnel...${NC}"
@@ -209,8 +236,25 @@ chmod -R 777 /var/www/html > /dev/null 2>&1 || true
 
 # Get final PID for display
 FINAL_PID=$(cat "$PID_FILE" 2>/dev/null || echo "unknown")
-echo -e "\n${GREEN}✓${NC} VS Code Tunnel process started (PID: $FINAL_PID)"
-echo -e "${CYAN}The tunnel is running. Check the output above for the authentication URL.${NC}"
-echo -e "${CYAN}Full logs: $LOG_FILE${NC}"
-echo -e "${CYAN}To view logs in real-time: tail -f $LOG_FILE${NC}"
-echo -e "${CYAN}To stop the tunnel: featherpanel developer stop${NC}\n"
+echo -e "\n${GREEN}${BOLD}========================================${NC}"
+echo -e "${GREEN}${BOLD}  VS Code Tunnel Started!${NC}"
+echo -e "${GREEN}${BOLD}========================================${NC}\n"
+
+echo -e "${CYAN}${BOLD}Next Steps:${NC}"
+echo -e "${CYAN}1. Look for the authentication code in the output above${NC}"
+echo -e "${CYAN}2. Visit the GitHub/Microsoft login URL shown above${NC}"
+echo -e "${CYAN}3. Enter the code to authenticate${NC}"
+echo -e "${CYAN}4. After authentication, you'll receive a tunnel link${NC}"
+echo -e "${CYAN}5. Open that link in your browser to access VS Code remotely\n${NC}"
+
+echo -e "${YELLOW}The tunnel link will look like:${NC}"
+echo -e "${YELLOW}  https://vscode.dev/tunnel/<tunnel-name>/var/www/html${NC}\n"
+
+echo -e "${CYAN}Useful Commands:${NC}"
+echo -e "${CYAN}  • Check status: ${GREEN}featherpanel developer status${NC}"
+echo -e "${CYAN}  • View logs: ${GREEN}tail -f $LOG_FILE${NC}"
+echo -e "${CYAN}  • Stop tunnel: ${GREEN}featherpanel developer stop${NC}\n"
+
+echo -e "${GREEN}✓${NC} Process ID: $FINAL_PID"
+echo -e "${GREEN}✓${NC} Log file: $LOG_FILE"
+echo -e "${GREEN}✓${NC} Tunnel info will be saved for easy access\n"
