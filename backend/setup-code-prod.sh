@@ -124,6 +124,23 @@ echo -e "${CYAN}Starting VS Code Tunnel...${NC}"
 echo -e "${YELLOW}You'll see the authentication output below.${NC}"
 echo -e "${YELLOW}Look for the GitHub/Microsoft authentication URL in the output!${NC}\n"
 
+# Create VS Code data directory in persistent config volume
+# This will persist across updates and restarts!
+VSCODE_DATA_DIR="/var/www/html/storage/config/vscode"
+VSCODE_CLI_DIR="$VSCODE_DATA_DIR/cli"
+echo -e "${CYAN}Setting up VS Code data directory (persistent location)...${NC}"
+mkdir -p "$VSCODE_CLI_DIR" 2>/dev/null || true
+chown -R www-data:www-data "$VSCODE_DATA_DIR" 2>/dev/null || true
+chmod -R 755 "$VSCODE_DATA_DIR" 2>/dev/null || true
+
+# Also create config directory for VS Code settings
+VSCODE_CONFIG_DIR="/var/www/html/storage/config/vscode/.config"
+mkdir -p "$VSCODE_CONFIG_DIR" 2>/dev/null || true
+chown -R www-data:www-data "$VSCODE_CONFIG_DIR" 2>/dev/null || true
+
+# Set HOME to the config directory so VS Code uses the persistent location
+WWW_DATA_HOME="/var/www/html/storage/config"
+
 # Run code tunnel with output visible - use tee to show AND log
 # Run in foreground so output is visible to PHP's proc_open
 # The script will "block" here, but that's fine - PHP streams the output
@@ -131,11 +148,15 @@ if command -v tee > /dev/null 2>&1; then
     # Write PID before starting (we'll update it after)
     echo "starting" > "$PID_FILE"
     
+    # Set HOME environment variable for www-data and VSCODE_CLI_DATA_DIR
+    # This ensures VS Code can write its config files
+    VSCODE_ENV="HOME=$WWW_DATA_HOME VSCODE_CLI_DATA_DIR=$VSCODE_DATA_DIR"
+    
     # Run code tunnel with tee - output goes to stdout (visible) AND log file
     # This runs in foreground so output is captured by PHP proc_open
     if [ "$EUID" -eq 0 ] || [ -n "$SUDO_USER" ]; then
-        # We're root or have sudo, run as www-data
-        sudo -u www-data bash -c "code tunnel 2>&1 | tee \"$LOG_FILE\"" &
+        # We're root or have sudo, run as www-data with proper environment
+        sudo -u www-data bash -c "$VSCODE_ENV code tunnel 2>&1 | tee \"$LOG_FILE\"" &
         TUNNEL_PID=$!
         # Get the actual code tunnel PID (child of the bash process)
         sleep 1
@@ -143,7 +164,7 @@ if command -v tee > /dev/null 2>&1; then
         echo $ACTUAL_PID > "$PID_FILE"
     else
         # Run as current user
-        code tunnel 2>&1 | tee "$LOG_FILE" &
+        eval "$VSCODE_ENV code tunnel 2>&1 | tee \"$LOG_FILE\"" &
         TUNNEL_PID=$!
         sleep 1
         ACTUAL_PID=$(pgrep -P "$TUNNEL_PID" 2>/dev/null | head -n 1 || pgrep -f "^code tunnel" | head -n 1 || echo "$TUNNEL_PID")
@@ -156,13 +177,14 @@ if command -v tee > /dev/null 2>&1; then
 else
     # Fallback if tee not available
     echo -e "${YELLOW}Note: Output will be logged. Starting tunnel...${NC}"
+    VSCODE_ENV="HOME=$WWW_DATA_HOME VSCODE_CLI_DATA_DIR=$VSCODE_DATA_DIR"
     if [ "$EUID" -eq 0 ] || [ -n "$SUDO_USER" ]; then
-        sudo -u www-data bash -c "code tunnel > \"$LOG_FILE\" 2>&1 & echo \$!" 2>/dev/null > /tmp/tunnel_pid.tmp
+        sudo -u www-data bash -c "$VSCODE_ENV code tunnel > \"$LOG_FILE\" 2>&1 & echo \$!" 2>/dev/null > /tmp/tunnel_pid.tmp
         TUNNEL_PID=$(cat /tmp/tunnel_pid.tmp 2>/dev/null | head -n 1 || echo "")
         rm -f /tmp/tunnel_pid.tmp
         echo $TUNNEL_PID > "$PID_FILE"
     else
-        code tunnel > "$LOG_FILE" 2>&1 &
+        eval "$VSCODE_ENV code tunnel > \"$LOG_FILE\" 2>&1 &"
         TUNNEL_PID=$!
         echo $TUNNEL_PID > "$PID_FILE"
         chown www-data:www-data "$PID_FILE" "$LOG_FILE" 2>/dev/null || true
