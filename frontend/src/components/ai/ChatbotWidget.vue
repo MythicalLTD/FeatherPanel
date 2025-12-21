@@ -24,6 +24,7 @@
 // SOFTWARE.
 
 import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { useMediaQuery } from '@vueuse/core';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Maximize2 } from 'lucide-vue-next';
@@ -32,6 +33,7 @@ import ChatbotDialog from './ChatbotDialog.vue';
 import { useSettingsStore } from '@/stores/settings';
 
 const settingsStore = useSettingsStore();
+const route = useRoute();
 const isOpen = ref(false);
 const isDialogOpen = ref(false);
 
@@ -70,7 +72,11 @@ const handleKeyboardShortcut = (event: KeyboardEvent) => {
 };
 
 const shouldShowChatbot = computed(() => {
-    return isDesktop.value && isChatbotEnabled.value && window.location.pathname.includes('/server');
+    const currentPath = route.path;
+    const isServerPage = currentPath.includes('/server');
+    const isDashboardPage = currentPath === '/dashboard' || currentPath.startsWith('/dashboard/');
+
+    return isDesktop.value && isChatbotEnabled.value && (isServerPage || isDashboardPage);
 });
 
 onMounted(async () => {

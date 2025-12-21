@@ -222,8 +222,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
 import { Card } from '@/components/ui/card';
 import { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -239,10 +240,14 @@ const props = defineProps<{
 
 const { t } = useI18n();
 const settingsStore = useSettingsStore();
+const route = useRoute();
 
 const loadingStates = ref<Record<string, boolean>>({});
 const errorStates = ref<Record<string, string | null>>({});
 const isReloadingAll = ref(false);
+
+// Get current route path for widgets
+const currentRoutePath = computed(() => route.path);
 
 // Initialize loading states
 onMounted(async () => {
@@ -276,7 +281,11 @@ watch(
 );
 
 function getWidgetSrc(widget: PluginWidget): string {
-    return `/components/${widget.plugin}/${widget.component}`;
+    const baseUrl = `/components/${widget.plugin}/${widget.component}`;
+
+    // Add current route path as query parameter so widgets know where they are
+    const separator = baseUrl.includes('?') ? '&' : '?';
+    return `${baseUrl}${separator}route=${encodeURIComponent(currentRoutePath.value)}`;
 }
 
 function onIframeLoad(widgetId: string): void {
