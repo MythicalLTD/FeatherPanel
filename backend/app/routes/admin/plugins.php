@@ -33,6 +33,7 @@ use App\Permissions;
 use App\Controllers\Admin\PluginsController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
+use App\Controllers\Admin\CloudPluginsController;
 
 return function (RouteCollection $routes): void {
     App::getInstance(true)->registerAdminRoute(
@@ -159,5 +160,15 @@ return function (RouteCollection $routes): void {
         },
         Permissions::ADMIN_PLUGINS_MANAGE,
         ['POST']
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-plugins-previously-installed',
+        '/api/admin/plugins/previously-installed',
+        function (Request $request) {
+            return (new CloudPluginsController())->getPreviouslyInstalled($request);
+        },
+        Permissions::ADMIN_PLUGINS_VIEW,
     );
 };

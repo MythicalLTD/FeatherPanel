@@ -111,13 +111,4 @@ return function (RouteCollection $routes): void {
         ['POST']
     );
 
-    App::getInstance(true)->registerAdminRoute(
-        $routes,
-        'admin-cloud-plugins-previously-installed',
-        '/api/admin/plugins/online/previously-installed',
-        function (Request $request) {
-            return (new CloudPluginsController())->getPreviouslyInstalled($request);
-        },
-        Permissions::ADMIN_PLUGINS_VIEW,
-    );
 };

@@ -285,10 +285,10 @@ class CloudPluginsController
     }
 
     #[OA\Get(
-        path: '/api/admin/plugins/online/previously-installed',
+        path: '/api/admin/plugins/previously-installed',
         summary: 'Get previously installed plugins',
         description: 'Retrieve a list of plugins that were previously installed (including uninstalled ones) to help users restore them after FeatherPanel updates.',
-        tags: ['Admin - Cloud Plugins'],
+        tags: ['Admin - Plugins'],
         responses: [
             new OA\Response(
                 response: 200,

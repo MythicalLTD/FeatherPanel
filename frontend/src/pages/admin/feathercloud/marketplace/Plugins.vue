@@ -1719,7 +1719,7 @@ const dismissPluginsOnlineBanner = () => {
 
 const fetchPreviouslyInstalledPlugins = async () => {
     try {
-        const resp = await fetch('/api/admin/plugins/online/previously-installed', {
+        const resp = await fetch('/api/admin/plugins/previously-installed', {
             credentials: 'include',
         });
         if (!resp.ok) {
