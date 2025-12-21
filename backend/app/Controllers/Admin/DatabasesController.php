@@ -261,7 +261,7 @@ class DatabasesController
     #[OA\Put(
         path: '/api/admin/databases',
         summary: 'Create new database',
-        description: 'Create a new database instance. The system will test the database connection before creating the record. Node ID is optional for migration purposes.',
+        description: 'Create a new database instance. Health checks are skipped by default. Use /api/admin/databases/test-connection endpoint to test the connection before creating if needed. Node ID is optional for migration purposes.',
         tags: ['Admin - Databases'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -277,7 +277,7 @@ class DatabasesController
                     ]
                 )
             ),
-            new OA\Response(response: 400, description: 'Bad request - Invalid data or connection failed'),
+            new OA\Response(response: 400, description: 'Bad request - Invalid data'),
             new OA\Response(response: 401, description: 'Unauthorized'),
             new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
             new OA\Response(response: 404, description: 'Node not found (only if node_id is provided)'),
@@ -373,11 +373,8 @@ class DatabasesController
             }
         }
 
-        // Test database connection before creating
-        $connectionTest = $this->testDatabaseConnection($data);
-        if (!$connectionTest['success']) {
-            return ApiResponse::error('Database connection failed: ' . $connectionTest['message'], 'CONNECTION_FAILED', 400);
-        }
+        // Health check is always skipped by default
+        // Users can test the connection manually via /api/admin/databases/test-connection endpoint
 
         // Handle optional ID for migrations
         if (isset($data['id'])) {

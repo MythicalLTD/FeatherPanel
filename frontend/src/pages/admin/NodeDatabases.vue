@@ -710,10 +710,14 @@ async function submitForm() {
 
     formLoading.value = true;
     try {
-        const data = {
-            ...form.value,
-            node_id: nodeId.value,
+        const data: Record<string, unknown> = {
+            name: form.value.name,
+            database_type: form.value.database_type,
+            database_host: form.value.database_host,
             database_port: Number(form.value.database_port),
+            database_username: form.value.database_username,
+            database_password: form.value.database_password,
+            node_id: nodeId.value,
         };
 
         if (drawerMode.value === 'create') {
