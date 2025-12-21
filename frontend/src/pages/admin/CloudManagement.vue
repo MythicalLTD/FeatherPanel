@@ -34,6 +34,7 @@ import { useToast } from 'vue-toastification';
 import {
     AlertTriangle,
     BarChart3,
+    Brain,
     Copy,
     Eye,
     EyeOff,
@@ -41,11 +42,9 @@ import {
     LockKeyhole,
     PlugZap,
     RefreshCw,
-    Rocket,
     ShieldCheck,
-    Sparkles,
+    Store,
     X,
-    Zap,
 } from 'lucide-vue-next';
 // Dialog removed - using Teleport for full-screen overlay
 
@@ -337,59 +336,47 @@ watch(
                         <!-- Content -->
                         <div class="flex-1 container mx-auto px-6 py-10 space-y-8">
                             <div class="max-w-4xl mx-auto space-y-8">
-                                <!-- Warning Message -->
+                                <!-- Welcome Message -->
                                 <Card
-                                    class="border-2 border-amber-500/50 bg-linear-to-br from-amber-500/10 via-amber-500/5 to-transparent"
+                                    class="border-2 border-primary/50 bg-linear-to-br from-primary/10 via-primary/5 to-transparent"
                                 >
                                     <CardContent class="p-6">
                                         <div class="space-y-4">
                                             <h3 class="text-2xl font-bold text-foreground">
-                                                This page is experimental - Full features are not yet implemented
+                                                Welcome to FeatherCloud Cloud Management
                                             </h3>
                                             <p class="text-base text-muted-foreground">
-                                                FeatherCloud Cloud Management is currently in active development. The
-                                                features listed below are planned and will be available soon.
+                                                Connect your FeatherPanel instance to FeatherCloud using secure
+                                                credentials that identify your deployment to its owner. These
+                                                credentials enable access to powerful cloud services including Premium
+                                                Plugins, FeatherAI, and the Cloud Intelligence Database.
                                             </p>
                                         </div>
                                     </CardContent>
                                 </Card>
 
-                                <!-- Coming Soon Features -->
+                                <!-- Key Features Overview -->
                                 <div>
-                                    <h3 class="text-xl font-bold text-foreground mb-6">Coming Soon Features</h3>
-                                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    <h3 class="text-xl font-bold text-foreground mb-6">Cloud Services Access</h3>
+                                    <div class="grid gap-4 sm:grid-cols-1 lg:grid-cols-3">
                                         <Card class="border border-border/70 bg-background/95">
                                             <CardContent class="p-6">
                                                 <div class="flex items-start gap-4">
-                                                    <div class="p-3 rounded-xl bg-primary/10">
-                                                        <Zap class="h-6 w-6 text-primary" />
+                                                    <div class="p-3 rounded-xl bg-blue-500/10">
+                                                        <Brain class="h-6 w-6 text-blue-500" />
                                                     </div>
                                                     <div class="flex-1">
-                                                        <h4 class="font-semibold text-foreground mb-2">
-                                                            Paid Plugin Marketplace
-                                                        </h4>
+                                                        <Badge
+                                                            variant="outline"
+                                                            class="mb-2 bg-blue-500/10 text-blue-600 border-blue-500/30 text-xs"
+                                                        >
+                                                            Coming Soon
+                                                        </Badge>
+                                                        <h4 class="font-semibold text-foreground mb-2">FeatherAI</h4>
                                                         <p class="text-sm text-muted-foreground">
-                                                            Download and install paid plugins directly from the panel
-                                                            through FeatherCloud integration.
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-
-                                        <Card class="border border-border/70 bg-background/95">
-                                            <CardContent class="p-6">
-                                                <div class="flex items-start gap-4">
-                                                    <div class="p-3 rounded-xl bg-primary/10">
-                                                        <ShieldCheck class="h-6 w-6 text-primary" />
-                                                    </div>
-                                                    <div class="flex-1">
-                                                        <h4 class="font-semibold text-foreground mb-2">
-                                                            Thread Intelligence Database
-                                                        </h4>
-                                                        <p class="text-sm text-muted-foreground">
-                                                            Access online threat intelligence databases for enhanced
-                                                            security and threat detection across your infrastructure.
+                                                            Access FeatherPanel's built-in AI model for intelligent
+                                                            automation, analysis, and assistance without external API
+                                                            keys.
                                                         </p>
                                                     </div>
                                                 </div>
@@ -400,15 +387,21 @@ watch(
                                             <CardContent class="p-6">
                                                 <div class="flex items-start gap-4">
                                                     <div class="p-3 rounded-xl bg-amber-500/10">
-                                                        <AlertTriangle class="h-6 w-6 text-amber-500" />
+                                                        <Store class="h-6 w-6 text-amber-500" />
                                                     </div>
                                                     <div class="flex-1">
+                                                        <Badge
+                                                            variant="outline"
+                                                            class="mb-2 bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs"
+                                                        >
+                                                            Premium
+                                                        </Badge>
                                                         <h4 class="font-semibold text-foreground mb-2">
-                                                            Cross-Host Reporting
+                                                            Premium Plugins
                                                         </h4>
                                                         <p class="text-sm text-muted-foreground">
-                                                            See warnings when users or servers are reported by other
-                                                            hosts for suspicious activity (e.g., crypto mining, abuse).
+                                                            Download and install paid plugins directly from the
+                                                            FeatherCloud marketplace through your panel interface.
                                                         </p>
                                                     </div>
                                                 </div>
@@ -418,37 +411,22 @@ watch(
                                         <Card class="border border-border/70 bg-background/95">
                                             <CardContent class="p-6">
                                                 <div class="flex items-start gap-4">
-                                                    <div class="p-3 rounded-xl bg-primary/10">
-                                                        <Sparkles class="h-6 w-6 text-primary" />
+                                                    <div class="p-3 rounded-xl bg-green-500/10">
+                                                        <ShieldCheck class="h-6 w-6 text-green-500" />
                                                     </div>
                                                     <div class="flex-1">
+                                                        <Badge
+                                                            variant="outline"
+                                                            class="mb-2 bg-green-500/10 text-green-600 border-green-500/30 text-xs"
+                                                        >
+                                                            Active
+                                                        </Badge>
                                                         <h4 class="font-semibold text-foreground mb-2">
-                                                            FeatherAI Integration
+                                                            Cloud Intelligence Database
                                                         </h4>
                                                         <p class="text-sm text-muted-foreground">
-                                                            Use FeatherPanel's built-in AI model instead of external API
-                                                            keys for intelligent automation and analysis.
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-
-                                        <Card
-                                            class="border border-border/70 bg-background/95 sm:col-span-2 lg:col-span-1"
-                                        >
-                                            <CardContent class="p-6">
-                                                <div class="flex items-start gap-4">
-                                                    <div class="p-3 rounded-xl bg-primary/10">
-                                                        <Rocket class="h-6 w-6 text-primary" />
-                                                    </div>
-                                                    <div class="flex-1">
-                                                        <h4 class="font-semibold text-foreground mb-2">
-                                                            And Much More
-                                                        </h4>
-                                                        <p class="text-sm text-muted-foreground">
-                                                            Additional cloud-powered features, integrations, and
-                                                            services coming soon to enhance your panel experience.
+                                                            Protect your host from abuse with real-time threat
+                                                            intelligence from across the FeatherCloud network.
                                                         </p>
                                                     </div>
                                                 </div>
@@ -457,20 +435,25 @@ watch(
                                     </div>
                                 </div>
 
-                                <!-- Example Explanation -->
+                                <!-- Instance Identification Explanation -->
                                 <Card class="border border-primary/30 bg-primary/5">
                                     <CardContent class="p-6">
                                         <div class="space-y-3">
                                             <h4 class="font-semibold text-foreground flex items-center gap-2">
-                                                <AlertTriangle class="h-5 w-5 text-amber-500" />
-                                                Cross-Host Reporting Example
+                                                <Key class="h-5 w-5 text-primary" />
+                                                Instance Identification & Ownership
                                             </h4>
                                             <p class="text-sm text-muted-foreground">
-                                                If Host X reports a user with email, username, first name, or last name
-                                                for crypto mining, you'll see a warning when viewing that user's page
-                                                indicating that 1 or more hosts have reported this user for crypto
-                                                mining activity. This helps protect your infrastructure by sharing
-                                                threat intelligence across the FeatherCloud network.
+                                                Your credentials serve as a unique identifier that links your
+                                                FeatherPanel instance to its owner. This secure identification enables
+                                                FeatherCloud to verify your instance's authenticity and provide access
+                                                to owner-specific services like premium plugins, AI features, and threat
+                                                intelligence data.
+                                            </p>
+                                            <p class="text-sm text-muted-foreground">
+                                                The Cloud Intelligence Database uses this identification to share abuse
+                                                reports and threat information across the network, helping protect all
+                                                FeatherPanel instances from malicious users and activities.
                                             </p>
                                         </div>
                                     </CardContent>
@@ -517,8 +500,9 @@ watch(
                                 FeatherCloud Cloud Management
                             </h1>
                             <p class="max-w-2xl text-base text-muted-foreground sm:text-lg">
-                                Securely manage the keys that allow FeatherCloud infrastructure to authenticate and
-                                communicate with your FeatherPanel deployment.
+                                Connect your FeatherPanel instance to FeatherCloud using secure credentials that
+                                identify your deployment to its owner. Enable access to premium plugins, FeatherAI, and
+                                cloud-based threat intelligence to protect your infrastructure.
                             </p>
                         </div>
                         <div class="flex flex-wrap gap-3">
@@ -541,9 +525,10 @@ watch(
                             <div
                                 class="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/70 p-4"
                             >
-                                <ShieldCheck class="mt-0.5 h-4 w-4 text-primary" />
+                                <Key class="mt-0.5 h-4 w-4 text-primary" />
                                 <p class="text-sm text-muted-foreground">
-                                    Keys are scoped to your environment and are required for FeatherCloud API access.
+                                    These credentials uniquely identify your FeatherPanel instance to its owner,
+                                    enabling secure access to cloud services.
                                 </p>
                             </div>
                             <div
@@ -551,7 +536,8 @@ watch(
                             >
                                 <LockKeyhole class="mt-0.5 h-4 w-4 text-primary" />
                                 <p class="text-sm text-muted-foreground">
-                                    Rotate keys whenever infrastructure changes or if you suspect key exposure.
+                                    Rotate keys whenever infrastructure changes or if you suspect key exposure to
+                                    maintain security.
                                 </p>
                             </div>
                         </div>
@@ -573,13 +559,65 @@ watch(
                                 </span>
                             </div>
                             <p class="text-lg font-semibold text-foreground">
-                                Public & private keypair for FeatherCloud integrations
+                                Instance Identification & Cloud Access Credentials
                             </p>
                             <p class="text-sm text-muted-foreground">
-                                Provide these credentials to FeatherCloud services and infrastructure components to
-                                grant authenticated access back to your panel.
+                                These unique credentials identify your FeatherPanel instance to its owner and enable
+                                access to Premium Plugins, FeatherAI, and the Cloud Intelligence Database for abuse
+                                prevention.
                             </p>
 
+                            <div class="rounded-xl border border-border/70 bg-muted/30 p-4">
+                                <div class="flex items-center justify-between gap-2">
+                                    <p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                        FeatherCloud → Panel
+                                    </p>
+                                    <Badge v-if="hasCloudKeys" variant="outline" class="border-primary/30 text-xs">
+                                        Active
+                                    </Badge>
+                                </div>
+                                <p class="text-sm text-foreground">
+                                    {{ keys.cloudCredentials.publicKey || 'No public key stored' }}
+                                </p>
+                                <div class="mt-2 flex items-center gap-2">
+                                    <Input
+                                        class="border-0 bg-transparent px-0 text-sm text-foreground focus-visible:ring-0"
+                                        :type="showCloudPrivateKey ? 'text' : 'password'"
+                                        :value="keys.cloudCredentials.privateKey"
+                                        readonly
+                                    />
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        class="h-8 w-8 text-muted-foreground hover:text-primary"
+                                        @click="showCloudPrivateKey = !showCloudPrivateKey"
+                                    >
+                                        <LockKeyhole class="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        class="h-8 w-8 text-muted-foreground hover:text-primary"
+                                        :disabled="!showCloudPrivateKey || !keys.cloudCredentials.privateKey"
+                                        @click="
+                                            copyToClipboard(
+                                                keys.cloudCredentials.privateKey,
+                                                'FeatherCloud private key',
+                                            )
+                                        "
+                                    >
+                                        <Copy class="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                <p class="text-[11px] text-muted-foreground">
+                                    Updated:
+                                    {{
+                                        keys.cloudCredentials.lastRotatedAt
+                                            ? new Date(keys.cloudCredentials.lastRotatedAt).toLocaleString()
+                                            : 'Never'
+                                    }}
+                                </p>
+                            </div>
                             <div class="space-y-5">
                                 <div class="rounded-xl border border-border/70 bg-muted/30 p-4">
                                     <div class="flex items-center justify-between gap-2">
@@ -631,297 +669,142 @@ watch(
                                         }}
                                     </p>
                                 </div>
-
-                                <div class="rounded-xl border border-border/70 bg-muted/30 p-4">
-                                    <div class="flex items-center justify-between gap-2">
-                                        <p
-                                            class="text-xs font-semibold uppercase tracking-widest text-muted-foreground"
-                                        >
-                                            FeatherCloud → Panel
-                                        </p>
-                                        <Badge v-if="hasCloudKeys" variant="outline" class="border-primary/30 text-xs">
-                                            Active
-                                        </Badge>
-                                    </div>
-                                    <p class="text-sm text-foreground">
-                                        {{ keys.cloudCredentials.publicKey || 'No public key stored' }}
-                                    </p>
-                                    <div class="mt-2 flex items-center gap-2">
-                                        <Input
-                                            class="border-0 bg-transparent px-0 text-sm text-foreground focus-visible:ring-0"
-                                            :type="showCloudPrivateKey ? 'text' : 'password'"
-                                            :value="keys.cloudCredentials.privateKey"
-                                            readonly
-                                        />
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            class="h-8 w-8 text-muted-foreground hover:text-primary"
-                                            @click="showCloudPrivateKey = !showCloudPrivateKey"
-                                        >
-                                            <LockKeyhole class="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            class="h-8 w-8 text-muted-foreground hover:text-primary"
-                                            :disabled="!showCloudPrivateKey || !keys.cloudCredentials.privateKey"
-                                            @click="
-                                                copyToClipboard(
-                                                    keys.cloudCredentials.privateKey,
-                                                    'FeatherCloud private key',
-                                                )
-                                            "
-                                        >
-                                            <Copy class="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                    <p class="text-[11px] text-muted-foreground">
-                                        Updated:
-                                        {{
-                                            keys.cloudCredentials.lastRotatedAt
-                                                ? new Date(keys.cloudCredentials.lastRotatedAt).toLocaleString()
-                                                : 'Never'
-                                        }}
-                                    </p>
-                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section class="grid gap-6 lg:grid-cols-2">
-                <Card class="border border-border/70 bg-background/95">
-                    <CardHeader>
-                        <CardTitle class="text-xl font-semibold text-foreground">
-                            FeatherCloud → Panel credentials
-                        </CardTitle>
-                        <CardDescription class="text-sm text-muted-foreground">
-                            Synchronise the keypair that FeatherCloud presents when calling this panel. Keep these
-                            values aligned with the ones issued in your FeatherCloud workspace.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent class="space-y-4">
-                        <div class="space-y-2">
-                            <label class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                                FeatherCloud public key
-                            </label>
-                            <Input
-                                v-model="manualCloudKeys.publicKey"
-                                placeholder="FCCLOUDPUB-..."
-                                class="text-sm"
-                                autocomplete="off"
-                            />
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                                FeatherCloud private key
-                            </label>
-                            <div class="flex items-center gap-2">
-                                <Input
-                                    v-model="manualCloudKeys.privateKey"
-                                    :type="revealManualCloud ? 'text' : 'password'"
-                                    placeholder="Paste the private key issued by FeatherCloud"
-                                    class="text-sm"
-                                    autocomplete="off"
-                                />
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    class="h-9 w-9 text-muted-foreground hover:text-primary"
-                                    @click="revealManualCloud = !revealManualCloud"
-                                >
-                                    <Eye v-if="revealManualCloud" class="h-4 w-4" />
-                                    <EyeOff v-else class="h-4 w-4" />
-                                </Button>
-                            </div>
-                            <p class="text-[11px] text-muted-foreground">
-                                Keep this value secret. Rotating keys here immediately invalidates old integrations.
-                            </p>
-                        </div>
-                        <div class="flex flex-wrap gap-2">
-                            <Button :disabled="isSavingCloud" class="gap-2" @click="saveCloudKeys">
-                                <span v-if="isSavingCloud">Saving…</span>
-                                <span v-else>Save FeatherCloud Keys</span>
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                :disabled="isSavingCloud"
-                                @click="
-                                    () => {
-                                        manualCloudKeys.publicKey = keys.cloudCredentials.publicKey;
-                                        manualCloudKeys.privateKey = keys.cloudCredentials.privateKey;
-                                    }
-                                "
+            <!-- Key Features Section -->
+            <section class="space-y-6">
+                <div class="text-center space-y-2">
+                    <h2 class="text-2xl font-bold text-foreground">Unlock Cloud-Powered Features</h2>
+                    <p class="text-muted-foreground">
+                        Your credentials enable access to these powerful FeatherCloud services
+                    </p>
+                </div>
+                <div class="grid gap-6 md:grid-cols-3">
+                    <Card
+                        class="group relative overflow-hidden border-2 border-primary/30 bg-background/95 transition-all duration-300 hover:border-primary/60 hover:shadow-xl hover:shadow-primary/20"
+                    >
+                        <div
+                            class="absolute inset-x-0 top-0 h-1.5 bg-linear-to-r from-primary via-primary/60 to-primary/30"
+                        />
+                        <CardHeader class="space-y-4 pb-6">
+                            <div
+                                class="flex h-14 w-14 items-center justify-center rounded-xl bg-linear-to-br from-primary/20 to-primary/10 text-primary transition-transform group-hover:scale-110"
                             >
-                                Reset to stored FeatherCloud keys
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                                <Brain class="h-7 w-7" />
+                            </div>
+                            <div>
+                                <Badge
+                                    variant="outline"
+                                    class="mb-2 bg-blue-500/10 text-blue-600 border-blue-500/30 text-xs"
+                                >
+                                    Coming Soon
+                                </Badge>
+                                <CardTitle class="text-xl font-semibold text-foreground">FeatherAI</CardTitle>
+                            </div>
+                            <CardDescription class="text-sm leading-relaxed text-muted-foreground">
+                                Access FeatherPanel's built-in AI model for intelligent automation, analysis, and
+                                assistance without requiring external API keys. Get AI-powered insights and
+                                recommendations directly integrated into your panel.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
 
-                <Card class="border border-border/70 bg-background/95">
-                    <CardHeader>
-                        <CardTitle class="text-xl font-semibold text-foreground">Handshake expectations</CardTitle>
-                        <CardDescription class="text-sm text-muted-foreground">
-                            FeatherCloud calls the panel using your keys via the <code>/api/cloud/v1/handshake</code>
-                            endpoint.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent class="space-y-3 text-sm text-muted-foreground">
-                        <p>
-                            Every request must include the headers <code>X-Panel-Public-Key</code>,
-                            <code>X-Panel-Private-Key</code>, <code>X-Cloud-Public-Key</code>, and
-                            <code>X-Cloud-Private-Key</code>. The middleware validates all four values before any action
-                            runs.
-                        </p>
-                        <p>
-                            Successful requests receive a 200 response confirming the connection. Missing or invalid
-                            keys return descriptive errors so you can diagnose configuration issues quickly.
-                        </p>
-                        <p>
-                            Use the handshake endpoint first to confirm connectivity, then wire the same authentication
-                            headers into your automation workflows.
-                        </p>
-                    </CardContent>
-                </Card>
+                    <Card
+                        class="group relative overflow-hidden border-2 border-primary/30 bg-background/95 transition-all duration-300 hover:border-primary/60 hover:shadow-xl hover:shadow-primary/20"
+                    >
+                        <div
+                            class="absolute inset-x-0 top-0 h-1.5 bg-linear-to-r from-primary via-primary/60 to-primary/30"
+                        />
+                        <CardHeader class="space-y-4 pb-6">
+                            <div
+                                class="flex h-14 w-14 items-center justify-center rounded-xl bg-linear-to-br from-primary/20 to-primary/10 text-primary transition-transform group-hover:scale-110"
+                            >
+                                <Store class="h-7 w-7" />
+                            </div>
+                            <div>
+                                <Badge
+                                    variant="outline"
+                                    class="mb-2 bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs"
+                                >
+                                    Premium
+                                </Badge>
+                                <CardTitle class="text-xl font-semibold text-foreground">Premium Plugins</CardTitle>
+                            </div>
+                            <CardDescription class="text-sm leading-relaxed text-muted-foreground">
+                                Download and install paid plugins directly from the FeatherCloud marketplace. Browse
+                                premium extensions, purchase licenses, and install them seamlessly without leaving your
+                                panel interface.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+
+                    <Card
+                        class="group relative overflow-hidden border-2 border-primary/30 bg-background/95 transition-all duration-300 hover:border-primary/60 hover:shadow-xl hover:shadow-primary/20"
+                    >
+                        <div
+                            class="absolute inset-x-0 top-0 h-1.5 bg-linear-to-r from-primary via-primary/60 to-primary/30"
+                        />
+                        <CardHeader class="space-y-4 pb-6">
+                            <div
+                                class="flex h-14 w-14 items-center justify-center rounded-xl bg-linear-to-br from-primary/20 to-primary/10 text-primary transition-transform group-hover:scale-110"
+                            >
+                                <ShieldCheck class="h-7 w-7" />
+                            </div>
+                            <div>
+                                <Badge
+                                    variant="outline"
+                                    class="mb-2 bg-green-500/10 text-green-600 border-green-500/30 text-xs"
+                                >
+                                    Active
+                                </Badge>
+                                <CardTitle class="text-xl font-semibold text-foreground">
+                                    Cloud Intelligence Database
+                                </CardTitle>
+                            </div>
+                            <CardDescription class="text-sm leading-relaxed text-muted-foreground">
+                                Protect your host from abuse with real-time threat intelligence. Access a shared
+                                database of reported users, suspicious activities, and abuse patterns from across the
+                                FeatherCloud network to prevent malicious actors.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                </div>
             </section>
 
-            <section class="grid gap-6 lg:grid-cols-2">
-                <Card class="border border-border/70 bg-background/95">
-                    <CardHeader>
-                        <CardTitle class="text-xl font-semibold text-foreground">
-                            Panel → FeatherCloud credentials
-                        </CardTitle>
-                        <CardDescription class="text-sm text-muted-foreground">
-                            Provide these keys to FeatherCloud so it can authenticate when talking back to this panel.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent class="space-y-4">
-                        <div class="space-y-2">
-                            <label class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                                Panel public key
-                            </label>
-                            <Input
-                                v-model="manualPanelKeys.publicKey"
-                                placeholder="FCPUB-..."
-                                class="text-sm"
-                                autocomplete="off"
-                            />
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                                Panel private key
-                            </label>
-                            <div class="flex items-center gap-2">
-                                <Input
-                                    v-model="manualPanelKeys.privateKey"
-                                    :type="revealManualPanel ? 'text' : 'password'"
-                                    placeholder="Paste or regenerate the private key shared with FeatherCloud"
-                                    class="text-sm"
-                                    autocomplete="off"
-                                />
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    class="h-9 w-9 text-muted-foreground hover:text-primary"
-                                    @click="revealManualPanel = !revealManualPanel"
-                                >
-                                    <Eye v-if="revealManualPanel" class="h-4 w-4" />
-                                    <EyeOff v-else class="h-4 w-4" />
-                                </Button>
-                            </div>
-                            <p class="text-[11px] text-muted-foreground">
-                                Rotating these keys immediately invalidates any existing authentication sessions with
-                                FeatherCloud.
-                            </p>
-                        </div>
-                        <div class="flex flex-wrap gap-2">
-                            <Button :disabled="isSavingManual" class="gap-2" @click="savePanelKeys">
-                                <span v-if="isSavingManual">Saving…</span>
-                                <span v-else>Save Panel Keys</span>
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                :disabled="isSavingManual"
-                                @click="
-                                    () => {
-                                        manualPanelKeys.publicKey = keys.panelCredentials.publicKey;
-                                        manualPanelKeys.privateKey = keys.panelCredentials.privateKey;
-                                    }
-                                "
-                            >
-                                Reset to stored panel keys
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card class="border border-border/70 bg-background/95">
-                    <CardHeader>
-                        <CardTitle class="text-xl font-semibold text-foreground">Implementation checklist</CardTitle>
-                        <CardDescription class="text-sm text-muted-foreground">
-                            Confirm your integration is using the new two-way authentication flow correctly.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent class="space-y-3 text-sm text-muted-foreground">
-                        <ul class="space-y-2">
-                            <li class="flex items-start gap-2">
-                                <span class="mt-1 h-1.5 w-1.5 rounded-full bg-primary" />
-                                <span>Store both keypairs securely within your infrastructure secrets manager.</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <span class="mt-1 h-1.5 w-1.5 rounded-full bg-primary" />
-                                <span>Send all four headers on every FeatherCloud → FeatherPanel request.</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <span class="mt-1 h-1.5 w-1.5 rounded-full bg-primary" />
-                                <span>Rotate panel keys here after major infrastructure events.</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <span class="mt-1 h-1.5 w-1.5 rounded-full bg-primary" />
-                                <span>
-                                    Update FeatherCloud whenever you rotate keys to keep the bidirectional handshake
-                                    valid.
-                                </span>
-                            </li>
-                        </ul>
-                    </CardContent>
-                </Card>
-            </section>
-
+            <!-- Additional Benefits Section -->
             <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <Card
                     v-for="block in [
                         {
-                            id: 'auth',
-                            title: 'Authenticated API calls',
+                            id: 'identification',
+                            title: 'Instance Identification',
                             description:
-                                'Use these credentials when calling FeatherPanel APIs from FeatherCloud to deploy, scale, or monitor workloads.',
-                            icon: PlugZap,
+                                'Your credentials uniquely identify your FeatherPanel instance to its owner, enabling secure cloud services.',
+                            icon: Key,
                         },
                         {
                             id: 'security',
-                            title: 'Security best practices',
+                            title: 'Security & Privacy',
                             description:
-                                'Store keys in your secrets manager, rotate them on a scheduled basis, and restrict access to automation pipelines.',
-                            icon: ShieldCheck,
-                        },
-                        {
-                            id: 'scoped',
-                            title: 'Scoped integrations',
-                            description:
-                                'Keys inherit the permissions granted to the issuing administrator, ensuring tight control over FeatherCloud actions.',
+                                'All credentials are encrypted and scoped to your environment. Rotate keys anytime to maintain security.',
                             icon: LockKeyhole,
                         },
                         {
-                            id: 'observability',
-                            title: 'Observability ready',
+                            id: 'scoped',
+                            title: 'Permission-Based Access',
                             description:
-                                'Every API call performed with these keys is logged within FeatherPanel for traceability and auditing.',
+                                'Keys inherit administrator permissions, ensuring granular control over cloud service access.',
+                            icon: ShieldCheck,
+                        },
+                        {
+                            id: 'observability',
+                            title: 'Full Audit Trail',
+                            description:
+                                'Every cloud service interaction is logged within FeatherPanel for complete traceability and auditing.',
                             icon: BarChart3,
                         },
                     ]"
@@ -945,62 +828,156 @@ watch(
                 </Card>
             </section>
 
-            <section class="grid gap-6 lg:grid-cols-2">
-                <Card class="border border-border/70 bg-background/95">
-                    <CardHeader>
-                        <CardTitle class="text-xl font-semibold text-foreground">Integration checklist</CardTitle>
-                        <CardDescription class="text-sm text-muted-foreground">
-                            Follow these steps to connect FeatherCloud services to your FeatherPanel deployment.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent class="space-y-4">
-                        <ol class="space-y-3 text-sm text-muted-foreground">
-                            <li>
-                                <strong class="text-foreground">1. Store keys securely:</strong> Add both keys to your
-                                automation environment variables or secret manager.
-                            </li>
-                            <li>
-                                <strong class="text-foreground">2. Configure FeatherCloud:</strong> Supply keys when you
-                                register your panel endpoint in FeatherCloud.
-                            </li>
-                            <li>
-                                <strong class="text-foreground">3. Confirm in settings:</strong> Visit
-                                <span class="font-semibold text-foreground">Settings → Security → FeatherCloud</span> to
-                                verify the rotated keys are stored and scoped correctly.
-                            </li>
-                            <li>
-                                <strong class="text-foreground">4. Monitor usage:</strong> Review audit logs and usage
-                                KPIs inside FeatherPanel to ensure integrations are behaving as expected.
-                            </li>
-                        </ol>
-                    </CardContent>
-                </Card>
+            <!-- Credential Management Section -->
+            <section class="space-y-6">
+                <div class="text-center space-y-2">
+                    <h2 class="text-2xl font-bold text-foreground">Manage Your Credentials</h2>
+                    <p class="text-muted-foreground">
+                        Configure and manage the credentials that identify your instance and enable cloud services
+                    </p>
+                </div>
+                <div class="grid gap-6 lg:grid-cols-2">
+                    <Card class="border border-border/70 bg-background/95">
+                        <CardHeader>
+                            <CardTitle class="text-xl font-semibold text-foreground">
+                                FeatherCloud → Panel credentials
+                            </CardTitle>
+                            <CardDescription class="text-sm text-muted-foreground">
+                                Synchronise the keypair that FeatherCloud presents when calling this panel. Keep these
+                                values aligned with the ones issued in your FeatherCloud workspace.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent class="space-y-4">
+                            <div class="space-y-2">
+                                <label class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                    FeatherCloud public key
+                                </label>
+                                <Input
+                                    v-model="manualCloudKeys.publicKey"
+                                    placeholder="FCCLOUDPUB-..."
+                                    class="text-sm"
+                                    autocomplete="off"
+                                />
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                    FeatherCloud private key
+                                </label>
+                                <div class="flex items-center gap-2">
+                                    <Input
+                                        v-model="manualCloudKeys.privateKey"
+                                        :type="revealManualCloud ? 'text' : 'password'"
+                                        placeholder="Paste the private key issued by FeatherCloud"
+                                        class="text-sm"
+                                        autocomplete="off"
+                                    />
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        class="h-9 w-9 text-muted-foreground hover:text-primary"
+                                        @click="revealManualCloud = !revealManualCloud"
+                                    >
+                                        <Eye v-if="revealManualCloud" class="h-4 w-4" />
+                                        <EyeOff v-else class="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                <p class="text-[11px] text-muted-foreground">
+                                    Keep this value secret. Rotating keys here immediately invalidates old integrations.
+                                </p>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <Button :disabled="isSavingCloud" class="gap-2" @click="saveCloudKeys">
+                                    <span v-if="isSavingCloud">Saving…</span>
+                                    <span v-else>Save FeatherCloud Keys</span>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    :disabled="isSavingCloud"
+                                    @click="
+                                        () => {
+                                            manualCloudKeys.publicKey = keys.cloudCredentials.publicKey;
+                                            manualCloudKeys.privateKey = keys.cloudCredentials.privateKey;
+                                        }
+                                    "
+                                >
+                                    Reset to stored FeatherCloud keys
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                <Card class="border border-border/70 bg-background/95">
-                    <CardHeader>
-                        <CardTitle class="text-xl font-semibold text-foreground">Manage keys from settings</CardTitle>
-                        <CardDescription class="text-sm text-muted-foreground">
-                            FeatherPanel settings remain the source of truth for cloud credentials—rotate or revoke
-                            access without leaving the admin panel.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent class="space-y-4 text-sm text-muted-foreground">
-                        <p>
-                            Access
-                            <span class="font-semibold text-foreground">Settings → Security → FeatherCloud</span> to
-                            create or revoke keys, then return here to copy them into your automation pipelines.
-                        </p>
-                        <p>
-                            Restrict who can rotate credentials by managing the
-                            <code>admin.settings.edit</code> permission on administrator roles. Every rotation is logged
-                            for auditing.
-                        </p>
-                        <p>
-                            Once keys are in place, configure FeatherCloud services to authenticate using the public and
-                            private pair shown above—no additional endpoint knowledge required.
-                        </p>
-                    </CardContent>
-                </Card>
+                    <Card class="border border-border/70 bg-background/95">
+                        <CardHeader>
+                            <CardTitle class="text-xl font-semibold text-foreground">
+                                Panel → FeatherCloud credentials
+                            </CardTitle>
+                            <CardDescription class="text-sm text-muted-foreground">
+                                Provide these keys to FeatherCloud so it can authenticate when talking back to this
+                                panel.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent class="space-y-4">
+                            <div class="space-y-2">
+                                <label class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                    Panel public key
+                                </label>
+                                <Input
+                                    v-model="manualPanelKeys.publicKey"
+                                    placeholder="FCPUB-..."
+                                    class="text-sm"
+                                    autocomplete="off"
+                                />
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                    Panel private key
+                                </label>
+                                <div class="flex items-center gap-2">
+                                    <Input
+                                        v-model="manualPanelKeys.privateKey"
+                                        :type="revealManualPanel ? 'text' : 'password'"
+                                        placeholder="Paste or regenerate the private key shared with FeatherCloud"
+                                        class="text-sm"
+                                        autocomplete="off"
+                                    />
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        class="h-9 w-9 text-muted-foreground hover:text-primary"
+                                        @click="revealManualPanel = !revealManualPanel"
+                                    >
+                                        <Eye v-if="revealManualPanel" class="h-4 w-4" />
+                                        <EyeOff v-else class="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                <p class="text-[11px] text-muted-foreground">
+                                    Rotating these keys immediately invalidates any existing authentication sessions
+                                    with FeatherCloud.
+                                </p>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <Button :disabled="isSavingManual" class="gap-2" @click="savePanelKeys">
+                                    <span v-if="isSavingManual">Saving…</span>
+                                    <span v-else>Save Panel Keys</span>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    :disabled="isSavingManual"
+                                    @click="
+                                        () => {
+                                            manualPanelKeys.publicKey = keys.panelCredentials.publicKey;
+                                            manualPanelKeys.privateKey = keys.panelCredentials.privateKey;
+                                        }
+                                    "
+                                >
+                                    Reset to stored panel keys
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </section>
         </div>
     </DashboardLayout>

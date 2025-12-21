@@ -63,6 +63,20 @@ return function (RouteCollection $routes): void {
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-servers-show-by-external-id',
+        '/api/admin/servers/external/{externalId}',
+        function (Request $request, array $args) {
+            $externalId = $args['externalId'] ?? null;
+            if (!$externalId || !is_string($externalId) || trim($externalId) === '') {
+                return ApiResponse::error('Missing or invalid external ID', 'INVALID_EXTERNAL_ID', 400);
+            }
+
+            return (new ServersController())->showByExternalId($request, trim($externalId));
+        },
+        Permissions::ADMIN_SERVERS_VIEW,
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-servers-update',
         '/api/admin/servers/{id}',
         function (Request $request, array $args) {

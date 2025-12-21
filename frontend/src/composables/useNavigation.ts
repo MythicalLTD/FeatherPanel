@@ -63,7 +63,7 @@ import {
     Gauge,
     ArrowRightLeft,
     Upload,
-	Cloud,
+    Cloud,
 } from 'lucide-vue-next';
 import type { LucideIcon } from 'lucide-vue-next';
 import Permissions from '@/lib/permissions';

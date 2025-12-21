@@ -310,6 +310,21 @@ class Server
     }
 
     /**
+     * Fetch a server by external ID.
+     */
+    public static function getServerByExternalId(string $externalId): ?array
+    {
+        if (empty($externalId)) {
+            return null;
+        }
+        $pdo = Database::getPdoConnection();
+        $stmt = $pdo->prepare('SELECT * FROM ' . self::$table . ' WHERE external_id = :external_id LIMIT 1');
+        $stmt->execute(['external_id' => $externalId]);
+
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /**
      * Get all servers.
      */
     public static function getAllServers(): array

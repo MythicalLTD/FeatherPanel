@@ -61,6 +61,20 @@ return function (RouteCollection $routes): void {
     );
     App::getInstance(true)->registerAdminRoute(
         $routes,
+        'admin-users-show-by-external-id',
+        '/api/admin/users/external/{externalId}',
+        function (Request $request, array $args) {
+            $externalId = $args['externalId'] ?? null;
+            if (!$externalId || !is_string($externalId) || trim($externalId) === '') {
+                return ApiResponse::error('Missing or invalid external ID', 'INVALID_EXTERNAL_ID', 400);
+            }
+
+            return (new UsersController())->showByExternalId($request, trim($externalId));
+        },
+        Permissions::ADMIN_USERS_VIEW,
+    );
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
         'admin-users-update',
         '/api/admin/users/{uuid}',
         function (Request $request, array $args) {

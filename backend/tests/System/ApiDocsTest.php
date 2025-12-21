@@ -38,6 +38,9 @@ class ApiDocsTest extends TestCase
 
     protected function setUp(): void
     {
+        if (!defined('APP_VERSION')) {
+            define('APP_VERSION', 'v1.1.2');
+        }
         $this->controller = new ApiDocs();
     }
 

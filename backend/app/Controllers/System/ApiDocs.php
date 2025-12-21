@@ -37,9 +37,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 #[OA\Info(
-    title: 'FeatherPanel API',
-    version: '1.0.0',
-    description: 'The next generation of FeatherPanel API',
+    title: 'FeatherPanel API Documentation',
+    version: APP_VERSION,
+    description: 'The FeatherPanel API is a RESTful API that allows you to manage your FeatherPanel server and resources.',
     termsOfService: 'https://mythical.systems/terms',
     contact: new OA\Contact(
         name: 'MythicalSystems',
@@ -168,8 +168,8 @@ class ApiDocs
                     'openapi' => '3.1.0',
                     'info' => [
                         'title' => 'FeatherPanel API',
-                        'version' => '1.0.0',
-                        'description' => 'The next generation of FeatherPanel API',
+                        'version' => APP_VERSION,
+                        'description' => 'The FeatherPanel API is a RESTful API that allows you to manage your FeatherPanel server and resources.',
                         'contact' => [
                             'name' => 'MythicalSystems',
                             'url' => 'https://mythical.systems',

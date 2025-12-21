@@ -368,6 +368,87 @@ class UsersController
         return ApiResponse::success(['user' => $user, 'roles' => $rolesMap], 'User fetched successfully', 200);
     }
 
+    #[OA\Get(
+        path: '/api/admin/users/external/{externalId}',
+        summary: 'Get user by external ID',
+        description: 'Retrieve a specific user by its external ID with comprehensive information including role details, activity history, and mail history.',
+        tags: ['Admin - Users'],
+        parameters: [
+            new OA\Parameter(
+                name: 'externalId',
+                in: 'path',
+                description: 'User external ID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'User retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'user', ref: '#/components/schemas/User'),
+                        new OA\Property(property: 'roles', type: 'object', description: 'Available roles mapping'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid external ID'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'User not found'),
+        ]
+    )]
+    public function showByExternalId(Request $request, string $externalId): Response
+    {
+        if (empty($externalId)) {
+            return ApiResponse::error('External ID is required', 'INVALID_EXTERNAL_ID', 400);
+        }
+
+        $user = User::getUserByExternalId($externalId);
+        if (!$user) {
+            return ApiResponse::error('User not found', 'USER_NOT_FOUND', 404);
+        }
+
+        $roles = \App\Chat\Role::getAllRoles();
+        $rolesMap = [];
+        foreach ($roles as $role) {
+            $rolesMap[$role['id']] = [
+                'name' => $role['name'],
+                'display_name' => $role['display_name'],
+                'color' => $role['color'],
+            ];
+        }
+        $roleId = $user['role_id'] ?? null;
+        $user['role'] = [
+            'name' => $rolesMap[$roleId]['name'] ?? $roleId,
+            'display_name' => $rolesMap[$roleId]['display_name'] ?? 'User',
+            'color' => $rolesMap[$roleId]['color'] ?? '#666666',
+        ];
+
+        unset($user['password']);
+
+        $user['activities'] = array_map(function ($activity) {
+            unset($activity['user_uuid'], $activity['id'], $activity['updated_at']);
+
+            return $activity;
+        }, Activity::getActivitiesByUser($user['uuid']));
+
+        $mailList = MailList::getByUserUuid($user['uuid']);
+        $queueIds = array_column($mailList, 'queue_id');
+        $mailQueues = MailQueue::getByIds($queueIds);
+        $user['mails'] = [];
+        foreach ($queueIds as $queueId) {
+            if (isset($mailQueues[$queueId])) {
+                $mail = $mailQueues[$queueId];
+                unset($mail['id'], $mail['user_uuid'], $mail['deleted'], $mail['locked'], $mail['updated_at']);
+                $user['mails'][] = $mail;
+            }
+        }
+
+        return ApiResponse::success(['user' => $user, 'roles' => $rolesMap], 'User fetched successfully', 200);
+    }
+
     #[OA\Put(
         path: '/api/admin/users',
         summary: 'Create new user',
@@ -818,8 +899,8 @@ class UsersController
 
     #[OA\Get(
         path: '/api/admin/users/serverRequest/{id}',
-        summary: 'Get user by id',
-        description: 'Retrieve a user by their ID',
+        summary: 'Get server request by id (INTERNAL USE ONLY) - DO NOT USE THIS ENDPOINT IN YOUR CODE!',
+        description: 'Retrieve a server request by its ID (INTERNAL USE ONLY) - DO NOT USE THIS ENDPOINT IN YOUR CODE!',
         tags: ['Admin - Users'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', description: 'User ID', required: true, schema: new OA\Schema(type: 'integer')),

@@ -321,6 +321,22 @@ class ServersController
             if ($server['owner']) {
                 unset($server['owner']['password'], $server['owner']['remember_token'], $server['owner']['two_fa_key']);
             }
+
+            // Remove sensitive node data
+            if ($server['node']) {
+                unset(
+                    $server['node']['memory'],
+                    $server['node']['memory_overallocate'],
+                    $server['node']['disk'],
+                    $server['node']['disk_overallocate'],
+                    $server['node']['upload_size'],
+                    $server['node']['daemon_token_id'],
+                    $server['node']['daemon_token'],
+                    $server['node']['daemonListen'],
+                    $server['node']['daemonSFTP'],
+                    $server['node']['daemonBase']
+                );
+            }
         }
 
         $total = Server::getCount($search, $ownerId, $nodeId, $realmId, $spellId);
@@ -395,6 +411,140 @@ class ServersController
     public function show(Request $request, int $id): Response
     {
         $server = Server::getServerById($id);
+        if (!$server) {
+            return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
+        }
+
+        // Get related data
+        $server['owner'] = User::getUserById($server['owner_id']);
+        $server['node'] = Node::getNodeById($server['node_id']);
+        $server['realm'] = Realm::getById($server['realms_id']);
+        $server['spell'] = Spell::getSpellById($server['spell_id']);
+        $server['allocation'] = Allocation::getAllocationById($server['allocation_id']);
+        $server['activity'] = ServerActivity::getActivitiesByServerId($server['id']);
+        $server['activity'] = array_reverse(array_slice($server['activity'], 0, 50));
+
+        // Get server variables and spell variables
+        $serverVariables = ServerVariable::getServerVariablesByServerId($server['id']);
+        $spellVariables = SpellVariable::getVariablesBySpellId($server['spell_id']);
+
+        // Create a map of spell variables by their ID for easy lookup
+        $spellVariableMap = [];
+        foreach ($spellVariables as $spellVar) {
+            $spellVariableMap[$spellVar['id']] = $spellVar;
+        }
+
+        // Merge server variables with their corresponding spell variable definitions
+        $mergedVariables = [];
+        foreach ($serverVariables as $serverVar) {
+            $variableId = $serverVar['variable_id'];
+            if (isset($spellVariableMap[$variableId])) {
+                $spellVar = $spellVariableMap[$variableId];
+                $mergedVariables[] = [
+                    'id' => $serverVar['id'],
+                    'server_id' => $serverVar['server_id'],
+                    'variable_id' => $variableId,
+                    'variable_value' => $serverVar['variable_value'],
+                    'name' => $spellVar['name'],
+                    'description' => $spellVar['description'],
+                    'env_variable' => $spellVar['env_variable'],
+                    'default_value' => $spellVar['default_value'],
+                    'user_viewable' => $spellVar['user_viewable'],
+                    'user_editable' => $spellVar['user_editable'],
+                    'rules' => $spellVar['rules'],
+                    'field_type' => $spellVar['field_type'],
+                    'created_at' => $serverVar['created_at'],
+                    'updated_at' => $serverVar['updated_at'],
+                ];
+            }
+        }
+
+        $server['variables'] = $mergedVariables;
+
+        // Add SFTP information (similar to user controller)
+        $sftp = [
+            'host' => $server['node']['fqdn'],
+            'port' => $server['node']['daemonSFTP'] ?? 2022,
+            'username' => strtolower($server['owner']['username']) . '.' . $server['uuidShort'],
+            'password' => '#AUTH_PASSWORD#',
+            'url' => 'sftp://' . $server['node']['fqdn'] . ':' . ($server['node']['daemonSFTP'] ?? 2022) . '/' . strtolower($server['owner']['username']) . '.' . $server['uuidShort'],
+        ];
+        $server['sftp'] = $sftp;
+
+        // Remove sensitive data from related objects
+        if ($server['owner']) {
+            unset($server['owner']['password'], $server['owner']['remember_token'], $server['owner']['two_fa_key']);
+        }
+
+        // Remove sensitive node data
+        unset(
+            $server['node']['memory'],
+            $server['node']['memory_overallocate'],
+            $server['node']['disk'],
+            $server['node']['disk_overallocate'],
+            $server['node']['upload_size'],
+            $server['node']['daemon_token_id'],
+            $server['node']['daemon_token'],
+            $server['node']['daemonListen'],
+            $server['node']['daemonSFTP'],
+            $server['node']['daemonBase']
+        );
+
+        return ApiResponse::success($server, 'Server fetched successfully', 200);
+    }
+
+    #[OA\Get(
+        path: '/api/admin/servers/external/{externalId}',
+        summary: 'Get server by external ID',
+        description: 'Retrieve a specific server by its external ID with complete details including related data, variables, SFTP information, and recent activity.',
+        tags: ['Admin - Servers'],
+        parameters: [
+            new OA\Parameter(
+                name: 'externalId',
+                in: 'path',
+                description: 'Server external ID',
+                required: true,
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Server retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', description: 'Server ID'),
+                        new OA\Property(property: 'uuid', type: 'string', description: 'Server UUID'),
+                        new OA\Property(property: 'uuidShort', type: 'string', description: 'Short server UUID'),
+                        new OA\Property(property: 'name', type: 'string', description: 'Server name'),
+                        new OA\Property(property: 'description', type: 'string', description: 'Server description'),
+                        new OA\Property(property: 'startup', type: 'string', description: 'Server startup command'),
+                        new OA\Property(property: 'image', type: 'string', description: 'Server Docker image'),
+                        new OA\Property(property: 'status', type: 'string', description: 'Server status'),
+                        new OA\Property(property: 'owner', type: 'object', description: 'Server owner information'),
+                        new OA\Property(property: 'node', type: 'object', description: 'Node information'),
+                        new OA\Property(property: 'realm', type: 'object', description: 'Realm information'),
+                        new OA\Property(property: 'spell', type: 'object', description: 'Spell information'),
+                        new OA\Property(property: 'allocation', type: 'object', description: 'Allocation information'),
+                        new OA\Property(property: 'variables', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServerVariable'), description: 'Server variables'),
+                        new OA\Property(property: 'sftp', ref: '#/components/schemas/ServerSFTP', description: 'SFTP connection information'),
+                        new OA\Property(property: 'activity', type: 'array', items: new OA\Items(type: 'object'), description: 'Recent server activity'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Bad request - Invalid external ID'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 404, description: 'Server not found'),
+        ]
+    )]
+    public function showByExternalId(Request $request, string $externalId): Response
+    {
+        if (empty($externalId)) {
+            return ApiResponse::error('External ID is required', 'INVALID_EXTERNAL_ID', 400);
+        }
+
+        $server = Server::getServerByExternalId($externalId);
         if (!$server) {
             return ApiResponse::error('Server not found', 'SERVER_NOT_FOUND', 404);
         }
