@@ -88,7 +88,7 @@ class Developer extends App implements CommandBuilder
                 default:
                     $app->send('&cInvalid subcommand: ' . $subCommand);
                     $app->send('&7Available subcommands: start, stop, status, logs');
-                    $app->send('&7Usage: php cli developer <subcommand>');
+                    $app->send('&7Usage: featherpanel developer <subcommand>');
                     break;
             }
         } else {
@@ -126,10 +126,10 @@ class Developer extends App implements CommandBuilder
 
         $app->send('');
         $app->send($app->color3 . 'Examples:');
-        $app->send('&7  php cli developer start');
-        $app->send('&7  php cli developer stop');
-        $app->send('&7  php cli developer status');
-        $app->send('&7  php cli developer logs 100');
+        $app->send('&7  featherpanel developer start');
+        $app->send('&7  featherpanel developer stop');
+        $app->send('&7  featherpanel developer status');
+        $app->send('&7  featherpanel developer logs 100');
     }
 
     private static function startServer(App $app): void
@@ -138,7 +138,7 @@ class Developer extends App implements CommandBuilder
         if (self::isRunning()) {
             $pid = self::getPid();
             $app->send('&eDeveloper server is already running (PID: ' . $pid . ')');
-            $app->send('&7Use &fphp cli developer stop &7to stop it first');
+            $app->send('&7Use &ffeatherpanel developer stop &7to stop it first');
 
             return;
         }
@@ -180,12 +180,144 @@ class Developer extends App implements CommandBuilder
         }
 
         $app->send('&7Running setup script...');
-        $app->send('&7This will install VS Code and start the tunnel in the background.');
+        $app->send('&7This will install VS Code and start the tunnel.');
+        $app->send('&7You will see the authentication output below.');
+        $app->send('');
 
-        // Run the setup script in background
-        $output = [];
-        $returnVar = 0;
-        exec('bash ' . escapeshellarg($scriptPath) . ' > /dev/null 2>&1 &', $output, $returnVar);
+        // Run the setup script and show output in real-time
+        // Use passthru to show output directly to the user
+        $app->send($app->color3 . 'Starting setup (this may take a few minutes)...');
+        $app->send('&7' . str_repeat('─', 50));
+        $app->send('');
+
+        // Flush output buffer to show messages immediately
+        if (function_exists('ob_flush')) {
+            ob_flush();
+            flush();
+        }
+
+        // Run script and capture output line by line to show progress
+        $descriptorspec = [
+            0 => ['pipe', 'r'],  // stdin
+            1 => ['pipe', 'w'],  // stdout
+            2 => ['pipe', 'w'],  // stderr
+        ];
+
+        $process = proc_open('bash ' . escapeshellarg($scriptPath), $descriptorspec, $pipes);
+
+        if (is_resource($process)) {
+            // Close stdin
+            fclose($pipes[0]);
+
+            // Read output line by line and display it
+            $stdout = $pipes[1];
+            $stderr = $pipes[2];
+
+            // Set streams to non-blocking
+            stream_set_blocking($stdout, false);
+            stream_set_blocking($stderr, false);
+
+            $pidFile = self::PID_FILE;
+            $startTime = time();
+            $timeout = 300; // 5 minutes timeout
+
+            while (true) {
+                $read = [$stdout, $stderr];
+                $write = null;
+                $except = null;
+
+                if (stream_select($read, $write, $except, 1) > 0) {
+                    foreach ($read as $stream) {
+                        $line = fgets($stream);
+                        if ($line !== false) {
+                            // Display the line (strip color codes for CLI compatibility)
+                            echo $line;
+                            if (function_exists('ob_flush')) {
+                                ob_flush();
+                                flush();
+                            }
+                        }
+                    }
+                }
+
+                // Check if process is still running
+                $status = proc_get_status($process);
+                if (!$status['running']) {
+                    break;
+                }
+
+                // Check if PID file exists (tunnel started)
+                if (file_exists($pidFile)) {
+                    // Keep reading output for a bit more to show auth URL
+                    // Code tunnel will output the auth URL shortly after starting
+                    $app->send('');
+                    $app->send($app->color3 . 'Tunnel process started. Waiting for authentication URL...');
+                    $app->send($app->color3 . 'Keep watching the output above for the GitHub/Microsoft auth URL!');
+                    $app->send('');
+
+                    // Continue reading for up to 30 more seconds to catch auth URL
+                    $authWaitStart = time();
+                    $authTimeout = 30;
+
+                    while ((time() - $authWaitStart) < $authTimeout) {
+                        if (stream_select($read, $write, $except, 1) > 0) {
+                            foreach ($read as $stream) {
+                                $line = fgets($stream);
+                                if ($line !== false) {
+                                    echo $line;
+                                    if (function_exists('ob_flush')) {
+                                        ob_flush();
+                                        flush();
+                                    }
+                                }
+                            }
+                        }
+
+                        // Check if process finished
+                        $status = proc_get_status($process);
+                        if (!$status['running']) {
+                            break 2;
+                        }
+                    }
+
+                    break;
+                }
+
+                // Timeout check
+                if ((time() - $startTime) > $timeout) {
+                    $app->send('');
+                    $app->send('&cTimeout waiting for tunnel to start');
+                    proc_terminate($process);
+                    break;
+                }
+            }
+
+            // Close pipes
+            fclose($stdout);
+            fclose($stderr);
+            proc_close($process);
+
+            // Show final status
+            $app->send('');
+            if (self::isRunning()) {
+                $pid = self::getPid();
+                $app->send('&a&l✅ Developer server is running!');
+                $app->send('&7PID: &f' . $pid);
+                $app->send('&7Logs: &f' . self::LOG_FILE);
+                $app->send('');
+                $app->send($app->color3 . 'The tunnel is running in the background.');
+                $app->send($app->color3 . 'If you didn\'t see the auth URL above, check the logs:');
+                $app->send('&7  tail -f ' . self::LOG_FILE);
+            } else {
+                $app->send('&eTunnel may still be starting. Check logs:');
+                $app->send('&7  tail -f ' . self::LOG_FILE);
+            }
+        } else {
+            // Fallback: run in background if proc_open fails
+            $app->send('&7Running in background mode...');
+            exec('bash ' . escapeshellarg($scriptPath) . ' > /dev/null 2>&1 &', $output, $returnVar);
+            sleep(3);
+        }
 
         // Wait a moment for the process to start
         sleep(3);
@@ -307,8 +439,8 @@ class Developer extends App implements CommandBuilder
         }
 
         $app->send('');
-        $app->send('&7Use &fphp cli developer start &7to start the server');
-        $app->send('&7Use &fphp cli developer logs &7to view logs');
+        $app->send('&7Use &ffeatherpanel developer start &7to start the server');
+        $app->send('&7Use &ffeatherpanel developer logs &7to view logs');
     }
 
     private static function showLogs(App $app, int $lines = 50): void

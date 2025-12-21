@@ -71,6 +71,10 @@ echo -e "${CYAN}[4/5]${NC} Installing VS Code (this may take a minute)..."
 sudo apt update -y > /dev/null 2>&1
 sudo apt install code -y > /dev/null 2>&1
 
+# Fix permissions - ensure /var/www/html remains owned by www-data:www-data
+echo -e "${CYAN}[4.5/6]${NC} Restoring file permissions..."
+chown -R www-data:www-data /var/www/html > /dev/null 2>&1 || true
+
 # Set development mode (APP_DEBUG = true)
 echo -e "${CYAN}[5/6]${NC} Setting development mode (APP_DEBUG = true)..."
 BACKEND_DIR="/var/www/html"
@@ -105,18 +109,86 @@ echo -e "${CYAN}You'll need to authenticate with your Microsoft/GitHub account.$
 echo -e "${CYAN}After authentication, you'll receive a URL to access VS Code remotely.\n${NC}"
 echo -e "${YELLOW}Remember: Only edit files in safe directories!${NC}\n"
 
-# Create PID file directory
+# Create PID file directory and set ownership
 PID_DIR="/tmp/featherpanel-dev"
 mkdir -p "$PID_DIR"
 PID_FILE="$PID_DIR/vscode-tunnel.pid"
 LOG_FILE="$PID_DIR/vscode-tunnel.log"
 
-# Launch VS Code Tunnel in background
-echo -e "${CYAN}Starting VS Code Tunnel in background...${NC}"
-nohup code tunnel > "$LOG_FILE" 2>&1 &
-TUNNEL_PID=$!
-echo $TUNNEL_PID > "$PID_FILE"
+# Ensure PID directory is accessible by www-data
+chown -R www-data:www-data "$PID_DIR" 2>/dev/null || true
+chmod 755 "$PID_DIR" 2>/dev/null || true
 
-echo -e "${GREEN}✓${NC} VS Code Tunnel started (PID: $TUNNEL_PID)"
-echo -e "${CYAN}Logs are available at: $LOG_FILE${NC}"
-echo -e "${CYAN}To stop the tunnel, run: php cli developer stop${NC}\n"
+# Launch VS Code Tunnel - show output for authentication
+echo -e "${CYAN}Starting VS Code Tunnel...${NC}"
+echo -e "${YELLOW}You'll see the authentication output below.${NC}"
+echo -e "${YELLOW}Look for the GitHub/Microsoft authentication URL in the output!${NC}\n"
+
+# Run code tunnel with output visible - use tee to show AND log
+# Run in foreground so output is visible to PHP's proc_open
+# The script will "block" here, but that's fine - PHP streams the output
+if command -v tee > /dev/null 2>&1; then
+    # Write PID before starting (we'll update it after)
+    echo "starting" > "$PID_FILE"
+    
+    # Run code tunnel with tee - output goes to stdout (visible) AND log file
+    # This runs in foreground so output is captured by PHP proc_open
+    if [ "$EUID" -eq 0 ] || [ -n "$SUDO_USER" ]; then
+        # We're root or have sudo, run as www-data
+        sudo -u www-data bash -c "code tunnel 2>&1 | tee \"$LOG_FILE\"" &
+        TUNNEL_PID=$!
+        # Get the actual code tunnel PID (child of the bash process)
+        sleep 1
+        ACTUAL_PID=$(pgrep -P "$TUNNEL_PID" 2>/dev/null | head -n 1 || pgrep -f "^code tunnel" | head -n 1 || echo "$TUNNEL_PID")
+        echo $ACTUAL_PID > "$PID_FILE"
+    else
+        # Run as current user
+        code tunnel 2>&1 | tee "$LOG_FILE" &
+        TUNNEL_PID=$!
+        sleep 1
+        ACTUAL_PID=$(pgrep -P "$TUNNEL_PID" 2>/dev/null | head -n 1 || pgrep -f "^code tunnel" | head -n 1 || echo "$TUNNEL_PID")
+        echo $ACTUAL_PID > "$PID_FILE"
+        chown www-data:www-data "$PID_FILE" "$LOG_FILE" 2>/dev/null || true
+    fi
+    
+    # Note: The process is backgrounded but output goes through tee to stdout
+    # PHP's proc_open will capture this output and display it
+else
+    # Fallback if tee not available
+    echo -e "${YELLOW}Note: Output will be logged. Starting tunnel...${NC}"
+    if [ "$EUID" -eq 0 ] || [ -n "$SUDO_USER" ]; then
+        sudo -u www-data bash -c "code tunnel > \"$LOG_FILE\" 2>&1 & echo \$!" 2>/dev/null > /tmp/tunnel_pid.tmp
+        TUNNEL_PID=$(cat /tmp/tunnel_pid.tmp 2>/dev/null | head -n 1 || echo "")
+        rm -f /tmp/tunnel_pid.tmp
+        echo $TUNNEL_PID > "$PID_FILE"
+    else
+        code tunnel > "$LOG_FILE" 2>&1 &
+        TUNNEL_PID=$!
+        echo $TUNNEL_PID > "$PID_FILE"
+        chown www-data:www-data "$PID_FILE" "$LOG_FILE" 2>/dev/null || true
+    fi
+    
+    # Show initial output
+    sleep 3
+    if [ -f "$LOG_FILE" ]; then
+        echo -e "\n${CYAN}Initial tunnel output (check $LOG_FILE for full output):${NC}"
+        tail -n 30 "$LOG_FILE" 2>/dev/null || true
+        echo -e "\n${YELLOW}To see live output, run: tail -f $LOG_FILE${NC}"
+    fi
+fi
+
+# Ensure PID and log files are accessible
+chmod 644 "$PID_FILE" "$LOG_FILE" 2>/dev/null || true
+chown www-data:www-data "$PID_FILE" "$LOG_FILE" 2>/dev/null || true
+
+# Final permission restoration to ensure www-data ownership is maintained
+chown -R www-data:www-data /var/www/html > /dev/null 2>&1 || true
+chmod -R 777 /var/www/html > /dev/null 2>&1 || true
+
+# Get final PID for display
+FINAL_PID=$(cat "$PID_FILE" 2>/dev/null || echo "unknown")
+echo -e "\n${GREEN}✓${NC} VS Code Tunnel process started (PID: $FINAL_PID)"
+echo -e "${CYAN}The tunnel is running. Check the output above for the authentication URL.${NC}"
+echo -e "${CYAN}Full logs: $LOG_FILE${NC}"
+echo -e "${CYAN}To view logs in real-time: tail -f $LOG_FILE${NC}"
+echo -e "${CYAN}To stop the tunnel: featherpanel developer stop${NC}\n"
