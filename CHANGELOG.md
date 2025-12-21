@@ -15,6 +15,7 @@
 - Added the ability to query user data by external_id and server data via the admin API. by @nayskutzu
 - The API documentation has been significantly enhanced with detailed versioning and additional metadata, offering clearer and more accurate information. by @nayskutzu
 - Plugin Widgets now intelligently detect and adapt to their initialization page, enabling more context-aware behavior and seamless integration. by @nayskutzu
+- Added a streamlined option to automatically reinstall any plugins removed during a panel update, eliminating the need for manual reinstallation. by @nayskutzu
 
 ### Improved
 

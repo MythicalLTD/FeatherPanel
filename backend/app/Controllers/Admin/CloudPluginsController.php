@@ -34,6 +34,7 @@ use App\App;
 use App\Chat\Activity;
 use App\Chat\Database;
 use App\Helpers\ApiResponse;
+use App\Chat\InstalledPlugin;
 use OpenApi\Attributes as OA;
 use App\CloudFlare\CloudFlareRealIP;
 use Symfony\Component\HttpFoundation\Request;
@@ -280,6 +281,47 @@ class CloudPluginsController
             App::getInstance(true)->getLogger()->error('Failed to fetch online addons: ' . $e->getMessage());
 
             return ApiResponse::error('Failed to fetch online addons: ' . $e->getMessage(), 500);
+        }
+    }
+
+    #[OA\Get(
+        path: '/api/admin/plugins/online/previously-installed',
+        summary: 'Get previously installed plugins',
+        description: 'Retrieve a list of plugins that were previously installed (including uninstalled ones) to help users restore them after FeatherPanel updates.',
+        tags: ['Admin - Cloud Plugins'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Previously installed plugins retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'plugins', type: 'array', items: new OA\Items(type: 'object', properties: [
+                            new OA\Property(property: 'id', type: 'integer', description: 'Record ID'),
+                            new OA\Property(property: 'name', type: 'string', description: 'Plugin name'),
+                            new OA\Property(property: 'identifier', type: 'string', description: 'Plugin identifier'),
+                            new OA\Property(property: 'cloud_id', type: 'integer', nullable: true, description: 'Cloud registry ID'),
+                            new OA\Property(property: 'version', type: 'string', nullable: true, description: 'Plugin version'),
+                            new OA\Property(property: 'installed_at', type: 'string', format: 'date-time', description: 'Installation timestamp'),
+                            new OA\Property(property: 'uninstalled_at', type: 'string', format: 'date-time', nullable: true, description: 'Uninstallation timestamp'),
+                        ])),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden - Insufficient permissions'),
+            new OA\Response(response: 500, description: 'Internal server error'),
+        ]
+    )]
+    public function getPreviouslyInstalled(Request $request): Response
+    {
+        try {
+            $plugins = InstalledPlugin::getAllPreviouslyInstalledPlugins();
+
+            return ApiResponse::success([
+                'plugins' => $plugins,
+            ], 'Previously installed plugins retrieved successfully', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to fetch previously installed plugins: ' . $e->getMessage(), 500);
         }
     }
 
@@ -986,7 +1028,7 @@ class CloudPluginsController
                 return ApiResponse::error('Failed to extract addon package', 'ADDON_EXTRACT_FAILED', 422);
             }
 
-            $installResult = $this->performAddonInstall($tempDir, $identifier);
+            $installResult = $this->performAddonInstall($tempDir, $identifier, $pkg['id'] ?? null);
 
             // If install was successful, log activity and emit event
             if ($installResult->getStatusCode() === 200 || $installResult->getStatusCode() === 201) {
@@ -1025,8 +1067,12 @@ class CloudPluginsController
      * Perform the common installation routine given an extracted addon temp directory.
      * Handles identifier resolution (from conf.yml if not provided), copying files,
      * exposing public assets, running migrations, and calling the install hook.
+     *
+     * @param string $tempDir Temporary directory containing extracted addon
+     * @param string|null $identifier Optional identifier (will be read from conf.yml if not provided)
+     * @param int|null $cloudId Optional cloud registry ID for tracking
      */
-    public function performAddonInstall(string $tempDir, ?string $identifier = null): Response
+    public function performAddonInstall(string $tempDir, ?string $identifier = null, ?int $cloudId = null): Response
     {
         try {
             if (!defined('APP_ADDONS_DIR')) {
@@ -1155,11 +1201,13 @@ class CloudPluginsController
                 }
             }
 
-            // Get new version from config before calling hooks
+            // Get new version and plugin name from config before calling hooks
             $newVersion = null;
+            $pluginName = null;
             try {
                 $newConfig = \App\Plugins\PluginConfig::getConfig($identifier);
                 $newVersion = $newConfig['plugin']['version'] ?? null;
+                $pluginName = $newConfig['plugin']['name'] ?? $identifier;
             } catch (\Exception $e) {
                 // Failed to get version
                 App::getInstance(true)->getLogger()->warning('Failed to get new version for plugin ' . $identifier . ': ' . $e->getMessage());
@@ -1231,6 +1279,32 @@ class CloudPluginsController
                     // Log error but don't fail installation - hooks are optional
                     App::getInstance(true)->getLogger()->error("Failed to load plugin class for {$identifier}: " . $e->getMessage());
                 }
+            }
+
+            // Track installation in database
+            try {
+                $existing = InstalledPlugin::getInstalledPluginByIdentifier($identifier);
+                if ($existing) {
+                    // Update existing record (reinstall or update)
+                    InstalledPlugin::updateInstalledPlugin($identifier, [
+                        'name' => $pluginName ?? $identifier,
+                        'version' => $newVersion,
+                        'cloud_id' => $cloudId,
+                    ]);
+                    // Clear uninstalled_at if it was set
+                    InstalledPlugin::markAsReinstalled($identifier);
+                } else {
+                    // Create new record
+                    InstalledPlugin::createInstalledPlugin([
+                        'name' => $pluginName ?? $identifier,
+                        'identifier' => $identifier,
+                        'version' => $newVersion,
+                        'cloud_id' => $cloudId,
+                    ]);
+                }
+            } catch (\Exception $e) {
+                // Log but don't fail installation
+                App::getInstance(true)->getLogger()->warning('Failed to track plugin installation: ' . $e->getMessage());
             }
 
             if ($isUpdate) {

@@ -33,6 +33,7 @@ namespace App\Controllers\Admin;
 use App\App;
 use App\Chat\Activity;
 use App\Helpers\ApiResponse;
+use App\Chat\InstalledPlugin;
 use App\Plugins\PluginConfig;
 use OpenApi\Attributes as OA;
 use App\Config\ConfigInterface;
@@ -481,6 +482,14 @@ class PluginsController
             $publicComponentsBase = dirname(__DIR__, 3) . '/public/components';
             $linkPath = $publicComponentsBase . '/' . $identifier;
             @exec('rm -rf ' . escapeshellarg($linkPath));
+
+            // Track uninstallation in database
+            try {
+                InstalledPlugin::markAsUninstalled($identifier);
+            } catch (\Exception $e) {
+                // Log but don't fail uninstallation
+                App::getInstance(true)->getLogger()->warning('Failed to track plugin uninstallation: ' . $e->getMessage());
+            }
 
             return ApiResponse::success([], 'Addon uninstalled successfully', 200);
         } catch (\Exception $e) {

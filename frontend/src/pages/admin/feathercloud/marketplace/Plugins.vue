@@ -39,6 +39,52 @@
                     </div>
                 </div>
 
+                <!-- Previously Installed Plugins Banner -->
+                <div
+                    v-if="showPreviouslyInstalledBanner && previouslyInstalledPlugins.length > 0"
+                    class="mb-4 rounded-xl border border-blue-500/30 bg-blue-500/10 p-5"
+                >
+                    <div class="flex items-start gap-3">
+                        <Info class="h-5 w-5 text-blue-700 dark:text-blue-400 shrink-0 mt-0.5" />
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-blue-900 dark:text-blue-300 mb-2">
+                                Previously Installed Plugins
+                            </h3>
+                            <p class="text-sm text-blue-800 dark:text-blue-400 mb-3">
+                                You had {{ previouslyInstalledPlugins.length }} plugin{{
+                                    previouslyInstalledPlugins.length !== 1 ? 's' : ''
+                                }}
+                                installed before. Would you like to reinstall
+                                {{ previouslyInstalledPlugins.length === 1 ? 'it' : 'them' }}?
+                            </p>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <Badge
+                                    v-for="plugin in previouslyInstalledPlugins"
+                                    :key="plugin.id"
+                                    variant="outline"
+                                    class="text-xs border-blue-500/50 text-blue-700 dark:text-blue-400"
+                                >
+                                    {{ plugin.name }}
+                                </Badge>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <Button
+                                    size="sm"
+                                    variant="default"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white"
+                                    @click="reinstallPreviouslyInstalledPlugins"
+                                >
+                                    <CloudDownload class="h-4 w-4 mr-2" />
+                                    Reinstall All
+                                </Button>
+                                <Button size="sm" variant="outline" @click="showPreviouslyInstalledBanner = false">
+                                    Dismiss
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Online Plugins Content -->
                 <!-- Publish Banner (dismissible) -->
                 <div v-if="showPluginsOnlineBanner" class="mb-4">
@@ -1100,6 +1146,18 @@ const router = useRouter();
 const plugins = ref<Plugin[]>([]);
 const banner = ref<{ type: 'success' | 'warning' | 'error' | 'info'; text: string } | null>(null);
 const showPluginsOnlineBanner = ref(true);
+const previouslyInstalledPlugins = ref<
+    Array<{
+        id: number;
+        name: string;
+        identifier: string;
+        cloud_id?: number | null;
+        version?: string | null;
+        installed_at: string;
+        uninstalled_at?: string | null;
+    }>
+>([]);
+const showPreviouslyInstalledBanner = ref(false);
 
 // State for installed plugins check (used to show "Installed" badge)
 const installedIds = computed<Set<string>>(() => new Set(plugins.value.map((p) => p.identifier)));
@@ -1658,6 +1716,77 @@ const dismissPluginsOnlineBanner = () => {
     showPluginsOnlineBanner.value = false;
     localStorage.setItem('featherpanel_plugins_online_banner_dismissed', 'true');
 };
+
+const fetchPreviouslyInstalledPlugins = async () => {
+    try {
+        const resp = await fetch('/api/admin/plugins/online/previously-installed', {
+            credentials: 'include',
+        });
+        if (!resp.ok) {
+            return;
+        }
+        const data = await resp.json();
+        if (data.success && data.data?.plugins) {
+            // Filter to only show uninstalled plugins (those with uninstalled_at set)
+            const uninstalled = data.data.plugins.filter(
+                (p: { uninstalled_at: string | null }) => p.uninstalled_at !== null,
+            );
+            // Only show plugins that are not currently installed
+            const uninstalledNotCurrent = uninstalled.filter(
+                (p: { identifier: string }) => !installedIds.value.has(p.identifier),
+            );
+            previouslyInstalledPlugins.value = uninstalledNotCurrent;
+            showPreviouslyInstalledBanner.value = uninstalledNotCurrent.length > 0;
+        }
+    } catch (e) {
+        console.error('Failed to fetch previously installed plugins:', e);
+    }
+};
+
+const reinstallPreviouslyInstalledPlugins = async () => {
+    const toReinstall = previouslyInstalledPlugins.value;
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const plugin of toReinstall) {
+        try {
+            const resp = await fetch('/api/admin/plugins/online/install', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier: plugin.identifier }),
+            });
+            if (resp.ok) {
+                successCount++;
+            } else {
+                failCount++;
+            }
+        } catch (e) {
+            failCount++;
+            console.error(`Failed to reinstall ${plugin.identifier}:`, e);
+        }
+    }
+
+    if (successCount > 0) {
+        banner.value = {
+            type: 'success',
+            text: `Successfully reinstalled ${successCount} plugin${successCount !== 1 ? 's' : ''}${failCount > 0 ? ` (${failCount} failed)` : ''}`,
+        };
+        showPreviouslyInstalledBanner.value = false;
+        await fetchPlugins();
+        await fetchOnlineAddons();
+        // Reload page to load plugin CSS/JS
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+    } else if (failCount > 0) {
+        banner.value = {
+            type: 'error',
+            text: `Failed to reinstall ${failCount} plugin${failCount !== 1 ? 's' : ''}`,
+        };
+    }
+};
+
 // Lifecycle
 onMounted(async () => {
     const ok = await sessionStore.checkSessionOrRedirect(router);
@@ -1672,6 +1801,8 @@ onMounted(async () => {
     await fetchPopularAddons();
     // Fetch online plugins to display
     await fetchOnlineAddons();
+    // Fetch previously installed plugins
+    await fetchPreviouslyInstalledPlugins();
 });
 </script>
 
