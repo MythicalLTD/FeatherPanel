@@ -72,10 +72,10 @@
                                     size="sm"
                                     variant="default"
                                     class="bg-blue-600 hover:bg-blue-700 text-white"
-                                    @click="reinstallPreviouslyInstalledPlugins"
+                                    @click="openReinstallDialog"
                                 >
                                     <CloudDownload class="h-4 w-4 mr-2" />
-                                    Reinstall All
+                                    Select Plugins to Reinstall
                                 </Button>
                                 <Button size="sm" variant="outline" @click="showPreviouslyInstalledBanner = false">
                                     Dismiss
@@ -740,6 +740,75 @@
             </DialogContent>
         </Dialog>
 
+        <!-- Reinstall Previously Installed Plugins Dialog -->
+        <Dialog v-model:open="reinstallDialogOpen">
+            <DialogContent class="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>Select Plugins to Reinstall</DialogTitle>
+                    <DialogDescription>
+                        Choose which previously installed plugins you would like to reinstall.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div class="space-y-3 py-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <Button size="sm" variant="outline" @click="selectAllPlugins = !selectAllPlugins">
+                                {{ selectAllPlugins ? 'Deselect All' : 'Select All' }}
+                            </Button>
+                            <span class="text-sm text-muted-foreground">
+                                {{ selectedPluginsToReinstall.size }} of
+                                {{ previouslyInstalledPlugins.length }} selected
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div
+                            v-for="plugin in previouslyInstalledPlugins"
+                            :key="plugin.id"
+                            class="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                        >
+                            <input
+                                type="checkbox"
+                                class="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary"
+                                :checked="selectedPluginsToReinstall.has(plugin.identifier)"
+                                @change="
+                                    (e) =>
+                                        togglePluginSelection(plugin.identifier, (e.target as HTMLInputElement).checked)
+                                "
+                            />
+                            <div class="flex-1 min-w-0">
+                                <div class="font-medium">{{ plugin.name }}</div>
+                                <div class="text-sm text-muted-foreground">{{ plugin.identifier }}</div>
+                                <div v-if="plugin.version" class="text-xs text-muted-foreground mt-1">
+                                    Version: {{ plugin.version }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <DialogClose as-child>
+                        <Button variant="outline">Cancel</Button>
+                    </DialogClose>
+                    <Button
+                        :disabled="selectedPluginsToReinstall.size === 0 || reinstallingPlugins"
+                        @click="reinstallSelectedPlugins"
+                    >
+                        <CloudDownload v-if="!reinstallingPlugins" class="h-4 w-4 mr-2" />
+                        <div v-else class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        {{
+                            reinstallingPlugins
+                                ? 'Reinstalling...'
+                                : `Reinstall ${selectedPluginsToReinstall.size} Plugin${selectedPluginsToReinstall.size !== 1 ? 's' : ''}`
+                        }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
         <!-- Confirm Online Install Dialog -->
         <Dialog v-model:open="confirmOnlineOpen">
             <DialogContent class="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -1031,7 +1100,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useSessionStore } from '@/stores/session';
 import { useRouter } from 'vue-router';
 import {
@@ -1158,6 +1227,10 @@ const previouslyInstalledPlugins = ref<
     }>
 >([]);
 const showPreviouslyInstalledBanner = ref(false);
+const reinstallDialogOpen = ref(false);
+const selectedPluginsToReinstall = ref<Set<string>>(new Set());
+const selectAllPlugins = ref(false);
+const reinstallingPlugins = ref(false);
 
 // State for installed plugins check (used to show "Installed" badge)
 const installedIds = computed<Set<string>>(() => new Set(plugins.value.map((p) => p.identifier)));
@@ -1727,25 +1800,54 @@ const fetchPreviouslyInstalledPlugins = async () => {
         }
         const data = await resp.json();
         if (data.success && data.data?.plugins) {
-            // Show plugins that are in the database but NOT currently installed in filesystem
+            // Filter: exclude plugins with uninstalled_at set AND exclude currently installed plugins
             const notCurrentlyInstalled = data.data.plugins.filter(
-                (p: { identifier: string }) => !installedIds.value.has(p.identifier),
+                (p: { identifier: string; uninstalled_at: string | null }) =>
+                    p.uninstalled_at === null && !installedIds.value.has(p.identifier),
             );
             previouslyInstalledPlugins.value = notCurrentlyInstalled;
             showPreviouslyInstalledBanner.value = notCurrentlyInstalled.length > 0;
-
-            // Debug logging
-            if (notCurrentlyInstalled.length > 0) {
-                console.log('Previously installed plugins (not currently installed):', notCurrentlyInstalled);
-            }
         }
     } catch (e) {
         console.error('Failed to fetch previously installed plugins:', e);
     }
 };
 
-const reinstallPreviouslyInstalledPlugins = async () => {
-    const toReinstall = previouslyInstalledPlugins.value;
+const openReinstallDialog = () => {
+    // Select all by default
+    selectedPluginsToReinstall.value = new Set(previouslyInstalledPlugins.value.map((p) => p.identifier));
+    selectAllPlugins.value = true;
+    reinstallDialogOpen.value = true;
+};
+
+const togglePluginSelection = (identifier: string, checked: boolean) => {
+    if (checked) {
+        selectedPluginsToReinstall.value.add(identifier);
+    } else {
+        selectedPluginsToReinstall.value.delete(identifier);
+    }
+    // Update select all state
+    selectAllPlugins.value = selectedPluginsToReinstall.value.size === previouslyInstalledPlugins.value.length;
+};
+
+// Watch selectAllPlugins to update individual selections
+watch(selectAllPlugins, (newValue) => {
+    if (newValue) {
+        selectedPluginsToReinstall.value = new Set(previouslyInstalledPlugins.value.map((p) => p.identifier));
+    } else {
+        selectedPluginsToReinstall.value.clear();
+    }
+});
+
+const reinstallSelectedPlugins = async () => {
+    if (selectedPluginsToReinstall.value.size === 0) {
+        return;
+    }
+
+    reinstallingPlugins.value = true;
+    const toReinstall = previouslyInstalledPlugins.value.filter((p) =>
+        selectedPluginsToReinstall.value.has(p.identifier),
+    );
     let successCount = 0;
     let failCount = 0;
 
@@ -1768,6 +1870,9 @@ const reinstallPreviouslyInstalledPlugins = async () => {
         }
     }
 
+    reinstallingPlugins.value = false;
+    reinstallDialogOpen.value = false;
+
     if (successCount > 0) {
         banner.value = {
             type: 'success',
@@ -1776,6 +1881,7 @@ const reinstallPreviouslyInstalledPlugins = async () => {
         showPreviouslyInstalledBanner.value = false;
         await fetchPlugins();
         await fetchOnlineAddons();
+        await fetchPreviouslyInstalledPlugins();
         // Reload page to load plugin CSS/JS
         setTimeout(() => {
             window.location.reload();

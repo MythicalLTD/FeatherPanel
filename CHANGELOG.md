@@ -27,6 +27,7 @@
 
 - Removed the unused global context menu for a cleaner, more streamlined experience. by @nayskutzu
 - The API debug menu is now disabled in production, helping conserve resources and further boost app performance. by @nayskutzu
+- The popular plugins section now displays correctly and reliably highlights top plugins. by @nayskutzu
 
 ### Fixed
 
