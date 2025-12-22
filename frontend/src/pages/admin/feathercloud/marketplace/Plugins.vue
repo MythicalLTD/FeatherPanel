@@ -23,6 +23,58 @@
                     </div>
                 </div>
 
+                <!-- Cloud Account Missing Banner -->
+                <div v-if="!cloudAccountConfigured" class="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-5">
+                    <div class="flex items-start gap-3">
+                        <AlertCircle class="h-5 w-5 text-red-700 dark:text-red-400 shrink-0 mt-0.5" />
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-red-900 dark:text-red-300 mb-2">Cloud Account Missing</h3>
+                            <p class="text-sm text-red-800 dark:text-red-400 mb-3">
+                                FeatherCloud credentials are not configured. You cannot download premium plugins until
+                                you configure your cloud account credentials in Cloud Management.
+                            </p>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                class="border-red-500/50 text-red-700 dark:text-red-400 hover:bg-red-500/20"
+                                @click="router.push('/admin/cloud-management')"
+                            >
+                                <Key class="h-4 w-4 mr-2" />
+                                Configure Cloud Account
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cloud Account Info Banner -->
+                <div
+                    v-if="cloudAccountConfigured && (cloudCredits || cloudTeam)"
+                    class="mb-4 rounded-xl border border-blue-500/30 bg-blue-500/10 p-5"
+                >
+                    <div class="flex items-start gap-3">
+                        <Info class="h-5 w-5 text-blue-700 dark:text-blue-400 shrink-0 mt-0.5" />
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-blue-900 dark:text-blue-300 mb-2">Cloud Account Connected</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                                <div v-if="cloudCredits" class="flex items-center gap-2">
+                                    <Coins class="h-4 w-4 text-blue-700 dark:text-blue-400" />
+                                    <span class="text-blue-800 dark:text-blue-400">
+                                        <span class="font-medium">Credits:</span>
+                                        {{ cloudCredits.total_credits.toFixed(2) }}
+                                    </span>
+                                </div>
+                                <div v-if="cloudTeam?.team" class="flex items-center gap-2">
+                                    <Users class="h-4 w-4 text-blue-700 dark:text-blue-400" />
+                                    <span class="text-blue-800 dark:text-blue-400">
+                                        <span class="font-medium">Team:</span>
+                                        {{ cloudTeam.team.name }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Banner -->
                 <div v-if="banner" class="mb-4">
                     <div
@@ -419,7 +471,17 @@
                                     </template>
                                     <template v-else-if="addon.premium === 1">
                                         <Button
-                                            v-if="isPremiumPluginPurchased(addon)"
+                                            v-if="!cloudAccountConfigured"
+                                            size="sm"
+                                            class="flex-1 bg-linear-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white opacity-50 cursor-not-allowed"
+                                            disabled
+                                            title="Cloud account not configured - cannot download premium plugins"
+                                        >
+                                            <Crown class="h-4 w-4 mr-1" />
+                                            Requires Cloud Account
+                                        </Button>
+                                        <Button
+                                            v-else-if="isPremiumPluginPurchased(addon)"
                                             size="sm"
                                             class="flex-1 bg-linear-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 hover:scale-105 hover:shadow-md transition-all duration-200 text-white"
                                             :disabled="installingOnlineId === addon.identifier"
@@ -750,7 +812,16 @@
                     </DialogClose>
                     <template v-if="packageDetails && !installedIds.has(packageDetails.package.identifier)">
                         <Button
-                            v-if="
+                            v-if="packageDetails.package.premium === 1 && !cloudAccountConfigured"
+                            disabled
+                            class="bg-linear-to-r from-yellow-500 to-amber-600 text-white opacity-50 cursor-not-allowed"
+                            title="Cloud account not configured - cannot download premium plugins"
+                        >
+                            <Crown class="h-4 w-4 mr-2" />
+                            Requires Cloud Account
+                        </Button>
+                        <Button
+                            v-else-if="
                                 packageDetails.package.premium === 1 && isPremiumPluginPurchased(packageDetails.package)
                             "
                             :disabled="installingOnlineId === packageDetails.package.identifier"
@@ -1079,9 +1150,40 @@
                         </div>
                     </div>
 
+                    <!-- Cloud Account Required for Premium -->
+                    <div
+                        v-if="installRequirements.package.premium === 1 && !cloudAccountConfigured"
+                        class="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-600"
+                    >
+                        <div class="flex items-start gap-2">
+                            <AlertCircle class="h-5 w-5 shrink-0 mt-0.5" />
+                            <div>
+                                <div class="font-semibold mb-1">Cloud Account Required</div>
+                                <p>
+                                    This is a premium plugin. You must configure your FeatherCloud account credentials
+                                    before you can download premium plugins. Please configure your cloud account in
+                                    Cloud Management.
+                                </p>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    class="mt-2 border-red-500/50 text-red-700 dark:text-red-400 hover:bg-red-500/20"
+                                    @click="router.push('/admin/cloud-management')"
+                                >
+                                    <Key class="h-4 w-4 mr-2" />
+                                    Configure Cloud Account
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Error Summary -->
                     <div
-                        v-if="!installRequirements.can_install && !installRequirementsLoading"
+                        v-if="
+                            !installRequirements.can_install &&
+                            !installRequirementsLoading &&
+                            (installRequirements.package.premium !== 1 || cloudAccountConfigured)
+                        "
                         class="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-600"
                     >
                         <div class="flex items-start gap-2">
@@ -1108,7 +1210,8 @@
                         :disabled="
                             installingOnlineId === selectedAddonForInstall?.identifier ||
                             (installRequirements && !installRequirements.can_install) ||
-                            installRequirementsLoading
+                            installRequirementsLoading ||
+                            (installRequirements?.package.premium === 1 && !cloudAccountConfigured)
                         "
                         @click="proceedOnlineInstall"
                     >
@@ -1117,9 +1220,11 @@
                             class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
                         ></div>
                         {{
-                            installRequirements?.update_available
-                                ? `Update to v${installRequirements.latest_version}`
-                                : 'Install'
+                            installRequirements?.package.premium === 1 && !cloudAccountConfigured
+                                ? 'Cloud Account Required'
+                                : installRequirements?.update_available
+                                  ? `Update to v${installRequirements.latest_version}`
+                                  : 'Install'
                         }}
                     </Button>
                 </DialogFooter>
@@ -1170,6 +1275,9 @@ import {
     RefreshCw,
     ArrowLeft,
     Crown,
+    Key,
+    Coins,
+    Users,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -1186,7 +1294,13 @@ import {
     DialogFooter,
     DialogClose,
 } from '@/components/ui/dialog';
-import { useFeatherCloud, type ProductPurchase } from '@/composables/useFeatherCloud';
+import {
+    useFeatherCloud,
+    type ProductPurchase,
+    type CloudSummary,
+    type CreditsData,
+    type TeamData,
+} from '@/composables/useFeatherCloud';
 
 // Types
 interface Plugin {
@@ -1265,11 +1379,17 @@ type OnlinePaginationItem = number | 'ellipsis-left' | 'ellipsis-right';
 // Stores
 const sessionStore = useSessionStore();
 const router = useRouter();
-const { fetchProducts } = useFeatherCloud();
+const { fetchProducts, fetchSummary, fetchCredits, fetchTeam } = useFeatherCloud();
 
 // Purchased products tracking
 const purchasedProducts = ref<Set<string>>(new Set());
 const purchasedProductsLoading = ref(false);
+
+// Cloud account info
+const cloudSummary = ref<CloudSummary | null>(null);
+const cloudCredits = ref<CreditsData | null>(null);
+const cloudTeam = ref<TeamData | null>(null);
+const cloudAccountConfigured = ref(false);
 
 // State
 const plugins = ref<Plugin[]>([]);
@@ -1624,6 +1744,16 @@ const fetchOnlineAddons = async (page = currentOnlinePage.value) => {
     }
 };
 const onlineInstall = async (identifier: string, isUpdate = false, version?: string) => {
+    // Check if this is a premium plugin and cloud account is not configured
+    const addon = onlineAddons.value.find((a) => a.identifier === identifier);
+    if (addon?.premium === 1 && !cloudAccountConfigured.value) {
+        banner.value = {
+            type: 'error',
+            text: 'Cloud account not configured. Please configure your FeatherCloud credentials in Cloud Management to download premium plugins.',
+        };
+        return;
+    }
+
     installingOnlineId.value = identifier;
     try {
         const body: { identifier: string; version?: string } = { identifier };
@@ -1900,6 +2030,12 @@ const fetchPreviouslyInstalledPlugins = async () => {
 };
 
 const fetchPurchasedProducts = async () => {
+    // Don't fetch if cloud account is not configured
+    if (!cloudAccountConfigured.value) {
+        purchasedProductsLoading.value = false;
+        return;
+    }
+
     purchasedProductsLoading.value = true;
     try {
         // Fetch all pages of purchased products
@@ -1927,10 +2063,56 @@ const fetchPurchasedProducts = async () => {
         });
         purchasedProducts.value = productIds;
     } catch (e) {
-        console.error('Failed to fetch purchased products:', e);
         // Silently fail - premium plugins will show purchase button if fetch fails
+        // Don't log errors if credentials aren't configured
+        const error = e as { response?: { data?: { error_code?: string } } };
+        if (error.response?.data?.error_code !== 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
+            console.error('Failed to fetch purchased products:', e);
+        }
     } finally {
         purchasedProductsLoading.value = false;
+    }
+};
+
+const fetchCloudAccountInfo = async () => {
+    try {
+        // Try to fetch cloud summary to check if account is configured
+        // Silently check - don't show errors if credentials aren't configured
+        const summary = await fetchSummary();
+        if (summary) {
+            cloudAccountConfigured.value = true;
+            cloudSummary.value = summary;
+
+            // Fetch credits and team info (only if summary succeeded)
+            try {
+                const credits = await fetchCredits();
+                if (credits) {
+                    cloudCredits.value = credits;
+                }
+            } catch {
+                // Silently fail - credits might not be available
+            }
+
+            try {
+                const team = await fetchTeam();
+                if (team) {
+                    cloudTeam.value = team;
+                }
+            } catch {
+                // Silently fail - team might not be available
+            }
+        } else {
+            cloudAccountConfigured.value = false;
+        }
+    } catch (e) {
+        // If fetch fails with credentials error, silently mark as not configured
+        const error = e as { response?: { data?: { error_code?: string } } };
+        if (error.response?.data?.error_code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
+            cloudAccountConfigured.value = false;
+            return;
+        }
+        // For other errors, silently assume not configured
+        cloudAccountConfigured.value = false;
     }
 };
 
@@ -2023,10 +2205,14 @@ onMounted(async () => {
     const dismissed = localStorage.getItem('featherpanel_plugins_online_banner_dismissed');
     showPluginsOnlineBanner.value = dismissed !== 'true';
 
+    // Fetch cloud account info first
+    await fetchCloudAccountInfo();
     // Fetch installed plugins to check which ones are already installed (for badge display)
     await fetchPlugins();
-    // Fetch purchased products to check premium plugin access
-    await fetchPurchasedProducts();
+    // Fetch purchased products to check premium plugin access (only if cloud account is configured)
+    if (cloudAccountConfigured.value) {
+        await fetchPurchasedProducts();
+    }
     // Fetch popular packages
     await fetchPopularAddons();
     // Fetch online plugins to display

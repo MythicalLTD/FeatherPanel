@@ -30,6 +30,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from 'vue-toastification';
 import {
     AlertTriangle,
@@ -101,6 +111,7 @@ const revealManualCloud = ref<boolean>(false);
 const isSavingManual = ref<boolean>(false);
 const isSavingCloud = ref<boolean>(false);
 const showExperimentalDialog = ref<boolean>(false);
+const showRotateConfirmDialog = ref<boolean>(false);
 
 const hasPanelKeys = computed(() => Boolean(keys.panelCredentials.publicKey && keys.panelCredentials.privateKey));
 const hasCloudKeys = computed(() => Boolean(keys.cloudCredentials.publicKey && keys.cloudCredentials.privateKey));
@@ -145,7 +156,16 @@ const regenerateKeys = async () => {
             keys.cloudCredentials.lastRotatedAt =
                 data.cloud_credentials.last_rotated_at ?? keys.cloudCredentials.lastRotatedAt;
         }
-        toast.success('Cloud credentials rotated');
+
+        // Check if cloud credentials are empty after rotation
+        const cloudCredsEmpty = !keys.cloudCredentials.publicKey || !keys.cloudCredentials.privateKey;
+        if (cloudCredsEmpty) {
+            toast.warning(
+                'Cloud credentials are empty. Premium plugins cannot be downloaded until FeatherCloud credentials are configured.',
+            );
+        } else {
+            toast.success('Cloud credentials rotated');
+        }
     } catch (error) {
         toast.error('Failed to rotate cloud credentials');
         console.error(error);
@@ -549,7 +569,12 @@ watch(
                             </p>
                         </div>
                         <div class="flex flex-wrap gap-3">
-                            <Button size="lg" :disabled="isRegenerating" class="gap-2" @click="regenerateKeys">
+                            <Button
+                                size="lg"
+                                :disabled="isRegenerating"
+                                class="gap-2"
+                                @click="showRotateConfirmDialog = true"
+                            >
                                 <RefreshCw :class="['h-4 w-4', isRegenerating && 'animate-spin']" />
                                 Rotate Keys
                             </Button>
@@ -1154,6 +1179,52 @@ watch(
                 </div>
             </section>
         </div>
+
+        <!-- Rotate Keys Confirmation Dialog -->
+        <AlertDialog :open="showRotateConfirmDialog" @update:open="(val: boolean) => (showRotateConfirmDialog = val)">
+            <AlertDialogContent class="max-w-lg">
+                <AlertDialogHeader>
+                    <AlertDialogTitle class="flex items-center gap-2">
+                        <RefreshCw class="h-5 w-5 text-primary" />
+                        Confirm Key Rotation
+                    </AlertDialogTitle>
+                    <AlertDialogDescription class="space-y-3 pt-2">
+                        <p class="text-sm text-foreground">
+                            Are you sure you want to rotate your FeatherCloud credentials? This action will generate new
+                            keys for your panel.
+                        </p>
+                        <div class="rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 space-y-2">
+                            <p class="text-sm font-semibold text-yellow-800 dark:text-yellow-300">Important:</p>
+                            <ul
+                                class="list-disc list-inside space-y-1 text-sm text-yellow-700 dark:text-yellow-400 pl-2"
+                            >
+                                <li>New keys will be generated immediately</li>
+                                <li>You must update your FeatherCloud account with the new keys</li>
+                                <li>Old keys will no longer work after rotation</li>
+                                <li v-if="!hasCloudKeys" class="font-semibold">
+                                    Cloud credentials are currently empty - premium plugins cannot be downloaded until
+                                    FeatherCloud credentials are configured
+                                </li>
+                            </ul>
+                        </div>
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                        class="bg-primary hover:bg-primary/90"
+                        :disabled="isRegenerating"
+                        @click="
+                            showRotateConfirmDialog = false;
+                            regenerateKeys();
+                        "
+                    >
+                        <RefreshCw :class="['h-4 w-4 mr-2', isRegenerating && 'animate-spin']" />
+                        {{ isRegenerating ? 'Rotating...' : 'Rotate Keys' }}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </DashboardLayout>
 </template>
 

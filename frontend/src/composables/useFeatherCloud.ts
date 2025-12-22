@@ -108,9 +108,17 @@ export function useFeatherCloud() {
             }
             return null;
         } catch (err) {
-            const e = err as { response?: { data?: { message?: string } } };
+            const e = err as { response?: { data?: { error_code?: string; message?: string } } };
+            // Don't show toast errors for missing credentials - handled silently
+            if (e?.response?.data?.error_code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
+                error.value = null;
+                return null;
+            }
             error.value = e?.response?.data?.message || 'Failed to fetch cloud summary';
-            toast.error(error.value);
+            // Only show toast for unexpected errors, not missing credentials
+            if (e?.response?.data?.error_code !== 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
+                toast.error(error.value);
+            }
             return null;
         } finally {
             loading.value = false;
@@ -127,9 +135,17 @@ export function useFeatherCloud() {
             }
             return null;
         } catch (err) {
-            const e = err as { response?: { data?: { message?: string } } };
+            const e = err as { response?: { data?: { error_code?: string; message?: string } } };
+            // Don't show toast errors for missing credentials - handled silently
+            if (e?.response?.data?.error_code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
+                error.value = null;
+                return null;
+            }
             error.value = e?.response?.data?.message || 'Failed to fetch credits';
-            toast.error(error.value);
+            // Only show toast for unexpected errors, not missing credentials
+            if (e?.response?.data?.error_code !== 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
+                toast.error(error.value);
+            }
             return null;
         } finally {
             loading.value = false;
@@ -146,9 +162,17 @@ export function useFeatherCloud() {
             }
             return null;
         } catch (err) {
-            const e = err as { response?: { data?: { message?: string } } };
+            const e = err as { response?: { data?: { error_code?: string; message?: string } } };
+            // Don't show toast errors for missing credentials - handled silently
+            if (e?.response?.data?.error_code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
+                error.value = null;
+                return null;
+            }
             error.value = e?.response?.data?.message || 'Failed to fetch team information';
-            toast.error(error.value);
+            // Only show toast for unexpected errors, not missing credentials
+            if (e?.response?.data?.error_code !== 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
+                toast.error(error.value);
+            }
             return null;
         } finally {
             loading.value = false;
@@ -167,9 +191,17 @@ export function useFeatherCloud() {
             }
             return null;
         } catch (err) {
-            const e = err as { response?: { data?: { message?: string } } };
+            const e = err as { response?: { data?: { error_code?: string; message?: string } } };
+            // Don't show toast errors for missing credentials - handled silently
+            if (e?.response?.data?.error_code === 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
+                error.value = null;
+                return null;
+            }
             error.value = e?.response?.data?.message || 'Failed to fetch products';
-            toast.error(error.value);
+            // Only show toast for unexpected errors, not missing credentials
+            if (e?.response?.data?.error_code !== 'CLOUD_CREDENTIALS_NOT_CONFIGURED') {
+                toast.error(error.value);
+            }
             return null;
         } finally {
             loading.value = false;

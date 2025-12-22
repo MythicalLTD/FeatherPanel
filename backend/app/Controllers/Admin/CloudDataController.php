@@ -65,6 +65,9 @@ class CloudDataController
     {
         try {
             $client = new FeatherCloudClient();
+            if (!$client->isConfigured()) {
+                return ApiResponse::error('FeatherCloud credentials are not configured', 'CLOUD_CREDENTIALS_NOT_CONFIGURED', 503);
+            }
             $data = $client->getSummary();
 
             return ApiResponse::success($data, 'Cloud summary retrieved successfully', 200);
@@ -101,6 +104,9 @@ class CloudDataController
     {
         try {
             $client = new FeatherCloudClient();
+            if (!$client->isConfigured()) {
+                return ApiResponse::error('FeatherCloud credentials are not configured', 'CLOUD_CREDENTIALS_NOT_CONFIGURED', 503);
+            }
             $data = $client->getTotalCredits();
 
             return ApiResponse::success($data, 'Credits retrieved successfully', 200);
@@ -135,6 +141,9 @@ class CloudDataController
     {
         try {
             $client = new FeatherCloudClient();
+            if (!$client->isConfigured()) {
+                return ApiResponse::error('FeatherCloud credentials are not configured', 'CLOUD_CREDENTIALS_NOT_CONFIGURED', 503);
+            }
             $data = $client->getTeam();
 
             return ApiResponse::success($data, 'Team information retrieved successfully', 200);
@@ -189,6 +198,9 @@ class CloudDataController
             $limit = (int) $request->query->get('limit', 50);
 
             $client = new FeatherCloudClient();
+            if (!$client->isConfigured()) {
+                return ApiResponse::error('FeatherCloud credentials are not configured', 'CLOUD_CREDENTIALS_NOT_CONFIGURED', 503);
+            }
             $data = $client->getPurchasedProducts($page, $limit);
 
             return ApiResponse::success($data, 'Products retrieved successfully', 200);
@@ -240,6 +252,9 @@ class CloudDataController
     {
         try {
             $client = new FeatherCloudClient();
+            if (!$client->isConfigured()) {
+                return ApiResponse::error('FeatherCloud credentials are not configured. Please configure your cloud account credentials in Cloud Management to download premium plugins.', 'CLOUD_CREDENTIALS_NOT_CONFIGURED', 503);
+            }
             $fileContent = $client->downloadPremiumPackage($packageName, $version);
 
             $response = new Response($fileContent, 200);
@@ -248,6 +263,11 @@ class CloudDataController
 
             return $response;
         } catch (FeatherCloudException $e) {
+            // Don't spam with credentials error if already checked
+            if ($e->getErrorCode() === 'CREDENTIALS_NOT_CONFIGURED') {
+                return ApiResponse::error('FeatherCloud credentials are not configured. Please configure your cloud account credentials in Cloud Management to download premium plugins.', 'CLOUD_CREDENTIALS_NOT_CONFIGURED', 503);
+            }
+
             return ApiResponse::error($e->getMessage(), $e->getErrorCode(), $e->getHttpStatusCode());
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to download package: ' . $e->getMessage(), 'INTERNAL_ERROR', 500);

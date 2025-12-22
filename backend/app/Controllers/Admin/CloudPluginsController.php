@@ -1010,10 +1010,23 @@ class CloudPluginsController
             $fileContent = false;
 
             if ($isPremium) {
+                // Check if FeatherCloud credentials are configured BEFORE attempting download
+                $featherCloudClient = new \App\Services\FeatherCloud\FeatherCloudClient();
+                if (!$featherCloudClient->isConfigured()) {
+                    $premiumLink = $pkg['premium_link'] ?? null;
+                    return ApiResponse::error(
+                        'FeatherCloud credentials are not configured. Please configure your cloud account credentials in Cloud Management to download premium plugins.',
+                        'CLOUD_CREDENTIALS_NOT_CONFIGURED',
+                        503,
+                        [
+                            'premium_link' => $premiumLink,
+                            'premium_price' => $pkg['premium_price'] ?? null,
+                        ]
+                    );
+                }
+
                 // For premium plugins, try to download via FeatherCloud
                 try {
-                    $featherCloudClient = new \App\Services\FeatherCloud\FeatherCloudClient();
-
                     // Get version from latest_version or request
                     $version = $latestVersion['version'] ?? ($body['version'] ?? null);
                     if (!$version) {
@@ -1033,6 +1046,19 @@ class CloudPluginsController
                 } catch (\App\Services\FeatherCloud\FeatherCloudException $e) {
                     // If FeatherCloud download fails, return error with purchase info
                     $premiumLink = $pkg['premium_link'] ?? null;
+
+                    // Don't spam with credentials error if it's already checked
+                    if ($e->getErrorCode() === 'CREDENTIALS_NOT_CONFIGURED') {
+                        return ApiResponse::error(
+                            'FeatherCloud credentials are not configured. Please configure your cloud account credentials in Cloud Management to download premium plugins.',
+                            'CLOUD_CREDENTIALS_NOT_CONFIGURED',
+                            503,
+                            [
+                                'premium_link' => $premiumLink,
+                                'premium_price' => $pkg['premium_price'] ?? null,
+                            ]
+                        );
+                    }
 
                     return ApiResponse::error(
                         $e->getMessage() ?: 'This is a premium addon and must be purchased',
