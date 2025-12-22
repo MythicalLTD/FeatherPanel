@@ -31,6 +31,7 @@
 use App\App;
 use App\Permissions;
 use Symfony\Component\HttpFoundation\Request;
+use App\Controllers\Admin\CloudDataController;
 use Symfony\Component\Routing\RouteCollection;
 use App\Controllers\Admin\CloudManagementController;
 
@@ -76,5 +77,56 @@ return function (RouteCollection $routes): void {
         },
         Permissions::ADMIN_SETTINGS_EDIT,
         ['POST'],
+    );
+
+    // Cloud Data Endpoints (Admin Root Only)
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-cloud-data-summary',
+        '/api/admin/cloud/data/summary',
+        static function (Request $request) {
+            return (new CloudDataController())->getSummary($request);
+        },
+        Permissions::ADMIN_ROOT,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-cloud-data-credits',
+        '/api/admin/cloud/data/credits',
+        static function (Request $request) {
+            return (new CloudDataController())->getCredits($request);
+        },
+        Permissions::ADMIN_ROOT,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-cloud-data-team',
+        '/api/admin/cloud/data/team',
+        static function (Request $request) {
+            return (new CloudDataController())->getTeam($request);
+        },
+        Permissions::ADMIN_ROOT,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-cloud-data-products',
+        '/api/admin/cloud/data/products',
+        static function (Request $request) {
+            return (new CloudDataController())->getProducts($request);
+        },
+        Permissions::ADMIN_ROOT,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-cloud-download-package',
+        '/api/admin/cloud/data/download/{packageName}/{version}',
+        static function (Request $request, string $packageName, string $version) {
+            return (new CloudDataController())->downloadPackage($request, $packageName, $version);
+        },
+        Permissions::ADMIN_ROOT,
     );
 };

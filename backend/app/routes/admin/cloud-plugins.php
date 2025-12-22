@@ -110,5 +110,4 @@ return function (RouteCollection $routes): void {
         Permissions::ADMIN_PLUGINS_MANAGE,
         ['POST']
     );
-
 };

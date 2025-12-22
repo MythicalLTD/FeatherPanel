@@ -45,7 +45,10 @@ import {
     ShieldCheck,
     Store,
     X,
+    Users,
+    Coins,
 } from 'lucide-vue-next';
+import { useFeatherCloud, type CloudSummary, type CreditsData, type TeamData } from '@/composables/useFeatherCloud';
 // Dialog removed - using Teleport for full-screen overlay
 
 interface CredentialPair {
@@ -101,6 +104,13 @@ const showExperimentalDialog = ref<boolean>(false);
 
 const hasPanelKeys = computed(() => Boolean(keys.panelCredentials.publicKey && keys.panelCredentials.privateKey));
 const hasCloudKeys = computed(() => Boolean(keys.cloudCredentials.publicKey && keys.cloudCredentials.privateKey));
+
+// FeatherCloud data
+const { fetchSummary, fetchCredits, fetchTeam, loading: cloudLoading } = useFeatherCloud();
+const cloudSummary = ref<CloudSummary | null>(null);
+const cloudCredits = ref<CreditsData | null>(null);
+const cloudTeam = ref<TeamData | null>(null);
+const isRefreshingCloudData = ref(false);
 
 const fetchKeys = async () => {
     isLoading.value = true;
@@ -228,13 +238,46 @@ const saveCloudKeys = async (): Promise<void> => {
 
 const EXPERIMENTAL_DIALOG_DISMISSED_KEY = 'feathercloud-experimental-dialog-dismissed';
 
-onMounted(() => {
-    void fetchKeys();
+const refreshCloudData = async () => {
+    if (!hasCloudKeys.value) {
+        return;
+    }
+    isRefreshingCloudData.value = true;
+    try {
+        const [summary, credits, team] = await Promise.all([fetchSummary(), fetchCredits(), fetchTeam()]);
+        cloudSummary.value = summary;
+        cloudCredits.value = credits;
+        cloudTeam.value = team;
+    } catch (error) {
+        console.error('Failed to refresh cloud data:', error);
+    } finally {
+        isRefreshingCloudData.value = false;
+    }
+};
+
+onMounted(async () => {
+    await fetchKeys();
 
     // Show experimental dialog if not dismissed
     const isDismissed = localStorage.getItem(EXPERIMENTAL_DIALOG_DISMISSED_KEY);
     if (!isDismissed) {
         showExperimentalDialog.value = true;
+    }
+
+    // Fetch cloud data if credentials are configured
+    if (hasCloudKeys.value) {
+        await refreshCloudData();
+    }
+});
+
+// Watch for credential changes and refresh cloud data
+watch(hasCloudKeys, async (hasKeys) => {
+    if (hasKeys) {
+        await refreshCloudData();
+    } else {
+        cloudSummary.value = null;
+        cloudCredits.value = null;
+        cloudTeam.value = null;
     }
 });
 
@@ -772,6 +815,137 @@ watch(
                             </CardDescription>
                         </CardHeader>
                     </Card>
+                </div>
+            </section>
+
+            <!-- Cloud Information Section -->
+            <section v-if="hasCloudKeys" class="space-y-6">
+                <div class="flex items-center justify-between">
+                    <div class="text-center space-y-2 flex-1">
+                        <h2 class="text-2xl font-bold text-foreground">Cloud Information</h2>
+                        <p class="text-muted-foreground">Your FeatherCloud team and resource information</p>
+                    </div>
+                    <Button
+                        variant="outline"
+                        :disabled="isRefreshingCloudData || cloudLoading"
+                        class="gap-2"
+                        @click="refreshCloudData"
+                    >
+                        <RefreshCw :class="['h-4 w-4', (isRefreshingCloudData || cloudLoading) && 'animate-spin']" />
+                        Refresh
+                    </Button>
+                </div>
+
+                <div v-if="cloudLoading || isRefreshingCloudData" class="flex items-center justify-center py-12">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"
+                        ></div>
+                        <span class="text-muted-foreground">Loading cloud data...</span>
+                    </div>
+                </div>
+
+                <div v-else-if="cloudSummary || cloudCredits || cloudTeam" class="grid gap-6 md:grid-cols-3">
+                    <!-- Team Info Card -->
+                    <Card v-if="cloudTeam" class="border border-border/70 bg-background/95">
+                        <CardHeader>
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 rounded-lg bg-blue-500/10">
+                                    <Users class="h-5 w-5 text-blue-500" />
+                                </div>
+                                <CardTitle class="text-lg font-semibold text-foreground">Team</CardTitle>
+                            </div>
+                        </CardHeader>
+                        <CardContent class="space-y-2">
+                            <div>
+                                <p class="text-sm text-muted-foreground">Team Name</p>
+                                <p class="text-base font-medium text-foreground">{{ cloudTeam.team.name }}</p>
+                            </div>
+                            <div v-if="cloudTeam.team.description">
+                                <p class="text-sm text-muted-foreground">Description</p>
+                                <p class="text-sm text-foreground">{{ cloudTeam.team.description }}</p>
+                            </div>
+                            <div v-if="cloudSummary">
+                                <p class="text-sm text-muted-foreground">Total Members</p>
+                                <p class="text-base font-medium text-foreground">
+                                    {{ cloudSummary.statistics.total_members }}
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <!-- Credits Card -->
+                    <Card v-if="cloudCredits" class="border border-border/70 bg-background/95">
+                        <CardHeader>
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 rounded-lg bg-amber-500/10">
+                                    <Coins class="h-5 w-5 text-amber-500" />
+                                </div>
+                                <CardTitle class="text-lg font-semibold text-foreground">Credits</CardTitle>
+                            </div>
+                        </CardHeader>
+                        <CardContent class="space-y-2">
+                            <div>
+                                <p class="text-sm text-muted-foreground">Total Credits</p>
+                                <p class="text-2xl font-bold text-foreground">
+                                    {{ cloudCredits.total_credits.toLocaleString() }}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-muted-foreground">Team Members</p>
+                                <p class="text-base font-medium text-foreground">{{ cloudCredits.member_count }}</p>
+                            </div>
+                            <div v-if="cloudCredits.member_credits.length > 0" class="pt-2 border-t">
+                                <p class="text-xs text-muted-foreground mb-2">Top Contributors</p>
+                                <div class="space-y-1">
+                                    <div
+                                        v-for="member in cloudCredits.member_credits.slice(0, 3)"
+                                        :key="member.user_uuid"
+                                        class="flex items-center justify-between text-sm"
+                                    >
+                                        <span class="text-foreground truncate">{{ member.username }}</span>
+                                        <span class="font-medium text-foreground ml-2">
+                                            {{ member.credits.toLocaleString() }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <!-- Statistics Card -->
+                    <Card v-if="cloudSummary" class="border border-border/70 bg-background/95">
+                        <CardHeader>
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 rounded-lg bg-green-500/10">
+                                    <BarChart3 class="h-5 w-5 text-green-500" />
+                                </div>
+                                <CardTitle class="text-lg font-semibold text-foreground">Statistics</CardTitle>
+                            </div>
+                        </CardHeader>
+                        <CardContent class="space-y-3">
+                            <div>
+                                <p class="text-sm text-muted-foreground">Total Purchases</p>
+                                <p class="text-2xl font-bold text-foreground">
+                                    {{ cloudSummary.statistics.total_purchases }}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-muted-foreground">Cloud Instance</p>
+                                <p class="text-base font-medium text-foreground">{{ cloudSummary.cloud.cloud_name }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-muted-foreground">Panel URL</p>
+                                <p class="text-sm text-foreground break-all">
+                                    {{ cloudSummary.cloud.featherpanel_url }}
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <div v-else-if="hasCloudKeys" class="text-center py-12">
+                    <p class="text-muted-foreground">No cloud data available. Click refresh to load information.</p>
                 </div>
             </section>
 

@@ -1007,29 +1007,55 @@ class CloudPluginsController
 
             // Check if addon is premium
             $isPremium = isset($pkg['premium']) && (int) $pkg['premium'] === 1;
+            $fileContent = false;
+
             if ($isPremium) {
-                $premiumLink = $pkg['premium_link'] ?? null;
+                // For premium plugins, try to download via FeatherCloud
+                try {
+                    $featherCloudClient = new \App\Services\FeatherCloud\FeatherCloudClient();
 
-                return ApiResponse::error(
-                    'This is a premium addon and must be purchased',
-                    'PREMIUM_ADDON_PURCHASE_REQUIRED',
-                    402,
-                    [
-                        'premium_link' => $premiumLink,
-                        'premium_price' => $pkg['premium_price'] ?? null,
-                    ]
-                );
-            }
+                    // Get version from latest_version or request
+                    $version = $latestVersion['version'] ?? ($body['version'] ?? null);
+                    if (!$version) {
+                        return ApiResponse::error(
+                            'Version is required for premium plugins',
+                            'VERSION_REQUIRED',
+                            400,
+                            [
+                                'premium_link' => $pkg['premium_link'] ?? null,
+                                'premium_price' => $pkg['premium_price'] ?? null,
+                            ]
+                        );
+                    }
 
-            // Get download URL from latest version
-            if (!isset($latestVersion['download_url'])) {
-                return ApiResponse::error('Package has no download URL available', 'PACKAGE_NO_DOWNLOAD_URL', 404);
-            }
+                    // Download premium package via FeatherCloud
+                    $fileContent = $featherCloudClient->downloadPremiumPackage($identifier, $version);
+                } catch (\App\Services\FeatherCloud\FeatherCloudException $e) {
+                    // If FeatherCloud download fails, return error with purchase info
+                    $premiumLink = $pkg['premium_link'] ?? null;
 
-            $downloadUrl = 'https://api.featherpanel.com' . $latestVersion['download_url'];
-            $fileContent = @file_get_contents($downloadUrl, false, $context);
-            if ($fileContent === false) {
-                return ApiResponse::error('Failed to download addon package', 'ADDON_DOWNLOAD_FAILED', 500);
+                    return ApiResponse::error(
+                        $e->getMessage() ?: 'This is a premium addon and must be purchased',
+                        $e->getErrorCode() ?: 'PREMIUM_ADDON_PURCHASE_REQUIRED',
+                        $e->getHttpStatusCode() ?: 402,
+                        [
+                            'premium_link' => $premiumLink,
+                            'premium_price' => $pkg['premium_price'] ?? null,
+                        ]
+                    );
+                }
+            } else {
+                // For free plugins, download from public API
+                // Get download URL from latest version
+                if (!isset($latestVersion['download_url'])) {
+                    return ApiResponse::error('Package has no download URL available', 'PACKAGE_NO_DOWNLOAD_URL', 404);
+                }
+
+                $downloadUrl = 'https://api.featherpanel.com' . $latestVersion['download_url'];
+                $fileContent = @file_get_contents($downloadUrl, false, $context);
+                if ($fileContent === false) {
+                    return ApiResponse::error('Failed to download addon package', 'ADDON_DOWNLOAD_FAILED', 500);
+                }
             }
 
             $tempFile = sys_get_temp_dir() . '/' . uniqid('featherpanel_', true) . '.fpa';

@@ -308,8 +308,9 @@
                                         </Badge>
                                         <Badge
                                             v-if="addon.premium === 1"
-                                            class="text-xs bg-linear-to-r from-yellow-500 to-amber-600 text-white border-0"
+                                            class="text-xs bg-linear-to-r from-yellow-500 to-amber-600 text-white border-0 flex items-center gap-1"
                                         >
+                                            <Crown class="h-3 w-3" />
                                             Premium
                                         </Badge>
                                     </div>
@@ -329,15 +330,26 @@
                                 ⚠️ Unverified addon - review source before installing
                             </div>
 
-                            <!-- Premium Price -->
-                            <div v-if="addon.premium === 1 && addon.premium_price" class="mb-3">
+                            <!-- Premium Price & Purchase Status -->
+                            <div v-if="addon.premium === 1" class="mb-3 space-y-2">
                                 <div
+                                    v-if="addon.premium_price"
                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-linear-to-r from-yellow-500/10 to-amber-600/10 border border-yellow-500/30"
                                 >
+                                    <Crown class="h-4 w-4 text-yellow-700 dark:text-yellow-500" />
                                     <span class="text-base font-bold text-yellow-700 dark:text-yellow-500"
                                         >€{{ addon.premium_price }}</span
                                     >
                                     <span class="text-xs text-muted-foreground">EUR</span>
+                                </div>
+                                <div
+                                    v-if="isPremiumPluginPurchased(addon)"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-green-500/10 border border-green-500/30"
+                                >
+                                    <BadgeCheck class="h-4 w-4 text-green-700 dark:text-green-400" />
+                                    <span class="text-sm font-medium text-green-700 dark:text-green-400"
+                                        >Purchased</span
+                                    >
                                 </div>
                             </div>
 
@@ -407,6 +419,29 @@
                                     </template>
                                     <template v-else-if="addon.premium === 1">
                                         <Button
+                                            v-if="isPremiumPluginPurchased(addon)"
+                                            size="sm"
+                                            class="flex-1 bg-linear-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 hover:scale-105 hover:shadow-md transition-all duration-200 text-white"
+                                            :disabled="installingOnlineId === addon.identifier"
+                                            :title="
+                                                installingOnlineId === addon.identifier
+                                                    ? 'Installing...'
+                                                    : 'Install premium plugin'
+                                            "
+                                            @click.stop="openOnlineInstallDialog(addon)"
+                                        >
+                                            <Crown
+                                                v-if="installingOnlineId !== addon.identifier"
+                                                class="h-4 w-4 mr-1"
+                                            />
+                                            <div
+                                                v-else
+                                                class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                                            ></div>
+                                            {{ installingOnlineId === addon.identifier ? 'Installing...' : 'Install' }}
+                                        </Button>
+                                        <Button
+                                            v-else
                                             size="sm"
                                             as="a"
                                             :href="addon.premium_link || '#'"
@@ -415,6 +450,7 @@
                                             class="flex-1 bg-linear-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 hover:scale-105 hover:shadow-md transition-all duration-200 text-white"
                                             title="Purchase premium plugin"
                                         >
+                                            <Crown class="h-4 w-4 mr-1" />
                                             Purchase
                                         </Button>
                                     </template>
@@ -714,7 +750,23 @@
                     </DialogClose>
                     <template v-if="packageDetails && !installedIds.has(packageDetails.package.identifier)">
                         <Button
-                            v-if="packageDetails.package.premium === 1"
+                            v-if="
+                                packageDetails.package.premium === 1 && isPremiumPluginPurchased(packageDetails.package)
+                            "
+                            :disabled="installingOnlineId === packageDetails.package.identifier"
+                            class="bg-linear-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 hover:scale-105 hover:shadow-md transition-all duration-200 text-white"
+                            title="Install premium plugin"
+                            @click="openOnlineInstallDialog(packageDetails.package)"
+                        >
+                            <Crown
+                                v-if="installingOnlineId !== packageDetails.package.identifier"
+                                class="h-4 w-4 mr-2"
+                            />
+                            <div v-else class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            {{ installingOnlineId === packageDetails.package.identifier ? 'Installing...' : 'Install' }}
+                        </Button>
+                        <Button
+                            v-else-if="packageDetails.package.premium === 1"
                             as="a"
                             :href="packageDetails.package.premium_link || '#'"
                             target="_blank"
@@ -722,6 +774,7 @@
                             class="bg-linear-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 hover:scale-105 hover:shadow-md transition-all duration-200 text-white"
                             title="Purchase premium plugin"
                         >
+                            <Crown class="h-4 w-4 mr-2" />
                             Purchase
                         </Button>
                         <Button
@@ -1116,6 +1169,7 @@ import {
     Info,
     RefreshCw,
     ArrowLeft,
+    Crown,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -1132,6 +1186,7 @@ import {
     DialogFooter,
     DialogClose,
 } from '@/components/ui/dialog';
+import { useFeatherCloud, type ProductPurchase } from '@/composables/useFeatherCloud';
 
 // Types
 interface Plugin {
@@ -1210,6 +1265,11 @@ type OnlinePaginationItem = number | 'ellipsis-left' | 'ellipsis-right';
 // Stores
 const sessionStore = useSessionStore();
 const router = useRouter();
+const { fetchProducts } = useFeatherCloud();
+
+// Purchased products tracking
+const purchasedProducts = ref<Set<string>>(new Set());
+const purchasedProductsLoading = ref(false);
 
 // State
 const plugins = ref<Plugin[]>([]);
@@ -1274,6 +1334,26 @@ const hasUpdateAvailable = (addon: OnlineAddon): boolean => {
     };
 
     return compareVersions(installedNormalized, latestNormalized) < 0;
+};
+
+// Extract product identifier from premium_link URL
+const extractProductIdentifier = (premiumLink: string | null | undefined): string | null => {
+    if (!premiumLink) return null;
+    try {
+        const url = new URL(premiumLink);
+        // Extract identifier from path like /market/my-product
+        const match = url.pathname.match(/\/market\/([^/]+)/);
+        return match && match[1] ? match[1] : null;
+    } catch {
+        return null;
+    }
+};
+
+// Check if premium plugin is purchased
+const isPremiumPluginPurchased = (addon: OnlineAddon): boolean => {
+    if (addon.premium !== 1 || !addon.premium_link) return false;
+    const productId = extractProductIdentifier(addon.premium_link);
+    return productId !== null && purchasedProducts.value.has(productId);
 };
 
 // Popular packages
@@ -1543,14 +1623,19 @@ const fetchOnlineAddons = async (page = currentOnlinePage.value) => {
         onlineLoading.value = false;
     }
 };
-const onlineInstall = async (identifier: string, isUpdate = false) => {
+const onlineInstall = async (identifier: string, isUpdate = false, version?: string) => {
     installingOnlineId.value = identifier;
     try {
+        const body: { identifier: string; version?: string } = { identifier };
+        if (version) {
+            body.version = version;
+        }
+
         const resp = await fetch('/api/admin/plugins/online/install', {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ identifier }),
+            body: JSON.stringify(body),
         });
         if (!resp.ok) {
             const errorMessage = await parseApiError(resp);
@@ -1611,7 +1696,8 @@ const openOnlineInstallDialog = async (addon: OnlineAddon) => {
 const proceedOnlineInstall = async () => {
     if (!selectedAddonForInstall.value) return;
     const isUpdate = installRequirements.value?.update_available ?? false;
-    await onlineInstall(selectedAddonForInstall.value.identifier, isUpdate);
+    const version = selectedAddonForInstall.value.latest_version?.version || undefined;
+    await onlineInstall(selectedAddonForInstall.value.identifier, isUpdate, version);
     confirmOnlineOpen.value = false;
     selectedAddonForInstall.value = null;
     installRequirements.value = null;
@@ -1813,6 +1899,41 @@ const fetchPreviouslyInstalledPlugins = async () => {
     }
 };
 
+const fetchPurchasedProducts = async () => {
+    purchasedProductsLoading.value = true;
+    try {
+        // Fetch all pages of purchased products
+        let page = 1;
+        const allPurchases: ProductPurchase[] = [];
+        let hasMore = true;
+
+        while (hasMore) {
+            const data = await fetchProducts(page, 100);
+            if (data && data.purchases) {
+                allPurchases.push(...data.purchases);
+                hasMore = data.purchases.length === 100 && page < 10; // Limit to 10 pages max
+                page++;
+            } else {
+                hasMore = false;
+            }
+        }
+
+        // Extract product identifiers
+        const productIds = new Set<string>();
+        allPurchases.forEach((purchase) => {
+            if (purchase.product?.identifier) {
+                productIds.add(purchase.product.identifier);
+            }
+        });
+        purchasedProducts.value = productIds;
+    } catch (e) {
+        console.error('Failed to fetch purchased products:', e);
+        // Silently fail - premium plugins will show purchase button if fetch fails
+    } finally {
+        purchasedProductsLoading.value = false;
+    }
+};
+
 const openReinstallDialog = () => {
     // Select all by default
     selectedPluginsToReinstall.value = new Set(previouslyInstalledPlugins.value.map((p) => p.identifier));
@@ -1904,6 +2025,8 @@ onMounted(async () => {
 
     // Fetch installed plugins to check which ones are already installed (for badge display)
     await fetchPlugins();
+    // Fetch purchased products to check premium plugin access
+    await fetchPurchasedProducts();
     // Fetch popular packages
     await fetchPopularAddons();
     // Fetch online plugins to display
