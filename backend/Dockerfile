@@ -49,7 +49,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         zip \
         gd \
         intl \
-        bcmath
+        bcmath \
+		mysqli
 
 # Install Redis extension with BuildKit cache mount
 RUN --mount=type=cache,target=/tmp/pecl-cache \
