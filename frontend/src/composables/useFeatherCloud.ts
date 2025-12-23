@@ -183,9 +183,12 @@ export function useFeatherCloud() {
         loading.value = true;
         error.value = null;
         try {
-            const response = await axios.get<{ success: boolean; data: ProductsData }>('/api/admin/cloud/data/products', {
-                params: { page, limit },
-            });
+            const response = await axios.get<{ success: boolean; data: ProductsData }>(
+                '/api/admin/cloud/data/products',
+                {
+                    params: { page, limit },
+                },
+            );
             if (response.data.success) {
                 return response.data.data;
             }
@@ -248,4 +251,3 @@ export function useFeatherCloud() {
         downloadPremiumPackage,
     };
 }
-

@@ -223,6 +223,11 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/CloudManagement.vue'),
     },
     {
+        path: '/admin/cloud-management/finish',
+        name: 'AdminCloudManagementFinish',
+        component: () => import('@/pages/admin/CloudManagementFinish.vue'),
+    },
+    {
         path: '/admin/dev/logs',
         name: 'AdminLogViewer',
         component: () => import('@/pages/admin/dev/LogViewer.vue'),

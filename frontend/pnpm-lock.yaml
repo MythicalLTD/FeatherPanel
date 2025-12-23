@@ -96,8 +96,8 @@ importers:
         specifier: ^1.5.4
         version: 1.5.4
       reka-ui:
-        specifier: ^2.6.1
-        version: 2.6.1(typescript@5.9.3)(vue@3.5.26(typescript@5.9.3))
+        specifier: ^2.7.0
+        version: 2.7.0(typescript@5.9.3)(vue@3.5.26(typescript@5.9.3))
       tailwind-merge:
         specifier: ^3.4.0
         version: 3.4.0
@@ -115,7 +115,7 @@ importers:
         version: 8.50.1(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
       vaul-vue:
         specifier: ^0.4.1
-        version: 0.4.1(reka-ui@2.6.1(typescript@5.9.3)(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))
+        version: 0.4.1(reka-ui@2.7.0(typescript@5.9.3)(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))
       vee-validate:
         specifier: ^4.15.1
         version: 4.15.1(vue@3.5.26(typescript@5.9.3))
@@ -1849,8 +1849,8 @@ packages:
     resolution: {integrity: sha512-qpt8EwugBWDw2cgE2W+/3oxC+KTez2uSVR8JU9Q36TXPAGCaozfQUs59v4j4GFpWTaw0i6hAZSvOmu1J0uOEUg==}
     engines: {node: ^18.17.0 || >=20.5.0}
 
-  reka-ui@2.6.1:
-    resolution: {integrity: sha512-XK7cJDQoNuGXfCNzBBo/81Yg/OgjPwvbabnlzXG2VsdSgNsT6iIkuPBPr+C0Shs+3bb0x0lbPvgQAhMSCKm5Ww==}
+  reka-ui@2.7.0:
+    resolution: {integrity: sha512-m+XmxQN2xtFzBP3OAdIafKq7C8OETo2fqfxcIIxYmNN2Ch3r5oAf6yEYCIJg5tL/yJU2mHqF70dCCekUkrAnXA==}
     peerDependencies:
       vue: '>= 3.2.0'
 
@@ -3911,7 +3911,7 @@ snapshots:
       json-parse-even-better-errors: 4.0.0
       npm-normalize-package-bin: 4.0.0
 
-  reka-ui@2.6.1(typescript@5.9.3)(vue@3.5.26(typescript@5.9.3)):
+  reka-ui@2.7.0(typescript@5.9.3)(vue@3.5.26(typescript@5.9.3)):
     dependencies:
       '@floating-ui/dom': 1.7.4
       '@floating-ui/vue': 1.1.9(vue@3.5.26(typescript@5.9.3))
@@ -4129,10 +4129,10 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  vaul-vue@0.4.1(reka-ui@2.6.1(typescript@5.9.3)(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3)):
+  vaul-vue@0.4.1(reka-ui@2.7.0(typescript@5.9.3)(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3)):
     dependencies:
       '@vueuse/core': 10.11.1(vue@3.5.26(typescript@5.9.3))
-      reka-ui: 2.6.1(typescript@5.9.3)(vue@3.5.26(typescript@5.9.3))
+      reka-ui: 2.7.0(typescript@5.9.3)(vue@3.5.26(typescript@5.9.3))
       vue: 3.5.26(typescript@5.9.3)
     transitivePeerDependencies:
       - '@vue/composition-api'

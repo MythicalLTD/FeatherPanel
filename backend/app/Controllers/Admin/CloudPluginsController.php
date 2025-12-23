@@ -1014,6 +1014,7 @@ class CloudPluginsController
                 $featherCloudClient = new \App\Services\FeatherCloud\FeatherCloudClient();
                 if (!$featherCloudClient->isConfigured()) {
                     $premiumLink = $pkg['premium_link'] ?? null;
+
                     return ApiResponse::error(
                         'FeatherCloud credentials are not configured. Please configure your cloud account credentials in Cloud Management to download premium plugins.',
                         'CLOUD_CREDENTIALS_NOT_CONFIGURED',

@@ -79,6 +79,27 @@ return function (RouteCollection $routes): void {
         ['POST'],
     );
 
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-cloud-oauth2-link',
+        '/api/admin/cloud/oauth2/link',
+        static function (Request $request) {
+            return (new CloudManagementController())->getOAuth2Link($request);
+        },
+        Permissions::ADMIN_SETTINGS_VIEW,
+    );
+
+    App::getInstance(true)->registerAdminRoute(
+        $routes,
+        'admin-cloud-oauth2-callback',
+        '/api/admin/cloud/oauth2/callback',
+        static function (Request $request) {
+            return (new CloudManagementController())->saveOAuth2Callback($request);
+        },
+        Permissions::ADMIN_SETTINGS_EDIT,
+        ['POST'],
+    );
+
     // Cloud Data Endpoints (Admin Root Only)
     App::getInstance(true)->registerAdminRoute(
         $routes,

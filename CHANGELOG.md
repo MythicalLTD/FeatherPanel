@@ -17,6 +17,7 @@
 - Plugin Widgets now intelligently detect and adapt to their initialization page, enabling more context-aware behavior and seamless integration. by @nayskutzu
 - Added a streamlined option to automatically reinstall any plugins removed during a panel update, eliminating the need for manual reinstallation. by @nayskutzu
 - You can now seamlessly download premium plugins directly, once your panel is linked to your FeatherCloud account. by @nayskutzu
+- Seamless FeatherCloud OAuth2 integration now available—securely link your panel to the cloud in just a few clicks! by @nayskutzu
 
 ### Improved
 
