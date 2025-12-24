@@ -9,3 +9,4 @@
 .env
 .env-copy
 config/ratelimit.json
+mcversionmanager/
