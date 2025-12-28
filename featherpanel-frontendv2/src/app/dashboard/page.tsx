@@ -147,7 +147,7 @@ export default function DashboardPage() {
 					<div className="space-y-6">
 						<div className="flex items-center justify-between">
 							<h2 className="text-xl font-bold">{t('dashboard.recent_servers.title')}</h2>
-							<Link href="/servers" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
+							<Link href="/dashboard/servers" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
 								{t('dashboard.recent_servers.view_all')} &rarr;
 							</Link>
 						</div>
@@ -249,7 +249,7 @@ export default function DashboardPage() {
 					<div className="rounded-xl border border-border bg-card p-6 shadow-sm">
 						<div className="flex items-center justify-between mb-6">
 							<h2 className="text-lg font-bold">{t('dashboard.activity.title')}</h2>
-							<Link href="/account?tab=activity" className="text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+							<Link href="/dashboard/account?tab=activity" className="text-xs font-medium text-primary hover:text-primary/80 transition-colors">
 								{t('dashboard.activity.view_all')} &rarr;
 							</Link>
 						</div>

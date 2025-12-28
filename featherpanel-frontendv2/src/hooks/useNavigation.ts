@@ -480,9 +480,9 @@ export function useNavigation() {
                 id: 'servers',
                 name: 'Servers',
                 title: 'Servers',
-                url: '/servers',
+                url: '/dashboard/servers',
                 icon: Server,
-                isActive: pathname.startsWith('/servers'),
+                isActive: pathname.startsWith('/dashboard/servers'),
                 category: 'main',
                 group: 'Overview'
             },
@@ -490,9 +490,9 @@ export function useNavigation() {
                 id: 'account',
                 name: 'Account',
                 title: 'Account',
-                url: '/account',
+                url: '/dashboard/account',
                 icon: User,
-                isActive: pathname.startsWith('/account'),
+                isActive: pathname.startsWith('/dashboard/account'),
                 category: 'main',
                 group: 'Account'
             },
