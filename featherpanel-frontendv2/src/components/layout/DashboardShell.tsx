@@ -32,7 +32,7 @@ export default function DashboardShell({
                        pathname.match(/^\/dashboard\/.+/)
 
   // More specific check: if it's not one of our core pages, it's likely a plugin or a dedicated management page
-  const corePaths = ['/dashboard', '/dashboard/servers', '/dashboard/account', '/dashboard/tickets', '/dashboard/knowledgebase']
+  const corePaths = ['/dashboard', '/dashboard/servers', '/dashboard/account', '/dashboard/tickets', '/dashboard/knowledgebase', '/dashboard/status']
   const isFullWidthMode = isPluginPage && !corePaths.includes(pathname) && !pathname.startsWith('/auth/')
 
   useEffect(() => {
