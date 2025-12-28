@@ -3,6 +3,7 @@
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild, Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import { Fragment, useState, useRef } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useTranslation } from '@/contexts/TranslationContext'
 import { Button } from '@/components/ui/button'
 import { Image as ImageIcon, ArrowUp, XIcon } from 'lucide-react'
 
@@ -12,38 +13,39 @@ interface BackgroundCustomizerProps {
 
 export default function BackgroundCustomizer({ children }: BackgroundCustomizerProps) {
 	const { backgroundType, backgroundImage, setBackgroundType, setBackgroundImage } = useTheme()
+	const { t } = useTranslation()
 	const [isOpen, setIsOpen] = useState(false)
 	const [imageUrl, setImageUrl] = useState(backgroundImage)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 
 	const gradientPresets = [
 		{
-			name: 'Purple Dream',
+			name: t('appearance.background.presets.purpleDream'),
 			value: 'purple-dream',
 			gradient: 'linear-gradient(135deg, rgba(147, 51, 234, 0.1) 0%, rgba(79, 70, 229, 0.05) 50%, rgba(147, 51, 234, 0.1) 100%)'
 		},
 		{
-			name: 'Ocean Breeze',
+			name: t('appearance.background.presets.oceanBreeze'),
 			value: 'ocean-breeze',
 			gradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(59, 130, 246, 0.05) 50%, rgba(6, 182, 212, 0.1) 100%)'
 		},
 		{
-			name: 'Sunset Glow',
+			name: t('appearance.background.presets.sunsetGlow'),
 			value: 'sunset-glow',
 			gradient: 'linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(239, 68, 68, 0.05) 50%, rgba(251, 146, 60, 0.1) 100%)'
 		},
 		{
-			name: 'Forest Mist',
+			name: t('appearance.background.presets.forestMist'),
 			value: 'forest-mist',
 			gradient: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.05) 50%, rgba(34, 197, 94, 0.1) 100%)'
 		},
 		{
-			name: 'Rose Garden',
+			name: t('appearance.background.presets.roseGarden'),
 			value: 'rose-garden',
 			gradient: 'linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(219, 39, 119, 0.05) 50%, rgba(236, 72, 153, 0.1) 100%)'
 		},
 		{
-			name: 'Golden Hour',
+			name: t('appearance.background.presets.goldenHour'),
 			value: 'golden-hour',
 			gradient: 'linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.05) 50%, rgba(251, 191, 36, 0.1) 100%)'
 		},
@@ -85,7 +87,7 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
 				<button
 					onClick={() => setIsOpen(true)}
 					className="h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md hover:bg-background hover:scale-110 hover:shadow-lg transition-all duration-200 flex items-center justify-center"
-					title="Customize background"
+					title={t('appearance.background.customize')}
 				>
 					<ImageIcon className="h-4 w-4" aria-hidden="true" />
 				</button>
@@ -119,7 +121,7 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
 								<DialogPanel className="w-full max-w-lg transform overflow-hidden rounded-2xl bg-card border border-border/50 p-6 shadow-xl transition-all">
 									<div className="flex items-center justify-between mb-6">
 										<DialogTitle className="text-lg font-semibold text-foreground">
-											Background Settings
+											{t('appearance.background.title')}
 										</DialogTitle>
 										<button
 											onClick={() => setIsOpen(false)}
@@ -138,7 +140,7 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
 													: 'text-muted-foreground hover:bg-background/50'
 												}`
 											}>
-												Gradients
+												{t('appearance.background.gradients')}
 											</Tab>
 											<Tab className={({ selected }) =>
 												`w-full rounded-lg py-2.5 text-sm font-medium transition-all
@@ -147,7 +149,7 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
 													: 'text-muted-foreground hover:bg-background/50'
 												}`
 											}>
-												Solid/Pattern
+												{t('appearance.background.solidPattern')}
 											</Tab>
 											<Tab className={({ selected }) =>
 												`w-full rounded-lg py-2.5 text-sm font-medium transition-all
@@ -156,7 +158,7 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
 													: 'text-muted-foreground hover:bg-background/50'
 												}`
 											}>
-												Custom Image
+												{t('appearance.background.customImage')}
 											</Tab>
 										</TabList>
 
@@ -203,7 +205,7 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
                             `}
 													>
 														<div className="h-20 rounded-lg mb-2 bg-background" />
-														<p className="text-sm font-medium">Solid Color</p>
+														<p className="text-sm font-medium">{t('appearance.background.solidColor')}</p>
 													</button>
 													<button
 														onClick={() => {
@@ -225,7 +227,7 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
 																backgroundSize: '16px 16px'
 															}}
 														/>
-														<p className="text-sm font-medium">Dot Pattern</p>
+														<p className="text-sm font-medium">{t('appearance.background.dotPattern')}</p>
 													</button>
 												</div>
 											</TabPanel>
@@ -236,7 +238,7 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
 													{/* File Upload */}
 													<div>
 														<label className="block text-sm font-medium mb-2">
-															Upload Local Image
+															{t('appearance.background.uploadLocal')}
 														</label>
 														<input
 															ref={fileInputRef}
@@ -251,7 +253,7 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
 															className="w-full"
 														>
 															<ArrowUp className="h-4 w-4 mr-2" />
-															Choose File
+															{t('appearance.background.chooseFile')}
 														</Button>
 													</div>
 
@@ -260,14 +262,14 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
 															<div className="w-full border-t border-border" />
 														</div>
 														<div className="relative flex justify-center text-xs">
-															<span className="bg-card px-2 text-muted-foreground">OR</span>
+															<span className="bg-card px-2 text-muted-foreground">{t('appearance.background.or')}</span>
 														</div>
 													</div>
 
 													{/* URL Input */}
 													<div>
 														<label className="block text-sm font-medium mb-2">
-															Image URL
+															{t('appearance.background.imageUrl')}
 														</label>
 														<input
 															type="url"
@@ -277,7 +279,7 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
 															className="w-full px-4 py-2 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
 														/>
 														<Button onClick={handleSaveUrl} className="w-full mt-3">
-															Apply Image
+															{t('appearance.background.applyImage')}
 														</Button>
 													</div>
 												</div>

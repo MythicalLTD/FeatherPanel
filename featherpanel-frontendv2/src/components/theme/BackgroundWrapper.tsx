@@ -1,11 +1,11 @@
 'use client'
 
 import { useTheme } from '@/contexts/ThemeContext'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 export default function BackgroundWrapper({ children }: { children: React.ReactNode }) {
 	const { backgroundType, backgroundImage } = useTheme()
-	const [mounted, setMounted] = useState(() => typeof window !== 'undefined')
+	const [mounted] = useState(() => typeof window !== 'undefined')
 
 	if (!mounted) {
 		return <>{children}</>

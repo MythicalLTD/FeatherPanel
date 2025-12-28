@@ -111,7 +111,7 @@
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",
-	"optional": "Optional",
+    "optional": "Optional",
     "success": "Success",
     "cancel": "Cancel",
     "save": "Save",
@@ -168,12 +168,6 @@
       "view_all": "View All",
       "no_servers": "No servers found",
       "create_first": "Create your first server to get started"
-    },
-    "coming_soon": {
-      "title": "Coming Soon",
-      "tickets": "Support Tickets",
-      "announcements": "Announcements",
-      "description": "We are working hard to bring you these features."
     },
     "announcements": {
       "new": "New",
@@ -314,7 +308,9 @@
       "statuses": {
         "active": "Active",
         "deleted": "Deleted"
-      }
+      },
+      "updateFailed": "Failed to update SSH key",
+      "loadSingleError": "Failed to load SSH key"
     },
     "apiKeys": {
       "title": "API Keys",
@@ -425,7 +421,10 @@
         "pending": "Pending",
         "sent": "Sent",
         "failed": "Failed"
-      }
+      },
+      "showingMails": "Showing {{from}} to {{to}} of {{total}} emails",
+      "totalMailsCount": "{{count}} emails",
+      "mailContent": "Mail Content"
     },
     "licenses": {
       "title": "Licenses & Third Party",
@@ -476,7 +475,7 @@
       "running": "Running",
       "stopped": "Stopped",
       "starting": "Starting",
-	  "null": "Unknown",
+      "null": "Unknown",
       "stopping": "Stopping",
       "offline": "Offline",
       "installing": "Installing",
@@ -563,9 +562,10 @@
     "fillRequiredFields": "Please fill in all required fields",
     "ticketCreated": "Ticket created successfully",
     "failedToCreate": "Failed to create ticket",
-	"titleDescription": "Brief summary of the issue",
-	"descriptionDetail": "Detailed description of your issue...",
+    "titleDescription": "Brief summary of the issue",
+    "descriptionDetail": "Detailed description of your issue...",
     "fileTooLarge": "File {name} is too large (max 50MB)",
+    "failedToLoad": "Failed to load ticket details",
     "failedToLoadCategories": "Failed to load form data",
     "backToTickets": "Back to Tickets",
     "selectServerTitle": "Select a server",
@@ -574,7 +574,11 @@
     "noServersFound": "No servers found",
     "clearServerSelection": "Clear selection",
     "conversation": "Conversation",
+    "originalRequest": "Original Request",
+    "internalNote": "Internal Note",
+    "system": "System",
     "noMessages": "No messages in this ticket yet.",
+    "ticketNotFound": "Ticket not found",
     "replyToTicket": "Reply to Ticket",
     "typeReply": "Type your reply here...",
     "sendReply": "Send Reply",
@@ -583,18 +587,124 @@
     "failedToSendReply": "Failed to send reply",
     "messageDeleted": "Message deleted",
     "failedToDeleteMessage": "Failed to delete message",
+    "deleteMessage": "Delete Message",
     "deleteMessageConfirm": "Are you sure you want to delete this message?",
     "details": "Ticket Details",
     "statusLabel": "Status",
     "status": {
-        "open": "Open",
-        "closed": "Closed",
-        "answered": "Answered"
+      "open": "Open",
+      "closed": "Closed",
+      "answered": "Answered"
     },
     "category": "Category",
     "priority": "Priority",
     "server": "Server",
+    "serverId": "ID",
     "attachFiles": "Attach Files",
     "dragDropHint": "Drag & Drop files here"
+  },
+  "appearance": {
+    "title": "Appearance Settings",
+    "language": "Language",
+    "accentColor": "Accent Color",
+    "theme": {
+      "title": "Theme",
+      "light": "Light Mode",
+      "dark": "Dark Mode",
+      "switchToLight": "Switch to light mode",
+      "switchToDark": "Switch to dark mode"
+    },
+    "background": {
+      "title": "Background Settings",
+      "customize": "Customize background",
+      "change": "Change Background",
+      "gradients": "Gradients",
+      "solidPattern": "Solid/Pattern",
+      "customImage": "Custom Image",
+      "solidColor": "Solid Color",
+      "dotPattern": "Dot Pattern",
+      "uploadLocal": "Upload Local Image",
+      "chooseFile": "Choose File",
+      "imageUrl": "Image URL",
+      "applyImage": "Apply Image",
+      "or": "OR",
+      "presets": {
+        "purpleDream": "Purple Dream",
+        "oceanBreeze": "Ocean Breeze",
+        "sunsetGlow": "Sunset Glow",
+        "forestMist": "Forest Mist",
+        "roseGarden": "Rose Garden",
+        "goldenHour": "Golden Hour"
+      }
+    },
+    "colors": {
+      "purple": "Purple",
+      "blue": "Blue",
+      "green": "Green",
+      "red": "Red",
+      "orange": "Orange",
+      "pink": "Pink",
+      "teal": "Teal",
+      "yellow": "Yellow"
+    }
+  },
+  "navigation": {
+    "groups": {
+      "overview": "Overview",
+      "users": "Users",
+      "infrastructure": "Infrastructure",
+      "content": "Content",
+      "system": "System",
+      "featherCloud": "FeatherCloud",
+      "tickets": "Tickets",
+      "management": "Management",
+      "account": "Account",
+      "support": "Support",
+      "plugins": "Plugins"
+    },
+    "items": {
+      "dashboard": "Dashboard",
+      "analytics": "Analytics & KPIs",
+      "users": "Users",
+      "roles": "Roles",
+      "notifications": "Notifications",
+      "servers": "Servers",
+      "locations": "Locations",
+      "nodeStatus": "Node Status",
+      "subdomains": "Subdomains",
+      "realms": "Realms",
+      "zeroTrust": "ZeroTrust Security",
+      "images": "Images",
+      "mailTemplates": "Mail Templates",
+      "redirectLinks": "Redirect Links",
+      "aiAgent": "AI Agent",
+      "settings": "Settings",
+      "rateLimits": "Rate Limits",
+      "databaseManagement": "Database Management",
+      "pterodactylImporter": "Pterodactyl Importer",
+      "apiKeys": "API Keys",
+      "plugins": "Plugins",
+      "marketplace": "Marketplace",
+      "cloudManagement": "Cloud Management",
+      "knowledgebase": "Knowledge Base",
+      "tickets": "Support Tickets",
+      "ticketCategories": "Ticket Categories",
+      "ticketPriorities": "Ticket Priorities",
+      "ticketStatuses": "Ticket Statuses",
+      "backToDashboard": "Back to Dashboard",
+      "serverOverview": "Overview",
+      "account": "Account",
+      "status": "Status",
+      "admin": "Admin"
+    }
+  },
+  "navbar": {
+    "profile": "Your Profile",
+    "adminArea": "Admin Area",
+    "adminPanelTooltip": "Admin Panel",
+    "openSidebar": "Open sidebar",
+    "openUserMenu": "Open user menu",
+    "signOut": "Sign out",
+    "user": "User"
   }
 }

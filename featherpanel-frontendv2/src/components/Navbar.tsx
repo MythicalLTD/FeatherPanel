@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer'
 import { useSession } from '@/contexts/SessionContext'
+import { useTranslation } from '@/contexts/TranslationContext'
 import Image from 'next/image'
 import Permissions from '@/lib/permissions'
 
@@ -22,9 +23,10 @@ interface NavbarProps {
 export default function Navbar({ onMenuClick }: NavbarProps) {
 	const router = useRouter()
 	const { user, logout, hasPermission } = useSession()
+	const { t } = useTranslation()
 
 	const userNavigation = [
-		{ name: 'Your Profile', href: '/dashboard/account', icon: CircleUser },
+		{ name: t('navbar.profile'), href: '/dashboard/account', icon: CircleUser },
 	]
 
 	const handleLogout = async () => {
@@ -37,8 +39,8 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 	}
 
 	const getUserDisplayName = () => {
-		if (!user) return 'User'
-		return `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || 'User'
+		if (!user) return t('navbar.user')
+		return `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || t('navbar.user')
 	}
 
 	const canAccessAdmin = hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)
@@ -51,7 +53,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 				className="-m-2.5 p-2.5 text-muted-foreground lg:hidden hover:text-foreground transition-colors"
 				onClick={onMenuClick}
 			>
-				<span className="sr-only">Open sidebar</span>
+				<span className="sr-only">{t('navbar.openSidebar')}</span>
 				<MenuIcon className="h-6 w-6" aria-hidden="true" />
 			</button>
 
@@ -61,7 +63,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 			<div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
 				<div className="flex flex-1 items-center">
 					{/* Breadcrumbs or page title can go here */}
-					<h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
+					<h1 className="text-lg font-semibold text-foreground">{t('dashboard.title')}</h1>
 				</div>
 
 				<div className="flex items-center gap-x-2 sm:gap-x-4 lg:gap-x-6">
@@ -70,10 +72,10 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 						<button
 							onClick={() => router.push('/admin')}
 							className="flex items-center gap-2 rounded-lg px-2 sm:px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
-							title="Admin Panel"
+							title={t('navbar.adminPanelTooltip')}
 						>
 							<ShieldCheck className="h-5 w-5" />
-							<span className="hidden lg:inline">Admin Area</span>
+							<span className="hidden lg:inline">{t('navbar.adminArea')}</span>
 						</button>
 					)}
 
@@ -86,7 +88,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 					{/* Profile dropdown */}
 					<Menu as="div" className="relative">
 						<Menu.Button className="flex items-center gap-x-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
-							<span className="sr-only">Open user menu</span>
+							<span className="sr-only">{t('navbar.openUserMenu')}</span>
 							{user?.avatar ? (
 								<Image
 									src={user.avatar}
@@ -191,7 +193,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 												)}
 											>
 												<LogOut className="h-5 w-5" />
-												Sign out
+												{t('navbar.signOut')}
 											</button>
 										)}
 									</Menu.Item>

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { useSession } from "@/contexts/SessionContext";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useTranslation } from "@/contexts/TranslationContext";
 import Permissions from "@/lib/permissions";
 import axios from "axios";
 import type {
@@ -16,7 +17,8 @@ import {
   ShieldCheck,
   Settings,
   Activity,
-  BookOpen, ChevronLeft,
+  BookOpen,
+  ChevronLeft,
   Ticket,
   BarChart3,
   Crown,
@@ -45,6 +47,7 @@ export function useNavigation() {
   const pathname = usePathname();
   const { hasPermission } = useSession();
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const [pluginRoutes, setPluginRoutes] = useState<
     PluginSidebarResponse["data"]["sidebar"] | null
   >(cachedPluginRoutes);
@@ -132,247 +135,246 @@ export function useNavigation() {
 
     if (isAdmin) {
       const items: NavigationItem[] = [
-        // Overview
         {
           id: "admin-dashboard",
-          name: "Dashboard",
-          title: "Dashboard",
+          name: t("navigation.items.dashboard"),
+          title: t("landing.hero.title") || "Dashboard",
           url: "/admin",
           icon: Home,
           isActive: pathname === "/admin",
           category: "admin",
           permission: Permissions.ADMIN_DASHBOARD_VIEW,
-          group: "Overview",
+          group: t("navigation.groups.overview"),
         },
         {
           id: "admin-kpi-analytics",
-          name: "Analytics & KPIs",
-          title: "Analytics & KPIs",
+          name: t("navigation.items.analytics"),
+          title: t("navigation.items.analytics"),
           url: "/admin/kpi/analytics",
           icon: BarChart3,
           isActive: pathname.startsWith("/admin/kpi"),
           category: "admin",
           permission: Permissions.ADMIN_USERS_VIEW,
-          group: "Overview",
+          group: t("navigation.groups.overview"),
         },
         // User Management
         {
           id: "admin-users",
-          name: "Users",
-          title: "Users",
+          name: t("navigation.items.users"),
+          title: t("navigation.items.users"),
           url: "/admin/users",
           icon: Users,
           isActive: pathname.startsWith("/admin/users"),
           category: "admin",
           permission: Permissions.ADMIN_USERS_VIEW,
-          group: "Users",
+          group: t("navigation.groups.users"),
         },
         {
           id: "admin-roles",
-          name: "Roles",
-          title: "Roles",
+          name: t("navigation.items.roles"),
+          title: t("navigation.items.roles"),
           url: "/admin/roles",
           icon: Crown,
           isActive: pathname.startsWith("/admin/roles"),
           category: "admin",
           permission: Permissions.ADMIN_ROLES_VIEW,
-          group: "Users",
+          group: t("navigation.groups.users"),
         },
         {
           id: "admin-notifications",
-          name: "Notifications",
-          title: "Notifications",
+          name: t("navigation.items.notifications"),
+          title: t("navigation.items.notifications"),
           url: "/admin/notifications",
           icon: Bell,
           isActive: pathname.startsWith("/admin/notifications"),
           category: "admin",
           permission: Permissions.ADMIN_NOTIFICATIONS_VIEW,
-          group: "Users",
+          group: t("navigation.groups.users"),
         },
         // Infrastructure
         {
           id: "admin-servers",
-          name: "Servers",
-          title: "Servers",
+          name: t("navigation.items.servers"),
+          title: t("navigation.items.servers"),
           url: "/admin/servers",
           icon: Server,
           isActive: pathname.startsWith("/admin/servers"),
           category: "admin",
           permission: Permissions.ADMIN_SERVERS_VIEW,
-          group: "Infrastructure",
+          group: t("navigation.groups.infrastructure"),
         },
         {
           id: "admin-locations",
-          name: "Locations",
-          title: "Locations",
+          name: t("navigation.items.locations"),
+          title: t("navigation.items.locations"),
           url: "/admin/locations",
           icon: Globe,
           isActive: pathname.startsWith("/admin/locations"),
           category: "admin",
           permission: Permissions.ADMIN_LOCATIONS_VIEW,
-          group: "Infrastructure",
+          group: t("navigation.groups.infrastructure"),
         },
         {
           id: "admin-nodes-status",
-          name: "Node Status",
-          title: "Node Status",
+          name: t("navigation.items.nodeStatus"),
+          title: t("navigation.items.nodeStatus"),
           url: "/admin/nodes/status",
           icon: Activity,
           isActive: pathname === "/admin/nodes/status",
           category: "admin",
           permission: Permissions.ADMIN_NODES_VIEW,
-          group: "Infrastructure",
+          group: t("navigation.groups.infrastructure"),
         },
         {
           id: "admin-subdomains",
-          name: "Subdomains",
-          title: "Subdomains",
+          name: t("navigation.items.subdomains"),
+          title: t("navigation.items.subdomains"),
           url: "/admin/subdomains",
           icon: Link,
           isActive: pathname.startsWith("/admin/subdomains"),
           category: "admin",
           permission: Permissions.ADMIN_SUBDOMAINS_VIEW,
-          group: "Infrastructure",
+          group: t("navigation.groups.infrastructure"),
         },
         {
           id: "admin-realms",
-          name: "Realms",
-          title: "Realms",
+          name: t("navigation.items.realms"),
+          title: t("navigation.items.realms"),
           url: "/admin/realms",
           icon: Newspaper,
           isActive: pathname.startsWith("/admin/realms"),
           category: "admin",
           permission: Permissions.ADMIN_REALMS_VIEW,
-          group: "Infrastructure",
+          group: t("navigation.groups.infrastructure"),
         },
         {
           id: "admin-featherzerotrust",
-          name: "ZeroTrust Security",
-          title: "ZeroTrust Security",
+          name: t("navigation.items.zeroTrust"),
+          title: t("navigation.items.zeroTrust"),
           url: "/admin/featherzerotrust",
           icon: ShieldCheck,
           isActive: pathname.startsWith("/admin/featherzerotrust"),
           category: "admin",
           permission: Permissions.ADMIN_FEATHERZEROTRUST_VIEW,
-          group: "Infrastructure",
+          group: t("navigation.groups.infrastructure"),
         },
         // Content
         {
           id: "admin-images",
-          name: "Images",
-          title: "Images",
+          name: t("navigation.items.images"),
+          title: t("navigation.items.images"),
           url: "/admin/images",
           icon: ImageIcon,
           isActive: pathname.startsWith("/admin/images"),
           category: "admin",
           permission: Permissions.ADMIN_IMAGES_VIEW,
-          group: "Content",
+          group: t("navigation.groups.content"),
         },
         {
           id: "admin-mail-templates",
-          name: "Mail Templates",
-          title: "Mail Templates",
+          name: t("navigation.items.mailTemplates"),
+          title: t("navigation.items.mailTemplates"),
           url: "/admin/mail-templates",
           icon: FileText,
           isActive: pathname.startsWith("/admin/mail-templates"),
           category: "admin",
           permission: Permissions.ADMIN_TEMPLATE_EMAIL_VIEW,
-          group: "Content",
+          group: t("navigation.groups.content"),
         },
         {
           id: "admin-redirect-links",
-          name: "Redirect Links",
-          title: "Redirect Links",
+          name: t("navigation.items.redirectLinks"),
+          title: t("navigation.items.redirectLinks"),
           url: "/admin/redirect-links",
           icon: Link,
           isActive: pathname.startsWith("/admin/redirect-links"),
           category: "admin",
           permission: Permissions.ADMIN_REDIRECT_LINKS_VIEW,
-          group: "Content",
+          group: t("navigation.groups.content"),
         },
         {
           id: "admin-feathercloud-ai-agent",
-          name: "AI Agent",
-          title: "AI Agent",
+          name: t("navigation.items.aiAgent"),
+          title: t("navigation.items.aiAgent"),
           url: "/admin/featherpanel-ai-agent",
           icon: Bot,
           isActive: pathname.startsWith("/admin/featherpanel-ai-agent"),
           category: "admin",
           permission: Permissions.ADMIN_STATISTICS_VIEW,
-          group: "Content",
+          group: t("navigation.groups.content"),
         },
         // System
         {
           id: "admin-settings",
-          name: "Settings",
-          title: "Settings",
+          name: t("navigation.items.settings"),
+          title: t("navigation.items.settings"),
           url: "/admin/settings",
           icon: Settings,
           isActive: pathname.startsWith("/admin/settings"),
           category: "admin",
           permission: Permissions.ADMIN_SETTINGS_VIEW,
-          group: "System",
+          group: t("navigation.groups.system"),
         },
         {
           id: "admin-rate-limits",
-          name: "Rate Limits",
-          title: "Rate Limits",
+          name: t("navigation.items.rateLimits"),
+          title: t("navigation.items.rateLimits"),
           url: "/admin/rate-limits",
           icon: Gauge,
           isActive: pathname.startsWith("/admin/rate-limits"),
           category: "admin",
           permission: Permissions.ADMIN_SETTINGS_VIEW,
-          group: "System",
+          group: t("navigation.groups.system"),
         },
         {
           id: "admin-database-management",
-          name: "Database Management",
-          title: "Database Management",
+          name: t("navigation.items.databaseManagement"),
+          title: t("navigation.items.databaseManagement"),
           url: "/admin/databases/management",
           icon: Database,
           isActive: pathname.startsWith("/admin/databases/management"),
           category: "admin",
           permission: Permissions.ADMIN_DATABASES_VIEW,
-          group: "System",
+          group: t("navigation.groups.system"),
         },
         {
           id: "admin-pterodactyl-importer",
-          name: "Pterodactyl Importer",
-          title: "Pterodactyl Importer",
+          name: t("navigation.items.pterodactylImporter"),
+          title: t("navigation.items.pterodactylImporter"),
           url: "/admin/pterodactyl-importer",
           icon: Download,
           isActive: pathname.startsWith("/admin/pterodactyl-importer"),
           category: "admin",
           permission: Permissions.ADMIN_DATABASES_MANAGE,
-          group: "System",
+          group: t("navigation.groups.system"),
         },
         {
           id: "admin-api-keys",
-          name: "API Keys",
-          title: "API Keys",
+          name: t("navigation.items.apiKeys"),
+          title: t("navigation.items.apiKeys"),
           url: "/admin/api-keys",
           icon: Key,
           isActive: pathname.startsWith("/admin/api-keys"),
           category: "admin",
           permission: Permissions.ADMIN_DASHBOARD_VIEW,
-          group: "System",
+          group: t("navigation.groups.system"),
         },
         {
           id: "admin-plugins",
-          name: "Plugins",
-          title: "Plugins",
+          name: t("navigation.items.plugins"),
+          title: t("navigation.items.plugins"),
           url: "/admin/plugins",
           icon: PlayCircle,
           isActive: pathname.startsWith("/admin/plugins"),
           category: "admin",
           permission: Permissions.ADMIN_PLUGINS_VIEW,
-          group: "System",
+          group: t("navigation.groups.system"),
         },
         // FeatherCloud
         {
           id: "admin-feathercloud-marketplace",
-          name: "Marketplace",
-          title: "Marketplace",
+          name: t("navigation.items.marketplace"),
+          title: t("navigation.items.marketplace"),
           url: "/admin/feathercloud/marketplace",
           icon: Package,
           isActive:
@@ -381,32 +383,32 @@ export function useNavigation() {
             pathname.startsWith("/admin/feathercloud/spells"),
           category: "admin",
           permission: Permissions.ADMIN_PLUGINS_VIEW,
-          group: "FeatherCloud",
+          group: t("navigation.groups.featherCloud"),
         },
         {
           id: "admin-cloud-management",
-          name: "Cloud Management",
-          title: "Cloud Management",
+          name: t("navigation.items.cloudManagement"),
+          title: t("navigation.items.cloudManagement"),
           url: "/admin/cloud-management",
           icon: Cloud,
           isActive: pathname.startsWith("/admin/cloud-management"),
           category: "admin",
           permission: Permissions.ADMIN_ROOT,
-          group: "FeatherCloud",
+          group: t("navigation.groups.featherCloud"),
         },
       ];
 
       if (isEnabled(settings?.knowledgebase_enabled)) {
         items.push({
           id: "admin-knowledgebase",
-          name: "Knowledgebase",
-          title: "Knowledgebase",
+          name: t("navigation.items.knowledgebase"),
+          title: t("navigation.items.knowledgebase"),
           url: "/admin/knowledgebase/categories",
           icon: BookOpen,
           isActive: pathname.startsWith("/admin/knowledgebase"),
           category: "admin",
           permission: Permissions.ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW,
-          group: "Users",
+          group: t("navigation.groups.users"),
         });
       }
 
@@ -414,8 +416,8 @@ export function useNavigation() {
         items.push(
           {
             id: "admin-tickets",
-            name: "Tickets",
-            title: "Support Tickets",
+            name: t("navigation.items.tickets"),
+            title: t("navigation.items.tickets"),
             url: "/admin/tickets",
             icon: Ticket,
             isActive:
@@ -425,40 +427,40 @@ export function useNavigation() {
               !pathname.startsWith("/admin/tickets/statuses"),
             category: "admin",
             permission: Permissions.ADMIN_TICKETS_VIEW,
-            group: "Tickets",
+            group: t("navigation.groups.tickets"),
           },
           {
             id: "admin-ticket-categories",
-            name: "Ticket Categories",
-            title: "Ticket Categories",
+            name: t("navigation.items.ticketCategories"),
+            title: t("navigation.items.ticketCategories"),
             url: "/admin/tickets/categories",
             icon: Ticket,
             isActive: pathname.startsWith("/admin/tickets/categories"),
             category: "admin",
             permission: Permissions.ADMIN_TICKET_CATEGORIES_VIEW,
-            group: "Tickets",
+            group: t("navigation.groups.tickets"),
           },
           {
             id: "admin-ticket-priorities",
-            name: "Ticket Priorities",
-            title: "Ticket Priorities",
+            name: t("navigation.items.ticketPriorities"),
+            title: t("navigation.items.ticketPriorities"),
             url: "/admin/tickets/priorities",
             icon: Ticket,
             isActive: pathname.startsWith("/admin/tickets/priorities"),
             category: "admin",
             permission: Permissions.ADMIN_TICKET_PRIORITIES_VIEW,
-            group: "Tickets",
+            group: t("navigation.groups.tickets"),
           },
           {
             id: "admin-ticket-statuses",
-            name: "Ticket Statuses",
-            title: "Ticket Statuses",
+            name: t("navigation.items.ticketStatuses"),
+            title: t("navigation.items.ticketStatuses"),
             url: "/admin/tickets/statuses",
             icon: Ticket,
             isActive: pathname.startsWith("/admin/tickets/statuses"),
             category: "admin",
             permission: Permissions.ADMIN_TICKET_STATUSES_VIEW,
-            group: "Tickets",
+            group: t("navigation.groups.tickets"),
           }
         );
       }
@@ -472,7 +474,7 @@ export function useNavigation() {
             !item.group ||
             (typeof item.group === "string" && item.group.trim() === "")
           ) {
-            item.group = "Plugins";
+            item.group = t("navigation.groups.plugins");
           }
         });
         items.push(...pluginItems);
@@ -481,13 +483,13 @@ export function useNavigation() {
       // Add "Back to Dashboard"
       items.push({
         id: "back-to-dashboard",
-        name: "Back to Dashboard",
-        title: "Back to Dashboard",
+        name: t("navigation.items.backToDashboard"),
+        title: t("navigation.items.backToDashboard"),
         url: "/dashboard",
         icon: Home,
         isActive: false,
         category: "main",
-        group: "System",
+        group: t("navigation.groups.system"),
       });
 
       return items.filter(
@@ -499,13 +501,13 @@ export function useNavigation() {
       const items: NavigationItem[] = [
         {
           id: "server-overview",
-          name: "Overview",
-          title: "Server Overview",
+          name: t("navigation.items.serverOverview"),
+          title: t("navigation.items.serverOverview"),
           url: `/server/${serverUuid}`,
           icon: Home,
           isActive: pathname === `/server/${serverUuid}`,
           category: "server",
-          group: "Management",
+          group: t("navigation.groups.management"),
         },
         // Add other dedicated server core paths here if any
       ];
@@ -538,13 +540,13 @@ export function useNavigation() {
       // Add "Back to Dashboard"
       items.push({
         id: "back-to-dashboard",
-        name: "Back to Dashboard",
-        title: "Back to Dashboard",
+        name: t("navigation.items.backToDashboard"),
+        title: t("navigation.items.backToDashboard"),
         url: "/dashboard",
         icon: ChevronLeft,
         isActive: false,
         category: "main",
-        group: "System",
+        group: t("navigation.groups.system"),
       });
 
       return items.filter(
@@ -556,85 +558,85 @@ export function useNavigation() {
     const items: NavigationItem[] = [
       {
         id: "dashboard",
-        name: "Dashboard",
-        title: "Dashboard",
+        name: t("navigation.items.dashboard"),
+        title: t("landing.hero.title") || "Dashboard",
         url: "/dashboard",
         icon: Home,
         isActive: pathname === "/dashboard",
         category: "main",
-        group: "Overview",
+        group: t("navigation.groups.overview"),
       },
       {
         id: "servers",
-        name: "Servers",
-        title: "Servers",
+        name: t("navigation.items.servers"),
+        title: t("navigation.items.servers"),
         url: "/dashboard/servers",
         icon: Server,
         isActive: pathname.startsWith("/dashboard/servers"),
         category: "main",
-        group: "Overview",
+        group: t("navigation.groups.overview"),
       },
       {
         id: "account",
-        name: "Account",
-        title: "Account",
+        name: t("navigation.items.account"),
+        title: t("navigation.items.account"),
         url: "/dashboard/account",
         icon: User,
         isActive: pathname.startsWith("/dashboard/account"),
         category: "main",
-        group: "Account",
+        group: t("navigation.groups.account"),
       },
     ];
 
     if (hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)) {
       items.push({
         id: "admin",
-        name: "Admin",
-        title: "Admin Panel",
+        name: t("navigation.items.admin"),
+        title: t("navbar.adminPanelTooltip"),
         url: "/admin",
         icon: ShieldCheck,
         isActive: pathname.startsWith("/admin"),
         category: "main",
-        group: "System",
+        group: t("navigation.groups.system"),
       });
     }
 
     if (isEnabled(settings?.knowledgebase_enabled)) {
       items.push({
         id: "knowledgebase",
-        name: "Knowledge Base",
-        title: "Knowledge Base",
+        name: t("navigation.items.knowledgebase"),
+        title: t("navigation.items.knowledgebase"),
         url: "/dashboard/knowledgebase",
         icon: BookOpen,
         isActive: pathname.startsWith("/dashboard/knowledgebase"),
         category: "main",
-        group: "Support",
+        group: t("navigation.groups.support"),
       });
     }
 
     if (isEnabled(settings?.ticket_system_enabled)) {
       items.push({
         id: "tickets",
-        name: "Support Tickets",
-        title: "Support Tickets",
+        name: t("navigation.items.tickets"),
+        title: t("navigation.items.tickets"),
         url: "/dashboard/tickets",
         icon: Ticket,
         isActive: pathname.startsWith("/dashboard/tickets"),
         category: "main",
-        group: "Support",
+        group: t("navigation.groups.support"),
       });
     }
 
     if (isEnabled(settings?.status_page_enabled)) {
       items.push({
         id: "status",
-        name: "Status",
-        title: "Status",
+        name: t("navigation.items.status"),
+        title: t("navigation.items.status"),
         url: "/dashboard/status",
         icon: Activity,
         isActive: pathname.startsWith("/dashboard/status"),
         category: "main",
-        group: "Support",
+        group: t("navigation.groups.support"),
       });
     }
 
@@ -647,7 +649,7 @@ export function useNavigation() {
           !item.group ||
           (typeof item.group === "string" && item.group.trim() === "")
         ) {
-          item.group = "Plugins";
+          item.group = t("navigation.groups.plugins");
         }
       });
       items.push(...pluginItems);
@@ -683,7 +685,7 @@ export function useNavigation() {
     }
 
     return items;
-  }, [pathname, hasPermission, pluginRoutes, convertPluginItems, settings]);
+  }, [pathname, hasPermission, pluginRoutes, convertPluginItems, settings, t]);
 
   return { navigationItems };
 }

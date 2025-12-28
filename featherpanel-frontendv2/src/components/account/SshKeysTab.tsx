@@ -43,7 +43,7 @@ export default function SshKeysTab() {
 		} catch (error) {
 			console.error('Error fetching SSH keys:', error)
 			const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } }
-			toast.error(axiosError.response?.data?.error_message || axiosError.response?.data?.message || 'Failed to load SSH keys')
+			toast.error(axiosError.response?.data?.error_message || axiosError.response?.data?.message || t('account.sshKeys.loadError'))
 		} finally {
 			setLoading(false)
 		}
@@ -96,7 +96,7 @@ export default function SshKeysTab() {
 		} catch (error) {
 			console.error('Error updating SSH key:', error)
 			const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } }
-			toast.error(axiosError.response?.data?.error_message || axiosError.response?.data?.message || 'Failed to update SSH key')
+			toast.error(axiosError.response?.data?.error_message || axiosError.response?.data?.message || t('account.sshKeys.updateFailed'))
 		}
 	}
 
@@ -110,7 +110,7 @@ export default function SshKeysTab() {
 		} catch (error) {
 			console.error('Error loading SSH key:', error)
 			const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } }
-			toast.error(axiosError.response?.data?.error_message || axiosError.response?.data?.message || 'Failed to load SSH key')
+			toast.error(axiosError.response?.data?.error_message || axiosError.response?.data?.message || t('account.sshKeys.loadSingleError'))
 		}
 	}
 
@@ -125,7 +125,7 @@ export default function SshKeysTab() {
 			}
 		} catch (error) {
 			console.error('Error loading SSH key:', error)
-			toast.error('Failed to load SSH key')
+			toast.error(t('account.sshKeys.loadSingleError'))
 		}
 	}
 
@@ -159,7 +159,7 @@ export default function SshKeysTab() {
 		} catch (error) {
 			console.error('Error restoring SSH key:', error)
 			const axiosError = error as { response?: { data?: { message?: string; error_message?: string } } }
-			toast.error(axiosError.response?.data?.error_message || axiosError.response?.data?.message || 'Failed to restore SSH key')
+			toast.error(axiosError.response?.data?.error_message || axiosError.response?.data?.message || t('account.sshKeys.loadSingleError'))
 		}
 	}
 
@@ -225,7 +225,7 @@ export default function SshKeysTab() {
 								<div className="flex-1">
 									<h4 className="text-sm font-semibold text-foreground">{key.name}</h4>
 									<p className="text-xs text-muted-foreground mt-1 font-mono truncate">
-										{key.fingerprint || 'No fingerprint'}
+										{key.fingerprint || t('common.unknown')}
 									</p>
 									<p className="text-xs text-muted-foreground mt-2">
 										{t('account.sshKeys.createdAt')}: {new Date(key.created_at).toLocaleDateString()}
@@ -233,9 +233,9 @@ export default function SshKeysTab() {
 								</div>
 								<div className={cn(
 									"px-2 py-1 rounded text-xs font-medium",
-									key.deleted_at ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+									key.deleted_at ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-green-200" : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
 								)}>
-									{key.deleted_at ? 'Deleted' : 'Active'}
+									{key.deleted_at ? t('account.sshKeys.statuses.deleted') : t('account.sshKeys.statuses.active')}
 								</div>
 							</div>
 							<div className="flex gap-2">
@@ -280,7 +280,7 @@ export default function SshKeysTab() {
 								<HeadlessInput
 									value={newKeyName}
 									onChange={(e) => setNewKeyName(e.target.value)}
-									placeholder="My SSH Key"
+									placeholder={t('account.sshKeys.keyNamePlaceholder')}
 									className={cn(
 										'mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2',
 										'text-sm text-foreground placeholder:text-muted-foreground',
@@ -294,7 +294,7 @@ export default function SshKeysTab() {
 								<textarea
 									value={newKeyPublic}
 									onChange={(e) => setNewKeyPublic(e.target.value)}
-									placeholder="ssh-rsa AAAAB3NzaC1yc2E..."
+									placeholder={t('account.sshKeys.publicKeyHint')}
 									rows={8}
 									className={cn(
 										'mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2',
@@ -307,7 +307,7 @@ export default function SshKeysTab() {
 
 						<div className="mt-6 flex gap-3">
 							<Button onClick={editModal ? handleEditKey : handleAddKey} className="flex-1">
-								{editModal ? t('account.sshKeys.updateKey') : 'Add Key'}
+								{editModal ? t('account.sshKeys.updateKey') : t('account.sshKeys.addKey')}
 							</Button>
 							<Button onClick={() => { setIsOpen(false); setEditModal(false); setNewKeyName(''); setNewKeyPublic(''); }} variant="outline" className="flex-1">
 								{t('common.cancel')}
@@ -326,11 +326,11 @@ export default function SshKeysTab() {
 						{selectedKey && (
 							<div className="space-y-4">
 								<div>
-									<span className="text-sm font-medium text-muted-foreground">Fingerprint:</span>
+									<span className="text-sm font-medium text-muted-foreground">{t('account.sshKeys.fingerprint')}:</span>
 									<p className="mt-1 text-sm font-mono break-all">{selectedKey.fingerprint}</p>
 								</div>
 								<div>
-									<span className="text-sm font-medium text-muted-foreground">Public Key:</span>
+									<span className="text-sm font-medium text-muted-foreground">{t('account.sshKeys.publicKey')}:</span>
 									<div className="mt-2 p-3 bg-muted rounded-md custom-scrollbar overflow-auto max-h-64">
 										<pre className="text-xs font-mono break-all whitespace-pre-wrap">{selectedKey.public_key}</pre>
 									</div>

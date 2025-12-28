@@ -299,10 +299,10 @@ export default function TicketViewPage() {
                                 <AvatarFallback>OP</AvatarFallback>
                              </Avatar>
                              <div className="flex-1 space-y-1 max-w-[85%]">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-semibold text-sm">Original Request</span>
-                                    <span className="text-xs text-muted-foreground">{new Date(ticket.created_at).toLocaleString()}</span>
-                                </div>
+                                 <div className="flex items-center gap-2">
+                                     <span className="font-semibold text-sm">{t('tickets.originalRequest')}</span>
+                                     <span className="text-xs text-muted-foreground">{new Date(ticket.created_at).toLocaleString()}</span>
+                                 </div>
                                 <div className="p-4 rounded-2xl rounded-tl-sm bg-muted/30 border border-border/30 text-sm leading-relaxed whitespace-pre-wrap">
                                     <ReactMarkdown>{ticket.description}</ReactMarkdown>
                                 </div>
@@ -341,8 +341,8 @@ export default function TicketViewPage() {
                                         isMe ? "items-end" : "items-start"
                                     )}>
                                         {!isMe && (
-                                            <div className="flex items-center gap-2 px-1 mb-1">
-                                                <span className="font-semibold text-sm">{msg.user?.username || 'System'}</span>
+                                             <div className="flex items-center gap-2 px-1 mb-1">
+                                                 <span className="font-semibold text-sm">{msg.user?.username || t('tickets.system')}</span>
                                                 {msg.user?.role && (
                                                     <Badge 
                                                         variant="secondary" 
@@ -367,10 +367,10 @@ export default function TicketViewPage() {
                                                     : "bg-muted/80 text-foreground rounded-2xl rounded-tl-sm border border-border/50"
                                         )}>
                                             {isInternal && (
-                                                <div className="flex items-center gap-1.5 mb-2 text-xs font-bold uppercase tracking-wider opacity-80 pb-2 border-b border-yellow-500/20">
-                                                    <AlertCircle className="h-3 w-3" />
-                                                    Internal Note
-                                                </div>
+                                                 <div className="flex items-center gap-1.5 mb-2 text-xs font-bold uppercase tracking-wider opacity-80 pb-2 border-b border-yellow-500/20">
+                                                     <AlertCircle className="h-3 w-3" />
+                                                     {t('tickets.internalNote')}
+                                                 </div>
                                             )}
                                             
                                             <div className={clsx(
@@ -593,10 +593,10 @@ export default function TicketViewPage() {
                                     <div className="p-2 rounded bg-muted">
                                         <ServerIcon className="h-4 w-4 text-muted-foreground" />
                                     </div>
-                                    <div className="min-w-0 flex-1">
-                                        <div className="font-medium text-sm truncate" title={ticket.server.name}>{ticket.server.name}</div>
-                                        <div className="text-xs text-muted-foreground">ID: {ticket.server.id}</div>
-                                    </div>
+                                     <div className="min-w-0 flex-1">
+                                         <div className="font-medium text-sm truncate" title={ticket.server.name}>{ticket.server.name}</div>
+                                         <div className="text-xs text-muted-foreground">{t('tickets.serverId')}: {ticket.server.id}</div>
+                                     </div>
                                 </div>
                             </CardContent>
                         </Card>

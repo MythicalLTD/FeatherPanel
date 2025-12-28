@@ -122,7 +122,7 @@ export default function MailTab() {
 	}
 
 	const formatDate = (dateString: string) => {
-		if (!dateString) return 'Unknown'
+		if (!dateString) return t('common.unknown')
 		try {
 			const date = new Date(dateString)
 			const now = new Date()
@@ -138,7 +138,7 @@ export default function MailTab() {
 				return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 			}
 		} catch {
-			return 'Unknown'
+			return t('common.unknown')
 		}
 	}
 
@@ -210,10 +210,14 @@ export default function MailTab() {
 			<div className="text-sm text-muted-foreground text-center">
 				{pagination ? (
 					<span>
-						Showing {pagination.from} to {pagination.to} of {pagination.total_records} emails
+						{t('account.mail.showingMails', { 
+							from: String(pagination.from), 
+							to: String(pagination.to), 
+							total: String(pagination.total_records) 
+						})}
 					</span>
 				) : (
-					<span>{mails.length} emails</span>
+					<span>{t('account.mail.totalMailsCount', { count: String(mails.length) })}</span>
 				)}
 			</div>
 
@@ -257,7 +261,7 @@ export default function MailTab() {
 			{pagination && pagination.total_pages > 1 && (
 				<div className="flex items-center justify-between gap-4 pt-4">
 					<div className="text-sm text-muted-foreground">
-						Page {pagination.current_page} of {pagination.total_pages}
+                        {t('dashboard.knowledgebase.page')} {pagination.current_page} {t('dashboard.knowledgebase.of')} {pagination.total_pages}
 					</div>
 					<div className="flex items-center gap-2">
 						<Button
@@ -316,7 +320,7 @@ export default function MailTab() {
 									srcDoc={getIframeContent(selectedMail.body)}
 									className="w-full h-full min-h-[60vh] border-0 bg-white rounded"
 									sandbox="allow-same-origin"
-									title="Mail Content"
+									title={t('account.mail.mailContent')}
 								/>
 							)}
 						</div>

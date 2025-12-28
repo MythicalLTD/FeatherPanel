@@ -13,14 +13,14 @@ export default function ThemeCustomizer() {
 	const { t, availableLanguages, setLocale, locale } = useTranslation()
 
 	const accentColorOptions = [
-		{ name: 'Purple', value: 'purple', color: 'hsl(262 83% 58%)' },
-		{ name: 'Blue', value: 'blue', color: 'hsl(217 91% 60%)' },
-		{ name: 'Green', value: 'green', color: 'hsl(142 71% 45%)' },
-		{ name: 'Red', value: 'red', color: 'hsl(0 84% 60%)' },
-		{ name: 'Orange', value: 'orange', color: 'hsl(25 95% 53%)' },
-		{ name: 'Pink', value: 'pink', color: 'hsl(330 81% 60%)' },
-		{ name: 'Teal', value: 'teal', color: 'hsl(173 80% 40%)' },
-		{ name: 'Yellow', value: 'yellow', color: 'hsl(48 96% 53%)' },
+		{ name: t('appearance.colors.purple'), value: 'purple', color: 'hsl(262 83% 58%)' },
+		{ name: t('appearance.colors.blue'), value: 'blue', color: 'hsl(217 91% 60%)' },
+		{ name: t('appearance.colors.green'), value: 'green', color: 'hsl(142 71% 45%)' },
+		{ name: t('appearance.colors.red'), value: 'red', color: 'hsl(0 84% 60%)' },
+		{ name: t('appearance.colors.orange'), value: 'orange', color: 'hsl(25 95% 53%)' },
+		{ name: t('appearance.colors.pink'), value: 'pink', color: 'hsl(330 81% 60%)' },
+		{ name: t('appearance.colors.teal'), value: 'teal', color: 'hsl(173 80% 40%)' },
+		{ name: t('appearance.colors.yellow'), value: 'yellow', color: 'hsl(48 96% 53%)' },
 	]
 
 	// Don't render until mounted to avoid hydration mismatch
@@ -49,7 +49,7 @@ export default function ThemeCustomizer() {
 				<button
 					onClick={toggleTheme}
 					className="h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md hover:bg-background hover:scale-110 hover:shadow-lg transition-all duration-200 flex items-center justify-center"
-					title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+					title={theme === 'dark' ? t('appearance.theme.switchToLight') : t('appearance.theme.switchToDark')}
 				>
 					{theme === 'dark' ? (
 						<Sun className="h-4 w-4" />
@@ -78,7 +78,7 @@ export default function ThemeCustomizer() {
 					>
 						<MenuItems className="absolute right-0 mt-2 w-48 origin-top-right rounded-xl bg-card border border-border/50 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none backdrop-blur-xl p-2 z-50">
 							<div className="px-3 py-2 text-sm font-semibold text-foreground border-b border-border/50 mb-2">
-								{t('auth.accentColor') || 'Accent Color'}
+								{t('appearance.accentColor')}
 							</div>
 							{accentColorOptions.map((option) => (
 								<MenuItem key={option.value}>
@@ -130,7 +130,7 @@ export default function ThemeCustomizer() {
 										className={`${focus ? 'bg-accent' : ''} flex w-full items-center rounded-lg px-3 py-2.5 text-sm transition-colors`}
 									>
 										{theme === 'dark' ? <Sun className="h-4 w-4 mr-3" /> : <Moon className="h-4 w-4 mr-3" />}
-										{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+										{theme === 'dark' ? t('appearance.theme.light') : t('appearance.theme.dark')}
 									</button>
 								)}
 							</MenuItem>
@@ -141,7 +141,7 @@ export default function ThemeCustomizer() {
 									<BackgroundCustomizer>
 										<div className={`${focus ? 'bg-accent' : ''} flex w-full items-center rounded-lg px-3 py-2.5 text-sm transition-colors cursor-pointer`}>
 											<ImageIcon className="h-4 w-4 mr-3" />
-											Change Background
+											{t('appearance.background.change')}
 										</div>
 									</BackgroundCustomizer>
 								)}
@@ -151,7 +151,7 @@ export default function ThemeCustomizer() {
 
 							{/* Accent Colors Grid */}
 							<div className="px-3 py-2">
-								<div className="text-xs font-semibold text-muted-foreground mb-2">Accent Color</div>
+								<div className="text-xs font-semibold text-muted-foreground mb-2">{t('appearance.accentColor')}</div>
 								<div className="grid grid-cols-4 gap-2">
 									{accentColorOptions.map((option) => (
 										<button
@@ -170,7 +170,7 @@ export default function ThemeCustomizer() {
 
 							{/* Language List */}
 							<div className="px-3 py-1">
-								<div className="text-xs font-semibold text-muted-foreground mb-2">Language</div>
+								<div className="text-xs font-semibold text-muted-foreground mb-2">{t('appearance.language')}</div>
 								<div className="space-y-1">
 									{availableLanguages.map((language) => (
 										<MenuItem key={language.code}>
