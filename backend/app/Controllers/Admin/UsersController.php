@@ -550,6 +550,7 @@ class UsersController
             'app_url' => $config->getSetting(ConfigInterface::APP_URL, 'https://featherpanel.mythical.systems'),
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
+            'password' => $data['password'],
             'username' => $data['username'],
             'app_support_url' => $config->getSetting(ConfigInterface::APP_SUPPORT_URL, 'https://discord.mythical.systems'),
             'uuid' => $data['uuid'],

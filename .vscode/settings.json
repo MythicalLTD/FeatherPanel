@@ -286,5 +286,8 @@
   },
   "[xml]": {
     "editor.defaultFormatter": "redhat.vscode-xml"
-  } // required to format on save
+},
+"[typescriptreact]": {
+	"editor.defaultFormatter": "vscode.typescript-language-features"
+} // required to format on save
 }
