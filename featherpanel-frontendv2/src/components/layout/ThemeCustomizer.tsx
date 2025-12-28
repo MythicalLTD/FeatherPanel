@@ -4,7 +4,7 @@ import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/r
 import { Fragment } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useTranslation } from '@/contexts/TranslationContext'
-import { Check, Palette, Image, Moon, Sun } from 'lucide-react'
+import { Check, Palette, Image as ImageIcon, Moon, Sun } from 'lucide-react'
 import BackgroundCustomizer from '@/components/theme/BackgroundCustomizer'
 import LanguageSelector from '@/components/layout/LanguageSelector'
 
@@ -140,7 +140,7 @@ export default function ThemeCustomizer() {
 								{({ focus }) => (
 									<BackgroundCustomizer>
 										<div className={`${focus ? 'bg-accent' : ''} flex w-full items-center rounded-lg px-3 py-2.5 text-sm transition-colors cursor-pointer`}>
-											<Image className="h-4 w-4 mr-3" />
+											<ImageIcon className="h-4 w-4 mr-3" />
 											Change Background
 										</div>
 									</BackgroundCustomizer>

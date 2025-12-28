@@ -11,7 +11,7 @@ export function AnnouncementBanner({ t }: AnnouncementBannerProps) {
 	if (!isVisible) return null
 
 	return (
-		<div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white shadow-lg mb-6">
+		<div className="relative overflow-hidden rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 p-6 text-white shadow-lg mb-6">
 			<div className="relative z-10 flex items-start justify-between gap-4">
 				<div className="flex-1">
 					<div className="flex items-center gap-2 mb-2">

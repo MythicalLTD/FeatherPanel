@@ -197,7 +197,7 @@ export default function DashboardPage() {
 										className="h-16 w-16 rounded-full border-2 border-primary/20 object-cover"
 									/>
 								) : (
-									<div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border-2 border-primary/20 flex items-center justify-center">
+									<div className="h-16 w-16 rounded-full bg-linear-to-br from-primary/20 to-primary/10 border-2 border-primary/20 flex items-center justify-center">
 										<span className="text-2xl font-semibold text-primary">
 											{`${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase()}
 										</span>

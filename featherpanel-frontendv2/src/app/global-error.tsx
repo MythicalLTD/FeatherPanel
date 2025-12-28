@@ -77,13 +77,13 @@ export default function GlobalError({
 					<div className="relative z-10 w-full max-w-2xl">
 						<div className="relative group">
 							{/* Glow effect */}
-							<div className="absolute -inset-0.5 bg-gradient-to-r from-destructive/50 to-destructive/30 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000" />
+							<div className="absolute -inset-0.5 bg-linear-to-r from-destructive/50 to-destructive/30 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000" />
 
 							<div className="relative rounded-3xl border border-border/50 bg-card/95 backdrop-blur-xl p-8 md:p-12 shadow-2xl shadow-black/20">
 								<div className="text-center space-y-6">
 									{/* 500 Number */}
 									<div className="relative">
-										<h1 className="text-9xl md:text-[12rem] font-black bg-gradient-to-br from-destructive via-destructive/80 to-destructive/60 bg-clip-text text-transparent leading-none">
+										<h1 className="text-9xl md:text-[12rem] font-black bg-linear-to-br from-destructive via-destructive/80 to-destructive/60 bg-clip-text text-transparent leading-none">
 											500
 										</h1>
 										<div className="absolute inset-0 flex items-center justify-center">

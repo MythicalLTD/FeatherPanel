@@ -106,7 +106,7 @@ export default function SettingsTab() {
 			{/* Two-Factor Authentication */}
 			<div className="rounded-lg border border-border bg-card p-6">
 				<div className="flex items-start gap-4">
-					<div className="flex-shrink-0">
+					<div className="shrink-0">
 						<div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
 							<ShieldCheck className="w-6 h-6 text-primary" />
 						</div>

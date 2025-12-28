@@ -45,7 +45,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 	const canAccessAdmin = hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)
 
 	return (
-		<div className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+		<div className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/60 px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
 			{/* Mobile menu button */}
 			<button
 				type="button"
@@ -95,7 +95,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 									className="h-8 w-8 rounded-full border border-primary/20 object-cover"
 								/>
 							) : (
-								<div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20 flex items-center justify-center">
+								<div className="h-8 w-8 rounded-full bg-linear-to-br from-primary/20 to-primary/10 border border-primary/20 flex items-center justify-center">
 									<span className="text-sm font-semibold text-primary">{getUserInitials()}</span>
 								</div>
 							)}
@@ -125,7 +125,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 												className="h-10 w-10 rounded-full border border-primary/20 object-cover"
 											/>
 										) : (
-											<div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20 flex items-center justify-center">
+											<div className="h-10 w-10 rounded-full bg-linear-to-br from-primary/20 to-primary/10 border border-primary/20 flex items-center justify-center">
 												<span className="text-sm font-semibold text-primary">{getUserInitials()}</span>
 											</div>
 										)}

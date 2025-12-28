@@ -81,7 +81,7 @@ export default function Error({
 			<div className="relative z-10 w-full max-w-2xl">
 				<div className="relative group">
 					{/* Glow effect */}
-					<div className="absolute -inset-0.5 bg-gradient-to-r from-destructive/50 to-destructive/30 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000" />
+					<div className="absolute -inset-0.5 bg-linear-to-r from-destructive/50 to-destructive/30 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-1000" />
 
 					<div className="relative rounded-3xl border border-border/50 bg-card/95 backdrop-blur-xl p-8 md:p-12 shadow-2xl shadow-black/20">
 						<div className="text-center space-y-6">

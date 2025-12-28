@@ -316,9 +316,9 @@ export default function ServersPage() {
 							<Switch
 								checked={showOnlyRunning}
 								onChange={setShowOnlyRunning}
-								className="group relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 data-[checked]:bg-green-500 bg-muted shrink-0"
+								className="group relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 data-checked:bg-green-500 bg-muted shrink-0"
 							>
-								<span className="inline-block h-3 w-3 transform rounded-full bg-white shadow-lg transition-transform group-data-[checked]:translate-x-4 translate-x-1" />
+								<span className="inline-block h-3 w-3 transform rounded-full bg-white shadow-lg transition-transform group-data-checked:translate-x-4 translate-x-1" />
 							</Switch>
 							<span className="text-sm font-medium whitespace-nowrap">{t('servers.runningOnly')}</span>
 						</div>

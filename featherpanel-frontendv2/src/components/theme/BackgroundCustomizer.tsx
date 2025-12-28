@@ -4,7 +4,7 @@ import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild, Tab, Tab
 import { Fragment, useState, useRef } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Button } from '@/components/ui/button'
-import { Image, ArrowUp, XIcon } from 'lucide-react'
+import { Image as ImageIcon, ArrowUp, XIcon } from 'lucide-react'
 
 interface BackgroundCustomizerProps {
 	children?: React.ReactNode
@@ -87,7 +87,7 @@ export default function BackgroundCustomizer({ children }: BackgroundCustomizerP
 					className="h-10 w-10 rounded-full border border-border/50 bg-background/90 backdrop-blur-md hover:bg-background hover:scale-110 hover:shadow-lg transition-all duration-200 flex items-center justify-center"
 					title="Customize background"
 				>
-					<Image className="h-4 w-4" />
+					<ImageIcon className="h-4 w-4" aria-hidden="true" />
 				</button>
 			)}
 
