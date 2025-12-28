@@ -131,7 +131,11 @@ export default function TicketViewPage() {
             const { data } = await axios.get<TicketResponse>(`/api/user/tickets/${uuid}`)
             if (data.success) {
                 setTicket(data.data.ticket)
-                setMessages(data.data.messages || [])
+                // Sort messages by created_at OLD -> NEW (Ascending)
+                const sortedMessages = [...(data.data.messages || [])].sort((a, b) => {
+                    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                })
+                setMessages(sortedMessages)
             } else {
                 setError(t('tickets.failedToLoad'))
             }
@@ -381,10 +385,17 @@ export default function TicketViewPage() {
                                                 <ReactMarkdown
                                                     components={{
                                                         p: ({children}) => <p className="mb-1 last:mb-0 whitespace-pre-wrap">{children}</p>,
-                                                        hr: () => <hr className={clsx("my-3 border-t", isMe ? "border-primary/20 dashed" : "border-border/60 dashed")} />
+                                                        hr: () => <hr className={clsx("my-4 border-t", isMe ? "border-primary/20 dashed" : "border-border/60 dashed")} />,
+                                                        ul: ({children}) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
+                                                        ol: ({children}) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                                                        li: ({children}) => <li className="mb-0.5">{children}</li>
                                                     }}
                                                 >
-                                                    {msg.message}
+                                                    {msg.message
+                                                        .replace(/\n---\n-\n/g, '\n---\n')
+                                                        .replace(/\n---\n---\n/g, '\n---\n')
+                                                        .replace(/\n\s*\n\s*\n/g, '\n\n') // Collapse excessive newlines
+                                                    }
                                                 </ReactMarkdown>
                                             </div>
 

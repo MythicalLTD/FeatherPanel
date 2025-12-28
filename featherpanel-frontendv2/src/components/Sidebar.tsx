@@ -41,7 +41,10 @@ function SidebarContent({
 }) {
 	const { theme } = useTheme()
 	const isActive = (href: string) => {
-		return pathname === href || pathname.startsWith(href + '/')
+		if (pathname === href) return true
+        // Prevent /dashboard from matching /dashboard/tickets, /dashboard/servers etc.
+        if (href === '/dashboard') return false
+		return pathname.startsWith(href + '/')
 	}
 
 	const logoUrl = theme === 'dark'
