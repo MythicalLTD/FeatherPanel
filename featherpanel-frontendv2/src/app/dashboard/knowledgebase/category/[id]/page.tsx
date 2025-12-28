@@ -155,7 +155,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
 
 				{/* Pagination */}
 				{pagination && pagination.total_pages > 1 && (
-					<div className="p-4 border-t border-border/50 flex items-center justify-between bg-white/[0.01]">
+					<div className="p-4 border-t border-border/50 flex items-center justify-between bg-white/1">
 						<p className="text-sm text-muted-foreground">
 							{currentPage} / {pagination.total_pages}
 						</p>

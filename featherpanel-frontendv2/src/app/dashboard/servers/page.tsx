@@ -151,7 +151,7 @@ export default function ServersPage() {
 
 	const openServerDetails = (server: Server) => {
 		if (!isServerAccessible(server)) return
-		router.push(`/server/${server.uuidShort}`)
+		router.push(`/dashboard/server/${server.uuidShort}`)
 	}
 
 	const openCreateFolder = () => {

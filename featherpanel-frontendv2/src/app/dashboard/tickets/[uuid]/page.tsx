@@ -312,9 +312,9 @@ export default function TicketViewPage() {
                         {/* Divider */}
                         {messages.length > 0 && (
                             <div className="relative flex items-center py-2">
-                                <div className="flex-grow border-t border-border/50"></div>
-                                <span className="flex-shrink-0 mx-4 text-xs font-medium text-muted-foreground uppercase">{t('tickets.conversation')}</span>
-                                <div className="flex-grow border-t border-border/50"></div>
+                                <div className="grow border-t border-border/50"></div>
+                                <span className="shrink-0 mx-4 text-xs font-medium text-muted-foreground uppercase">{t('tickets.conversation')}</span>
+                                <div className="grow border-t border-border/50"></div>
                             </div>
                         )}
 
@@ -374,7 +374,7 @@ export default function TicketViewPage() {
                                             )}
                                             
                                             <div className={clsx(
-                                                "prose prose-sm max-w-none break-words leading-normal text-left dark:prose-invert",
+                                                "prose prose-sm max-w-none wrap-break-word leading-normal text-left dark:prose-invert",
                                             )}>
                                                 <ReactMarkdown
                                                     components={{

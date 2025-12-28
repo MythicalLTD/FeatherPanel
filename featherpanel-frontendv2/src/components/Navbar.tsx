@@ -5,7 +5,6 @@ import { Menu, Transition } from '@headlessui/react'
 import {
 	Menu as MenuIcon,
 	CircleUser,
-	Settings,
 	LogOut,
 	ShieldCheck,
 } from 'lucide-react'
