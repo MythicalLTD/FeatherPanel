@@ -44,6 +44,14 @@ function SidebarContent({
 		if (pathname === href) return true
         // Prevent /dashboard from matching /dashboard/tickets, /dashboard/servers etc.
         if (href === '/dashboard') return false
+        
+        // If it's the server root (/server/[uuid]), only match exact.
+        // This prevents the "Console" item from being highlighted on plugin pages like /server/[uuid]/[plugin]
+        const serverRootRegex = /^\/server\/[^\/]+$/
+        if (serverRootRegex.test(href)) {
+            return pathname === href
+        }
+
 		return pathname.startsWith(href + '/')
 	}
 

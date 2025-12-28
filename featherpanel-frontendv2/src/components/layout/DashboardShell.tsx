@@ -27,13 +27,13 @@ export default function DashboardShell({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   // Determine if this is a plugin page or full-width page
-  const isPluginPage = pathname.includes('/dashboard/server/') || 
-                       pathname.match(/^\/dashboard\/.+/) || 
-                       pathname.startsWith('/admin/')
+  const isPluginPage = pathname.startsWith('/server/') || 
+                       pathname.startsWith('/admin/') ||
+                       pathname.match(/^\/dashboard\/.+/)
 
-  // More specific check: if it's not one of our core pages, it's likely a plugin
+  // More specific check: if it's not one of our core pages, it's likely a plugin or a dedicated management page
   const corePaths = ['/dashboard', '/dashboard/servers', '/dashboard/account', '/dashboard/tickets', '/dashboard/knowledgebase']
-  const isFullWidthMode = isPluginPage && !corePaths.includes(pathname)
+  const isFullWidthMode = isPluginPage && !corePaths.includes(pathname) && !pathname.startsWith('/auth/')
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect

@@ -26,7 +26,7 @@ export default function AppPreloader() {
 		: (settings?.app_logo_white || 'https://cdn.mythical.systems/featherpanel/logo.png')
 
 	return (
-		<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background animate-fade-in overflow-hidden">
+		<div className="fixed inset-0 z-9999 flex items-center justify-center bg-background animate-fade-in overflow-hidden">
 			{/* Animated background gradient */}
 			<div
 				className="absolute inset-0 opacity-5 animate-pulse"

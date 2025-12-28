@@ -30,6 +30,12 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
         const fetchPluginData = async () => {
             setLoading(true)
             setError(null)
+
+            // Set serverUuid cookie if in server context to help backend controller
+            if (context === 'server' && serverUuid) {
+                document.cookie = `serverUuid=${serverUuid}; path=/; max-age=3600; SameSite=Lax`
+            }
+
             try {
                 const { data } = await axios.get<PluginSidebarResponse>('/api/system/plugin-sidebar')
                 if (!data.success || !data.data?.sidebar) {
@@ -75,7 +81,7 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
 
                 // Loose matching if still not found
                 if (!matchingItem && (context === 'client' || context === 'admin')) {
-                     for (const value of Object.values(sidebarSection)) {
+                    for (const value of Object.values(sidebarSection)) {
                         if (value.component && pathname.includes(value.plugin)) {
                             matchingItem = value
                             break
@@ -84,7 +90,20 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                 }
 
                 if (matchingItem && matchingItem.component) {
-                    setIframeSrc(`/components/${matchingItem.plugin}/${matchingItem.component}`)
+                    let componentUrl = `/components/${matchingItem.plugin}/${matchingItem.component}`
+                    
+                    // The backend might return serverUuid=notFound if cookie wasn't set yet
+                    // or it might have other placeholders.
+                    if (context === 'server' && serverUuid) {
+                        if (componentUrl.includes('serverUuid=notFound')) {
+                            componentUrl = componentUrl.replace('serverUuid=notFound', `serverUuid=${serverUuid}`)
+                        } else if (!componentUrl.includes('serverUuid=')) {
+                            const separator = componentUrl.includes('?') ? '&' : '?'
+                            componentUrl += `${separator}serverUuid=${serverUuid}`
+                        }
+                    }
+
+                    setIframeSrc(componentUrl)
                 } else {
                     setError('Plugin page not found')
                 }
@@ -97,7 +116,7 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
         }
 
         fetchPluginData()
-    }, [pathname, context, serverUuid])
+    }, [pathname, context, serverUuid, t])
 
     const injectScrollbarStyles = () => {
         if (!iframeRef.current) return
