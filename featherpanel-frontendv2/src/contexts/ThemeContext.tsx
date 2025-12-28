@@ -15,6 +15,7 @@ interface ThemeContextType {
   setBackgroundType: (type: BackgroundType) => void
   setBackgroundImage: (image: string) => void
   toggleTheme: () => void
+  mounted: boolean
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -102,7 +103,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setAccentColor, 
       setBackgroundType, 
       setBackgroundImage, 
-      toggleTheme 
+      toggleTheme,
+      mounted
     }}>
       {children}
     </ThemeContext.Provider>

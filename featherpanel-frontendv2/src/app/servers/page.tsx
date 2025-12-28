@@ -26,21 +26,19 @@ import {
 	Transition
 } from '@headlessui/react'
 import {
-	Squares2X2Icon,
-	ListBulletIcon,
-	FunnelIcon,
-	CheckIcon,
-	ChevronUpDownIcon,
-	ArrowPathIcon,
-	TrashIcon,
-	PencilIcon,
-	FolderPlusIcon,
-	ExclamationTriangleIcon
-} from '@heroicons/react/24/outline'
-import {
-	ServerIcon as ServerIconSolid,
-	FolderIcon as FolderIconSolid
-} from '@heroicons/react/24/solid'
+	LayoutGrid,
+	List,
+	Filter,
+	Check,
+	ChevronsUpDown,
+	RefreshCw,
+	Trash2,
+	Pencil,
+	FolderPlus,
+	TriangleAlert,
+	Server as ServerIcon,
+	Folder
+} from 'lucide-react'
 
 // Import new components
 import { ServerCard } from '@/components/servers/ServerCard'
@@ -61,8 +59,8 @@ export default function ServersPage() {
 	]
 
 	const layoutOptions = [
-		{ id: 'grid', name: t('servers.layout.grid'), icon: Squares2X2Icon },
-		{ id: 'list', name: t('servers.layout.list'), icon: ListBulletIcon }
+		{ id: 'grid', name: t('servers.layout.grid'), icon: LayoutGrid },
+		{ id: 'list', name: t('servers.layout.list'), icon: List }
 	]
 
 	// State management
@@ -206,133 +204,143 @@ export default function ServersPage() {
 	const selectedLayoutOption = layoutOptions.find(o => o.id === selectedLayout) || layoutOptions[0]
 
 	return (
-		<div className="min-h-screen p-8 space-y-8">
+		<div className="min-h-screen p-4 sm:p-8 space-y-6 sm:space-y-8">
 			{/* Header */}
 			<div className="flex items-start justify-between">
 				<div>
-					<h1 className="text-4xl font-bold tracking-tight">{t('servers.title')}</h1>
-					<p className="mt-2 text-lg text-muted-foreground">
+					<h1 className="text-2xl sm:text-4xl font-bold tracking-tight">{t('servers.title')}</h1>
+					<p className="mt-2 text-sm sm:text-lg text-muted-foreground">
 						{t('servers.description')}
 					</p>
 				</div>
 			</div>
 
 			{/* Toolbar */}
-			<div className="flex flex-wrap items-center gap-4 p-6 bg-card rounded-2xl border border-border">
-				{/* Search */}
-				<div className="flex-1 min-w-[300px]">
+			<div className="flex flex-col gap-4 p-4 bg-card rounded-2xl border border-border">
+				{/* Search Field - Full Width */}
+				<div className="flex-1 w-full">
 					<input
 						type="text"
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 						placeholder={t('servers.searchPlaceholder')}
-						className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+						className="w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-all"
 					/>
 				</div>
 
-				{/* Sort Listbox */}
-				<Listbox value={selectedSortOption} onChange={(option) => setSelectedSort(option.id)}>
-					<div className="relative">
-						<ListboxButton className="relative w-48 cursor-pointer rounded-xl bg-background py-3 pl-4 pr-10 text-left border border-border focus:outline-none focus:ring-2 focus:ring-primary">
-							<span className="flex items-center gap-2">
-								<FunnelIcon className="h-5 w-5 text-muted-foreground" />
-								<span className="block truncate">{selectedSortOption.name}</span>
-							</span>
-							<span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-								<ChevronUpDownIcon className="h-5 w-5 text-muted-foreground" />
-							</span>
-						</ListboxButton>
-						<Transition
-							as={Fragment}
-							leave="transition ease-in duration-100"
-							leaveFrom="opacity-100"
-							leaveTo="opacity-0"
-						>
-							<ListboxOptions className="absolute z-10 mt-2 max-h-60 w-full overflow-auto rounded-xl bg-popover border border-border py-1 shadow-2xl focus:outline-none">
-								{sortOptions.map((option) => (
-									<ListboxOption
+				{/* Controls Grid */}
+				<div className="flex flex-col sm:flex-row gap-4">
+					{/* Actions Group (Sort & Layout) */}
+					<div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-4 flex-1">
+						{/* Sort Listbox */}
+						<Listbox value={selectedSortOption} onChange={(option) => setSelectedSort(option.id)}>
+							<div className="relative w-full sm:w-auto min-w-[140px]">
+								<ListboxButton className="relative w-full cursor-pointer rounded-xl bg-background py-2.5 pl-3 pr-8 text-left border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm">
+									<span className="flex items-center gap-2">
+										<Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+										<span className="block truncate">{selectedSortOption.name}</span>
+									</span>
+									<span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+										<ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
+									</span>
+								</ListboxButton>
+								<Transition
+									as={Fragment}
+									leave="transition ease-in duration-100"
+									leaveFrom="opacity-100"
+									leaveTo="opacity-0"
+								>
+									<ListboxOptions className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-xl bg-popover border border-border py-1 shadow-2xl focus:outline-none text-sm">
+										{sortOptions.map((option) => (
+											<ListboxOption
+												key={option.id}
+												value={option}
+												className={({ focus }) =>
+													cn(
+														'relative cursor-pointer select-none py-2 pl-9 pr-4 transition-colors',
+														focus ? 'bg-primary/10 text-primary' : 'text-foreground'
+													)
+												}
+											>
+												{({ selected }) => (
+													<>
+														<span className={cn('block truncate', selected ? 'font-semibold' : 'font-normal')}>
+															{option.name}
+														</span>
+														{selected && (
+															<span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary">
+																<Check className="h-4 w-4" />
+															</span>
+														)}
+													</>
+												)}
+											</ListboxOption>
+										))}
+									</ListboxOptions>
+								</Transition>
+							</div>
+						</Listbox>
+
+						{/* Layout RadioGroup */}
+						<RadioGroup value={selectedLayoutOption} onChange={(option) => setSelectedLayout(option.id as 'grid' | 'list')}>
+							<div className="flex h-full gap-1 p-1 bg-background rounded-xl border border-border">
+								{layoutOptions.map((option) => (
+									<RadioGroupOption
 										key={option.id}
 										value={option}
-										className={({ focus }) =>
+										className={({ checked }) =>
 											cn(
-												'relative cursor-pointer select-none py-3 pl-10 pr-4 transition-colors',
-												focus ? 'bg-primary/10 text-primary' : 'text-foreground'
+												'flex-1 flex items-center justify-center cursor-pointer rounded-lg px-3 transition-all',
+												checked
+													? 'bg-primary text-primary-foreground shadow-sm'
+													: 'text-muted-foreground hover:text-foreground hover:bg-muted'
 											)
 										}
 									>
-										{({ selected }) => (
-											<>
-												<span className={cn('block truncate', selected ? 'font-semibold' : 'font-normal')}>
-													{option.name}
-												</span>
-												{selected && (
-													<span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary">
-														<CheckIcon className="h-5 w-5" />
-													</span>
-												)}
-											</>
+										{() => (
+											<div className="flex items-center gap-2">
+												<option.icon className="h-4 w-4" />
+												<span className="sr-only sm:not-sr-only sm:text-sm font-medium">{option.name}</span>
+											</div>
 										)}
-									</ListboxOption>
+									</RadioGroupOption>
 								))}
-							</ListboxOptions>
-						</Transition>
+							</div>
+						</RadioGroup>
 					</div>
-				</Listbox>
 
-				{/* Layout RadioGroup */}
-				<RadioGroup value={selectedLayoutOption} onChange={(option) => setSelectedLayout(option.id as 'grid' | 'list')}>
-					<div className="flex gap-2 p-1 bg-background rounded-xl border border-border">
-						{layoutOptions.map((option) => (
-							<RadioGroupOption
-								key={option.id}
-								value={option}
-								className={({ checked }) =>
-									cn(
-										'cursor-pointer rounded-lg px-4 py-2 transition-all',
-										checked
-											? 'bg-primary text-primary-foreground shadow-sm'
-											: 'text-muted-foreground hover:text-foreground hover:bg-muted'
-									)
-								}
+					{/* Toggles Group (Running Only & Refresh) */}
+					<div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-4 sm:pt-0 border-border">
+						{/* Running Only Switch */}
+						<div className="flex items-center gap-2 cursor-pointer" onClick={() => setShowOnlyRunning(!showOnlyRunning)}>
+							<Switch
+								checked={showOnlyRunning}
+								onChange={setShowOnlyRunning}
+								className="group relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 data-[checked]:bg-green-500 bg-muted shrink-0"
 							>
-								{() => (
-									<div className="flex items-center gap-2">
-										<option.icon className="h-5 w-5" />
-										<span className="text-sm font-medium">{option.name}</span>
-									</div>
-								)}
-							</RadioGroupOption>
-						))}
+								<span className="inline-block h-3 w-3 transform rounded-full bg-white shadow-lg transition-transform group-data-[checked]:translate-x-4 translate-x-1" />
+							</Switch>
+							<span className="text-sm font-medium whitespace-nowrap">{t('servers.runningOnly')}</span>
+						</div>
+
+						{/* Refresh Button */}
+						<button
+							onClick={fetchData}
+							disabled={loading}
+							className="p-2.5 bg-background border border-border rounded-xl hover:bg-muted transition-colors disabled:opacity-50"
+							title={t('servers.refresh')}
+						>
+							<RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+						</button>
 					</div>
-				</RadioGroup>
-
-				{/* Running Only Switch */}
-				<div className="flex items-center gap-3">
-					<Switch
-						checked={showOnlyRunning}
-						onChange={setShowOnlyRunning}
-						className="group relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 data-[checked]:bg-green-500 bg-muted"
-					>
-						<span className="inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform group-data-[checked]:translate-x-6 translate-x-1" />
-					</Switch>
-					<span className="text-sm font-medium">{t('servers.runningOnly')}</span>
 				</div>
-
-				{/* Refresh Button */}
-				<button
-					onClick={fetchData}
-					disabled={loading}
-					className="px-4 py-3 bg-background border border-border rounded-xl hover:bg-muted transition-colors disabled:opacity-50"
-				>
-					<ArrowPathIcon className={cn("h-5 w-5", loading && "animate-spin")} />
-				</button>
 			</div>
 
 			{/* Loading State */}
 			{loading && (
 				<div className="flex items-center justify-center py-24">
 					<div className="flex flex-col items-center gap-4">
-						<ArrowPathIcon className="h-12 w-12 animate-spin text-primary" />
+						<RefreshCw className="h-12 w-12 animate-spin text-primary" />
 						<p className="text-muted-foreground">{t('servers.loading')}</p>
 					</div>
 				</div>
@@ -342,7 +350,7 @@ export default function ServersPage() {
 			{error && !loading && (
 				<div className="flex items-center justify-center py-24">
 					<div className="text-center max-w-md">
-						<ExclamationTriangleIcon className="h-16 w-16 text-destructive mx-auto mb-4" />
+						<TriangleAlert className="h-16 w-16 text-destructive mx-auto mb-4" />
 						<h3 className="text-xl font-semibold mb-2">{t('servers.errorTitle')}</h3>
 						<p className="text-muted-foreground mb-6">{error}</p>
 						<button
@@ -422,7 +430,7 @@ export default function ServersPage() {
 									onClick={openCreateFolder}
 									className="flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors"
 								>
-									<FolderPlusIcon className="h-5 w-5" />
+									<FolderPlus className="h-5 w-5" />
 									{t('servers.createFolder')}
 								</button>
 
@@ -430,7 +438,7 @@ export default function ServersPage() {
 									<div key={folder.id} className="space-y-4">
 										<div className="flex items-center justify-between">
 											<div className="flex items-center gap-3">
-												<FolderIconSolid className="h-6 w-6 text-primary" />
+												<Folder className="h-6 w-6 text-primary" />
 												<div>
 													<h3 className="text-xl font-semibold">{folder.name}</h3>
 													{folder.description && (
@@ -446,13 +454,13 @@ export default function ServersPage() {
 													onClick={(e) => openEditFolder(folder, e)}
 													className="p-2 hover:bg-muted rounded-lg transition-colors"
 												>
-													<PencilIcon className="h-5 w-5 text-muted-foreground" />
+													<Pencil className="h-5 w-5 text-muted-foreground" />
 												</button>
 												<button
 													onClick={(e) => handleDeleteFolder(folder.id, e)}
 													className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
 												>
-													<TrashIcon className="h-5 w-5 text-destructive" />
+													<Trash2 className="h-5 w-5 text-destructive" />
 												</button>
 											</div>
 										</div>
@@ -484,7 +492,7 @@ export default function ServersPage() {
 								{unassignedServers.length > 0 && (
 									<div className="space-y-4">
 										<div className="flex items-center gap-3">
-											<ServerIconSolid className="h-6 w-6 text-muted-foreground" />
+											<ServerIcon className="h-6 w-6 text-muted-foreground" />
 											<h3 className="text-xl font-semibold">{t('servers.unassigned')}</h3>
 											<span className="px-3 py-1 bg-muted text-muted-foreground text-sm font-medium rounded-full">
 												{unassignedServers.length}

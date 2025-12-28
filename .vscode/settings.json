@@ -288,6 +288,6 @@
     "editor.defaultFormatter": "redhat.vscode-xml"
 },
 "[typescriptreact]": {
-	"editor.defaultFormatter": "vscode.typescript-language-features"
+	"editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
 } // required to format on save
 }

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ShieldCheckIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
+import { ShieldCheck, ArrowRight } from 'lucide-react'
 import { useTranslation } from '@/contexts/TranslationContext'
 import axios from 'axios'
 
@@ -83,7 +83,7 @@ export default function VerifyTwoFactorForm() {
       {/* Header */}
       <div className="text-center space-y-3">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-2">
-          <ShieldCheckIcon className="h-8 w-8 text-primary" />
+          <ShieldCheck className="h-8 w-8 text-primary" />
         </div>
         <h2 className="text-2xl font-bold tracking-tight">{t('auth.verify_2fa.title')}</h2>
         <p className="text-sm text-muted-foreground">
@@ -114,7 +114,7 @@ export default function VerifyTwoFactorForm() {
           {!loading && (
             <>
               {t('auth.verify_2fa.submit')}
-              <ArrowRightIcon className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </>
           )}
         </Button>

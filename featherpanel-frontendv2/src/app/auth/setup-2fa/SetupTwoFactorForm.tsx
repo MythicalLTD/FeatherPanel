@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import QRCode from 'react-qr-code'
-import { ShieldCheckIcon, ArrowRightIcon, ClipboardDocumentIcon } from '@heroicons/react/24/outline'
+import { ShieldCheck, ArrowRight, Clipboard } from 'lucide-react'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -170,7 +170,7 @@ export default function SetupTwoFactorForm() {
       {/* Header */}
       <div className="text-center space-y-3">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-2">
-          <ShieldCheckIcon className="h-8 w-8 text-primary" />
+          <ShieldCheck className="h-8 w-8 text-primary" />
         </div>
         <h2 className="text-2xl font-bold tracking-tight">{t('auth.setup_2fa.title')}</h2>
         <p className="text-sm text-muted-foreground">
@@ -204,7 +204,7 @@ export default function SetupTwoFactorForm() {
               onClick={copySecret}
               title="Copy to clipboard"
             >
-              <ClipboardDocumentIcon className="h-4 w-4" />
+              <Clipboard className="h-4 w-4" />
             </Button>
           </div>
           {copied && (
@@ -259,7 +259,7 @@ export default function SetupTwoFactorForm() {
             {!submitting && (
               <>
                 {t('auth.setup_2fa.submit')}
-                <ArrowRightIcon className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </>
             )}
           </Button>

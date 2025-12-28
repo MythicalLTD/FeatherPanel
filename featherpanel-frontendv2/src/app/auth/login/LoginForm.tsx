@@ -8,7 +8,7 @@ import { useTranslation } from '@/contexts/TranslationContext'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useSession } from '@/contexts/SessionContext'
-import { EnvelopeIcon, LockClosedIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
+import { Mail, Lock, ArrowRight } from 'lucide-react'
 import Turnstile from 'react-turnstile'
 import { authApi } from '@/lib/api'
 
@@ -148,7 +148,7 @@ export default function LoginForm() {
           onChange={(e) => setForm({ ...form, username_or_email: e.target.value })}
           required
           autoComplete="username"
-          icon={<EnvelopeIcon className="h-5 w-5" />}
+          icon={<Mail className="h-5 w-5" />}
           placeholder={t('auth.login.username')}
         />
 
@@ -159,7 +159,7 @@ export default function LoginForm() {
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           required
           autoComplete="current-password"
-          icon={<LockClosedIcon className="h-5 w-5" />}
+          icon={<Lock className="h-5 w-5" />}
           placeholder={t('auth.login.password')}
         />
 
@@ -203,7 +203,7 @@ export default function LoginForm() {
           {!loading && (
             <>
               {t('auth.login.submit')}
-              <ArrowRightIcon className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </>
           )}
         </Button>

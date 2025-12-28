@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { LockClosedIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
+import { Lock, ArrowRight } from 'lucide-react'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -189,7 +189,7 @@ export default function ResetPasswordForm() {
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           required
           autoComplete="new-password"
-          icon={<LockClosedIcon className="h-5 w-5" />}
+          icon={<Lock className="h-5 w-5" />}
           placeholder={t('auth.register.password_placeholder')}
         />
 
@@ -200,7 +200,7 @@ export default function ResetPasswordForm() {
           onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
           required
           autoComplete="new-password"
-          icon={<LockClosedIcon className="h-5 w-5" />}
+          icon={<Lock className="h-5 w-5" />}
           placeholder={t('auth.register.password_placeholder')}
         />
 
@@ -232,7 +232,7 @@ export default function ResetPasswordForm() {
           {!submitting && (
             <>
               {t('auth.reset_password.submit')}
-              <ArrowRightIcon className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </>
           )}
         </Button>

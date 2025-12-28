@@ -5,7 +5,7 @@ import { useTranslation } from '@/contexts/TranslationContext'
 import { Dialog, DialogPanel, DialogTitle, Description as DialogDescription } from '@headlessui/react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { EnvelopeIcon, ArrowPathIcon, ClockIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import { Mail, RefreshCw, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
 import axios from 'axios'
 
 interface MailItem {
@@ -173,7 +173,7 @@ export default function MailTab() {
 		return (
 			<div className="flex items-center justify-center py-12">
 				<div className="text-center">
-					<EnvelopeIcon className="h-8 w-8 mx-auto mb-2 text-destructive" />
+					<Mail className="h-8 w-8 mx-auto mb-2 text-destructive" />
 					<p className="text-destructive mb-2">{t('account.mail.loadError')}</p>
 					<Button variant="outline" onClick={() => fetchMails(currentPage)}>
 						{t('account.mail.tryAgain')}
@@ -191,7 +191,7 @@ export default function MailTab() {
 					<p className="text-sm text-muted-foreground mt-1">{t('account.mail.description')}</p>
 				</div>
 				<Button onClick={() => fetchMails(currentPage)} variant="outline" size="sm">
-					<ArrowPathIcon className="w-4 h-4 mr-2" />
+					<RefreshCw className="w-4 h-4 mr-2" />
 					{t('account.mail.refresh')}
 				</Button>
 			</div>
@@ -226,7 +226,7 @@ export default function MailTab() {
 								<div className="flex-1">
 									<h4 className="text-sm font-semibold text-foreground mb-2">{mail.subject}</h4>
 									<Button variant="outline" size="sm" onClick={() => openMailModal(mail)}>
-										<EnvelopeIcon className="w-4 h-4 mr-1" />
+										<Mail className="w-4 h-4 mr-1" />
 										{t('account.mail.viewFull')}
 									</Button>
 								</div>
@@ -235,7 +235,7 @@ export default function MailTab() {
 								</div>
 							</div>
 							<div className="flex items-center gap-1 text-xs text-muted-foreground">
-								<ClockIcon className="h-3 w-3" />
+								<Clock className="h-3 w-3" />
 								<span>{formatDate(mail.created_at)}</span>
 							</div>
 						</div>
@@ -243,7 +243,7 @@ export default function MailTab() {
 				</div>
 			) : (
 				<div className="text-center py-12">
-					<EnvelopeIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+					<Mail className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
 					<h4 className="text-sm font-semibold text-foreground mb-2">
 						{searchQuery ? t('account.mail.noSearchResults') : t('account.mail.noMails')}
 					</h4>
@@ -266,7 +266,7 @@ export default function MailTab() {
 							disabled={!pagination.has_prev}
 							onClick={() => fetchMails(pagination.current_page - 1)}
 						>
-							<ChevronLeftIcon className="h-4 w-4" />
+							<ChevronLeft className="h-4 w-4" />
 						</Button>
 						<div className="flex items-center gap-1">
 							{visiblePages().map((page) => (
@@ -286,7 +286,7 @@ export default function MailTab() {
 							disabled={!pagination.has_next}
 							onClick={() => fetchMails(pagination.current_page + 1)}
 						>
-							<ChevronRightIcon className="h-4 w-4" />
+							<ChevronRight className="h-4 w-4" />
 						</Button>
 					</div>
 				</div>
@@ -302,7 +302,7 @@ export default function MailTab() {
 						</DialogTitle>
 						<DialogDescription className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
 							<div className="flex items-center gap-2">
-								<ClockIcon className="h-4 w-4" />
+								<Clock className="h-4 w-4" />
 								<span>{selectedMail ? formatDate(selectedMail.created_at) : ''}</span>
 							</div>
 							<div className={cn("px-2 py-1 rounded text-xs font-medium", getStatusVariant(selectedMail?.status || 'pending'))}>

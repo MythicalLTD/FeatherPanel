@@ -1,4 +1,4 @@
-import { TicketIcon, ChatBubbleLeftEllipsisIcon } from '@heroicons/react/24/outline'
+import { Ticket, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 
 interface TicketListProps {
@@ -37,7 +37,7 @@ export function TicketList({ t }: TicketListProps) {
 		<div className="rounded-xl border border-border bg-card shadow-sm">
 			<div className="flex items-center justify-between p-6 border-b border-border">
 				<div className="flex items-center gap-2">
-					<TicketIcon className="h-5 w-5 text-muted-foreground" />
+					<Ticket className="h-5 w-5 text-muted-foreground" />
 					<h2 className="text-lg font-bold">{t('dashboard.tickets.title')}</h2>
 				</div>
 				<Link href="/tickets" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
@@ -48,25 +48,25 @@ export function TicketList({ t }: TicketListProps) {
 			<div className="divide-y divide-border">
 				{tickets.length > 0 ? (
 					tickets.map((ticket) => (
-						<div key={ticket.id} className="p-4 hover:bg-muted/50 transition-colors flex items-center justify-between group">
+						<div key={ticket.id} className="p-4 hover:bg-muted/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
 							<div className="flex items-start gap-4">
-								<div className="p-2 rounded-full bg-primary/5 text-primary">
-									<ChatBubbleLeftEllipsisIcon className="h-5 w-5" />
+								<div className="p-2 rounded-full bg-primary/5 text-primary shrink-0">
+									<MessageSquare className="h-5 w-5" />
 								</div>
 								<div>
-									<h4 className="font-medium text-foreground group-hover:text-primary transition-colors">
+									<h4 className="font-medium text-foreground group-hover:text-primary transition-colors text-sm sm:text-base">
 										{ticket.subject}
 									</h4>
-									<div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+									<div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-muted-foreground">
 										<span className="font-mono">#{ticket.id}</span>
-										<span>•</span>
+										<span className="hidden sm:inline">•</span>
 										<span>{ticket.category}</span>
-										<span>•</span>
+										<span className="hidden sm:inline">•</span>
 										<span>{new Date(ticket.last_updated).toLocaleDateString()}</span>
 									</div>
 								</div>
 							</div>
-							<div className="flex items-center gap-4">
+							<div className="flex items-center gap-4 pl-11 sm:pl-0">
 								<span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide ${getStatusColor(ticket.status)}`}>
 									{ticket.status}
 								</span>
@@ -75,7 +75,7 @@ export function TicketList({ t }: TicketListProps) {
 					))
 				) : (
 					<div className="p-8 text-center text-muted-foreground">
-						<TicketIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+						<Ticket className="h-8 w-8 mx-auto mb-2 opacity-50" />
 						<p>{t('dashboard.tickets.no_tickets')}</p>
 					</div>
 				)}

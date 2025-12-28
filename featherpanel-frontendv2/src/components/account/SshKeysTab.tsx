@@ -5,7 +5,7 @@ import { useTranslation } from '@/contexts/TranslationContext'
 import { Dialog, DialogPanel, DialogTitle, Description as DialogDescription, Field, Label, Input as HeadlessInput } from '@headlessui/react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { KeyIcon, PlusIcon, TrashIcon, EyeIcon, PencilIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { Key, Plus, Trash2, Eye, Pencil, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import axios from 'axios'
 
@@ -183,11 +183,11 @@ export default function SshKeysTab() {
 				</div>
 				<div className="flex gap-2">
 					<Button onClick={fetchKeys} variant="outline" size="sm">
-						<ArrowPathIcon className="w-4 h-4 mr-2" />
+						<RefreshCw className="w-4 h-4 mr-2" />
 						{t('account.sshKeys.refresh')}
 					</Button>
 					<Button onClick={() => setIsOpen(true)} size="sm">
-						<PlusIcon className="w-4 h-4 mr-2" />
+						<Plus className="w-4 h-4 mr-2" />
 						{t('account.sshKeys.addKey')}
 					</Button>
 				</div>
@@ -210,7 +210,7 @@ export default function SshKeysTab() {
 
 			{filteredKeys.length === 0 ? (
 				<div className="rounded-lg border-2 border-dashed border-border bg-muted/20 p-12 text-center">
-					<KeyIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+					<Key className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
 					<h4 className="text-sm font-semibold text-foreground mb-2">{t('account.sshKeys.noKeys')}</h4>
 					<p className="text-sm text-muted-foreground mb-4">{t('account.sshKeys.createFirst')}</p>
 					<Button onClick={() => setIsOpen(true)} variant="outline">
@@ -240,11 +240,11 @@ export default function SshKeysTab() {
 							</div>
 							<div className="flex gap-2">
 								<Button variant="outline" size="sm" onClick={() => viewKey(key)}>
-									<EyeIcon className="w-4 h-4 mr-1" />
+									<Eye className="w-4 h-4 mr-1" />
 									{t('account.sshKeys.viewDetails')}
 								</Button>
 								<Button variant="outline" size="sm" onClick={() => editKey(key)}>
-									<PencilIcon className="w-4 h-4 mr-1" />
+									<Pencil className="w-4 h-4 mr-1" />
 									{t('account.sshKeys.edit')}
 								</Button>
 								{key.deleted_at ? (
@@ -253,7 +253,7 @@ export default function SshKeysTab() {
 									</Button>
 								) : null}
 								<Button variant="destructive" size="sm" onClick={() => { setSelectedKey(key); setDeleteModal(true); }}>
-									<TrashIcon className="w-4 h-4 mr-1" />
+									<Trash2 className="w-4 h-4 mr-1" />
 									{key.deleted_at ? t('account.sshKeys.permanentlyDelete') : t('account.sshKeys.delete')}
 								</Button>
 							</div>

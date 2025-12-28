@@ -6,7 +6,7 @@ import { useTranslation } from '@/contexts/TranslationContext'
 import { useSession } from '@/contexts/SessionContext'
 import { useSettings } from '@/contexts/SettingsContext'
 import { Button } from '@/components/ui/button'
-import { ShieldCheckIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { ShieldCheck, Check } from 'lucide-react'
 import axios from 'axios'
 import { toast } from 'sonner'
 
@@ -108,7 +108,7 @@ export default function SettingsTab() {
 				<div className="flex items-start gap-4">
 					<div className="flex-shrink-0">
 						<div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-							<ShieldCheckIcon className="w-6 h-6 text-primary" />
+							<ShieldCheck className="w-6 h-6 text-primary" />
 						</div>
 					</div>
 					<div className="flex-1 min-w-0">
@@ -121,7 +121,7 @@ export default function SettingsTab() {
 								{user?.two_fa_enabled === '1' && (
 									<div className="mt-3 p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
 										<div className="flex items-center gap-2">
-											<CheckIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
+											<Check className="h-4 w-4 text-green-600 dark:text-green-400" />
 											<span className="text-sm text-green-800 dark:text-green-200">
 												{t('account.twoFactor.enabled')}
 											</span>

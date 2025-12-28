@@ -7,10 +7,10 @@ import {
 	Transition
 } from '@headlessui/react'
 import {
-	EllipsisVerticalIcon,
-	FolderMinusIcon,
-	ArrowRightStartOnRectangleIcon
-} from '@heroicons/react/24/outline'
+	MoreVertical,
+	FolderMinus,
+	FolderInput
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
 	displayStatus,
@@ -64,7 +64,7 @@ export function ServerCard({
 		return (
 			<div
 				className={cn(
-					'flex items-center gap-6 p-6 bg-card rounded-2xl border border-border transition-all relative group',
+					'flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 p-4 sm:p-6 bg-card rounded-2xl border border-border transition-all relative group',
 					accessible ? 'hover:border-primary hover:shadow-lg' : 'opacity-60'
 				)}
 			>
@@ -72,7 +72,7 @@ export function ServerCard({
 				{server.spell?.banner && (
 					<div
 						onClick={accessible ? onClick : undefined}
-						className={cn("w-24 h-16 rounded-lg overflow-hidden shrink-0", accessible && "cursor-pointer")}
+						className={cn("w-full sm:w-24 h-32 sm:h-16 rounded-lg overflow-hidden shrink-0", accessible && "cursor-pointer")}
 					>
 						<div
 							className="w-full h-full bg-cover bg-center"
@@ -82,7 +82,7 @@ export function ServerCard({
 				)}
 
 				<div
-					className={cn("flex-1 min-w-0", accessible && "cursor-pointer")}
+					className={cn("flex-1 min-w-0 w-full", accessible && "cursor-pointer")}
 					onClick={accessible ? onClick : undefined}
 				>
 					<div className="flex items-center gap-3 mb-2">
@@ -95,25 +95,25 @@ export function ServerCard({
 					<p className="text-sm text-muted-foreground truncate">{server.description}</p>
 				</div>
 
-				<div className="flex items-center gap-4">
+				<div className="flex items-center justify-between w-full sm:w-auto gap-4 mt-2 sm:mt-0">
 					<div
-						className={cn("flex items-center gap-6", accessible && "cursor-pointer")}
+						className={cn("flex items-center gap-4 sm:gap-6", accessible && "cursor-pointer")}
 						onClick={accessible ? onClick : undefined}
 					>
 						<div className="text-sm">
-							<div className="text-muted-foreground">{t('servers.node')}</div>
-							<div className="font-medium">{server.node?.name}</div>
+							<div className="text-muted-foreground text-xs sm:text-sm">{t('servers.node')}</div>
+							<div className="font-medium text-sm sm:text-base">{server.node?.name}</div>
 						</div>
 						<div className="text-sm">
-							<div className="text-muted-foreground">{t('servers.spell')}</div>
-							<div className="font-medium">{server.spell?.name}</div>
+							<div className="text-muted-foreground text-xs sm:text-sm">{t('servers.spell')}</div>
+							<div className="font-medium text-sm sm:text-base">{server.spell?.name}</div>
 						</div>
 					</div>
 
 					{/* Manage Menu */}
 					<Menu as="div" className="relative">
 						<MenuButton className="p-2 hover:bg-muted rounded-lg transition-colors focus:outline-none" onClick={(e) => e.stopPropagation()}>
-							<EllipsisVerticalIcon className="h-5 w-5 text-muted-foreground" />
+							<MoreVertical className="h-5 w-5 text-muted-foreground" />
 						</MenuButton>
 						<Transition
 							as={Fragment}
@@ -138,7 +138,7 @@ export function ServerCard({
 													active ? 'bg-muted' : ''
 												)}
 											>
-												<FolderMinusIcon className="h-4 w-4" />
+												<FolderMinus className="h-4 w-4" />
 												{t('servers.removeFromFolder')}
 											</button>
 										)}
@@ -161,7 +161,7 @@ export function ServerCard({
 															active ? 'bg-muted' : ''
 														)}
 													>
-														<ArrowRightStartOnRectangleIcon className="h-4 w-4 rotate-180" />
+														<FolderInput className="h-4 w-4" />
 														{folder.name}
 													</button>
 												)}
@@ -213,7 +213,7 @@ export function ServerCard({
 				)}
 			</div>
 
-			<div className="p-6 space-y-4">
+			<div className="p-4 sm:p-6 space-y-4">
 				<div className="flex items-start justify-between gap-4">
 					<div
 						className={cn("flex-1 min-w-0", accessible && "cursor-pointer")}
@@ -226,7 +226,7 @@ export function ServerCard({
 					{/* Manage Menu */}
 					<Menu as="div" className="relative shrink-0">
 						<MenuButton className="p-2 hover:bg-muted rounded-lg transition-colors focus:outline-none" onClick={(e) => e.stopPropagation()}>
-							<EllipsisVerticalIcon className="h-5 w-5 text-muted-foreground" />
+							<MoreVertical className="h-5 w-5 text-muted-foreground" />
 						</MenuButton>
 						<Transition
 							as={Fragment}
@@ -251,7 +251,7 @@ export function ServerCard({
 													active ? 'bg-muted' : ''
 												)}
 											>
-												<FolderMinusIcon className="h-4 w-4" />
+												<FolderMinus className="h-4 w-4" />
 												Remove from Folder
 											</button>
 										)}
@@ -274,7 +274,7 @@ export function ServerCard({
 															active ? 'bg-muted' : ''
 														)}
 													>
-														<ArrowRightStartOnRectangleIcon className="h-4 w-4 rotate-180" />
+														<FolderInput className="h-4 w-4" />
 														{folder.name}
 													</button>
 												)}

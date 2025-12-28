@@ -3,12 +3,12 @@
 import { Fragment } from 'react'
 import { Menu, Transition } from '@headlessui/react'
 import {
-	Bars3Icon,
-	UserCircleIcon,
-	Cog6ToothIcon,
-	ArrowRightOnRectangleIcon,
-	ShieldCheckIcon,
-} from '@heroicons/react/24/outline'
+	Menu as MenuIcon,
+	CircleUser,
+	Settings,
+	LogOut,
+	ShieldCheck,
+} from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer'
@@ -24,8 +24,8 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 	const { user, logout, hasPermission } = useSession()
 
 	const userNavigation = [
-		{ name: 'Your Profile', href: '/account', icon: UserCircleIcon },
-		{ name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
+		{ name: 'Your Profile', href: '/account', icon: CircleUser },
+		{ name: 'Settings', href: '/settings', icon: Settings },
 	]
 
 	const handleLogout = async () => {
@@ -53,7 +53,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 				onClick={onMenuClick}
 			>
 				<span className="sr-only">Open sidebar</span>
-				<Bars3Icon className="h-6 w-6" aria-hidden="true" />
+				<MenuIcon className="h-6 w-6" aria-hidden="true" />
 			</button>
 
 			{/* Separator */}
@@ -65,15 +65,15 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 					<h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
 				</div>
 
-				<div className="flex items-center gap-x-4 lg:gap-x-6">
+				<div className="flex items-center gap-x-2 sm:gap-x-4 lg:gap-x-6">
 					{/* Admin Panel Button */}
 					{canAccessAdmin && (
 						<button
 							onClick={() => router.push('/admin')}
-							className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
+							className="flex items-center gap-2 rounded-lg px-2 sm:px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
 							title="Admin Panel"
 						>
-							<ShieldCheckIcon className="h-5 w-5" />
+							<ShieldCheck className="h-5 w-5" />
 							<span className="hidden lg:inline">Admin Area</span>
 						</button>
 					)}
@@ -185,7 +185,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 													'flex w-full items-center gap-3 px-4 py-2.5 text-sm text-destructive transition-colors'
 												)}
 											>
-												<ArrowRightOnRectangleIcon className="h-5 w-5" />
+												<LogOut className="h-5 w-5" />
 												Sign out
 											</button>
 										)}

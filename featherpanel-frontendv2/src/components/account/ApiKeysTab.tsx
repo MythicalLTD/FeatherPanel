@@ -7,7 +7,7 @@ import { useSettings } from '@/contexts/SettingsContext'
 import { Dialog, DialogPanel, DialogTitle, Description as DialogDescription, Field, Label, Input as HeadlessInput } from '@headlessui/react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { KeyIcon, PlusIcon, TrashIcon, EyeIcon, PencilIcon, ArrowPathIcon, ClipboardIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
+import { Key, Plus, Trash2, Eye, Pencil, RefreshCw, Copy, Info } from 'lucide-react'
 import { toast } from 'sonner'
 import axios from 'axios'
 
@@ -191,12 +191,12 @@ export default function ApiKeysTab() {
 						{t('account.apiKeys.apiDocs')}
 					</Button>
 					<Button onClick={fetchClients} variant="outline" size="sm">
-						<ArrowPathIcon className="w-4 h-4 mr-2" />
+						<RefreshCw className="w-4 h-4 mr-2" />
 						{t('account.apiKeys.refresh')}
 					</Button>
 					{canCreateApiKeys && (
 						<Button onClick={() => setIsOpen(true)} size="sm">
-							<PlusIcon className="w-4 h-4 mr-2" />
+							<Plus className="w-4 h-4 mr-2" />
 							{t('account.apiKeys.addKey')}
 						</Button>
 					)}
@@ -206,7 +206,7 @@ export default function ApiKeysTab() {
 			{/* Info Banner */}
 			<div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
 				<div className="flex items-start gap-3">
-					<InformationCircleIcon className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+					<Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
 					<div className="space-y-2">
 						<h4 className="text-sm font-medium text-blue-800 dark:text-blue-200">
 							{t('account.apiKeys.importantInfo.title')}
@@ -237,7 +237,7 @@ export default function ApiKeysTab() {
 
 			{filteredClients.length === 0 ? (
 				<div className="rounded-lg border-2 border-dashed border-border bg-muted/20 p-12 text-center">
-					<KeyIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+					<Key className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
 					<h4 className="text-sm font-semibold text-foreground mb-2">{t('account.apiKeys.noKeys')}</h4>
 					<p className="text-sm text-muted-foreground mb-4">{t('account.apiKeys.createFirst')}</p>
 					{canCreateApiKeys && (
@@ -266,19 +266,19 @@ export default function ApiKeysTab() {
 							</div>
 							<div className="flex gap-2 flex-wrap">
 								<Button variant="outline" size="sm" onClick={() => viewClient(client)}>
-									<EyeIcon className="w-4 h-4 mr-1" />
+									<Eye className="w-4 h-4 mr-1" />
 									{t('account.apiKeys.viewDetails')}
 								</Button>
 								<Button variant="outline" size="sm" onClick={() => editClient(client)}>
-									<PencilIcon className="w-4 h-4 mr-1" />
+									<Pencil className="w-4 h-4 mr-1" />
 									{t('account.apiKeys.edit')}
 								</Button>
 								<Button variant="outline" size="sm" onClick={() => { setSelectedClient(client); setRegenerateModal(true); }}>
-									<ArrowPathIcon className="w-4 h-4 mr-1" />
+									<RefreshCw className="w-4 h-4 mr-1" />
 									{t('account.apiKeys.regenerateKeys')}
 								</Button>
 								<Button variant="destructive" size="sm" onClick={() => { setSelectedClient(client); setDeleteModal(true); }}>
-									<TrashIcon className="w-4 h-4 mr-1" />
+									<Trash2 className="w-4 h-4 mr-1" />
 									{t('account.apiKeys.delete')}
 								</Button>
 							</div>
@@ -338,7 +338,7 @@ export default function ApiKeysTab() {
 									<div className="mt-2 p-3 bg-muted rounded-md">
 										<pre className="text-xs font-mono break-all whitespace-pre-wrap">{selectedClient.public_key}</pre>
 										<Button variant="outline" size="sm" className="mt-2" onClick={() => copyToClipboard(selectedClient.public_key || '')}>
-											<ClipboardIcon className="w-4 h-4 mr-1" />
+											<Copy className="w-4 h-4 mr-1" />
 											{t('account.apiKeys.copyKey')}
 										</Button>
 									</div>
@@ -349,7 +349,7 @@ export default function ApiKeysTab() {
 										<div className="mt-2 p-3 bg-muted rounded-md">
 											<pre className="text-xs font-mono break-all whitespace-pre-wrap custom-scrollbar max-h-64 overflow-auto">{selectedClient.private_key}</pre>
 											<Button variant="outline" size="sm" className="mt-2" onClick={() => copyToClipboard(selectedClient.private_key || '')}>
-												<ClipboardIcon className="w-4 h-4 mr-1" />
+												<Copy className="w-4 h-4 mr-1" />
 												{t('account.apiKeys.copyKey')}
 											</Button>
 											<p className="text-xs text-yellow-600 mt-2">{t('account.apiKeys.privateKeyWarning')}</p>

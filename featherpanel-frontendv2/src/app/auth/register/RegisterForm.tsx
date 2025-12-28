@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { EnvelopeIcon, LockClosedIcon, UserIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
+import { Mail, Lock, User, ArrowRight } from 'lucide-react'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -191,7 +191,7 @@ export default function RegisterForm() {
             onChange={(e) => setForm({ ...form, first_name: e.target.value })}
             required
             autoComplete="given-name"
-            icon={<UserIcon className="h-5 w-5" />}
+            icon={<User className="h-5 w-5" />}
             placeholder={t('auth.register.first_name_placeholder')}
           />
           <Input
@@ -201,7 +201,7 @@ export default function RegisterForm() {
             onChange={(e) => setForm({ ...form, last_name: e.target.value })}
             required
             autoComplete="family-name"
-            icon={<UserIcon className="h-5 w-5" />}
+            icon={<User className="h-5 w-5" />}
             placeholder={t('auth.register.last_name_placeholder')}
           />
         </div>
@@ -213,7 +213,7 @@ export default function RegisterForm() {
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           required
           autoComplete="email"
-          icon={<EnvelopeIcon className="h-5 w-5" />}
+          icon={<Mail className="h-5 w-5" />}
           placeholder={t('auth.register.email_placeholder')}
         />
 
@@ -224,7 +224,7 @@ export default function RegisterForm() {
           onChange={(e) => setForm({ ...form, username: e.target.value })}
           required
           autoComplete="username"
-          icon={<UserIcon className="h-5 w-5" />}
+          icon={<User className="h-5 w-5" />}
           placeholder={t('auth.register.username_placeholder')}
         />
 
@@ -235,7 +235,7 @@ export default function RegisterForm() {
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           required
           autoComplete="new-password"
-          icon={<LockClosedIcon className="h-5 w-5" />}
+          icon={<Lock className="h-5 w-5" />}
           placeholder={t('auth.register.password_placeholder')}
         />
 
@@ -267,7 +267,7 @@ export default function RegisterForm() {
           {!loading && (
             <>
               {t('auth.register.submit')}
-              <ArrowRightIcon className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </>
           )}
         </Button>

@@ -4,15 +4,15 @@ import { Fragment, useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Dialog, Transition } from '@headlessui/react'
 import {
-	HomeIcon,
-	ServerIcon,
-	UserIcon,
-	ShieldCheckIcon,
-	Cog6ToothIcon,
-	XMarkIcon,
-	ChevronLeftIcon,
-	ChevronRightIcon,
-} from '@heroicons/react/24/outline'
+	Home,
+	Server,
+	User,
+	ShieldCheck,
+	Settings,
+	X,
+	ChevronLeft,
+	ChevronRight,
+} from 'lucide-react'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useSession } from '@/contexts/SessionContext'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -34,17 +34,17 @@ interface NavItem {
 
 const getNavigation = (hasPermission: (permission: string) => boolean): NavItem[] => {
 	const nav: NavItem[] = [
-		{ name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-		{ name: 'Servers', href: '/servers', icon: ServerIcon },
-		{ name: 'Account', href: '/account', icon: UserIcon },
+		{ name: 'Dashboard', href: '/dashboard', icon: Home },
+		{ name: 'Servers', href: '/servers', icon: Server },
+		{ name: 'Account', href: '/account', icon: User },
 	]
 
 	// Add Admin link if user has permission
 	if (hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)) {
-		nav.push({ name: 'Admin', href: '/admin', icon: ShieldCheckIcon })
+		nav.push({ name: 'Admin', href: '/admin', icon: ShieldCheck })
 	}
 
-	nav.push({ name: 'Settings', href: '/settings', icon: Cog6ToothIcon })
+	nav.push({ name: 'Settings', href: '/settings', icon: Settings })
 
 	return nav
 }
@@ -158,10 +158,10 @@ function SidebarContent({
 						className="flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all"
 					>
 						{collapsed ? (
-							<ChevronRightIcon className="h-5 w-5" />
+							<ChevronRight className="h-5 w-5" />
 						) : (
 							<>
-								<ChevronLeftIcon className="h-5 w-5 mr-2" />
+								<ChevronLeft className="h-5 w-5 mr-2" />
 								<span>Collapse</span>
 							</>
 						)}
@@ -231,7 +231,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
 											onClick={() => setMobileOpen(false)}
 										>
 											<span className="sr-only">Close sidebar</span>
-											<XMarkIcon className="h-6 w-6 text-foreground" aria-hidden="true" />
+											<X className="h-6 w-6 text-foreground" aria-hidden="true" />
 										</button>
 									</div>
 								</Transition.Child>

@@ -1,4 +1,4 @@
-import { MegaphoneIcon, TicketIcon } from '@heroicons/react/24/outline'
+import { Megaphone, Ticket } from 'lucide-react'
 
 interface ComingSoonCardProps {
 	t: (key: string) => string
@@ -17,13 +17,13 @@ export function ComingSoonCard({ t }: ComingSoonCardProps) {
 			<div className="space-y-4 relative z-10">
 				<div className="flex items-center gap-3 text-muted-foreground/80">
 					<div className="p-2 rounded-lg bg-muted">
-						<TicketIcon className="h-5 w-5" />
+						<Ticket className="h-5 w-5" />
 					</div>
 					<span className="font-medium">{t('dashboard.coming_soon.tickets')}</span>
 				</div>
 				<div className="flex items-center gap-3 text-muted-foreground/80">
 					<div className="p-2 rounded-lg bg-muted">
-						<MegaphoneIcon className="h-5 w-5" />
+						<Megaphone className="h-5 w-5" />
 					</div>
 					<span className="font-medium">{t('dashboard.coming_soon.announcements')}</span>
 				</div>

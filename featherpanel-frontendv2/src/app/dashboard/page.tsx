@@ -1,17 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import {
-	ServerIcon,
-	ClockIcon,
-} from '@heroicons/react/24/outline'
+import { Server, Clock } from 'lucide-react'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useSession } from '@/contexts/SessionContext'
 import Link from 'next/link'
 import axios from 'axios'
 
 // Types
-import type { Server } from '@/types/server'
+import type { Server as ServerData } from '@/types/server'
 import type { Activity } from '@/types/activity'
 
 // Components
@@ -28,7 +25,7 @@ import { isServerAccessible } from '@/lib/server-utils'
 export default function DashboardPage() {
 	const { t } = useTranslation()
 	const { user } = useSession()
-	const [servers, setServers] = useState<Server[]>([])
+	const [servers, setServers] = useState<ServerData[]>([])
 	const [activities, setActivities] = useState<Activity[]>([])
 	const [loadingServers, setLoadingServers] = useState(true)
 	const [loadingActivity, setLoadingActivity] = useState(true)
@@ -83,7 +80,7 @@ export default function DashboardPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
-	const getServerLiveStats = (server: Server) => {
+	const getServerLiveStats = (server: ServerData) => {
 		const liveData = serverLiveData[server.uuidShort]
 		if (!liveData?.stats) return null
 
@@ -122,23 +119,23 @@ export default function DashboardPage() {
 	return (
 		<div className="space-y-8">
 			{/* Welcome Section */}
-			<div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-8">
+			<div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4 sm:p-6 md:p-8">
 				<div className="relative z-10">
-					<h1 className="text-4xl font-bold tracking-tight text-foreground mb-2">
+					<h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-2">
 						{t('dashboard.welcome')}{user ? `, ${user.first_name}` : ''}
 					</h1>
-					<p className="text-lg text-muted-foreground">
+					<p className="text-sm sm:text-base md:text-lg text-muted-foreground">
 						{t('dashboard.subtitle')}
 					</p>
 				</div>
 				{/* Decorative elements */}
-				<div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-0" />
-				<div className="absolute bottom-0 left-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl -z-0" />
+				<div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl z-0" />
+				<div className="absolute bottom-0 left-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl z-0" />
 			</div>
 
-			<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+			<div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
 				{/* Main Content (Servers, Announcements, Tickets) */}
-				<div className="lg:col-span-2 space-y-8">
+				<div className="lg:col-span-2 space-y-6 md:space-y-8">
 					{/* Announcements */}
 					<AnnouncementBanner t={t} />
 
@@ -153,7 +150,7 @@ export default function DashboardPage() {
 
 						{loadingServers ? (
 							<div className="flex items-center justify-center py-12">
-								<ServerIcon className="h-8 w-8 animate-spin text-muted-foreground" />
+								<Server className="h-8 w-8 animate-spin text-muted-foreground" />
 							</div>
 						) : servers.length > 0 ? (
 							<div className="space-y-4">
@@ -174,7 +171,7 @@ export default function DashboardPage() {
 							</div>
 						) : (
 							<div className="rounded-xl border border-border bg-card p-12 text-center">
-								<ServerIcon className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
+								<Server className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
 								<p className="text-muted-foreground font-medium">{t('dashboard.recent_servers.no_servers')}</p>
 								<p className="text-sm text-muted-foreground/70 mt-1">
 									{t('dashboard.recent_servers.create_first')}
@@ -241,13 +238,13 @@ export default function DashboardPage() {
 
 						{loadingActivity ? (
 							<div className="flex items-center justify-center py-8">
-								<ClockIcon className="h-6 w-6 animate-spin text-muted-foreground" />
+								<Clock className="h-6 w-6 animate-spin text-muted-foreground" />
 							</div>
 						) : activities.length > 0 ? (
 							<ActivityFeed activities={activities} formatDate={formatDate} />
 						) : (
 							<div className="text-center py-8">
-								<ClockIcon className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
+								<Clock className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
 								<p className="text-sm text-muted-foreground">{t('dashboard.activity.no_activity')}</p>
 							</div>
 						)}

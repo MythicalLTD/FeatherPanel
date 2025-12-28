@@ -1,4 +1,4 @@
-import { XMarkIcon, MegaphoneIcon } from '@heroicons/react/24/outline'
+import { X, Megaphone } from 'lucide-react'
 import { useState } from 'react'
 
 interface AnnouncementBannerProps {
@@ -16,7 +16,7 @@ export function AnnouncementBanner({ t }: AnnouncementBannerProps) {
 				<div className="flex-1">
 					<div className="flex items-center gap-2 mb-2">
 						<span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
-							<MegaphoneIcon className="h-5 w-5 text-white" />
+							<Megaphone className="h-5 w-5 text-white" />
 						</span>
 						<span className="inline-flex items-center rounded-md bg-white/10 px-2 py-1 text-xs font-medium text-white ring-1 ring-inset ring-white/20">
 							{t('dashboard.announcements.new')}
@@ -33,7 +33,7 @@ export function AnnouncementBanner({ t }: AnnouncementBannerProps) {
 					onClick={() => setIsVisible(false)}
 					className="rounded-lg p-1 hover:bg-white/10 transition-colors"
 				>
-					<XMarkIcon className="h-5 w-5 text-white" />
+					<X className="h-5 w-5 text-white" />
 				</button>
 			</div>
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { ArrowRightStartOnRectangleIcon } from '@heroicons/react/24/outline'
+import { LogOut } from 'lucide-react'
 
 export default function LogoutPage() {
   const router = useRouter()
@@ -70,7 +70,7 @@ export default function LogoutPage() {
         <div className="relative">
           <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl" />
           <div className="relative bg-primary/10 rounded-full p-4">
-            <ArrowRightStartOnRectangleIcon className="size-12 text-primary" />
+            <LogOut className="size-12 text-primary" />
           </div>
         </div>
 

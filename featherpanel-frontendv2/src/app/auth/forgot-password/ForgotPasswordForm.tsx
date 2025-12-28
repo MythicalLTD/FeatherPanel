@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogHeader, DialogTitleCustom, DialogDescription, DialogFooter } from '@/components/ui/dialog'
-import { CheckCircleIcon, EnvelopeIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
+import { CheckCircle, Mail, ArrowRight } from 'lucide-react'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -114,7 +114,7 @@ export default function ForgotPasswordForm() {
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             required
             autoComplete="email"
-            icon={<EnvelopeIcon className="h-5 w-5" />}
+            icon={<Mail className="h-5 w-5" />}
             placeholder={t('auth.register.email_placeholder')}
           />
 
@@ -146,7 +146,7 @@ export default function ForgotPasswordForm() {
             {!loading && (
               <>
                 {t('auth.forgot_password.submit')}
-                <ArrowRightIcon className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </>
             )}
           </Button>
@@ -176,7 +176,7 @@ export default function ForgotPasswordForm() {
         <DialogHeader>
           <DialogTitleCustom className="flex items-center gap-2">
             <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-green-500/10">
-              <CheckCircleIcon className="h-5 w-5 text-green-500" />
+              <CheckCircle className="h-5 w-5 text-green-500" />
             </div>
             <span>{t('auth.forgot_password.success_title')}</span>
           </DialogTitleCustom>
