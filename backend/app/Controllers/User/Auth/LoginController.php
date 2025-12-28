@@ -296,6 +296,9 @@ class LoginController
                 );
             }
 
+			//Unset stuff thats dangerous
+			unset($userInfo['password']);
+			
             // Load user preferences
             $preferences = UserPreference::getPreferences($userInfo['uuid']);
 

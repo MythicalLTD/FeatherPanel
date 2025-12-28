@@ -286,8 +286,8 @@
   },
   "[xml]": {
     "editor.defaultFormatter": "redhat.vscode-xml"
-},
-"[typescriptreact]": {
-	"editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
-} // required to format on save
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
+  } // required to format on save
 }
