@@ -3,6 +3,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 import { SettingsProvider } from '@/contexts/SettingsContext'
 import { TranslationProvider } from '@/contexts/TranslationContext'
 import { SessionProvider } from '@/contexts/SessionContext'
+import { NotificationProvider } from '@/contexts/NotificationContext'
 import AppContent from '@/components/common/AppContent'
 import { Toaster } from 'sonner'
 
@@ -45,8 +46,10 @@ export default function RootLayout({
 					<SettingsProvider>
 						<TranslationProvider>
 							<SessionProvider>
-								<AppContent>{children}</AppContent>
-								<Toaster richColors position="top-right" />
+								<NotificationProvider>
+									<AppContent>{children}</AppContent>
+									<Toaster richColors position="top-right" />
+								</NotificationProvider>
 							</SessionProvider>
 						</TranslationProvider>
 					</SettingsProvider>

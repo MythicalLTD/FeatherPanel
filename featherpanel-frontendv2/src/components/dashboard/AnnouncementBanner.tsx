@@ -1,45 +1,82 @@
-import { X, Megaphone } from 'lucide-react'
-import { useState } from 'react'
+import { X, Megaphone, CheckCircle, AlertTriangle, AlertOctagon } from 'lucide-react'
+import { useNotifications } from '@/contexts/NotificationContext'
+import type { Notification } from '@/types/notification'
+import { cn } from '@/lib/utils'
+import ReactMarkdown from 'react-markdown'
 
-interface AnnouncementBannerProps {
-	t: (key: string) => string
-}
+export function AnnouncementBanner() {
+	const { notifications, dismissNotification } = useNotifications()
 
-export function AnnouncementBanner({ t }: AnnouncementBannerProps) {
-	const [isVisible, setIsVisible] = useState(true)
+	if (notifications.length === 0) return null
 
-	if (!isVisible) return null
+	const getTypeStyles = (type: Notification['type']) => {
+		switch (type) {
+			case 'success':
+				return 'bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-400'
+			case 'warning':
+				return 'bg-yellow-500/10 border-yellow-500/20 text-yellow-700 dark:text-yellow-400'
+			case 'error':
+			case 'danger':
+				return 'bg-red-500/10 border-red-500/20 text-red-700 dark:text-red-400'
+			case 'info':
+			default:
+				return 'bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-400'
+		}
+	}
+
+	const getTypeIcon = (type: Notification['type']) => {
+		switch (type) {
+			case 'success': return CheckCircle
+			case 'warning': return AlertTriangle
+			case 'error':
+			case 'danger': return AlertOctagon
+			case 'info':
+			default: return Megaphone
+		}
+	}
 
 	return (
-		<div className="relative overflow-hidden rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 p-6 text-white shadow-lg mb-6">
-			<div className="relative z-10 flex items-start justify-between gap-4">
-				<div className="flex-1">
-					<div className="flex items-center gap-2 mb-2">
-						<span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
-							<Megaphone className="h-5 w-5 text-white" />
-						</span>
-						<span className="inline-flex items-center rounded-md bg-white/10 px-2 py-1 text-xs font-medium text-white ring-1 ring-inset ring-white/20">
-							{t('dashboard.announcements.new')}
-						</span>
-					</div>
-					<h3 className="text-lg font-bold text-white mb-1">
-						{t('dashboard.announcements.sample_title')}
-					</h3>
-					<p className="text-blue-100 text-sm leading-relaxed max-w-2xl">
-						{t('dashboard.announcements.sample_message')}
-					</p>
-				</div>
-				<button
-					onClick={() => setIsVisible(false)}
-					className="rounded-lg p-1 hover:bg-white/10 transition-colors"
-				>
-					<X className="h-5 w-5 text-white" />
-				</button>
-			</div>
+		<div className="space-y-4 mb-6">
+			{notifications.map(notification => {
+				const Icon = getTypeIcon(notification.type)
+				const styles = getTypeStyles(notification.type)
 
-			{/* Decorative background effects */}
-			<div className="absolute -top-10 -right-10 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-			<div className="absolute -bottom-10 -left-10 h-48 w-48 rounded-full bg-purple-500/20 blur-2xl" />
+				return (
+					<div
+						key={notification.id}
+						className={cn(
+							"relative overflow-hidden rounded-xl border p-4 shadow-sm transition-all",
+							styles
+						)}
+					>
+						<div className="flex items-start justify-between gap-4">
+							<div className="flex-1">
+								<div className="flex items-center gap-2 mb-1">
+									<Icon className="h-5 w-5 opacity-80" />
+									<h3 className="font-semibold text-sm uppercase tracking-wide opacity-90">
+										{notification.title}
+									</h3>
+								</div>
+								<div className="text-sm opacity-90 pl-7 prose prose-sm dark:prose-invert max-w-none prose-p:my-0 prose-headings:my-1 prose-a:text-inherit prose-a:underline">
+									<ReactMarkdown>
+										{notification.message_markdown}
+									</ReactMarkdown>
+								</div>
+							</div>
+							
+							{notification.is_dismissible && !notification.is_sticky && (
+								<button
+									onClick={() => dismissNotification(notification.id)}
+									className="rounded-lg p-1 hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0"
+									aria-label="Dismiss"
+								>
+									<X className="h-4 w-4 opacity-70" />
+								</button>
+							)}
+						</div>
+					</div>
+				)
+			})}
 		</div>
 	)
 }

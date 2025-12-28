@@ -138,7 +138,7 @@ export default function DashboardPage() {
 				{/* Main Content (Servers, Announcements, Tickets) */}
 				<div className="lg:col-span-2 space-y-6 md:space-y-8">
 					{/* Announcements */}
-					<AnnouncementBanner t={t} />
+					<AnnouncementBanner />
 
 					{/* Servers List */}
 					<div className="space-y-6">
