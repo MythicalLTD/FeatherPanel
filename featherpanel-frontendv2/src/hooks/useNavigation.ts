@@ -18,7 +18,6 @@ import {
   Settings,
   Activity,
   BookOpen,
-  ChevronLeft,
   Ticket,
   BarChart3,
   Crown,
@@ -91,7 +90,7 @@ export function useNavigation() {
           let prefix = "";
           if (category === "admin") prefix = "/admin";
           if (category === "main") prefix = "/dashboard";
-          if (category === "server") prefix = "/server"; // Handle server context just in case
+          if (category === "server") prefix = "/server";
 
           const cleanUrl = url.startsWith("/") ? url : `/${url}`;
           const fullUrl = `${prefix}${cleanUrl}`;
@@ -106,12 +105,45 @@ export function useNavigation() {
             ? `${prefix}${cleanRedirect}`
             : fullUrl;
 
+          // Legacy-style group normalization
+          const builtInGroups: Record<string, string[]> = {
+            server: [
+              "management",
+              "files",
+              "networking",
+              "automation",
+              "configuration",
+            ],
+            admin: [
+              "overview",
+              "feathercloud",
+              "users",
+              "tickets",
+              "networking",
+              "infrastructure",
+              "content",
+              "system",
+            ],
+            main: ["overview", "support"],
+          };
+
+          let normalizedGroup = item.group || "plugins";
+          if (item.group) {
+            const lowerGroup = item.group.toLowerCase();
+            const matchingBuiltIn = builtInGroups[category]?.find(
+              (bg) => bg.toLowerCase() === lowerGroup
+            );
+            if (matchingBuiltIn) {
+              normalizedGroup = matchingBuiltIn;
+            }
+          }
+
           return {
             id: `plugin-${item.plugin}-${url}`,
             name: item.name,
             title: item.name,
             url: fullUrl,
-            icon: item.icon, // String (emoji)
+            icon: item.icon,
             isActive:
               pathname === fullUrl || pathname.startsWith(fullUrl + "/"),
             category,
@@ -122,7 +154,7 @@ export function useNavigation() {
             showBadge: item.showBadge,
             description: item.description,
             permission: item.permission,
-            group: item.group || "Plugins",
+            group: normalizedGroup,
           };
         })
         .filter((item) => {
@@ -136,13 +168,13 @@ export function useNavigation() {
   );
 
   const navigationItems = useMemo(() => {
-    // Logic to switch between Main, Admin and Server navigation
     const isAdmin = pathname.startsWith("/admin");
     const isServer = pathname.startsWith("/server/");
     const serverUuid = isServer ? pathname.split("/")[2] : null;
 
     if (isAdmin) {
       const items: NavigationItem[] = [
+        // Overview
         {
           id: "admin-dashboard",
           name: t("navigation.items.dashboard"),
@@ -152,7 +184,7 @@ export function useNavigation() {
           isActive: pathname === "/admin",
           category: "admin",
           permission: Permissions.ADMIN_DASHBOARD_VIEW,
-          group: t("navigation.groups.overview"),
+          group: "overview",
         },
         {
           id: "admin-kpi-analytics",
@@ -163,7 +195,18 @@ export function useNavigation() {
           isActive: pathname.startsWith("/admin/kpi"),
           category: "admin",
           permission: Permissions.ADMIN_USERS_VIEW,
-          group: t("navigation.groups.overview"),
+          group: "overview",
+        },
+        {
+          id: "admin-nodes-status",
+          name: t("navigation.items.nodeStatus"),
+          title: t("navigation.items.nodeStatus"),
+          url: "/admin/nodes/status",
+          icon: Activity,
+          isActive: pathname === "/admin/nodes/status",
+          category: "admin",
+          permission: Permissions.ADMIN_NODES_VIEW,
+          group: "overview",
         },
         // User Management
         {
@@ -175,18 +218,7 @@ export function useNavigation() {
           isActive: pathname.startsWith("/admin/users"),
           category: "admin",
           permission: Permissions.ADMIN_USERS_VIEW,
-          group: t("navigation.groups.users"),
-        },
-        {
-          id: "admin-roles",
-          name: t("navigation.items.roles"),
-          title: t("navigation.items.roles"),
-          url: "/admin/roles",
-          icon: Crown,
-          isActive: pathname.startsWith("/admin/roles"),
-          category: "admin",
-          permission: Permissions.ADMIN_ROLES_VIEW,
-          group: t("navigation.groups.users"),
+          group: "users",
         },
         {
           id: "admin-notifications",
@@ -197,7 +229,18 @@ export function useNavigation() {
           isActive: pathname.startsWith("/admin/notifications"),
           category: "admin",
           permission: Permissions.ADMIN_NOTIFICATIONS_VIEW,
-          group: t("navigation.groups.users"),
+          group: "users",
+        },
+        {
+          id: "admin-roles",
+          name: t("navigation.items.roles"),
+          title: t("navigation.items.roles"),
+          url: "/admin/roles",
+          icon: Crown,
+          isActive: pathname.startsWith("/admin/roles"),
+          category: "admin",
+          permission: Permissions.ADMIN_ROLES_VIEW,
+          group: "users",
         },
         // Infrastructure
         {
@@ -209,7 +252,7 @@ export function useNavigation() {
           isActive: pathname.startsWith("/admin/servers"),
           category: "admin",
           permission: Permissions.ADMIN_SERVERS_VIEW,
-          group: t("navigation.groups.infrastructure"),
+          group: "infrastructure",
         },
         {
           id: "admin-locations",
@@ -220,18 +263,7 @@ export function useNavigation() {
           isActive: pathname.startsWith("/admin/locations"),
           category: "admin",
           permission: Permissions.ADMIN_LOCATIONS_VIEW,
-          group: t("navigation.groups.infrastructure"),
-        },
-        {
-          id: "admin-nodes-status",
-          name: t("navigation.items.nodeStatus"),
-          title: t("navigation.items.nodeStatus"),
-          url: "/admin/nodes/status",
-          icon: Activity,
-          isActive: pathname === "/admin/nodes/status",
-          category: "admin",
-          permission: Permissions.ADMIN_NODES_VIEW,
-          group: t("navigation.groups.infrastructure"),
+          group: "infrastructure",
         },
         {
           id: "admin-subdomains",
@@ -242,7 +274,7 @@ export function useNavigation() {
           isActive: pathname.startsWith("/admin/subdomains"),
           category: "admin",
           permission: Permissions.ADMIN_SUBDOMAINS_VIEW,
-          group: t("navigation.groups.infrastructure"),
+          group: "infrastructure",
         },
         {
           id: "admin-realms",
@@ -253,7 +285,7 @@ export function useNavigation() {
           isActive: pathname.startsWith("/admin/realms"),
           category: "admin",
           permission: Permissions.ADMIN_REALMS_VIEW,
-          group: t("navigation.groups.infrastructure"),
+          group: "infrastructure",
         },
         {
           id: "admin-featherzerotrust",
@@ -264,7 +296,7 @@ export function useNavigation() {
           isActive: pathname.startsWith("/admin/featherzerotrust"),
           category: "admin",
           permission: Permissions.ADMIN_FEATHERZEROTRUST_VIEW,
-          group: t("navigation.groups.infrastructure"),
+          group: "infrastructure",
         },
         // Content
         {
@@ -276,7 +308,7 @@ export function useNavigation() {
           isActive: pathname.startsWith("/admin/images"),
           category: "admin",
           permission: Permissions.ADMIN_IMAGES_VIEW,
-          group: t("navigation.groups.content"),
+          group: "content",
         },
         {
           id: "admin-mail-templates",
@@ -287,18 +319,7 @@ export function useNavigation() {
           isActive: pathname.startsWith("/admin/mail-templates"),
           category: "admin",
           permission: Permissions.ADMIN_TEMPLATE_EMAIL_VIEW,
-          group: t("navigation.groups.content"),
-        },
-        {
-          id: "admin-redirect-links",
-          name: t("navigation.items.redirectLinks"),
-          title: t("navigation.items.redirectLinks"),
-          url: "/admin/redirect-links",
-          icon: Link,
-          isActive: pathname.startsWith("/admin/redirect-links"),
-          category: "admin",
-          permission: Permissions.ADMIN_REDIRECT_LINKS_VIEW,
-          group: t("navigation.groups.content"),
+          group: "content",
         },
         {
           id: "admin-feathercloud-ai-agent",
@@ -309,9 +330,31 @@ export function useNavigation() {
           isActive: pathname.startsWith("/admin/featherpanel-ai-agent"),
           category: "admin",
           permission: Permissions.ADMIN_STATISTICS_VIEW,
-          group: t("navigation.groups.content"),
+          group: "content",
+        },
+        {
+          id: "admin-redirect-links",
+          name: t("navigation.items.redirectLinks"),
+          title: t("navigation.items.redirectLinks"),
+          url: "/admin/redirect-links",
+          icon: Link,
+          isActive: pathname.startsWith("/admin/redirect-links"),
+          category: "admin",
+          permission: Permissions.ADMIN_REDIRECT_LINKS_VIEW,
+          group: "content",
         },
         // System
+        {
+          id: "admin-api-keys",
+          name: t("navigation.items.apiKeys"),
+          title: t("navigation.items.apiKeys"),
+          url: "/admin/api-keys",
+          icon: Key,
+          isActive: pathname.startsWith("/admin/api-keys"),
+          category: "admin",
+          permission: Permissions.ADMIN_DASHBOARD_VIEW,
+          group: "system",
+        },
         {
           id: "admin-settings",
           name: t("navigation.items.settings"),
@@ -321,7 +364,7 @@ export function useNavigation() {
           isActive: pathname.startsWith("/admin/settings"),
           category: "admin",
           permission: Permissions.ADMIN_SETTINGS_VIEW,
-          group: t("navigation.groups.system"),
+          group: "system",
         },
         {
           id: "admin-rate-limits",
@@ -332,40 +375,7 @@ export function useNavigation() {
           isActive: pathname.startsWith("/admin/rate-limits"),
           category: "admin",
           permission: Permissions.ADMIN_SETTINGS_VIEW,
-          group: t("navigation.groups.system"),
-        },
-        {
-          id: "admin-database-management",
-          name: t("navigation.items.databaseManagement"),
-          title: t("navigation.items.databaseManagement"),
-          url: "/admin/databases/management",
-          icon: Database,
-          isActive: pathname.startsWith("/admin/databases/management"),
-          category: "admin",
-          permission: Permissions.ADMIN_DATABASES_VIEW,
-          group: t("navigation.groups.system"),
-        },
-        {
-          id: "admin-pterodactyl-importer",
-          name: t("navigation.items.pterodactylImporter"),
-          title: t("navigation.items.pterodactylImporter"),
-          url: "/admin/pterodactyl-importer",
-          icon: Download,
-          isActive: pathname.startsWith("/admin/pterodactyl-importer"),
-          category: "admin",
-          permission: Permissions.ADMIN_DATABASES_MANAGE,
-          group: t("navigation.groups.system"),
-        },
-        {
-          id: "admin-api-keys",
-          name: t("navigation.items.apiKeys"),
-          title: t("navigation.items.apiKeys"),
-          url: "/admin/api-keys",
-          icon: Key,
-          isActive: pathname.startsWith("/admin/api-keys"),
-          category: "admin",
-          permission: Permissions.ADMIN_DASHBOARD_VIEW,
-          group: t("navigation.groups.system"),
+          group: "system",
         },
         {
           id: "admin-plugins",
@@ -376,7 +386,29 @@ export function useNavigation() {
           isActive: pathname.startsWith("/admin/plugins"),
           category: "admin",
           permission: Permissions.ADMIN_PLUGINS_VIEW,
-          group: t("navigation.groups.system"),
+          group: "system",
+        },
+        {
+          id: "admin-database-management",
+          name: t("navigation.items.databaseManagement"),
+          title: t("navigation.items.databaseManagement"),
+          url: "/admin/databases/management",
+          icon: Database,
+          isActive: pathname.startsWith("/admin/databases/management"),
+          category: "admin",
+          permission: Permissions.ADMIN_DATABASES_VIEW,
+          group: "system",
+        },
+        {
+          id: "admin-pterodactyl-importer",
+          name: t("navigation.items.pterodactylImporter"),
+          title: t("navigation.items.pterodactylImporter"),
+          url: "/admin/pterodactyl-importer",
+          icon: Download,
+          isActive: pathname.startsWith("/admin/pterodactyl-importer"),
+          category: "admin",
+          permission: Permissions.ADMIN_DATABASES_MANAGE,
+          group: "system",
         },
         // FeatherCloud
         {
@@ -391,7 +423,7 @@ export function useNavigation() {
             pathname.startsWith("/admin/feathercloud/spells"),
           category: "admin",
           permission: Permissions.ADMIN_PLUGINS_VIEW,
-          group: t("navigation.groups.featherCloud"),
+          group: "feathercloud",
         },
         {
           id: "admin-cloud-management",
@@ -402,7 +434,7 @@ export function useNavigation() {
           isActive: pathname.startsWith("/admin/cloud-management"),
           category: "admin",
           permission: Permissions.ADMIN_ROOT,
-          group: t("navigation.groups.featherCloud"),
+          group: "feathercloud",
         },
       ];
 
@@ -416,7 +448,7 @@ export function useNavigation() {
           isActive: pathname.startsWith("/admin/knowledgebase"),
           category: "admin",
           permission: Permissions.ADMIN_KNOWLEDGEBASE_CATEGORIES_VIEW,
-          group: t("navigation.groups.users"),
+          group: "users",
         });
       }
 
@@ -435,7 +467,7 @@ export function useNavigation() {
               !pathname.startsWith("/admin/tickets/statuses"),
             category: "admin",
             permission: Permissions.ADMIN_TICKETS_VIEW,
-            group: t("navigation.groups.tickets"),
+            group: "tickets",
           },
           {
             id: "admin-ticket-categories",
@@ -446,7 +478,7 @@ export function useNavigation() {
             isActive: pathname.startsWith("/admin/tickets/categories"),
             category: "admin",
             permission: Permissions.ADMIN_TICKET_CATEGORIES_VIEW,
-            group: t("navigation.groups.tickets"),
+            group: "tickets",
           },
           {
             id: "admin-ticket-priorities",
@@ -457,7 +489,7 @@ export function useNavigation() {
             isActive: pathname.startsWith("/admin/tickets/priorities"),
             category: "admin",
             permission: Permissions.ADMIN_TICKET_PRIORITIES_VIEW,
-            group: t("navigation.groups.tickets"),
+            group: "tickets",
           },
           {
             id: "admin-ticket-statuses",
@@ -468,7 +500,7 @@ export function useNavigation() {
             isActive: pathname.startsWith("/admin/tickets/statuses"),
             category: "admin",
             permission: Permissions.ADMIN_TICKET_STATUSES_VIEW,
-            group: t("navigation.groups.tickets"),
+            group: "tickets",
           }
         );
       }
@@ -476,29 +508,8 @@ export function useNavigation() {
       // Add Plugin Admin Items
       if (pluginRoutes?.admin) {
         const pluginItems = convertPluginItems(pluginRoutes.admin, "admin");
-        // Default admin plugins to the "Plugins" group
-        pluginItems.forEach((item) => {
-          if (
-            !item.group ||
-            (typeof item.group === "string" && item.group.trim() === "")
-          ) {
-            item.group = t("navigation.groups.plugins");
-          }
-        });
         items.push(...pluginItems);
       }
-
-      // Add "Back to Dashboard"
-      items.push({
-        id: "back-to-dashboard",
-        name: t("navigation.items.backToDashboard"),
-        title: t("navigation.items.backToDashboard"),
-        url: "/dashboard",
-        icon: Home,
-        isActive: false,
-        category: "main",
-        group: t("navigation.groups.system"),
-      });
 
       return items.filter(
         (item) => !item.permission || hasPermission(item.permission)
@@ -507,6 +518,7 @@ export function useNavigation() {
 
     if (isServer && serverUuid) {
       const items: NavigationItem[] = [
+        // Management
         {
           id: "server-overview",
           name: t("navigation.items.console"),
@@ -515,7 +527,7 @@ export function useNavigation() {
           icon: SquareTerminal,
           isActive: pathname === `/server/${serverUuid}`,
           category: "server",
-          group: t("navigation.groups.management"),
+          group: "management",
         },
         {
           id: "server-logs",
@@ -525,7 +537,7 @@ export function useNavigation() {
           icon: FileText,
           isActive: pathname.startsWith(`/server/${serverUuid}/logs`),
           category: "server",
-          group: t("navigation.groups.management"),
+          group: "management",
           permission: "activity.read",
         },
         {
@@ -536,9 +548,10 @@ export function useNavigation() {
           icon: Clock,
           isActive: pathname.startsWith(`/server/${serverUuid}/activities`),
           category: "server",
-          group: t("navigation.groups.management"),
+          group: "management",
           permission: "activity.read",
         },
+        // Files
         {
           id: "server-files",
           name: t("navigation.items.files"),
@@ -547,7 +560,7 @@ export function useNavigation() {
           icon: Folder,
           isActive: pathname.startsWith(`/server/${serverUuid}/files`),
           category: "server",
-          group: t("navigation.groups.filesData"),
+          group: "files",
           permission: "file.read",
         },
         {
@@ -558,30 +571,8 @@ export function useNavigation() {
           icon: Database,
           isActive: pathname.startsWith(`/server/${serverUuid}/databases`),
           category: "server",
-          group: t("navigation.groups.filesData"),
+          group: "files",
           permission: "database.read",
-        },
-        {
-          id: "server-schedules",
-          name: t("navigation.items.schedules"),
-          title: t("navigation.items.schedules"),
-          url: `/server/${serverUuid}/schedules`,
-          icon: Calendar,
-          isActive: pathname.startsWith(`/server/${serverUuid}/schedules`),
-          category: "server",
-          group: t("navigation.groups.automation"),
-          permission: "schedule.read",
-        },
-        {
-          id: "server-users",
-          name: t("navigation.items.users"),
-          title: t("navigation.items.users"),
-          url: `/server/${serverUuid}/users`,
-          icon: Users,
-          isActive: pathname.startsWith(`/server/${serverUuid}/users`),
-          category: "server",
-          group: t("navigation.groups.configuration"),
-          permission: "user.read",
         },
         {
           id: "server-backups",
@@ -591,41 +582,8 @@ export function useNavigation() {
           icon: Archive,
           isActive: pathname.startsWith(`/server/${serverUuid}/backups`),
           category: "server",
-          group: t("navigation.groups.filesData"),
+          group: "files",
           permission: "backup.read",
-        },
-        {
-          id: "server-allocations",
-          name: t("navigation.items.allocations"),
-          title: t("navigation.items.allocations"),
-          url: `/server/${serverUuid}/allocations`,
-          icon: Network,
-          isActive: pathname.startsWith(`/server/${serverUuid}/allocations`),
-          category: "server",
-          group: t("navigation.groups.networking"),
-          permission: "allocation.read",
-        },
-        {
-          id: "server-firewall",
-          name: t("navigation.items.firewall"),
-          title: t("navigation.items.firewall"),
-          url: `/server/${serverUuid}/firewall`,
-          icon: ShieldCheck,
-          isActive: pathname.startsWith(`/server/${serverUuid}/firewall`),
-          category: "server",
-          group: t("navigation.groups.networking"),
-          permission: "firewall.read",
-        },
-        {
-          id: "server-proxy",
-          name: t("navigation.items.proxy"),
-          title: t("navigation.items.proxy"),
-          url: `/server/${serverUuid}/proxy`,
-          icon: ArrowRightLeft,
-          isActive: pathname.startsWith(`/server/${serverUuid}/proxy`),
-          category: "server",
-          group: t("navigation.groups.networking"),
-          permission: "proxy.read",
         },
         {
           id: "server-import",
@@ -635,8 +593,32 @@ export function useNavigation() {
           icon: Upload,
           isActive: pathname.startsWith(`/server/${serverUuid}/import`),
           category: "server",
-          group: t("navigation.groups.filesData"),
+          group: "files",
           permission: "import.read",
+        },
+        // Automation
+        {
+          id: "server-schedules",
+          name: t("navigation.items.schedules"),
+          title: t("navigation.items.schedules"),
+          url: `/server/${serverUuid}/schedules`,
+          icon: Calendar,
+          isActive: pathname.startsWith(`/server/${serverUuid}/schedules`),
+          category: "server",
+          group: "automation",
+          permission: "schedule.read",
+        },
+        // Configuration
+        {
+          id: "server-users",
+          name: t("navigation.items.users"),
+          title: t("navigation.items.users"),
+          url: `/server/${serverUuid}/users`,
+          icon: Users,
+          isActive: pathname.startsWith(`/server/${serverUuid}/users`),
+          category: "server",
+          group: "configuration",
+          permission: "user.read",
         },
         {
           id: "server-startup",
@@ -646,7 +628,7 @@ export function useNavigation() {
           icon: PlayCircle,
           isActive: pathname.startsWith(`/server/${serverUuid}/startup`),
           category: "server",
-          group: t("navigation.groups.configuration"),
+          group: "configuration",
           permission: "startup.read",
         },
         {
@@ -657,8 +639,53 @@ export function useNavigation() {
           icon: Settings,
           isActive: pathname.startsWith(`/server/${serverUuid}/settings`),
           category: "server",
-          group: t("navigation.groups.configuration"),
+          group: "configuration",
           permission: "settings.rename",
+        },
+        // Networking
+        {
+          id: "server-allocations",
+          name: t("navigation.items.allocations"),
+          title: t("navigation.items.allocations"),
+          url: `/server/${serverUuid}/allocations`,
+          icon: Network,
+          isActive: pathname.startsWith(`/server/${serverUuid}/allocations`),
+          category: "server",
+          group: "networking",
+          permission: "allocation.read",
+        },
+        {
+          id: "server-firewall",
+          name: t("navigation.items.firewall"),
+          title: t("navigation.items.firewall"),
+          url: `/server/${serverUuid}/firewall`,
+          icon: ShieldCheck,
+          isActive: pathname.startsWith(`/server/${serverUuid}/firewall`),
+          category: "server",
+          group: "networking",
+          permission: "firewall.read",
+        },
+        {
+          id: "server-proxy",
+          name: t("navigation.items.proxy"),
+          title: t("navigation.items.proxy"),
+          url: `/server/${serverUuid}/proxy`,
+          icon: ArrowRightLeft,
+          isActive: pathname.startsWith(`/server/${serverUuid}/proxy`),
+          category: "server",
+          group: "networking",
+          permission: "proxy.read",
+        },
+        {
+          id: "server-subdomains",
+          name: t("navigation.items.subdomains"),
+          title: t("navigation.items.subdomains"),
+          url: `/server/${serverUuid}/subdomains`,
+          icon: Globe,
+          isActive: pathname.startsWith(`/server/${serverUuid}/subdomains`),
+          category: "server",
+          group: "networking",
+          permission: "subdomain.manage",
         },
       ];
 
@@ -687,18 +714,6 @@ export function useNavigation() {
         items.push(...serverPlugins);
       }
 
-      // Add "Back to Dashboard"
-      items.push({
-        id: "back-to-dashboard",
-        name: t("navigation.items.backToDashboard"),
-        title: t("navigation.items.backToDashboard"),
-        url: "/dashboard",
-        icon: ChevronLeft,
-        isActive: false,
-        category: "main",
-        group: t("navigation.groups.system"),
-      });
-
       return items.filter(
         (item) => !item.permission || hasPermission(item.permission)
       );
@@ -714,7 +729,7 @@ export function useNavigation() {
         icon: Home,
         isActive: pathname === "/dashboard",
         category: "main",
-        group: t("navigation.groups.overview"),
+        group: "overview",
       },
       {
         id: "servers",
@@ -724,7 +739,7 @@ export function useNavigation() {
         icon: Server,
         isActive: pathname.startsWith("/dashboard/servers"),
         category: "main",
-        group: t("navigation.groups.overview"),
+        group: "overview",
       },
       {
         id: "account",
@@ -734,7 +749,7 @@ export function useNavigation() {
         icon: User,
         isActive: pathname.startsWith("/dashboard/account"),
         category: "main",
-        group: t("navigation.groups.account"),
+        group: "account",
       },
     ];
 
@@ -747,7 +762,7 @@ export function useNavigation() {
         icon: ShieldCheck,
         isActive: pathname.startsWith("/admin"),
         category: "main",
-        group: t("navigation.groups.system"),
+        group: "overview",
       });
     }
 
@@ -760,7 +775,7 @@ export function useNavigation() {
         icon: BookOpen,
         isActive: pathname.startsWith("/dashboard/knowledgebase"),
         category: "main",
-        group: t("navigation.groups.support"),
+        group: "support",
       });
     }
 
@@ -773,7 +788,7 @@ export function useNavigation() {
         icon: Ticket,
         isActive: pathname.startsWith("/dashboard/tickets"),
         category: "main",
-        group: t("navigation.groups.support"),
+        group: "support",
       });
     }
 
@@ -786,52 +801,14 @@ export function useNavigation() {
         icon: Activity,
         isActive: pathname.startsWith("/dashboard/status"),
         category: "main",
-        group: t("navigation.groups.support"),
+        group: "support",
       });
     }
 
     // Add Plugin Items
     if (pluginRoutes?.client) {
       const pluginItems = convertPluginItems(pluginRoutes.client, "main");
-      // Default client plugins to the "Plugins" group
-      pluginItems.forEach((item) => {
-        if (
-          !item.group ||
-          (typeof item.group === "string" && item.group.trim() === "")
-        ) {
-          item.group = t("navigation.groups.plugins");
-        }
-      });
       items.push(...pluginItems);
-    }
-
-    // Add Server Plugin Items if on a server page
-    if (pathname.startsWith("/server/") && pluginRoutes?.server) {
-      const parts = pathname.split("/");
-      const uuidShort = parts[2];
-      if (uuidShort) {
-        const serverPlugins = convertPluginItems(pluginRoutes.server, "server");
-        // Prefix server plugin URLs with the current server path
-        serverPlugins.forEach((item) => {
-          const subPath = item.url.startsWith("/server")
-            ? item.url.replace("/server", "")
-            : item.url;
-          item.url = `/server/${uuidShort}${
-            subPath.startsWith("/") ? subPath : "/" + subPath
-          }`;
-          if (item.pluginRedirect) {
-            const redirectSubPath = item.pluginRedirect.startsWith("/server")
-              ? item.pluginRedirect.replace("/server", "")
-              : item.pluginRedirect;
-            item.pluginRedirect = `/server/${uuidShort}${
-              redirectSubPath.startsWith("/")
-                ? redirectSubPath
-                : "/" + redirectSubPath
-            }`;
-          }
-        });
-        items.push(...serverPlugins);
-      }
     }
 
     return items;

@@ -15,6 +15,7 @@ import { useSettings } from '@/contexts/SettingsContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { cn } from '@/lib/utils'
 import { useNavigation } from '@/hooks/useNavigation'
+import { useTranslation } from '@/contexts/TranslationContext'
 import type { NavigationItem } from '@/types/navigation'
 
 interface SidebarProps {
@@ -40,6 +41,33 @@ function SidebarContent({
 	groupedItems: Record<string, NavigationItem[]>
 }) {
 	const { theme } = useTheme()
+    const { t } = useTranslation()
+    
+    // State for collapsed groups, initialized from localStorage
+    const [collapsedGroups, setCollapsedGroups] = useState<string[]>([])
+
+    // Load collapsed groups from localStorage on mount
+    useEffect(() => {
+        const saved = localStorage.getItem('featherpanel_collapsed_groups')
+        if (saved) {
+            try {
+                setCollapsedGroups(JSON.parse(saved))
+            } catch (e) {
+                console.error('Failed to parse collapsed groups', e)
+            }
+        }
+    }, [])
+
+    // Sync collapsed groups to localStorage
+    const toggleGroup = (group: string) => {
+        const newCollapsed = collapsedGroups.includes(group)
+            ? collapsedGroups.filter(g => g !== group)
+            : [...collapsedGroups, group]
+        
+        setCollapsedGroups(newCollapsed)
+        localStorage.setItem('featherpanel_collapsed_groups', JSON.stringify(newCollapsed))
+    }
+
 	const isActive = (href: string) => {
 		if (pathname === href) return true
         // Prevent /dashboard from matching /dashboard/tickets, /dashboard/servers etc.
@@ -55,17 +83,45 @@ function SidebarContent({
 		return pathname.startsWith(href + '/')
 	}
 
+    const renderGroupTitle = (group: string) => {
+        const translationKey = `navigation.groups.${group}`
+        const translated = t(translationKey)
+        
+        // If translation not found, t returns the key itself
+        if (translated === translationKey) {
+            // Return capitalized group name as fallback
+            return group.charAt(0).toUpperCase() + group.slice(1)
+        }
+        
+        return translated
+    }
+
 	const logoUrl = theme === 'dark'
 		? (settings?.app_logo_dark || '/logo.png')
 		: (settings?.app_logo_white || '/logo.png')
 
-    // Define group order
-    const groupOrder = ['Overview', 'System', 'Account', 'Support', 'Plugins']
+    // Define group order using keys from en.json
+    const groupOrder = [
+        'overview',
+        'management',
+        'files',
+        'networking',
+        'automation',
+        'configuration',
+        'feathercloud',
+        'users',
+        'tickets',
+        'infrastructure',
+        'content',
+        'system',
+        'support',
+        'plugins'
+    ]
 
     // Sort groups: explicit order first, then others alphabetically
     const sortedGroups = Object.keys(groupedItems).sort((a, b) => {
-        const indexA = groupOrder.indexOf(a)
-        const indexB = groupOrder.indexOf(b)
+        const indexA = groupOrder.indexOf(a.toLowerCase())
+        const indexB = groupOrder.indexOf(b.toLowerCase())
         
         if (indexA !== -1 && indexB !== -1) return indexA - indexB
         if (indexA !== -1) return -1
@@ -77,6 +133,7 @@ function SidebarContent({
 	return (
 		<div className="flex h-full flex-col">
 			{/* Logo */}
+			<Link href="/dashboard">
 			<div className={cn(
 				"flex items-center border-b border-border/50 transition-all",
 				collapsed && !mobile ? "justify-center px-2 py-4" : "gap-3 px-4 py-4"
@@ -106,18 +163,32 @@ function SidebarContent({
 					</div>
 				)}
 			</div>
+			</Link>
 
 			{/* Navigation */}
 			<nav className="flex-1 px-2 py-4 overflow-y-auto custom-scrollbar space-y-6">
-				{sortedGroups.map((group) => (
-                    <div key={group}>
-                        {(!collapsed || mobile) && (
-                            <h3 className="mb-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                {group}
-                            </h3>
-                        )}
-                        <div className="space-y-1">
-                            {groupedItems[group].map((item) => {
+				{sortedGroups.map((group) => {
+                    const isCollapsed = collapsedGroups.includes(group)
+                    
+                    return (
+                        <div key={group}>
+                            {(!collapsed || mobile) && (
+                                <button
+                                    onClick={() => toggleGroup(group)}
+                                    className="flex items-center justify-between w-full mb-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider group/header hover:text-accent-foreground transition-colors"
+                                >
+                                    <span>{renderGroupTitle(group)}</span>
+                                    <ChevronRight className={cn(
+                                        "h-3 w-3 transition-transform duration-200",
+                                        !isCollapsed && "rotate-90"
+                                    )} />
+                                </button>
+                            )}
+                            <div className={cn(
+                                "space-y-1 transition-all duration-200 overflow-hidden",
+                                isCollapsed && (!collapsed || mobile) ? "max-h-0 opacity-0" : "max-h-[2000px] opacity-100"
+                            )}>
+                                {groupedItems[group].map((item) => {
                                 const active = isActive(item.url)
                                 const Icon = item.icon
                                 const isPluginAction = !!item.pluginJs
@@ -216,7 +287,8 @@ function SidebarContent({
                             })}
                         </div>
                     </div>
-                ))}
+                    )
+                })}
 			</nav>
 
 			{/* Collapse Button (Desktop only) */}
