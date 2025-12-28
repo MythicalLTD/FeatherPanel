@@ -5,6 +5,7 @@ import { Server, Clock } from 'lucide-react'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useSession } from '@/contexts/SessionContext'
 import Link from 'next/link'
+import Image from 'next/image'
 import axios from 'axios'
 
 // Types
@@ -191,9 +192,12 @@ export default function DashboardPage() {
 						<div className="rounded-xl border border-border bg-card p-6 shadow-sm">
 							<div className="flex items-center gap-4">
 								{user.avatar ? (
-									<img
+									<Image
 										src={user.avatar}
 										alt={`${user.first_name} ${user.last_name}`}
+										width={64}
+										height={64}
+										unoptimized
 										className="h-16 w-16 rounded-full border-2 border-primary/20 object-cover"
 									/>
 								) : (

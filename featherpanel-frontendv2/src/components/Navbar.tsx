@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer'
 import { useSession } from '@/contexts/SessionContext'
+import Image from 'next/image'
 import Permissions from '@/lib/permissions'
 
 interface NavbarProps {
@@ -89,9 +90,12 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 						<Menu.Button className="flex items-center gap-x-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
 							<span className="sr-only">Open user menu</span>
 							{user?.avatar ? (
-								<img
+								<Image
 									src={user.avatar}
 									alt={getUserDisplayName()}
+									width={32}
+									height={32}
+									unoptimized
 									className="h-8 w-8 rounded-full border border-primary/20 object-cover"
 								/>
 							) : (
@@ -119,9 +123,12 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 								<div className="px-4 py-3 border-b border-border">
 									<div className="flex items-center gap-3 mb-2">
 										{user?.avatar ? (
-											<img
+											<Image
 												src={user.avatar}
 												alt={getUserDisplayName()}
+												width={40}
+												height={40}
+												unoptimized
 												className="h-10 w-10 rounded-full border border-primary/20 object-cover"
 											/>
 										) : (
