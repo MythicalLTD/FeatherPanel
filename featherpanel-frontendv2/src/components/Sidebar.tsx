@@ -1,52 +1,24 @@
 'use client'
 
-import { Fragment, useState, useEffect } from 'react'
+import { Fragment, useState, useEffect, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Dialog, Transition } from '@headlessui/react'
 import {
-	Home,
-	Server,
-	User,
-	ShieldCheck,
-	Settings,
 	X,
 	ChevronLeft,
 	ChevronRight,
 } from 'lucide-react'
+import NextImage from 'next/image'
+import Link from 'next/link'
 import { useSettings } from '@/contexts/SettingsContext'
-import { useSession } from '@/contexts/SessionContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { cn } from '@/lib/utils'
-import Permissions from '@/lib/permissions'
+import { useNavigation } from '@/hooks/useNavigation'
+import type { NavigationItem } from '@/types/navigation'
 
 interface SidebarProps {
 	mobileOpen: boolean
 	setMobileOpen: (open: boolean) => void
-}
-
-interface NavItem {
-	name: string
-	href: string
-	icon: React.ComponentType<{ className?: string }>
-	badge?: string
-	requiresPermission?: string
-}
-
-const getNavigation = (hasPermission: (permission: string) => boolean): NavItem[] => {
-	const nav: NavItem[] = [
-		{ name: 'Dashboard', href: '/dashboard', icon: Home },
-		{ name: 'Servers', href: '/servers', icon: Server },
-		{ name: 'Account', href: '/account', icon: User },
-	]
-
-	// Add Admin link if user has permission
-	if (hasPermission(Permissions.ADMIN_DASHBOARD_VIEW)) {
-		nav.push({ name: 'Admin', href: '/admin', icon: ShieldCheck })
-	}
-
-	nav.push({ name: 'Settings', href: '/settings', icon: Settings })
-
-	return nav
 }
 
 // Move SidebarContent outside to avoid creating component during render
@@ -57,7 +29,7 @@ function SidebarContent({
 	pathname,
 	router,
 	setMobileOpen,
-	navigation,
+	groupedItems,
 }: {
 	mobile?: boolean
 	collapsed: boolean
@@ -65,7 +37,7 @@ function SidebarContent({
 	pathname: string
 	router: ReturnType<typeof useRouter>
 	setMobileOpen: (open: boolean) => void
-	navigation: NavItem[]
+	groupedItems: Record<string, NavigationItem[]>
 }) {
 	const { theme } = useTheme()
 	const isActive = (href: string) => {
@@ -75,6 +47,21 @@ function SidebarContent({
 	const logoUrl = theme === 'dark'
 		? (settings?.app_logo_dark || '/logo.png')
 		: (settings?.app_logo_white || '/logo.png')
+
+    // Define group order
+    const groupOrder = ['Overview', 'System', 'Account', 'Support', 'Plugins']
+
+    // Sort groups: explicit order first, then others alphabetically
+    const sortedGroups = Object.keys(groupedItems).sort((a, b) => {
+        const indexA = groupOrder.indexOf(a)
+        const indexB = groupOrder.indexOf(b)
+        
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB
+        if (indexA !== -1) return -1
+        if (indexB !== -1) return 1
+        
+        return a.localeCompare(b)
+    })
 
 	return (
 		<div className="flex h-full flex-col">
@@ -87,10 +74,13 @@ function SidebarContent({
 					"flex items-center justify-center shrink-0",
 					collapsed && !mobile ? "w-10 h-10" : "w-10 h-10"
 				)}>
-					<img
+					<NextImage
 						src={logoUrl}
 						alt={settings?.app_name || 'FeatherPanel'}
+						width={40}
+						height={40}
 						className="w-full h-full object-contain"
+						unoptimized
 					/>
 				</div>
 
@@ -107,41 +97,116 @@ function SidebarContent({
 			</div>
 
 			{/* Navigation */}
-			<nav className="flex-1 space-y-1 px-2 py-4 overflow-y-auto">
-				{navigation.map((item) => {
-					const active = isActive(item.href)
-					const Icon = item.icon
+			<nav className="flex-1 px-2 py-4 overflow-y-auto custom-scrollbar space-y-6">
+				{sortedGroups.map((group) => (
+                    <div key={group}>
+                        {(!collapsed || mobile) && (
+                            <h3 className="mb-2 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                {group}
+                            </h3>
+                        )}
+                        <div className="space-y-1">
+                            {groupedItems[group].map((item) => {
+                                const active = isActive(item.url)
+                                const Icon = item.icon
+                                const isPluginAction = !!item.pluginJs
 
-					return (
-						<button
-							key={item.name}
-							onClick={() => {
-								router.push(item.href)
-								if (mobile) setMobileOpen(false)
-							}}
-							className={cn(
-								"group flex items-center w-full rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
-								active
-									? "bg-primary text-primary-foreground shadow-sm"
-									: "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-								collapsed && !mobile ? "justify-center" : "gap-3"
-							)}
-						>
-							<Icon className={cn(
-								"shrink-0 transition-transform group-hover:scale-110",
-								collapsed && !mobile ? "h-6 w-6" : "h-5 w-5"
-							)} />
-							{(!collapsed || mobile) && (
-								<span className="truncate">{item.name}</span>
-							)}
-							{item.badge && (!collapsed || mobile) && (
-								<span className="ml-auto inline-flex items-center rounded-full bg-primary/20 px-2 py-0.5 text-xs font-medium">
-									{item.badge}
-								</span>
-							)}
-						</button>
-					)
-				})}
+                                if (isPluginAction) {
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => {
+                                                try {
+                                                    // eslint-disable-next-line no-eval
+                                                    eval(item.pluginJs!)
+                                                } catch (e) {
+                                                    console.error('Failed to execute plugin JS', e)
+                                                }
+                                                if (mobile) setMobileOpen(false)
+                                            }}
+                                            className={cn(
+                                                "group flex items-center w-full rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                                                active
+                                                    ? "bg-primary text-primary-foreground shadow-sm"
+                                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                                                collapsed && !mobile ? "justify-center" : "gap-3"
+                                            )}
+                                            title={collapsed && !mobile ? item.name : undefined}
+                                        >
+                                            {typeof Icon === 'string' ? (
+                                                <span className={cn(
+                                                    "shrink-0 flex items-center justify-center text-lg",
+                                                     collapsed && !mobile ? "h-6 w-6" : "h-5 w-5"
+                                                )}>
+                                                    {Icon}
+                                                </span>
+                                            ) : (
+                                                <Icon className={cn(
+                                                    "shrink-0 transition-transform group-hover:scale-110",
+                                                    collapsed && !mobile ? "h-6 w-6" : "h-5 w-5"
+                                                )} />
+                                            )}
+                                            
+                                            {(!collapsed || mobile) && (
+                                                <span className="truncate">{item.name}</span>
+                                            )}
+                                            
+                                            {item.badge && (!collapsed || mobile) && (
+                                                <span className="ml-auto inline-flex items-center rounded-full bg-primary/20 px-2 py-0.5 text-xs font-medium">
+                                                    {item.badge}
+                                                </span>
+                                            )}
+                                        </button>
+                                    )
+                                }
+
+                                const targetUrl = item.pluginRedirect || item.url
+
+                                return (
+                                    <Link
+                                        key={item.id}
+                                        href={targetUrl}
+                                        onClick={() => {
+                                             if (mobile) setMobileOpen(false)
+                                        }}
+                                        className={cn(
+                                            "group flex items-center w-full rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                                            active
+                                                ? "bg-primary text-primary-foreground shadow-sm"
+                                                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                                            collapsed && !mobile ? "justify-center" : "gap-3"
+                                        )}
+                                        title={collapsed && !mobile ? item.name : undefined}
+                                    >
+                                        {typeof Icon === 'string' ? (
+                                            <span className={cn(
+                                                "shrink-0 flex items-center justify-center text-lg",
+                                                 collapsed && !mobile ? "h-6 w-6" : "h-5 w-5"
+                                            )}>
+                                                {Icon}
+                                            </span>
+                                        ) : (
+                                            <Icon className={cn(
+                                                "shrink-0 transition-transform group-hover:scale-110",
+                                                collapsed && !mobile ? "h-6 w-6" : "h-5 w-5"
+                                            )} />
+                                        )}
+                                        
+                                        {(!collapsed || mobile) && (
+                                            <span className="truncate">{item.name}</span>
+                                        )}
+                                        
+                                        {item.badge && (!collapsed || mobile) && (
+                                            <span className="ml-auto inline-flex items-center rounded-full bg-primary/20 px-2 py-0.5 text-xs font-medium">
+                                                {item.badge}
+                                            </span>
+                                        )}
+                                    </Link>
+                                )
+                            })}
+                        </div>
+                    </div>
+                ))}
 			</nav>
 
 			{/* Collapse Button (Desktop only) */}
@@ -176,10 +241,18 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
 	const pathname = usePathname()
 	const router = useRouter()
 	const { settings } = useSettings()
-	const { hasPermission } = useSession()
+	const { navigationItems } = useNavigation()
 	const [collapsed, setCollapsed] = useState(false)
 
-	const navigation = getNavigation(hasPermission)
+    // Group items
+    const groupedItems = useMemo(() => {
+        return navigationItems.reduce((acc, item) => {
+            const group = item.group || 'Other'
+            if (!acc[group]) acc[group] = []
+            acc[group].push(item)
+            return acc
+        }, {} as Record<string, NavigationItem[]>)
+    }, [navigationItems])
 
 	useEffect(() => {
 		const handleToggle = () => setCollapsed(prev => !prev)
@@ -244,7 +317,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
 										pathname={pathname}
 										router={router}
 										setMobileOpen={setMobileOpen}
-										navigation={navigation}
+										groupedItems={groupedItems}
 									/>
 								</div>
 							</Dialog.Panel>
@@ -265,7 +338,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: SidebarProps) {
 						pathname={pathname}
 						router={router}
 						setMobileOpen={setMobileOpen}
-						navigation={navigation}
+						groupedItems={groupedItems}
 					/>
 				</div>
 			</div>
