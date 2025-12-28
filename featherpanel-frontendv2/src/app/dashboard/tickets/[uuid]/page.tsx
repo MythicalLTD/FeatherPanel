@@ -12,7 +12,6 @@ import {
     Trash2,
     Send,
     AlertCircle,
-    Download,
     X,
     Server as ServerIcon,
     XCircle,
@@ -243,11 +242,6 @@ export default function TicketViewPage() {
         const sizes = ['B', 'KB', 'MB', 'GB']
         const i = Math.floor(Math.log(bytes) / Math.log(k))
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-    }
-
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text)
-        toast.success(t('common.copied'))
     }
 
     if (loading) {

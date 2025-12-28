@@ -17,6 +17,7 @@ import { ServerCard } from '@/components/servers/ServerCard'
 import { ActivityFeed } from '@/components/activity/ActivityFeed'
 import { AnnouncementBanner } from '@/components/dashboard/AnnouncementBanner'
 import { TicketList } from '@/components/dashboard/TicketList'
+import { KnowledgeBaseList } from '@/components/dashboard/KnowledgeBaseList'
 import { useSettings } from '@/contexts/SettingsContext'
 
 // API
@@ -187,6 +188,13 @@ export default function DashboardPage() {
 					<div className="space-y-6">
 						{isEnabled(settings?.ticket_system_enabled) && (
 							<TicketList t={t} />
+						)}
+					</div>
+
+					{/* Knowledge Base */}
+					<div className="space-y-6">
+						{isEnabled(settings?.knowledgebase_enabled) && (
+							<KnowledgeBaseList t={t} />
 						)}
 					</div>
 				</div>

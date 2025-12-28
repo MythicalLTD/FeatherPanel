@@ -514,8 +514,8 @@ export function useNavigation() {
         if (isEnabled(settings?.knowledgebase_enabled)) {
             items.push({
                 id: 'knowledgebase',
-                name: 'Knowledgebase',
-                title: 'Knowledgebase',
+                name: 'Knowledge Base',
+                title: 'Knowledge Base',
                 url: '/dashboard/knowledgebase',
                 icon: BookOpen,
                 isActive: pathname.startsWith('/dashboard/knowledgebase'),

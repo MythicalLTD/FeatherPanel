@@ -79,7 +79,8 @@
       "message": "Please wait while we securely log you out",
       "redirect_message": "If you are not redirected automatically,",
       "click_here": "click here"
-    }
+    },
+    "accentColor": "Accent Color"
   },
   "errors": {
     "404": {
@@ -200,6 +201,28 @@
       "cpu": "CPU Usage",
       "memory": "Memory Usage",
       "disk": "Disk Usage"
+    },
+    "knowledgebase": {
+      "title": "Knowledge Base",
+      "view_all": "View All",
+      "loading": "Loading...",
+      "no_categories": "No knowledge base categories found",
+      "browseByCategory": "Browse by Category",
+      "noCategories": "No categories found",
+      "no_categories_desc": "Check back later for updates.",
+      "read_article": "Read Article",
+      "articles": "Articles",
+      "loadingArticles": "Loading articles...",
+      "loadingArticle": "Loading article...",
+      "backToCategories": "Back to Categories",
+      "noArticles": "No articles found in this category",
+      "pinned": "Pinned",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page",
+      "of": "of",
+      "back": "Back",
+      "downloads": "Downloads"
     }
   },
 
