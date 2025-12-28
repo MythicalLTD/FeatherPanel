@@ -16,7 +16,7 @@ import {
   ShieldCheck,
   Settings,
   Activity,
-  BookOpen,
+  BookOpen, ChevronLeft,
   Ticket,
   BarChart3,
   Crown,
@@ -82,13 +82,17 @@ export function useNavigation() {
           if (category === "main") prefix = "/dashboard";
           if (category === "server") prefix = "/server"; // Handle server context just in case
 
-          const fullUrl = `${prefix}${url}`;
+          const cleanUrl = url.startsWith("/") ? url : `/${url}`;
+          const fullUrl = `${prefix}${cleanUrl}`;
 
           // Allow plugins to override redirect
-          const fullRedirect = item.redirect
+          const cleanRedirect = item.redirect
             ? item.redirect.startsWith("/")
-              ? `${prefix}${item.redirect}`
-              : `${prefix}/${item.redirect}`
+              ? item.redirect
+              : `/${item.redirect}`
+            : null;
+          const fullRedirect = cleanRedirect
+            ? `${prefix}${cleanRedirect}`
             : fullUrl;
 
           return {
@@ -121,8 +125,10 @@ export function useNavigation() {
   );
 
   const navigationItems = useMemo(() => {
-    // Logic to switch between Main and Admin navigation
+    // Logic to switch between Main, Admin and Server navigation
     const isAdmin = pathname.startsWith("/admin");
+    const isServer = pathname.startsWith("/server/");
+    const serverUuid = isServer ? pathname.split("/")[2] : null;
 
     if (isAdmin) {
       const items: NavigationItem[] = [
@@ -489,6 +495,63 @@ export function useNavigation() {
       );
     }
 
+    if (isServer && serverUuid) {
+      const items: NavigationItem[] = [
+        {
+          id: "server-overview",
+          name: "Overview",
+          title: "Server Overview",
+          url: `/server/${serverUuid}`,
+          icon: Home,
+          isActive: pathname === `/server/${serverUuid}`,
+          category: "server",
+          group: "Management",
+        },
+        // Add other dedicated server core paths here if any
+      ];
+
+      // Add Server Plugin Items
+      if (pluginRoutes?.server) {
+        const serverPlugins = convertPluginItems(pluginRoutes.server, "server");
+        // Prefix server plugin URLs with the current server path
+        serverPlugins.forEach((item) => {
+          const subPath = item.url.startsWith("/server")
+            ? item.url.replace("/server", "")
+            : item.url;
+          item.url = `/server/${serverUuid}${
+            subPath.startsWith("/") ? subPath : "/" + subPath
+          }`;
+          if (item.pluginRedirect) {
+            const redirectSubPath = item.pluginRedirect.startsWith("/server")
+              ? item.pluginRedirect.replace("/server", "")
+              : item.pluginRedirect;
+            item.pluginRedirect = `/server/${serverUuid}${
+              redirectSubPath.startsWith("/")
+                ? redirectSubPath
+                : "/" + redirectSubPath
+            }`;
+          }
+        });
+        items.push(...serverPlugins);
+      }
+
+      // Add "Back to Dashboard"
+      items.push({
+        id: "back-to-dashboard",
+        name: "Back to Dashboard",
+        title: "Back to Dashboard",
+        url: "/dashboard",
+        icon: ChevronLeft,
+        isActive: false,
+        category: "main",
+        group: "System",
+      });
+
+      return items.filter(
+        (item) => !item.permission || hasPermission(item.permission)
+      );
+    }
+
     // MAIN NAVIGATION
     const items: NavigationItem[] = [
       {
@@ -588,6 +651,35 @@ export function useNavigation() {
         }
       });
       items.push(...pluginItems);
+    }
+
+    // Add Server Plugin Items if on a server page
+    if (pathname.startsWith("/server/") && pluginRoutes?.server) {
+      const parts = pathname.split("/");
+      const uuidShort = parts[2];
+      if (uuidShort) {
+        const serverPlugins = convertPluginItems(pluginRoutes.server, "server");
+        // Prefix server plugin URLs with the current server path
+        serverPlugins.forEach((item) => {
+          const subPath = item.url.startsWith("/server")
+            ? item.url.replace("/server", "")
+            : item.url;
+          item.url = `/server/${uuidShort}${
+            subPath.startsWith("/") ? subPath : "/" + subPath
+          }`;
+          if (item.pluginRedirect) {
+            const redirectSubPath = item.pluginRedirect.startsWith("/server")
+              ? item.pluginRedirect.replace("/server", "")
+              : item.pluginRedirect;
+            item.pluginRedirect = `/server/${uuidShort}${
+              redirectSubPath.startsWith("/")
+                ? redirectSubPath
+                : "/" + redirectSubPath
+            }`;
+          }
+        });
+        items.push(...serverPlugins);
+      }
     }
 
     return items;

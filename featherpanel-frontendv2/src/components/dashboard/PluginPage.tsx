@@ -52,9 +52,10 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                 if (context === 'admin') {
                     pluginPath = pathname.replace('/admin', '')
                 } else if (context === 'server' && serverUuid) {
-                    const serverPrefix = `/dashboard/server/${serverUuid}`
+                    const serverPrefix = `/server/${serverUuid}`
                     pluginPath = pathname.replace(serverPrefix, '')
                 } else if (context === 'client') {
+                    // Try to handle /dashboard/ and other dashboard nested paths
                     pluginPath = pathname.replace('/dashboard', '')
                 }
 
