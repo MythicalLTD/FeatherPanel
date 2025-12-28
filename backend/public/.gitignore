@@ -29,7 +29,11 @@
 /attachments/image_hosting/*/*.bmp
 /attachments/image_hosting/*/*.tiff
 /attachments/image_hosting/*/*.tif
+/attachments/image_hosting/*/*.gif
 /attachments/image_hosting/*/*.ico
 
 /attachments/*.exe
+/attachments/*.svg
+/attachments/*.zip
+/attachments/*.gif
 pma/

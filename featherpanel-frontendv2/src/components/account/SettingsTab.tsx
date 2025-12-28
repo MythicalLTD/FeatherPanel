@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button'
 import { ShieldCheck, Check } from 'lucide-react'
 import axios from 'axios'
 import { toast } from 'sonner'
+import Turnstile from 'react-turnstile'
+import { isEnabled } from '@/lib/utils'
 
 export default function SettingsTab() {
 	const { t } = useTranslation()
@@ -17,6 +19,8 @@ export default function SettingsTab() {
 	const router = useRouter()
 	const [loading, setLoading] = useState(true)
 	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [turnstileToken, setTurnstileToken] = useState('')
+	const [turnstileKey, setTurnstileKey] = useState(0)
 
 	useEffect(() => {
 		const init = async () => {
@@ -26,25 +30,51 @@ export default function SettingsTab() {
 		init()
 	}, [fetchSession])
 
+	const resetTurnstile = () => {
+		if (settings?.turnstile_enabled) {
+			setTurnstileToken('')
+			setTurnstileKey(prev => prev + 1)
+		}
+	}
+
 	const handleEnable2FA = () => {
 		router.push('/auth/setup-2fa')
 	}
 
 	const handleDisable2FA = async () => {
 		try {
+			if (isEnabled(settings?.turnstile_enabled) && !turnstileToken) {
+				toast.error('Please complete the CAPTCHA verification')
+				return
+			}
+			
 			setIsSubmitting(true)
-			const response = await axios.patch('/api/user/session', {
-				two_fa_enabled: false,
-			})
+			const payload: { two_fa_enabled: boolean; turnstile_token?: string } = { 
+                two_fa_enabled: false 
+            }
+			
+			if (isEnabled(settings?.turnstile_enabled)) {
+				payload.turnstile_token = turnstileToken
+			}
+
+			const response = await axios.patch('/api/user/session', payload)
+			
 			if (response.data?.success) {
 				toast.success('2FA disabled successfully')
 				await fetchSession(true)
+				resetTurnstile()
 			} else {
-				toast.error('Failed to disable 2FA')
+				toast.error(response.data?.message || 'Failed to disable 2FA')
+				resetTurnstile()
 			}
 		} catch (error) {
 			console.error('Error disabling 2FA:', error)
-			toast.error('Failed to disable 2FA')
+            if (axios.isAxiosError(error) && error.response?.data?.message) {
+			    toast.error(error.response.data.message)
+            } else {
+                toast.error('Failed to disable 2FA')
+            }
+			resetTurnstile()
 		} finally {
 			setIsSubmitting(false)
 		}
@@ -140,14 +170,23 @@ export default function SettingsTab() {
 										{t('account.twoFactor.enable')}
 									</Button>
 								) : (
-									<Button
-										variant="destructive"
-										size="sm"
-										disabled={isSubmitting}
-										onClick={handleDisable2FA}
-									>
-										{t('account.twoFactor.disable')}
-									</Button>
+									<div className="flex flex-col items-end gap-2">
+										{isEnabled(settings?.turnstile_enabled) && settings?.turnstile_key_pub && (
+											<Turnstile
+												key={turnstileKey}
+												sitekey={settings.turnstile_key_pub}
+												onSuccess={(token) => setTurnstileToken(token)}
+											/>
+										)}
+										<Button
+											variant="destructive"
+											size="sm"
+											disabled={isSubmitting}
+											onClick={handleDisable2FA}
+										>
+											{t('account.twoFactor.disable')}
+										</Button>
+									</div>
 								)}
 							</div>
 						</div>
@@ -156,7 +195,7 @@ export default function SettingsTab() {
 			</div>
 
 			{/* Discord OAuth */}
-			{settings?.discord_oauth_enabled == "true" && (
+			{isEnabled(settings?.discord_oauth_enabled) && (
 				<div className="rounded-lg border border-border bg-card p-6">
 					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 						<div className="flex-1">

@@ -26,7 +26,6 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
 	const userNavigation = [
 		{ name: 'Your Profile', href: '/account', icon: CircleUser },
-		{ name: 'Settings', href: '/settings', icon: Settings },
 	]
 
 	const handleLogout = async () => {

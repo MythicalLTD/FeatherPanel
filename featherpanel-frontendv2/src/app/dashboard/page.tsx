@@ -17,11 +17,13 @@ import { ServerCard } from '@/components/servers/ServerCard'
 import { ActivityFeed } from '@/components/activity/ActivityFeed'
 import { AnnouncementBanner } from '@/components/dashboard/AnnouncementBanner'
 import { TicketList } from '@/components/dashboard/TicketList'
+import { useSettings } from '@/contexts/SettingsContext'
 
 // API
 import { serversApi } from '@/lib/servers-api'
 import { useServersWebSocket } from '@/hooks/useServersWebSocket'
 import { isServerAccessible } from '@/lib/server-utils'
+import { isEnabled } from '@/lib/utils'
 
 export default function DashboardPage() {
 	const { t } = useTranslation()
@@ -30,6 +32,7 @@ export default function DashboardPage() {
 	const [activities, setActivities] = useState<Activity[]>([])
 	const [loadingServers, setLoadingServers] = useState(true)
 	const [loadingActivity, setLoadingActivity] = useState(true)
+	const { settings } = useSettings()
 
 	// WebSocket for live stats (dashboard only needs a few connection, but hooks are convenient)
 	const {
@@ -92,7 +95,6 @@ export default function DashboardPage() {
 			status: liveData.status || server.status
 		}
 	}
-
 
 	const formatDate = (dateString: string): string => {
 		if (!dateString) return '-'
@@ -182,7 +184,11 @@ export default function DashboardPage() {
 					</div>
 
 					{/* Support Tickets */}
-					<TicketList t={t} />
+					<div className="space-y-6">
+						{isEnabled(settings?.ticket_system_enabled) && (
+							<TicketList t={t} />
+						)}
+					</div>
 				</div>
 
 				{/* Sidebar (Activity & Profile) */}

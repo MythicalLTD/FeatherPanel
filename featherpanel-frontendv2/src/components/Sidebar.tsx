@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/unsupported-syntax */
 'use client'
 
 import { Fragment, useState, useEffect, useMemo } from 'react'
@@ -27,7 +28,6 @@ function SidebarContent({
 	collapsed,
 	settings,
 	pathname,
-	router,
 	setMobileOpen,
 	groupedItems,
 }: {
@@ -117,7 +117,6 @@ function SidebarContent({
                                             key={item.id}
                                             onClick={() => {
                                                 try {
-                                                    // eslint-disable-next-line no-eval
                                                     eval(item.pluginJs!)
                                                 } catch (e) {
                                                     console.error('Failed to execute plugin JS', e)

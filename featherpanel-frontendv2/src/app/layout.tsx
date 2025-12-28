@@ -20,8 +20,7 @@ export default function RootLayout({
 						__html: `
               (function() {
                 try {
-                  const theme = localStorage.getItem('theme') || 
-                    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                  const theme = localStorage.getItem('theme') || 'dark';
                   const accentColor = localStorage.getItem('accentColor') || 'purple';
                   const colors = {
                     purple: '262 83% 58%',
@@ -35,6 +34,7 @@ export default function RootLayout({
                   };
                   document.documentElement.classList.add(theme);
                   document.documentElement.style.setProperty('--primary', colors[accentColor] || colors.purple);
+                  document.documentElement.style.setProperty('--ring', colors[accentColor] || colors.purple);
                 } catch (e) {}
               })();
             `,

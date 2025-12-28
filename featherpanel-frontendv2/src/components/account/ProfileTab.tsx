@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import axios from 'axios'
 import { toast } from 'sonner'
 import Turnstile from 'react-turnstile'
-import { cn } from '@/lib/utils'
+import { cn, isEnabled } from '@/lib/utils'
 
 interface FormData {
 	username: string
@@ -83,7 +83,7 @@ export default function ProfileTab() {
 	}
 
 	const resetTurnstile = () => {
-		if (settings?.turnstile_enabled) {
+		if (isEnabled(settings?.turnstile_enabled)) {
 			setTurnstileToken('')
 			setTurnstileKey(prev => prev + 1)
 		}
@@ -105,7 +105,7 @@ export default function ProfileTab() {
 		e.preventDefault()
 
 		try {
-			if (settings?.turnstile_enabled && !turnstileToken) {
+			if (isEnabled(settings?.turnstile_enabled) && !turnstileToken) {
 				toast.error('Please complete the CAPTCHA verification')
 				return
 			}
@@ -160,7 +160,7 @@ export default function ProfileTab() {
 				submitData.ticket_signature = formData.ticket_signature
 			}
 
-			if (settings?.turnstile_enabled) {
+			if (isEnabled(settings?.turnstile_enabled)) {
 				submitData.turnstile_token = turnstileToken
 			}
 
@@ -360,12 +360,12 @@ export default function ProfileTab() {
 				</Fieldset>
 
 				<div className="space-y-4 pt-4 border-t border-border">
-					{settings?.turnstile_enabled && settings?.turnstile_key_pub && (
+					{isEnabled(settings?.turnstile_enabled) && settings?.turnstile_key_pub && (
 						<div className="flex justify-start">
 							<Turnstile
 								key={turnstileKey}
 								sitekey={settings.turnstile_key_pub}
-								onSuccess={(token) => setTurnstileToken(token)}
+								onVerify={(token) => setTurnstileToken(token)}
 							/>
 						</div>
 					)}

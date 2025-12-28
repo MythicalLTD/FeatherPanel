@@ -8,6 +8,7 @@
   --card-foreground: 0 0% 9%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 9%;
+  /* Default to Purple */
   --primary: 262 83% 58%;
   --primary-foreground: 0 0% 98%;
   --secondary: 0 0% 96%;
@@ -49,12 +50,12 @@
 }
 
 .dark {
-  --background: 0 0% 4%;
-  --foreground: 0 0% 93%;
-  --card: 0 0% 6%;
-  --card-foreground: 0 0% 93%;
-  --popover: 0 0% 6%;
-  --popover-foreground: 0 0% 93%;
+  --background: 220 15% 6%; /* Deep dark blue-grey/black for premium look */
+  --foreground: 210 20% 98%;
+  --card: 220 15% 9%;
+  --card-foreground: 210 20% 98%;
+  --popover: 220 15% 9%;
+  --popover-foreground: 210 20% 98%;
   --primary: 262 83% 58%;
   --primary-foreground: 0 0% 98%;
   --secondary: 0 0% 15%;
@@ -65,8 +66,8 @@
   --accent-foreground: 0 0% 93%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 15%;
-  --input: 0 0% 15%;
+  --border: 220 15% 12%;
+  --input: 220 15% 12%;
   --ring: 262 83% 58%;
 }
 
