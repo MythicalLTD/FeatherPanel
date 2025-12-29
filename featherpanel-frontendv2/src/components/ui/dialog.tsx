@@ -44,7 +44,7 @@ export function Dialog({ open, onClose, onOpenChange, children, className }: Dia
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <DialogPanel className={cn("w-full max-w-md transform overflow-hidden rounded-2xl bg-card border border-border/50 p-6 text-left align-middle shadow-2xl transition-all", className)}>
+              <DialogPanel className={cn("w-full transform overflow-hidden rounded-2xl bg-card border border-border/50 p-6 text-left align-middle shadow-2xl transition-all", !className?.includes('max-w-') && "max-w-md", className)}>
                 {children}
               </DialogPanel>
             </TransitionChild>

@@ -19,6 +19,7 @@ interface HeadlessSelectProps {
     className?: string
     label?: string
     description?: string
+    buttonClassName?: string
 }
 
 export function HeadlessSelect({
@@ -27,6 +28,7 @@ export function HeadlessSelect({
     options,
     placeholder = 'Select an option',
     className,
+    buttonClassName,
     label,
     description
 }: HeadlessSelectProps) {
@@ -45,7 +47,7 @@ export function HeadlessSelect({
                         {description}
                     </p>
                 )}
-                <Listbox.Button className="relative w-full cursor-pointer rounded-xl bg-background border border-border/50 hover:border-border transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary py-3 pl-4 pr-10 text-left sm:text-sm shadow-sm hover:shadow-md group">
+                <Listbox.Button className={clsx("relative w-full cursor-pointer rounded-xl border transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary py-3 pl-4 pr-10 text-left sm:text-sm shadow-sm hover:shadow-md group", buttonClassName || "bg-background border-border/50 hover:border-border")}>
                     <span className={clsx("flex items-center gap-3 truncate", !selectedOption && "text-muted-foreground")}>
                         {selectedOption?.image && (
                             /* eslint-disable-next-line @next/next/no-img-element */

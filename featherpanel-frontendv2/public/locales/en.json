@@ -110,6 +110,8 @@
   },
   "common": {
     "loading": "Loading...",
+    "refresh": "Refresh",
+    "clear": "Clear",
     "error": "An error occurred",
     "optional": "Optional",
     "success": "Success",
@@ -834,5 +836,53 @@
       "restartServer": "Restart Server",
       "serverRestarted": "Server restarted successfully"
     }
+  },
+  "serverActivities": {
+    "title": "Server Activity",
+    "description": "View the audit logs for this server.",
+    "events": "Events",
+    "allEvents": "All Events",
+    "searchPlaceholder": "Search activities...",
+    "noActivityPermission": "You do not have permission to view server activities.",
+    "failedToFetch": "Failed to fetch activities",
+    "justNow": "Just now",
+    "minutesAgo": "{minutes} minutes ago",
+    "hoursAgo": "{hours} hours ago",
+    "daysAgo": "{days} days ago",
+    "details": {
+      "title": "Activity Details",
+      "description": "Detailed information about this server event.",
+      "timestamp": "Timestamp",
+      "executingUser": "Executing User",
+      "originIp": "Origin IP",
+      "localConsole": "Local Console",
+      "entryId": "Log Entry ID",
+      "metadataPayload": "Metadata Payload",
+      "diagnosticOutput": "Diagnostic Output",
+      "copyPayload": "Copy Payload",
+      "payloadCopied": "Log payload copied",
+      "closeEntry": "Close Entry",
+      "system": "System"
+    },
+    "noActivitiesFound": "No Activities Found",
+    "noActivitiesDescription": "This server has no recorded activity yet.",
+    "noActivitiesSearchDescription": "Try adjusting your search query or filters to find what you are looking for.",
+    "pagination": {
+      "showing": "Showing {{from}} - {{to}} of {{total}}",
+      "prev": "Prev",
+      "next": "Next"
+    },
+    "filterNames": {
+      "server": "Server",
+      "backup": "Backup",
+      "power": "Power",
+      "file": "File",
+      "database": "Database",
+      "schedule": "Schedule",
+      "task": "Task",
+      "subuser": "Subuser",
+      "allocation": "Allocation"
+    },
+    "viewDetails": "View Details"
   }
 }

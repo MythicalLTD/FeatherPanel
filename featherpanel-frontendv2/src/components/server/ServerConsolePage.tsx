@@ -8,6 +8,7 @@ import ServerInfoCards from '@/components/server/ServerInfoCards'
 import ServerTerminal, { ServerTerminalRef } from '@/components/server/ServerTerminal'
 import ServerPerformance from '@/components/server/ServerPerformance'
 import { Card, CardContent } from '@/components/ui/card'
+import { useServerPermissions } from '@/hooks/useServerPermissions'
 import { AlertTriangle, Wifi, WifiOff, Loader2 } from 'lucide-react'
 import axios from 'axios'
 
@@ -28,6 +29,9 @@ export default function ServerConsolePage() {
   const [loading, setLoading] = useState(true)
   const [serverStatus, setServerStatus] = useState('offline')
   const [wingsUptime, setWingsUptime] = useState<string>('')
+
+  // Permissions hook
+  const { hasPermission, loading: permissionsLoading } = useServerPermissions(serverUuid)
 
   // Performance data
   const [cpuData, setCpuData] = useState<Array<{ timestamp: number; value: number }>>([])
@@ -224,7 +228,7 @@ export default function ServerConsolePage() {
     }
   }
 
-  if (loading) {
+  if (loading || permissionsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-4">
@@ -259,10 +263,10 @@ export default function ServerConsolePage() {
         serverUuidShort={server.uuidShort}
         nodeLocation={server.location?.name || server.node?.name}
         nodeLocationFlag={server.location?.flag_code}
-        canStart={true}
-        canStop={true}
-        canRestart={true}
-        canKill={true}
+        canStart={hasPermission('control.start')}
+        canStop={hasPermission('control.stop')}
+        canRestart={hasPermission('control.restart')}
+        canKill={hasPermission('control.console')}
         onStart={() => sendPowerAction('start')}
         onStop={() => sendPowerAction('stop')}
         onRestart={() => sendPowerAction('restart')}
@@ -308,7 +312,7 @@ export default function ServerConsolePage() {
       <ServerTerminal 
         ref={terminalRef}
         onSendCommand={sendCommand}
-        canSendCommands={connectionStatus === 'connected'}
+        canSendCommands={connectionStatus === 'connected' && hasPermission('control.console')}
         serverStatus={serverStatus}
       />
 
