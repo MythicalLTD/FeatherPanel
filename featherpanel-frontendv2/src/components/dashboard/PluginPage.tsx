@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
-import axios from 'axios'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useSettings } from '@/contexts/SettingsContext'
 import { RefreshCw, AlertTriangle } from 'lucide-react'
 import { cn, isEnabled } from '@/lib/utils'
-import type { PluginSidebarResponse, PluginSidebarItem } from '@/types/navigation'
+import type { PluginSidebarItem } from '@/types/navigation'
+import { usePluginRoutes } from '@/hooks/usePluginRoutes'
 
 interface PluginPageProps {
     context: 'admin' | 'client' | 'server'
@@ -19,6 +19,9 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
     const { settings } = useSettings()
     const pathname = usePathname()
     const iframeRef = useRef<HTMLIFrameElement>(null)
+    
+    // Use shared plugin routes hook
+    const pluginData = usePluginRoutes()
 
     const [loading, setLoading] = useState(true)
     const [iframeLoading, setIframeLoading] = useState(true)
@@ -27,7 +30,7 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
     const [iframeSrc, setIframeSrc] = useState<string | null>(null)
 
     useEffect(() => {
-        const fetchPluginData = async () => {
+        const processPluginData = () => {
             setLoading(true)
             setError(null)
 
@@ -37,20 +40,19 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
             }
 
             try {
-                const { data } = await axios.get<PluginSidebarResponse>('/api/system/plugin-sidebar')
-                if (!data.success || !data.data?.sidebar) {
-                    throw new Error('Failed to load plugin data')
+                if (!pluginData) {
+                    // Still loading from hook
+                    return
                 }
 
-                const sidebar = data.data.sidebar
                 let sidebarSection: Record<string, PluginSidebarItem> = {}
 
                 if (context === 'admin') {
-                    sidebarSection = sidebar.admin || {}
+                    sidebarSection = pluginData.admin || {}
                 } else if (context === 'server') {
-                    sidebarSection = sidebar.server || {}
+                    sidebarSection = pluginData.server || {}
                 } else {
-                    sidebarSection = sidebar.client || {}
+                    sidebarSection = pluginData.client || {}
                 }
 
                 // Determine plugin path from current pathname
@@ -108,15 +110,15 @@ export default function PluginPage({ context, serverUuid }: PluginPageProps) {
                     setError('Plugin page not found')
                 }
             } catch (err) {
-                console.error('Error fetching plugin data:', err)
+                console.error('Error processing plugin data:', err)
                 setError('Failed to load plugin information')
             } finally {
                 setLoading(false)
             }
         }
 
-        fetchPluginData()
-    }, [pathname, context, serverUuid, t])
+        processPluginData()
+    }, [pathname, context, serverUuid, t, pluginData])
 
     const injectScrollbarStyles = () => {
         if (!iframeRef.current) return
