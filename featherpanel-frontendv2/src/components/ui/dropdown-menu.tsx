@@ -55,3 +55,7 @@ export function DropdownMenuItem({ children, onClick, className, disabled }: { c
 export function DropdownMenuSeparator({ className }: { className?: string }) {
   return <div className={cn('-mx-1 my-1 h-px bg-border/40', className)} />
 }
+
+export function DropdownMenuLabel({ children, className }: { children: React.ReactNode, className?: string }) {
+  return <div className={cn('px-3 py-2 text-xs font-semibold text-muted-foreground', className)}>{children}</div>
+}

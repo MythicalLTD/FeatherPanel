@@ -107,6 +107,9 @@ export interface Server {
   // Network
   allocation_id: number;
   allocation_limit: number;
+  current_allocations?: number;
+  can_add_more?: boolean;
+  primary_allocation_id?: number;
   database_limit: number;
   backup_limit: number;
 
@@ -279,6 +282,57 @@ export interface ImportsResponse {
   success: boolean;
   data: {
     imports: ImportItem[];
+  };
+  message?: string;
+}
+
+export interface AllocationItem {
+  id: number;
+  node_id: number;
+  ip: string;
+  port: number;
+  ip_alias?: string;
+  notes?: string;
+  is_primary: boolean;
+}
+
+export interface AllocationPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+  from: number;
+  to: number;
+}
+
+export interface AllocationsResponse {
+  success: boolean;
+  data: {
+    server: {
+      id: number;
+      name: string;
+      uuid: string;
+      allocation_limit: number;
+      current_allocations: number;
+      can_add_more: boolean;
+      primary_allocation_id?: number;
+    };
+    allocations: AllocationItem[];
+  };
+  message?: string;
+}
+
+export interface AvailableAllocationsResponse {
+  success: boolean;
+  data: {
+    allocations: Omit<AllocationItem, "is_primary">[];
+    pagination: AllocationPagination;
+    search?: {
+      query: string;
+      has_results: boolean;
+    };
   };
   message?: string;
 }
