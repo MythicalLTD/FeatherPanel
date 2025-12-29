@@ -10,7 +10,7 @@ import { useTranslation } from '@/contexts/TranslationContext'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import Turnstile from 'react-turnstile'
-import { authApi } from '@/lib/api'
+import { authApi } from '@/lib/api/auth'
 
 export default function ForgotPasswordForm() {
   const router = useRouter()

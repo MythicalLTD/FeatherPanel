@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Clock, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
 import axios from 'axios'
 import { toast } from 'sonner'
-import { ActivityFeed } from '@/components/activity/ActivityFeed'
+import { ActivityFeed } from '@/components/dashboard/ActivityFeed'
 import type { Activity } from '@/types/activity'
 
 interface PaginationInfo {

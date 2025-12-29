@@ -52,12 +52,7 @@ export default function VerifyTwoFactorForm() {
 
       if (response.data && response.data.success) {
         setSuccess(t('common.success'))
-        
-        // Store auth token if provided
-        if (response.data.data?.token) {
-          localStorage.setItem('auth_token', response.data.data.token)
-        }
-
+		
         setTimeout(() => {
           router.push('/dashboard')
         }, 1200)

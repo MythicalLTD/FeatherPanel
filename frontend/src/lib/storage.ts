@@ -137,7 +137,6 @@ export const clearAllStorage = async (): Promise<void> => {
     try {
         // Clear any remaining auth-related items
         const authKeys = [
-            'auth_token',
             'refresh_token',
             'user',
             'token',
@@ -164,7 +163,6 @@ export const clearAllStorage = async (): Promise<void> => {
 export const clearAuthStorage = (): void => {
     try {
         const authKeys = [
-            'auth_token',
             'refresh_token',
             'user',
             'token',

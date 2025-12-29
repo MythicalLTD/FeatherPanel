@@ -9,7 +9,7 @@ import { useSettings } from '@/contexts/SettingsContext'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import Turnstile from 'react-turnstile'
-import { authApi } from '@/lib/api'
+import { authApi } from '@/lib/api/auth'
 
 export default function RegisterForm() {
   const router = useRouter()
@@ -103,12 +103,7 @@ export default function RegisterForm() {
 
       if (response.success) {
         setSuccess(t('common.success'))
-        
-        // Store auth token if provided
-        if (response.data?.token) {
-          localStorage.setItem('auth_token', response.data.token)
-        }
-
+		
         setTimeout(() => {
           router.push('/dashboard')
         }, 1000)

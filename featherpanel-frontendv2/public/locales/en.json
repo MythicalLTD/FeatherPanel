@@ -208,6 +208,7 @@
     "tickets": {
       "title": "Recent Support Tickets",
       "view_all": "View All Tickets",
+	  "create_new": "Create New Ticket",
       "no_tickets": "No recent tickets found",
       "status": {
         "open": "Open",

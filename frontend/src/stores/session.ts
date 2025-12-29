@@ -152,13 +152,6 @@ export const useSessionStore = defineStore('session', {
                     clearAuthStorage();
                 } catch (importError) {
                     console.error('Error importing storage utilities:', importError);
-                    // Fallback to manual cleanup
-                    if (localStorage.getItem('auth_token')) {
-                        localStorage.removeItem('auth_token');
-                    }
-                    if (sessionStorage.getItem('auth_token')) {
-                        sessionStorage.removeItem('auth_token');
-                    }
                 }
             }
         },

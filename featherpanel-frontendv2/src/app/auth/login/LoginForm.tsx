@@ -10,7 +10,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useSession } from '@/contexts/SessionContext'
 import { Mail, Lock, ArrowRight } from 'lucide-react'
 import Turnstile from 'react-turnstile'
-import { authApi } from '@/lib/api'
+import { authApi } from '@/lib/api/auth'
 
 export default function LoginForm() {
   const router = useRouter()
@@ -70,11 +70,6 @@ export default function LoginForm() {
         }
 
         setSuccess(t('common.success'))
-        
-        // Store auth token if provided
-        if (response.data?.token) {
-          localStorage.setItem('auth_token', response.data.token)
-        }
 
         // Fetch session to load user data immediately
         await fetchSession(true)

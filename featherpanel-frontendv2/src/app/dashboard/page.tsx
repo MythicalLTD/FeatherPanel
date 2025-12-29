@@ -14,7 +14,7 @@ import type { Activity } from '@/types/activity'
 
 // Components
 import { ServerCard } from '@/components/servers/ServerCard'
-import { ActivityFeed } from '@/components/activity/ActivityFeed'
+import { ActivityFeed } from '@/components/dashboard/ActivityFeed'
 import { AnnouncementBanner } from '@/components/dashboard/AnnouncementBanner'
 import { TicketList } from '@/components/dashboard/TicketList'
 import { KnowledgeBaseList } from '@/components/dashboard/KnowledgeBaseList'
@@ -126,7 +126,7 @@ export default function DashboardPage() {
 			<div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4 sm:p-6 md:p-8">
 				<div className="relative z-10">
 					<h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-2">
-						{t('dashboard.welcome')}{user ? `, ${user.first_name}` : ''}
+						{t('dashboard.welcome')}{user ? `, ${user.first_name}` : ''} 
 					</h1>
 					<p className="text-sm sm:text-base md:text-lg text-muted-foreground">
 						{t('dashboard.subtitle')}

@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react'
 import axios from 'axios'
 import { BookOpen, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -84,9 +85,10 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
 	if (!category) return null
 
 	return (
-		<div className="space-y-6 flex flex-col pt-2">
+		<div className="space-y-6">
+		
 			{/* Header */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 				<div className="flex items-center gap-4">
 					<Link href="/dashboard/knowledgebase">
 						<Button variant="ghost" size="icon" className="rounded-full h-10 w-10 border border-border/50 hover:bg-card">
@@ -96,7 +98,7 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
 					<div>
 						<h1 className="text-3xl font-bold tracking-tight text-foreground">{category.name}</h1>
 						{category.description && (
-							<p className="text-muted-foreground text-lg">{category.description}</p>
+							<p className="text-muted-foreground">{category.description}</p>
 						)}
 					</div>
 				</div>
@@ -120,10 +122,25 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
 								href={`/dashboard/knowledgebase/article/${article.id}`}
 								className="block"
 							>
-								<div className="p-5 hover:bg-white/5 transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group border-l-2 border-l-transparent hover:border-l-primary">
-									<div className="flex-1 min-w-0">
-										<div className="flex items-center gap-3 mb-1">
-											<h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors truncate">
+								<div className="p-5 hover:bg-white/5 transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group border-l-2 border-l-transparent hover:border-l-primary cursor-pointer">
+									<div className="flex items-center gap-4 flex-1">
+										<div className="h-10 w-10 rounded-full bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300 shrink-0">
+											{article.icon ? (
+												<div className="h-5 w-5 relative overflow-hidden rounded-sm">
+													<Image 
+														src={article.icon} 
+														fill
+														unoptimized
+														alt={article.title} 
+														className="object-cover"
+													/>
+												</div>
+											) : (
+												<BookOpen className="h-5 w-5" />
+											)}
+										</div>
+										<div className="min-w-0">
+											<h3 className="font-semibold text-base text-foreground group-hover:text-primary transition-colors truncate">
 												{article.title}
 											</h3>
 											{article.pinned === 'true' && (
@@ -131,15 +148,15 @@ export default function CategoryArticlesPage({ params }: { params: Promise<{ id:
 													{t('dashboard.knowledgebase.pinned')}
 												</Badge>
 											)}
-										</div>
-										<div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-											<span>{new Date(article.updated_at).toLocaleDateString()}</span>
-											{article.slug && (
-												<>
-													<span className="hidden sm:inline">•</span>
-													<span className="font-mono">{article.slug}</span>
-												</>
-											)}
+											<div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+												<span>{new Date(article.updated_at).toLocaleDateString()}</span>
+												{article.slug && (
+													<>
+														<span className="hidden sm:inline">•</span>
+														<span className="font-mono">{article.slug}</span>
+													</>
+												)}
+											</div>
 										</div>
 									</div>
 									<div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
