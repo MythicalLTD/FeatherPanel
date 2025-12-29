@@ -20,6 +20,7 @@ interface HeadlessSelectProps {
     label?: string
     description?: string
     buttonClassName?: string
+    disabled?: boolean
 }
 
 export function HeadlessSelect({
@@ -30,12 +31,13 @@ export function HeadlessSelect({
     className,
     buttonClassName,
     label,
-    description
+    description,
+    disabled
 }: HeadlessSelectProps) {
     const selectedOption = options.find(o => o.id === value) || null
 
     return (
-        <Listbox value={value} onChange={onChange}>
+        <Listbox value={value} onChange={onChange} disabled={disabled}>
             <div className={clsx("relative mt-1", className)}>
                 {label && (
                     <Listbox.Label className="block text-sm font-semibold text-foreground mb-1">
@@ -47,7 +49,14 @@ export function HeadlessSelect({
                         {description}
                     </p>
                 )}
-                <Listbox.Button className={clsx("relative w-full cursor-pointer rounded-xl border transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary py-3 pl-4 pr-10 text-left sm:text-sm shadow-sm hover:shadow-md group", buttonClassName || "bg-background border-border/50 hover:border-border")}>
+                <Listbox.Button 
+                    className={clsx(
+                        "relative w-full cursor-pointer rounded-xl border transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary py-3 pl-4 pr-10 text-left sm:text-sm shadow-sm",
+                        buttonClassName || "bg-background border-border/50 hover:border-border",
+                        !disabled && "hover:shadow-md group",
+                        disabled && "opacity-50 cursor-not-allowed bg-muted/30"
+                    )}
+                >
                     <span className={clsx("flex items-center gap-3 truncate", !selectedOption && "text-muted-foreground")}>
                         {selectedOption?.image && (
                             /* eslint-disable-next-line @next/next/no-img-element */

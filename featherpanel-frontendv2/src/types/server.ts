@@ -177,3 +177,48 @@ export interface ServersResponse {
   };
   message?: string;
 }
+
+export interface DatabaseFilters {
+  search?: string;
+}
+
+export interface Database {
+  id: number;
+  server_id: number;
+  database_host_id: number;
+  database: string;
+  username: string;
+  remote: string;
+  password?: string;
+  max_connections: number;
+  created_at: string;
+  updated_at: string;
+  database_host?: string;
+  database_port?: number;
+  database_type?: string;
+  host_name?: string;
+}
+
+export interface DatabaseHost {
+  id: number;
+  name: string;
+  database_type: string;
+  database_host: string;
+  database_port: number;
+}
+
+export interface DatabasesResponse {
+  success: boolean;
+  data: {
+    data: Database[];
+    pagination: {
+      current_page: number;
+      per_page: number;
+      total: number;
+      last_page: number;
+      from: number;
+      to: number;
+    };
+  };
+  message?: string;
+}
