@@ -993,6 +993,7 @@
     "confirmRestore": "Confirm Restore",
     "deleteConfirm": "Are you sure you want to delete this backup? This action cannot be undone.",
     "statusLocked": "Locked",
+    "statusCreating": "Creating...",
     "statusSuccessful": "Completed",
     "statusFailed": "Failed",
     "failedToFetch": "Failed to fetch backups",

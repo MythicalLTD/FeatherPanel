@@ -161,6 +161,17 @@ export default function ServerBackupsPage() {
         }
     }, [canRead, permissionsLoading, fetchBackups, uuidShort, router, t])
 
+    // Auto-refresh when backups are creating
+    useEffect(() => {
+        const hasCreating = backups.some(b => !b.completed_at && !b.is_successful)
+        if (hasCreating) {
+            const interval = setInterval(() => {
+                fetchBackups()
+            }, 3000)
+            return () => clearInterval(interval)
+        }
+    }, [backups, fetchBackups])
+
     const generateBackupName = () => {
         const now = new Date()
         const formatted = now.toISOString().replace(/T/, '-').replace(/\..+/, '').replace(/:/g, '-')
@@ -408,11 +419,19 @@ export default function ServerBackupsPage() {
                                 <div className="p-6 flex flex-col sm:flex-row sm:items-center gap-6">
                                     <div className={cn(
                                         "h-16 w-16 rounded-2xl flex items-center justify-center border-2 shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2",
-                                        backup.is_successful ? "bg-emerald-500/10 border-emerald-500/20" : "bg-red-500/10 border-red-500/20"
+                                        !backup.completed_at && !backup.is_successful 
+                                            ? "bg-blue-500/10 border-blue-500/20" 
+                                            : backup.is_successful 
+                                                ? "bg-emerald-500/10 border-emerald-500/20" 
+                                                : "bg-red-500/10 border-red-500/20"
                                     )}>
                                         <Archive className={cn(
                                             "h-8 w-8",
-                                            backup.is_successful ? "text-emerald-500" : "text-red-500"
+                                            !backup.completed_at && !backup.is_successful 
+                                                ? "text-blue-500 animate-pulse" 
+                                                : backup.is_successful 
+                                                    ? "text-emerald-500" 
+                                                    : "text-red-500"
                                         )} />
                                     </div>
 
@@ -421,9 +440,17 @@ export default function ServerBackupsPage() {
                                             <h3 className="text-xl font-bold truncate tracking-tight">{backup.name}</h3>
                                             <span className={cn(
                                                 "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none",
-                                                backup.is_successful ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "bg-red-500 text-white shadow-lg shadow-red-500/20"
+                                                !backup.completed_at && !backup.is_successful 
+                                                    ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20 animate-pulse" 
+                                                    : backup.is_successful 
+                                                        ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" 
+                                                        : "bg-red-500 text-white shadow-lg shadow-red-500/20"
                                             )}>
-                                                {backup.is_successful ? t('serverBackups.statusSuccessful') : t('serverBackups.statusFailed')}
+                                                {!backup.completed_at && !backup.is_successful 
+                                                    ? t('serverBackups.statusCreating') 
+                                                    : backup.is_successful 
+                                                        ? t('serverBackups.statusSuccessful') 
+                                                        : t('serverBackups.statusFailed')}
                                             </span>
                                             {backup.is_locked === 1 && (
                                                 <span className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 leading-none">
