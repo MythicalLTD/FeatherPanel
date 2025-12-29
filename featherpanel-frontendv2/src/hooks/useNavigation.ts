@@ -174,7 +174,7 @@ export function useNavigation() {
     }
 
     if (isServer && serverUuid) {
-      let items = getServerNavigationItems(t, serverUuid);
+      let items = getServerNavigationItems(t, serverUuid, settings);
 
       items = items.map((item) => ({
         ...item,

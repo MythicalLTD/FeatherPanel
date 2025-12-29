@@ -370,8 +370,8 @@ export const getAdminNavigationItems = (t: TFunction, settings: AppSettings | nu
   return items;
 };
 
-export const getServerNavigationItems = (t: TFunction, serverUuid: string): NavigationItem[] => {
-  return [
+export const getServerNavigationItems = (t: TFunction, serverUuid: string, settings: AppSettings | null): NavigationItem[] => {
+  const items: NavigationItem[] = [
     // Management
     {
       id: "server-overview",
@@ -428,7 +428,10 @@ export const getServerNavigationItems = (t: TFunction, serverUuid: string): Navi
       group: "files",
       permission: "backup.read",
     },
-    {
+  ];
+
+  if (isEnabled(settings?.server_allow_user_made_import)) {
+    items.push({
       id: "server-import",
       name: t("navigation.items.import"),
       title: t("navigation.items.import"),
@@ -438,7 +441,10 @@ export const getServerNavigationItems = (t: TFunction, serverUuid: string): Navi
       category: "server",
       group: "files",
       permission: "import.read",
-    },
+    });
+  }
+
+  items.push(
     // Automation
     {
       id: "server-schedules",
@@ -529,8 +535,10 @@ export const getServerNavigationItems = (t: TFunction, serverUuid: string): Navi
       category: "server",
       group: "networking",
       permission: "subdomain.manage",
-    },
-  ];
+    }
+  );
+
+  return items;
 };
 
 export const getMainNavigationItems = (t: TFunction, settings: AppSettings | null, hasPermission: (permission: string) => boolean): NavigationItem[] => {

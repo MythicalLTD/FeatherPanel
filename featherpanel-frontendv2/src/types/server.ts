@@ -256,3 +256,29 @@ export interface BackupsResponse {
   };
   message?: string;
 }
+export interface ImportItem {
+  id: number;
+  server_id: number;
+  user: string;
+  host: string;
+  port: number;
+  source_location: string;
+  destination_location: string;
+  type: "sftp" | "ftp";
+  wipe: boolean;
+  wipe_all_files: boolean;
+  status: "pending" | "importing" | "completed" | "failed";
+  error: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ImportsResponse {
+  success: boolean;
+  data: {
+    imports: ImportItem[];
+  };
+  message?: string;
+}
