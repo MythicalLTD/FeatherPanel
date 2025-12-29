@@ -208,7 +208,7 @@
     "tickets": {
       "title": "Recent Support Tickets",
       "view_all": "View All Tickets",
-	  "create_new": "Create New Ticket",
+      "create_new": "Create New Ticket",
       "no_tickets": "No recent tickets found",
       "status": {
         "open": "Open",
@@ -552,6 +552,46 @@
     "layout": {
       "grid": "Grid",
       "list": "List"
+    },
+    "console": {
+      "loading": "Loading server...",
+      "connection": {
+        "connecting": "Connecting to Wings...",
+        "connected": "Connected to Wings",
+        "error": "Connection error - retrying...",
+        "disconnected": "Disconnected from Wings",
+        "info": "Real-time console and stats will be available once connected"
+      },
+      "kill": "Kill",
+      "uuid": "UUID",
+      "info_cards": {
+        "address": "Server Address",
+        "uptime": "Wings Uptime",
+        "ping": "WebSocket Ping",
+        "limit": "Limit: {{limit}}",
+        "unlimited": "Unlimited",
+        "copied": "Server address copied to clipboard",
+        "copy_error": "Failed to copy address",
+        "copy": "Copy to clipboard"
+      },
+      "performance": {
+        "network": "Network",
+        "no_data": "No data"
+      },
+      "terminal": {
+        "title": "Console",
+        "auto_scroll": "Auto-scroll",
+        "history_title": "Command History",
+        "no_history": "No history yet",
+        "scroll_bottom": "Scroll to bottom",
+        "placeholder": "Enter command...",
+        "server_running_required": "Server must be running to send commands",
+        "clear": "Clear console"
+      },
+      "not_found": {
+        "title": "Server not found",
+        "message": "The requested server could not be loaded."
+      }
     }
   },
   "tickets": {

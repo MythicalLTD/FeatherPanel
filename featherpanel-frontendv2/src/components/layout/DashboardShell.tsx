@@ -33,7 +33,9 @@ export default function DashboardShell({
   const pluginPaths = getPluginPaths(pluginData)
 
   // Determine if this is a plugin page or full-width page
-  const isPluginPage = pathname.startsWith('/server/') || 
+  // Server console (without plugin path) should NOT be treated as a plugin page
+  const isServerConsolePage = pathname.match(/^\/server\/[^/]+$/)
+  const isPluginPage = (pathname.startsWith('/server/') && !isServerConsolePage) || 
                        pathname.startsWith('/admin/') ||
                        pathname.match(/^\/dashboard\/.+/)
 
@@ -66,7 +68,7 @@ export default function DashboardShell({
   // Check if current path starts with any built-in path (supports subpages like /dashboard/tickets/create)
   const isCoreFeaturePage = pathname === '/dashboard' || builtInPaths.some(corePath => pathname.startsWith(corePath))
   
-  // Only apply full-width mode to actual plugin pages (not core features)
+  // Only apply full-width mode to actual plugin pages (not core features or server console)
   // Use plugin paths if available, otherwise fall back to old detection
   const isFullWidthMode = isActualPluginPage || (isPluginPage && !isCoreFeaturePage && !pathname.startsWith('/auth/'))
 
