@@ -46,6 +46,8 @@ class ServerMiddleware implements MiddlewareInterface
     {
         $user = $request->attributes->get('user');
 
+		unset($user['password'], $user['remember_token']);
+
         if (!$user) {
             return ApiResponse::error('User not authenticated', 'NOT_AUTHENTICATED', 401, []);
         }

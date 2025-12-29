@@ -13,6 +13,10 @@ import axios from 'axios'
 
 import type { Server } from '@/types/server'
 import { useTranslation } from '@/contexts/TranslationContext'
+import { useFeatureDetector } from '@/hooks/useFeatureDetector'
+import { EulaDialog } from '@/components/server/features/EulaDialog'
+import { JavaVersionDialog } from '@/components/server/features/JavaVersionDialog'
+import { PidLimitDialog } from '@/components/server/features/PidLimitDialog'
 
 export default function ServerConsolePage() {
   const { t } = useTranslation()
@@ -37,6 +41,18 @@ export default function ServerConsolePage() {
   const [currentMemory, setCurrentMemory] = useState(0)
   const [currentDisk, setCurrentDisk] = useState(0)
 
+  // Feature Detector
+  const {
+    processLog,
+    eulaOpen,
+    setEulaOpen,
+    javaVersionOpen,
+    setJavaVersionOpen,
+    pidLimitOpen,
+    setPidLimitOpen,
+    detectedData,
+  } = useFeatureDetector()
+
   // Wings WebSocket connection
   const {
     connectionStatus,
@@ -44,9 +60,13 @@ export default function ServerConsolePage() {
     sendCommand,
     sendPowerAction,
     requestStats,
+    requestLogs,
   } = useWingsWebSocket({
     serverUuid,
     onConsoleOutput: (output) => {
+      // Process log for feature detection
+      processLog(output)
+
       // Write to terminal
       if (terminalRef.current) {
         terminalRef.current.writeln(output)
@@ -147,6 +167,8 @@ export default function ServerConsolePage() {
 
     // Request stats immediately on connect
     requestStats()
+    // Request logs history
+    requestLogs()
 
     // Then request every 5 seconds for ping measurement
     const interval = setInterval(() => {
@@ -154,7 +176,7 @@ export default function ServerConsolePage() {
     }, 5000)
 
     return () => clearInterval(interval)
-  }, [connectionStatus, requestStats])
+  }, [connectionStatus, requestStats, requestLogs])
 
   // Initialize charts with zero data point
   useEffect(() => {
@@ -301,6 +323,35 @@ export default function ServerConsolePage() {
           memoryLimit={server.memory || 0}
           diskLimit={server.disk || 0}
         />
+      )}
+
+      {/* Feature Detection Dialogs */}
+      {server && (
+        <>
+          <EulaDialog
+            isOpen={eulaOpen}
+            onClose={() => setEulaOpen(false)}
+            server={server}
+            onAccepted={() => {
+              // Optionally restart server or just close
+            }}
+          />
+          <JavaVersionDialog
+            isOpen={javaVersionOpen}
+            onClose={() => setJavaVersionOpen(false)}
+            server={server}
+            detectedIssue={
+              detectedData.javaVersion && (detectedData.javaVersion as { detectedVersion?: string }).detectedVersion
+                ? t('features.javaVersion.detectedVersion', { version: (detectedData.javaVersion as { detectedVersion?: string }).detectedVersion || '' })
+                : undefined
+            }
+          />
+          <PidLimitDialog
+            isOpen={pidLimitOpen}
+            onClose={() => setPidLimitOpen(false)}
+            server={server}
+          />
+        </>
       )}
     </div>
   )

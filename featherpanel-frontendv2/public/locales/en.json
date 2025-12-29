@@ -129,14 +129,16 @@
     "settings": "Settings",
     "profile": "Profile",
     "logout": "Logout",
-    "welcome": "Welcome to FeatherPanel",
-    "version": "Running on FeatherPanel v1.0.0",
-    "company": "MythicalSystems",
+    "unlimited": "Unlimited",
     "time": {
       "just_now": "Just now",
       "hours_ago": "{{count}} hour{{s}} ago",
       "yesterday": "Yesterday"
     }
+  },
+  "branding": {
+    "running_on": "Running on {{name}} v{{version}}",
+    "copyright": "{{company}}"
   },
   "validation": {
     "required": "This field is required",
@@ -794,5 +796,42 @@
     "openUserMenu": "Open user menu",
     "signOut": "Sign out",
     "user": "User"
+  },
+  "features": {
+    "eula": {
+      "title": "Accept Minecraft EULA",
+      "description": "The Minecraft EULA must be accepted to run this server.",
+      "eulaMessage": "By changing the setting below to TRUE you are indicating your agreement to our EULA.",
+      "eulaExplanation": "The Minecraft End User License Agreement (EULA) contains the rules you must follow when running a Minecraft server.",
+      "readEula": "Read the Minecraft EULA",
+      "accept": "I Accept",
+      "accepting": "Accepting...",
+      "eulaAccepted": "EULA Accepted",
+      "eulaAcceptedAndServerStarted": "EULA Accepted and Server Started",
+      "failedToAccept": "Failed to accept EULA",
+      "failedToStartServer": "Failed to auto-start server. Please start it manually."
+    },
+    "javaVersion": {
+      "title": "Java Version Incompatibility Detected",
+      "description": "The server detected an incorrect Java version.",
+      "recommendation": "We detected that your server requires a different Java version than what is currently selected.",
+      "detectedVersion": "Detected requirement: Java {{version}}",
+      "availableImages": "Available Docker Images",
+      "selectedImage": "Selected Image",
+      "updateImage": "Update Docker Image",
+      "imageUpdated": "Docker image updated successfully",
+      "failedToUpdate": "Failed to update Docker image"
+    },
+    "pidLimit": {
+      "title": "Process Limit Reached",
+      "description": "Your server has reached the maximum number of allowed processes.",
+      "explanation": "This usually happens when plugins or mods spawn too many threads or subprocesses, or if the server has been running for a long time with a memory leak.",
+      "suggestions": "Suggestions to resolve this:",
+      "suggestion1": "Restart your server to clear stuck processes",
+      "suggestion2": "Check your plugins for known issues with thread usage",
+      "suggestion3": "Contact support if this persists",
+      "restartServer": "Restart Server",
+      "serverRestarted": "Server restarted successfully"
+    }
   }
 }

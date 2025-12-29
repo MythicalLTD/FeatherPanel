@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useSettings } from '@/contexts/SettingsContext'
+import { useTranslation } from '@/contexts/TranslationContext'
 
 export default function AuthLayout({
   children,
@@ -10,6 +12,8 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   const { backgroundType, backgroundImage } = useTheme()
+  const { core } = useSettings()
+  const { t } = useTranslation()
 
   const renderBackground = () => {
     const gradientMap: Record<string, string> = {
@@ -94,7 +98,7 @@ export default function AuthLayout({
         {/* Footer */}
         <div className="mt-8 text-center text-xs text-muted-foreground transition-all duration-200">
           <p className="mb-2 font-medium">
-            Running on FeatherPanel v1.0.0
+            {t('branding.running_on', { name: 'FeatherPanel', version: core?.version || '' }).trim()}
           </p>
           <a
             href="https://featherpanel.com"
@@ -102,7 +106,7 @@ export default function AuthLayout({
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-primary transition-all duration-200 hover:text-primary/80 hover:underline underline-offset-4 font-medium"
           >
-            MythicalSystems
+            {t('branding.copyright', { company: 'MythicalSystems' })}
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>

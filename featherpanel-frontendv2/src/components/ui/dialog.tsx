@@ -6,14 +6,21 @@ import { cn } from '@/lib/utils'
 
 interface DialogProps {
   open: boolean
-  onClose: () => void
+  onClose?: () => void
+  onOpenChange?: (open: boolean) => void
   children: React.ReactNode
+  className?: string
 }
 
-export function Dialog({ open, onClose, children }: DialogProps) {
+export function Dialog({ open, onClose, onOpenChange, children, className }: DialogProps) {
+  const handleClose = () => {
+    onClose?.()
+    onOpenChange?.(false)
+  }
+
   return (
     <Transition show={open} as={React.Fragment}>
-      <HeadlessDialog as="div" className="relative z-50" onClose={onClose}>
+      <HeadlessDialog as="div" className="relative z-50" onClose={handleClose}>
         <TransitionChild
           as={React.Fragment}
           enter="ease-out duration-300"
@@ -37,7 +44,7 @@ export function Dialog({ open, onClose, children }: DialogProps) {
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <DialogPanel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-card border border-border/50 p-6 text-left align-middle shadow-2xl transition-all">
+              <DialogPanel className={cn("w-full max-w-md transform overflow-hidden rounded-2xl bg-card border border-border/50 p-6 text-left align-middle shadow-2xl transition-all", className)}>
                 {children}
               </DialogPanel>
             </TransitionChild>
@@ -92,4 +99,12 @@ export function DialogFooter({ children, className }: DialogFooterProps) {
   return <div className={cn('mt-6 flex gap-3 justify-end', className)}>{children}</div>
 }
 
-export { DialogTitleComponent as DialogTitleCustom }
+export function DialogContent({ className, children }: { className?: string, children: React.ReactNode }) {
+  // Since our Dialog component already renders the panel with standard styling,
+  // we treat DialogContent as a pass-through or additional wrapper if needed.
+  // We apply the className to the inner div to allow some customization, 
+  // though main layout is controlled by Dialog.
+  return <div className={className}>{children}</div>
+}
+
+export { DialogTitleComponent as DialogTitleCustom, DialogTitleComponent as DialogTitle }

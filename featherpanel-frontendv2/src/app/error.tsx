@@ -4,6 +4,8 @@ import { useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useSettings } from '@/contexts/SettingsContext'
+import { useTranslation } from '@/contexts/TranslationContext'
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer'
 import { Home, RefreshCw } from 'lucide-react'
 
@@ -15,6 +17,8 @@ export default function Error({
 	reset: () => void
 }) {
 	const { backgroundType, backgroundImage } = useTheme()
+	const { core } = useSettings()
+	const { t } = useTranslation()
 
 	useEffect(() => {
 		// Log the error to an error reporting service
@@ -97,14 +101,14 @@ export default function Error({
 							{/* Message */}
 							<div className="space-y-3">
 								<h2 className="text-2xl md:text-3xl font-bold tracking-tight">
-									Something Went Wrong
+									{t('errors.500.title')}
 								</h2>
 								<p className="text-muted-foreground max-w-md mx-auto">
-									We encountered an unexpected error. Don&apos;t worry, our team has been notified and we&apos;re working on it.
+									{t('errors.500.message')}
 								</p>
 								{error.digest && (
 									<p className="text-xs text-muted-foreground font-mono bg-muted px-3 py-1 rounded-lg inline-block">
-										Error ID: {error.digest}
+										{t('errors.500.error_id')}: {error.digest}
 									</p>
 								)}
 							</div>
@@ -117,12 +121,12 @@ export default function Error({
 									className="group"
 								>
 									<RefreshCw className="h-4 w-4 mr-2 group-hover:rotate-180 transition-transform duration-500" />
-									Try Again
+									{t('errors.500.try_again')}
 								</Button>
 								<Link href="/">
 									<Button className="w-full sm:w-auto group">
 										<Home className="h-4 w-4 mr-2" />
-										Go Home
+										{t('errors.500.go_home')}
 									</Button>
 								</Link>
 							</div>
@@ -131,7 +135,7 @@ export default function Error({
 							{process.env.NODE_ENV === 'development' && (
 								<details className="pt-6 border-t border-border/50 text-left">
 									<summary className="text-sm font-medium cursor-pointer hover:text-primary transition-colors">
-										Error Details (Development Only)
+										{t('errors.500.details')}
 									</summary>
 									<div className="mt-4 p-4 rounded-xl bg-muted text-xs font-mono overflow-auto max-h-60">
 										<p className="text-destructive font-semibold mb-2">{error.name}</p>
@@ -150,7 +154,7 @@ export default function Error({
 			{/* Footer */}
 			<div className="relative z-10 mt-8 text-center text-xs text-muted-foreground">
 				<p className="mb-2 font-medium">
-					Running on FeatherPanel v1.0.0
+					{t('branding.running_on', { name: 'FeatherPanel', version: core?.version || '' }).trim()}
 				</p>
 				<a
 					href="https://featherpanel.com"
@@ -158,7 +162,7 @@ export default function Error({
 					rel="noopener noreferrer"
 					className="inline-flex items-center gap-1.5 text-primary transition-all duration-200 hover:text-primary/80 hover:underline underline-offset-4 font-medium"
 				>
-					MythicalSystems
+					{t('branding.copyright', { company: 'MythicalSystems' })}
 					<svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
 					</svg>

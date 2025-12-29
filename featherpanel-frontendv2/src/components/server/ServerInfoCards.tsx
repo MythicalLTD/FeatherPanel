@@ -4,6 +4,7 @@ import React from 'react'
 import { Wifi, Cpu, HardDrive, Database, Clock, Activity } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslation } from '@/contexts/TranslationContext'
+import { formatMib, formatCpu as formatCpuGlobal } from '@/lib/utils'
 
 interface ServerInfoCardsProps {
   serverIp: string
@@ -33,27 +34,19 @@ export default function ServerInfoCards({
 }: ServerInfoCardsProps) {
   const { t } = useTranslation()
 
-  const formatBytes = (bytes: number): string => {
-    if (bytes === 0) return '0 MB'
-    const k = 1024
-    const sizes = ['MB', 'GB', 'TB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`
-  }
-
   const formatCpu = (cpu: number): string => {
     if (cpu === 0) return t('servers.console.info_cards.unlimited')
-    return `${cpu}%`
+    return formatCpuGlobal(cpu)
   }
 
   const formatMemory = (memory: number): string => {
     if (memory === 0) return t('servers.console.info_cards.unlimited')
-    return formatBytes(memory)
+    return formatMib(memory)
   }
 
   const formatDisk = (disk: number): string => {
     if (disk === 0) return t('servers.console.info_cards.unlimited')
-    return formatBytes(disk)
+    return formatMib(disk)
   }
 
   const cards = [
@@ -75,7 +68,7 @@ export default function ServerInfoCards({
     },
     {
       title: t('servers.memory'),
-      value: formatBytes(memoryUsage * 1024 * 1024),
+      value: formatMib(memoryUsage),
       subtitle: t('servers.console.info_cards.limit', { limit: formatMemory(memoryLimit) }),
       icon: Database,
       iconColor: 'text-green-500',
@@ -83,7 +76,7 @@ export default function ServerInfoCards({
     },
     {
       title: t('servers.disk'),
-      value: formatBytes(diskUsage * 1024 * 1024),
+      value: formatMib(diskUsage),
       subtitle: t('servers.console.info_cards.limit', { limit: formatDisk(diskLimit) }),
       icon: HardDrive,
       iconColor: 'text-orange-500',

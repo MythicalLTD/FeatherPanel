@@ -4,12 +4,16 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useSettings } from '@/contexts/SettingsContext'
+import { useTranslation } from '@/contexts/TranslationContext'
 import ThemeCustomizer from '@/components/layout/ThemeCustomizer'
 import { Home, ArrowLeft } from 'lucide-react'
 
 export default function NotFound() {
 	const router = useRouter()
 	const { backgroundType, backgroundImage } = useTheme()
+	const { core } = useSettings()
+	const { t } = useTranslation()
 
 	const renderBackground = () => {
 		const gradientMap: Record<string, string> = {
@@ -90,10 +94,10 @@ export default function NotFound() {
 							{/* Message */}
 							<div className="space-y-3">
 								<h2 className="text-2xl md:text-3xl font-bold tracking-tight">
-									Page Not Found
+									{t('errors.404.title')}
 								</h2>
 								<p className="text-muted-foreground max-w-md mx-auto">
-									The page you&apos;re looking for doesn&apos;t exist or has been moved. Let&apos;s get you back on track.
+									{t('errors.404.message')}
 								</p>
 							</div>
 
@@ -105,12 +109,12 @@ export default function NotFound() {
 									className="group"
 								>
 									<ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-									Go Back
+									{t('errors.404.go_back')}
 								</Button>
 								<Link href="/">
 									<Button className="w-full sm:w-auto group">
 										<Home className="h-4 w-4 mr-2" />
-										Go Home
+										{t('errors.404.go_home')}
 									</Button>
 								</Link>
 							</div>
@@ -118,17 +122,17 @@ export default function NotFound() {
 							{/* Helpful links */}
 							<div className="pt-6 border-t border-border/50">
 								<p className="text-sm text-muted-foreground mb-3">
-									Looking for something specific?
+									{t('errors.404.looking_for')}
 								</p>
 								<div className="flex flex-wrap gap-2 justify-center">
 									<Link href="/auth/login">
 										<button className="text-sm px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors">
-											Login
+											{t('errors.404.login')}
 										</button>
 									</Link>
 									<Link href="/dashboard">
 										<button className="text-sm px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors">
-											Dashboard
+											{t('errors.404.dashboard')}
 										</button>
 									</Link>
 								</div>
@@ -141,7 +145,7 @@ export default function NotFound() {
 			{/* Footer */}
 			<div className="relative z-10 mt-8 text-center text-xs text-muted-foreground">
 				<p className="mb-2 font-medium">
-					Running on FeatherPanel v1.0.0
+					{t('branding.running_on', { name: 'FeatherPanel', version: core?.version || '' }).trim()}
 				</p>
 				<a
 					href="https://featherpanel.com"
@@ -149,7 +153,7 @@ export default function NotFound() {
 					rel="noopener noreferrer"
 					className="inline-flex items-center gap-1.5 text-primary transition-all duration-200 hover:text-primary/80 hover:underline underline-offset-4 font-medium"
 				>
-					MythicalSystems
+					{t('branding.copyright', { company: 'MythicalSystems' })}
 					<svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
 					</svg>

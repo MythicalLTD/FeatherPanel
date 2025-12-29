@@ -88,7 +88,6 @@ export function useWingsWebSocket({
   const [stats, setStats] = useState<WingsStats | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const lastStatsRequestTimeRef = useRef<number | null>(null);
-  const tokenRefreshTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Store callbacks in refs to avoid triggering useEffect on every render
   const onMessageRef = useRef(onMessage);
@@ -395,11 +394,6 @@ export function useWingsWebSocket({
           setPing(null);
           setStats(null);
 
-          // Clear token refresh timeout
-          if (tokenRefreshTimeoutRef.current) {
-            clearTimeout(tokenRefreshTimeoutRef.current);
-          }
-
           // Only attempt reconnection if not cleaned up
           if (!isCleanedUp) {
             reconnectTimeoutRef.current = setTimeout(() => {
@@ -429,9 +423,6 @@ export function useWingsWebSocket({
       isCleanedUp = true;
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
-      }
-      if (tokenRefreshTimeoutRef.current) {
-        clearTimeout(tokenRefreshTimeoutRef.current);
       }
       if (wsRef.current) {
         wsRef.current.close();

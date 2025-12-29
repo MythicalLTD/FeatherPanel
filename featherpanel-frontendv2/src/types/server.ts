@@ -57,6 +57,7 @@ export interface ServerSpell {
   icon?: string;
   author?: string;
   version?: string;
+  docker_images?: string | Record<string, string>;
 }
 
 export interface ServerStats {

@@ -1,5 +1,8 @@
 'use client'
 
+// global-error.tsx is a special Next.js error boundary that wraps the entire application
+import { useEffect, useState } from 'react'
+
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -14,6 +17,22 @@ export default function GlobalError({
 	reset: () => void
 }) {
 	const { backgroundType, backgroundImage } = useTheme()
+	const [version, setVersion] = useState<string>('')
+
+	useEffect(() => {
+    // Safely read version from localStorage after mount
+		try {
+			const cached = localStorage.getItem('app_settings')
+			if (cached) {
+				const { data } = JSON.parse(cached)
+				if (data?.core?.version) {
+          requestAnimationFrame(() => setVersion(data.core.version))
+        }
+			}
+		} catch {
+			// Ignore error
+		}
+	}, [])
 
 	const renderBackground = () => {
 		const gradientMap: Record<string, string> = {
@@ -133,7 +152,7 @@ export default function GlobalError({
 					{/* Footer */}
 					<div className="relative z-10 mt-8 text-center text-xs text-muted-foreground">
 						<p className="mb-2 font-medium">
-							Running on FeatherPanel v1.0.0
+							Running on FeatherPanel {version ? `v${version}` : ''}
 						</p>
 						<a
 							href="https://featherpanel.com"
