@@ -222,3 +222,37 @@ export interface DatabasesResponse {
   };
   message?: string;
 }
+export interface BackupFilters {
+  search?: string;
+}
+
+export interface BackupItem {
+  id: number;
+  server_id: number;
+  uuid: string;
+  name: string;
+  ignored_files: string;
+  disk: string;
+  is_successful: number;
+  is_locked: number;
+  bytes: number;
+  created_at: string;
+  updated_at: string;
+  completed_at?: string;
+}
+
+export interface BackupsResponse {
+  success: boolean;
+  data: {
+    data: BackupItem[];
+    pagination: {
+      current_page: number;
+      per_page: number;
+      total: number;
+      last_page: number;
+      from: number;
+      to: number;
+    };
+  };
+  message?: string;
+}

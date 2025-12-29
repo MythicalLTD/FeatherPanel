@@ -1,60 +1,51 @@
 'use client'
 
-import React, { useState, useEffect, use } from 'react'
+import React, { useState, useEffect, use, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import axios from 'axios'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useServerPermissions } from '@/hooks/useServerPermissions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-// Use HeadlessSelect instead of ShadCN Select
 import { HeadlessSelect } from '@/components/ui/headless-select'
-import {
-    Avatar,
-    AvatarImage,
-    AvatarFallback
-} from '@/components/ui/avatar'
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle
+import { 
+    Dialog, 
+    DialogDescription, 
+    DialogFooter, 
+    DialogHeader, 
+    DialogTitle 
 } from '@/components/ui/dialog'
-import {
-    Activity,
-    RefreshCw,
-    Search,
-    X,
-    Eye,
-    Clock,
-    ChevronLeft,
-    ChevronRight,
-    Archive,
-    Terminal,
-    FileText,
-    Server,
-    Database,
-    Users,
-    Settings,
-    Play,
-    Pause,
-    RotateCcw,
-    Trash2,
-    Lock,
-    Unlock,
-    Copy,
-    CalendarClock,
-    ListTodo,
-    Network,
-    Edit,
-    Hash,
-    User,
-    Globe
+import { 
+    Activity, 
+    RefreshCw, 
+    Search, 
+    X, 
+    Eye, 
+    Clock, 
+    ChevronLeft, 
+    ChevronRight, 
+    Archive, 
+    FileText, 
+    Server, 
+    Database, 
+    Users, 
+    Play, 
+    Pause, 
+    RotateCcw, 
+    Trash2, 
+    Lock, 
+    Unlock, 
+    Copy, 
+    CalendarClock, 
+    ListTodo, 
+    Network, 
+    Edit, 
+    User, 
+    Globe,
+    Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
-
+import { cn } from '@/lib/utils'
 
 // Types
 type ActivityMetadata = {
@@ -141,18 +132,18 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
     const [detailsOpen, setDetailsOpen] = useState(false)
     const [selectedItem, setSelectedItem] = useState<ActivityItem | null>(null)
 
-    const fetchActivities = async (page = 1) => {
+    const fetchActivities = useCallback(async (page = 1) => {
         try {
             setLoading(true)
-            const params: Record<string, string | number> = {
+            const queryParams: Record<string, string | number> = {
                 page,
                 per_page: pagination.per_page,
             }
             if (searchQuery.trim()) {
-                params.search = searchQuery.trim()
+                queryParams.search = searchQuery.trim()
             }
 
-            const { data } = await axios.get(`/api/user/servers/${uuidShort}/activities`, { params })
+            const { data } = await axios.get(`/api/user/servers/${uuidShort}/activities`, { params: queryParams })
 
             if (!data.success) {
                 toast.error(data.message || t('serverActivities.failedToFetch'))
@@ -187,13 +178,16 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
             setActivities(filteredActivities)
             
             const p = data.data.pagination || {}
+            const totalPages = p.total_pages || p.last_page || 1
+            const currentPage = p.current_page || 1
+            
             setPagination({
-                current_page: p.current_page || 1,
+                current_page: currentPage,
                 per_page: p.per_page || 10,
                 total_records: p.total || p.total_records || 0,
-                total_pages: p.total_pages || p.last_page || 1,
-                has_next: (p.current_page || 1) < (p.total_pages || p.last_page || 1),
-                has_prev: (p.current_page || 1) > 1,
+                total_pages: totalPages,
+                has_next: currentPage < totalPages,
+                has_prev: currentPage > 1,
                 from: p.from || 0,
                 to: p.to || 0,
             })
@@ -204,18 +198,17 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
         } finally {
             setLoading(false)
         }
-    }
+    }, [uuidShort, pagination.per_page, searchQuery, selectedEventFilter, t])
 
     // Debounce Search
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (!loading) { // Avoid initial double fetch
+            if (!loading) {
                 fetchActivities(1)
             }
         }, 500)
         return () => clearTimeout(timer)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchQuery])
+    }, [searchQuery, loading, fetchActivities])
 
     // Initial Load
     useEffect(() => {
@@ -227,8 +220,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
             }
             fetchActivities(1)
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [uuidShort, permissionsLoading, hasPermission])
+    }, [uuidShort, permissionsLoading, hasPermission, fetchActivities, router, t])
 
     function normalizeMetadata(m: unknown): ActivityMetadata | undefined {
         if (m == null) return undefined
@@ -259,7 +251,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
         if (eventLower.includes('task')) return ListTodo
         if (['subuser', 'user'].some(x => eventLower.includes(x))) return Users
         if (['allocation', 'network'].some(x => eventLower.includes(x))) return Network
-        if (['setting', 'updated'].some(x => eventLower.includes(x))) return Edit
+        if (['setting', 'updated', 'update'].some(x => eventLower.includes(x))) return Edit
         if (['delete', 'deleted'].some(x => eventLower.includes(x))) return Trash2
         if (eventLower.includes('lock')) return Lock
         if (eventLower.includes('unlock')) return Unlock
@@ -268,21 +260,21 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
 
     function getEventIconClass(event: string) {
         const eventLower = event.toLowerCase()
-        if (eventLower.includes('backup')) return 'text-blue-500 bg-blue-500/5'
-        if (['start', 'play'].some(x => eventLower.includes(x))) return 'text-green-500 bg-green-500/5'
-        if (['stop', 'kill'].some(x => eventLower.includes(x))) return 'text-red-500 bg-red-500/5'
-        if (eventLower.includes('restart')) return 'text-yellow-500 bg-yellow-500/5'
-        if (eventLower.includes('power')) return 'text-green-500 bg-green-500/5'
-        if (eventLower.includes('file')) return 'text-orange-500 bg-orange-500/5'
-        if (eventLower.includes('database')) return 'text-indigo-500 bg-indigo-500/5'
-        if (eventLower.includes('schedule')) return 'text-purple-500 bg-purple-500/5'
-        if (eventLower.includes('task')) return 'text-pink-500 bg-pink-500/5'
-        if (['subuser', 'user'].some(x => eventLower.includes(x))) return 'text-cyan-500 bg-cyan-500/5'
-        if (eventLower.includes('allocation')) return 'text-emerald-500 bg-emerald-500/5'
-        if (eventLower.includes('delete')) return 'text-red-500 bg-red-500/5'
-        if (eventLower.includes('lock')) return 'text-amber-500 bg-amber-500/5'
-        if (eventLower.includes('unlock')) return 'text-emerald-500 bg-emerald-500/5'
-        return 'text-primary bg-primary/5'
+        if (eventLower.includes('backup')) return 'text-blue-500 bg-blue-500/10 border-blue-500/20'
+        if (['start', 'play'].some(x => eventLower.includes(x))) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20'
+        if (['stop', 'kill'].some(x => eventLower.includes(x))) return 'text-red-500 bg-red-500/10 border-red-500/20'
+        if (eventLower.includes('restart')) return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20'
+        if (eventLower.includes('power')) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20'
+        if (eventLower.includes('file')) return 'text-orange-500 bg-orange-500/10 border-orange-500/20'
+        if (eventLower.includes('database')) return 'text-indigo-500 bg-indigo-500/10 border-indigo-500/20'
+        if (eventLower.includes('schedule')) return 'text-purple-500 bg-purple-500/10 border-purple-500/20'
+        if (eventLower.includes('task')) return 'text-pink-500 bg-pink-500/10 border-pink-500/20'
+        if (['subuser', 'user'].some(x => eventLower.includes(x))) return 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20'
+        if (eventLower.includes('allocation')) return 'text-teal-500 bg-teal-500/10 border-teal-500/20'
+        if (eventLower.includes('delete')) return 'text-red-500 bg-red-500/10 border-red-500/20'
+        if (eventLower.includes('lock')) return 'text-amber-500 bg-amber-500/10 border-amber-500/20'
+        if (eventLower.includes('unlock')) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20'
+        return 'text-primary bg-primary/10 border-primary/20'
     }
 
     function displayMessage(item: ActivityItem): string {
@@ -326,7 +318,6 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
         }
     }
 
-    // Prepare events for select
     const filterOptions = [
         { id: 'all', name: t('serverActivities.allEvents') },
         { id: 'server', name: t('serverActivities.filterNames.server') },
@@ -340,370 +331,325 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
         { id: 'allocation', name: t('serverActivities.filterNames.allocation') },
     ]
 
+    if (permissionsLoading || (loading && activities.length === 0)) {
+        return (
+            <div className="flex flex-col items-center justify-center py-24">
+                <Loader2 className="h-12 w-12 animate-spin text-primary opacity-50" />
+                <p className="mt-4 text-muted-foreground font-medium animate-pulse">{t('common.loading')}</p>
+            </div>
+        )
+    }
+
     return (
-        <div className="space-y-6 pb-20">
+        <div className="space-y-8 pb-12 animate-in fade-in duration-700">
             {/* Header Section */}
-            <div className="flex flex-col gap-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="space-y-1">
-                        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                            {t('serverActivities.title')}
-                        </h1>
-                        <p className="text-sm text-muted-foreground/80 font-medium">
-                            {t('serverActivities.description')}
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/40 text-xs font-medium text-muted-foreground backdrop-blur-sm">
-                            <Activity className="h-3.5 w-3.5" />
-                            <span>{pagination.total_records} {t('serverActivities.events')}</span>
-                        </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={loading}
-                            onClick={() => fetchActivities(pagination.current_page)}
-                            className="h-9 px-4 border-border/40 hover:bg-secondary/80 bg-background/50 backdrop-blur-sm transition-all"
-                        >
-                            <RefreshCw className={`h-3.5 w-3.5 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                            {t('common.refresh')}
-                        </Button>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div className="space-y-2">
+                    <h1 className="text-4xl font-black tracking-tight uppercase">{t('serverActivities.title')}</h1>
+                    <div className="flex items-center gap-3 text-muted-foreground">
+                        <p className="text-lg opacity-80">{t('serverActivities.description')}</p>
+                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/20">
+                            {pagination.total_records} {t('serverActivities.events')}
+                        </span>
                     </div>
                 </div>
 
-                {/* Filter Bar - Floating Glass Design */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="flex-1 relative group">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 transition-colors group-hover:text-primary/60" />
-                        <Input
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder={t('serverActivities.searchPlaceholder')}
-                            disabled={loading}
-                            className="pl-10 h-11 bg-card/40 border-border/40 hover:border-primary/30 hover:bg-card/60 focus:bg-card/80 transition-all rounded-xl shadow-sm backdrop-blur-sm"
-                        />
-                    </div>
-                    <div className="flex gap-2 w-full sm:w-auto">
-                        <div className="w-full sm:w-56">
-                            <HeadlessSelect
-                                value={selectedEventFilter}
-                                onChange={(val: string | number) => {
-                                    setSelectedEventFilter(String(val))
-                                    setTimeout(() => fetchActivities(1), 0)
-                                }}
-                                options={filterOptions}
-                                placeholder={t('serverActivities.events')}
-                                className="h-11 mt-0"
-                                buttonClassName="h-11 bg-card/40 border-border/40 hover:border-primary/30 hover:bg-card/60 rounded-xl shadow-sm backdrop-blur-sm"
-                            />
-                        </div>
-                        { (searchQuery || selectedEventFilter !== 'all') && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-11 w-11 rounded-xl border border-dashed border-border/40 hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive transition-all"
-                                onClick={() => {
-                                    setSearchQuery('')
-                                    setSelectedEventFilter('all')
-                                    setTimeout(() => fetchActivities(1), 0)
-                                }}
-                                title={t('common.clear')}
-                            >
-                                <X className="h-4 w-4" />
-                            </Button>
-                        )}
-                    </div>
+                <div className="flex items-center gap-3">
+                    <Button 
+                        variant="outline" 
+                        size="lg" 
+                        onClick={() => fetchActivities()}
+                        disabled={loading}
+                        className="bg-background/50 backdrop-blur-md border-border/40 hover:bg-background/80"
+                    >
+                        <RefreshCw className={cn("h-5 w-5 mr-2", loading && "animate-spin")} />
+                        {t('common.refresh')}
+                    </Button>
                 </div>
             </div>
 
-            {/* Content Section */}
-            {loading && activities.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 animate-in fade-in zoom-in-95 duration-500">
-                     <div className="relative">
-                        <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full"></div>
-                        <div className="relative bg-background rounded-full p-4 border border-border/50 shadow-lg">
-                            <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-                        </div>
-                     </div>
-                     <span className="mt-6 text-sm font-medium text-muted-foreground animate-pulse">{t('common.loading')}</span>
+            {/* Filter Bar */}
+            <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1 group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <Input 
+                        placeholder={t('serverActivities.searchPlaceholder')}
+                        className="bg-background/40 backdrop-blur-md border-border/40 pl-12 h-14 text-lg rounded-2xl focus:ring-primary/20 focus:border-primary/50 transition-all"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                 </div>
-            ) : activities.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-border/40 rounded-2xl bg-card/20">
-                    <div className="bg-secondary/50 p-6 rounded-full mb-4 ring-1 ring-border/50">
-                        <Activity className="h-8 w-8 text-muted-foreground/60" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground/80">{t('serverActivities.noActivitiesFound')}</h3>
-                    <p className="text-sm text-muted-foreground mt-2 max-w-xs">
-                        {searchQuery || selectedEventFilter !== 'all' 
-                            ? t('serverActivities.noActivitiesSearchDescription') 
-                            : t('serverActivities.noActivitiesDescription')}
-                    </p>
+                <div className="w-full md:w-64 flex gap-2">
+                    <HeadlessSelect
+                        value={selectedEventFilter}
+                        onChange={(val: string | number) => {
+                            setSelectedEventFilter(String(val))
+                            setTimeout(() => fetchActivities(1), 0)
+                        }}
+                        options={filterOptions}
+                        placeholder={t('serverActivities.events')}
+                        buttonClassName="h-14 bg-background/40 backdrop-blur-md border-border/40 rounded-2xl text-lg px-6"
+                    />
                     {(searchQuery || selectedEventFilter !== 'all') && (
                         <Button 
-                            variant="ghost" 
+                            variant="outline" 
+                            size="icon" 
+                            className="h-14 w-14 rounded-2xl border-border/40 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50"
                             onClick={() => {
                                 setSearchQuery('')
                                 setSelectedEventFilter('all')
                                 setTimeout(() => fetchActivities(1), 0)
                             }}
-                            className="mt-4 text-primary hover:bg-primary/5 underline-offset-4 hover:underline"
+                        >
+                            <X className="h-6 w-6" />
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            {/* Activities List */}
+            {activities.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-card/10 rounded-[3rem] border border-dashed border-border/60 backdrop-blur-sm">
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
+                        <div className="relative h-32 w-32 rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 rotate-3">
+                            <Activity className="h-16 w-16 text-primary" />
+                        </div>
+                    </div>
+                    <div className="max-w-md space-y-3">
+                        <h2 className="text-3xl font-black">{t('serverActivities.noActivitiesFound')}</h2>
+                        <p className="text-muted-foreground text-lg px-4">
+                            {searchQuery || selectedEventFilter !== 'all' 
+                                ? t('serverActivities.noActivitiesSearchDescription') 
+                                : t('serverActivities.noActivitiesDescription')}
+                        </p>
+                    </div>
+                    {(searchQuery || selectedEventFilter !== 'all') && (
+                        <Button 
+                            variant="outline" 
+                            size="lg"
+                            onClick={() => {
+                                setSearchQuery('')
+                                setSelectedEventFilter('all')
+                                setTimeout(() => fetchActivities(1), 0)
+                            }}
+                            className="px-8 h-12 rounded-xl"
                         >
                             {t('common.clear')}
                         </Button>
                     )}
                 </div>
             ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                     {activities.map((activity, index) => {
                         const Icon = getEventIcon(activity.event)
                         return (
                             <div 
-                                key={activity.id} 
-                                className="group relative flex items-start sm:items-center gap-4 p-4 rounded-xl border border-border/40 bg-card/20 hover:bg-card/40 hover:border-border/60 transition-all duration-300"
+                                key={activity.id}
+                                onClick={() => {
+                                    setSelectedItem(activity)
+                                    setDetailsOpen(true)
+                                }}
+                                className="group relative overflow-hidden rounded-3xl bg-card/30 backdrop-blur-md border border-border/40 hover:border-primary/40 hover:bg-card/50 transition-all duration-300 shadow-sm cursor-pointer"
                                 style={{ animationDelay: `${index * 50}ms` }}
                             >
-                                {/* Icon */}
-                                <div className={`shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-colors ${getEventIconClass(activity.event)} bg-opacity-10`}>
-                                    <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
-                                </div>
-                                
-                                {/* Content */}
-                                <div className="flex-1 min-w-0 grid sm:grid-cols-[1fr_auto] gap-4 items-center">
-                                    <div className="space-y-1.5">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <h3 className="font-semibold text-sm sm:text-base text-foreground/90 group-hover:text-primary transition-colors">
-                                                {formatEvent(activity.event)}
-                                            </h3>
-                                        </div>
-                                        <p className="text-sm text-muted-foreground/70 line-clamp-1 font-medium">
-                                            {displayMessage(activity)}
-                                        </p>
-                                        
-                                        {/* Mobile Metadata Row */}
-                                        <div className="flex sm:hidden items-center gap-3 text-xs text-muted-foreground/60 mt-2">
-                                            <div className="flex items-center gap-1.5">
-                                                <Clock className="h-3 w-3" />
-                                                <span>{activity.timestamp ? formatRelativeTime(activity.timestamp) : ''}</span>
-                                            </div>
-                                            <div className="w-0.5 h-0.5 rounded-full bg-border"></div>
-                                            {activity.user ? (
-                                                <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{activity.user.username}</span>
-                                            ) : (
-                                                <span className="text-sm font-bold text-muted-foreground/60 italic">{t('serverActivities.details.system')}</span>
-                                            )}
-                                            <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">{t('serverActivities.details.executingUser')}</span>
-                                        </div>
+                                <div className="p-6 flex flex-col md:flex-row md:items-center gap-6">
+                                    <div className={cn(
+                                        "h-16 w-16 rounded-2xl flex items-center justify-center border-2 shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-2 shadow-inner",
+                                        getEventIconClass(activity.event)
+                                    )}>
+                                        <Icon className="h-8 w-8" />
                                     </div>
 
-                                    {/* Desktop Metadata & Actions */}
-                                    <div className="hidden sm:flex items-center gap-6 justify-end">
-                                        {/* User Info */}
-                                        <div className="flex flex-col items-end gap-0.5 text-right min-w-[100px]">
-                                            {activity.user ? (
-                                                <>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-medium text-foreground/80">{activity.user.username}</span>
-                                                        <Avatar className="h-5 w-5 border border-border/50">
-                                                            <AvatarImage src={activity.user.avatar || undefined} alt={activity.user.username} />
-                                                            <AvatarFallback className="text-[9px] bg-secondary text-secondary-foreground">{activity.user.username.substring(0,2).toUpperCase()}</AvatarFallback>
-                                                        </Avatar>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <div className="flex items-center gap-1.5 text-muted-foreground/60">
-                                                    <Server className="h-3.5 w-3.5" />
-                                                    <span className="text-xs font-medium italic">{t('serverActivities.details.system')}</span>
+                                    <div className="flex-1 min-w-0 space-y-2">
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            <h3 className="text-xl font-bold truncate tracking-tight group-hover:text-primary transition-colors">{formatEvent(activity.event)}</h3>
+                                            <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none bg-background/50 border border-border/40 shadow-sm">
+                                                {activity.id}
+                                            </span>
+                                        </div>
+
+                                        <p className="text-muted-foreground font-medium line-clamp-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                                            {displayMessage(activity)}
+                                        </p>
+
+                                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-1 border-t border-border/10">
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <User className="h-4 w-4 opacity-50" />
+                                                <span className="text-sm font-bold uppercase tracking-tight">
+                                                    {activity.user?.username || t('serverActivities.details.system')}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <Clock className="h-4 w-4 opacity-50" />
+                                                <span className="text-sm font-semibold">
+                                                    {activity.timestamp ? formatRelativeTime(activity.timestamp) : '-'}
+                                                </span>
+                                            </div>
+                                            {activity.ip && (
+                                                <div className="flex items-center gap-2 text-muted-foreground">
+                                                    <Globe className="h-4 w-4 opacity-50" />
+                                                    <span className="text-xs font-mono font-bold opacity-60 italic">{activity.ip}</span>
                                                 </div>
                                             )}
                                         </div>
+                                    </div>
 
-                                        {/* Time */}
-                                        <div className="flex flex-col items-end min-w-[100px]">
-                                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60 font-medium">
-                                                <Clock className="h-3 w-3" />
-                                                {activity.timestamp ? formatRelativeTime(activity.timestamp) : ''}
-                                            </div>
+                                    <div className="flex items-center gap-2 md:self-center">
+                                        <div className="h-12 w-12 rounded-xl group-hover:bg-primary/10 text-muted-foreground group-hover:text-primary transition-all flex items-center justify-center">
+                                            <Eye className="h-6 w-6" />
                                         </div>
-
-                                        {/* View Button */}
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => {
-                                                setSelectedItem(activity)
-                                                setDetailsOpen(true)
-                                            }}
-                                            className="h-8 w-8 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300"
-                                        >
-                                            <Eye className="h-4 w-4" />
-                                            <span className="sr-only">{t('serverActivities.viewDetails')}</span>
-                                        </Button>
                                     </div>
                                 </div>
-                                
-                                {/* Mobile Click Target overlay for easier tapping */}
-                                <div 
-                                    className="sm:hidden absolute inset-0 z-10 block"
-                                    onClick={() => {
-                                        setSelectedItem(activity)
-                                        setDetailsOpen(true)
-                                    }}
-                                />
                             </div>
                         )
                     })}
                 </div>
             )}
 
-            {/* Pagination footer */}
-            {activities.length > 0 && (
-                <div className="flex items-center justify-between pt-4 border-t border-dashed border-border/40">
-                    <p className="text-xs text-muted-foreground font-medium">
-                        {t('serverActivities.pagination.showing', { from: String(pagination.from), to: String(pagination.to), total: String(pagination.total_records) })}
+            {/* Pagination */}
+            {pagination.total_records > pagination.per_page && (
+                <div className="flex items-center justify-between py-8 border-t border-border/40 px-6">
+                    <p className="text-sm font-bold opacity-40 uppercase tracking-widest">
+                        {t('serverActivities.pagination.showing', { 
+                            from: String(pagination.from), 
+                            to: String(pagination.to), 
+                            total: String(pagination.total_records) 
+                        })}
                     </p>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
+                    <div className="flex items-center gap-3">
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
                             disabled={!pagination.has_prev || loading}
                             onClick={() => changePage(pagination.current_page - 1)}
-                            className="h-8 px-3 border-border/40 bg-transparent hover:bg-secondary/50 text-xs gap-1"
+                            className="h-10 w-10 p-0 rounded-xl"
                         >
-                            <ChevronLeft className="h-3 w-3" />
-                            {t('serverActivities.pagination.prev')}
+                            <ChevronLeft className="h-5 w-5" />
                         </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
+                        <span className="h-10 px-4 rounded-xl text-sm font-black bg-primary/5 text-primary border border-primary/20 flex items-center justify-center min-w-12">
+                            {pagination.current_page} / {pagination.total_pages}
+                        </span>
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
                             disabled={!pagination.has_next || loading}
                             onClick={() => changePage(pagination.current_page + 1)}
-                            className="h-8 px-3 border-border/40 bg-transparent hover:bg-secondary/50 text-xs gap-1"
+                            className="h-10 w-10 p-0 rounded-xl"
                         >
-                            {t('serverActivities.pagination.next')}
-                            <ChevronRight className="h-3 w-3" />
+                            <ChevronRight className="h-5 w-5" />
                         </Button>
                     </div>
                 </div>
             )}
 
-            {/* Details Dialog - High Contrast & Ultra Wide */}
+            {/* DETAILS DIALOG */}
             <Dialog 
                 open={detailsOpen} 
                 onOpenChange={setDetailsOpen}
-                className="max-w-[1400px] w-[95vw]"
             >
-                <DialogContent className="overflow-hidden flex flex-col p-10 gap-10 border-border/40 bg-background/95 backdrop-blur-3xl shadow-2xl rounded-2xl">
-                    <DialogHeader className="space-y-6 pb-0 border-b-0">
-                        <DialogTitle className="flex items-center gap-6 text-3xl">
-                            {selectedItem && (
-                                <div className={`p-3.5 rounded-2xl ${getEventIconClass(selectedItem.event)} ring-2 ring-primary/20`}>
-                                    {React.createElement(getEventIcon(selectedItem.event), { className: "h-8 w-8" })}
+                {selectedItem && (
+                    <div className="space-y-8 p-6 max-w-[1200px] w-full">
+                        <DialogHeader>
+                            <div className="flex items-center gap-6">
+                                <div className={cn(
+                                    "h-20 w-20 rounded-4xl flex items-center justify-center border-4 shadow-2xl transition-transform group-hover:scale-105 group-hover:rotate-2 shrink-0",
+                                    getEventIconClass(selectedItem.event)
+                                )}>
+                                    {React.createElement(getEventIcon(selectedItem.event), { className: "h-10 w-10" })}
                                 </div>
-                            )}
-                            <span className="font-extrabold tracking-tight text-white">{selectedItem ? formatEvent(selectedItem.event) : t('serverActivities.details.title')}</span>
-                        </DialogTitle>
-                        <DialogDescription className="text-xl text-muted-foreground/90 pl-1 leading-relaxed max-w-4xl">
-                            {selectedItem?.message || t('serverActivities.details.description')}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    {selectedItem && (
-                        <div className="flex-1 space-y-12">
-                            {/* Key Info Row - High Contrast */}
-                            <div className="flex flex-wrap items-center gap-x-16 gap-y-8">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/40">
-                                        <Clock className="h-6 w-6 text-primary" />
+                                <div className="space-y-1.5 flex-1">
+                                    <div className="flex items-center gap-3">
+                                        <DialogTitle className="text-4xl font-black uppercase tracking-tighter leading-none">
+                                            {formatEvent(selectedItem.event)}
+                                        </DialogTitle>
+                                        <span className="px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-[0.2em] bg-white/10 border border-white/5 opacity-40">
+                                            #{selectedItem.id}
+                                        </span>
                                     </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em]">{t('serverActivities.details.timestamp')}</span>
-                                        <span className="text-xl font-bold text-white mt-1">{selectedItem.timestamp ? new Date(selectedItem.timestamp).toLocaleString() : '-'}</span>
-                                    </div>
+                                    <DialogDescription className="text-xl font-medium opacity-70 leading-relaxed max-w-4xl">
+                                        {selectedItem.message || t('serverActivities.details.description')}
+                                    </DialogDescription>
                                 </div>
+                            </div>
+                        </DialogHeader>
 
-                                <div className="flex items-center gap-4">
-                                    <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/40">
-                                        <User className="h-6 w-6 text-primary" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em]">{t('serverActivities.details.executingUser')}</span>
-                                        <span className="text-xl font-bold text-white mt-1">{selectedItem.user?.username || t('serverActivities.details.system')}</span>
-                                    </div>
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                            {/* Metadata Table */}
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-3">
+                                        <div className="w-1.5 h-4 bg-primary rounded-full" />
+                                        {t('serverActivities.details.metadataPayload')}
+                                    </h3>
+                                    <span className="text-[10px] font-black opacity-30 uppercase tracking-widest">{detailsPairs.length} Keys found</span>
                                 </div>
 
-                                <div className="flex items-center gap-4">
-                                    <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/40">
-                                        <Globe className="h-6 w-6 text-primary" />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 shrink-0">
+                                        <span className="text-[10px] font-black text-primary/50 uppercase tracking-widest">{t('serverActivities.details.executingUser')}</span>
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-8 w-8 rounded-xl bg-primary/20 flex items-center justify-center font-black text-xs border border-primary/20">
+                                                {selectedItem.user?.username?.substring(0, 2).toUpperCase() || 'S'}
+                                            </div>
+                                            <span className="text-lg font-bold truncate">{selectedItem.user?.username || t('serverActivities.details.system')}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em]">{t('serverActivities.details.originIp')}</span>
-                                        <span className="text-xl font-black font-mono text-white mt-1">{selectedItem.ip || t('serverActivities.details.localConsole')}</span>
+                                    <div className="flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 shrink-0">
+                                        <span className="text-[10px] font-black text-primary/50 uppercase tracking-widest">{t('serverActivities.details.timestamp')}</span>
+                                        <div className="flex items-center gap-3">
+                                            <Clock className="h-5 w-5 text-primary opacity-50" />
+                                            <span className="text-lg font-bold">{selectedItem.timestamp ? new Date(selectedItem.timestamp).toLocaleString() : '-'}</span>
+                                        </div>
                                     </div>
-                                </div>
-
-                                <div className="flex items-center gap-4">
-                                    <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/40">
-                                        <Hash className="h-6 w-6 text-primary" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em]">{t('serverActivities.details.entryId')}</span>
-                                        <span className="text-xl font-black font-mono text-white mt-1">#{selectedItem.id}</span>
-                                    </div>
+                                    {detailsPairs.map((pair) => (
+                                        <div key={pair.key} className="flex flex-col gap-2 p-5 rounded-3xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-all">
+                                            <span className="text-[10px] font-black text-primary/50 uppercase tracking-widest underline decoration-primary/20 decoration-2 underline-offset-4">{pair.key}</span>
+                                            <span className="text-base font-mono font-bold break-all leading-tight opacity-90 group-hover:opacity-100">{pair.value}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
-                            {/* Metadata Section - Ultra High Contrast */}
-                            {detailsPairs.length > 0 && (
-                                <div className="space-y-8">
-                                    <div className="flex items-center gap-3 border-b border-border/40 pb-4">
-                                        <Settings className="h-6 w-6 text-primary" />
-                                        <h4 className="text-xl font-black uppercase tracking-widest text-white">{t('serverActivities.details.metadataPayload')}</h4>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {detailsPairs.map((pair) => (
-                                            <div key={pair.key} className="flex flex-col gap-2 p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-primary/30 hover:bg-white/10 transition-all group">
-                                                <span className="text-[10px] font-black text-primary/70 uppercase tracking-widest">{pair.key}</span>
-                                                <span className="text-lg text-white font-mono break-all leading-tight">{pair.value}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                             {/* Raw JSON - Massive Code Block */}
-                             <div className="space-y-6">
-                                <div className="flex items-center justify-between border-b border-border/40 pb-4">
-                                    <div className="flex items-center gap-3">
-                                        <Terminal className="h-6 w-6 text-primary" />
-                                        <h4 className="text-xl font-black uppercase tracking-widest text-white">{t('serverActivities.details.diagnosticOutput')}</h4>
-                                    </div>
-                                    <Button variant="outline" size="sm" className="h-10 px-6 font-black uppercase tracking-wider border-border/40 hover:border-primary text-xs" onClick={() => {
-                                        navigator.clipboard.writeText(rawJson)
-                                        toast.success(t('serverActivities.details.payloadCopied'))
-                                    }}>
-                                        <Copy className="h-4 w-4 mr-2" /> {t('serverActivities.details.copyPayload')}
+                            {/* Raw Logs */}
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-3">
+                                        <div className="w-1.5 h-4 bg-primary rounded-full" />
+                                        {t('serverActivities.details.diagnosticOutput')}
+                                    </h3>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="h-8 px-4 font-black uppercase tracking-wider bg-white/5 border border-white/5 opacity-40 hover:opacity-100 hover:bg-primary/20"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(rawJson)
+                                            toast.success(t('serverActivities.details.payloadCopied'))
+                                        }}
+                                    >
+                                        <Copy className="h-3.5 w-3.5 mr-2" />
+                                        {t('serverActivities.details.copyPayload')}
                                     </Button>
                                 </div>
-                                <div className="relative group">
-                                    <div className="absolute inset-0 bg-primary/5 blur-3xl rounded-3xl -z-10 group-hover:bg-primary/10 transition-colors"></div>
-                                    <pre className="bg-black/60 text-emerald-400 p-8 rounded-3xl overflow-x-auto font-mono text-base border border-white/10 max-h-[500px] custom-scrollbar transition-all hover:bg-black/80 hover:border-primary/30 shadow-2xl leading-relaxed">
-                                        {rawJson}
+                                <div className="relative group h-full">
+                                    <pre className="h-full max-h-[600px] bg-black/40 text-emerald-400 p-8 rounded-4xl overflow-x-auto font-mono text-base border border-white/5 custom-scrollbar leading-relaxed backdrop-blur-3xl shadow-2xl">
+                                        {rawJson || '// No additional metadata available'}
                                     </pre>
                                 </div>
-                             </div>
+                            </div>
                         </div>
-                    )}
-                    
-                    <DialogFooter className="pt-4 mt-0 border-t border-border/40">
-                        <Button 
-                            variant="default" 
-                            onClick={() => setDetailsOpen(false)} 
-                            className="w-full sm:w-auto h-12 px-10 text-base font-black uppercase tracking-widest shadow-primary/20"
-                        >
-                            {t('serverActivities.details.closeEntry')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
+
+                        <DialogFooter className="border-t border-white/5 pt-8 mt-4 flex items-center justify-end">
+                            <Button 
+                                size="lg" 
+                                className="px-12 h-14 rounded-2xl font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/20"
+                                onClick={() => setDetailsOpen(false)}
+                            >
+                                {t('serverActivities.details.closeEntry')}
+                            </Button>
+                        </DialogFooter>
+                    </div>
+                )}
             </Dialog>
         </div>
     )
