@@ -384,17 +384,6 @@ export const getServerNavigationItems = (t: TFunction, serverUuid: string): Navi
       group: "management",
     },
     {
-      id: "server-logs",
-      name: t("navigation.items.logs"),
-      title: t("navigation.items.logs"),
-      url: `/server/${serverUuid}/logs`,
-      icon: FileText,
-      isActive: false,
-      category: "server",
-      group: "management",
-      permission: "activity.read",
-    },
-    {
       id: "server-activities",
       name: t("navigation.items.activities"),
       title: t("navigation.items.activities"),

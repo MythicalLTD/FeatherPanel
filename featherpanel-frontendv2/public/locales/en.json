@@ -578,7 +578,8 @@
       },
       "performance": {
         "network": "Network",
-        "no_data": "No data"
+        "no_data": "No data",
+        "cpu_load": "CPU Load"
       },
       "terminal": {
         "title": "Console",

@@ -6,7 +6,7 @@ import Sidebar from '@/components/Sidebar'
 import Navbar from '@/components/Navbar'
 import { cn } from '@/lib/utils'
 import BackgroundWrapper from '@/components/theme/BackgroundWrapper'
-import { getAdminNavigationItems, getMainNavigationItems } from '@/config/navigation'
+
 import { usePluginRoutes, getPluginPaths } from '@/hooks/usePluginRoutes'
 
 function getCookie(name: string): string | null {
@@ -32,45 +32,37 @@ export default function DashboardShell({
   const pluginData = usePluginRoutes()
   const pluginPaths = getPluginPaths(pluginData)
 
-  // Determine if this is a plugin page or full-width page
-  // Server console (without plugin path) should NOT be treated as a plugin page
-  const isServerConsolePage = pathname.match(/^\/server\/[^/]+$/)
-  const isPluginPage = (pathname.startsWith('/server/') && !isServerConsolePage) || 
-                       pathname.startsWith('/admin/') ||
-                       pathname.match(/^\/dashboard\/.+/)
-
-  // Get all built-in core paths from navigation config
-  // Mock translation function for extracting URLs
-  const mockT = (key: string) => key
-  const mockHasPermission = () => true
-  
-  // Get all navigation items (pass null for settings to get all possible paths)
-  const adminItems = getAdminNavigationItems(mockT, null)
-  const mainItems = getMainNavigationItems(mockT, null, mockHasPermission)
-  
-  const builtInPaths: string[] = []
-  // Extract URLs from all items
-  adminItems.forEach(item => {
-    if (item.url && !item.isPlugin) {
-      builtInPaths.push(item.url)
-    }
-  })
-  
-  mainItems.forEach(item => {
-    if (item.url && !item.isPlugin) {
-      builtInPaths.push(item.url)
-    }
-  })
+  // Check if current path starts with any built-in path (supports subpages like /dashboard/tickets/create)
+  // const isCoreFeaturePage = pathname === '/dashboard' || builtInPaths.some(corePath => pathname.startsWith(corePath))
   
   // Check if current path starts with any plugin path
-  const isActualPluginPage = pluginPaths.some(pluginPath => pathname.startsWith(pluginPath))
+  const isActualPluginPage = pluginPaths.some(pluginPath => {
+    // If it's a server page, we need to handle UUID matching
+    if (pathname.startsWith('/server/')) {
+        const uuid = pathname.split('/')[2]
+        if (uuid) {
+            // Check if this plugin path is intended for server activity
+            // The plugin path from getPluginPaths might be absolute like /minecraftpluginmanager
+            // We need to see if the current path matches /server/[uuid][pluginPath]
+            
+            // Clean up the plugin path to ensure it doesn't duplicate /server prefix
+            let cleanPluginPath = pluginPath
+            if (cleanPluginPath.startsWith('/server')) {
+                cleanPluginPath = cleanPluginPath.replace('/server', '')
+            }
+            if (!cleanPluginPath.startsWith('/')) {
+                cleanPluginPath = '/' + cleanPluginPath
+            }
+            
+            const constructedPath = `/server/${uuid}${cleanPluginPath}`
+            return pathname.startsWith(constructedPath)
+        }
+    }
+    return pathname.startsWith(pluginPath)
+  })
   
-  // Check if current path starts with any built-in path (supports subpages like /dashboard/tickets/create)
-  const isCoreFeaturePage = pathname === '/dashboard' || builtInPaths.some(corePath => pathname.startsWith(corePath))
-  
-  // Only apply full-width mode to actual plugin pages (not core features or server console)
-  // Use plugin paths if available, otherwise fall back to old detection
-  const isFullWidthMode = isActualPluginPage || (isPluginPage && !isCoreFeaturePage && !pathname.startsWith('/auth/'))
+  // Only apply full-width mode to actual plugin pages (as determined by the backend configuration)
+  const isFullWidthMode = isActualPluginPage
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
