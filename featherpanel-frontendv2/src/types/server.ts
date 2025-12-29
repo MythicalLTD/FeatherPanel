@@ -407,3 +407,32 @@ export interface DnsVerifyResponse {
   };
   message?: string;
 }
+
+export interface SubdomainDomain {
+  id: number;
+  uuid: string;
+  domain: string;
+}
+
+export interface SubdomainEntry {
+  id: number;
+  uuid: string;
+  domain: string;
+  subdomain: string;
+  record_type: string;
+  port?: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface SubdomainOverview {
+  current_total: number;
+  max_allowed: number;
+  domains: SubdomainDomain[];
+  subdomains: SubdomainEntry[];
+}
+
+export interface SubdomainCreateRequest {
+  domain_uuid: string;
+  subdomain: string;
+}
