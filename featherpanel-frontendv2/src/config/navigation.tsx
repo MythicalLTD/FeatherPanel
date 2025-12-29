@@ -519,8 +519,8 @@ export const getServerNavigationItems = (t: TFunction, serverUuid: string, setti
     });
   }
 
-  items.push(
-    {
+  if (isEnabled(settings?.server_allow_user_made_proxy)) {
+    items.push({
       id: "server-proxy",
       name: t("navigation.items.proxy"),
       title: t("navigation.items.proxy"),
@@ -530,7 +530,10 @@ export const getServerNavigationItems = (t: TFunction, serverUuid: string, setti
       category: "server",
       group: "networking",
       permission: "proxy.read",
-    },
+    });
+  }
+
+  items.push(
     {
       id: "server-subdomains",
       name: t("navigation.items.subdomains"),

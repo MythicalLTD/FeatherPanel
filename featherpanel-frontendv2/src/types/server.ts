@@ -364,3 +364,46 @@ export interface FirewallRulesResponse {
   };
   message?: string;
 }
+
+export interface Proxy {
+  id: number;
+  server_id: number;
+  domain: string;
+  ip: string;
+  port: number;
+  ssl: boolean;
+  use_lets_encrypt: boolean;
+  client_email?: string | null;
+  ssl_cert?: string | null;
+  ssl_key?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProxyCreateRequest {
+  domain: string;
+  port: string;
+  ssl: boolean;
+  use_lets_encrypt: boolean;
+  client_email?: string;
+  ssl_cert?: string;
+  ssl_key?: string;
+}
+
+export interface ProxiesResponse {
+  success: boolean;
+  data: {
+    proxies: Proxy[];
+  };
+  message?: string;
+}
+
+export interface DnsVerifyResponse {
+  success: boolean;
+  data: {
+    verified: boolean;
+    expected_ip?: string;
+    message?: string;
+  };
+  message?: string;
+}
