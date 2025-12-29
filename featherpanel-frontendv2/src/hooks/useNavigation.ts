@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { useSession } from "@/contexts/SessionContext";
 import { useSettings } from "@/contexts/SettingsContext";
