@@ -336,3 +336,31 @@ export interface AvailableAllocationsResponse {
   };
   message?: string;
 }
+
+export interface FirewallRule {
+  id: number;
+  created_at: string;
+  updated_at: string;
+  server_uuid: string;
+  remote_ip: string;
+  server_port: number;
+  priority: number;
+  type: "allow" | "block";
+  protocol: "tcp" | "udp";
+}
+
+export interface CreateFirewallRuleRequest {
+  remote_ip: string;
+  server_port: number;
+  priority?: number;
+  type: "allow" | "block";
+  protocol?: "tcp" | "udp";
+}
+
+export interface FirewallRulesResponse {
+  success: boolean;
+  data: {
+    data: FirewallRule[];
+  };
+  message?: string;
+}

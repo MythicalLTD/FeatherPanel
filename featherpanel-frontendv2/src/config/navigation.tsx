@@ -503,7 +503,10 @@ export const getServerNavigationItems = (t: TFunction, serverUuid: string, setti
       group: "networking",
       permission: "allocation.read",
     },
-    {
+  );
+
+  if (isEnabled(settings?.server_allow_user_made_firewall)) {
+    items.push({
       id: "server-firewall",
       name: t("navigation.items.firewall"),
       title: t("navigation.items.firewall"),
@@ -513,7 +516,10 @@ export const getServerNavigationItems = (t: TFunction, serverUuid: string, setti
       category: "server",
       group: "networking",
       permission: "firewall.read",
-    },
+    });
+  }
+
+  items.push(
     {
       id: "server-proxy",
       name: t("navigation.items.proxy"),
