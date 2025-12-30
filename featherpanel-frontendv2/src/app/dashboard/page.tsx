@@ -47,8 +47,8 @@ export default function DashboardPage() {
 		const fetchData = async () => {
 			// Fetch Servers
 			try {
-				const serversData = await serversApi.getServers()
-				const serversArray = Array.isArray(serversData) ? serversData : []
+				const response = await serversApi.getServers()
+				const serversArray = Array.isArray(response.servers) ? response.servers : []
 				// We only want top 3, but let's fetch all and slice for now (or backend pagination if available)
 				// Assuming recently created is better, or just first 3
 				setServers(serversArray.slice(0, 3))
