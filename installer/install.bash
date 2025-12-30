@@ -2870,6 +2870,10 @@ modify_compose_for_dev() {
     sudo sed -i "s|image: ghcr.io/mythicalltd/featherpanel-frontend:latest|image: ghcr.io/mythicalltd/featherpanel-frontend:${frontend_tag}|g" "$compose_file"
     sudo sed -i "s|image: ghcr.io/mythicalltd/featherpanel-frontend:.*|image: ghcr.io/mythicalltd/featherpanel-frontend:${frontend_tag}|g" "$compose_file"
     
+    # Replace frontendv2 image
+    sudo sed -i "s|image: ghcr.io/mythicalltd/featherpanel-frontendv2:latest|image: ghcr.io/mythicalltd/featherpanel-frontendv2:${frontend_tag}|g" "$compose_file"
+    sudo sed -i "s|image: ghcr.io/mythicalltd/featherpanel-frontendv2:.*|image: ghcr.io/mythicalltd/featherpanel-frontendv2:${frontend_tag}|g" "$compose_file"
+    
     log_success "docker-compose.yml modified for dev images"
 }
 
