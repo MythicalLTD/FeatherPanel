@@ -20,8 +20,11 @@ COPY . .
 # Build the application in standalone mode
 RUN pnpm build
 
-# Production stage with minimal Node.js
+# Production stage with nginx + Node.js
 FROM node:22-alpine AS production
+
+# Install nginx and supervisor
+RUN apk add --no-cache nginx supervisor
 
 # Set working directory
 WORKDIR /app
@@ -34,11 +37,36 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Expose port 3000
-EXPOSE 3000
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/http.d/default.conf
 
-# Set default backend URL (can be overridden)
-ENV BACKEND_URL=http://backend:8721
+# Create supervisor configuration
+RUN mkdir -p /var/log/supervisor && \
+    echo '[supervisord]' > /etc/supervisord.conf && \
+    echo 'nodaemon=true' >> /etc/supervisord.conf && \
+    echo 'user=root' >> /etc/supervisord.conf && \
+    echo '' >> /etc/supervisord.conf && \
+    echo '[program:nextjs]' >> /etc/supervisord.conf && \
+    echo 'command=node server.js' >> /etc/supervisord.conf && \
+    echo 'directory=/app' >> /etc/supervisord.conf && \
+    echo 'autostart=true' >> /etc/supervisord.conf && \
+    echo 'autorestart=true' >> /etc/supervisord.conf && \
+    echo 'stdout_logfile=/dev/stdout' >> /etc/supervisord.conf && \
+    echo 'stdout_logfile_maxbytes=0' >> /etc/supervisord.conf && \
+    echo 'stderr_logfile=/dev/stderr' >> /etc/supervisord.conf && \
+    echo 'stderr_logfile_maxbytes=0' >> /etc/supervisord.conf && \
+    echo '' >> /etc/supervisord.conf && \
+    echo '[program:nginx]' >> /etc/supervisord.conf && \
+    echo 'command=nginx -g "daemon off;"' >> /etc/supervisord.conf && \
+    echo 'autostart=true' >> /etc/supervisord.conf && \
+    echo 'autorestart=true' >> /etc/supervisord.conf && \
+    echo 'stdout_logfile=/dev/stdout' >> /etc/supervisord.conf && \
+    echo 'stdout_logfile_maxbytes=0' >> /etc/supervisord.conf && \
+    echo 'stderr_logfile=/dev/stderr' >> /etc/supervisord.conf && \
+    echo 'stderr_logfile_maxbytes=0' >> /etc/supervisord.conf
 
-# Start Next.js server
-CMD ["node", "server.js"]
+# Expose port 80 (nginx)
+EXPOSE 80
+
+# Start supervisor to run both nginx and Next.js
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
