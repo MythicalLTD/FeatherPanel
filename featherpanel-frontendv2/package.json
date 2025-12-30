@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "eslint --fix && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint --fix"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",

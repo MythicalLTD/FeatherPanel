@@ -3,6 +3,7 @@
 import { Fragment, ReactNode } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface HeadlessModalProps {
     isOpen: boolean
@@ -10,6 +11,7 @@ interface HeadlessModalProps {
     title: string
     children: ReactNode
     description?: string
+    className?: string
 }
 
 export function HeadlessModal({
@@ -17,7 +19,8 @@ export function HeadlessModal({
     onClose,
     title,
     children,
-    description
+    description,
+    className
 }: HeadlessModalProps) {
     return (
         <Transition appear show={isOpen} as={Fragment}>
@@ -45,7 +48,10 @@ export function HeadlessModal({
                             leaveFrom="opacity-100 scale-100"
                             leaveTo="opacity-0 scale-95"
                         >
-                            <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-card border border-border/50 p-6 text-left align-middle shadow-2xl transition-all relative">
+                            <Dialog.Panel className={cn(
+                                "w-full max-w-md transform overflow-hidden rounded-2xl bg-card border border-border/50 p-6 text-left align-middle shadow-2xl transition-all relative",
+                                className
+                            )}>
                                 <Dialog.Title
                                     as="h3"
                                     className="text-lg font-semibold leading-6 text-foreground flex justify-between items-center mb-4"

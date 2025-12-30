@@ -144,13 +144,14 @@
     "unlimited": "Unlimited",
     "time": {
       "just_now": "Just now",
-      "hours_ago": "{{count}} hour{{s}} ago",
+      "hours_ago": "{count} hour{s} ago",
       "yesterday": "Yesterday"
-    }
+    },
+    "saveChanges": "Save Changes"
   },
   "branding": {
-    "running_on": "Running on {{name}} v{{version}}",
-    "copyright": "{{company}}"
+    "running_on": "Running on {name} v{version}",
+    "copyright": "{company}"
   },
   "validation": {
     "required": "This field is required",
@@ -348,7 +349,7 @@
       "tryAgain": "Try Again",
       "refresh": "Refresh",
       "searchPlaceholder": "Search SSH keys...",
-      "totalKeys": "Total keys: {{count}}",
+      "totalKeys": "Total keys: {count}",
       "noSearchResults": "No SSH keys found",
       "tryDifferentSearch": "Try a different search term",
       "statuses": {
@@ -407,7 +408,7 @@
       "refresh": "Refresh",
       "apiDocs": "API Documentation",
       "searchPlaceholder": "Search API keys...",
-      "totalKeys": "Total keys: {{count}}",
+      "totalKeys": "Total keys: {count}",
       "noSearchResults": "No API keys found",
       "tryDifferentSearch": "Try a different search term",
       "importantInfo": {
@@ -441,7 +442,7 @@
       "noSearchResults": "No activities found",
       "tryDifferentSearch": "Try a different search term",
       "justNow": "Just now",
-      "hoursAgo": "{{hours}} hours ago",
+      "hoursAgo": "{hours} hours ago",
       "yesterday": "Yesterday"
     },
     "mail": {
@@ -457,19 +458,19 @@
       "tryAgain": "Try Again",
       "refresh": "Refresh",
       "searchPlaceholder": "Search emails...",
-      "totalMails": "Total emails: {{count}}",
+      "totalMails": "Total emails: {count}",
       "noSearchResults": "No emails found",
       "tryDifferentSearch": "Try a different search term",
       "justNow": "Just now",
-      "hoursAgo": "{{hours}} hours ago",
+      "hoursAgo": "{hours} hours ago",
       "yesterday": "Yesterday",
       "status": {
         "pending": "Pending",
         "sent": "Sent",
         "failed": "Failed"
       },
-      "showingMails": "Showing {{from}} to {{to}} of {{total}} emails",
-      "totalMailsCount": "{{count}} emails",
+      "showingMails": "Showing {from} to {to} of {total} emails",
+      "totalMailsCount": "{count} emails",
       "mailContent": "Mail Content"
     },
     "licenses": {
@@ -568,8 +569,8 @@
       "list": "List"
     },
     "pagination": {
-      "showing": "Showing {{from}} to {{to}} of {{total}} servers",
-      "page": "Page {{current}} of {{total}}"
+      "showing": "Showing {from} to {to} of {total} servers",
+      "page": "Page {current} of {total}"
     },
     "console": {
       "loading": "Loading server...",
@@ -586,7 +587,7 @@
         "address": "Server Address",
         "uptime": "Wings Uptime",
         "ping": "WebSocket Ping",
-        "limit": "Limit: {{limit}}",
+        "limit": "Limit: {limit}",
         "unlimited": "Unlimited",
         "copied": "Server address copied to clipboard",
         "copy_error": "Failed to copy address",
@@ -1075,7 +1076,7 @@
       "title": "Java Version Incompatibility Detected",
       "description": "The server detected an incorrect Java version.",
       "recommendation": "We detected that your server requires a different Java version than what is currently selected.",
-      "detectedVersion": "Detected requirement: Java {{version}}",
+      "detectedVersion": "Detected requirement: Java {version}",
       "availableImages": "Available Docker Images",
       "selectedImage": "Selected Image",
       "updateImage": "Update Docker Image",
@@ -1125,7 +1126,7 @@
     "noActivitiesDescription": "This server has no recorded activity yet.",
     "noActivitiesSearchDescription": "Try adjusting your search query or filters to find what you are looking for.",
     "pagination": {
-      "showing": "Showing {{from}} - {{to}} of {{total}}",
+      "showing": "Showing {from} - {to} of {total}",
       "prev": "Prev",
       "next": "Next"
     },
@@ -1174,7 +1175,7 @@
     "createdAt": "Created At",
     "password": "Password",
     "databaseLimitReached": "Database limit reached",
-    "databaseLimitReachedDescription": "You have reached the maximum number of databases for this server (limit: {{limit}}). Please delete some databases to create a new one.",
+    "databaseLimitReachedDescription": "You have reached the maximum number of databases for this server (limit: {limit}). Please delete some databases to create a new one.",
     "sensitiveInfoWarning": "Sensitive Information Warning",
     "sensitiveInfoDescription": "This dialog contains sensitive database credentials including passwords. Please ensure you are in a secure environment before proceeding.",
     "rememberChoice": "Remember my choice and do not show this warning again",
@@ -1203,7 +1204,7 @@
     "noDatabasesDescription": "Create your first database to start storing and managing your data",
     "noDatabasesNoLimit": "This server does not have database access enabled",
     "confirmDeleteTitle": "Delete Database",
-    "confirmDeleteDescription": "Are you sure you want to delete the database \"{{database}}\"? This action cannot be undone and will remove all data.",
+    "confirmDeleteDescription": "Are you sure you want to delete the database \"{database}\"? This action cannot be undone and will remove all data.",
     "confirmDelete": "Delete Database",
     "databaseNameRequired": "Database name is required",
     "noDatabaseHosts": "No database hosts available",
@@ -1219,7 +1220,7 @@
     "searchPlaceholder": "Search backups...",
     "refresh": "Refresh",
     "backupLimitReached": "Backup limit reached",
-    "backupLimitReachedDescription": "You have reached the maximum number of backups for this server (limit: {{limit}}). Please delete some backups to create a new one.",
+    "backupLimitReachedDescription": "You have reached the maximum number of backups for this server (limit: {limit}). Please delete some backups to create a new one.",
     "createBackup": "Create Backup",
     "createBackupDescription": "Create a new backup of your server data.",
     "name": "Backup Name",
@@ -1262,7 +1263,7 @@
     "noBackups": "Oh... It looks like there are no backups here",
     "noBackupsDescription": "Create your first backup to protect your server data",
     "noBackupsNoLimit": "This server does not have backup access enabled",
-    "viewAllBackups": "View all {{count}} backups",
+    "viewAllBackups": "View all {count} backups",
     "lockConfirm": "Are you sure you want to lock this backup? Locked backups cannot be deleted or restored.",
     "unlockConfirm": "Are you sure you want to unlock this backup? This will allow deletion and restoration.",
     "lock": "Lock",
@@ -1327,7 +1328,7 @@
     "wipeAllFilesHelp": "If enabled, deletes ALL files and folders in the server root directory before importing. This ensures a completely clean import.",
     "wipeAllFilesWarning": "⚠️ This will permanently delete ALL existing server files before importing!",
     "wipingAllFiles": "Wiping all server files...",
-    "wipeAllFilesSuccess": "Successfully wiped {{count}} file(s) before import",
+    "wipeAllFilesSuccess": "Successfully wiped {count} file(s) before import",
     "wipeAllFilesWarningPartial": "Warning: Failed to wipe all files, but continuing with import",
     "serverMustBeOffline": "Server Must Be Offline",
     "serverMustBeOfflineDescription": "The server must be stopped before you can import files. Please stop the server and try again.",
@@ -1375,7 +1376,7 @@
     "rules": "Rules",
     "allow": "Allow",
     "block": "Block",
-    "priorityLabel": "Priority: {{priority}}",
+    "priorityLabel": "Priority: {priority}",
     "createdAt": "Created",
     "updatedAt": "Updated",
     "editRule": "Edit Rule",
@@ -1594,5 +1595,382 @@
     "confirmDelete": "Delete Task",
     "failedToFetch": "Failed to load tasks.",
     "noSchedulePermission": "You do not have permission to view schedule tasks."
+  },
+  "serverSubusers": {
+    "title": "Subusers",
+    "description": "Manage subusers and their permissions for this server",
+    "searchPlaceholder": "Search subusers...",
+    "search": "Search",
+    "addSubuser": "Add Subuser",
+    "addSubuserDescription": "Add a new subuser by email and assign permissions",
+    "subusers": "Subusers",
+    "subusersDescription": "Users with access to this server",
+    "management": "Subuser Management",
+    "searchDescription": "Filter the list by username or email",
+    "delete": "Delete",
+    "refresh": "Refresh",
+    "editSubuser": "Edit Subuser",
+    "editSubuserDescription": "Modify subuser permissions",
+    "managePermissions": "Manage Permissions",
+    "managePermissionsDescription": "Select the specific permissions this subuser should have access to. Choose individual permissions or select all to grant full access.",
+    "permissions": "Permissions",
+    "permissionsHelp": "Full access is granted by default with all permissions enabled.",
+    "emailHelp": "Enter the email address of the user you want to add as a subuser",
+    "addSubuserDialogDescription": "Enter the email address of the user you want to add",
+    "emailLabel": "Email",
+    "emailPlaceholder": "Enter email address",
+    "add": "Add",
+    "createdAt": "Created At",
+    "currentPermissions": "Current Permissions",
+    "addPermission": "Add Permission",
+    "selectPermission": "Select permission to add",
+    "noSubusers": "No Subusers",
+    "noSubusersDescription": "No subusers have been added to this server yet. Add one to get started.",
+    "noResults": "No Results Found",
+    "noResultsDescription": "No subusers match your search criteria.",
+    "clearSearch": "Clear Search",
+    "showing": "Showing",
+    "of": "of",
+    "confirmDeleteTitle": "Delete Subuser",
+    "confirmDeleteDescription": "Are you sure you want to remove {email} from this server? This action cannot be undone.",
+    "confirmDelete": "Delete",
+    "noSubuserManagementPermission": "Only the server owner can manage subusers.",
+    "failedToFetch": "Failed to fetch subusers",
+    "createFailed": "Failed to create subuser",
+    "createSuccess": "Subuser created successfully",
+    "failedToCreate": "Failed to create subuser",
+    "created": "Subuser created successfully",
+    "updateFailed": "Failed to update subuser",
+    "updateSuccess": "Subuser updated successfully",
+    "deleteFailed": "Failed to delete subuser",
+    "deleteSuccess": "Subuser deleted successfully",
+    "deleted": "Subuser deleted successfully",
+    "failedToDelete": "Failed to delete subuser",
+    "noSubusersFound": "No subusers found",
+    "addPermissionFailed": "Failed to add permission",
+    "addPermissionSuccess": "Permission added successfully",
+    "removePermissionFailed": "Failed to remove permission",
+    "removePermissionSuccess": "Permission removed successfully",
+    "fullAccess": "Full Access",
+    "user": "User",
+    "added": "Added",
+    "select": "Select",
+    "selectUser": "Select User",
+    "email": "Email",
+    "fillRequiredFields": "Please fill in all required fields",
+    "searchFailed": "Failed to search users",
+    "nA": "N/A",
+    "fullAccessGranted": "Full Access Granted",
+    "fullAccessDescription": "New subusers automatically receive full access with all permissions enabled.",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "permissionsSelected": "permission(s) selected",
+    "failedToUpdate": "Failed to update permissions",
+    "permissionCategories": {
+      "activity": {
+        "name": "Activity",
+        "description": "Permissions that control a user's ability to view server activity.",
+        "permissions": {
+          "read": {
+            "name": "Read",
+            "description": "Allows a user to view server activity."
+          }
+        }
+      },
+      "subdomain": {
+        "name": "Subdomain",
+        "description": "Permissions that control a user's ability to manage subdomains for this server.",
+        "permissions": {
+          "create": {
+            "name": "Create",
+            "description": "Allows a user to create new subdomains for this server."
+          },
+          "read": {
+            "name": "Read",
+            "description": "Allows a user to view subdomains for this server."
+          },
+          "update": {
+            "name": "Update",
+            "description": "Allows a user to update subdomains for this server."
+          },
+          "delete": {
+            "name": "Delete",
+            "description": "Allows a user to delete subdomains for this server."
+          },
+          "manage": {
+            "name": "Manage",
+            "description": "Allows a user to create, update, delete, and sync subdomains for this server."
+          }
+        }
+      },
+      "websocket": {
+        "name": "WebSocket",
+        "description": "Allows a user to connect to the server console via WebSocket.",
+        "permissions": {
+          "connect": {
+            "name": "Connect",
+            "description": "Allows a user to connect to the server console via WebSocket."
+          }
+        }
+      },
+      "control": {
+        "name": "Control",
+        "description": "Permissions that control a user's ability to control the power state of a server, or send commands.",
+        "permissions": {
+          "console": {
+            "name": "Console",
+            "description": "Allows a user to send commands to the server instance via the console."
+          },
+          "start": {
+            "name": "Start",
+            "description": "Allows a user to start the server if it is stopped."
+          },
+          "stop": {
+            "name": "Stop",
+            "description": "Allows a user to stop a server if it is running."
+          },
+          "restart": {
+            "name": "Restart",
+            "description": "Allows a user to perform a server restart. This allows them to start the server if it is offline, but not put the server in a completely stopped state."
+          }
+        }
+      },
+      "user": {
+        "name": "User",
+        "description": "Permissions that allow a user to manage other subusers on a server. They will never be able to edit their own account, or assign permissions they do not have themselves.",
+        "permissions": {
+          "create": {
+            "name": "Create",
+            "description": "Allows a user to create new subusers for the server."
+          },
+          "read": {
+            "name": "Read",
+            "description": "Allows the user to view subusers and their permissions for the server."
+          },
+          "update": {
+            "name": "Update",
+            "description": "Allows a user to modify other subusers."
+          },
+          "delete": {
+            "name": "Delete",
+            "description": "Allows a user to delete a subuser from the server."
+          }
+        }
+      },
+      "file": {
+        "name": "File",
+        "description": "Permissions that control a user's ability to modify the filesystem for this server.",
+        "permissions": {
+          "create": {
+            "name": "Create",
+            "description": "Allows a user to create additional files and folders via the Panel or direct upload."
+          },
+          "read": {
+            "name": "Read",
+            "description": "Allows a user to view the contents of a directory, but not view the contents of or download files."
+          },
+          "readContent": {
+            "name": "Read Content",
+            "description": "Allows a user to view the contents of a given file. This will also allow the user to download files."
+          },
+          "update": {
+            "name": "Update",
+            "description": "Allows a user to update the contents of an existing file or directory."
+          },
+          "delete": {
+            "name": "Delete",
+            "description": "Allows a user to delete files or directories."
+          },
+          "archive": {
+            "name": "Archive",
+            "description": "Allows a user to archive the contents of a directory as well as decompress existing archives on the system."
+          },
+          "sftp": {
+            "name": "SFTP",
+            "description": "Allows a user to connect to SFTP and manage server files using the other assigned file permissions."
+          }
+        }
+      },
+      "backup": {
+        "name": "Backup",
+        "description": "Permissions that control a user's ability to generate and manage server backups.",
+        "permissions": {
+          "create": {
+            "name": "Create",
+            "description": "Allows a user to create new backups for this server."
+          },
+          "read": {
+            "name": "Read",
+            "description": "Allows a user to view all backups that exist for this server."
+          },
+          "delete": {
+            "name": "Delete",
+            "description": "Allows a user to remove backups from the system."
+          },
+          "download": {
+            "name": "Download",
+            "description": "Allows a user to download a backup for the server. Danger: this allows a user to access all files for the server in the backup."
+          },
+          "restore": {
+            "name": "Restore",
+            "description": "Allows a user to restore a backup for the server. Danger: this allows the user to delete all of the server files in the process."
+          }
+        }
+      },
+      "allocation": {
+        "name": "Allocation",
+        "description": "Permissions that control a user's ability to modify the port allocations for this server.",
+        "permissions": {
+          "read": {
+            "name": "Read",
+            "description": "Allows a user to view all allocations currently assigned to this server. Users with any level of access to this server can always view the primary allocation."
+          },
+          "create": {
+            "name": "Create",
+            "description": "Allows a user to assign additional allocations to the server."
+          },
+          "update": {
+            "name": "Update",
+            "description": "Allows a user to change the primary server allocation and attach notes to each allocation."
+          },
+          "delete": {
+            "name": "Delete",
+            "description": "Allows a user to delete an allocation from the server."
+          }
+        }
+      },
+      "startup": {
+        "name": "Startup",
+        "description": "Permissions that control a user's ability to view this server's startup parameters.",
+        "permissions": {
+          "read": {
+            "name": "Read",
+            "description": "Allows a user to view the startup parameters for a server."
+          },
+          "update": {
+            "name": "Update",
+            "description": "Allows a user to modify startup parameters for a server."
+          },
+          "docker_image": {
+            "name": "Update Docker Image",
+            "description": "Allows a user to modify the Docker image used for a server."
+          }
+        }
+      },
+      "database": {
+        "name": "Database",
+        "description": "Permissions that control a user's ability to create and manage server databases.",
+        "permissions": {
+          "create": {
+            "name": "Create",
+            "description": "Allows a user to create new databases for this server."
+          },
+          "read": {
+            "name": "Read",
+            "description": "Allows a user to view all databases that exist for this server."
+          },
+          "update": {
+            "name": "Update",
+            "description": "Allows a user to view passwords for databases."
+          },
+          "delete": {
+            "name": "Delete",
+            "description": "Allows a user to remove databases from the system."
+          }
+        }
+      },
+      "schedule": {
+        "name": "Schedule",
+        "description": "Permissions that control a user's ability to manage automated tasks for this server.",
+        "permissions": {
+          "create": {
+            "name": "Create",
+            "description": "Allows a user to create new schedules for this server."
+          },
+          "read": {
+            "name": "Read",
+            "description": "Allows a user to view all schedules that exist for this server."
+          },
+          "update": {
+            "name": "Update",
+            "description": "Allows a user to modify schedules for a server."
+          },
+          "delete": {
+            "name": "Delete",
+            "description": "Allows a user to remove schedules from the system."
+          }
+        }
+      },
+      "settings": {
+        "name": "Settings",
+        "description": "Permissions that control a user's ability to view and modify server settings.",
+        "permissions": {
+          "rename": {
+            "name": "Rename",
+            "description": "Allows a user to rename a server."
+          },
+          "reinstall": {
+            "name": "Reinstall",
+            "description": "Allows a user to trigger a server reinstallation."
+          }
+        }
+      },
+      "firewall": {
+        "name": "Firewall",
+        "description": "Permissions that control a user's ability to manage firewall rules for this server.",
+        "permissions": {
+          "read": {
+            "name": "Read",
+            "description": "Allows a user to view the firewall rules for this server."
+          },
+          "manage": {
+            "name": "Manage",
+            "description": "Allows a user to create, update, and delete firewall rules for this server."
+          }
+        }
+      },
+      "proxy": {
+        "name": "Proxy",
+        "description": "Permissions that control a user's ability to manage proxy rules for this server.",
+        "permissions": {
+          "read": {
+            "name": "Read",
+            "description": "Allows a user to view the proxy rules for this server."
+          },
+          "manage": {
+            "name": "Manage",
+            "description": "Allows a user to create, update, and delete proxy rules for this server."
+          }
+        }
+      },
+      "import": {
+        "name": "Import",
+        "description": "Permissions that control a user's ability to manage server imports.",
+        "permissions": {
+          "read": {
+            "name": "Read",
+            "description": "Allows a user to view server imports."
+          },
+          "manage": {
+            "name": "Manage",
+            "description": "Allows a user to create and manage server imports."
+          }
+        }
+      },
+      "templates": {
+        "name": "Templates",
+        "description": "Permissions that control a user's ability to manage and install server templates.",
+        "permissions": {
+          "read": {
+            "name": "Read",
+            "description": "Allows a user to view available server templates."
+          },
+          "install": {
+            "name": "Install",
+            "description": "Allows a user to install templates on the server."
+          }
+        }
+      }
+    }
   }
 }

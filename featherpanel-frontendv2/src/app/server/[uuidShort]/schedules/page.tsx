@@ -148,7 +148,7 @@ export default function ServerSchedulesPage() {
 
     if (loading && schedules.length === 0) {
         return (
-            <div key={pathname} className="flex flex-col items-center justify-center py-24 animate-in fade-in duration-700">
+            <div key={pathname} className="flex flex-col items-center justify-center py-24">
                 <Loader2 className="h-12 w-12 animate-spin text-primary opacity-50" />
                 <p className="mt-4 text-muted-foreground font-medium animate-pulse">{t("common.loading")}</p>
             </div>
@@ -171,7 +171,7 @@ export default function ServerSchedulesPage() {
     }
 
     return (
-        <div key={pathname} className="space-y-8 pb-12 animate-in fade-in duration-700">
+        <div key={pathname} className="space-y-8 pb-12">
              {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-2">

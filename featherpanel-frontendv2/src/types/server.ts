@@ -500,3 +500,45 @@ export interface TaskCreateRequest {
 export interface TaskUpdateRequest extends TaskCreateRequest {
   sequence_id?: number;
 }
+export interface Subuser {
+  id: number;
+  server_id: number;
+  user_id: number;
+  username?: string;
+  email: string;
+  permissions: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubuserPagination {
+  current_page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+  from: number;
+  to: number;
+}
+
+export interface SubusersResponse {
+  success: boolean;
+  data: {
+    data: Subuser[];
+    pagination: SubuserPagination;
+  };
+  message?: string;
+}
+
+export interface SubuserPermissionsResponse {
+  success: boolean;
+  data: {
+    permissions: string[];
+    grouped_permissions: Record<
+      string,
+      {
+        permissions: string[];
+      }
+    >;
+  };
+  message?: string;
+}
