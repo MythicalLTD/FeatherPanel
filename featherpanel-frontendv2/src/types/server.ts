@@ -58,6 +58,23 @@ export interface ServerSpell {
   author?: string;
   version?: string;
   docker_images?: string | Record<string, string>;
+  startup?: string;
+  realm_id?: number;
+}
+
+export interface Variable {
+  id: number;
+  server_id: number;
+  variable_id: number;
+  variable_value: string;
+  name: string;
+  description: string;
+  env_variable: string;
+  default_value: string;
+  user_viewable: number;
+  user_editable: number;
+  rules: string;
+  field_type: string;
 }
 
 export interface ServerStats {
@@ -132,6 +149,7 @@ export interface Server {
 
   // Additional metadata
   docker_image?: string;
+  image?: string;
   startup?: string;
   environment?: Record<string, string>;
 }
@@ -539,6 +557,31 @@ export interface SubuserPermissionsResponse {
         permissions: string[];
       }
     >;
+  };
+  message?: string;
+}
+
+export interface RealmsResponse {
+  success: boolean;
+  data: {
+    realms: ServerRealm[];
+  };
+  message?: string;
+}
+
+export interface SpellsResponse {
+  success: boolean;
+  data: {
+    spells: ServerSpell[];
+  };
+  message?: string;
+}
+
+export interface SpellDetailsResponse {
+  success: boolean;
+  data: {
+    spell: ServerSpell;
+    variables: Variable[];
   };
   message?: string;
 }

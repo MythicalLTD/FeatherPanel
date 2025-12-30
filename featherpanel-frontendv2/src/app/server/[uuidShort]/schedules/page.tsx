@@ -79,7 +79,7 @@ export default function ServerSchedulesPage() {
         } finally {
             setLoading(false)
         }
-    }, [uuidShort, t])
+    }, [uuidShort, settings?.server_allow_schedules, t])
 
     React.useEffect(() => {
         if (canRead) {

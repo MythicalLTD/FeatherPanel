@@ -931,7 +931,6 @@ EOF
     sudo systemctl enable featherwings
     
     log_success "FeatherWings daemon installed successfully."
-    log_warn "This is a CANARY release of FeatherWings - not recommended for production use."
     log_info "Next steps:"
     log_info "1. Create a node in your FeatherPanel admin panel"
     log_info "2. Copy the configuration from the node to /etc/featherpanel/config.yml"
