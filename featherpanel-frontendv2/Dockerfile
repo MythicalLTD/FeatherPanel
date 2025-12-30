@@ -48,6 +48,7 @@ RUN mkdir -p /var/log/supervisor && \
     echo '' >> /etc/supervisord.conf && \
     echo '[program:nextjs]' >> /etc/supervisord.conf && \
     echo 'command=node server.js' >> /etc/supervisord.conf && \
+    echo 'environment=HOSTNAME="0.0.0.0"' >> /etc/supervisord.conf && \
     echo 'directory=/app' >> /etc/supervisord.conf && \
     echo 'autostart=true' >> /etc/supervisord.conf && \
     echo 'autorestart=true' >> /etc/supervisord.conf && \
