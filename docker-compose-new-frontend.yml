@@ -74,7 +74,7 @@ services:
 
   frontend:
     image: ghcr.io/mythicalltd/featherpanel-frontendv2:latest
-    container_name: featherpanel_frontendv2
+    container_name: featherpanel_frontend
     restart: unless-stopped
     environment:
       - BACKEND_URL=http://backend:8721
