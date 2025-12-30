@@ -403,7 +403,7 @@ export default function ServerAllocationsPage() {
                     <Button 
                          size="lg"
                          onClick={handleAutoAllocate}
-                         className="shadow-xl shadow-primary/20 hover:shadow-primary/30"
+                         className="h-14 px-10 text-lg shadow-2xl shadow-primary/20"
                     >
                          {t("serverAllocations.createFirstAllocation")}
                     </Button>

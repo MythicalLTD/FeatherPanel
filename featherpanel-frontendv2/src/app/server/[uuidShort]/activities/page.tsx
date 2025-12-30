@@ -434,7 +434,7 @@ export default function ServerActivityPage({ params }: { params: Promise<{ uuidS
                                 setSelectedEventFilter('all')
                                 setTimeout(() => fetchActivities(1), 0)
                             }}
-                            className="px-8 h-12 rounded-xl"
+                            className="h-14 px-10 text-lg rounded-2xl"
                         >
                             {t('common.clear')}
                         </Button>
