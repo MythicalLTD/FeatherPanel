@@ -436,3 +436,43 @@ export interface SubdomainCreateRequest {
   domain_uuid: string;
   subdomain: string;
 }
+
+export interface Schedule {
+  id: number;
+  server_id: number;
+  name: string;
+  cron_day_of_week: string;
+  cron_month: string;
+  cron_day_of_month: string;
+  cron_hour: string;
+  cron_minute: string;
+  is_active: number;
+  is_processing: number;
+  only_when_online: number;
+  last_run_at: string | null;
+  next_run_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScheduleCreateRequest {
+  name: string;
+  cron_minute: string;
+  cron_hour: string;
+  cron_day_of_month: string;
+  cron_month: string;
+  cron_day_of_week: string;
+  only_when_online: number;
+  is_active: number;
+}
+
+export type ScheduleUpdateRequest = ScheduleCreateRequest;
+
+export interface SchedulePagination {
+  current_page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+  from: number;
+  to: number;
+}

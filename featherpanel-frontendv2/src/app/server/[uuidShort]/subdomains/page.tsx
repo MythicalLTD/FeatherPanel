@@ -10,7 +10,6 @@ import {
     Trash2,
     RefreshCw,
     AlertTriangle,
-    Shield,
     Globe,
     Lock
 } from "lucide-react"
