@@ -212,3 +212,134 @@ jobs:
             ghcr.io/mythicalltd/featherpanel-frontend:dev
             ghcr.io/mythicalltd/featherpanel-frontend:dev-${{ steps.tags.outputs.branch }}
             ghcr.io/mythicalltd/featherpanel-frontend:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}
+
+  build-frontendv2:
+    name: Build & Push Frontend v2 (Dev) - ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+            cache-key: amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            cache-key: arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+      - name: Set image tags
+        id: tags
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          BRANCH_NAME="${{ github.ref_name }}"
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ github.event.inputs.branch }}" ]; then
+            BRANCH_NAME="${{ github.event.inputs.branch }}"
+          fi
+          # Sanitize branch name for Docker tag (replace / with -)
+          BRANCH_NAME=$(echo "$BRANCH_NAME" | sed 's/\//-/g')
+          echo "dev=dev" >> $GITHUB_OUTPUT
+          echo "sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "full=dev-$BRANCH_NAME-$SHORT_SHA" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ./featherpanel-frontendv2/node_modules
+          key: ${{ runner.os }}-pnpm-v2-${{ matrix.cache-key }}-${{ hashFiles('featherpanel-frontendv2/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-v2-${{ matrix.cache-key }}-
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set platform tag
+        id: platform-tag
+        run: |
+          PLATFORM_TAG=$(echo "${{ matrix.platform }}" | sed 's/\//-/g')
+          echo "tag=$PLATFORM_TAG" >> $GITHUB_OUTPUT
+
+      - name: Build & Push Frontend v2
+        uses: docker/build-push-action@v5
+        with:
+          context: ./featherpanel-frontendv2
+          platforms: ${{ matrix.platform }}
+          push: true
+          cache-from: |
+            type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontendv2:buildcache-${{ matrix.cache-key }}
+            type=gha
+          cache-to: |
+            type=registry,ref=ghcr.io/mythicalltd/featherpanel-frontendv2:buildcache-${{ matrix.cache-key }},mode=max
+            type=gha,mode=max
+          tags: |
+            ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-${{ steps.platform-tag.outputs.tag }}
+
+  manifest-frontendv2:
+    name: Create Multi-Arch Manifest - Frontend v2
+    runs-on: ubuntu-latest
+    needs: build-frontendv2
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+      - name: Set image tags
+        id: tags
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          BRANCH_NAME="${{ github.ref_name }}"
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ github.event.inputs.branch }}" ]; then
+            BRANCH_NAME="${{ github.event.inputs.branch }}"
+          fi
+          # Sanitize branch name for Docker tag (replace / with -)
+          BRANCH_NAME=$(echo "$BRANCH_NAME" | sed 's/\//-/g')
+          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for platform-specific images
+        run: |
+          echo "Waiting for platform-specific images to be available..."
+          sleep 10
+
+      - name: Create and push manifest
+        run: |
+          docker buildx imagetools create --tag ghcr.io/mythicalltd/featherpanel-frontendv2:dev \
+            ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-amd64 \
+            ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-arm64
+          docker buildx imagetools create --tag ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }} \
+            ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-amd64 \
+            ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-arm64
+          docker buildx imagetools create --tag ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }} \
+            ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-amd64 \
+            ghcr.io/mythicalltd/featherpanel-frontendv2:dev-${{ steps.tags.outputs.branch }}-${{ steps.tags.outputs.sha }}-linux-arm64
