@@ -1537,7 +1537,9 @@
     "confirmDeleteDescription": "Are you sure you want to delete '{scheduleName}'? This action cannot be undone.",
     "confirmDelete": "Delete",
     "failedToFetch": "Failed to load schedules.",
-    "noSchedulePermission": "You do not have permission to view schedules."
+    "noSchedulePermission": "You do not have permission to view schedules.",
+    "featureDisabled": "Schedules Disabled",
+    "featureDisabledDescription": "The schedules feature has been disabled by the administrator. Please contact support if you need to automate server tasks."
   },
   "serverTasks": {
     "title": "Schedule Tasks",
@@ -1666,6 +1668,8 @@
     "deselectAll": "Deselect All",
     "permissionsSelected": "permission(s) selected",
     "failedToUpdate": "Failed to update permissions",
+    "featureDisabled": "Subuser Management Disabled",
+    "featureDisabledDescription": "Subuser management has been disabled by the administrator. Please contact the server owner if you need to manage access.",
     "permissionCategories": {
       "activity": {
         "name": "Activity",

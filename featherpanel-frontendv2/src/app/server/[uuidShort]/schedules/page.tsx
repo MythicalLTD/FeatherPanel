@@ -26,13 +26,14 @@ import { HeadlessModal } from "@/components/ui/headless-modal"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
-import { cn } from "@/lib/utils"
+import { cn, isEnabled } from "@/lib/utils"
 import type { Schedule, SchedulePagination } from "@/types/server"
 
 export default function ServerSchedulesPage() {
     const { uuidShort } = useParams() as { uuidShort: string }
     const router = useRouter()
     const pathname = usePathname()
+	const { settings } = useSettings() 
     const { t } = useTranslation()
     const { loading: settingsLoading } = useSettings()
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
@@ -62,7 +63,7 @@ export default function ServerSchedulesPage() {
 
     // Fetch Data
     const fetchData = React.useCallback(async (page = 1) => {
-        if (!uuidShort) return
+        if (!uuidShort || !isEnabled(settings?.server_allow_schedules)) return
         setLoading(true)
         try {
             const { data } = await axios.get<{success: boolean, data: {data: Schedule[], pagination: SchedulePagination}}>(`/api/user/servers/${uuidShort}/schedules`, {
@@ -145,6 +146,28 @@ export default function ServerSchedulesPage() {
     }
 
     if (permissionsLoading || settingsLoading) return null
+
+    if (!isEnabled(settings?.server_allow_schedules)) {
+        return (
+            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 animate-in fade-in duration-700">
+                <div className="relative">
+                    <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full scale-150" />
+                    <div className="relative h-32 w-32 rounded-3xl bg-red-500/10 flex items-center justify-center border-2 border-red-500/20 rotate-3">
+                        <Lock className="h-16 w-16 text-red-500" />
+                    </div>
+                </div>
+                <div className="max-w-md space-y-3 px-4">
+                    <h2 className="text-3xl font-black uppercase tracking-tight">{t("serverSchedules.featureDisabled")}</h2>
+                    <p className="text-muted-foreground text-lg leading-relaxed font-medium">
+                        {t("serverSchedules.featureDisabledDescription")}
+                    </p>
+                </div>
+                <Button variant="outline" size="lg" className="mt-8 rounded-2xl h-14 px-10" onClick={() => router.push(`/server/${uuidShort}`)}>
+                    {t("common.goBack")}
+                </Button>
+            </div>
+        )
+    }
 
     if (loading && schedules.length === 0) {
         return (

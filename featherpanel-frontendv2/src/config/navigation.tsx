@@ -444,9 +444,8 @@ export const getServerNavigationItems = (t: TFunction, serverUuid: string, setti
     });
   }
 
-  items.push(
-    // Automation
-    {
+  if (isEnabled(settings?.server_allow_schedules)) {
+    items.push({
       id: "server-schedules",
       name: t("navigation.items.schedules"),
       title: t("navigation.items.schedules"),
@@ -456,9 +455,12 @@ export const getServerNavigationItems = (t: TFunction, serverUuid: string, setti
       category: "server",
       group: "automation",
       permission: "schedule.read",
-    },
-    // Configuration
-    {
+    });
+  }
+
+  // Configuration
+  if (isEnabled(settings?.server_allow_subusers)) {
+    items.push({
       id: "server-users",
       name: t("navigation.items.users"),
       title: t("navigation.items.users"),
@@ -468,7 +470,10 @@ export const getServerNavigationItems = (t: TFunction, serverUuid: string, setti
       category: "server",
       group: "configuration",
       permission: "user.read",
-    },
+    });
+  }
+
+  items.push(
     {
       id: "server-startup",
       name: t("navigation.items.startup"),

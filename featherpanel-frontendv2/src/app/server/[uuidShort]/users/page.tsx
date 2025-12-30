@@ -24,7 +24,7 @@ import { HeadlessModal } from "@/components/ui/headless-modal"
 import { toast } from "sonner"
 import { useServerPermissions } from "@/hooks/useServerPermissions"
 import { useSettings } from "@/contexts/SettingsContext"
-import { cn } from "@/lib/utils"
+import { cn, isEnabled } from "@/lib/utils"
 import type { Subuser, SubuserPagination, SubusersResponse, SubuserPermissionsResponse } from "@/types/server"
 
 export default function ServerSubusersPage() {
@@ -32,7 +32,7 @@ export default function ServerSubusersPage() {
     const router = useRouter()
     const pathname = usePathname()
     const { t } = useTranslation()
-    const { loading: settingsLoading } = useSettings()
+    const { settings, loading: settingsLoading } = useSettings()
     const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
     
     // Permission checks
@@ -71,8 +71,8 @@ export default function ServerSubusersPage() {
     const [savingPermissions, setSavingPermissions] = React.useState(false)
 
     // Fetch Data
-    const fetchData = React.useCallback(async (page = 1) => {
-        if (!uuidShort) return
+    const fetchSubusers = React.useCallback(async (page = 1) => {
+        if (!uuidShort || !isEnabled(settings?.server_allow_subusers)) return
         setLoading(true)
         try {
             const { data } = await axios.get<SubusersResponse>(`/api/user/servers/${uuidShort}/subusers`, {
@@ -92,18 +92,18 @@ export default function ServerSubusersPage() {
         } finally {
             setLoading(false)
         }
-    }, [uuidShort, t, searchQuery])
+    }, [uuidShort, t, searchQuery, settings?.server_allow_subusers])
 
     React.useEffect(() => {
-        if (canRead) {
-            fetchData()
-        } else if (!permissionsLoading && !canRead) {
+        if (canRead && isEnabled(settings?.server_allow_subusers)) {
+            fetchSubusers()
+        } else if (!permissionsLoading && !canRead && isEnabled(settings?.server_allow_subusers)) {
             toast.error(t("serverSubusers.noSubuserManagementPermission"))
             router.push(`/server/${uuidShort}`)
         } else {
             setLoading(false)
         }
-    }, [canRead, permissionsLoading, fetchData, router, uuidShort, t])
+    }, [canRead, permissionsLoading, fetchSubusers, router, uuidShort, t, settings?.server_allow_subusers])
 
     const handleAddSubuser = async () => {
         if (!addEmail || !addEmail.includes("@")) {
@@ -119,7 +119,7 @@ export default function ServerSubusersPage() {
                 toast.success(t("serverSubusers.createSuccess"))
                 setIsAddOpen(false)
                 setAddEmail("")
-                fetchData(1)
+                fetchSubusers(1)
             } else {
                 toast.error(data?.message || t("serverSubusers.createFailed"))
             }
@@ -140,7 +140,7 @@ export default function ServerSubusersPage() {
             if (data?.success) {
                 toast.success(t("serverSubusers.deleteSuccess"))
                 setIsDeleteOpen(false)
-                fetchData(pagination.current_page)
+                fetchSubusers(pagination.current_page)
             } else {
                 toast.error(data?.message || t("serverSubusers.deleteFailed"))
             }
@@ -183,7 +183,7 @@ export default function ServerSubusersPage() {
             if (data?.success) {
                 toast.success(t("serverSubusers.updateSuccess"))
                 setIsPermissionsOpen(false)
-                fetchData(pagination.current_page)
+                fetchSubusers(pagination.current_page)
             } else {
                 toast.error(data?.message || t("serverSubusers.updateFailed"))
             }
@@ -243,6 +243,28 @@ export default function ServerSubusersPage() {
 
     if (permissionsLoading || settingsLoading) return null
 
+    if (!isEnabled(settings?.server_allow_subusers)) {
+        return (
+            <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 bg-[#0A0A0A]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5">
+                <div className="relative">
+                    <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full scale-150" />
+                    <div className="relative h-32 w-32 rounded-3xl bg-red-500/10 flex items-center justify-center border-2 border-red-500/20 rotate-3">
+                        <Lock className="h-16 w-16 text-red-500" />
+                    </div>
+                </div>
+                <div className="max-w-md space-y-3 px-4">
+                    <h2 className="text-3xl font-black uppercase tracking-tight">{t("serverSubusers.featureDisabled")}</h2>
+                    <p className="text-muted-foreground text-lg leading-relaxed font-medium">
+                        {t("serverSubusers.featureDisabledDescription")}
+                    </p>
+                </div>
+                <Button variant="outline" size="lg" className="mt-8 rounded-2xl h-14 px-10" onClick={() => router.push(`/server/${uuidShort}`)}>
+                    {t("common.goBack")}
+                </Button>
+            </div>
+        )
+    }
+
     if (loading && subusers.length === 0 && !searchQuery) {
         return (
             <div key={pathname} className="flex flex-col items-center justify-center py-24">
@@ -282,7 +304,7 @@ export default function ServerSubusersPage() {
                     <Button 
                         variant="outline" 
                         size="lg" 
-                        onClick={() => fetchData(pagination.current_page)} 
+                        onClick={() => fetchSubusers(pagination.current_page)} 
                         disabled={loading}
                         className="bg-background/50 backdrop-blur-md border-border/40 hover:bg-background/80"
                     >
@@ -338,7 +360,7 @@ export default function ServerSubusersPage() {
                             <input
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={(e) => e.key === "Enter" && fetchData(1)}
+                                onKeyDown={(e) => e.key === "Enter" && fetchSubusers(1)}
                                 type="text"
                                 placeholder={t("serverSubusers.searchPlaceholder")}
                                 className="w-full pl-12 pr-4 h-14 bg-[#0A0A0A]/40 backdrop-blur-xl border border-white/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
@@ -346,7 +368,7 @@ export default function ServerSubusersPage() {
                         </div>
                         <Button 
                             size="lg" 
-                            onClick={() => fetchData(1)} 
+                            onClick={() => fetchSubusers(1)} 
                             disabled={loading}
                             className="h-14 px-8 rounded-2xl"
                         >
@@ -362,7 +384,7 @@ export default function ServerSubusersPage() {
                             <Button 
                                 variant="outline" 
                                 className="mt-4"
-                                onClick={() => { setSearchQuery(""); fetchData(1); }}
+                                onClick={() => { setSearchQuery(""); fetchSubusers(1); }}
                             >
                                 {t("serverSubusers.clearSearch")}
                             </Button>
@@ -432,7 +454,7 @@ export default function ServerSubusersPage() {
                                     variant="outline"
                                     size="sm"
                                     disabled={pagination.current_page <= 1 || loading}
-                                    onClick={() => fetchData(pagination.current_page - 1)}
+                                    onClick={() => fetchSubusers(pagination.current_page - 1)}
                                     className="rounded-xl h-10 w-10 p-0"
                                 >
                                     <ChevronLeft className="h-5 w-5" />
@@ -444,7 +466,7 @@ export default function ServerSubusersPage() {
                                     variant="outline"
                                     size="sm"
                                     disabled={pagination.current_page >= pagination.last_page || loading}
-                                    onClick={() => fetchData(pagination.current_page + 1)}
+                                    onClick={() => fetchSubusers(pagination.current_page + 1)}
                                     className="rounded-xl h-10 w-10 p-0"
                                 >
                                     <ChevronRight className="h-5 w-5" />
