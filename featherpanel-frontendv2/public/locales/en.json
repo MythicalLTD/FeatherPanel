@@ -111,6 +111,8 @@
   "common": {
     "loading": "Loading...",
     "refresh": "Refresh",
+	"disable": "Disable",
+	"enable": "Enable",
     "copiedToClipboard": "Copied to clipboard",
     "actionsCannotBeUndone": "Actions cannot be undone",
     "clear": "Clear",

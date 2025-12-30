@@ -1,0 +1,362 @@
+"use client"
+
+import * as React from "react"
+import { useParams, useRouter } from "next/navigation"
+import axios, { AxiosError } from "axios"
+import { useTranslation } from "@/contexts/TranslationContext"
+import {
+    Calendar,
+    ChevronLeft,
+    Loader2,
+    Plus,
+    ExternalLink,
+    Lock
+} from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { HeadlessSelect } from "@/components/ui/headless-select"
+import { toast } from "sonner"
+import { useServerPermissions } from "@/hooks/useServerPermissions"
+import { useSettings } from "@/contexts/SettingsContext"
+import type { ScheduleCreateRequest } from "@/types/server"
+
+export default function CreateSchedulePage() {
+    const { uuidShort } = useParams() as { uuidShort: string }
+    const router = useRouter()
+    const { t } = useTranslation()
+    const { loading: settingsLoading } = useSettings()
+    const { hasPermission, loading: permissionsLoading } = useServerPermissions(uuidShort)
+    
+    const canCreate = hasPermission("schedule.create")
+
+    // State
+    const [saving, setSaving] = React.useState(false)
+
+    // Form State
+    const [formData, setFormData] = React.useState<ScheduleCreateRequest>({
+        name: "",
+        cron_minute: "*/5",
+        cron_hour: "*",
+        cron_day_of_month: "*",
+        cron_month: "*",
+        cron_day_of_week: "*",
+        only_when_online: 0,
+        is_active: 1
+    })
+
+    // Handlers
+    const handleCreate = async (e: React.FormEvent) => {
+        e.preventDefault()
+        
+        if (!formData.name.trim()) {
+            toast.error("Schedule name is required")
+            return
+        }
+
+        setSaving(true)
+        try {
+            const { data } = await axios.post(`/api/user/servers/${uuidShort}/schedules`, formData)
+            if (data?.success) {
+                toast.success(t("serverSchedules.createSuccess"))
+                router.push(`/server/${uuidShort}/schedules`)
+            } else {
+                toast.error(data?.message || t("serverSchedules.createFailed"))
+            }
+        } catch (error) {
+            const axiosError = error as AxiosError<{ message: string }>;
+            const msg = axiosError.response?.data?.message || t("serverSchedules.createFailed")
+            toast.error(msg)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    if (permissionsLoading || settingsLoading) return null
+
+    if (!canCreate) {
+        return (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="h-20 w-20 rounded-3xl bg-red-500/10 flex items-center justify-center mb-6">
+                    <Lock className="h-10 w-10 text-red-500" />
+                </div>
+                <h1 className="text-2xl font-black uppercase tracking-tight">{t("common.accessDenied")}</h1>
+                <p className="text-muted-foreground mt-2">{t("common.noPermission")}</p>
+                <Button variant="outline" className="mt-8" onClick={() => router.back()}>
+                    {t("common.goBack")}
+                </Button>
+            </div>
+        )
+    }
+
+    return (
+        <div className="max-w-4xl mx-auto space-y-8 pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            {/* Navigation Header */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-4">
+                <div className="space-y-3">
+                    <button 
+                        onClick={() => router.back()}
+                        className="group flex items-center gap-2 text-muted-foreground hover:text-primary transition-all duration-300"
+                    >
+                        <div className="h-6 w-6 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                            <ChevronLeft className="h-3 w-3 transition-transform group-hover:-translate-x-0.5" />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{t("common.back")}</span>
+                    </button>
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-3">
+                            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-xl shadow-primary/5">
+                                <Calendar className="h-6 w-6 text-primary" />
+                            </div>
+                            <h1 className="text-3xl font-black tracking-tight uppercase italic leading-none">{t("serverSchedules.createSchedule")}</h1>
+                        </div>
+                        <p className="text-sm text-muted-foreground font-medium opacity-60 ml-15 max-w-xl">
+                            {t("serverSchedules.createScheduleDescription")}
+                        </p>
+                    </div>
+                </div>
+                
+                <div className="hidden md:flex items-center gap-3">
+                    <Button 
+                        variant="ghost" 
+                        size="lg" 
+                        onClick={() => router.back()}
+                        disabled={saving}
+                        className="h-12 px-8 font-black uppercase tracking-widest text-[10px] hover:bg-white/5 rounded-2xl transition-all border border-transparent hover:border-white/10"
+                    >
+                        {t("common.cancel")}
+                    </Button>
+                    <Button 
+                        size="lg" 
+                        onClick={handleCreate}
+                        disabled={saving}
+                        className="h-12 px-10 font-black uppercase tracking-widest shadow-xl shadow-primary/20 rounded-2xl hover:scale-[1.02] active:scale-95 transition-all text-[10px] group overflow-hidden"
+                    >
+                        {saving ? (
+                            <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                {t("common.saving")}
+                            </>
+                        ) : (
+                            <>
+                                <Plus className="h-4 w-4 mr-2" />
+                                {t("serverSchedules.create")}
+                            </>
+                        )}
+                    </Button>
+                </div>
+            </div>
+
+            <form onSubmit={handleCreate} className="space-y-8">
+                {/* Schedule Name */}
+                <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl">
+                    <div className="flex items-center gap-4 border-b border-white/5 pb-6">
+                        <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center border border-primary/20">
+                            <Calendar className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="space-y-0.5">
+                            <h2 className="text-xl font-black uppercase tracking-tight italic">{t("serverSchedules.name")}</h2>
+                            <p className="text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50">Basic Info</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2.5">
+                        <Label htmlFor="schedule-name" className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
+                            {t("serverSchedules.name")} <span className="text-primary">*</span>
+                        </Label>
+                        <Input 
+                            id="schedule-name"
+                            value={formData.name}
+                            onChange={(e) => setFormData({...formData, name: e.target.value})}
+                            placeholder={t("serverSchedules.namePlaceholder")}
+                            className="h-12 bg-white/5 border-white/5 focus:border-primary/50 font-extrabold px-5 rounded-xl text-base transition-all"
+                            disabled={saving}
+                            required
+                        />
+                        <p className="text-xs text-muted-foreground ml-1">{t("serverSchedules.nameHelp")}</p>
+                    </div>
+                </div>
+
+                {/* Cron Expression */}
+                <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-6">
+                        <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center border border-primary/20">
+                                <Calendar className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="space-y-0.5">
+                                <h2 className="text-xl font-black uppercase tracking-tight italic">{t("serverSchedules.cronExpression")}</h2>
+                                <p className="text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50">Schedule Timing</p>
+                            </div>
+                        </div>
+                        <a
+                            href="https://cron.help/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-primary hover:underline flex items-center gap-1 font-bold"
+                        >
+                            <ExternalLink className="h-3 w-3" />
+                            {t("serverSchedules.cronHelper")}
+                        </a>
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="cron-minute" className="text-xs font-medium">
+                                {t("serverSchedules.minute")}
+                            </Label>
+                            <Input
+                                id="cron-minute"
+                                value={formData.cron_minute}
+                                onChange={(e) => setFormData({...formData, cron_minute: e.target.value})}
+                                placeholder="*/5"
+                                className="font-mono text-sm h-10"
+                                disabled={saving}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="cron-hour" className="text-xs font-medium">
+                                {t("serverSchedules.hour")}
+                            </Label>
+                            <Input
+                                id="cron-hour"
+                                value={formData.cron_hour}
+                                onChange={(e) => setFormData({...formData, cron_hour: e.target.value})}
+                                placeholder="*"
+                                className="font-mono text-sm h-10"
+                                disabled={saving}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="cron-day" className="text-xs font-medium">
+                                {t("serverSchedules.dayOfMonth")}
+                            </Label>
+                            <Input
+                                id="cron-day"
+                                value={formData.cron_day_of_month}
+                                onChange={(e) => setFormData({...formData, cron_day_of_month: e.target.value})}
+                                placeholder="*"
+                                className="font-mono text-sm h-10"
+                                disabled={saving}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="cron-month" className="text-xs font-medium">
+                                {t("serverSchedules.month")}
+                            </Label>
+                            <Input
+                                id="cron-month"
+                                value={formData.cron_month}
+                                onChange={(e) => setFormData({...formData, cron_month: e.target.value})}
+                                placeholder="*"
+                                className="font-mono text-sm h-10"
+                                disabled={saving}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="cron-weekday" className="text-xs font-medium">
+                                {t("serverSchedules.dayOfWeek")}
+                            </Label>
+                            <Input
+                                id="cron-weekday"
+                                value={formData.cron_day_of_week}
+                                onChange={(e) => setFormData({...formData, cron_day_of_week: e.target.value})}
+                                placeholder="*"
+                                className="font-mono text-sm h-10"
+                                disabled={saving}
+                            />
+                        </div>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">{t("serverSchedules.cronHelp")}</p>
+                </div>
+
+                {/* Options */}
+                <div className="bg-[#0A0A0A]/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-8 space-y-6 shadow-2xl">
+                    <div className="flex items-center gap-4 border-b border-white/5 pb-6">
+                        <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center border border-primary/20">
+                            <Calendar className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="space-y-0.5">
+                            <h2 className="text-xl font-black uppercase tracking-tight italic">Options</h2>
+                            <p className="text-[9px] font-bold text-muted-foreground tracking-widest uppercase opacity-50">Configuration</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-6">
+                        <div className="space-y-2.5">
+                            <Label htmlFor="only-when-online" className="text-sm font-medium">
+                                {t("serverSchedules.onlyWhenOnline")}
+                            </Label>
+                            <HeadlessSelect
+                                value={String(formData.only_when_online)}
+                                onChange={(val) => setFormData({...formData, only_when_online: Number(val)})}
+                                options={[
+                                    { id: "0", name: "No - Run regardless of server status" },
+                                    { id: "1", name: "Yes - Only run when server is online" }
+                                ]}
+                                disabled={saving}
+                                buttonClassName="h-12 bg-white/5 border-white/5 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all"
+                            />
+                            <p className="text-xs text-muted-foreground ml-1">{t("serverSchedules.onlyWhenOnlineHelp")}</p>
+                        </div>
+
+                        <div className="space-y-2.5">
+                            <Label htmlFor="schedule-enabled" className="text-sm font-medium">
+                                {t("serverSchedules.scheduleEnabled")}
+                            </Label>
+                            <HeadlessSelect
+                                value={String(formData.is_active)}
+                                onChange={(val) => setFormData({...formData, is_active: Number(val)})}
+                                options={[
+                                    { id: "1", name: "Enabled - Schedule will run automatically" },
+                                    { id: "0", name: "Disabled - Schedule will not run" }
+                                ]}
+                                disabled={saving}
+                                buttonClassName="h-12 bg-white/5 border-white/5 focus:border-primary/50 rounded-xl text-sm font-extrabold transition-all"
+                            />
+                            <p className="text-xs text-muted-foreground ml-1">{t("serverSchedules.scheduleEnabledHelp")}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mobile Actions */}
+                <div className="md:hidden flex flex-col gap-3">
+                    <Button 
+                        type="submit"
+                        size="lg" 
+                        disabled={saving}
+                        className="w-full h-12 font-black uppercase tracking-widest shadow-xl shadow-primary/20 rounded-2xl text-[10px]"
+                    >
+                        {saving ? (
+                            <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                {t("common.saving")}
+                            </>
+                        ) : (
+                            <>
+                                <Plus className="h-4 w-4 mr-2" />
+                                {t("serverSchedules.create")}
+                            </>
+                        )}
+                    </Button>
+                    <Button 
+                        type="button"
+                        variant="ghost" 
+                        size="lg" 
+                        onClick={() => router.back()}
+                        disabled={saving}
+                        className="w-full h-12 font-black uppercase tracking-widest text-[10px]"
+                    >
+                        {t("common.cancel")}
+                    </Button>
+                </div>
+            </form>
+        </div>
+    )
+}
